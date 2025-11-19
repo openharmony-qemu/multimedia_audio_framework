@@ -229,7 +229,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, MixAudioDeviceTest_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     uint32_t element = 100;
-    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].insert(element);
+    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].sessionIds.insert(element);
     ret = sleAudioDeviceManager_->StartPlaying(device, streamType);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -331,7 +331,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, Send_Get_001, TestSize.Level1)
     uint32_t streamType = 1;
     uint32_t delayValue = 0;
     
-    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType);
+    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType, USER_SELECT_SLE);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     int32_t result = sleAudioDeviceManager_->GetRenderPosition(device, delayValue);
@@ -355,7 +355,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, Send_Get_002, TestSize.Level1)
     uint32_t streamType = 1;
     uint32_t delayValue = 0;
     
-    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType);
+    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType, USER_SELECT_SLE);
     EXPECT_EQ(ret, SUCCESS);
 
     int32_t result = sleAudioDeviceManager_->GetRenderPosition(device, delayValue);
@@ -400,6 +400,23 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_002, TestSize.Level1)
 
     uint32_t result = sleAudioDeviceManager_->GetSleStreamTypeBySourceType(sourceType);
     EXPECT_EQ(result, SLE_AUDIO_STREAM_NONE);
+}
+
+/**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage.
+ * @tc.number: GetSleStreamType_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage && GetSleStreamTypeBySourceType.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    bool isGame = true;
+
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, isGame);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
 }
 
 /**
@@ -639,7 +656,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_001, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -660,7 +677,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_002, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -680,7 +697,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_003, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType, USER_SELECT_SLE);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -701,7 +718,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_004, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType, USER_SELECT_SLE);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1250,9 +1267,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
     sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
 
     int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
     ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

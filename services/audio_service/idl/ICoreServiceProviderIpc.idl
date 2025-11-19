@@ -47,4 +47,18 @@ interface ICoreServiceProviderIpc {
     void GetPaIndexByPortName(
         [in] String portName,
         [out] unsigned int ret);
+    void SetRendererTarget(
+        [in] unsigned int target,
+        [in] unsigned int lastTarget,
+        [in] unsigned int sessionId,
+        [out] int ret);
+    void StartInjection(
+        [in] unsigned int target,
+        [out] int ret);
+    void RemoveIdForInjector([in] unsigned int sessionId);
+    void ReleaseCaptureInjector();
+    void RebuildCaptureInjector([in] unsigned int sessionId);
+    void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
+    void OnCheckActiveMusicTime([in] String reason);
+    [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }

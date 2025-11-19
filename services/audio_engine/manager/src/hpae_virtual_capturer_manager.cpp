@@ -37,12 +37,7 @@ int32_t HpaeVirtualCapturerManager::CreateStream(const HpaeStreamInfo &streamInf
     std::lock_guard<std::mutex> lock(captureMutex_);
     AUDIO_INFO_LOG("Create output node:%{public}d", streamInfo.sessionId);
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
@@ -72,8 +67,7 @@ int32_t HpaeVirtualCapturerManager::Start(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_RUNNING);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_RUNNING);
     return SUCCESS;
 }
 
@@ -83,8 +77,7 @@ int32_t HpaeVirtualCapturerManager::Pause(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_PAUSED);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_PAUSED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_PAUSED, OPERATION_PAUSED);
     return SUCCESS;
@@ -115,8 +108,7 @@ int32_t HpaeVirtualCapturerManager::Stop(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_STOPPED);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_STOPPED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_STOPPED, OPERATION_STOPPED);
     return SUCCESS;
@@ -171,7 +163,7 @@ int32_t HpaeVirtualCapturerManager::SetStreamMute(uint32_t sessionId, bool isMut
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     CHECK_AND_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS, "captureInfo.sourceOutputNode is nullptr");
-    captureInfo.sourceOutputNode->SetMute(isMute);
+    captureStream_[sessionId].sourceOutputNode->SetMute(isMute);
     return SUCCESS;
 }
 
@@ -320,6 +312,20 @@ void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo
     streamInfo.sessionInfo.state = capturerState;
     CHECK_AND_RETURN_LOG(streamInfo.sourceOutputNode, "streamInfo.sourceOutputNode is nullptr");
     streamInfo.sourceOutputNode->SetState(capturerState);
+}
+
+int32_t HpaeVirtualCapturerManager::AddCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualCapturerManager::RemoveCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

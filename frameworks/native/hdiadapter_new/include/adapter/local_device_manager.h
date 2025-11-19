@@ -56,7 +56,7 @@ public:
 
     void AllAdapterSetMicMute(bool isMute) override;
 
-    void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
+    int32_t SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
     std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition) override;
@@ -104,6 +104,7 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::atomic<AudioScene> currentAudioScene_ = AUDIO_SCENE_DEFAULT;
+    std::mutex voiceVolumeMtx_;
 };
 
 } // namespace AudioStandard

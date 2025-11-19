@@ -26,22 +26,18 @@ namespace AudioStandard {
 struct AudioCaptureDataProcParams {
     AudioCaptureDataProcParams(
         const BufferDesc &readBuf,
-        std::shared_ptr<OHAudioBufferBase> procBuf,
         std::vector<uint8_t> &captureConvBuffer,
         std::vector<uint8_t> &rendererConvBuffer
     ) : readBuf_(readBuf),
-        procBuf_(std::move(procBuf)),
         captureConvBuffer_(captureConvBuffer),
         rendererConvBuffer_(rendererConvBuffer)
     {
     }
 
     bool isConvertReadFormat_ = false;
-    uint32_t dstSpanSizeInframe_ = 0;
     AudioSamplingRate srcSamplingRate = SAMPLE_RATE_48000;
 
     const BufferDesc &readBuf_;
-    std::shared_ptr<OHAudioBufferBase> procBuf_;
     std::vector<uint8_t> &captureConvBuffer_;
     std::vector<uint8_t> &rendererConvBuffer_;
 };
@@ -92,18 +88,23 @@ public:
  
     virtual bool GetSilentState() = 0;
     virtual void SetSilentState(bool state) = 0;
-    virtual void AddMuteWriteFrameCnt(int64_t muteFrameCnt) = 0;
     virtual void AddMuteFrameSize(int64_t muteFrameCnt) {}
     virtual void AddNormalFrameSize() {}
     virtual void AddNoDataFrameSize() {}
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
     virtual int32_t GetAudioHapticsSyncId() = 0;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) = 0;
+    virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData) = 0;
+    virtual void UpdateStreamInfo() {}
 
     virtual int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
     {
         return SUCCESS;
     }
+
+    virtual void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

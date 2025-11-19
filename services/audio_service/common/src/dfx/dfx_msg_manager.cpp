@@ -78,7 +78,6 @@ void DfxMsgManager::SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int6
 void DfxMsgManager::CheckReportDfxMsg()
 {
     Trace trace("DfxMsgManager::CheckReportDfxMsg");
-    AUDIO_INFO_LOG("entering CheckReportDfxMsg, reported msg size=%{public}d", reportedCnt_.load());
     SafeSendCallBackEvent(DFX_CHECK_REPORT_MSG, 0, DFX_CHECK_REPORT_MSG_TIME_MS);
 
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -96,6 +95,7 @@ void DfxMsgManager::CheckReportDfxMsg()
         reportedCnt_ = 0;
         lastReportTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         cvReachLimit_.notify_all();
+        std::lock_guard<std::mutex> appInfoLock(appInfoMutex_);
         appInfo_.clear();
         indexesInfo_.clear();
     }
@@ -567,6 +567,7 @@ void DfxMsgManager::WriteInterruptMsg(DfxMessage &msg, const std::unique_ptr<Dfx
     }
 
     uint8_t interruptBackgroundFlag = 0;
+    std::lock_guard<std::mutex> lock(appInfoMutex_);
     if (appInfo_.count(msg.appUid) != 0) {
         auto &item = appInfo_[msg.appUid];
         auto iter = std::find_if(item.appStateVec.begin(), item.appStateVec.end(), [](const auto &item) {
@@ -623,6 +624,7 @@ void DfxMsgManager::WriteCapturerMsg(DfxMessage &msg, const std::unique_ptr<DfxR
 void DfxMsgManager::WriteRunningAppMsg(DfxMessage &msg, const std::unique_ptr<DfxReportResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    std::lock_guard<std::mutex> lock(appInfoMutex_);
     if (appInfo_.count(msg.appUid) == 0) {
         AUDIO_ERR_LOG("unknown appUid=%{public}d", msg.appUid);
         return;
@@ -672,6 +674,7 @@ void DfxMsgManager::WritePlayAudioStatsEvent(const std::unique_ptr<DfxReportResu
 
 bool DfxMsgManager::CheckCanAddAppInfo(int32_t appUid)
 {
+    std::lock_guard<std::mutex> lock(appInfoMutex_);
     bool ret = false;
     if (CheckoutSystemAppUtil::CheckoutSystemApp(appUid)) {
         Trace trace("skip system app dfx msg.., appuid=" + std::to_string(appUid));
@@ -685,6 +688,7 @@ bool DfxMsgManager::CheckCanAddAppInfo(int32_t appUid)
 
 void DfxMsgManager::SaveAppInfo(const DfxRunningAppInfo info)
 {
+    std::lock_guard<std::mutex> lock(appInfoMutex_);
     if (appInfo_.count(info.appUid) == 0) {
         appInfo_.insert(std::make_pair(info.appUid, info));
     }
@@ -692,6 +696,7 @@ void DfxMsgManager::SaveAppInfo(const DfxRunningAppInfo info)
 
 void DfxMsgManager::UpdateAppState(int32_t appUid, DfxAppState appState, bool forceUpdate)
 {
+    std::lock_guard<std::mutex> lock(appInfoMutex_);
     if (appInfo_.count(appUid) != 0) {
         auto &item = appInfo_[appUid];
         DfxAppState recentAppState = !item.appStateVec.empty() ?

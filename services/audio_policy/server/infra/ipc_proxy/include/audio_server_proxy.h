@@ -59,7 +59,6 @@ public:
     void UpdateSessionConnectionStateProxy(const int32_t &sessionID, const int32_t &state);
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
-    void ResetAudioEndpointProxy();
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
     void OffloadSetVolumeProxy(float volume, const std::string &deviceClass, const std::string &networkId);
     void SetVoiceVolumeProxy(float volume);
@@ -121,8 +120,8 @@ public:
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetBtHdiInvalidState();
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
-    void SendInterruptEventToAudioServerProxy(InterruptEventInternal interruptEvent, int32_t sessionId);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    int32_t SetNonInterruptMuteProxy(uint32_t sessionId, bool muteFlag);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

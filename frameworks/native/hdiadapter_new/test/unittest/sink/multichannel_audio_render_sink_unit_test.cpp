@@ -558,7 +558,7 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_027, Test
 
     multichannelAudioRenderSink->halName_ = HDI_ID_INFO_USB;
     multichannelAudioRenderSink->InitDeviceDesc(deviceDesc);
-    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_HEADSET);
+    EXPECT_NE(deviceDesc.pins, PIN_OUT_USB_HEADSET);
 }
 
 /**

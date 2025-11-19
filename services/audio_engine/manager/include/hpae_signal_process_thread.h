@@ -39,6 +39,7 @@ public:
     {
         return recvSignal_.load();
     }
+    void SleepUntilNotify(int64_t sleepInUs);
 private:
 
     std::atomic<bool> running_;

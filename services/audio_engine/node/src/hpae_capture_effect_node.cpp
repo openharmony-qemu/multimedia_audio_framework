@@ -44,6 +44,9 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeCaptureEffectNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -52,6 +55,9 @@ HpaeCaptureEffectNode::~HpaeCaptureEffectNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -62,7 +68,7 @@ bool HpaeCaptureEffectNode::Reset()
 
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess inputs num[" +
+    Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
         std::to_string(inputs.size()) + "]");
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
@@ -115,7 +121,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -125,10 +131,11 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
         "%{public}u has disconnected with preNode", GetNodeId());
-    inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+    const auto port = preNode->GetOutputPort(nodeInfo, true);
+    inputStream_.DisConnect(port);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -141,24 +148,36 @@ bool HpaeCaptureEffectNode::GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, Hpae
     return true;
 }
 
+void HpaeCaptureEffectNode::GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout)
+{
+    if (channels == 2) { // 2 is stereo
+        channelLayout = CH_LAYOUT_STEREO;
+    } else if (channels == 4) { // 4 is QUAD_SIDE
+        channelLayout = CH_LAYOUT_QUAD_SIDE;
+    } else {
+        AUDIO_WARNING_LOG("channel is not meet expectations");
+    }
+}
+
 void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
     AudioBufferConfig micrefConfig)
 {
-    HpaeNodeInfo micInfo = {};
-    HpaeNodeInfo ecInfo = {};
-    HpaeNodeInfo micrefInfo = {};
+    HpaeNodeInfo micInfo = GetNodeInfo();
+    HpaeNodeInfo ecInfo = GetNodeInfo();
+    HpaeNodeInfo micrefInfo = GetNodeInfo();
     micInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-    micInfo.frameLen = FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND);
+    micInfo.frameLen = FRAME_LEN_20MS * (micConfig.samplingRate / MILLISECOND_PER_SECOND);
     micInfo.samplingRate = static_cast<AudioSamplingRate>(micConfig.samplingRate);
     micInfo.channels = static_cast<AudioChannel>(micConfig.channels);
     micInfo.format = static_cast<AudioSampleFormat>(micConfig.format / BITLENGTH - 1);
+    GetCaptureEffectMicChannelLayout(micConfig.channels, micInfo.channelLayout);
     ecInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
-    ecInfo.frameLen = FRAME_LEN * (ecConfig.samplingRate / MILLISECOND_PER_SECOND);
+    ecInfo.frameLen = FRAME_LEN_20MS * (ecConfig.samplingRate / MILLISECOND_PER_SECOND);
     ecInfo.samplingRate = static_cast<AudioSamplingRate>(ecConfig.samplingRate);
     ecInfo.channels = static_cast<AudioChannel>(ecConfig.channels);
     ecInfo.format = static_cast<AudioSampleFormat>(ecConfig.format / BITLENGTH - 1);
     micrefInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
-    micrefInfo.frameLen = FRAME_LEN * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND);
+    micrefInfo.frameLen = FRAME_LEN_20MS * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND);
     micrefInfo.samplingRate = static_cast<AudioSamplingRate>(micrefConfig.samplingRate);
     micrefInfo.channels = static_cast<AudioChannel>(micrefConfig.channels);
     micrefInfo.format = static_cast<AudioSampleFormat>(micrefConfig.format / BITLENGTH - 1);
@@ -186,12 +205,12 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     CHECK_AND_RETURN_RET_LOG(ret == 0 && micConfig.samplingRate != 0, ERROR,
         "get algo config failed, ret:%{public}d", ret);
     SetCapturerEffectConfig(micConfig, ecConfig, micrefConfig);
-    micBufferLength_ = FRAME_LEN * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
+    micBufferLength_ = FRAME_LEN_20MS * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (micConfig.format / BITLENGTH);
-    ecBufferLength_ = FRAME_LEN * ecConfig.channels * (ecConfig.samplingRate / MILLISECOND_PER_SECOND) *
+    ecBufferLength_ = FRAME_LEN_20MS * ecConfig.channels * (ecConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (ecConfig.format / BITLENGTH);
-    micrefBufferLength_ = FRAME_LEN * micrefConfig.channels * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) *
-        (micrefConfig.format / BITLENGTH);
+    micrefBufferLength_ = FRAME_LEN_20MS * micrefConfig.channels *
+        (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) * (micrefConfig.format / BITLENGTH);
     uint32_t maxLength = (micBufferLength_ > ecBufferLength_) ?
         (micBufferLength_ > micrefBufferLength_ ? micBufferLength_ : micrefBufferLength_) :
         (ecBufferLength_ > micrefBufferLength_ ? ecBufferLength_ : micrefBufferLength_);
@@ -201,8 +220,10 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     micCache_.resize(micBufferLength_);
     micRefCache_.resize(micrefBufferLength_);
     cacheDataOut_.resize(maxLength);
-    PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
-        micConfig.samplingRate);
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    GetCaptureEffectMicChannelLayout(micConfig.channels, channelLayout);
+    PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN_20MS * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
+        micConfig.samplingRate, channelLayout);
     outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     if (outPcmBuffer_ == nullptr) {
         AUDIO_ERR_LOG("create effect out pcm buffer fail");
@@ -217,6 +238,11 @@ int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
+}
+
+uint64_t HpaeCaptureEffectNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
 }
 
 }  // namespace HPAE

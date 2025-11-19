@@ -31,6 +31,7 @@ public:
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus);
     void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus);
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction);
+    void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction);
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo);
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode);
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent);
@@ -67,6 +68,8 @@ public:
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);
+    void OnVolumeDegreeEvent(const VolumeEvent &volumeEvent);
+    void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled);
 
 public:
     bool hasBTPermission_ = true;

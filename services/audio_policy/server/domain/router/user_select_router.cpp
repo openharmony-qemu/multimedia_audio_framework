@@ -87,13 +87,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
         (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
         GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
 
-    if (!selectedDesc.get()) {
-        AUDIO_INFO_LOG("Have no selected connected desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (selectedDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Selected connected desc type is none, just only add default device.");
+    if (!selectedDesc.get() || selectedDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
@@ -136,6 +130,11 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice();
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
+    shared_ptr<AudioDeviceDescriptor> perRecognitionDev_ =
+        AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && perRecognitionDev_ && perRecognitionDev_->deviceId_ != 0) {
+        perDev_ = perRecognitionDev_;
+    }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_INPUT_DEVICES, perDev_)) {

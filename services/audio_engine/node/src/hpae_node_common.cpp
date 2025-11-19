@@ -25,13 +25,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_NUM = 6;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
 static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
+// to judge whether SampleRate is multiples of 50, if true use 20ms, false use 100ms
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
+static constexpr uint32_t FRAME_LEN_40MS = 40;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -248,7 +249,8 @@ std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
                           std::to_string(nodeInfo.samplingRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
-                          std::to_string(nodeInfo.format);
+                          std::to_string(nodeInfo.format) + "_" +
+                          std::to_string(nodeInfo.channelLayout);
     return nodeKey;
 }
 
@@ -286,27 +288,6 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
     return static_cast<AudioSampleFormat>(g_formatFromParserStrToEnum[format]);
 }
 
-void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
-{
-    if (sinkInfo.deviceName == "DP_MCH_speaker") {
-        sinkInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
-        return;
-    }
-    if (sinkInfo.deviceName != "MCH_Speaker") {
-        return;
-    }
-    sinkInfo.channels = static_cast<AudioChannel>(DEFAULT_MULTICHANNEL_NUM);
-    sinkInfo.channelLayout = DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
-    sinkInfo.frameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * sinkInfo.samplingRate / MS_PER_SECOND;
-    sinkInfo.volume = MAX_SINK_VOLUME_LEVEL;
-    AUDIO_INFO_LOG("adjust MCH SINK info ch: %{public}u, channelLayout: %{public}" PRIu64
-                   " frameLen: %{public}zu volume %{public}f",
-        sinkInfo.channels,
-        sinkInfo.channelLayout,
-        sinkInfo.frameLen,
-        sinkInfo.volume);
-}
-
 int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
     if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
@@ -333,7 +314,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
         "channels or format is invalid");
     sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
-    sinkInfo.channelLayout = 0ULL;
+    sinkInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
     sinkInfo.deviceType = static_cast<int32_t>(StringToNum(audioModuleInfo.deviceType));
     sinkInfo.volume = MAX_SINK_VOLUME_LEVEL;
     sinkInfo.openMicSpeaker = static_cast<uint32_t>(StringToNum(audioModuleInfo.OpenMicSpeaker));
@@ -342,10 +323,12 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.sinkLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.sinkLatency));
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
-    AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }
+    AUDIO_INFO_LOG("sink info ch: %{public}u, channelLayout: %{public}" PRIu64,
+        sinkInfo.channels,
+        sinkInfo.channelLayout);
     return SUCCESS;
 }
 
@@ -370,23 +353,24 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.rate));
-    sourceInfo.channelLayout = 0ULL;
+    sourceInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
     sourceInfo.deviceType = static_cast<int32_t>(StringToNum(audioModuleInfo.deviceType));
     sourceInfo.volume = MAX_SINK_VOLUME_LEVEL;  // 1.0f;
+    sourceInfo.macAddress = audioModuleInfo.macAddress;
 
     sourceInfo.ecType = static_cast<HpaeEcType>(StringToNum(audioModuleInfo.ecType));
     sourceInfo.ecAdapterName = audioModuleInfo.ecAdapter;
     sourceInfo.ecSamplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.ecSamplingRate));
     sourceInfo.ecFormat = TransFormatFromStringToEnum(audioModuleInfo.ecFormat);
     sourceInfo.ecChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.ecChannels));
-    sourceInfo.ecFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
+    sourceInfo.ecFrameLen = FRAME_LEN_20MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
 
     sourceInfo.micRef = static_cast<HpaeMicRefSwitch>(StringToNum(audioModuleInfo.openMicRef));
     sourceInfo.micRefSamplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.micRefRate));
     sourceInfo.micRefFormat = TransFormatFromStringToEnum(audioModuleInfo.micRefFormat);
     sourceInfo.micRefChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.micRefChannels));
     sourceInfo.openMicSpeaker = static_cast<uint32_t>(StringToNum(audioModuleInfo.OpenMicSpeaker));
-    sourceInfo.micRefFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
+    sourceInfo.micRefFrameLen = FRAME_LEN_20MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
     return SUCCESS;
 }
 
@@ -525,6 +509,53 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
         return ERROR;
     }
     return SUCCESS;
+}
+
+void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
+    HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.channels = sinkInfo.channels;
+    nodeInfo.format = sinkInfo.format;
+    nodeInfo.frameLen = sinkInfo.frameLen;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceNetId = sinkInfo.deviceNetId;
+    nodeInfo.deviceClass = sinkInfo.deviceClass;
+    nodeInfo.statusCallback = statusCallback;
+}
+
+size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
+{
+    size_t frameLen = 0;
+    if (sampleRate == SAMPLE_RATE_11025) {
+        frameLen = FRAME_LEN_40MS * sampleRate / MS_PER_SECOND;
+    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
+        frameLen = FRAME_LEN_20MS * sampleRate / MS_PER_SECOND;
+    } else {
+        frameLen = FRAME_LEN_100MS * sampleRate / MS_PER_SECOND;
+    }
+    return frameLen;
+}
+
+size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
+{
+    return CalculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
+}
+
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
+{
+    nodeInfo.channels = streamInfo.channels;
+    nodeInfo.format = streamInfo.format;
+    nodeInfo.frameLen = streamInfo.frameLen;
+    nodeInfo.streamType = streamInfo.streamType;
+    nodeInfo.sessionId = streamInfo.sessionId;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
+    nodeInfo.sourceType = streamInfo.sourceType;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

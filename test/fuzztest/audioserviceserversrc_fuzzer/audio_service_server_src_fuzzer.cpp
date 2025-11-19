@@ -298,11 +298,11 @@ void ResourceServiceStopGroupFuzzTest()
     AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
 }
 
-void ResourceServiceGetAudioWorkgroupPtrFuzzTest()
+void ResourceServiceGetAudioWorkgroupFuzzTest()
 {
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
     int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
-    AudioResourceService::GetInstance()->GetAudioWorkgroupPtr(pid, workgroupId);
+    AudioResourceService::GetInstance()->GetAudioWorkgroup(pid, workgroupId);
 }
 
 void ResourceServiceGetThreadsNumPerProcessFuzzTest()
@@ -430,7 +430,7 @@ void RenderInServerInnerCaptureEnqueueBufferFuzzTest()
     audioProcessConfig.streamType = STREAM_MUSIC;
     captureInfo.dupStream = std::make_shared<ProRendererStreamImpl>(audioProcessConfig, true);
     int32_t innerCapId = g_fuzzUtils.GetData<int32_t>();
-    renderer->renderEmptyCountForInnerCap_ = g_fuzzUtils.GetData<int32_t>();
+    renderer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = g_fuzzUtils.GetData<int32_t>();
     renderer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
 }
 
@@ -646,8 +646,7 @@ void ProRendererOffloadSetVolumeFuzzTest()
 {
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
-    float volume = g_fuzzUtils.GetData<float>();
-    rendererStream->OffloadSetVolume(volume);
+    rendererStream->OffloadSetVolume();
 }
 
 void ProRendererSetOffloadDataCallbackStateFuzzTest()
@@ -997,7 +996,7 @@ vector<TestFuncs> g_testFuncs = {
     ResourceServiceRemoveThreadFromGroupFuzzTest,
     ResourceServiceStartGroupFuzzTest,
     ResourceServiceStopGroupFuzzTest,
-    ResourceServiceGetAudioWorkgroupPtrFuzzTest,
+    ResourceServiceGetAudioWorkgroupFuzzTest,
     ResourceServiceGetThreadsNumPerProcessFuzzTest,
     ResourceServiceIsProcessHasSystemPermissionFuzzTest,
     ResourceServiceRegisterAudioWorkgroupMonitorFuzzTest,

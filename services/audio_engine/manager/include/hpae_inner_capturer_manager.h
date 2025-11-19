@@ -24,7 +24,6 @@
 #include "i_renderer_stream.h"
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
-#include "hpae_resample_node.h"
 #include "hpae_inner_cap_sink_node.h"
 #include "hpae_source_output_node.h"
 #include "hpae_source_process_cluster.h"
@@ -80,7 +79,7 @@ public:
     HpaeSinkInfo GetSinkInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
 
     int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;
     int32_t AddAllNodesToSink(
@@ -96,6 +95,8 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
+    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);

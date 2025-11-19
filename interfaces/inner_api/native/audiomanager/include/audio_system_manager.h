@@ -66,7 +66,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0);
 
     /**
      * @brief Set the stream volume.
@@ -78,7 +78,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 16
      */
-    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType);
 
    /**
      * @brief Set the app volume.
@@ -290,7 +290,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE) const;
+    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     /**
      * @brief is stream mute.
@@ -733,6 +733,26 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the volume degree callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    int32_t RegisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_11);
+
+    /**
+     * @brief Unregisters the volumeKeyEvent callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    /**
      * @brief registers the systemVolumeChange callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1052,7 +1072,7 @@ public:
      * @return Returns success or not
      * @since 11
      */
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume = 0);
 
     /**
      * @brief Set the absolute volume value for the specified Bluetooth device
@@ -1069,6 +1089,13 @@ public:
      */
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, const bool updateUi);
+
+    /**
+     * @brief Set nearlink voiceStatus flag
+     *
+     * @return Returns success or not
+     */
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     /**
      * @brief Registers the availbale deviceChange callback listener.
@@ -1173,6 +1200,8 @@ public:
     int32_t UnsetAudioSceneChangeCallback(std::shared_ptr<AudioManagerAudioSceneChangedCallback> callback = nullptr);
 
     std::string GetSelfBundleName(int32_t uid);
+
+    std::string GetSelfBundleName();
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
@@ -1496,6 +1525,34 @@ public:
     */
     void CleanUpResource();
 
+    /**
+     * @brief set stream volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @param degree volume degree. It must be an integer with the range [0, 100].
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @since 21
+     */
+    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0);
+
+    /**
+     * @brief get stream volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @return Returns the volume degree for the specified Audio stream type.
+     * @since 21
+     */
+    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0);
+
+    /**
+     * @brief get stream min volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @return Returns the minimum volume degree for the specified Audio stream type.
+     * @since 21
+     */
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
+
     class WorkgroupPrioRecorder {
     public:
         WorkgroupPrioRecorder(int32_t grpId);
@@ -1552,7 +1609,6 @@ private:
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     int32_t GetCallingPid() const;
-    std::string GetSelfBundleName();
 
     int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;
@@ -1590,6 +1646,7 @@ private:
     bool hasSystemPermission_ = false;
     std::unordered_map<int32_t, std::shared_ptr<WorkgroupPrioRecorder>> workgroupPrioRecorderMap_;
     std::mutex workgroupPrioRecorderMutex_;
+    std::mutex volumeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

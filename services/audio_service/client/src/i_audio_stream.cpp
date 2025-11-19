@@ -49,6 +49,22 @@ const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
     SAMPLE_F32LE
 };
 
+const std::map<AudioChannel, AudioChannelLayout> AUDIO_DEFAULT_CHANNEL_LAYOUT_MAP = {
+    {MONO, CH_LAYOUT_MONO},
+    {STEREO, CH_LAYOUT_STEREO},
+    {CHANNEL_3, CH_LAYOUT_SURROUND},
+    {CHANNEL_4, CH_LAYOUT_2POINT0POINT2},
+    {CHANNEL_5, CH_LAYOUT_5POINT0_BACK},
+    {CHANNEL_6, CH_LAYOUT_5POINT1},
+    {CHANNEL_7, CH_LAYOUT_6POINT1_BACK},
+    {CHANNEL_8, CH_LAYOUT_5POINT1POINT2},
+    {CHANNEL_9, CH_LAYOUT_HOA_ORDER2_ACN_N3D},
+    {CHANNEL_10, CH_LAYOUT_7POINT1POINT2},
+    {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
+    {CHANNEL_14, CH_LAYOUT_9POINT1POINT4},
+    {CHANNEL_16, CH_LAYOUT_9POINT1POINT6}
+};
+
 std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::CreateStreamMap()
 {
     std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
@@ -249,7 +265,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Create fast record stream");
+        HILOG_COMM_INFO("Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
 #else
         (void)params;
@@ -258,7 +274,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 #endif
     }
     if (streamClass == PA_STREAM) {
-        AUDIO_INFO_LOG("Create ipc record stream");
+        HILOG_COMM_INFO("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
@@ -378,6 +394,19 @@ bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t ch
         return false;
     }
     return true;
+}
+
+AudioChannelLayout IAudioStream::ConvertChannelsToDefaultChannelLayout(AudioChannel channels,
+    AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(channelLayout == CH_LAYOUT_UNKNOWN, channelLayout,
+        "channelLayout is not CH_LAYOUT_UNKNOWN");
+
+    auto iter = AUDIO_DEFAULT_CHANNEL_LAYOUT_MAP.find(channels);
+    if (iter != AUDIO_DEFAULT_CHANNEL_LAYOUT_MAP.end()) {
+        return iter->second;
+    }
+    return channelLayout;
 }
 } // namespace AudioStandard
 } // namespace OHOS

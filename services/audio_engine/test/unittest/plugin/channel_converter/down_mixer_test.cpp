@@ -19,6 +19,7 @@
 #include <vector>
 #include "audio_engine_log.h"
 #include "down_mixer.h"
+#include "mixer_utils.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -38,7 +39,7 @@ constexpr static AudioChannelLayout FIRST_PART_CH_LAYOUTS = static_cast<AudioCha
 
 // need full audio channel layouts to cover all cases during setting up downmix table -- second part
 constexpr static AudioChannelLayout SECOND_PART_CH_LAYOUTS = static_cast<AudioChannelLayout> (
-    TOP_CENTER | TOP_BACK_LEFT | TOP_BACK_CENTER | TOP_BACK_RIGHT |
+    FRONT_LEFT | FRONT_RIGHT | TOP_BACK_CENTER | TOP_BACK_RIGHT |
     STEREO_LEFT | STEREO_RIGHT |
     WIDE_LEFT | WIDE_RIGHT |
     SURROUND_DIRECT_LEFT | SURROUND_DIRECT_RIGHT | LOW_FREQUENCY_2 |
@@ -100,24 +101,12 @@ const static std::map<AudioChannel, AudioChannelLayout> DOWNMIX_CHANNEL_COUNT_MA
     {CHANNEL_9, CH_LAYOUT_HOA_ORDER2_ACN_N3D},
     {CHANNEL_10, CH_LAYOUT_7POINT1POINT2},
     {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
-    {CHANNEL_13, CH_LAYOUT_UNKNOWN},
     {CHANNEL_14, CH_LAYOUT_9POINT1POINT4},
     {CHANNEL_16, CH_LAYOUT_9POINT1POINT6}
 };
 
 constexpr uint32_t TEST_FORMAT_SIZE = 4;
-constexpr uint32_t TEST_FRAME_LEN = 100;
-constexpr uint32_t TEST_BUFFER_LEN = 10;
 constexpr bool MIX_FLE = true;
-
-static uint32_t BitCounts(uint64_t bits)
-{
-    uint32_t num = 0;
-    for (; bits != 0; bits &= bits - 1) {
-        num++;
-    }
-    return num;
-}
 
 class DownMixerTest : public testing::Test {
 public:
@@ -146,7 +135,7 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
     outChannelInfo.numChannels = MAX_CHANNELS + 1;
     outChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
     int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
-    EXPECT_EQ(ret, DMIX_ERR_INVALID_ARG);
+    EXPECT_EQ(ret, MIX_ERR_INVALID_ARG);
     
     // valid param, predefined downmix rules
     for (AudioChannelLayout outLayout: OUTPUT_CH_LAYOUT_SET) {
@@ -158,7 +147,7 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
             int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
             AUDIO_INFO_LOG("SetParamRetSuccessAndSetupDownMixTable inLayout %{public}" PRIu64 ""
                 "outLayout: %{public}" PRIu64 "", inLayout, outLayout);
-            EXPECT_EQ(ret, DMIX_ERR_SUCCESS);
+            EXPECT_EQ(ret, MIX_ERR_SUCCESS);
         }
     }
     
@@ -172,9 +161,17 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
             int32_t ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
             AUDIO_INFO_LOG("SetParamRetSuccessAndSetupDownMixTable inLayout %{public}" PRIu64 ""
                 "outLayout: %{public}" PRIu64 "", inLayout, outLayout);
-            EXPECT_EQ(ret, DMIX_ERR_SUCCESS);
+            EXPECT_EQ(ret, MIX_ERR_SUCCESS);
         }
     }
+
+    // test HOA output
+    inChannelInfo.channelLayout = CH_LAYOUT_HOA_ORDER3_ACN_N3D;
+    inChannelInfo.numChannels = BitCounts(CH_LAYOUT_HOA_ORDER3_ACN_N3D);
+    outChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    outChannelInfo.numChannels = STEREO;
+    ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
 }
 
 /**
@@ -185,10 +182,11 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
 */
 HWTEST_F(DownMixerTest, SetDefaultChannelLayoutTest, TestSize.Level0)
 {
-    DownMixer downMixer;
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
+        AudioChannelLayout layout;
         AUDIO_INFO_LOG("fist: %{public}d, second %{public}" PRIu64 ".", pair.first, pair.second);
-        EXPECT_EQ(pair.second, downMixer.SetDefaultChannelLayout(pair.first));
+        bool ret = SetDefaultChannelLayout(pair.first, layout);
+        EXPECT_EQ(ret, true);
     }
 }
 
@@ -201,52 +199,8 @@ HWTEST_F(DownMixerTest, SetDefaultChannelLayoutTest, TestSize.Level0)
 */
 HWTEST_F(DownMixerTest, CheckIsHOATest, TestSize.Level0)
 {
-    DownMixer downMixer;
-    EXPECT_EQ(true, downMixer.CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D));
-    EXPECT_EQ(false, downMixer.CheckIsHOA(CH_LAYOUT_UNKNOWN));
-}
-
-/**
- * @tc.name  : Test Process API
- * @tc.type  : FUNC
- * @tc.number: Process
- * @tc.desc  : Test Process interface.
- */
-HWTEST_F(DownMixerTest, ProcesTest, TestSize.Level0)
-{
-    AudioChannelInfo inChannelInfo;
-    AudioChannelInfo outChannelInfo;
-    inChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
-    inChannelInfo.numChannels = CHANNEL_6;
-    outChannelInfo.channelLayout = CH_LAYOUT_STEREO;
-    outChannelInfo.numChannels = STEREO;
-
-    // test uninitialized
-    DownMixer downMixer;
-    std::vector<float> in(TEST_BUFFER_LEN * CHANNEL_6, 0.0f);
-    std::vector<float> out(TEST_BUFFER_LEN * STEREO, 0.0f);
-    uint32_t testInBufferSize = in.size() * TEST_FORMAT_SIZE;
-    uint32_t testOutBufferSize = out.size() * TEST_FORMAT_SIZE;
-    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
-        DMIX_ERR_ALLOC_FAILED);
-    
-    // test input and output buffer length smaller than expected
-    EXPECT_EQ(downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
-    EXPECT_EQ(downMixer.Process(TEST_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
-        DMIX_ERR_ALLOC_FAILED);
-
-    // test process usual channel layout
-    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
-        DMIX_ERR_SUCCESS);
-
-    // test process HOA
-    inChannelInfo.channelLayout = CH_LAYOUT_HOA_ORDER2_ACN_SN3D;
-    inChannelInfo.numChannels = CHANNEL_9;
-    in.resize(CHANNEL_9 * TEST_BUFFER_LEN, 0.0f);
-    testInBufferSize = in.size() * TEST_FORMAT_SIZE;
-    EXPECT_EQ(downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
-    EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
-        DMIX_ERR_SUCCESS);
+    EXPECT_EQ(true, CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D));
+    EXPECT_EQ(false, CheckIsHOA(CH_LAYOUT_UNKNOWN));
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

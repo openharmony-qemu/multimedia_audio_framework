@@ -26,19 +26,20 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
-HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
-    : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)),
-      hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
+HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo nodeInfo)
+    : HpaeNode(nodeInfo), hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeOutputCluster");
 #endif
+    nodeInfo.frameLen = nodeInfo.samplingRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    SetNodeInfo(nodeInfo);
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("mixerNode SetupAudioLimiter failed!");
     }
     hpaeSinkOutputNode_->Connect(mixerNode_);
-    frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
+    frameLenMs_ = hpaeSinkOutputNode_->GetFrameLen() * MILLISECOND_PER_SECOND / hpaeSinkOutputNode_->GetSampleRate();
     AUDIO_INFO_LOG("frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
 }
 
@@ -86,12 +87,6 @@ bool HpaeOutputCluster::Reset()
         converterNode.second->Reset();
     }
     hpaeSinkOutputNode_->DisConnect(mixerNode_);
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), mixerNode_->GetNodeInfo());
-        callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 
@@ -115,9 +110,12 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
 
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
+        // disable downmix normalization in output cluster because mixer node here enables limiter
+        sceneConverterMap_[sceneType]->SetDownmixNormalization(false);
     } else {
         sceneConverterMap_.erase(sceneType);
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
+        sceneConverterMap_[sceneType]->SetDownmixNormalization(false);
     }
     mixerNode_->Connect(sceneConverterMap_[sceneType]);
     sceneConverterMap_[sceneType]->Connect(preNode);
@@ -234,9 +232,20 @@ int32_t HpaeOutputCluster::SetPriPaPower(void)
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
 }
 
-uint32_t HpaeOutputCluster::GetLatency()
+uint32_t HpaeOutputCluster::GetHdiLatency()
 {
     return hpaeSinkOutputNode_->GetLatency();
+}
+
+uint64_t HpaeOutputCluster::GetLatency(HpaeProcessorType sceneType)
+{
+    uint64_t latency = 0;
+
+    latency += SafeGetMap(sceneConverterMap_, sceneType) ? sceneConverterMap_[sceneType]->GetLatency() : 0;
+
+    latency += mixerNode_ ? mixerNode_->GetLatency() : 0;
+
+    return latency;
 }
 
 int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)

@@ -67,6 +67,7 @@ public:
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();
+    int32_t GetClientUidBySessionId(uint32_t sessionId);
 
     void Dump(std::string &dumpString);
     bool IsModemCommunicationIdExist();
@@ -87,6 +88,9 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    int32_t IsCaptureVoipCall();
+    uint32_t GetPaIndexByName(std::string portName);
+    bool HasPrimarySink();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

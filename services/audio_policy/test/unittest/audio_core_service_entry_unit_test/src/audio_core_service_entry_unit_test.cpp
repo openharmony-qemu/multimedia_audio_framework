@@ -339,10 +339,10 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_015, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_016
+ * @tc.number: OnDeviceStatusUpdated_001
  * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_016, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -357,10 +357,10 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_016, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_017
+ * @tc.number: OnDeviceStatusUpdated_002
  * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_017, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -371,6 +371,46 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_017, TestSize.Level1)
     bool isStop = true;
 
     eventEntry->OnDeviceStatusUpdated(statusInfo, isStop);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: OnDeviceStatusUpdated_003
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
+ */
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_WATCH;
+    bool isConnected = true;
+
+    eventEntry->OnDeviceStatusUpdated(desc, isConnected);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: OnDeviceStatusUpdated_004
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
+ */
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    bool isConnected = true;
+
+    eventEntry->OnDeviceStatusUpdated(desc, isConnected);
 }
 
 /**
@@ -441,8 +481,104 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
 
     DeviceType devType = DEVICE_TYPE_SPEAKER;
     std::string macAddress = "macAddress";
-
+    eventEntry->OnPrivacyDeviceSelected(devType, macAddress);
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
+    
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceId_ = 114914;
+    devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc->macAddress_ = macAddress;
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devMan.AddNewDevice(devDesc);
+    auto devDesc2 = make_shared<AudioDeviceDescriptor>();
+    devDesc2->deviceId_ = 114915;
+    devDesc2->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc2->macAddress_ = macAddress;
+    devDesc2->deviceRole_ = INPUT_DEVICE;
+    devMan.AddNewDevice(devDesc2);
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    EXPECT_NE(devMan.FindConnectedDeviceById(devDesc->deviceId_), nullptr);
+}
+
+class MockRouter : public RouterBase {
+public:
+    RouterType routerType_ = ROUTER_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callCaptureRet_;
+    std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet_;
+    MockRouter() = default;
+    MockRouter(RouterType type = ROUTER_TYPE_DEFAULT,
+        std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callCaptureRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet = nullptr)
+        : routerType_(type),
+          mediaRenderRet_(std::move(mediaRenderRet)),
+          callRenderRet_(std::move(callRenderRet)),
+          callCaptureRet_(std::move(callCaptureRet)),
+          recordCaptureRet_(std::move(recordCaptureRet)) {}
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    {
+        return mediaRenderRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    {
+        return callRenderRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return callCaptureRet_;
+    }
+ 
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
+    {
+        static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
+        return emptyVector;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return recordCaptureRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override
+    {
+        return std::shared_ptr<AudioDeviceDescriptor>();
+    }
+ 
+    RouterType GetRouterType() override
+    {
+        return routerType_;
+    }
+};
+ 
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_041
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnForcedDeviceSelected()
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
+{
+    DeviceType devType = DEVICE_TYPE_USB_HEADSET;
+    std::string macAddress = "macAddress";
+    auto &audioRouter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouter.renderConfigMap_[STREAM_USAGE_VOICE_COMMUNICATION] == "CallRenderRouters";
+    AudioDeviceStatus audioDeviceStatus =  AudioDeviceStatus::GetInstance();
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceId_ = 114914;
+    devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc->macAddress_ = macAddress;
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    audioRouter.callRenderRouters_.emplace_back(std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT,
+        nullptr, devDesc, nullptr, nullptr));
+    audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(devDesc);
+    audioDeviceStatus.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 /**
@@ -927,20 +1063,70 @@ HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_043, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_044
- * @tc.desc  : Test AudioCoreService::UpdateStreamDevicesForStart
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_001
+ * @tc.desc  : Test isPCVolumeEnable_ && !isFirstScreenOn_
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_044, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
 
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_002
+ * @tc.desc  : Test isPCVolumeEnable_ && isFirstScreenOn_ and is inject mode
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(true);
     audioCoreService->isFirstScreenOn_ = true;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioStreamDescriptor->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_003
+ * @tc.desc  : Test !isPCVolumeEnable_ && isFirstScreenOn_
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioCoreService->isFirstScreenOn_ = true;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_004
+ * @tc.desc  : Test !isPCVolumeEnable_ && !isFirstScreenOn_
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioCoreService->isFirstScreenOn_ = false;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }

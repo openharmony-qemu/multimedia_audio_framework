@@ -62,6 +62,7 @@ public:
     MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
 
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));
+    MOCK_METHOD(int32_t, SetRebuildFlag, (), (override));
 };
 
 class AudioProcessInClientUnitTest : public testing::Test {
@@ -130,7 +131,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_001, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -153,7 +154,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_002, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -176,7 +177,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_003, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -472,7 +473,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_019, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -494,7 +495,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_020, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -516,7 +517,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_021, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -538,7 +539,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_022, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -560,7 +561,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_023, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -582,7 +583,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_024, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -604,7 +605,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_025, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -626,7 +627,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_026, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -648,7 +649,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_027, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -670,7 +671,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_028, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -692,7 +693,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_029, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -716,7 +717,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_030, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -740,7 +741,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_033, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -765,7 +766,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_035, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -790,7 +791,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_036, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -815,7 +816,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_038, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -839,7 +840,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_039, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -863,7 +864,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_040, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -887,7 +888,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_044, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -910,7 +911,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_045, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -933,7 +934,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_046, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -957,7 +958,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_047, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
 
@@ -981,7 +982,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_048, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     std::atomic<StreamStatus> streamStatus;
@@ -1003,7 +1004,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_049, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     std::atomic<StreamStatus> streamStatus;
@@ -1025,7 +1026,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_050, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     std::atomic<StreamStatus> streamStatus;
@@ -1047,7 +1048,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_051, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     std::atomic<StreamStatus> streamStatus;
@@ -1164,7 +1165,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_057, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1187,7 +1188,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_058, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1208,7 +1209,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_059, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1229,7 +1230,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_060, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1250,7 +1251,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_061, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1271,7 +1272,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_062, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1292,7 +1293,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_063, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig = {0};
@@ -1318,7 +1319,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_064, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     int32_t ret = ptrAudioProcessInClientInner->SetMute(true);
@@ -1348,7 +1349,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_065, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     ptrAudioProcessInClientInner->processConfig_.audioMode = AUDIO_MODE_PLAYBACK;
@@ -1373,73 +1374,13 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_066, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     std::shared_ptr<ClientUnderrunCallBack> underrunCallback = nullptr;
     ptrAudioProcessInClientInner->isInited_ = false;
     int32_t ret = ptrAudioProcessInClientInner->SaveUnderrunCallback(underrunCallback);
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_067
- * @tc.desc  : Test ChannelFormatS16Convert
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Level1)
-{
-    sptr<AudioProcessInServer> stream = AudioProcessInServer::Create(InitProcessConfig(), AudioService::GetInstance());
-
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(stream, true, info);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    dstData.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    bool ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    dstData.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    srcData.streamInfo.format = SAMPLE_S16LE;
-    srcData.streamInfo.channels = STEREO;
-    dstData.streamInfo.encoding = ENCODING_AUDIOVIVID;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    dstData.streamInfo.encoding = ENCODING_PCM;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(true, ret);
-    srcData.streamInfo.channels = MONO;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-
-    srcData.streamInfo.format = SAMPLE_S32LE;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    srcData.streamInfo.channels = CHANNEL_3;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    srcData.streamInfo.channels = STEREO;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    srcData.streamInfo.format = INVALID_WIDTH;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-    srcData.streamInfo.format = SAMPLE_F32LE;
-    srcData.streamInfo.channels = MONO;
-    uint8_t src1[NUMBER4] = {0};
-    srcData.bufferDesc = {src1, NUMBER4, NUMBER4};
-    uint8_t dst[NUMBER4] = {0};
-    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(true, ret);
-    srcData.streamInfo.channels = STEREO;
-    uint8_t src2[NUMBER8] = {0};
-    srcData.bufferDesc = {src2, NUMBER8, NUMBER8};
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -1455,7 +1396,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_068, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     int32_t ret = ptrAudioProcessInClientInner->Pause(true);
@@ -1479,7 +1420,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_069, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioProcessConfig audioProcConfig;
@@ -1509,7 +1450,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_070, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = false;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
         AUDIO_MODE_RECORD, config.appInfo.appUid);
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
@@ -1530,7 +1471,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_072, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1570,7 +1511,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_073, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1608,7 +1549,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_074, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1645,7 +1586,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_075, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     std::string timestamp = "";
@@ -1666,7 +1607,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_076, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioProcessConfig audioProcessConfig;
@@ -1689,7 +1630,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_077, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     ptrAudioProcessInClientInner->isInited_ = true;
@@ -1715,7 +1656,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_078, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioProcessConfig audioProcessConfig;
@@ -1736,68 +1677,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_078, TestSize.Lev
 /**
  * @tc.name  : Test AudioProcessInClientInner API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_079
- * @tc.desc  : Test AudioProcessInClientInner::ChannelFormatS16Convert
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_079, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-
-    AudioStreamData dstData;
-    AudioStreamData srcData;
-    srcData.streamInfo.format = SAMPLE_F32LE;
-    srcData.streamInfo.channels = MONO;
-    dstData.streamInfo.format = SAMPLE_S16LE;
-    dstData.streamInfo.channels = STEREO;
-
-    uint8_t src1[NUMBER4] = {0};
-    srcData.bufferDesc = {src1, NUMBER4, NUMBER4};
-    uint8_t dst[NUMBER4] = {0};
-    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
-    auto ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_080
- * @tc.desc  : Test AudioProcessInClientInner::ChannelFormatS16Convert
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_080, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-
-    AudioStreamData dstData;
-    AudioStreamData srcData;
-    srcData.streamInfo.format = SAMPLE_F32LE;
-    srcData.streamInfo.channels = STEREO;
-    dstData.streamInfo.format = SAMPLE_S16LE;
-    dstData.streamInfo.channels = STEREO;
-
-    uint8_t src1[NUMBER8] = {0};
-    srcData.bufferDesc = {src1, NUMBER8, NUMBER8};
-    uint8_t dst[NUMBER4] = {0};
-    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
-    auto ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
  * @tc.number: AudioProcessInClientInner_081
  * @tc.desc  : Test AudioProcessInClientInner::CopyWithVolume
  */
@@ -1808,7 +1687,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_081, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     BufferDesc srcDesc;
@@ -1829,7 +1708,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_082, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
@@ -1858,7 +1737,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_083, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1887,7 +1766,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_084, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     ptrAudioProcessInClientInner->isInited_ = true;
@@ -1923,7 +1802,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_085, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     ptrAudioProcessInClientInner->isInited_ = true;
@@ -1950,7 +1829,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_087, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1980,7 +1859,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_088, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -2010,7 +1889,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_089, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -2043,7 +1922,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_090, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2074,7 +1953,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_091, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2105,7 +1984,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_092, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2139,7 +2018,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_093, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2164,7 +2043,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_094, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2204,7 +2083,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_095, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2230,7 +2109,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_096, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2253,7 +2132,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_097, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(audioProcessInClientInner, nullptr);
 
@@ -2278,7 +2157,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_098, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(audioProcessInClientInner, nullptr);
 
@@ -2302,7 +2181,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_099, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto audioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(audioProcessInClientInner, nullptr);
 
@@ -2328,7 +2207,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_100, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2354,7 +2233,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_101, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2376,7 +2255,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_102, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2397,7 +2276,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_103, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2428,7 +2307,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_104, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2455,7 +2334,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_105, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2477,7 +2356,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_106, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2499,7 +2378,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_107, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2521,7 +2400,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_108, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2542,7 +2421,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_109, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2563,375 +2442,12 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_110, TestSize.Lev
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     auto ret = ptrAudioProcessInClientInner->ReadFromProcessClient();
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_001
- * @tc.desc  : Test Convert success
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_001, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
-    uint8_t srcArray[NUMBER8] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_002
- * @tc.desc  : Test sample rate or encoding different
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_002, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t srcArray[NUMBER8] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    // samplingRate diff
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_AUDIOVIVID, SAMPLE_S32LE, STEREO};
-    // encoding diff
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_003
- * @tc.desc  : Test convert SAMPLE_S16LE STEREO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_003, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_004
- * @tc.desc  : Test convert SAMPLE_S16LE MONO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_004, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO};
-    uint8_t srcArray[NUMBER2] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER2, NUMBER2};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_005
- * @tc.desc  : Test convert SAMPLE_S32LE MONO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_005, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, MONO};
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_006
- * @tc.desc  : Test convert SAMPLE_S32LE STEREO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_006, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t srcArray[NUMBER8] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_007
- * @tc.desc  : Test convert SAMPLE_F32LE STEREO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_007, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, MONO};
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-    uint8_t dstArray[NUMBER8] = {0};
-    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(true, ret) << "convert failed, check format";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_008
- * @tc.desc  : Test convert SAMPLE_F32LE STEREO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_008, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER8;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength not equel fail";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer nullptr fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_009
- * @tc.desc  : Test convert SAMPLE_F32LE STEREO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_009, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-
-    uint8_t srcArray[NUMBER8] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer nullptr fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_010
- * @tc.desc  : Test convert SAMPLE_S16LE STEREO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_010, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER4;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength failed";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
-
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_011
- * @tc.desc  : Test convert SAMPLE_S16LE MONO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_011, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER2;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength failed";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
-
-    uint8_t srcArray[NUMBER2] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER2, NUMBER2};
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_012
- * @tc.desc  : Test convert SAMPLE_S32LE MONO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_012, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, MONO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER4;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength failed";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
-
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_013
- * @tc.desc  : Test convert SAMPLE_S32LE CHANNEL_3 failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_013, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, CHANNEL_3};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "CHANNEL_3 not supported";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_014
- * @tc.desc  : Test convert SAMPLE_F32LE MONO failed
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_014, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, MONO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER4;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength failed";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
-
-    uint8_t srcArray[NUMBER4] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_ConvertS32_015
- * @tc.desc  : Test convert SAMPLE_F32LE STEREO
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_015, TestSize.Level1)
-{
-    AudioStreamData srcData;
-    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
-
-    AudioStreamData dstData;
-    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
-
-    srcData.bufferDesc.bufLength = NUMBER8;
-    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "bufLength failed";
-
-    dstData.bufferDesc.bufLength = NUMBER8;
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
-
-    uint8_t srcArray[NUMBER8] = {0};
-    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
-    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
-    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
 }
 
 /**
@@ -2947,7 +2463,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2972,7 +2488,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = false;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -2981,6 +2497,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
     bufDesc.dataLength = 0;
 
     auto ret = ptrAudioProcessInClientInner->WaitIfBufferEmpty(bufDesc);
+    EXPECT_EQ(ret, false);
+
+    ret = ptrAudioProcessInClientInner->WaitIfBufferEmpty(bufDesc);
     EXPECT_EQ(ret, false);
 }
 
@@ -2997,7 +2516,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -3023,7 +2542,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = false;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
@@ -3049,7 +2568,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002,
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -3105,7 +2624,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ExitStandByIfNeed
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -3151,7 +2670,7 @@ HWTEST(AudioProcessInClientUnitTest, CallClientHandleCurrent_001, TestSize.Level
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     ptrAudioProcessInClientInner->CallClientHandleCurrent();
 }
@@ -3168,7 +2687,7 @@ HWTEST(AudioProcessInClientUnitTest, IsRestoreNeeded_001, TestSize.Level1)
     AudioService *g_audioServicePtr = AudioService::GetInstance();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, true, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, true);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     std::atomic<StreamStatus> streamStatus;

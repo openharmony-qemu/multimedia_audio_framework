@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int64_t NANO_COUNT_PER_SECOND = 1000000000;
+    static constexpr int64_t NANO_COUNT_TEN_MILLION = 10000000;
+    static constexpr int64_t NANO_COUNT_HUNDRED = 100;
     static constexpr int32_t MAX_SUPPORT_SAMPLE_RETE = 384000;
     static constexpr int32_t MAX_STATISTICS_COUNT = 5;
     static constexpr int64_t REASONABLE_DELTA_BOUND_IN_NANO = 3000000; // 3ms
@@ -74,7 +76,8 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
     } else {
         deltaFrame = -static_cast<int64_t>(stampFrame_ - frame);
     }
-    reasonableDeltaTime = stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+    reasonableDeltaTime = stampNanoTime_ + (deltaFrame * NANO_COUNT_TEN_MILLION) /
+        (static_cast<int64_t>(sampleRate_) / NANO_COUNT_HUNDRED);
 
     // note: compare it with current time?
     if (nanoTime <= (reasonableDeltaTime + REASONABLE_BOUND_IN_NANO) &&
@@ -112,7 +115,8 @@ bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pr
         return false;
     }
     int64_t deltaFrame = static_cast<int64_t>(next.first - pre.first);
-    int64_t deltaFrameTime = deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+    int64_t deltaFrameTime = (deltaFrame * NANO_COUNT_TEN_MILLION) /
+        (static_cast<int64_t>(sampleRate_) / NANO_COUNT_HUNDRED);
     int64_t deltaTime = next.second - pre.second - deltaFrameTime;
 
     return std::abs(deltaTime) < REASONABLE_DELTA_BOUND_IN_NANO;
@@ -160,14 +164,16 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
                 " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }
         deltaFrame = static_cast<int64_t>(posInFrame - stampFrame_);
-        return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+        return stampNanoTime_ + (deltaFrame * NANO_COUNT_TEN_MILLION) /
+            (static_cast<int64_t>(sampleRate_) / NANO_COUNT_HUNDRED);
     } else {
         if (stampFrame_ - posInFrame >= (uint64_t)sampleRate_) {
             AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
                 " small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }
         deltaFrame = static_cast<int64_t>(stampFrame_ - posInFrame);
-        return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+        return stampNanoTime_ - (deltaFrame * NANO_COUNT_TEN_MILLION) /
+            (static_cast<int64_t>(sampleRate_) / NANO_COUNT_HUNDRED);
     }
     return invalidTime;
 }

@@ -58,8 +58,9 @@ public:
     int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
         SourceType &targetSourceType);
 
-    void ReloadSourceForSession(SessionInfo sessionInfo);
+    int32_t ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId = DEFAULT_SESSION_ID);
     int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
+    int32_t ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId);
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
     void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);
@@ -72,9 +73,12 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetOpenedNormalSourceSessionId(uint64_t sessionId);
     uint64_t GetOpenedNormalSourceSessionId();
-    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
+    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource,
+        uint32_t sessionId = DEFAULT_SESSION_ID);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    bool IsValidSourcePipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, bool isFromEcMicRef);
+    void UpdateModuleInfoForPrimary(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -89,6 +93,8 @@ private:
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ClearModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo);
     std::string ShouldOpenMicRef(SourceType source);
 
     EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
@@ -103,6 +109,8 @@ private:
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
 private:
+    const static uint32_t DEFAULT_SESSION_ID = 0;
+
     bool isEcFeatureEnable_ = false;
     bool isMicRefFeatureEnable_ = false;
 

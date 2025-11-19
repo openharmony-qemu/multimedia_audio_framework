@@ -40,6 +40,7 @@ public:
     static bool NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,
         bool isPcVolumeEnable, bool isMusicMute);
     static bool IsDualOnActive();
+    static void SortOutputStreamDescsForUsage(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 };
 }
 }

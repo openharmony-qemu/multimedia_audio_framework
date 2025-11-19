@@ -45,6 +45,7 @@ private:
     void ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode, StreamVolumeInfoMap &streamVolumeInfoMap);
     int32_t ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNode> curNode,
         std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
+    int32_t ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curNode);
     void ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> curNode,
         std::shared_ptr<StreamVolumeInfo> &streamVolInfo);
     void ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);

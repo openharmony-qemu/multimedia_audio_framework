@@ -23,6 +23,8 @@
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_bluetooth_manager.h"
+#include "audio_adapter_manager.h"
+#include "audio_device_status.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -94,7 +96,7 @@ void AudioDeviceManager::OnXmlParsingCompleted(
 }
 
 bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
-    AudioDevicePrivacyType &privacyType, DeviceRole &devRole, DeviceUsage &devUsage)
+    AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage)
 {
     list<DevicePrivacyInfo> deviceList;
     if (privacyType == TYPE_PRIVACY) {
@@ -127,6 +129,36 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
     }
 
     return false;
+}
+
+bool AudioDeviceManager::IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    list<DevicePrivacyInfo> &deviceList)
+{
+    for (auto &devInfo : deviceList) {
+        if ((devInfo.deviceType == devDesc->deviceType_) &&
+            (devInfo.deviceUsage & devDesc->deviceUsage_) &&
+            ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
+            (devInfo.deviceCategory & devDesc->deviceCategory_) != 0)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+AudioDevicePrivacyType AudioDeviceManager::GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, AudioDevicePrivacyType::TYPE_NEGATIVE, "devDesc is nullptr");
+
+    if (IsDescMatchedInVector(devDesc, privacyDeviceList_)) {
+        return AudioDevicePrivacyType::TYPE_PRIVACY;
+    }
+
+    if (IsDescMatchedInVector(devDesc, publicDeviceList_)) {
+        return AudioDevicePrivacyType::TYPE_PUBLIC;
+    }
+
+    return AudioDevicePrivacyType::TYPE_NEGATIVE;
 }
 
 void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
@@ -298,6 +330,18 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("isConnectedDevice %{public}d, connected list %{public}s", isConnectedDevice,
         AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
     return isConnectedDevice;
+}
+
+bool AudioDeviceManager::HasConnectedA2dp()
+{
+    auto isPresent = [](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc != nullptr &&
+            desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            desc->connectState_ != VIRTUAL_CONNECTED;
+    };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    return it != connectedDevices_.end();
 }
 
 void AudioDeviceManager::UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected)
@@ -806,14 +850,14 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, nullptr, "device is nullptr");
+    CHECK_AND_RETURN_RET_LOG(device->deviceType_ != DEVICE_TYPE_NONE, device, "device is nullptr");
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &dev : connectedDevices_) {
         if (dev->IsSameDeviceInfo(*device)) {
             return make_shared<AudioDeviceDescriptor>(dev);
         }
     }
-    return nullptr;
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 bool AudioDeviceManager::IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -930,11 +974,10 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
             continue;
         }
         // Find the target device.
-        desc->volumeBehavior_.isReady = true;
-        desc->volumeBehavior_.isVolumeControlDisabled = volumeBehavior.isVolumeControlDisabled;
-        desc->volumeBehavior_.databaseVolumeName = volumeBehavior.databaseVolumeName;
+        desc->volumeBehavior_ = volumeBehavior;
         AUDIO_INFO_LOG("isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
             volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(desc);
     }
     return SUCCESS;
 }
@@ -1034,6 +1077,17 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
     return audioDeviceDescriptors;
 }
 
+std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedDevices()
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
+    }
+    return audioDeviceDescriptors;
+}
+
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
@@ -1086,13 +1140,15 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
-
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_ &&
             desc->deviceCategory_ != devDesc->deviceCategory_) {
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             desc->deviceCategory_ = devDesc->deviceCategory_;
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
                 RemoveBtFromOtherList(devDesc);
             } else {
@@ -1100,6 +1156,7 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
                 desc->connectTimeStamp_ = GetCurrentTimeMS();
                 AddBtToOtherList(desc);
             }
+            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
         }
         updateFlag = true;
     }
@@ -1146,13 +1203,17 @@ bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
 bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->macAddress_ == devDesc->macAddress_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->isEnable_ != devDesc->isEnable_) {
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             desc->isEnable_ = devDesc->isEnable_;
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             updateFlag = true;
+            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
         }
     }
     return updateFlag;
@@ -1421,7 +1482,6 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     if (!selectedDefaultOutputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("no need to update default output device since current stream has not set");
         return SUCCESS;
     }
     DeviceType deviceType = selectedDefaultOutputDeviceInfo_[sessionID].first;
@@ -1558,7 +1618,7 @@ int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>();
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
         return devDesc;
     }
@@ -1569,6 +1629,57 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
         }
     }
     return devDesc;
+}
+
+int32_t AudioDeviceManager::SetPreferredInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const uint32_t sessionID, const SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_PERMISSION_DENIED, "set preferred input device denied: no system permission");
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter");
+    std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
+    preferredInputDeviceInfo_[sessionID] = std::make_pair(devDesc, sourceType);
+    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, "
+        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceType_, sourceType);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDevice(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(preferredInputDeviceInfo_.count(sessionID), nullptr,
+        "sessionID %{public}d: preferredInputDevice is empty", sessionID);
+    shared_ptr<AudioDeviceDescriptor> preferredInputDevice = preferredInputDeviceInfo_[sessionID].first;
+    shared_ptr<AudioDeviceDescriptor> onlinePreferredInputDevice = nullptr;
+
+    DeviceType deviceType = preferredInputDevice->deviceType_;
+    string mac = preferredInputDevice->macAddress_;
+
+    if (mac.empty()) {
+        AUDIO_WARNING_LOG("preferred input device has no mac address");
+        for (const auto &dev : connectedDevices_) {
+            if (dev->deviceType_ == deviceType) {
+                onlinePreferredInputDevice = dev;
+            }
+        }
+    } else {
+        for (const auto &dev : connectedDevices_) {
+            if (dev->deviceType_ == deviceType && dev->macAddress_ == mac) {
+                onlinePreferredInputDevice = dev;
+            }
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice != nullptr, nullptr, "cannot find online preferredInputDevice");
+    CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice->deviceRole_ == INPUT_DEVICE, nullptr, "wrong deviceRole");
+    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d", onlinePreferredInputDevice->deviceType_);
+    return onlinePreferredInputDevice;
+}
+
+int32_t AudioDeviceManager::RemovePreferredInputDevice(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
+    preferredInputDeviceInfo_.erase(sessionID);
+    AUDIO_INFO_LOG("remove preferred input device for session %{public}d", sessionID);
+    return SUCCESS;
 }
 
 void AudioDeviceManager::Dump(std::string &dumpString)
@@ -1613,16 +1724,18 @@ bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
     return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
 }
 
-bool AudioDeviceManager::ExistsByType(DeviceType devType) const
+bool AudioDeviceManager::ExistsByType(DeviceType devType)
 {
+    std::lock_guard<std::mutex> lg(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType](auto &item) {
         return item->deviceType_ == devType;
     });
     return it != connectedDevices_.cend();
 }
 
-bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address) const
+bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address)
 {
+    std::lock_guard<std::mutex> lg(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType, &address](auto &item) {
         return item->deviceType_ == devType && item->macAddress_ == address;
     });
@@ -1642,6 +1755,23 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
         }
     }
     return false;
+}
+
+int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (DeviceAttrMatch(desc, TYPE_PRIVACY, OUTPUT_DEVICE, ALL_USAGE)) {
+        return PRIORITY_PRIVACY;
+    }
+    if (DeviceAttrMatch(desc, TYPE_PUBLIC, OUTPUT_DEVICE, ALL_USAGE)) {
+        return PRIORITY_PUBLIC;
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
+        return PRIORITY_DISTRIBUTED;
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+        return PRIORITY_DISTRIBUTED;
+    }
+    return PRIORITY_BASE;
 }
 }
 }

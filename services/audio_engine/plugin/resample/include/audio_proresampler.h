@@ -24,6 +24,8 @@ namespace AudioStandard {
 namespace HPAE {
 class ProResampler : public Resampler {
 public:
+    // notice: inRate and outRate should be different, otherwise resampler will not process
+    // and will return RESAMPLER_ERR_ALLOC_FAILED in Process()
     ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality);
     ~ProResampler() override;
     // disable deep copy, enable move semantics to manage memory allocated by C malloc
@@ -48,6 +50,7 @@ private:
     int32_t Process10HzSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
         uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
+    int32_t ConfigBufferSizeAndExpectedInFrameLen();
     std::vector<float> buf11025_;
     std::vector<float> bufFor100ms_;
     uint32_t buf11025Index_ = 0;
@@ -56,8 +59,8 @@ private:
     uint32_t outRate_;
     uint32_t channels_;
     uint32_t quality_;
-    uint32_t expectedOutFrameLen_;
-    uint32_t expectedInFrameLen_;
+    uint32_t expectedOutFrameLen_ = 0;
+    uint32_t expectedInFrameLen_ = 0;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
 };
 } // HPAE

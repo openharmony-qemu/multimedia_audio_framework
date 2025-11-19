@@ -114,5 +114,60 @@ uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
     iCoreServiceProvider_->GetPaIndexByPortName(portName, ret);
     return ret;
 }
+
+int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "Injector::iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->SetRendererTarget(target, lastTarget, sessionId, ret);
+    return ret;
+}
+
+int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "Injector::iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->StartInjection(sessionId, ret);
+    return ret;
+}
+
+void CoreServiceHandler::RemoveIdForInjector(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "Injector::iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->RemoveIdForInjector(sessionId);
+}
+
+void CoreServiceHandler::ReleaseCaptureInjector()
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->ReleaseCaptureInjector();
+}
+
+void CoreServiceHandler::RebuildCaptureInjector(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "Injector::iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->RebuildCaptureInjector(sessionId);
+}
+
+int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                         uint32_t &timeStamp)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp, ret);
+    return ret;
+}
+
+void CoreServiceHandler::OnCheckActiveMusicTime(const std::string &reason)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->OnCheckActiveMusicTime(reason);
+}
+
+int32_t CoreServiceHandler::CaptureConcurrentCheck(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->CaptureConcurrentCheck(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

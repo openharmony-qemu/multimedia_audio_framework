@@ -38,11 +38,12 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     int32_t GetGainNodeCount();
     int32_t GetConverterNodeCount();
+    int32_t GetLoudnessGainNodeCount();
     int32_t GetPreOutNum();
-    int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
+    int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
@@ -52,13 +53,19 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
     void DisConnectMixerNode();
     void InitEffectBuffer(const uint32_t sessionId);
+    uint64_t GetLatency(uint32_t sessionId);
+    int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
+    int32_t DestroyNodes(uint32_t sessionId);
+    int32_t CheckNodes(uint32_t sessionId);
 private:
     void ConnectMixerNode();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
+    bool CheckNeedNotifyEffectNode(HpaeSinkInfo sinkInfo);
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
+    std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeLoudnessGainNode>> idLoudnessGainNodeMap_;

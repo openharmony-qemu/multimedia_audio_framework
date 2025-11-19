@@ -74,6 +74,7 @@ ohos_shared_library("audio_common") {
     "common/src/dfx/player_dfx_writer.cpp",
     "common/src/dfx/recorder_dfx_writer.cpp",
     "common/src/dfx/stream_dfx_manager.cpp",
+    "common/src/dfx/audio_stream_concurrency_detector.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/limiter/audio_limiter.cpp",
@@ -86,6 +87,8 @@ ohos_shared_library("audio_common") {
     "common/src/app_bundle_manager.cpp",
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
+    "common/src/audio_mute_factor_manager.cpp",
+    "common/src/audio_stream_checker_thread.cpp",
   ]
 
   cflags = [
@@ -116,6 +119,7 @@ ohos_shared_library("audio_common") {
     "samgr:samgr_proxy",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "init:libbegetutil",
   ]
 
   if (sonic_enable == true) {
@@ -138,6 +142,11 @@ ohos_shared_library("audio_common") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
+  ldflags = [ 
+      "-Wl,--emit-relocs", 
+      "-Wl,--no-relax", 
+      "-mno-fix-cortex-a53-843419" 
+  ]
 }
 
 config("audio_client_public_config") {
@@ -220,7 +229,6 @@ ohos_shared_library("audio_client") {
     "client/src/ipc_stream_listener_impl.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/offline_stream_in_client.cpp",
-    "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
@@ -238,6 +246,7 @@ ohos_shared_library("audio_client") {
   deps = [
     ":audio_common",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
@@ -260,6 +269,7 @@ ohos_shared_library("audio_client") {
     "i18n:intl_util",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "resource_management:global_resmgr",
@@ -270,7 +280,6 @@ ohos_shared_library("audio_client") {
 
   public_external_deps = [
     "c_utils:utils",
-    "libxml2:libxml2",
     "pulseaudio:sonic",
   ]
 
@@ -294,6 +303,10 @@ ohos_shared_library("audio_client") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (factory == true) {
+    defines += [ "CONFIG_FACTORY_VERSION" ]
   }
 
   version_script = "../../audio_framework.versionscript"
@@ -421,6 +434,7 @@ audio_ohos_library("audio_process_service") {
       "server/src/audio_endpoint.cpp",
       "server/src/audio_endpoint_performance.cpp",
       "server/src/audio_process_in_server.cpp",
+      "server/src/audio_endpoint_sink_adapter.cpp",
     ]
   }
 
@@ -535,6 +549,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/config/audio_param_parser.cpp",
+    "server/src/audio_injector_service.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -569,6 +584,7 @@ audio_ohos_library("audio_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "qos_manager:concurrent_task_client",
@@ -584,7 +600,6 @@ audio_ohos_library("audio_service") {
     ]
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
-  public_external_deps = [ "libxml2:libxml2" ]
 
   if (audio_framework_feature_offline_effect) {
     public_deps = [

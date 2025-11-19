@@ -24,22 +24,17 @@
 
 #include "media_monitor_manager.h"
 #include "audio_zone_service.h"
+#include "parameters.h"
 #include <fstream>
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK
-};
 
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char* RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 240000; //4min
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 210000; //3.5min
 constexpr const char* RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
@@ -528,7 +523,7 @@ int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
+    HILOG_COMM_INFO("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.capturerState,
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
@@ -792,6 +787,9 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+            return;
+        }
         AUDIO_INFO_LOG("start reclaim memory task");
         auto task = [this]() {
             ReclaimMem();
@@ -820,23 +818,19 @@ void AudioStreamCollector::ReclaimMem()
 bool AudioStreamCollector::CheckAudioStateIdle()
 {
     if (audioRendererChangeInfos_.empty() && audioCapturerChangeInfos_.empty()) {
-        AUDIO_INFO_LOG("there are no tasks");
         return true;
     }
     for (const auto& rendererInfo : audioRendererChangeInfos_) {
         if (rendererInfo->rendererState == RENDERER_RUNNING) {
-            AUDIO_INFO_LOG("rendererInfo exist running task");
             return false;
         }
     }
     for (const auto& capturerInfo : audioCapturerChangeInfos_) {
         if (capturerInfo->capturerState == CAPTURER_RUNNING) {
-            AUDIO_INFO_LOG("capturerInfo exist running task");
             return false;
         }
     }
 
-    AUDIO_INFO_LOG("there are no tasks running");
     return true;
 }
 
@@ -1885,6 +1879,30 @@ bool AudioStreamCollector::IsMediaPlaying()
         }
     }
     return false;
+}
+
+std::vector<int32_t> AudioStreamCollector::GetPlayingMediaSessionIdList()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    static const std::unordered_set<int32_t> mediaStreamTypes = {
+        STREAM_MUSIC,
+        STREAM_MEDIA,
+        STREAM_MOVIE,
+        STREAM_GAME,
+        STREAM_SPEECH,
+        STREAM_NAVIGATION,
+        STREAM_CAMCORDER,
+        STREAM_VOICE_MESSAGE
+    };
+    std::vector<int32_t> sessionIdList{};
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&
+            mediaStreamTypes.count(GetStreamType((changeInfo->rendererInfo).contentType,
+            (changeInfo->rendererInfo).streamUsage)) > 0) {
+            sessionIdList.push_back(changeInfo->sessionId);
+        }
+    }
+    return sessionIdList;
 }
 
 bool AudioStreamCollector::IsVoipStreamActive()

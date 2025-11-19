@@ -29,6 +29,7 @@
 #include "hpae_pcm_dumper.h"
 #endif
 #include "audio_engine_log.h"
+#include "volume_tools_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,8 +38,6 @@ namespace {
     constexpr uint32_t CACHE_FRAME_COUNT = 2;
     constexpr uint32_t TIME_US_PER_MS = 1000;
     constexpr uint32_t TIME_MS_PER_SEC = 1000;
-    constexpr uint32_t ERR_RETRY_COUNT = 20;
-    constexpr uint32_t FRAME_TIME_IN_MS = 20;
     constexpr int32_t OFFLOAD_FULL = -1;
     constexpr int32_t OFFLOAD_WRITE_FAILED = -2;
     constexpr uint32_t OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS = 7000;
@@ -66,7 +65,7 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeOffloadSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -76,6 +75,9 @@ HpaeOffloadSinkOutputNode::~HpaeOffloadSinkOutputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -83,7 +85,7 @@ bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
 {
     if (!GetPreOutNum()) {
         suspendCount_++;
-        usleep(TIME_US_PER_MS * FRAME_TIME_IN_MS);
+        usleep(TIME_US_PER_MS * FRAME_LEN_20MS);
         if (suspendCount_ > timeoutThdFrames_) {
             RenderSinkStop();
         }
@@ -147,7 +149,7 @@ void HpaeOffloadSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcm
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeId());
     }
 #endif
 }
@@ -158,7 +160,7 @@ void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<Hpae
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         auto preNodeReal = preNode->GetSharedInstance();
-        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), preNodeReal->GetNodeId());
     }
 #endif
 }
@@ -360,22 +362,24 @@ void HpaeOffloadSinkOutputNode::StopStream()
 
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 {
+    auto preState = hdiPolicyState_;
+    hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     if (setPolicyStateTask_.flag) {
-        if (state == hdiPolicyState_) {
+        if (state != OFFLOAD_INACTIVE_BACKGROUND) {
             AUDIO_INFO_LOG("unset policy state task");
             setPolicyStateTask_.flag = false;
         }
         return;
     }
-    if (hdiPolicyState_ != state && state == OFFLOAD_INACTIVE_BACKGROUND) {
+    CHECK_AND_RETURN(preState != state);
+    if (state == OFFLOAD_INACTIVE_BACKGROUND) {
         AUDIO_INFO_LOG("set policy state task");
         setPolicyStateTask_.flag = true;
         setPolicyStateTask_.time = std::chrono::high_resolution_clock::now();
-        setPolicyStateTask_.state = OFFLOAD_INACTIVE_BACKGROUND;
         return;
     }
-    hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     SetBufferSize();
+    RunningLock(true);
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()
@@ -425,7 +429,6 @@ void HpaeOffloadSinkOutputNode::SetBufferSizeWhileRenderFrame()
             POLICY_STATE_DELAY_IN_SEC) {
             AUDIO_INFO_LOG("excute set policy state task");
             setPolicyStateTask_.flag = false;
-            hdiPolicyState_ = setPolicyStateTask_.state;
             SetBufferSize();
             return; // no need to set buffer size twice at one process
         }
@@ -455,9 +458,9 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     if (renderFrameData_.empty()) {
         return OFFLOAD_WRITE_FAILED;
     }
-    uint64_t writeLen = 0;
+
     renderFrameDataTemp_ = renderFrameData_;
-    char *renderFrameData = (char *)renderFrameDataTemp_.data();
+
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -466,34 +469,20 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     AUDIO_DEBUG_LOG("name %{public}s, RenderFrame interval: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    auto now = std::chrono::high_resolution_clock::now();
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
-    if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
-        return OFFLOAD_FULL;
-    }
-    if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
-        AUDIO_ERR_LOG("offload renderFrame failed, errCode is %{public}d", ret);
-        return OFFLOAD_WRITE_FAILED;
-    }
-    // calc written data length
-    writePos_ += ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
-    // now is the time to first write hdi
+
     if (firstWriteHdi_) {
-        firstWriteHdi_ = false;
-        hdiPos_ = std::make_pair(0, now);
-        setHdiBufferSizeNum_ = OFFLOAD_SET_BUFFER_SIZE_NUM;
-        // if the hdi is flushing, it will block the volume setting.
-        // so the render frame judge it.
-        OffloadSetHdiVolume();
-        SetSpeed(speed_);
-        AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
-            writePos_, hdiPos_.first);
+        AudioRawFormat format{ GetBitWidth(), GetChannelCount() };
+        ProcessVol(reinterpret_cast<uint8_t *>(renderFrameDataTemp_.data()), renderFrameData_.size(), format, 0, 1);
     }
-    // hdi fallback, dont modify
-    SetBufferSizeWhileRenderFrame();
+
+    int32_t result = WriteFrameToHdi();
+    if (result != SUCCESS) {
+        return result;
+    }
+
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
+        outputPcmDumper_->Dump((int8_t *)renderFrameData_.data(), renderFrameData_.size());
     }
     timer.Stop();
     int64_t elapsed = timer.Elapsed();
@@ -501,7 +490,38 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         sinkOutAttr_.adapterName.c_str(), elapsed);
     intervalTimer_.Start();
 #endif
+
     renderFrameData_.clear();
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi()
+{
+    uint64_t writeLen = 0;
+    auto now = std::chrono::high_resolution_clock::now();
+
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameDataTemp_.data(), renderFrameData_.size(), writeLen);
+    if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
+        return OFFLOAD_FULL;
+    }
+    if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
+        AUDIO_ERR_LOG("renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64 " bytes", ret, writeLen);
+        return OFFLOAD_WRITE_FAILED;
+    }
+
+    writePos_ += ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
+
+    if (firstWriteHdi_) {
+        firstWriteHdi_ = false;
+        hdiPos_ = std::make_pair(0, now);
+        setHdiBufferSizeNum_ = OFFLOAD_SET_BUFFER_SIZE_NUM;
+        OffloadSetHdiVolume();
+        SetSpeed(speed_);
+        AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
+            writePos_, hdiPos_.first);
+    }
+
+    SetBufferSizeWhileRenderFrame();
     return SUCCESS;
 }
 
@@ -552,6 +572,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 
 void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     Trace trace("HpaeOffloadSinkOutputNode::OffloadCallback");
     switch (type) {
         case CB_NONBLOCK_WRITE_COMPLETED: {
@@ -600,14 +621,7 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
         isHdiFull_.store(true);
         return;
     }
-    if (retType != SUCCESS) {
-        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
-        if (retryCount_ < ERR_RETRY_COUNT) {
-            retryCount_++;
-        }
-        return;
-    }
-    retryCount_ = 1;
+    backoffController_.HandleResult(retType == SUCCESS);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

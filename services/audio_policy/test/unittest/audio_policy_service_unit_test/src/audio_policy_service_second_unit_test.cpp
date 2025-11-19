@@ -182,7 +182,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetAbsVolumeSceneAsync_001, TestSize.Lev
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     bool support = false;
-    server->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, support);
+    server->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "");
 }
 
@@ -196,7 +196,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceAbsVolumeSupported_001, TestSiz
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     bool support = false;
-    int32_t ret = server->audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support);
+    int32_t ret = server->audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -1171,6 +1171,44 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test AudioPolicyServiceExtUnitTest.
+ * @tc.number: OnForcedDeviceSelected_01
+ * @tc.desc  : Test OnForcedDeviceSelected interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, OnForcedDeviceSelected_01, TestSize.Level1)
+{
+    AudioDeviceDescriptor devDesc;
+    devDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc.macAddress_ = "11:22";
+    devDesc.deviceRole_ = OUTPUT_DEVICE;
+    devDesc.deviceId_ = 1234;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
+    auto &service = AudioPolicyService::GetAudioPolicyService();
+    service.OnForcedDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServiceExtUnitTest.
+ * @tc.number: OnPrivacyDeviceSelected_01
+ * @tc.desc  : Test OnPrivacyDeviceSelected interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, OnPrivacyDeviceSelected_01, TestSize.Level1)
+{
+    AudioDeviceDescriptor devDesc;
+    devDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc.macAddress_ = "11:22";
+    devDesc.deviceRole_ = OUTPUT_DEVICE;
+    devDesc.deviceId_ = 5678;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
+    auto &service = AudioPolicyService::GetAudioPolicyService();
+    service.OnPrivacyDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
 * @tc.name  : Test GetsinkPortName.
 * @tc.number: GetSinkPortName_004
 * @tc.desc  : Test RegisterDataObserver interfaces.
@@ -1184,6 +1222,139 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
     deviceType = DEVICE_TYPE_HEARING_AID;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     EXPECT_EQ(HEARING_AID_SPEAKER, retPortName);
+}
+
+/**
+* @tc.name  : Test SetSystemVolumeDegree
+* @tc.number: SetSystemVolumeDegree_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    int32_t streamType = static_cast<int32_t>(STREAM_MUSIC);
+    int32_t volumeDegree = 44;
+    int32_t ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    int32_t streamType2 = static_cast<int32_t>(STREAM_APP);
+    ret = server->SetSystemVolumeDegree(streamType2, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    server->GetSystemVolumeDegree(STREAM_ALL, 0, ret);
+    EXPECT_EQ(ret, volumeDegree);
+
+    server->GetMinVolumeDegree(streamType, DEVICE_TYPE_NONE, ret);
+    EXPECT_EQ(ret, 0);
+
+    auto &manager = static_cast<AudioAdapterManager &>(server->audioPolicyManager_);
+    manager.isVolumeUnadjustable_ = true;
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    manager.isVolumeUnadjustable_ = false;
+
+    ret = server->SetSystemVolumeDegree(static_cast<int32_t>(STREAM_ALL), volumeDegree, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetSystemVolumeDegree
+* @tc.number: SetSystemVolumeDegree_002
+* @tc.desc  : Test AudioPolicyService differernt degree.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    int32_t streamType = static_cast<int32_t>(STREAM_MUSIC);
+    int32_t volumeDegree1 = -1;
+    int32_t volumeDegree2 = 0;
+    int32_t volumeDegree3 = 1;
+    int32_t volumeDegree4 = 99;
+    int32_t volumeDegree5 = 100;
+    int32_t volumeDegree6 = 101;
+
+    int32_t volumelevel1 = 1;
+    int32_t volumelevel2 = 14;
+
+    int32_t ret = server->SetSystemVolumeDegree(streamType, volumeDegree1, 0, 0);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree6, 0, 0);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree2, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree5, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree3, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->GetSystemVolumeLevel(streamType, 0, ret);
+    EXPECT_EQ(ret, volumelevel1);
+
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree4, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->GetSystemVolumeLevel(streamType, 0, ret);
+    EXPECT_EQ(ret, volumelevel2);
+}
+
+/**
+* @tc.name  : Test SetSystemVolumeDegree
+* @tc.number: SetSystemVolumeDegree_003
+* @tc.desc  : Test AudioPolicyService differernt degree by set level.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_003, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    int32_t streamType = static_cast<int32_t>(STREAM_MUSIC);
+    int32_t volumeLevel1 = 1;
+    int32_t volumeLevel2 = 15;
+
+    int32_t volumeDegree2 = 100;
+    int32_t ret = server->SetSystemVolumeLevel(streamType, volumeLevel1, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->GetSystemVolumeDegree(streamType, 0, ret);
+    EXPECT_NE(ret, 0);
+
+    ret = server->SetSystemVolumeLevel(streamType, volumeLevel2, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->GetSystemVolumeDegree(streamType, 0, ret);
+    EXPECT_EQ(ret, volumeDegree2);
+}
+
+/**
+* @tc.name  : Test SetSystemVolumeDegree
+* @tc.number: SetSystemVolumeDegree_004
+* @tc.desc  : Test AudioPolicyService differernt degree by set level.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_004, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    int32_t streamType1 = static_cast<int32_t>(STREAM_MUSIC);
+    int32_t volumeDegree1 = 0;
+    int32_t volumeDegree2 = 100;
+
+    int32_t success = 0;
+    for (int32_t i = volumeDegree1; i <= volumeDegree2; ++i) {
+        AUDIO_INFO_LOG("level1=%{public}d", i);
+        int32_t ret = server->SetSystemVolumeDegree(streamType1, i, 0, 0);
+        if (ret == SUCCESS) {
+            success++;
+        } else {
+            AUDIO_INFO_LOG("level1=%{public}d, failed", i);
+        }
+    }
+
+    EXPECT_EQ(volumeDegree2 - volumeDegree1 + 1, success);
 }
 
 } // namespace AudioStandard

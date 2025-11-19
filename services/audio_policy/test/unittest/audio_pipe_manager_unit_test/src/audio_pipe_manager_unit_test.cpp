@@ -1226,7 +1226,12 @@ HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDupDevicesTypeStr
     desc->newDupDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
 
     std::string out = desc->GetNewDupDevicesTypeString();
-    EXPECT_EQ(out, "SPEAKER");
+    EXPECT_EQ(out, "SPEAKER:");
+
+    desc->newDupDeviceDescs_.clear();
+
+    out = desc->GetNewDupDevicesTypeString();
+    EXPECT_EQ(out, "");
 }
 
 /**
@@ -1305,6 +1310,158 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUsageActive_001, TestSize.Level1)
 
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     EXPECT_FALSE(audioPipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM));
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "aaa";
+    pipe1->routeFlag_ = 1;
+    pipe1->id_ = 123;
+
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    pipe1->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    int ret = audioPipeManager->IsCaptureVoipCall();
+
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "aaa";
+    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    pipe1->id_ = 123;
+
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    int ret = audioPipeManager->IsCaptureVoipCall();
+
+    EXPECT_EQ(ret, 1);
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "aaa";
+    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    pipe1->id_ = 123;
+
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+    pipe1->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    int ret = audioPipeManager->IsCaptureVoipCall();
+    
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "aaa";
+    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+    pipe1->id_ = 123;
+
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+    pipe1->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    int ret = audioPipeManager->IsCaptureVoipCall();
+
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+ * @tc.name: GetPaIndexByName_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetPaIndexByName_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->name_ = "aaa";
+    pipe1->routeFlag_ = 1;
+    pipe1->paIndex_ = 123;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    uint32_t ret = audioPipeManager->GetPaIndexByName("abc");
+    EXPECT_EQ(0xFFFFFFFF, ret);
+
+    ret = audioPipeManager->GetPaIndexByName("aaa");
+    EXPECT_EQ(123, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t WAIT_CALLBACK_TIMEOUT_IN_MS = 200;
+}
 ClientTypeManager *ClientTypeManager::GetInstance()
 {
     static ClientTypeManager clientTypeManager;
@@ -77,13 +80,26 @@ void ClientTypeManager::SetQueryClientTypeCallback(const sptr<IStandardAudioPoli
 ClientType ClientTypeManager::GetClientTypeByUid(uint32_t uid)
 {
     std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
-    AUDIO_INFO_LOG("uid %{public}u", uid);
     auto it = clientTypeMap_.find(uid);
     if (it == clientTypeMap_.end()) {
-        AUDIO_INFO_LOG("Cannot find uid");
+        AUDIO_INFO_LOG("Cannot find uid %{public}u", uid);
         return CLIENT_TYPE_OTHERS;
     }
     return it->second;
+}
+
+ClientType ClientTypeManager::GetClientTypeByUidSync(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(uid > 0, CLIENT_TYPE_OTHERS, "uid [%{public}d] is invalid", uid);
+    std::unique_lock<ffrt::mutex> lock(clientTypeMapMutex_);
+    uint32_t uidTemp = static_cast<uint32_t>(uid);
+    auto it = clientTypeMap_.find(uidTemp);
+    if (it == clientTypeMap_.end()) {
+        cv.wait_for(lock, std::chrono::milliseconds(WAIT_CALLBACK_TIMEOUT_IN_MS), [this, uidTemp]() {
+            return clientTypeMap_.find(uidTemp) != clientTypeMap_.end();
+        });
+    }
+    return clientTypeMap_.find(uidTemp) == clientTypeMap_.end() ? CLIENT_TYPE_OTHERS : clientTypeMap_[uidTemp];
 }
 
 void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType)
@@ -91,6 +107,7 @@ void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clie
     std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
     AUDIO_INFO_LOG("uid: %{public}u, client type: %{public}d", uid, clientType);
     clientTypeMap_.insert_or_assign(uid, clientType);
+    cv.notify_all();
 }
 } // namespace AudioStandard
 } // namespace OHOS

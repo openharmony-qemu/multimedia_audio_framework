@@ -347,8 +347,7 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_013, TestSize.Level1)
 {
     auto unit = CreatePaRendererStreamImpl();
     unit->offloadEnable_ = false;
-    float volume = 0.0f;
-    auto ret = unit->OffloadSetVolume(volume);
+    auto ret = unit->OffloadSetVolume();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 

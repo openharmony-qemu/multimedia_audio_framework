@@ -298,6 +298,13 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         return;
     }
 
+    // Calculate the average value
+    size_t size = frameSize / split;
+    if (size == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+
     // reset maps
     for (size_t index = 0; index < channel; index++) {
         volMaps.volStart[index] = 0;
@@ -311,12 +318,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         }
         raw8 += (split - 1) * channel;
     }
-    // Calculate the average value
-    size_t size = frameSize / split;
-    if (size == 0) {
-        AUDIO_ERR_LOG("invalid size");
-        return;
-    }
+
     for (size_t index = 0; index < channel; index++) {
         volMaps.volStart[index] /= static_cast<int32_t>(size);
     }
@@ -342,6 +344,13 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
 
+    // Calculate the average value
+    size_t size = frameSize / split;
+    if (size == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+
     // reset maps
     for (size_t index = 0; index < channel; index++) {
         volMaps.volStart[index] = 0;
@@ -355,12 +364,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         }
         raw16 += (split - 1) * channel;
     }
-    // Calculate the average value
-    size_t size = frameSize / split;
-    if (size == 0) {
-        AUDIO_ERR_LOG("invalid size");
-        return;
-    }
+
     for (size_t index = 0; index < channel; index++) {
         volMaps.volStart[index] /= static_cast<int32_t>(size);
     }
@@ -386,6 +390,13 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
 
+    // Calculate the average value
+    size_t size = frameSize / split;
+    if (size == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+
     // reset maps
     for (size_t index = 0; index < channel; index++) {
         volMaps.volStart[index] = 0;
@@ -401,12 +412,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         }
         raw8 += (split - 1) * channel * byteSizePerData;
     }
-    // Calculate the average value
-    size_t size = frameSize / split;
-    if (size == 0) {
-        AUDIO_ERR_LOG("invalid size");
-        return;
-    }
+
     for (size_t index = 0; index < channel; index++) {
         volSums[index] /= RIGHT_SHIFT_8; // equal to " >> INT24_SHIFT"
         volMaps.volStart[index] = static_cast<int32_t>(volSums[index] / size);
@@ -433,6 +439,13 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
 
+    // Calculate the average value
+    size_t size = frameSize / split;
+    if (size == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+
     // reset maps
     int64_t volSums[CHANNEL_MAX] = {0};
     for (size_t index = 0; index < CHANNEL_MAX; index++) {
@@ -451,12 +464,6 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw32 += (split - 1) * channel;
     }
 
-    // Calculate the average value
-    size_t size = frameSize / split;
-    if (size == 0) {
-        AUDIO_ERR_LOG("invalid size");
-        return;
-    }
     for (size_t index = 0; index < channel; index++) {
         volSums[index] /= static_cast<int64_t>(size);
         volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
@@ -483,6 +490,13 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
 
+    // Calculate the average value
+    size_t size = frameSize / split;
+    if (size == 0) {
+        AUDIO_ERR_LOG("invalid size");
+        return;
+    }
+
     // reset maps
     double volSums[CHANNEL_MAX] = {0};
     for (size_t index = 0; index < CHANNEL_MAX; index++) {
@@ -496,12 +510,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         }
         raw32 += (split - 1) * channel;
     }
-    // Calculate the average value
-    size_t size = frameSize / split;
-    if (size == 0) {
-        AUDIO_ERR_LOG("invalid size");
-        return;
-    }
+
     for (size_t index = 0; index < channel; index++) {
         volSums[index] = (volSums[index] * INT32_MAX) / static_cast<double>(size);
         volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);

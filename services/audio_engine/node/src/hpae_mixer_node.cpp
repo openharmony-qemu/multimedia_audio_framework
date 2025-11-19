@@ -40,8 +40,12 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
     mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
+    mixedOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMixerNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -50,6 +54,9 @@ HpaeMixerNode::~HpaeMixerNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -61,9 +68,39 @@ bool HpaeMixerNode::Reset()
 void HpaeMixerNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
 {
     mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
+    mixedOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     tmpOutput_.SetAudioStreamType(nodeInfo.streamType);
+    tmpOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     silenceData_.SetAudioStreamType(nodeInfo.streamType);
+    silenceData_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     HpaeNode::SetNodeInfo(nodeInfo);
+}
+
+void HpaeMixerNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
+    HpaeNodeInfo &nodeInfo)
+{
+    std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
+    CHECK_AND_RETURN_LOG(realPreNode != nullptr, "realPreNode is nullptr");
+    inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
+    }
+#endif
+}
+
+void HpaeMixerNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
+    HpaeNodeInfo &nodeInfo)
+{
+    CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
+        "HpaeMixerNode[%{public}u] has disconnected with preNode", GetNodeId());
+    const auto port = preNode->GetOutputPort(nodeInfo, true);
+    inputStream_.DisConnect(port);
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
+    }
+#endif
 }
 
 int32_t HpaeMixerNode::SetupAudioLimiter()
@@ -208,6 +245,12 @@ void HpaeMixerNode::DrainProcess()
             }
         }
     }
+}
+
+uint64_t HpaeMixerNode::GetLatency(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(limiter_ != nullptr, 0);
+    return limiter_->GetLatency() * AUDIO_US_PER_MS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

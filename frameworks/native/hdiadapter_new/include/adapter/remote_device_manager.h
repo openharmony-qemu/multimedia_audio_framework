@@ -81,7 +81,7 @@ public:
 
     void AllAdapterSetMicMute(bool isMute) override;
 
-    void SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
+    int32_t SetAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
     std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition) override;
@@ -114,16 +114,19 @@ public:
 private:
     void InitAudioManager(void);
     std::shared_ptr<RemoteAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);
+    int32_t LoadAdapterInner(const std::string &adapterName);
     int32_t SwitchAdapterDesc(const std::vector<RemoteAudioAdapterDescriptor> &descs, const std::string &adapterName);
     uint32_t GetPortId(RemoteAudioPortDirection portFlag);
     int32_t HandleStateChangeEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
+    uint32_t ParseRenderId(const char *condition);
     int32_t HandleRenderParamEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
     int32_t HandleCaptureParamEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
     int32_t SetOutputPortPin(DeviceType outputDevice, RemoteAudioRouteNode &sink);
     int32_t SetInputPortPin(DeviceType inputDevice, RemoteAudioRouteNode &source);
+    void DestroyAllChannels(const std::string &adapterName);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
@@ -137,6 +140,7 @@ private:
     std::mutex managerMtx_;
     std::unordered_map<std::string, std::shared_ptr<RemoteAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
+    std::unordered_set<std::string> adaptersLoaded_;
 };
 
 } // namespace AudioStandard

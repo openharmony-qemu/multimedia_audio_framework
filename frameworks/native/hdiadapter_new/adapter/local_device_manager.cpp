@@ -133,9 +133,10 @@ void LocalDeviceManager::ReprotBundleNameEvent(const std::string &value)
     }
 }
 
-void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+int32_t LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
+    Trace trace("LocalDeviceManager::SetAudioParameter" + std::to_string(key));
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
     ReprotBundleNameEvent(value);
@@ -144,12 +145,13 @@ void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const
     if (wrapper == nullptr || wrapper->adapter_ == nullptr) {
         AUDIO_ERR_LOG("adapter %{public}s is nullptr", adapterName.c_str());
         SaveSetParameter(adapterName, key, condition, value);
-        return;
+        return ERR_NULL_POINTER;
     }
     // LCOV_EXCL_STOP
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = wrapper->adapter_->SetExtraParams(wrapper->adapter_, hdiKey, condition.c_str(), value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set param fail, error code: %{public}d", ret);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
+    return ret;
 }
 
 std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
@@ -170,12 +172,18 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
 
 int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float volume)
 {
+    static const int32_t SET_VOICE_VOLUME_TIMEOUT = 10; // 10s is better
+    std::lock_guard<std::mutex> lock(voiceVolumeMtx_);
     AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);
 
     Trace trace("LocalDeviceManager::SetVoiceVolume");
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
         "adapter %{public}s is nullptr", adapterName.c_str());
+    AudioXCollie audioXCollie("LocalDeviceManager::SetVoiceVolume", SET_VOICE_VOLUME_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetVoiceVolume timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     return wrapper->adapter_->SetVoiceVolume(wrapper->adapter_, volume);
 }
 
@@ -495,8 +503,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 
 int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node)
 {
-    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT ||
-        dmDeviceTypeMap_[DEVICE_TYPE_NEARLINK_IN] == DM_DEVICE_TYPE_NEARLINK_SCO) {
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
         node.ext.device.type = PIN_OUT_NEARLINK_SCO;
         node.ext.device.desc = (char *)"pin_out_nearlink_sco";
         return SUCCESS;

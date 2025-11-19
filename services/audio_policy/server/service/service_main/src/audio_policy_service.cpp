@@ -417,9 +417,15 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
     AUDIO_WARNING_LOG("Start for [%{public}d]", serviceIndex);
 }
 
-void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
-    audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress);
+    audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress, filter);
+}
+
+void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+{
+    audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 void AudioPolicyService::LoadEffectLibrary()
@@ -808,6 +814,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFi
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps =
         audioDeviceManager_.GetDevicePrivacyMaps();
     for (const auto &dev : descs) {
+        CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is nullptr");
+        if (dev->IsRemoteDevice()) {
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
+            continue;
+        }
         for (const auto &devicePrivacy : devicePrivacyMaps) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             audioDeviceManager_.GetAvailableDevicesWithUsage(usage, deviceInfos, dev, audioDeviceDescriptors);
@@ -877,6 +888,11 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
     RegisterDataObserver();
     SubscribeAccessibilityConfigObserver();
     AudioServerProxy::GetInstance().NotifyAccountsChanged();
+}
+
+void AudioPolicyService::MuteMediaWhenAccountsChanged()
+{
+    audioPolicyManager_.MuteMediaWhenAccountsChanged();
 }
 
 void AudioPolicyService::LoadHdiEffectModel()
@@ -1172,7 +1188,6 @@ int32_t AudioPolicyService::LoadModernOffloadCapSource()
     moduleInfo.bufferSize = "3840"; // 20ms
 
     moduleInfo.className = "offload";
-    moduleInfo.adapterName = "primary";
     moduleInfo.offloadEnable = "true";
     moduleInfo.role = "source";
     moduleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE);
@@ -1213,11 +1228,6 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
 int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
-}
-
-int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
-{
-    return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
 
 bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)

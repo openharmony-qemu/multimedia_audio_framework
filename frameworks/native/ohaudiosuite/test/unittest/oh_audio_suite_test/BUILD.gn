@@ -1,0 +1,67 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../../../../config.gni")
+
+if (audio_framework_feature_audiosuite_support) {
+  module_output_path = "audio_framework/audio_framework_route/audio_ndk"
+  audio_framework_root = "//foundation/multimedia/audio_framework"
+
+  config("audio_suite_config") {
+    include_dirs = [
+      "${audio_framework_root}/frameworks/native/ohaudiosuite",
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+      "${audio_framework_root}/interfaces/inner_api/native/audiostream/include",
+      "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
+    ]
+
+    cflags = [
+      "-Wall",
+      "-Werror",
+      "-fno-access-control",
+    ]
+  }
+
+  config("audio_ohaudiosuite_config") {
+    include_dirs = [
+      "${audio_framework_root}/interfaces/kits/c/audio_suite/",
+      "${audio_framework_root}/interfaces/kits/c/common/",
+    ]
+  }
+
+  ohos_unittest("audio_oh_audio_suite_unit_test") {
+    module_out_path = module_output_path
+    include_dirs = [ "./include" ]
+
+    configs = [
+      ":audio_suite_config",
+      ":audio_ohaudiosuite_config",
+    ]
+
+    sources = [
+      "src/oh_audio_suite_engine_test.cpp",
+      "src/oh_audio_suite_node_builder_test.cpp",
+    ]
+
+    deps = [
+      "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils"
+    ]
+
+    external_deps = [
+      "hilog:libhilog",
+      "ipc:ipc_single",
+    ]
+  }
+}

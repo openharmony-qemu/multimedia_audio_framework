@@ -102,6 +102,7 @@ HWTEST_F(CapturerClockUnitTest, CapturerClockUnitTest_002, TestSize.Level1)
     capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_5, MOCK_SAMPLE_RATE_2, MOCK_POSITION_INC * 2);
 
     uint64_t timestamp;
+    capturerClock_->logTimestamp_ = 0;
     capturerClock_->GetTimeStampByPosition(MOCK_POSITION_4, timestamp);
     EXPECT_EQ(timestamp, MOCK_TIMESTAMP_4_IN_CAPTURER);
     capturerClock_->GetTimeStampByPosition(MOCK_POSITION_5, timestamp);

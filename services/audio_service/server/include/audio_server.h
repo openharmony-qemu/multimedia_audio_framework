@@ -179,8 +179,6 @@ public:
 
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
 
-    int32_t ResetAudioEndpoint() override;
-
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
     int32_t GetEffectOffloadEnabled(bool& isEffectOffloadEnabled) override;
@@ -267,9 +265,11 @@ public:
     void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
         const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
-    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
-        const InterruptEventInternal &interruptEvent) override;
     int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
+
+    int32_t AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
+        std::string &channels, std::string &bufferSize) override;
+    int32_t RemoveCaptureInjector(uint32_t sinkPortidx) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -345,24 +345,26 @@ private:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object, int32_t &workgroupId) override;
-    int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
-    int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
-    int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
-    int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
-    int32_t StopGroup(int32_t pid, int32_t workgroupId) override;
+    int32_t CreateAudioWorkgroup(const sptr<IRemoteObject> &object, int32_t &workgroupId) override;
+    int32_t ReleaseAudioWorkgroup(int32_t workgroupId) override;
+    int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId) override;
+    int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId) override;
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
+    int32_t StopGroup(int32_t workgroupId) override;
 
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
+    bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
+        AudioParamKey &parmKey, std::string &valueNew, std::string &halName);
     const std::string GetVAParameter(const std::string &key);
     int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
-    int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
-    int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
+    int32_t ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads) override;
+    int32_t RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads) override;
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
@@ -413,6 +415,8 @@ private:
 
     std::mutex audioDataTransferMutex_;
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
+
+    std::mutex setA2dpParamMutex_;
 };
 
 class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {

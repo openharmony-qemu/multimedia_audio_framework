@@ -112,6 +112,8 @@ public:
 
     bool IsRemote() const;
 
+    bool IsRemoteDevice() const;
+
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
@@ -121,6 +123,8 @@ public:
     std::string GetDeviceTypeString();
 
     std::string GetKey();
+
+    std::string GetName();
 
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
@@ -195,6 +199,8 @@ public:
     bool isVrSupported_ = true;
     mutable std::optional<ClientInfo> clientInfo_ = std::nullopt;
     VolumeBehavior volumeBehavior_;
+    bool modemCallSupported_ = true;
+    bool highQualityRecordingSupported_ = false;
 
 private:
     bool IsOutput()

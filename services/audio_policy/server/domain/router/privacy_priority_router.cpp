@@ -44,7 +44,19 @@ void PrivacyPriorityRouter::RemoveArmUsb(vector<shared_ptr<AudioDeviceDescriptor
     auto removeBeginIt = std::remove_if(descs.begin(), descs.end(), isPresent);
     size_t deleteNum = static_cast<uint32_t>(descs.end() - removeBeginIt);
     descs.erase(removeBeginIt, descs.end());
-    AUDIO_INFO_LOG("Remove %{public}zu desc from privacy list", deleteNum);
+}
+
+bool PrivacyPriorityRouter::IsA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfpDesc)
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetDevicesByFilter(
+            DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, hfpDesc->macAddress_, "", CONNECTED);
+    auto isPresent = [] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc != nullptr && !desc->isEnable_;
+    };
+
+    auto it = find_if(descs.begin(), descs.end(), isPresent);
+    return it != descs.end();
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
@@ -89,13 +101,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     }
 
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
-    if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connecte desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connecte desc type is none, just only add default device.");
+    if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
@@ -135,7 +141,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
         vector<shared_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if (desc->deviceType_ != DEVICE_TYPE_NONE && !IsA2dpDisable(desc)) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
                 sourceType, clientUID, desc->deviceType_);
             return desc;

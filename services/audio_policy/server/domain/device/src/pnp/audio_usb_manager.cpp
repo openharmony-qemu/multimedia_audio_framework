@@ -205,6 +205,7 @@ void AudioUsbManager::Deinit()
 
 void AudioUsbManager::RefreshUsbAudioDevices()
 {
+    CHECK_AND_RETURN_LOG(observer_, "observer_ is nullptr");
     vector<UsbAudioDevice> devices;
     auto ret = GetUsbAudioDevices(devices);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetUsbAudioDevices Failed. ret=%{public}d", ret);
@@ -321,6 +322,7 @@ void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
     lock_guard<mutex> lock(mutex_);
     auto it = find(audioDevices_.begin(), audioDevices_.end(), p.first);
     if (p.second) {
+        CHECK_AND_RETURN_LOG(initialized_, "Not initialized");
         soundCardMap_ = GetUsbSoundCardMap();
         CHECK_AND_RETURN_LOG(FillUsbAudioDevice(p.first), "Error: FillUsbAudioDevice Failed");
         UpdateDevice(p.first, it);

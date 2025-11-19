@@ -25,6 +25,7 @@
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
 #include "audio_stream_monitor.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -101,7 +102,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumeType = STREAM_MUSIC;
         }
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        AUDIO_DEBUG_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
     volumes->volumeSystem = 1.0f;
     std::string key = std::to_string(volumeType) + deviceClass;
@@ -109,10 +110,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     if (itSV != systemVolume_.end()) {
         volumes->volumeSystem = itSV->second.totalVolume_;
         volumeLevel = itSV->second.volumeLevel_;
-        if ((streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) &&
-            IsVgsVolumeSupported() && volumes->volumeSystem > 0.0f) {
-            volumes->volumeSystem = 1.0f;
-        }
     } else {
         AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
@@ -121,15 +118,17 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume;
+    float mdmMuteStatus = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus() ? 0.0f : 1.0f;
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteStatus;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
         AUDIO_INFO_LOG("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,devClass:%{public}s,"
             "volumeSystem:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
-            "doNotDisturbStatusVolume:%{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
-            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
-            itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
+            "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
+            deviceClass.c_str(), volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp,
+            it->second.IsVirtualKeyboard(), itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null",
+            doNotDisturbStatusVolume, mdmMuteStatus);
     }
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
@@ -211,7 +210,7 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
 
 void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 {
-    AUDIO_INFO_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    AUDIO_DEBUG_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
@@ -254,7 +253,7 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
     if (it != streamVolume_.end()) {
         it->second.volume_ = volume;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_) ? 0.0f :
             it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
@@ -269,7 +268,7 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
     if (it != streamVolume_.end()) {
         it->second.duckFactor_ = duckFactor;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_) ? 0.0f :
             it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
@@ -284,7 +283,7 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
     if (it != streamVolume_.end()) {
         it->second.lowPowerFactor_ = lowPowerFactor;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_) ? 0.0f :
             it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
@@ -335,7 +334,7 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
     if (it != streamVolume_.end()) {
         it->second.isMuted_ = isMuted;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
-        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f :
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_) ? 0.0f :
             it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
     }
 }
@@ -409,9 +408,9 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
         auto &stream = streamVolume.second;
         AUDIO_INFO_LOG("appUid: %{public}d, streamType: %{public}d", stream.GetAppUid(), stream.GetStreamType());
         if (stream.GetAppUid() == appUid && stream.GetStreamType() == static_cast<int32_t>(STREAM_RING)) {
-            bool isRingMuted = stream.isMuted_ || isMuted;
+            stream.isAppRingMuted_ = isMuted;
             stream.appVolume_ = totalAppVolume;
-            stream.totalVolume_ = isRingMuted ? 0.0f :
+            stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_) ? 0.0f :
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
             AUDIO_INFO_LOG("stream total volume: %{public}f", stream.totalVolume_);
             return true;
@@ -597,7 +596,7 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         bean->Add("POWERVOLUMEFACTOR", streamVolume->second.lowPowerFactor_);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        AUDIO_DEBUG_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
 
@@ -653,13 +652,18 @@ void AudioVolume::SetVgsVolumeSupported(bool isVgsSupported)
 inline bool AudioVolume::IsVgsVolumeSupported() const
 {
     // solve bluetooth sco connneted then connect typec headset, the volume of typec headset can not be adjusted.
-    return isVgsVolumeSupported_ && currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO;
+    return isVgsVolumeSupported_ && isScoActive_;
 }
 
-void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
+void AudioVolume::SetScoActive(bool isActive)
 {
-    AUDIO_INFO_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
-    currentActiveDevice_ = currentActiveDevice;
+    isScoActive_ = isActive;
+}
+
+DeviceType AudioVolume::GetCurrentActiveDevice()
+{
+    AUDIO_INFO_LOG("GetCurrentActiveDevice %{public}d", currentActiveDevice_);
+    return currentActiveDevice_;
 }
 
 void AudioVolume::SetOffloadType(uint32_t streamIndex, int32_t offloadType)

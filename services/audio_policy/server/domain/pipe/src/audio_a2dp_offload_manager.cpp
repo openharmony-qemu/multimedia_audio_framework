@@ -23,6 +23,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "i_hpae_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -260,8 +261,8 @@ bool AudioA2dpOffloadManager::GetSpatialAudio(bool getSpatialFromService,
 
 void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForA2dpDeviceOut()
 {
-    AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag change from %{public}d to %{public}d",
-        GetA2dpOffloadFlag(), NO_A2DP_DEVICE);
+    JUDGE_AND_INFO_LOG(GetA2dpOffloadFlag() != NO_A2DP_DEVICE,
+        "a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(), NO_A2DP_DEVICE);
 
     // Get current running stream sessions to stop
     std::vector<int32_t> allRunningSessions;
@@ -297,8 +298,8 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagInternal(
     }
 
     std::lock_guard<std::mutex> lock(switchA2dpOffloadMutex_);
-    AUDIO_PRERELEASE_LOGI("device: %{public}d, currentOutputDevice: %{public}d, runningStreamSize: %{public}zu, "
-        "oldA2dpOffloadFlag: %{public}d, newA2dpOffloadFlag: %{public}d",
+    AUDIO_PRERELEASE_LOGI("device: %{public}d, currentDevice: %{public}d, runStreamSize: %{public}zu, "
+        "oldFlag: %{public}d, newFlag: %{public}d",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(), allRunningA2dpInfos.size(),
         oldA2dpOffloadFlag, newA2dpOffloadFlag);
 

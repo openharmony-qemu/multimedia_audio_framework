@@ -49,6 +49,7 @@
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
+#include "audio_utils_c.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
 
@@ -224,10 +225,11 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
-    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame_,
-        engineTotalSizeInFrame_);
+    uint64_t engineSize = 0;
+    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame_, engineSize);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
+    cacheSizeInFrame_ = engineSize;
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -298,6 +300,18 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
     return SUCCESS;
 }
 
+void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
+{
+    if (spanSizeInFrame_ == 0) {
+        AUDIO_ERR_LOG("failed: spanSizeInFrame is invalid");
+        return;
+    }
+    // 20 -> 40, 93 -> 120
+    uint32_t cacheCount = (cacheSizeInFrame + spanSizeInFrame_ - 1) / spanSizeInFrame_ + 1;
+    cacheSizeInFrame_ = cacheCount * spanSizeInFrame_;
+    AUDIO_INFO_LOG("cacheCount:%{public}d cacheSizeInFrame:%{public}d", cacheCount, cacheSizeInFrame_.load());
+}
+
 void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
 {
     if (bufferDurationInUs > MAX_BUF_DURATION_IN_USEC) {
@@ -308,14 +322,18 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     // Calculate buffer size based on duration.
 
     size_t metaSize = 0;
+    uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
+            curStreamParams_.customSampleRate;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
         metaSize = converter_->GetMetaSize();
         converter_->GetInputBufferSize(cbBufferSize_);
     } else {
-        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
+        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
+    uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
+    SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -396,6 +414,9 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
     size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
+    int32_t readableFrames = clientBuffer_->GetReadableDataFrames();
+    AUTO_CTRACE("CheckBufferNeedWrite writeable:%d readable:%d cacheSize:%u", writableInFrame, readableFrames,
+        cacheSizeInFrame_.load());
     if (writableInFrame <= 0) {
         return false;
     }
@@ -404,17 +425,14 @@ bool RendererInClientInner::CheckBufferNeedWrite()
         return false;
     }
 
-    // readable >= engineTotalSizeInFrame_
-    if (static_cast<uint64_t>(writableInFrame) <
-        (static_cast<uint64_t>(totalSizeInFrame) - engineTotalSizeInFrame_)) {
-        return false;
-    }
-
+    // writableSizeInByte >= cbBufferSize_, call write() will not wait.
     if (writableSizeInByte < cbBufferSize_) {
         return false;
     }
 
-    return true;
+    RETURN_RET_IF(readableFrames <= static_cast<int32_t>(cacheSizeInFrame_), true);
+
+    return false;
 }
 
 bool RendererInClientInner::IsRestoreNeeded()
@@ -435,6 +453,7 @@ bool RendererInClientInner::IsRestoreNeeded()
 
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
+    Trace trace("WaitForBufferNeedWrite");
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
         static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
@@ -607,8 +626,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
         futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () {
-                return (state_ != RUNNING) ||
-                    (static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) > 0);
+                return (state_ != RUNNING) || CheckBufferNeedWrite();
             });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
@@ -621,7 +639,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
             writePos, readPos);
         RingBufferWrapper ringBuffer;
         int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR, "Write failed:%{public}d", ret);
         auto copySize = std::min(remainSize, ringBuffer.dataLength);
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
@@ -689,9 +707,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
-
-    unprocessedFramesBytes_.fetch_add(bufferSize / sizePerFrameInByte_);
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        audioWriteState_.store(currentState);
         return bufferSize;
     }
 
@@ -704,7 +723,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-    totalBytesWrittenAfterFlush_.fetch_add(bufferSize / sizePerFrameInByte_);
+    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
+    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
     return result;
@@ -730,8 +752,7 @@ void RendererInClientInner::ResetFramePosition()
     }
     dropPosition_ = 0;
     dropHdiPosition_ = 0;
-    unprocessedFramesBytes_ = 0;
-    totalBytesWrittenAfterFlush_ = 0;
+    audioWriteState_.store(AudioWriteState{});
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }
 
@@ -1011,7 +1032,9 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
+    AudioWriteState state = audioWriteState_.load();
+    uint64_t samplesWritten = state.totalBytesWrittenAfterFlush_;
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{samplesWritten, speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);

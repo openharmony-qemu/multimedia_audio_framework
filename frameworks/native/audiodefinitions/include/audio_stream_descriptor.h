@@ -47,14 +47,17 @@ public:
     uint32_t sessionId_ = 0;
     int32_t callerUid_ = -1;
     int32_t callerPid_ = -1;
+    uint32_t rendererTarget_ = 0;
     AudioStreamStatus streamStatus_ = STREAM_STATUS_NEW;
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    AudioDeviceDescriptor preferredInputDevice = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
     // for dup device
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDupDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
+    int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -148,6 +151,14 @@ public:
             (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL);
     }
 
+    bool IsMediaScene() const
+    {
+        return (rendererInfo_.streamUsage == STREAM_USAGE_MUSIC) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_MOVIE) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_GAME) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK);
+    }
+
     // Route funcs above
     uint32_t GetRoute() const
     {
@@ -198,6 +209,32 @@ public:
     bool IsOldRouteOffload() const
     {
         return (oldRouteFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
+    bool IsRenderStreamNeedRecreate() const
+    {
+        return ((routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) || (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST));
+    }
+
+    bool IsSelectFlagOffload() const
+    {
+        return (audioFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
+    bool IsSelectFlagHd() const
+    {
+        return (audioFlag_ & AUDIO_OUTPUT_FLAG_HD);
+    }
+
+    void SetOriginalFlagForcedNormal()
+    {
+        rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
+
+    void ResetOriginalFlag()
+    {
+        rendererInfo_.originalFlag = rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ? oldOriginalFlag_:
+            rendererInfo_.originalFlag;
     }
 
     // Device funcs above
@@ -261,6 +298,8 @@ public:
         }
         return false;
     }
+
+    int32_t GetRealUid() const;
 
 private:
     bool WriteDeviceDescVectorToParcel(

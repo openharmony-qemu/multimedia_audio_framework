@@ -382,7 +382,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_003, TestSize.Level0)
     EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
     auto sourceOutputNode = capturerManager->sourceOutputNodeMap_[streamInfo.sessionId];
     EXPECT_NE(sourceOutputNode, nullptr);
-    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType, HPAE_SOURCE_BUFFER_TYPE_MIC);
+    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType, HPAE_SOURCE_BUFFER_TYPE_EC);
 }
 
 /*
@@ -1065,6 +1065,645 @@ HWTEST_F(HpaeCapturerManagerTest, CreateStream_003, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->IsInit(), true);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test AddRemoveCaptureInjectorTest
+ * @tc.type  : FUNC
+ * @tc.number: AddRemoveCaptureInjectorTest
+ * @tc.desc  : Test AddCapturerInjector and RemoveCapturerInjector func
+ */
+HWTEST_F(HpaeCapturerManagerTest, AddRemoveCaptureInjectorTest, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
+    auto it = capturerManager->sceneClusterMap_.find(sceneType);
+    ASSERT_EQ(it != capturerManager->sceneClusterMap_.end(), true);
+    auto sceneCluster = it->second;
+    ASSERT_EQ(sceneCluster != nullptr, true);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.deviceClass = sourceInfo.deviceClass;
+    nodeInfo.channels = sourceInfo.channels;
+    nodeInfo.format = sourceInfo.format;
+    nodeInfo.frameLen = sourceInfo.frameLen;
+    nodeInfo.samplingRate = sourceInfo.samplingRate;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.statusCallback = capturerManager;
+    std::shared_ptr<HpaeSourceInputNode> preNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    EXPECT_EQ(capturerManager->AddCaptureInjector(preNode, streamInfo.sourceType), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 2);
+    EXPECT_EQ(capturerManager->RemoveCaptureInjector(preNode, streamInfo.sourceType), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 1);
+}
+
+/**
+ * @tc.name  : Test AddRemoveCaptureInjectorTest
+ * @tc.type  : FUNC
+ * @tc.number: AddRemoveCaptureInjectorTest_002
+ * @tc.desc  : Test AddCapturerInjector sourceType not exit
+ */
+HWTEST_F(HpaeCapturerManagerTest, AddRemoveCaptureInjectorTest_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.deviceClass = sourceInfo.deviceClass;
+    nodeInfo.channels = sourceInfo.channels;
+    nodeInfo.format = sourceInfo.format;
+    nodeInfo.frameLen = sourceInfo.frameLen;
+    nodeInfo.samplingRate = sourceInfo.samplingRate;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.statusCallback = capturerManager;
+    std::shared_ptr<HpaeSourceInputNode> preNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    EXPECT_EQ(capturerManager->AddCaptureInjector(preNode, SOURCE_TYPE_VOICE_MESSAGE), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 1);
+    EXPECT_EQ(capturerManager->RemoveCaptureInjector(preNode, SOURCE_TYPE_VOICE_MESSAGE), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 1);
+}
+
+/**
+ * @tc.name  : Test Process
+ * @tc.type  : FUNC
+ * @tc.number: Process_001
+ * @tc.desc  : Test Process.
+ */
+HWTEST_F(HpaeCapturerManagerTest, Process_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->Start(DEFAULT_SESSION_ID) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->Process();
+    EXPECT_EQ(capturerManager->IsRunning(), true);
+    EXPECT_EQ(capturerManager->Stop(DEFAULT_SESSION_ID) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    capturerManager->sourceInputClusterMap_[capturerManager->mainMicType_]->CapturerSourceStart();
+    capturerManager->Process();
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager SetStreamMute API
+ * tc.type   : FUNC
+ * tc.number : SetStreamMuteValidParamsTest
+ * tc.desc   : Test SetStreamMute functionality
+ */
+HWTEST_F(HpaeCapturerManagerTest, SetStreamMuteValidParamsTest, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    
+    int32_t result = capturerManager->SetStreamMute(streamInfo.sessionId, true);
+    EXPECT_EQ(result == SUCCESS, true);
+
+    result = capturerManager->SetStreamMute(streamInfo.sessionId, false);
+    EXPECT_EQ(result == SUCCESS, true);
+    
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager SetMute API true
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerSetMute_001
+ * tc.desc   : Test SetMute functionality
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerSetMute_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    
+    EXPECT_EQ(capturerManager->SetMute(true), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->isMute_, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager SetMute API false
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerSetMute_002
+ * tc.desc   : Test SetMute functionality
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerSetMute_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    
+    EXPECT_EQ(capturerManager->SetMute(false), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->isMute_, false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager PrepareCapturerEc API
+ * tc.type   : FUNC
+ * tc.number : PrepareCapturerEc_DiffAdapter_Test
+ * tc.desc   : Test PrepareCapturerEc with HPAE_EC_TYPE_DIFF_ADAPTER
+ */
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_DiffAdapter_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.ecType = HPAE_EC_TYPE_DIFF_ADAPTER;
+    sourceInfo.ecFrameLen = 1024; // 1024 for test framelen
+    sourceInfo.ecChannels = MONO;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    HpaeNodeInfo ecNodeInfo;
+    int32_t result = capturerManager->PrepareCapturerEc(ecNodeInfo); // ecNodeInfo will change
+    
+    EXPECT_EQ(result == SUCCESS, true);
+    EXPECT_EQ(ecNodeInfo.frameLen == sourceInfo.ecFrameLen, true);
+    EXPECT_EQ(ecNodeInfo.channels == sourceInfo.ecChannels, true);
+    EXPECT_EQ(ecNodeInfo.format == sourceInfo.ecFormat, true);
+    EXPECT_EQ(ecNodeInfo.samplingRate == sourceInfo.ecSamplingRate, true);
+    EXPECT_EQ(ecNodeInfo.sourceBufferType == HPAE_SOURCE_BUFFER_TYPE_EC, true);
+    EXPECT_EQ(ecNodeInfo.sourceInputNodeType == HPAE_SOURCE_EC, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager PrepareCapturerEc API
+ * tc.type   : FUNC
+ * tc.number : PrepareCapturerEc_NoEc_Test
+ * tc.desc   : Test PrepareCapturerEc with HPAE_EC_TYPE_NONE
+ */
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_NoEc_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    HpaeNodeInfo ecNodeInfo;
+    ecNodeInfo.frameLen = 512; // 512 for test framelen
+    ecNodeInfo.channels = STEREO;
+    ecNodeInfo.format = SAMPLE_S32LE;
+    ecNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    int32_t result = capturerManager->PrepareCapturerEc(ecNodeInfo); // ecNodeInfo will not change
+    
+    EXPECT_EQ(result == SUCCESS, true);
+    // Verify node info is not modified when ecType is NONE
+    EXPECT_EQ(ecNodeInfo.frameLen == 512, true);
+    EXPECT_EQ(ecNodeInfo.channels == STEREO, true);
+    EXPECT_EQ(ecNodeInfo.format == SAMPLE_S32LE, true);
+    EXPECT_EQ(ecNodeInfo.samplingRate == SAMPLE_RATE_48000, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager PrepareCapturerEc API
+ * tc.type   : FUNC
+ * tc.number : PrepareCapturerEc_SameAdapter_Test
+ * tc.desc   : Test PrepareCapturerEc with HPAE_EC_TYPE_SAME_ADAPTER
+ */
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_SameAdapter_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    HpaeNodeInfo ecNodeInfo;
+    ecNodeInfo.frameLen = 512; // 512 for test framelen
+    ecNodeInfo.channels = STEREO;
+    
+    int32_t result = capturerManager->PrepareCapturerEc(ecNodeInfo); // ecNodeInfo will not change
+    
+    EXPECT_EQ(result == SUCCESS, true);
+    // Verify node info is not modified when ecType is SAME_ADAPTER
+    EXPECT_EQ(ecNodeInfo.frameLen == 512, true); // 512 for test framelen
+    EXPECT_EQ(ecNodeInfo.channels == STEREO, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager PrepareCapturerMicRef API
+ * tc.type   : FUNC
+ * tc.number : PrepareCapturerMicRef_RefOn_Test
+ * tc.desc   : Test PrepareCapturerMicRef with HPAE_REF_ON
+ */
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerMicRef_RefOn_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.micRef = HPAE_REF_ON;
+    sourceInfo.micRefFrameLen = 512; // 512 for test framelen
+    sourceInfo.micRefChannels = MONO;
+    sourceInfo.micRefFormat = SAMPLE_S16LE;
+    sourceInfo.micRefSamplingRate = SAMPLE_RATE_16000;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    HpaeNodeInfo micRefNodeInfo;
+    int32_t result = capturerManager->PrepareCapturerMicRef(micRefNodeInfo); // micRefNodeInfo will change
+    
+    EXPECT_EQ(result == SUCCESS, true);
+    EXPECT_EQ(micRefNodeInfo.frameLen == sourceInfo.micRefFrameLen, true);
+    EXPECT_EQ(micRefNodeInfo.channels == sourceInfo.micRefChannels, true);
+    EXPECT_EQ(micRefNodeInfo.format == sourceInfo.micRefFormat, true);
+    EXPECT_EQ(micRefNodeInfo.samplingRate == sourceInfo.micRefSamplingRate, true);
+    EXPECT_EQ(micRefNodeInfo.sourceBufferType == HPAE_SOURCE_BUFFER_TYPE_MICREF, true);
+    EXPECT_EQ(micRefNodeInfo.sourceInputNodeType == HPAE_SOURCE_MICREF, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager PrepareCapturerMicRef API
+ * tc.type   : FUNC
+ * tc.number : PrepareCapturerMicRef_RefOff_Test
+ * tc.desc   : Test PrepareCapturerMicRef with HPAE_REF_OFF
+ */
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerMicRef_RefOff_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.micRef = HPAE_REF_OFF;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    HpaeNodeInfo micRefNodeInfo;
+    micRefNodeInfo.frameLen = 1024; // 1024 for test framelen
+    micRefNodeInfo.channels = STEREO;
+    micRefNodeInfo.format = SAMPLE_S32LE;
+    micRefNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    
+    int32_t result = capturerManager->PrepareCapturerMicRef(micRefNodeInfo); // micRefNodeInfo will not change
+    
+    EXPECT_EQ(result == SUCCESS, true);
+    // Verify node info is not modified when micRef is OFF
+    EXPECT_EQ(micRefNodeInfo.frameLen == 1024, true); // 1024 for test framelen
+    EXPECT_EQ(micRefNodeInfo.channels == STEREO, true);
+    EXPECT_EQ(micRefNodeInfo.format == SAMPLE_S32LE, true);
+    EXPECT_EQ(micRefNodeInfo.samplingRate == SAMPLE_RATE_48000, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager CreateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : CreateSourceAttr_BasicInfo_Test
+ * tc.desc   : Test CreateSourceAttr with basic source info
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateSourceAttr_BasicInfo_Test, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.adapterName = "primary";
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.channelLayout = 0;
+    sourceInfo.deviceType = DEVICE_TYPE_MIC;
+    sourceInfo.volume = 0.f;
+    sourceInfo.deviceNetId = "network123";
+    sourceInfo.filePath = "/data/test.pcm";
+    sourceInfo.sourceType = SOURCE_TYPE_MIC;
+    sourceInfo.openMicSpeaker = true;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+
+    EXPECT_EQ(attr.adapterName == sourceInfo.adapterName, true);
+    EXPECT_EQ(attr.sampleRate == sourceInfo.samplingRate, true);
+    EXPECT_EQ(attr.channel == sourceInfo.channels, true);
+    EXPECT_EQ(attr.format == sourceInfo.format, true);
+    EXPECT_EQ(attr.channelLayout == sourceInfo.channelLayout, true);
+    EXPECT_EQ(attr.deviceType == sourceInfo.deviceType, true);
+    EXPECT_EQ(attr.volume == sourceInfo.volume, true);
+    EXPECT_EQ(std::string(attr.deviceNetworkId) == sourceInfo.deviceNetId, true);
+    EXPECT_EQ(std::string(attr.filePath) == sourceInfo.filePath, true);
+    EXPECT_EQ(attr.isBigEndian == false, true);
+    EXPECT_EQ(attr.sourceType == static_cast<int32_t>(sourceInfo.sourceType), true);
+    EXPECT_EQ(attr.openMicSpeaker == sourceInfo.openMicSpeaker, true);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager DeleteOutputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerDeleteOutputSession_001
+ * @tc.desc  : Test HpaeCapturerManager DeleteOutputSession
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerDeleteOutputSession_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
+
+    capturerManager->DeleteOutputSession(streamInfo.sessionId);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager DeleteOutputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerDeleteOutputSession_002
+ * @tc.desc  : Test HpaeCapturerManager DeleteOutputSession not exit
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerDeleteOutputSession_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
+
+    capturerManager->DeleteOutputSession(streamInfo.sessionId + 1);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager DeleteOutputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerDeleteOutputSession_003
+ * @tc.desc  : Test HpaeCapturerManager DeleteOutputSession not delete all
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerDeleteOutputSession_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    size_t size = 10; // 10 for test size
+    HpaeStreamInfo streamInfo;
+    for (size_t i = 0; i < size; i++) {
+        streamInfo.sessionId = i;
+        EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    }
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), size);
+    size_t deleteSize = 5; // 5 for delete size
+    for (size_t i = 0; i < deleteSize; i++) {
+        capturerManager->DeleteOutputSession(i);
+    }
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), size - deleteSize);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager GetThreadName API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerGetThreadNameTest
+ * @tc.desc  : Test HpaeCapturerManager GetThreadName
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerGetThreadNameTest, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    std::string threadName = capturerManager->GetThreadName();
+    EXPECT_EQ(threadName, sourceInfo.deviceName);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager CheckIfAnyStreamRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureCheckIfAnyStreamRunningTest_001
+ * @tc.desc  : Test CheckIfAnyStreamRunning with no sessions
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCaptureCheckIfAnyStreamRunningTest_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->CheckIfAnyStreamRunning();
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager CheckIfAnyStreamRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureCheckIfAnyStreamRunningTest_002
+ * @tc.desc  : Test CheckIfAnyStreamRunning with running session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCaptureCheckIfAnyStreamRunningTest_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    capturerManager->CreateOutputSession(streamInfo);
+    auto sourceOutput = capturerManager->sourceOutputNodeMap_.find(streamInfo.sessionId);
+    ASSERT_EQ(sourceOutput != capturerManager->sourceOutputNodeMap_.end(), true);
+    auto sourceOutputNode = sourceOutput->second;
+    ASSERT_EQ(sourceOutputNode != nullptr, true); // make sure sessionId exit in sourceOutputMap
+    capturerManager->SetSessionState(streamInfo.sessionId, HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    capturerManager->CheckIfAnyStreamRunning();
+    EXPECT_EQ(capturerManager->IsRunning(), true);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager CheckIfAnyStreamRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCaptureCheckIfAnyStreamRunningTest_003
+ * @tc.desc  : Test CheckIfAnyStreamRunning with no running session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCaptureCheckIfAnyStreamRunningTest_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    capturerManager->CreateOutputSession(streamInfo);
+
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    capturerManager->CheckIfAnyStreamRunning();
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerIsRunningTest_001
+ * @tc.desc  : Test HpaeCapturerManager IsRunning with sourceinputnode is null
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->sourceInputClusterMap_.size(), 0); // no sourceInputNode
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerIsRunningTest_002
+ * @tc.desc  : Test HpaeCapturerManager IsRunning with processThread is null
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_NE(capturerManager->sourceInputClusterMap_.size(), 0); // sourceIn is not null
+    capturerManager->hpaeSignalProcessThread_ = nullptr;
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerIsRunningTest_003
+ * @tc.desc  : Test HpaeCapturerManager IsRunning with processThread is not run
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_NE(capturerManager->sourceInputClusterMap_.size(), 0); // sourceIn is not null
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_ != nullptr, true);
+    capturerManager->hpaeSignalProcessThread_->DeactivateThread();
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_->IsRunning(), false);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerIsRunningTest_004
+ * @tc.desc  : Test HpaeCapturerManager IsRunning with sourceInput is not run
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_004, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_NE(capturerManager->sourceInputClusterMap_.size(), 0); // sourceIn is not null
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_ != nullptr, true);
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_->IsRunning(), true);
+
+    auto micType = capturerManager->mainMicType_;
+    EXPECT_EQ(micType, HPAE_SOURCE_MIC);
+    auto sourceInput = capturerManager->sourceInputClusterMap_.find(micType);
+    EXPECT_EQ(sourceInput != capturerManager->sourceInputClusterMap_.end(), true);
+    auto sourceInputCluster = sourceInput->second;
+    EXPECT_EQ(sourceInputCluster != nullptr, true);
+    EXPECT_NE(sourceInputCluster->GetSourceState(), STREAM_MANAGER_RUNNING); // sourceIn not run
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerIsRunningTest_005
+ * @tc.desc  : Test HpaeCapturerManager IsRunning true
+ */
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_005, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_NE(capturerManager->sourceInputClusterMap_.size(), 0); // sourceIn is not null
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_ != nullptr, true);
+    EXPECT_EQ(capturerManager->hpaeSignalProcessThread_->IsRunning(), true);
+
+    auto micType = capturerManager->mainMicType_;
+    EXPECT_EQ(micType, HPAE_SOURCE_MIC);
+    auto sourceInput = capturerManager->sourceInputClusterMap_.find(micType);
+    ASSERT_EQ(sourceInput != capturerManager->sourceInputClusterMap_.end(), true);
+    auto sourceInputCluster = sourceInput->second;
+    ASSERT_EQ(sourceInputCluster != nullptr, true);
+    EXPECT_EQ(sourceInputCluster->CapturerSourceStart(), SUCCESS);
+    EXPECT_EQ(sourceInputCluster->GetSourceState(), STREAM_MANAGER_RUNNING); // sourceIn is run
+    EXPECT_EQ(capturerManager->IsRunning(), true);
 }
 } // namespace HPAE
 } // namespace AudioStandard

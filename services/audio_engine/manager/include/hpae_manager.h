@@ -82,7 +82,7 @@ public:
     int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) override;
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
-    void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
+    void DumpAllAvailableDevice() override;
     void DumpSinkInputsInfo() override;
     void DumpSourceOutputsInfo() override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
@@ -202,6 +202,8 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
+
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -215,7 +217,7 @@ private:
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
         MoveSessionType moveType);
     void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
-    void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
+    void HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
     void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType,
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
@@ -229,7 +231,7 @@ private:
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
-    void HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
+    bool HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
         bool isReload = false);
@@ -260,6 +262,14 @@ private:
     void DequeuePendingTransition(uint32_t sessionId);
     void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
+    void DeleteRendererManager(const std::string &name);
+    void DeleteCaptureManager(const std::string &name);
+    void DeleteAudioport(const std::string &name);
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> GetPerferSinkInputs(
+        const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
+    std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
+    std::vector<uint32_t> GetAllRenderSession(const std::string &name);
+    std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -294,6 +304,9 @@ private:
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
     std::string effectLiveState_ = "";
     std::mutex mutex_;
+
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkVirtualOutputNode>> sinkVirtualOutputNodeMap_;
+    std::mutex sinkVirtualOutputNodeMapMutex_;
 };
 
 }  // namespace HPAE

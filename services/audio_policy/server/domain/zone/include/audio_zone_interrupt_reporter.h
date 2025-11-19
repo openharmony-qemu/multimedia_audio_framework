@@ -51,9 +51,10 @@ public:
     static ReporterVector CreateReporter(int32_t zoneId,
         std::shared_ptr<AudioInterruptService> interruptService,
         std::shared_ptr<AudioZoneClientManager> zoneClientManager,
-        AudioZoneInterruptReason reason);
+        AudioZoneInterruptReason reason,
+        AudioFocusList injectFocusList = {});
     
-    void ReportInterrupt();
+    void ReportInterrupt(const string &deviceTag = "");
 
 private:
     std::shared_ptr<AudioInterruptService> interruptService_;
@@ -62,6 +63,7 @@ private:
     int32_t zoneId_ = 0;
     std::string deviceTag_ = "";
     AudioZoneFocusList oldFocusList_;
+    AudioZoneFocusList injectFocusList_;
     AudioZoneInterruptReason reportReason_ = AudioZoneInterruptReason::UNKNOWN;
 
     static ReportMap interruptEnableMaps_;

@@ -113,8 +113,17 @@ public:
 
     // remote extend function
     virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-        const char *splitStreamType) NOT_SUPPORT_RET
-        
+        SplitStreamType splitStreamType) NOT_SUPPORT_RET
+
+    /**
+     * @brief update stream type and usage, if changes, notify HDI.
+     * @param splitStreamType the channel stream type, only split stream mode by head unit
+     * @param type stream type
+     * @param usage stream usage
+     */
+    virtual void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
+        const StreamUsage usage) {};
+
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
     // for a2dp_offload connection state
@@ -133,6 +142,8 @@ public:
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
+
+    virtual void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) {}
 };
 
 } // namespace AudioStandard

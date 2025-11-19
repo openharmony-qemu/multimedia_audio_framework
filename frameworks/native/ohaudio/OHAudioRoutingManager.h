@@ -80,10 +80,8 @@ public:
 
     static OHAudioRoutingManager* GetInstance()
     {
-        if (!ohAudioRoutingManager_) {
-            ohAudioRoutingManager_ = new OHAudioRoutingManager();
-        }
-        return ohAudioRoutingManager_;
+        static OHAudioRoutingManager ohAudioRoutingManager;
+        return &ohAudioRoutingManager;
     }
     OH_AudioDeviceDescriptorArray* GetDevices(DeviceFlag deviceFlag);
 
@@ -102,12 +100,10 @@ public:
 
 private:
     OHAudioRoutingManager();
-    static OHAudioRoutingManager *ohAudioRoutingManager_;
     AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
     std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
     std::vector<std::shared_ptr<OHMicrophoneBlockCallback>> ohMicroPhoneBlockCallbackArray_;
 };
-OHAudioRoutingManager* OHAudioRoutingManager::ohAudioRoutingManager_ = nullptr;
 
 } // namespace AudioStandard
 } // namespace OHOS

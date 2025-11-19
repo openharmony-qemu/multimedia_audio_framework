@@ -216,8 +216,9 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, captureInfo.dupStream);
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
-    server->renderEmptyCountForInnerCap_ = 1;
+    server->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 1;
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
+    server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId + 1);
 }
 
 /**
@@ -487,7 +488,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_002, TestS
     server->stream_->UnsetOffloadMode();
     server->DisableInnerCap(innerCapId);
 
-    EXPECT_NE(server->softLinkInfos_[innerCapId].isSoftLinkEnabled, false);
+    EXPECT_EQ(server->softLinkInfos_[innerCapId].isSoftLinkEnabled, false);
 }
 
 /**
@@ -832,6 +833,38 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
     server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, NO_NEED_FOR_RESTORE);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveIdForInjector_001
+ * @tc.desc  : Test RemoveIdForInjector interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RemoveIdForInjector_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    EXPECT_NE(nullptr, server);
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    server->RemoveIdForInjector();
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveIdForInjector_002
+ * @tc.desc  : Test RemoveIdForInjector interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RemoveIdForInjector_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    EXPECT_NE(nullptr, server);
+    server->lastTarget_ = NORMAL_PLAYBACK;
+    server->RemoveIdForInjector();
 }
 
 /**
@@ -1202,6 +1235,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_007, TestSize.
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
+    const std::string version = AudioDump::GetInstance().GetVersionType();
+    AudioDump::GetInstance().SetVersionType(DumpFileUtil::BETA_VERSION);
 
     int32_t ret = rendererInServer->Init();
     EXPECT_EQ(SUCCESS, ret);
@@ -1215,7 +1250,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_007, TestSize.
     uint64_t currentReadFrame = rendererInServer->audioServerBuffer_->GetCurReadFrame();
     rendererInServer->audioServerBuffer_->SetCurWriteFrame(currentReadFrame + requestDataInFrame + 1);
 
-    ret = rendererInServer->OnWriteData(inputData, requestDataLen);
+    ret = rendererInServer->OnWriteData(inputData, 2);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioDump::GetInstance().SetVersionType(version);
+
+    ret = rendererInServer->OnWriteData(inputData, 3);
     EXPECT_EQ(SUCCESS, ret);
     delete[] inputData;
 }
@@ -1398,60 +1437,6 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_001
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 20;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_MUSIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_002
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 20;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_ULTRASONIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_003
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 30;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_MUSIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
  * @tc.name  : Test GetEAC3ControlParam
  * @tc.type  : FUNC
  * @tc.number: GetEAC3ControlParam_001
@@ -1563,7 +1548,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_003, TestSize.Level1
     server->offloadEnable_ = false;
     server->status_ = I_STATUS_STARTED;
     ret = server->Pause();
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1639,7 +1624,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerEnableInnerCap_001, TestSi
 
     server->offloadEnable_ = false;
     ret = server->EnableInnerCap(0);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1735,6 +1720,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     server->offloadEnable_ = true;
     server->status_ = I_STATUS_IDLE;
     server->Init();
+    std::shared_ptr<HPAE::IHpaeSoftLink> softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
     server->softLinkInfos_[0].softLink = nullptr;
@@ -2018,6 +2005,27 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestS
     ret = server->DestroySoftLink(1);
     ret = server->DestroySoftLink(2);
     ret = server->DestroySoftLink(3);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test StartInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartInner_001
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartInner_001, TestSize.Level1)
+{
+    auto server = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->Init();
+    server->standByEnable_ = true;
+    server->OnStatusUpdate(OPERATION_PAUSED);
+    server->playerDfx_ = nullptr;
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+
+    ret = server->StartInner();
     EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard

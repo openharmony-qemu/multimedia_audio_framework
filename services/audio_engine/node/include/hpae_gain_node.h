@@ -36,10 +36,11 @@ public:
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
-    bool isInnerCapturer_ = false;
+    bool isInnerCapturerOrInjector_ = false;
     float preGain_ = 1.0f;
     float curGain_ = 1.0f;
     bool isGainChanged_ = false;
@@ -51,7 +52,8 @@ private:
     void DoFading(HpaePcmBuffer *input);
     void SilenceData(HpaePcmBuffer *pcmBuffer);
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);
-    void GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);
+    uint32_t GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);
+    uint32_t GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *input);
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

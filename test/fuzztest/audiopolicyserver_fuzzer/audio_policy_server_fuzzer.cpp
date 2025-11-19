@@ -34,6 +34,7 @@
 #include "i_hpae_manager.h"
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
+#include "bluetooth_host.h"
 
 using namespace std;
 
@@ -432,15 +433,6 @@ void AudioPolicyServerSetLowPowerVolumeFuzzTest()
     audioPolicyServer->SetLowPowerVolume(streamId, volume);
 }
 
-void AudioPolicyServerGetFastStreamInfoFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamInfo streamInfo;
-    uint32_t sessionId = GetData<uint32_t>();
-    audioPolicyServer->GetFastStreamInfo(streamInfo, sessionId);
-}
-
 void AudioPolicyServerGetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -652,9 +644,10 @@ void AudioPolicyServerSetSingleStreamVolumeFuzztest()
     bool isUpdateUi = GetData<bool>();
     bool mute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, isUpdateUi, mute, zoneId);
+    VolumeUpdateOption option{isUpdateUi, mute, zoneId};
+    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
-        isUpdateUi, mute, zoneId);
+        option);
 }
 
 void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
@@ -894,7 +887,7 @@ void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest()
 
     std::string macAddress = "test_mac";
     bool support = GetData<bool>();
-    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support);
+    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
 void AudioPolicyServerIsAbsVolumeSceneFuzzTest()
@@ -1023,8 +1016,10 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest()
     int32_t uid = GetData<int32_t>();
     int32_t pid = GetData<int32_t>();
     bool isAllowed = GetData<bool>();
+    int32_t streamUsage = GetData<StreamUsage>();
+    bool silentControl = GetData<bool>();
 
-    audioPolicyServer->IsAllowedPlayback(uid, pid, isAllowed);
+    audioPolicyServer->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
 }
 
 void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
@@ -1410,23 +1405,6 @@ void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest()
     server->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioPolicyServerAudioInterruptZoneFuzzTest()
-{
-    std::set<int32_t> pids;
-    int32_t zoneID = GetData<int32_t>();
-    int32_t count = DEVICE_COUNT;
-    for (int32_t i = 0; i < count; ++i) {
-        pids.insert(GetData<int32_t>());
-    }
-
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->CreateAudioInterruptZone(pids, zoneID);
-    server->AddAudioInterruptZonePids(pids, zoneID);
-    server->RemoveAudioInterruptZonePids(pids, zoneID);
-    server->ReleaseAudioInterruptZone(zoneID);
-}
-
 void AudioPolicyServerRegisterAudioZoneClientFuzzTest()
 {
     auto server = GetServerPtr();
@@ -1664,7 +1642,7 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest()
     const int32_t id = GetData<int32_t>();
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
-    server->NotifyAccountsChanged(id);
+    server->NotifyAccountsChanged(id, 1);
 }
 
 void AudioPolicyServerCheckHibernateStateFuzzTest()
@@ -2109,7 +2087,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest,
     AudioPolicyServerGetAppVolumeLevelInternalFuzzTest,
     AudioPolicyServerSetLowPowerVolumeFuzzTest,
-    AudioPolicyServerGetFastStreamInfoFuzzTest,
     AudioPolicyServerGetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetSingleStreamVolumeFuzzTest,
     AudioPolicyServerIsVolumeUnadjustableFuzzTest,
@@ -2203,7 +2180,6 @@ TestFuncs g_testFuncs[] = {
     RegisterAppStateListenerFuzzTest,
     RegisterAndUnRegisterSyncHibernateListenerFuzzTest,
     AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest,
-    AudioPolicyServerAudioInterruptZoneFuzzTest,
     AudioPolicyServerRegisterAudioZoneClientFuzzTest,
     AudioPolicyServerAudioZoneQueryFuzzTest,
     AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest,
@@ -2286,6 +2262,11 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     return true;
 }
 } // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
 } // namesapce OHOS
 
 /* Fuzzer entry point */
@@ -2296,5 +2277,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::OnStop();
     return 0;
 }

@@ -33,6 +33,26 @@ using namespace testing;
 #define HFP_DEVICE_MAC2 "24:E9:CA:60:2F:CB"
 #define TEST_VIRTUAL_CALL_BUNDLE_NAME "test.service"
 
+class DeviceStatusObserverMock : public IDeviceStatusObserver {
+public:
+    void OnDeviceStatusUpdated(AudioStandard::DeviceType devType, bool isConnected,
+        const std::string &macAddress, const std::string &deviceName,
+        const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false) override {};
+    void OnMicrophoneBlockedUpdate(AudioStandard::DeviceType devType, DeviceBlockStatus status) override {};
+    void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
+    void OnDeviceConfigurationChanged(AudioStandard::DeviceType deviceType,
+        const std::string &macAddress, const std::string &deviceName,
+        const AudioStreamInfo &streamInfo) override {};
+    void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false) override {};
+    void OnServiceConnected(AudioServiceIndex serviceIndex) override {};
+    void OnServiceDisconnected(AudioServiceIndex serviceIndex) override {};
+    void OnForcedDeviceSelected(AudioStandard::DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr) override {};
+    void OnPrivacyDeviceSelected(AudioStandard::DeviceType devType, const std::string &macAddress) override {};
+    void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
+    void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {};
+};
+
 class BluetoothHfpManagerTest : public testing::Test {
 public:
     void SetUp(void) override
@@ -213,6 +233,33 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED,
         AudioHfpManager::activeHfpDevice_);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: HandleUserSelection_001
+ * @tc.desc  : Test HandleUserSelection
+ */
+HWTEST_F(BluetoothHfpManagerTest, HandleUserSelection_001, TestSize.Level1)
+{
+    DeviceStatusObserverMock observer;
+    RegisterDeviceObserver(observer);
+    BluetoothRemoteDevice device1(HFP_DEVICE_MAC1);
+    HfpBluetoothDeviceManager::HandleUserSelection(device1);
+    BluetoothRemoteDevice device2(HFP_DEVICE_MAC2);
+    HfpBluetoothDeviceManager::HandleUserSelection(device2);
+    EXPECT_NE(device1.GetDeviceAddr(), device2.GetDeviceAddr());
+}
+
+/**
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_007
+ * @tc.desc  : Test hfp device manager.
+ */
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_007, TestSize.Level1)
+{
+    EXPECT_NE(AudioHfpManager::ClearActiveHfpDevice("33:33:33"), SUCCESS);
+    EXPECT_EQ(AudioHfpManager::ClearActiveHfpDevice(""), SUCCESS);
 }
 } // namespace Bluetooth
 } // namespace OHOS

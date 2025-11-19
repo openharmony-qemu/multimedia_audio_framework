@@ -74,6 +74,51 @@ int32_t AudioPolicyClientStubImpl::OnVolumeKeyEvent(const VolumeEvent &volumeEve
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    volumeDegreeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    if (cb == nullptr) {
+        volumeDegreeCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeDegreeCallbackList_.begin(), volumeDegreeCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != volumeDegreeCallbackList_.end()) {
+        volumeDegreeCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetVolumeDegreeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    return volumeDegreeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    for (auto it = volumeDegreeCallbackList_.begin(); it != volumeDegreeCallbackList_.end();) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback = (*it).lock();
+        if (volumeKeyEventCallback != nullptr) {
+            volumeKeyEventCallback->OnVolumeDegreeEvent(volumeEvent);
+            ++it;
+        } else {
+            it = volumeDegreeCallbackList_.erase(it);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -265,6 +310,47 @@ int32_t AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, dca.deviceDescriptors);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second->OnDeviceChange(deviceChangeAction);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddDeviceInfoUpdateCallback(
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    deviceInfoUpdateCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveDeviceInfoUpdateCallback(
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    auto iter = deviceInfoUpdateCallbackList_.begin();
+    while (iter != deviceInfoUpdateCallbackList_.end()) {
+        if (*iter == cb || cb == nullptr) {
+            AUDIO_INFO_LOG("remove device info update cb");
+            iter = deviceInfoUpdateCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetDeviceInfoUpdateCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    return deviceInfoUpdateCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnDeviceInfoUpdate(const DeviceChangeAction &dca)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    for (auto it = deviceInfoUpdateCallbackList_.begin(); it != deviceInfoUpdateCallbackList_.end(); ++it) {
+        if (*it && dca.deviceDescriptors.size() > 0) {
+            (*it)->OnDeviceInfoUpdate(dca);
         }
     }
     return SUCCESS;
@@ -627,6 +713,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionDeactive(int32_t deactiveEvent)
     AudioSessionDeactiveEvent newDeactiveEvent;
     newDeactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(deactiveEvent);
     for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE((*it) != nullptr);
         (*it)->OnAudioSessionDeactive(newDeactiveEvent);
     }
     return SUCCESS;
@@ -1202,6 +1289,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChange(enabled);
     }
     return SUCCESS;
@@ -1212,6 +1300,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
@@ -1242,6 +1331,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
     for (const auto &callback : spatializationEnabledChangeForCurrentDeviceCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChangeForCurrentDevice(enabled);
     }
     return SUCCESS;
@@ -1272,6 +1362,7 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnHeadTrackingEnabledChange(enabled);
     }
     return SUCCESS;
@@ -1282,6 +1373,7 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
@@ -1398,6 +1490,38 @@ int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent 
         if (streamVolumeChangeCallback != nullptr && streamUsages.count(streamVolumeEvent.streamUsage)) {
             streamVolumeChangeCallback->OnStreamVolumeChange(streamVolumeEvent);
         }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddCollaborationEnabledChangeForCurrentDeviceCallback(
+    const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveCollaborationEnabledChangeForCurrentDeviceCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    return collaborationEnabledChangeForCurrentDeviceCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnCollaborationEnabledChangeForCurrentDevice(bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    for (const auto &callback : collaborationEnabledChangeForCurrentDeviceCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        AUDIO_INFO_LOG("OnCollaborationEnabledChangeForCurrentDevice enabled: %{public}d", enabled);
+        callback->OnCollaborationEnabledChangeForCurrentDevice(enabled);
     }
     return SUCCESS;
 }

@@ -187,7 +187,7 @@ static void ProcessRewind(struct userdata *u, pa_usec_t now)
 
     delay = u->timestamp - now;
     inBuffer = pa_usec_to_bytes(delay, &u->sink->sample_spec);
-    if (inBuffer <= 0) {
+    if (inBuffer == 0) {
         goto do_nothing;
     }
 

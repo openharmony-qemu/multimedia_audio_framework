@@ -19,7 +19,7 @@
 #include "i_capturer_stream.h"
 #include "hpae_stream_manager.h"
 #include "hpae_capture_move_info.h"
-#include "hpae_dfx_tree.h"
+#include "hpae_dfx_map_tree.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,11 +58,16 @@ public:
     virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload = false) = 0;
     virtual int32_t DumpSourceInfo() { return 0; };
     virtual void UploadDumpSourceInfo(std::string &deviceName);
-    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
+    virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo);
+    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId);
     virtual std::string GetDeviceHDFDumpInfo() = 0;
+    virtual int32_t AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) = 0;
 private:
 #ifdef ENABLE_HIDUMP_DFX
-    HpaeDfxTree dfxTree_;
+    HpaeDfxMapTree dfxTree_;
 #endif
 };
 }  // namespace HPAE

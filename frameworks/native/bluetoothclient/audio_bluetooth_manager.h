@@ -131,6 +131,7 @@ public:
     static void RegisterBluetoothScoListener();
     static void UnregisterBluetoothScoListener();
     static int32_t SetActiveHfpDevice(const std::string &macAddress);
+    static int32_t ClearActiveHfpDevice(const std::string &macAddress);
     static int32_t UpdateActiveHfpDevice(const BluetoothRemoteDevice &device);
     static std::string GetActiveHfpDevice();
     static int32_t DisconnectSco();
@@ -147,6 +148,7 @@ public:
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();
     static std::string GetAudioScoDeviceMac();
+    static ScoCategory GetScoCategory();
 
 private:
     static ScoCategory JudgeScoCategory();

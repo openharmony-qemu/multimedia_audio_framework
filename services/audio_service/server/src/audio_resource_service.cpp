@@ -48,18 +48,12 @@ AudioResourceService::~AudioResourceService()
 {
 }
 
-static bool IsValidPid(int32_t pid)
-{
-    return pid > 0;
-}
-
 int32_t AudioResourceService::AudioWorkgroupCheck(int32_t pid)
 {
-    bool inGroup = IsProcessInWorkgroup(pid);
-    std::lock_guard<std::mutex> lock(workgroupLock_);
+    bool inGroup = (audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end());
     if (inGroup) {
         if (audioWorkgroupMap_[pid].groups.size() >= AUDIO_MAX_GRP_PER_PROCESS) {
-            AUDIO_INFO_LOG("[WorkgroupInServer] pid=%{public}d more than 4 groups is not allowed\n", pid);
+            AUDIO_INFO_LOG("[WorkgroupInServer] pid=%{public}d more than 2 groups is not allowed\n", pid);
             return ERR_NOT_SUPPORTED;
         }
     } else {
@@ -79,23 +73,24 @@ int32_t AudioResourceService::AudioWorkgroupCheck(int32_t pid)
 
 int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(pid > 0, ERR_INVALID_PARAM, "CreateAudioWorkgroup for pid < 0");
+    CHECK_AND_RETURN_RET_LOG(pid > 0, ERR_INVALID_PARAM, "[WorkgroupInServer]"
+        "CreateAudioWorkgroup failed, err pid:%{public}d", pid);
 
     if (!object) {
         AUDIO_ERR_LOG("[AudioResourceService] object is nullptr!");
         return ERR_OPERATION_FAILED;
     }
 
+    std::lock_guard<std::mutex> lock(workgroupLock_);
     int ret = AudioWorkgroupCheck(pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_SUPPORTED, "[WorkgroupInServer]:"
         "1, Maximum 2 processes can create deadline workgroup."
-        "2, Maximum 4 workgroups can be created per process.");
+        "2, Maximum 2 workgroups can be created per process.");
 
     ConcurrentTask::IntervalReply reply;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_CREATE_GRP, -1, -1, reply);
     if (reply.rtgId != -1) {
-        std::lock_guard<std::mutex> lock(workgroupLock_);
         auto workgroup = std::make_shared<AudioWorkgroup>(reply.rtgId);
         audioWorkgroupMap_[pid].groups[reply.rtgId] = workgroup;
         FillAudioWorkgroupCgroupLimit(pid, workgroup);
@@ -118,16 +113,13 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
 
 int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
 {
-    if (!IsValidPid(pid)) {
-        AUDIO_ERR_LOG("[AudioResourceService] ReleaseAudioWorkgroup failed, err pid:%{public}d", pid);
-        return ERR_OPERATION_FAILED;
-    }
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
 
     Trace trace("[WorkgroupInServer] WorkgroupInServer pid:" + std::to_string(pid) +
         " workgroupId:" + std::to_string(workgroupId));
 
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
     ConcurrentTask::IntervalReply reply;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_DESTROY_GRP, -1, workgroupId, reply);
@@ -136,31 +128,43 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
         return ERR_OPERATION_FAILED;
     }
 
-    std::lock_guard<std::mutex> lock(workgroupLock_);
-    auto workgroupPtr = audioWorkgroupMap_[pid].groups[workgroupId];
-    if (workgroupPtr) {
-        auto deathIt = deathRecipientMap_.find(workgroupPtr);
-        if (deathIt != deathRecipientMap_.end()) {
-            ReleaseWorkgroupDeathRecipient(workgroupPtr, deathIt->second.first);
-        }
+    auto pidIt = audioWorkgroupMap_.find(pid);
+    if (pidIt == audioWorkgroupMap_.end()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup pid:%{public}d already removed", pid);
+        return ERR_INVALID_PARAM;
+    }
+ 
+    auto &groups = pidIt->second.groups;
+    auto grpIt = groups.find(workgroupId);
+    if (grpIt == groups.end() || !grpIt->second) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup pid:%{public}d grpId:%{public}d not exist",
+            pid, workgroupId);
+        return ERR_INVALID_PARAM;
+    }
+ 
+    auto deathIt = deathRecipientMap_.find(grpIt->second);
+    if (deathIt != deathRecipientMap_.end()) {
+        ReleaseWorkgroupDeathRecipient(grpIt->second, deathIt->second.first);
+    }
+ 
+    groups.erase(grpIt);
+    if (groups.empty()) {
+        audioWorkgroupMap_.erase(pidIt);
     }
 
-    audioWorkgroupMap_[pid].groups.erase(workgroupId);
-    if (audioWorkgroupMap_[pid].groups.size() == 0) {
-        audioWorkgroupMap_.erase(pid);
-    }
     DumpAudioWorkgroupMap();
     return SUCCESS;
 }
 
 int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
+    std::lock_guard<std::mutex> lock(workgroupLock_);
     if (pid == tokenId) {
         AUDIO_ERR_LOG("[WorkgroupInServer] main thread pid=%{public}d is not allowed to be added", pid);
         return ERR_OPERATION_FAILED;
     }
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
 
     if (GetThreadsNumPerProcess(pid) >= AUDIO_MAX_RT_THREADS) {
         AUDIO_ERR_LOG("error: Maximum 4 threads can be added per process");
@@ -173,37 +177,48 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
 
 int32_t AudioResourceService::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->RemoveThread(tokenId);
     return ret;
 }
 
 int32_t AudioResourceService::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Start(startTime, deadlineTime);
     return ret;
 }
  
 int32_t AudioResourceService::StopGroup(int32_t pid, int32_t workgroupId)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Stop();
     return ret;
 }
 
-AudioWorkgroup *AudioResourceService::GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId)
+std::shared_ptr<AudioWorkgroup> AudioResourceService::GetAudioWorkgroup(int32_t pid, int32_t workgroupId)
 {
-    std::lock_guard<std::mutex> lock(workgroupLock_);
-    std::shared_ptr<AudioWorkgroup> group_ptr = audioWorkgroupMap_[pid].groups[workgroupId];
-    if (!group_ptr) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] get AudioWorkgroup ptr failed\n");
+    auto pidIt = audioWorkgroupMap_.find(pid);
+    if (pidIt == audioWorkgroupMap_.end()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] GetAudioWorkgroup: pid:%{public}d not found", pid);
         return nullptr;
     }
-    return group_ptr.get();
+ 
+    auto &groups = pidIt->second.groups;
+    auto grpIt = groups.find(workgroupId);
+    if (grpIt == groups.end() || !grpIt->second) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] GetAudioWorkgroup: workgroupId=%{public}d"
+            " not found for pid=%{public}d", workgroupId, pid);
+        return nullptr;
+    }
+ 
+    return grpIt->second;
 }
 
 AudioResourceService::AudioWorkgroupDeathRecipient::AudioWorkgroupDeathRecipient()
@@ -266,7 +281,6 @@ void AudioResourceService::ReleaseWorkgroupDeathRecipient(const std::shared_ptr<
 int32_t AudioResourceService::GetThreadsNumPerProcess(int32_t pid)
 {
     uint32_t count = 0;
-    std::lock_guard<std::mutex> lock(workgroupLock_);
     for (const auto &[id, group]: audioWorkgroupMap_[pid].groups) {
         AUDIO_INFO_LOG("[WorkgroupInServer] pid=%{public}d groupID=%{public}d\n", pid, id);
         if (group != nullptr) {
@@ -319,12 +333,11 @@ int32_t AudioResourceService::RegisterAudioWorkgroupMonitor(int32_t pid, int32_t
 
 void AudioResourceService::WorkgroupRendererMonitor(int32_t pid, const bool isAllowed)
 {
-    // Even though the caller has checked once, here checks is still allowed
-    if (!IsProcessInWorkgroup(pid)) {
-        return;
-    }
-
     std::lock_guard<std::mutex> lock(workgroupLock_);
+    // Even though the caller has checked once, here checks is still allowed
+    CHECK_AND_RETURN_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
+        "[WorkgroupInServer]WorkgroupRendererMonitor failed, err pid:%{public}d", pid);
+
     if (isAllowed == audioWorkgroupMap_[pid].permission) {
         return;
     }
@@ -375,6 +388,8 @@ std::vector<int32_t> AudioResourceService::GetProcessesOfAudioWorkgroup()
 int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, bool> &threads)
 {
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    CHECK_AND_RETURN_RET_LOG(!threads.empty(), ERR_INVALID_PARAM, "[WorkgroupInServer] No thread to improve prio");
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos_level7", pid, tid.first);
         ScheduleReportData(pid, tid.first, "audio_server");
@@ -385,6 +400,8 @@ int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
 int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, int32_t> &threads)
 {
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    CHECK_AND_RETURN_RET_LOG(!threads.empty(), ERR_INVALID_PARAM, "[WorkgroupInServer] No thread to restore prio");
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos%{public}d",
             pid, tid.first, tid.second);

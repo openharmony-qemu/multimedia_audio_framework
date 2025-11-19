@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "hpae_msg_channel.h"
 #include "sink/i_audio_render_sink.h"
+#include "source/i_audio_capture_source.h"
 #include "i_renderer_stream.h"
 
 namespace OHOS {
@@ -109,7 +110,7 @@ public:
     MOCK_METHOD(int32_t, UnLockOffloadRunningLock, (), (override));
 
     MOCK_METHOD(int32_t, SplitRenderFrame,
-        (char &data, uint64_t len, uint64_t &writeLen, const char *splitStreamType), (override));
+        (char &data, uint64_t len, uint64_t &writeLen, SplitStreamType splitStreamType), (override));
     MOCK_METHOD(int32_t, UpdatePrimaryConnectionState, (uint32_t operation), (override));
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
@@ -122,12 +123,12 @@ public:
     MockNodeCallback() = default;
     virtual ~MockNodeCallback() = default;
     MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
-    MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnFadeDone, (uint32_t), (override));
     MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
     MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
     MOCK_METHOD(void, OnNotifyQueue, (), (override));
     MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
-    MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, uint32_t), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
 };
 
@@ -137,6 +138,43 @@ public:
     MockStreamCallback() = default;
     virtual ~MockStreamCallback() = default;
     MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
+    MOCK_METHOD(bool, OnQueryUnderrun, (), (override));
+};
+
+// Mock IAudioCaptureSource
+class MockAudioCaptureSource : public IAudioCaptureSource {
+public:
+    MockAudioCaptureSource() = default;
+    virtual ~MockAudioCaptureSource() = default;
+    MOCK_METHOD(int32_t, Init, (const IAudioSourceAttr &attr), (override));
+    MOCK_METHOD(void, DeInit, (), (override));
+    MOCK_METHOD(bool, IsInited, (), (override));
+    MOCK_METHOD(int32_t, Start, (), (override));
+    MOCK_METHOD(int32_t, Stop, (), (override));
+    MOCK_METHOD(int32_t, Resume, (), (override));
+    MOCK_METHOD(int32_t, Pause, (), (override));
+    MOCK_METHOD(int32_t, Flush, (), (override));
+    MOCK_METHOD(int32_t, Reset, (), (override));
+    MOCK_METHOD(int32_t, CaptureFrame, (char *frame, uint64_t requestBytes, uint64_t &replyBytes), (override));
+    MOCK_METHOD(int32_t, CaptureFrameWithEc, (FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc), (override));
+    MOCK_METHOD(std::string, GetAudioParameter, (const AudioParamKey key, const std::string &condition), (override));
+    MOCK_METHOD(void, SetAudioParameter, (const AudioParamKey key, const std::string &condition,
+        const std::string &value), (override));
+    MOCK_METHOD(int32_t, SetVolume, (float left, float right), (override));
+    MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
+    MOCK_METHOD(int32_t, SetMute, (bool isMute), (override));
+    MOCK_METHOD(int32_t, GetMute, (bool &isMute), (override));
+    MOCK_METHOD(uint64_t, GetTransactionId, (), (override));
+    MOCK_METHOD(int32_t, GetPresentationPosition, (uint64_t &frames, int64_t &timeSec,
+        int64_t &timeNanoSec), (override));
+    MOCK_METHOD(float, GetMaxAmplitude, (), (override));
+    MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
+    MOCK_METHOD(int32_t, UpdateActiveDevice, (DeviceType inputDevice), (override));
+    MOCK_METHOD(int32_t, UpdateAppsUid, (const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
+        const size_t size), (override));
+    MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
+    MOCK_METHOD(int32_t, GetArmUsbDeviceStatus, (), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard

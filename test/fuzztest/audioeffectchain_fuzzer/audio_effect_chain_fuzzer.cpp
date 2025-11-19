@@ -53,6 +53,7 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 const int32_t NUM_2 = 2;
 const int32_t TEST_HANDLE_SIZE = 10;
+typedef void (*TestFuncs)();
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
@@ -215,17 +216,6 @@ void EffectChainManagerReturnEffectChannelInfoFuzzTest()
     uint32_t processChannels = GetData<uint32_t>();
     uint64_t processChannelLayout = GetData<uint64_t>();
     EffectChainManagerReturnEffectChannelInfo(SCENETYPEMUSIC, &processChannels, &processChannelLayout);
-#endif
-}
-
-void EffectChainManagerReturnMultiChannelInfoFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    EffectChainManagerInitCb(SCENETYPEMUSIC);
-
-    uint32_t processChannels = GetData<uint32_t>();
-    uint64_t processChannelLayout = GetData<uint64_t>();
-    EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
 #endif
 }
 
@@ -451,27 +441,6 @@ void AudioEffectChainStreamVolumeUpdateFuzzTest()
     const std::string sessionIDString = "12345";
     const float streamVolume = GetData<float>();
     audioEffectChainManager->StreamVolumeUpdate(sessionIDString, streamVolume);
-}
-
-void AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        return;
-    }
-
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = GetData<uint64_t>();
-    sessionEffectInfo.channels = GetData<uint32_t>();
-    std::set<std::string> sceneType = {"123"};
-    audioEffectChainManager->isInitialized_ = GetData<bool>();
-    audioEffectChainManager->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    audioEffectChainManager->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    audioEffectChainManager->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    audioEffectChainManager->ResetInfo();
 }
 
 void AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest()
@@ -1115,13 +1084,6 @@ void ReleaseAudioEffectChainDynamicInnerFuzzTest()
     audioEffectChainManager->ReleaseAudioEffectChainDynamicInner(sceneType);
 }
 
-void EnhanceChainManagerGetAlgoConfigFuzzTest()
-{
-    struct DeviceAttrAdapter validAdapter;
-    EnhanceChainManagerCreateCb(0, &validAdapter);
-    EnhanceChainManagerSendInitCommand();
-}
-
 void QueryEffectChannelInfoInnerFuzzTest()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -1205,16 +1167,13 @@ void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
     audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
 }
 
-typedef void (*TestFuncs[59])();
-
-TestFuncs g_testFuncs = {
+TestFuncs g_testFuncs[] = {
     EffectChainManagerInitCbFuzzTest,
     EffectChainManagerCreateCbFuzzTest,
     EffectChainManagerCheckEffectOffloadFuzzTest,
     EffectChainManagerAddSessionInfoFuzzTest,
     EffectChainManagerDeleteSessionInfoFuzzTest,
     EffectChainManagerReturnEffectChannelInfoFuzzTest,
-    EffectChainManagerReturnMultiChannelInfoFuzzTest,
     EffectChainManagerSceneCheckFuzzTest,
     EffectChainManagerProcessFuzzTest,
     EffectChainManagerMultichannelUpdateFuzzTest,
@@ -1224,7 +1183,6 @@ TestFuncs g_testFuncs = {
     AudioEnhanceChainFuzzTest,
     AudioEffectChainGetOutputChannelInfoFuzzTest,
     AudioEffectChainStreamVolumeUpdateFuzzTest,
-    AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest,
     AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest,
     AudioEffectChainLoadEffectPropertiesFuzzTest,
     AudioEffectChainSetAudioEffectPropertyFuzzTest,
@@ -1261,7 +1219,6 @@ TestFuncs g_testFuncs = {
     AudioEnhanceChainUpdateExtraSceneTypeFuzzTest,
     SetAbsVolumeStateToEffectFuzzTest,
     ReleaseAudioEffectChainDynamicInnerFuzzTest,
-    EnhanceChainManagerGetAlgoConfigFuzzTest,
     QueryEffectChannelInfoInnerFuzzTest,
     EffectChainManagerExistAudioEffectChainInnerFuzzTest1,
     EffectChainManagerExistAudioEffectChainInnerFuzzTest2,

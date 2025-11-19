@@ -239,7 +239,7 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     bool support = *reinterpret_cast<const bool *>(rawData);
     int32_t volume = *reinterpret_cast<const int32_t *>(rawData);
     bool updateUi = *reinterpret_cast<const bool *>(rawData);
-    GetServerPtr()->SetDeviceAbsVolumeSupported(macAddress, support);
+    GetServerPtr()->SetDeviceAbsVolumeSupported(macAddress, support, volume);
     GetServerPtr()->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 
     GetServerPtr()->IsHighResolutionExist();

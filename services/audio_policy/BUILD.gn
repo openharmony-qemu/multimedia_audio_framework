@@ -51,6 +51,7 @@ config("audio_policy_public_config") {
     "server/include",
     "server/infra/async_action_handler/include",
     "server/infra/state_monitor",
+    "server/infra/window/include",
     "server/stub/include",
     "server/proxy/include",
     "server/domain/interrupt/include",
@@ -80,6 +81,7 @@ config("audio_policy_public_config") {
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_service/server/include",
     "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
@@ -131,6 +133,7 @@ ohos_shared_library("audio_setting_provider") {
     "../../services/audio_policy/server/infra/datashare/include",
     "../../services/audio_policy/server/domain/device/src/pnp",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   sources = [ "server/infra/datashare/src/audio_setting_provider.cpp" ]
@@ -205,6 +208,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
+    "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
@@ -219,10 +223,8 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_usr_select_manager.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
-    "server/src/audio_client_tracker_callback_service.cpp",
     "server/src/audio_client_tracker_callback_listener.cpp",
     "server/src/audio_spatialization_state_change_callback.cpp",
-    "server/src/audio_spatialization_state_change_listener.cpp",
     "server/src/audio_policy_manager_listener.cpp",
     "server/domain/effect/src/audio_effect_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
@@ -234,6 +236,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/volume/src/audio_adapter_manager.cpp",
     "server/domain/volume/src/audio_adapter_manager_handler.cpp",
     "server/domain/volume/src/volume_data_maintainer.cpp",
+    "server/domain/volume/src/audio_volume_utils.cpp",
     "server/domain/router/app_select_router.cpp",
     "server/domain/router/audio_router_center.cpp",
     "server/domain/router/cockpit_phone_router.cpp",
@@ -283,9 +286,14 @@ audio_ohos_library("audio_policy_service") {
     "server/service/service_main/src/audio_core_service_utils.cpp",
     "server/domain/pipe/src/audio_pipe_manager.cpp",
     "server/domain/pipe/src/audio_pipe_selector.cpp",
+    "server/service/service_main/src/audio_injector_policy.cpp",
   ]
 
   defines = []
+  if (!audio_framework_feature_mutesink_enable) {
+    defines += [ "MUTE_SINK_DISABLE" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
@@ -373,6 +381,7 @@ audio_ohos_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -382,12 +391,12 @@ audio_ohos_library("audio_policy_service") {
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
+    "init:libbeget_proxy",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -399,6 +408,10 @@ audio_ohos_library("audio_policy_service") {
 
   if (audio_framework_feature_detect_soundbox) {
     defines += [ "DETECT_SOUNDBOX" ]
+  }
+
+  if (audio_framework_feature_wireless_default_exclude) {
+    defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
   }
 
   if (audio_framework_config_policy_enable) {
@@ -584,7 +597,7 @@ audio_ohos_library("audio_policy_client") {
   deps = [
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
-    "../../services/audio_service/idl:audio_framework_interface",
+    "../../services/audio_service/idl:audio_policy_client_idl_interface",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -602,6 +615,8 @@ audio_ohos_library("audio_policy_client") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"

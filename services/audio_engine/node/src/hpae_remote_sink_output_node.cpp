@@ -28,7 +28,8 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-const std::string STREAM_TYPE_CHANGE = "stream_type_change";
+namespace {
+}
 HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
@@ -50,7 +51,7 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeRemoteSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -60,6 +61,9 @@ HpaeRemoteSinkOutputNode::~HpaeRemoteSinkOutputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -76,7 +80,7 @@ void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
     AUDIO_DEBUG_LOG("remoteSleepTime_ %{public}lld", remoteSleepTime_.count());
 }
 
-void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size)
+void HpaeRemoteSinkOutputNode::HandlePcmDumping(SplitStreamType streamType, char* data, size_t size)
 {
     auto handleDump = [&](auto& dumper) {
         if (dumper) {
@@ -86,36 +90,16 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, 
     };
 
     switch (streamType) {
-        case HpaeSplitStreamType::STREAM_TYPE_MEDIA:
+        case SplitStreamType::STREAM_TYPE_MEDIA:
             handleDump(outputMediaPcmDumper_);
             break;
-        case HpaeSplitStreamType::STREAM_TYPE_NAVIGATION:
+        case SplitStreamType::STREAM_TYPE_NAVIGATION:
             handleDump(outputNavigationPcmDumper_);
             break;
         default:
             handleDump(outputCommunicationPcmDumper_);
             break;
     }
-}
-
-void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType)
-{
-    if (splitStreamType != STREAM_TYPE_MEDIA) {
-        return;
-    }
-    HpaeNodeInfo nodeInfo = GetNodeInfo();
-    if (type == nodeInfo.streamType) {
-        return;
-    }
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    if (deviceManager == nullptr) {
-        return;
-    }
-    AudioParamKey key = AudioParamKey::PARAM_KEY_STATE;
-    deviceManager->SetAudioParameter(nodeInfo.deviceNetId, key, STREAM_TYPE_CHANGE, std::to_string(type));
-    nodeInfo.streamType = type;
-    SetNodeInfo(nodeInfo);
 }
 
 void HpaeRemoteSinkOutputNode::DoProcess()
@@ -134,9 +118,10 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         if (outputData == nullptr || (!outputData->IsValid() && !needEmptyChunk_)) {
             continue;
         }
-        HpaeSplitStreamType splitStreamType = outputData->GetSplitStreamType();
+        SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
-        NotifyStreamTypeChange(type, splitStreamType);
+        StreamUsage usage = outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN;
+        audioRendererSink_->UpdateStreamInfo(splitStreamType, type, usage);
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
         uint64_t writeLen = 0;
@@ -145,7 +130,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         HandlePcmDumping(splitStreamType, renderFrameData, renderFrameData_.size());
 #endif
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
-            writeLen, std::to_string(static_cast<int>(splitStreamType)).c_str());
+            writeLen, splitStreamType);
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
         }
@@ -187,7 +172,7 @@ void HpaeRemoteSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmB
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeId());
     }
 #endif
 }
@@ -198,7 +183,7 @@ void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         auto preNodeReal = preNode->GetSharedInstance();
-        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), preNodeReal->GetNodeId());
     }
 #endif
 }

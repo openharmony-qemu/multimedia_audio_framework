@@ -166,6 +166,7 @@ private:
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     bool IsRestoreOrStopNeeded();
+    void SetInSwitchingFlag(bool inSwitchingFlag);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
@@ -204,6 +205,9 @@ private:
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
+    std::condition_variable taskLoopCv_;
+    std::mutex inSwitchingMtx_;
+    bool inSwitchingFlag_ = false;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

@@ -144,6 +144,8 @@ private:
     static std::unique_ptr<AudioCapturerOptions> sCapturerOptions_;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
+    static std::atomic<bool> firstReadCalled_;
+    static std::atomic<bool> firstRegReadCbCalled_;
 
     std::shared_ptr<AudioCapturerCallback> callbackNapi_ = nullptr;
     std::shared_ptr<CapturerPositionCallback> positionCbNapi_ = nullptr;

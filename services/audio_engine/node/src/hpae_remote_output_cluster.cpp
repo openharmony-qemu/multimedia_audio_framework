@@ -51,23 +51,28 @@ void HpaeRemoteOutputCluster::DoProcess()
 {
     Trace trace("HpaeRemoteOutputCluster::DoProcess");
     hpaeSinkOutputNode_->DoProcess();
-    std::vector<HpaeProcessorType> needErased;
-    for (auto &mixerNode : sceneMixerMap_) {
-        if (mixerNode.second->GetPreOutNum() == 0) {
-            ++sceneStopCountMap_[mixerNode.first];
-        } else {
-            sceneStopCountMap_[mixerNode.first] = 0;
+    
+    for (auto mixerNodeIt = sceneMixerMap_.begin(); mixerNodeIt != sceneMixerMap_.end();) {
+        if (mixerNodeIt->second->GetPreOutNum() != 0) {
+            ++mixerNodeIt;
+            stopCount_ = 0;
+            continue;
         }
-        if (sceneStopCountMap_[mixerNode.first] > timeoutThdFrames_) {
-            needErased.emplace_back(mixerNode.first);
-            hpaeSinkOutputNode_->DisConnect(mixerNode.second);
+        if (sceneMixerMap_.size() == 1) {
+            ++stopCount_;
+            break;
         }
+        hpaeSinkOutputNode_->DisConnect(mixerNodeIt->second);
+        mixerNodeIt = sceneMixerMap_.erase(mixerNodeIt);
     }
-    for (auto sceneType : needErased) {
-        sceneMixerMap_.erase(sceneType);
-    }
-    if (hpaeSinkOutputNode_->GetPreOutNum() == 0) {
+    
+    if (stopCount_ > timeoutThdFrames_) {
+        if (!sceneMixerMap_.empty()) {
+            hpaeSinkOutputNode_->DisConnect(sceneMixerMap_.begin()->second);
+        }
+        sceneMixerMap_.clear();
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
+        stopCount_ = 0;
         AUDIO_INFO_LOG("timeout RenderSinkStop ret :%{public}d", ret);
     }
 }
@@ -81,11 +86,6 @@ bool HpaeRemoteOutputCluster::Reset()
     for (auto converterNode : sceneConverterMap_) {
         converterNode.second->Reset();
     }
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 
@@ -105,12 +105,12 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
         preNodeInfo.nodeName.c_str(), nodeInfo.nodeName.c_str());
     nodeInfo.sceneType = sceneType;
     nodeInfo.streamType = preNodeInfo.streamType;
+    nodeInfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     }
     if (!SafeGetMap(sceneMixerMap_, sceneType)) {
         sceneMixerMap_[sceneType] = std::make_shared<HpaeMixerNode>(nodeInfo);
-        sceneStopCountMap_[sceneType] = 0;
         hpaeSinkOutputNode_->Connect(sceneMixerMap_[sceneType]);
     }
     sceneMixerMap_[sceneType]->Connect(sceneConverterMap_[sceneType]);
@@ -121,19 +121,29 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
 
 void HpaeRemoteOutputCluster::UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode)
 {
-    HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
-    HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    // update mixed node streamType
-    HpaeNodeInfo tmpNodeInfo = sceneMixerMap_[sceneType]->GetNodeInfo();
-    tmpNodeInfo.streamType = preNodeInfo.streamType;
-    sceneMixerMap_[sceneType]->SetNodeInfo(tmpNodeInfo);
-    // update convert node streamType
-    tmpNodeInfo = sceneConverterMap_[sceneType]->GetNodeInfo();
-    tmpNodeInfo.streamType = preNodeInfo.streamType;
-    sceneConverterMap_[sceneType]->SetNodeInfo(tmpNodeInfo);
-    AUDIO_INFO_LOG("%{public}d type %{public}d",
-        sceneMixerMap_[sceneType]->GetNodeInfo().nodeId,
-        sceneMixerMap_[sceneType]->GetNodeInfo().streamType);
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "the param proNode is nullptr");
+    const HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
+    const HpaeProcessorType sceneType = preNodeInfo.sceneType;
+    
+    // update mixed node streamType and streamUsage
+    auto mixerNode = SafeGetMap(sceneMixerMap_, sceneType);
+    CHECK_AND_RETURN_LOG(mixerNode != nullptr, "the sceneType<%{public}d> is disconnect<Mixer>", sceneType);
+    HpaeNodeInfo mixerNodeInfo = mixerNode->GetNodeInfo();
+    mixerNodeInfo.streamType = preNodeInfo.streamType;
+    mixerNodeInfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
+    mixerNode->SetNodeInfo(mixerNodeInfo);
+
+    // update convert node streamType and streamUsage
+    auto convertNode = SafeGetMap(sceneConverterMap_, sceneType);
+    CHECK_AND_RETURN_LOG(convertNode != nullptr, "the sceneType<%{public}d> is disconnect<Converter>", sceneType);
+    HpaeNodeInfo converterNodeInfo = convertNode->GetNodeInfo();
+    converterNodeInfo.streamType = preNodeInfo.streamType;
+    converterNodeInfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
+    convertNode->SetNodeInfo(converterNodeInfo);
+
+    const HpaeNodeInfo &printNode = sceneMixerMap_[sceneType]->GetNodeInfo();
+    AUDIO_INFO_LOG("update stream info %{public}d type %{public}d usage %{public}d", printNode.nodeId,
+        printNode.streamType, printNode.effectInfo.streamUsage);
 }
 
 void HpaeRemoteOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
@@ -264,6 +274,17 @@ HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, cons
 int32_t HpaeRemoteOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
+}
+
+uint64_t HpaeRemoteOutputCluster::GetLatency(HpaeProcessorType sceneType)
+{
+    uint64_t latency = 0;
+
+    latency += SafeGetMap(sceneConverterMap_, sceneType) ? sceneConverterMap_[sceneType]->GetLatency() : 0;
+
+    latency += SafeGetMap(sceneMixerMap_, sceneType) ? sceneMixerMap_[sceneType]->GetLatency() : 0;
+
+    return latency;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

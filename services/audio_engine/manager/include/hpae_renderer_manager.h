@@ -85,7 +85,7 @@ public:
 
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
@@ -103,6 +103,7 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
+    bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
     bool isSplitProcessorType(HpaeProcessorType sceneType);
@@ -141,10 +142,18 @@ private:
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
-    void UpdateStreamType(const std::shared_ptr<HpaeNode> sourceNode, std::shared_ptr<HpaeNode> dstNode);
+    /**
+     * @brief Refresh the usage and type of the cluster corresponding to the given scene type.
+     * @param sceneType scene type of the target cluster.
+     * @return errCode
+     */
+    int32_t UpdateClusterStreamInfo(HpaeProcessorType sceneType);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
+    bool QueryOneStreamUnderrun();
+    void DeleteNodesByTraversal(uint32_t sessionId);
 
 private:
+
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
@@ -161,6 +170,9 @@ private:
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
+    std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
+
+    int64_t lastOnUnderrunTime_ = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

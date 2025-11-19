@@ -22,7 +22,6 @@
     *ConfigPolicyProvider*;
     *NotifyStreamVolumeChanged*;
     *GetMaxAmplitude*;
-    *ResetAudioEndpoint*;
     *GetRendererBySessionID*;
     *RestoreSession*;
     *OnDataLinkConnectionUpdate*;
@@ -83,11 +82,8 @@
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
-    *UpdateSwitchStreamMap*;
-    *UpdateBackgroundCaptureMap*;
-    *SendInterruptEventToAudioServer*;
-    *SendInterruptEventToAudioService*;
     *GetPrivacyType*;
+    *GetEndPointByType*;
   local:
     *;
 };

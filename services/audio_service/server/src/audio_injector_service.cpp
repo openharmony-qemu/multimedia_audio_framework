@@ -12,23 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioInjectorService"
+#endif
+
 #include "audio_injector_service.h"
+#include "i_hpae_manager.h"
+#include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioInjectorService::AudioInjectorService()
 {
-}
-
-int32_t AudioInjectorService::UpdateAudioInfo(AudioModuleInfo &info)
-{
-    return 0;
+    sinkPortIndex_ = UINT32_INVALID_VALUE;
 }
 
 int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
     AudioStreamInfo &streamInfo)
 {
-    return 0;
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR, "buffer is null");
+    return HPAE::IHpaeManager::GetHpaeManager().PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
 void AudioInjectorService::SetSinkPortIdx(uint32_t sinkPortIdx)

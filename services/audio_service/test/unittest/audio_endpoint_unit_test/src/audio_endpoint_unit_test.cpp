@@ -26,6 +26,7 @@
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
+#include "audio_endpoint_sink_adapter.cpp"
 
 using namespace testing::ext;
 
@@ -33,39 +34,6 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 constexpr uint64_t AUDIO_ENDPOINT_ID = 123;
-
-// Mock classes for dependencies
-class MockAudioInjector : public AudioInjector {
-public:
-    MOCK_METHOD(uint32_t, GetSinkPortIdx, (), (const, override));
-    MOCK_METHOD(AudioModuleInfo, GetModuleInfo, (), (const, override));
-    MOCK_METHOD(void, UpdateAudioInfo, (const AudioModuleInfo& moduleInfo), (override));
-    MOCK_METHOD(int32_t, PeekAudioData, (uint32_t, uint8_t*, size_t, AudioStreamInfo&), (override));
-    static std::shared_ptr<MockAudioInjector> GetMockInstance()
-    {
-        static auto instance = std::make_shared<MockAudioInjector>();
-        return instance;
-    }
-};
-
-class MockFormatConverter {
-public:
-    MOCK_METHOD(int32_t, S16StereoToF32Stereo, (const BufferDesc&, const BufferDesc&), ());
-    static std::shared_ptr<MockFormatConverter> GetMockInstance();
-};
-
-class MockHPAE {
-public:
-    MOCK_METHOD(void, SimdPointByPointAdd, (size_t, float*, float*, float*), ());
-    static std::shared_ptr<MockHPAE> GetMockInstance();
-};
-
-class MockAudioLimiter : public AudioLimiter {
-public:
-    MOCK_METHOD(int32_t, SetConfig, (size_t, size_t, AudioSamplingRate, AudioChannel), (override));
-    MOCK_METHOD(int32_t, Process, (int32_t, float*, float*), (override));
-    static std::shared_ptr<MockAudioLimiter> GetMockInstance();
-};
 
 void AudioEndpointUnitTest::SetUpTestCase(void)
 {
@@ -156,10 +124,9 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
     audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
-    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
-    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo, buffer);
+    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo);
     return processStream;
 }
 
@@ -882,6 +849,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_001, TestSize.Level1)
     audioEndpointInner->latencyMeasEnabled_ = false;
     uint8_t buffer[10] = {0};
     audioEndpointInner->CheckRecordSignal(buffer, 10);
+    EXPECT_FALSE(audioEndpointInner->signalDetected_);
 }
 
 /*
@@ -897,22 +865,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_002, TestSize.Level1)
     audioEndpointInner->signalDetectAgent_ = nullptr;
     uint8_t buffer[10] = {0};
     audioEndpointInner->CheckRecordSignal(buffer, 10);
-}
-
-/*
- * @tc.name  : Test CheckRecordSignal API
- * @tc.type  : FUNC
- * @tc.number: CheckRecordSignal_003
- * @tc.desc  : Test CheckRecordSignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->fastCaptureId_ = 1;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckRecordSignal(buffer, 10);
+    EXPECT_FALSE(audioEndpointInner->signalDetected_);
 }
 
 /*
@@ -1392,14 +1345,7 @@ HWTEST(AudioEndpointInnerUnitTest, AddCaptureInjector_001, TestSize.Level1)
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.channels = STEREO;
-
-    // Mock injector to return expected values
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetSinkPortIdx())
-        .WillOnce(Return(1234));
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetModuleInfo())
-        .WillOnce(Return(AudioModuleInfo{}));
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), UpdateAudioInfo(_))
-        .Times(1);
+    audioEndpointInner->injector_.sinkPortIndex_ = 1234;
 
     uint32_t sinkPortIndex = 1234;
     SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
@@ -1540,12 +1486,7 @@ HWTEST(AudioEndpointInnerUnitTest, AddRemoveCaptureInjector_001, TestSize.Level1
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.channels = STEREO;
-
-    // Mock injector calls
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetSinkPortIdx())
-        .WillRepeatedly(Return(1234));
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetModuleInfo())
-        .WillRepeatedly(Return(AudioModuleInfo{}));
+    audioEndpointInner->injector_.sinkPortIndex_ = 1234;
 
     uint32_t sinkPortIndex = 1234;
     SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
@@ -1624,30 +1565,11 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_003, TestSize.Level1)
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
 
-    // Mock all external dependencies
     SetInjectEnable(true);
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
-        .Times(2)
-        .WillRepeatedly(Return(SUCCESS));
-
-    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
-        .Times(1);
-
-    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), SetConfig(_, _, _, _))
-        .WillOnce(Return(SUCCESS));
-
-    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), Process(_, _, _))
-        .WillOnce(Return(SUCCESS));
 
     // Create test buffer
-    std::vector<uint8_t> testBuffer(1024, 0);
-    BufferDesc readBuf = {testBuffer.data(), testBuffer.size()};
-
+    BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
 
     // Should complete processing successfully
@@ -1667,11 +1589,13 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_004, TestSize.Level1)
     // Set up required state
     audioEndpointInner->isNeedInject_ = true;
     audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
+    audioEndpointInner->fastCaptureId_ = 1;
 
     SetInjectEnable(true);
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
-        .WillOnce(Return(ERROR)); // Peek fails
 
     BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
@@ -1693,17 +1617,14 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
     // Set up required state
     audioEndpointInner->isNeedInject_ = true;
     audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
-    audioEndpointInner->dstStreamInfo_.channels = MONO; // Different from renderer
+    audioEndpointInner->dstStreamInfo_.channels = STEREO; // Different from renderer
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
-
+    audioEndpointInner->fastCaptureId_ = 1;
+    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(1);
+    audioEndpointInner->limiter_->algoFrameLen_ = 1;
     SetInjectEnable(true);
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
-        .WillOnce(DoAll(
-            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
-            Return(SUCCESS)
-        ));
 
     BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
@@ -1713,90 +1634,484 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.name  : Test IsOtherEndpointRunning API when no other endpoints are running
  * @tc.type  : FUNC
- * @tc.number: InjectToCaptureDataProc_006
- * @tc.desc  : Test InjectToCaptureDataProc with limiter creation failure.
+ * @tc.number: IsOtherEndpointRunning_001
+ * @tc.desc  : Test IsOtherEndpointRunning when no other endpoints are present
  */
-HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_006, TestSize.Level1)
+HWTEST_F(AudioEndpointUnitTest, IsOtherEndpointRunning_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
-
-    // Set up required state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
-    audioEndpointInner->dstStreamInfo_.channels = STEREO;
-    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
-    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
-
-    SetInjectEnable(true);
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
-        .WillOnce(DoAll(
-            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
-            Return(SUCCESS)
-        ));
-
-    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
-        .Times(2)
-        .WillRepeatedly(Return(SUCCESS));
-
-    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
-        .Times(1);
-
-    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), SetConfig(_, _, _, _))
-        .WillOnce(Return(ERROR)); // Limiter config fails
-
-    BufferDesc readBuf = {nullptr, 1024};
-    audioEndpointInner->InjectToCaptureDataProc(readBuf);
-
-    // Should return early due to limiter failure
-    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    EXPECT_FALSE(checker->IsOtherEndpointRunning(fastRenderId, key));
 }
 
 /**
- * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.name  : Test IsOtherEndpointRunning API when other endpoints is IDEL
  * @tc.type  : FUNC
- * @tc.number: InjectToCaptureDataProc_007
- * @tc.desc  : Test InjectToCaptureDataProc with limiter processing failure.
+ * @tc.number: IsOtherEndpointRunning_002
+ * @tc.desc  : Test IsOtherEndpointRunning when another endpoints is IDEL
  */
-HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_007, TestSize.Level1)
+HWTEST_F(AudioEndpointUnitTest, IsOtherEndpointRunning_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpointSinkAdapter::EndpointName  otherKey = "other_key";
+
+    checker->AddOperation(fastRenderId, otherKey, AudioEndpoint::EndpointStatus::IDEL);
+    EXPECT_FALSE(checker->IsOtherEndpointRunning(fastRenderId, key));
+}
+
+/**
+ * @tc.name  : Test IsOtherEndpointRunning API when other endpoints is UNLINKED
+ * @tc.type  : FUNC
+ * @tc.number: IsOtherEndpointRunning_003
+ * @tc.desc  : Test IsOtherEndpointRunning when another endpoints is UNLINKED
+ */
+HWTEST_F(AudioEndpointUnitTest, IsOtherEndpointRunning_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpointSinkAdapter::EndpointName  otherKey = "other_key";
+
+    checker->AddOperation(fastRenderId, otherKey, AudioEndpoint::EndpointStatus::UNLINKED);
+    EXPECT_FALSE(checker->IsOtherEndpointRunning(fastRenderId, key));
+}
+
+/**
+ * @tc.name  : Test IsOtherEndpointRunning API when other endpoints is RUNNING
+ * @tc.type  : FUNC
+ * @tc.number: IsOtherEndpointRunning_004
+ * @tc.desc  : Test IsOtherEndpointRunning when another endpoints is RUNNING
+ */
+HWTEST_F(AudioEndpointUnitTest, IsOtherEndpointRunning_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpointSinkAdapter::EndpointName  otherKey = "other_key";
+
+    checker->AddOperation(fastRenderId, key, AudioEndpoint::EndpointStatus::IDEL);
+    checker->AddOperation(fastRenderId, otherKey, AudioEndpoint::EndpointStatus::RUNNING);
+    EXPECT_TRUE(checker->IsOtherEndpointRunning(fastRenderId, key));
+}
+
+/**
+ * @tc.name  : Test UpdateStatus API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStatus_001
+ * @tc.desc  : Test UpdateStatus to ensure it updates the status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateStatus_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpoint::EndpointStatus initialStatus = AudioEndpoint::EndpointStatus::RUNNING;
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::STOPPED;
+
+    checker->AddOperation(fastRenderId, key, initialStatus);
+    checker->UpdateStatus(fastRenderId, key, newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == key) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateStatus API for IDEL status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStatus_002
+ * @tc.desc  : Test UpdateStatus to ensure it updates to IDEL status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateStatus_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpoint::EndpointStatus initialStatus = AudioEndpoint::EndpointStatus::RUNNING;
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::IDEL;
+
+    checker->AddOperation(fastRenderId, key, initialStatus);
+    checker->UpdateStatus(fastRenderId, key, newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == key) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateStatus API for STARTING status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStatus_003
+ * @tc.desc  : Test UpdateStatus to ensure it updates to STARTING status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateStatus_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpoint::EndpointStatus initialStatus = AudioEndpoint::EndpointStatus::RUNNING;
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::STARTING;
+
+    checker->AddOperation(fastRenderId, key, initialStatus);
+    checker->UpdateStatus(fastRenderId, key, newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == key) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateStatus API for UNLINKED status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStatus_004
+ * @tc.desc  : Test UpdateStatus to ensure it updates to UNLINKED status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateStatus_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    AudioEndpointSinkAdapter::EndpointName  key = "test_key";
+    AudioEndpoint::EndpointStatus initialStatus = AudioEndpoint::EndpointStatus::RUNNING;
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::UNLINKED;
+
+    checker->AddOperation(fastRenderId, key, initialStatus);
+    checker->UpdateStatus(fastRenderId, key, newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == key) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateEndpointStatus API for RUNNING status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateEndpointStatus_001
+ * @tc.desc  : Test UpdateEndpointStatus to ensure it updates to RUNNING status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateEndpointStatus_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    std::string endpointName = "test_endpoint";
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::RUNNING;
+
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->fastRenderId_ = fastRenderId;
+    audioEndpointInner->UpdateEndpointStatus(newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == endpointName) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateEndpointStatus API for IDEL status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateEndpointStatus_002
+ * @tc.desc  : Test UpdateEndpointStatus to ensure it updates to IDEL status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateEndpointStatus_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    std::string endpointName = "test_endpoint";
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::IDEL;
+
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->fastRenderId_ = fastRenderId;
+    audioEndpointInner->UpdateEndpointStatus(newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == endpointName) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateEndpointStatus API for STARTING status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateEndpointStatus_003
+ * @tc.desc  : Test UpdateEndpointStatus to ensure it updates to STARTING status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateEndpointStatus_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    std::string endpointName = "test_endpoint";
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::STARTING;
+
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->fastRenderId_ = fastRenderId;
+    audioEndpointInner->UpdateEndpointStatus(newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == endpointName) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @tc.name  : Test UpdateEndpointStatus API for UNLINKED status
+ * @tc.type  : FUNC
+ * @tc.number: UpdateEndpointStatus_004
+ * @tc.desc  : Test UpdateEndpointStatus to ensure it updates to UNLINKED status correctly
+ */
+HWTEST_F(AudioEndpointUnitTest, UpdateEndpointStatus_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
+    uint32_t fastRenderId = 123;
+    std::string endpointName = "test_endpoint";
+    AudioEndpoint::EndpointStatus newStatus = AudioEndpoint::EndpointStatus::UNLINKED;
+
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner =
+        CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    EXPECT_NE(nullptr, audioEndpointInner);
+
+    audioEndpointInner->fastRenderId_ = fastRenderId;
+    audioEndpointInner->UpdateEndpointStatus(newStatus);
+
+    std::lock_guard<std::mutex> lock(checker->checkerOperationMapMutex_);
+    auto fastRenderIt = checker->operationMap.find(fastRenderId);
+    EXPECT_NE(fastRenderIt, checker->operationMap.end());
+    for (const auto &pair : fastRenderIt->second) {
+        if (pair.first == endpointName) {
+            EXPECT_EQ(pair.second, newStatus);
+            break;
+        }
+    }
+}
+
+/**
+ * @ tc.name : Test MixRendererAndCaptureData Function
+ * @ tc.type : FUNC
+ * @ tc.number: MixRendererAndCaptureData_001
+ * @ tc.desc : Test MixRendererAndCaptureData function with basic input data.
+ */
+HWTEST(AudioEndpointInnerUnitTest, MixRendererAndCaptureData_001, TestSize.Level1)
+{
+    const size_t bufLength = sizeof(float); // 1 float
+    std::vector<uint8_t> rendererConvData(bufLength, 0);
+    BufferDesc rendererConvDesc;
+    rendererConvDesc.bufLength = bufLength;
+    rendererConvDesc.buffer = rendererConvData.data();
+    float* leftBuff = reinterpret_cast<float*>(rendererConvDesc.buffer);
+    leftBuff[0] = 0.5f;
+
+    // Initialize captureConvDesc
+    std::vector<uint8_t> captureConvData(bufLength, 0);
+    BufferDesc captureConvDesc;
+    captureConvDesc.bufLength = bufLength;
+    captureConvDesc.buffer = captureConvData.data();
+    float* rightBuff = reinterpret_cast<float*>(captureConvDesc.buffer);
+    rightBuff[0] = 0.3f;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+    std::vector<uint8_t> injectPeekBuffer(4);
+    endpoint->injectPeekBuffer_ = injectPeekBuffer;
+    float* mixBuff = endpoint->MixRendererAndCaptureData(bufLength, rendererConvDesc, captureConvDesc);
+
+    EXPECT_EQ(mixBuff[0], 0.8f);
+}
+
+/**
+ * @tc.name : Test CreateAndCfgLimiter API
+ * @tc.type : FUNC
+ * @tc.number: CreateAndCfgLimiter_001
+ * @tc.desc : Test CreateAndCfgLimiter function with valid parameters.
+ */
+HWTEST(AudioEndpointInnerUnitTest, CreateAndCfgLimiter_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
 
-    // Set up required state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    // Set up initial state
+    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(HDI_INVALID_ID);
+
+    const size_t bufLength = 1024;
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.channels = STEREO;
+
+    int32_t result = audioEndpointInner->CreateAndCfgLimiter(bufLength, streamInfo);
+
+    // Verify the result
+    EXPECT_EQ(result, SUCCESS);
+    audioEndpointInner->limiter_ = nullptr;
+    result = audioEndpointInner->CreateAndCfgLimiter(bufLength, streamInfo);
+    // Verify limiter configuration
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+@tc.name : Test ConvertDataFormat API
+@tc.type : FUNC
+@tc.number: ConvertDataFormat_001
+@tc.desc : Test ConvertDataFormat function with valid parameters.
+*/
+HWTEST(AudioEndpointInnerUnitTest, ConvertDataFormat_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
     audioEndpointInner->dstStreamInfo_.channels = STEREO;
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
-    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(1); // Limiter already exists
+    audioEndpointInner->rendererConvBuffer_.assign(1024, 0);
+    audioEndpointInner->captureConvBuffer_.assign(1024, 0);
+    // Create input BufferDesc
+    const size_t bufLength = 4 * sizeof(int16_t); // 4 samples
+    BufferDesc readBuf = {new uint8_t[bufLength], bufLength};
+    BufferDesc rendererOrgDesc = {new uint8_t[bufLength], bufLength};
+    BufferDesc rendererConvDesc;
+    BufferDesc captureConvDesc;
 
-    SetInjectEnable(true);
-    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
-        .WillOnce(DoAll(
-            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
-            Return(SUCCESS)
-        ));
+    // Set up stream info
+    AudioStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
 
-    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
-        .Times(2)
-        .WillRepeatedly(Return(SUCCESS));
+    // Call the function
+    int32_t result = audioEndpointInner->ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo,
+        rendererConvDesc, captureConvDesc);
 
-    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
-        .Times(1);
+    // Verify the result
+    EXPECT_EQ(result, SUCCESS);
 
-    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), Process(_, _, _))
-        .WillOnce(Return(ERROR)); // Limiter process fails
+    // Cleanup
+    delete[] readBuf.buffer;
+    delete[] rendererOrgDesc.buffer;
+}
 
-    BufferDesc readBuf = {nullptr, 1024};
-    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_001
+ * @tc.desc  : When isStarted_ is false, function should return directly
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_001, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 1;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
+}
 
-    // Should return early due to limiter process failure
-    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_002
+ * @tc.desc  : When isStarted_ is true but syncInfoSize_ is zero
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_002, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 0;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
+}
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_003
+ * @tc.desc  : When isStarted_ is true and syncInfoSize_ is non-zero
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 1;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(audioEndpointInner->lastWriteTime_, currentTime);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -193,18 +193,8 @@ int32_t AudioEnhanceChain::ProcessSetInputDevice(const std::string &inputDevice,
     algoParam_.preDevice = inputDevice;
     algoParam_.preDeviceName = deviceName;
     AUDIO_INFO_LOG("update input device %{public}s name %{public}s", inputDevice.c_str(), deviceName.c_str());
-    AudioEffectTransInfo cmdInfo = {};
-    AudioEffectTransInfo replyInfo = {};
-    for (const auto &module : enhanceModules_) {
-        auto setParaCmdRet = SetEnhanceParamToHandle(module.enhanceHandle);
-        CHECK_AND_RETURN_RET_LOG(setParaCmdRet == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
-        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(initCmdRet == 0, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
-    }
 
-    return SUCCESS;
+    return ProcessSetEnhanceParam();
 }
 
 int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const std::string &deviceName)
@@ -224,6 +214,30 @@ int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const 
     return SUCCESS;
 }
 
+int32_t AudioEnhanceChain::ProcessSetPowerState(uint32_t powerState)
+{
+    if (powerState == algoParam_.powerState) {
+        AUDIO_INFO_LOG("no need update power state %{public}u", powerState);
+        return SUCCESS;
+    }
+    algoParam_.powerState = powerState;
+    AUDIO_INFO_LOG("update power state %{public}u", powerState);
+
+    return ProcessSetEnhanceParam();
+}
+
+int32_t AudioEnhanceChain::SetPowerState(uint32_t powerState)
+{
+    auto task = [self = weak_from_this(), powerState]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetPowerState(powerState);
+        }
+    };
+
+    ScheduleAudioTask(task);
+    return SUCCESS;
+}
+
 int32_t AudioEnhanceChain::ProcessSetFoldState(uint32_t foldState)
 {
     if (foldState == algoParam_.foldState) {
@@ -233,18 +247,7 @@ int32_t AudioEnhanceChain::ProcessSetFoldState(uint32_t foldState)
     algoParam_.foldState = foldState;
     AUDIO_INFO_LOG("update fold state %{public}u", foldState);
 
-    AudioEffectTransInfo cmdInfo = {};
-    AudioEffectTransInfo replyInfo = {};
-    for (const auto &module : enhanceModules_) {
-        auto setParaCmdRet = SetEnhanceParamToHandle(module.enhanceHandle);
-        CHECK_AND_RETURN_RET_LOG(setParaCmdRet == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
-        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(initCmdRet == 0, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
-    }
-
-    return SUCCESS;
+    return ProcessSetEnhanceParam();
 }
 
 int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
@@ -256,15 +259,18 @@ int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
     };
 
     ScheduleAudioTask(task);
-
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::ProcessSetEnhanceParam(bool mute, uint32_t systemVol)
+int32_t AudioEnhanceChain::ProcessSetVolumeParam(bool mute, uint32_t systemVol)
 {
     algoParam_.muteInfo = mute;
     algoParam_.volumeInfo = systemVol;
+    return ProcessSetEnhanceParam();
+}
 
+int32_t AudioEnhanceChain::ProcessSetEnhanceParam()
+{
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     for (const auto &module : enhanceModules_) {
@@ -283,12 +289,11 @@ int32_t AudioEnhanceChain::SetEnhanceParam(bool mute, uint32_t systemVol)
 {
     auto task = [self = weak_from_this(), mute, systemVol]() {
         if (auto chain = self.lock(); chain != nullptr) {
-            chain->ProcessSetEnhanceParam(mute, systemVol);
+            chain->ProcessSetVolumeParam(mute, systemVol);
         }
     };
 
     ScheduleAudioTask(task);
-
     return SUCCESS;
 }
 
@@ -297,8 +302,8 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.foldState,
-        algoParam_.preDevice.c_str(), algoParam_.postDevice.c_str(), algoParam_.sceneType.c_str(),
-        algoParam_.preDeviceName.c_str()};
+        algoParam_.powerState, algoParam_.preDevice.c_str(), algoParam_.postDevice.c_str(),
+        algoParam_.sceneType.c_str(), algoParam_.preDeviceName.c_str()};
     cmdInfo.data = static_cast<void *>(&setParam);
     cmdInfo.size = sizeof(setParam);
     return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);

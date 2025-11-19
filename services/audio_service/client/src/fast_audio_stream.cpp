@@ -172,7 +172,7 @@ void FastAudioStream::InitCallbackHandler()
 void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64, eventCode, data);
+    AUDIO_INFO_LOG("code: %{public}u, data: %{public}" PRId64, eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
@@ -611,7 +611,7 @@ int32_t FastAudioStream::SetSpeed(float speed)
 
 int32_t FastAudioStream::SetPitch(float pitch)
 {
-    AUDIO_ERR_LOG("SetPitch is not supported");
+    AUDIO_ERR_LOG("not supported");
     return ERR_OPERATION_FAILED;
 }
 
@@ -649,6 +649,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         return;
     }
 
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->RegisterThreadPriority(tid,
         AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
@@ -656,7 +657,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_PRERELEASE_LOGI("StartAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
         false, "Illegal state:%{public}u", state_);
 
@@ -693,7 +694,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_PRERELEASE_LOGI("PauseAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -744,7 +745,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_PRERELEASE_LOGI("FlushAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     return true;
 }
 
@@ -1125,7 +1126,7 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
     int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error.");
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;
 }
@@ -1170,29 +1171,33 @@ int32_t FastAudioStream::SetCallbacksWhenRestore()
 
 void FastAudioStream::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
-    if (spkProcClientCb_ == nullptr && micProcClientCb_ == nullptr) {
+    if (!IsDataCallbackSet()) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
         captureMode_ = CAPTURE_MODE_NORMAL;
         return NEED_RESTORE_TO_NORMAL;
     }
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     return processClient_->CheckRestoreStatus();
 }
 
 RestoreStatus FastAudioStream::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     return processClient_->SetRestoreStatus(restoreStatus);
 }
 
@@ -1208,6 +1213,13 @@ void FastAudioStream::SetCallStartByUserTid(pid_t tid)
 {
     std::lock_guard lock(lastCallStartByUserTidMutex_);
     lastCallStartByUserTid_ = tid;
+}
+
+int32_t FastAudioStream::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR, "processClient_ is null");
+    processClient_->SetRebuildFlag();
+    return SUCCESS;
 }
 
 void FastAudioStream::SetCallbackLoopTid(int32_t tid)
@@ -1247,7 +1259,16 @@ bool FastAudioStream::GetStopFlag() const
 bool FastAudioStream::IsRestoreNeeded()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    // FastAudioStream only support callback mode, FastAudioStream without callback should be restored
+    if (!IsDataCallbackSet()) {
+        return true;
+    }
     return processClient_->IsRestoreNeeded();
+}
+
+bool FastAudioStream::IsDataCallbackSet() const
+{
+    return spkProcClientCb_ != nullptr || micProcClientCb_ != nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

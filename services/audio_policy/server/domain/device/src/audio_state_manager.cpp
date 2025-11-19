@@ -45,7 +45,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     const int32_t uid, const std::string caller)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     bool ret = false;
     int32_t callerUid = uid;
     auto callerPid = IPCSkeleton::GetCallingPid();
@@ -82,7 +82,7 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
 
         RemoveForcedDeviceMapData(callerUid);
         currentDeviceMap = {{callerUid, deviceDescriptor}};
-        
+
         forcedDeviceMapList_.push_back(currentDeviceMap);
     }
 }
@@ -241,6 +241,18 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevic
     return devDesc;
 }
 
+void AudioStateManager::SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    preferredRecognitionCaptureDevice_ = desc;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCaptureDevice()
+{
+    lock_guard<std::mutex> lock(mutex_);
+    return preferredRecognitionCaptureDevice_;
+}
+
 void AudioStateManager::UpdatePreferredMediaRenderDeviceConnectState(ConnectState state)
 {
     CHECK_AND_RETURN_LOG(preferredMediaRenderDevice_ != nullptr, "preferredMediaRenderDevice_ is nullptr");
@@ -275,7 +287,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
         }
     } else if (usage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        vector<shared_ptr<AudioDeviceDescriptor>> devices;
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
@@ -311,12 +322,14 @@ void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
 
 int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     audioClientInfoMgrCallback_ = callback;
     return 0;
 }
 
 int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     audioVKBInfoMgrCallback_ = callback;
     AUDIO_INFO_LOG("VKB audioVKBInfoMgrCallback_ is nullptr:%{public}s",
         audioVKBInfoMgrCallback_ == nullptr ? "T" : "F");
@@ -325,10 +338,11 @@ int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyM
 
 int32_t AudioStateManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (audioVKBInfoMgrCallback_ != nullptr) {
         audioVKBInfoMgrCallback_->OnCheckVKBInfo(bundleName, isValid);
     }
-    AUDIO_INFO_LOG("VKB isVKB:%{public}s", isValid ? "T" : "F");
+    AUDIO_INFO_LOG("isVKB:%{public}s", isValid ? "T" : "F");
     return 0;
 }
 

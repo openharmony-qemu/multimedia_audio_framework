@@ -106,6 +106,8 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
+    int32_t SetTarget(RenderTarget target) override;
+    RenderTarget GetTarget() const override;
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -163,7 +165,7 @@ public:
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
-
+        
         audioStreamParams.format = params.sampleFormat;
         audioStreamParams.samplingRate = params.sampleRate;
         audioStreamParams.customSampleRate = params.customSampleRate;
@@ -214,6 +216,8 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);
+    bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
+        RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();
@@ -224,7 +228,7 @@ private:
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackgroud();
+    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
     RendererState GetStatusInner();
@@ -245,6 +249,7 @@ private:
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
+    void SetInSwitchingFlag(bool inSwitchingFlag);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -282,7 +287,7 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
 
     std::vector<uint32_t> usedSessionId_ = {};
-    std::mutex silentModeAndMixWithOthersMutex_;
+    mutable std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
@@ -293,6 +298,9 @@ private:
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
     bool releaseFlag_ = false;
+    std::condition_variable taskLoopCv_;
+    std::mutex inSwitchingMtx_;
+    bool inSwitchingFlag_ = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

@@ -133,6 +133,7 @@ struct HpaeDfxNodeInfo {
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;
+    std::string deviceName;
     std::string nodeName;
     SourceType sourceType;
 };
@@ -140,12 +141,13 @@ struct HpaeDfxNodeInfo {
 class INodeCallback {
 public:
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
-    virtual void OnFadeDone(uint32_t sessionId, IOperation operation){};
+    virtual void OnFadeDone(uint32_t sessionId){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
     virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
-    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};
+    virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo){};
+    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
 };
 
@@ -155,10 +157,10 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
     HpaeSourceBufferType sourceBufferType = HpaeSourceBufferType::HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSourceInputNodeType sourceInputNodeType = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
 
-    HpaeSplitStreamType GetSplitStreamType() const
+    SplitStreamType GetSplitStreamType() const
     {
         static const auto splitTypeMap = [] {
-            std::unordered_map<HpaeProcessorType, HpaeSplitStreamType> map;
+            std::unordered_map<HpaeProcessorType, SplitStreamType> map;
             map[HPAE_SCENE_SPLIT_NAVIGATION] = STREAM_TYPE_NAVIGATION;
             map[HPAE_SCENE_SPLIT_COMMUNICATION] = STREAM_TYPE_COMMUNICATION;
             map[HPAE_SCENE_SPLIT_MEDIA] = STREAM_TYPE_MEDIA;

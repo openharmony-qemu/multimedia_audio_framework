@@ -66,7 +66,7 @@ public:
     int32_t UnsetOffloadMode() override;
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
-    int32_t OffloadSetVolume(float volume) override;
+    int32_t OffloadSetVolume() override;
     int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;
@@ -81,12 +81,15 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+
+    bool OnQueryUnderrun() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
+    uint32_t GetSinkLatency(); // unit ms
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
@@ -114,14 +117,17 @@ private:
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
+
     // latency position timeStamp
-    std::shared_mutex latencyMutex_;
+    std::shared_mutex latencyMutex_; // lock for variables related to position, latency, timestamp
     uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
+    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
+
     std::string deviceClass_;
     std::string deviceNetId_;
     // record latency
@@ -134,6 +140,7 @@ private:
     // buffer mode, write or callback end
 
     std::atomic<size_t> mutePaddingFrames_ = 0;
+    bool noWaitDataFlag_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -35,6 +35,7 @@
 #include "manager/hdi_monitor.h"
 #include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -139,6 +140,11 @@ void AudioCaptureSource::DeInit(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    if (audioCapture_ != nullptr && !attr_.isPrimarySinkExist_) {
+        struct AudioSceneDescriptor sceneDesc;
+        InitSceneDesc(sceneDesc, AUDIO_SCENE_DEFAULT);
+        audioCapture_->SelectScene(audioCapture_, &sceneDesc);
+    }
     sourceInited_ = false;
     started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -383,6 +389,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         return NonblockingCaptureFrameWithEc(fdescEc, replyBytesEc);
     }
 
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
     int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
@@ -390,6 +397,9 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         AUDIO_ERR_LOG("fail, ret: %{public}x", ret);
         AudioCaptureFrameInfoFree(&frameInfo, false);
         return ERR_READ_FAILED;
+    }
+    if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
+        audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
     }
 
     if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
@@ -955,6 +965,13 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+        if (address_.empty()) {
+            AUDIO_INFO_LOG("use attr desc instead");
+            deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
+        } else {
+            deviceDesc.desc = const_cast<char *>(address_.c_str());
+        }
+        return;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
         if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
             deviceDesc.pins = PIN_IN_PENCIL;
@@ -1024,7 +1041,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create capture, halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
+    HILOG_COMM_INFO("halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
         "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
         param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
@@ -1137,7 +1154,6 @@ void AudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             captureFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }
@@ -1323,5 +1339,20 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
     }
 }
 
+int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
+{
+    Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
+    std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "deviceManager is nullptr");
+    std::string infoCond = std::string("get_usb_status#C") + GetField(address, "card", ';') +
+        "D" + GetField(address, "device", ';');
+    std::string deviceInfo = deviceManager->GetAudioParameter(adapterNameCase_, USB_DEVICE, infoCond);
+    std::string status = GetField(deviceInfo, "status", ',');
+    int32_t ret = 0;
+    StringConverter(status, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

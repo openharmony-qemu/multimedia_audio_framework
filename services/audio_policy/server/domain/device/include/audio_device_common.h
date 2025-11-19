@@ -48,6 +48,7 @@
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
 #include "audio_ec_manager.h"
+#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,7 +81,7 @@ public:
     void UpdateConnectedDevicesWhenConnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descForCb);
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume = true);
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
     void FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -104,7 +105,7 @@ public:
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-        ConnectState connectState);
+        ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal();
@@ -248,7 +249,7 @@ private:
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
     bool isHeadsetUnpluggedToSpkOrEpFlag_ = false;
-    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    std::vector<std::pair<uint32_t, AudioStreamType>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

@@ -33,8 +33,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamU
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
-            "activeScoDevice is nullptr");
+        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr && activeScoDevice->connectState_ != SUSPEND_CONNECTED &&
+            !activeScoDevice->exceptionFlag_, make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
     }
@@ -65,7 +65,56 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
 vector<std::shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
+    bool hasScoState = AudioDeviceManager::GetAudioDeviceManager().GetScoState();
+    shared_ptr<AudioDeviceDescriptor> activeScoDevice = nullptr;
+    if (hasScoState) {
+        std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
+        activeScoDevice = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+            DeviceRole::OUTPUT_DEVICE);
+    }
+    
+    auto defaultDevice = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
+    return DecideRingRenderDevices(hasScoState, activeScoDevice, streamUsage,
+        curRingerMode, defaultDevice);
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevices(
+    bool hasScoState,
+    const shared_ptr<AudioDeviceDescriptor> &activeScoDevice,
+    StreamUsage streamUsage,
+    AudioRingerMode curRingerMode,
+    const shared_ptr<AudioDeviceDescriptor> &defaultDevice
+    )
+{
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    if (hasScoState && activeScoDevice != nullptr && activeScoDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d", activeScoDevice->deviceType_);
+        descs.push_back(activeScoDevice);
+    }
+    bool needDefaultDevice = false;
+    switch (streamUsage) {
+        case STREAM_USAGE_ALARM:
+            needDefaultDevice = true;
+            break;
+        case STREAM_USAGE_VOICE_RINGTONE:
+        case  STREAM_USAGE_RINGTONE:
+            if (curRingerMode == RINGER_MODE_NORMAL) {
+                needDefaultDevice = true;
+            }
+            break;
+        default:
+            break;
+    }
+    if (needDefaultDevice && defaultDevice != nullptr && defaultDevice->deviceType_ != DEVICE_TYPE_NONE) {
+        if (descs.empty() || descs[0]->deviceId_ != defaultDevice->deviceId_) {
+            AUDIO_INFO_LOG("Adding default device deviceType=%{public}d", defaultDevice->deviceType_);
+            descs.push_back(defaultDevice);
+        } else {
+            AUDIO_INFO_LOG("Default device found, fallback to empty descriptor.");
+        }
+    }
+    
     return descs;
 }
 
@@ -76,8 +125,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
-            "activeScoDevice is nullptr");
+        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr && activeScoDevice->connectState_ != SUSPEND_CONNECTED &&
+            !activeScoDevice->exceptionFlag_, make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
     }

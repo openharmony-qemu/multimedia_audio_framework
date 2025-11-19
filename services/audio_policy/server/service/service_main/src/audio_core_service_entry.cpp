@@ -237,11 +237,18 @@ void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex servi
     AUDIO_WARNING_LOG("unload serviceIndex [%{public}d], should not be here", serviceIndex);
 }
 
-void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock");
-    coreService_->OnForcedDeviceSelected(devType, macAddress);
+    coreService_->OnForcedDeviceSelected(devType, macAddress, filter);
+}
+
+void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
@@ -579,7 +586,6 @@ int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(cons
 
 uint32_t AudioCoreService::EventEntry::GetPaIndexByPortName(const std::string &portName)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPaIndexByPortName(portName);
 }
 
@@ -600,6 +606,61 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
     coreService_->isOffloadInRelease_[type].store(false);
     return SUCCESS;
+}
+
+int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
+    uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "Injector::coreService_ is nullptr");
+    return coreService_->SetRendererTarget(target, lastTarget, sessionId);
+}
+
+int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "Injector::coreService_ is nullptr");
+    return coreService_->StartInjection(sessionId);
+}
+
+void AudioCoreService::EventEntry::RemoveIdForInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
+    coreService_->RemoveIdForInjector(streamId);
+}
+
+void AudioCoreService::EventEntry::ReleaseCaptureInjector()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
+    coreService_->ReleaseCaptureInjector();
+}
+
+void AudioCoreService::EventEntry::RebuildCaptureInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
+    coreService_->RebuildCaptureInjector(streamId);
+}
+
+int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                                   uint32_t &timeStamp)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+    return coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+}
+
+void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &reason)
+{
+    coreService_->OnCheckActiveMusicTime(reason);
+}
+
+int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+    return coreService_->CaptureConcurrentCheck(sessionId);
 }
 }
 }

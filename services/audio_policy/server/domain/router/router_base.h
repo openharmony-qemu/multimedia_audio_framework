@@ -100,7 +100,9 @@ public:
             if (device->deviceRole_ != targetDevice->deviceRole_ ||
                 device->deviceType_ != targetDevice->deviceType_ ||
                 device->networkId_ != targetDevice->networkId_ ||
-                device->macAddress_ != targetDevice->macAddress_) {
+                device->macAddress_ != targetDevice->macAddress_ ||
+                ((device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || device->deviceType_ == DEVICE_TYPE_NEARLINK) &&
+                AudioDeviceManager::GetAudioDeviceManager().GetScoState())) {
                 continue;
             }
             if (!device->exceptionFlag_ && device->isEnable_ &&

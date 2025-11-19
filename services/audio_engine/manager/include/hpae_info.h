@@ -76,6 +76,7 @@ enum MoveSessionType {
     MOVE_SINGLE,
     MOVE_ALL,
     MOVE_PREFER,
+    MOVE_DEFAULT,
 };
 
 struct HpaeStreamInfo {
@@ -166,6 +167,7 @@ struct HpaeSourceInfo {
     AudioSampleFormat micRefFormat = INVALID_WIDTH;
     AudioChannel micRefChannels = CHANNEL_UNKNOW;
     uint32_t openMicSpeaker = 0;
+    std::string macAddress = "";
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)

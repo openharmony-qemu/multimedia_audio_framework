@@ -1308,7 +1308,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
 
     if (pa_memblock_is_silence(pchunk->memblock)) {
         AUTO_CTRACE("hdi_sink::ProcessAudioVolume: is_silence");
-        AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
+        AUDIO_PRERELEASE_LOGD("pa_memblock_is_silence");
     } else {
         AudioRawFormat rawFormat;
         rawFormat.format = (uint32_t)ConvertPaToHdiAdapterFormat(si->sample_spec.format);
@@ -3291,8 +3291,6 @@ static void PaInputStateChangeCbMultiChannel(struct Userdata *u, pa_sink_input *
     const bool starting = i->thread_info.state == PA_SINK_INPUT_CORKED && state == PA_SINK_INPUT_RUNNING;
     const bool stopping = state == PA_SINK_INPUT_UNLINKED;
 
-    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
-
     if (corking) {
         SetFadeoutState(i->index, NO_FADE);
     }
@@ -3459,7 +3457,6 @@ static void SinkRenderMultiChannelProcess(pa_sink *si, size_t length, pa_memchun
     pa_assert_se(u = si->userdata);
 
     UpdateStreamVolumeMap(u);
-    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
 
     chunkIn->memblock = pa_memblock_new(si->core->mempool, length * IN_CHANNEL_NUM_MAX / DEFAULT_IN_CHANNEL_NUM);
     size_t tmpLength = length * u->multiChannel.sinkChannel / DEFAULT_IN_CHANNEL_NUM;
@@ -4150,7 +4147,6 @@ static int32_t SinkSetStateInIoThreadCbStartMultiChannel(struct Userdata *u, pa_
 
     u->multiChannel.timestamp = pa_rtclock_now();
 
-    EffectChainManagerQueryHdiSupportedChannelLayout(&u->multiChannel.sinkChannel, &u->multiChannel.sinkChannelLayout);
     ResetMultiChannelHdiState(u);
     return 0;
 }
@@ -4534,7 +4530,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
     }
 
     if (!strcmp(u->sink->name, "Speaker") || !strcmp(u->sink->name, MCH_SINK_NAME) ||
-        !strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+        !strcmp(u->sink->name, OFFLOAD_SINK_NAME) || IsSinkNameDp(u->sink->name)) {
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
             (pa_hook_cb_t)SinkInputPutCb, u);
     }

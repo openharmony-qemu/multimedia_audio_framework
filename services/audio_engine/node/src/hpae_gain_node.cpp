@@ -40,10 +40,11 @@ static constexpr float EPSILON = 1e-6f;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
-    isInnerCapturer_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK);
+    isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
+        GetDeviceName() == VIRTUAL_INJECTOR;
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    if (isInnerCapturer_) {
+    if (isInnerCapturerOrInjector_) {
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
     } else {
         struct VolumeValues volumes;
@@ -56,6 +57,9 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
         "SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeGainNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -64,6 +68,9 @@ HpaeGainNode::~HpaeGainNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -93,7 +100,6 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
         nodeInfo.channels = (AudioChannel)channelCount;
         nodeInfo.samplingRate = (AudioSamplingRate)sampleRate;
         SetNodeInfo(nodeInfo);
-
         outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
             "_ch_" + std::to_string(GetChannelCount()) +
@@ -103,7 +109,9 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     if (needGainState_) {
         DoGain(inputs[0], frameLen, channelCount);
     }
-    DoFading(inputs[0]);
+    if (fadeInState_ || fadeOutState_ == FadeOutState::DO_FADEOUT) {
+        DoFading(inputs[0]);
+    }
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_ != nullptr) {
@@ -158,7 +166,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_);
+        statusCallback->OnFadeDone(GetSessionId());
         return;
     }
     AudioRawFormat rawFormat;
@@ -166,7 +174,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     rawFormat.channels = GetChannelCount();
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
-    GetFadeLength(byteLength, input);
+    uint32_t index = GetFadeLength(byteLength, input);
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
@@ -176,17 +184,18 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
+        statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
         return;
     }
     // do fade in
     if (fadeInState_) {
         if (!input->IsValid() || IsSilentData(input)) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
+            SilenceData(input);
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;
     }
 }
@@ -211,7 +220,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     AudioVolume *audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
     float preSystemGain = 1.0f;
-    if (isInnerCapturer_) {
+    if (isInnerCapturerOrInjector_) {
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
         preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
     } else {
@@ -247,30 +256,53 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
 bool HpaeGainNode::IsSilentData(HpaePcmBuffer *pcmBuffer)
 {
     float *data = pcmBuffer->GetPcmDataBuffer();
-    size_t length = pcmBuffer->Size() / sizeof(float);
-    AUDIO_DEBUG_LOG("HpaeGainNode::Data length:%{public}zu", length);
+    size_t length = pcmBuffer->DataSize() / sizeof(float);
+    AUDIO_DEBUG_LOG("[%{public}d]: Data length:%{public}zu", GetSessionId(), length);
     return std::all_of(data, data + length, [](float value) {
         return fabs(value) < EPSILON;
         });
 }
 
-void HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
+uint32_t HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
 {
+    uint32_t index = 0;
     uint32_t channels = GetChannelCount();
     switch (GetNodeInfo().fadeType) {
         case FadeType::SHORT_FADE: {
             byteLength = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD * channels * sizeof(float);
-            AUDIO_DEBUG_LOG("GainNode: short fade length in Bytes: %{public}u", byteLength);
+            AUDIO_DEBUG_LOG("[%{public}d]: short fade length in Bytes: %{public}u", GetSessionId(), byteLength);
             break;
         }
         case FadeType::DEFAULT_FADE: {
-            byteLength = input->DataSize();
-            AUDIO_DEBUG_LOG("GainNode: default fade length in Bytes: %{public}u", byteLength);
+            index = fadeInState_ ? GetFadeInLength(byteLength, input) : index;
+            byteLength = index == 0 ? input->DataSize() : byteLength;
+            AUDIO_DEBUG_LOG("[%{public}d]: default fade length in Bytes: %{public}u", GetSessionId(), byteLength);
             break;
         }
         default:
             break;
     }
+    return index;
+}
+
+uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *input)
+{
+    uint32_t index = 0;
+    float *data = input->GetPcmDataBuffer();
+    size_t length = input->DataSize() / sizeof(float);
+    for (size_t i = 0; i < length; ++i) {
+        if (fabs(data[i]) > EPSILON) {
+            byteLength = input->DataSize() - i * sizeof(float);
+            index = i * sizeof(float);
+            break;
+        }
+    }
+    return index;
+}
+
+uint64_t HpaeGainNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

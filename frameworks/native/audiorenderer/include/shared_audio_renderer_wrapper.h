@@ -482,6 +482,16 @@ public:
         return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);
     }
 
+    int32_t SetTarget(RenderTarget target) override
+    {
+        return sharedAudioRenderer_->SetTarget(target);
+    }
+
+    RenderTarget GetTarget() const override
+    {
+        return sharedAudioRenderer_->GetTarget();
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

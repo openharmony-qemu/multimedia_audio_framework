@@ -26,6 +26,7 @@
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
+#include "audio_endpoint_sink_adapter.cpp"
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 
@@ -33,8 +34,11 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
-static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
+namespace {
+    static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
+    static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
+    constexpr uint64_t TEST_ENDPOINT_ID = 123;
+}
 class MockAudioProcessStream : public IAudioProcessStream {
 public:
     // Pure virtual methods
@@ -73,7 +77,6 @@ public:
     MOCK_METHOD(bool, GetSilentState, (), (override));
     MOCK_METHOD(void, SetSilentState, (bool state), (override));
 
-    MOCK_METHOD(void, AddMuteWriteFrameCnt, (int64_t muteFrameCnt), (override));
     MOCK_METHOD(void, AddMuteFrameSize, (int64_t muteFrameCnt), (override));
     MOCK_METHOD(void, AddNormalFrameSize, (), (override));
     MOCK_METHOD(void, AddNoDataFrameSize, (), (override));
@@ -83,6 +86,10 @@ public:
     // Audio-Haptics sync
     MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
     MOCK_METHOD(int32_t, GetAudioHapticsSyncId, (), (override));
+    MOCK_METHOD(bool, PrepareRingBuffer, (uint64_t curRead, RingBufferWrapper& ringBuffer), (override));
+    MOCK_METHOD(void, PrepareStreamDataBuffer,
+        (size_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData), (override));
+    MOCK_METHOD(void, DfxOperationAndCalcMuteFrame, (BufferDesc &bufferDesc), (override));
 };
 
 void AudioEndpointPlusUnitTest::SetUpTestCase(void)
@@ -138,10 +145,9 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
     audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
-    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
-    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo, buffer);
+    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo);
     return processStream;
 }
 
@@ -348,11 +354,20 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
+    dstData.bufferDesc.buffer = new uint8_t[1] {1};
+    dstData.bufferDesc.bufLength = 1;
+    dstData.bufferDesc.dataLength = 1;
+
+    audioEndpointInner->ProcessData(srcDataList, dstData);
+    EXPECT_EQ(dstData.bufferDesc.buffer[0], 0);
+
     AudioStreamData audioStreamData;
     audioStreamData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     audioStreamData.streamInfo.channels = AudioChannel::CHANNEL_3;
     srcDataList.push_back(audioStreamData);
 
+    audioEndpointInner->ProcessData(srcDataList, dstData);
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
     audioEndpointInner->ProcessData(srcDataList, dstData);
 }
 
@@ -464,142 +479,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_012, TestSize.Level1)
     srcDataList.push_back(audioStreamData);
 
     audioEndpointInner->ProcessData(srcDataList, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_013
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_013, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_014
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_014, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_015
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_015, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_016
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_016, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_017
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    clientConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    clientConfig.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    clientConfig.streamInfo.format = SAMPLE_F32LE;
-    clientConfig.streamInfo.channels = STEREO;
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(clientConfig);
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 }
 
 /*
@@ -1534,77 +1413,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_059, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_060
- * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_060, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::vector<uint8_t> buffer1(1, 0);
-    std::vector<uint8_t> buffer2(1, 0);
-    RingBufferWrapper ringBuffer = {
-        {{
-            {.buffer = buffer1.data(), .bufLength = 1},
-            {.buffer = buffer2.data(), .bufLength = 1},
-        }},
-        // 1 + 1 = 2
-        .dataLength = 2
-    };
-    auto ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 1);
-    EXPECT_EQ(ret, true);
-
-    ringBuffer.dataLength = 1;
-    ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 1);
-    EXPECT_EQ(ret, false);
-
-    // 2 > 1
-    ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 2);
-    EXPECT_EQ(ret, true);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_061
- * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_061, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    audioEndpointInner->processTmpBufferList_.resize(1);
-
-    std::vector<uint8_t> buffer1(1, 0);
-    RingBufferWrapper ringBuffer = {
-        {{
-            {.buffer = buffer1.data(), .bufLength = 1},
-            {.buffer = nullptr, .bufLength = 0},
-        }},
-        .dataLength = 1
-    };
-    AudioStreamData streamData;
-    audioEndpointInner->PrepareStreamDataBuffer(0, 1, ringBuffer, streamData);
-    // spansizeinframe == 2; spansizeinframe > datalenth
-    audioEndpointInner->PrepareStreamDataBuffer(0, 2, ringBuffer, streamData);
-
-    // processTmpBufferList[i] == spansizeinframe
-    EXPECT_EQ(audioEndpointInner->processTmpBufferList_[0].size(), 2);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
  * @tc.number: IsInvalidBuffer_001
  * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
  */
@@ -1703,7 +1511,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink);
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink, HDI_ID_TYPE_PRIMARY);
     audioEndpointnIner->CheckAudioHapticsSync(10);
     EXPECT_EQ(audioEndpointnIner->audioHapticsSyncId_, 0);
 }
@@ -1724,7 +1532,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_002, TestSize.Level1)
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
 
-    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(nullptr);
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(nullptr, HDI_ID_TYPE_PRIMARY);
 
     audioEndpointnIner->CheckAudioHapticsSync(10);
 
@@ -1806,46 +1614,32 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_008
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
+ * @tc.number: GetAllReadyProcessDataSub_001
+ * @tc.desc  : Test AudioEndpointInner::GetAllReadyProcessDataSub()
  */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
+HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Level4)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, TEST_ENDPOINT_ID, clientConfig.audioMode);
 
-    ASSERT_NE(audioEndpointInner, nullptr);
+    auto processBuffer = std::make_shared<OHAudioBufferBase>(AudioBufferHolder::AUDIO_CLIENT, 0, 0);
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    BasicBufferInfo bufferInfo;
+    processBuffer->basicBufferInfo_ = &bufferInfo;
 
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    MockAudioProcessStream processServer;
+    audioEndpointInner->processList_.push_back(&processServer);
 
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+    std::function<void()> moveClientIndex;
+    EXPECT_CALL(processServer, PrepareRingBuffer(_, _)).WillOnce(Return(false));
+    EXPECT_CALL(processServer, GetStreamStatus()).WillOnce(Return(StreamStatus::STREAM_RUNNING));
+    EXPECT_CALL(processServer, AddNoDataFrameSize())
+        .Times(1)
+        .WillOnce(Return());
+    audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
 }
 } // namespace AudioStandard
 } // namespace OHOS

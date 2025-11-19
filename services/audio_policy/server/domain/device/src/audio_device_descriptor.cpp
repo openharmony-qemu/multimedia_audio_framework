@@ -151,6 +151,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    modemCallSupported_ = true;
+    highQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -182,6 +184,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    modemCallSupported_ = true;
+    highQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -216,6 +220,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
     isVrSupported_ = deviceDescriptor.isVrSupported_;
     clientInfo_ = deviceDescriptor.clientInfo_;
+    modemCallSupported_ = deviceDescriptor.modemCallSupported_;
+    highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -251,6 +257,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
     isVrSupported_ = deviceDescriptor->isVrSupported_;
     clientInfo_ = deviceDescriptor->clientInfo_;
+    modemCallSupported_ = deviceDescriptor->modemCallSupported_;
+    highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -332,7 +340,9 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
+        parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -392,7 +402,9 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
+        parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -426,6 +438,8 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
+    modemCallSupported_ = parcel.ReadBool();
+    highQualityRecordingSupported_ = parcel.ReadBool();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -441,18 +455,21 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
 
 void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    for (size_t index = descs.size() - 1; index >= 0; index--) {
-        if (descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || descs[index]->deviceRole_ != INPUT_DEVICE) {
+    for (int index = static_cast<int>(descs.size()) - 1; index >= 0; index--) {
+        if ((descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
+            descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP_IN) ||
+            descs[index]->deviceRole_ != INPUT_DEVICE) {
             continue;
         }
         bool hasSame = false;
-        for (const auto& otherDesc : descs) {
+        for (auto& otherDesc : descs) {
             if (otherDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
                 descs[index]->macAddress_ != "" &&
                 otherDesc->macAddress_ == descs[index]->macAddress_ &&
                 otherDesc->deviceRole_ == descs[index]->deviceRole_ &&
                 otherDesc->networkId_ == descs[index]->networkId_) {
                 hasSame = true;
+                otherDesc->highQualityRecordingSupported_ = descs[index]->highQualityRecordingSupported_;
                 break;
             }
         }
@@ -516,7 +533,7 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
 
 bool AudioDeviceDescriptor::IsDistributedSpeaker() const
 {
-    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID;
 }
 
 bool AudioDeviceDescriptor::IsA2dpOffload() const
@@ -533,7 +550,12 @@ bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 
 bool AudioDeviceDescriptor::IsRemote() const
 {
-    return networkId_ != "LocalDevice";
+    return networkId_ != LOCAL_NETWORK_ID;
+}
+
+bool AudioDeviceDescriptor::IsRemoteDevice() const
+{
+    return networkId_ != LOCAL_NETWORK_ID || deviceType_ == DEVICE_TYPE_REMOTE_CAST;
 }
 
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
@@ -541,6 +563,14 @@ void AudioDeviceDescriptor::Dump(std::string &dumpString)
     AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",
         deviceId_, IsOutput() ? "Output" : "Input",
         deviceType_, DeviceTypeToString(deviceType_), deviceName_.c_str());
+}
+
+std::string AudioDeviceDescriptor::GetName()
+{
+    if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) {
+        return "DMSDP";
+    }
+    return GetDeviceTypeString();
 }
 
 std::string AudioDeviceDescriptor::GetDeviceTypeString()
@@ -584,7 +614,7 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
 DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
 {
     DeviceStreamInfo streamInfo;
-    CHECK_AND_RETURN_RET_LOG(!audioStreamInfo_.empty(), streamInfo, "streamInfo empty, get default streamInfo");
+    CHECK_AND_RETURN_RET_LOG(!audioStreamInfo_.empty(), streamInfo, "streamInfo empty");
     return *audioStreamInfo_.rbegin();
 }
 } // AudioStandard

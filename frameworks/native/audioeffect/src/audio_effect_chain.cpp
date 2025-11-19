@@ -185,6 +185,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     // Set param
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
+    CHECK_AND_RETURN_RET_LOG(effectParam != nullptr, ERROR, "effectParam is null");
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
@@ -212,9 +213,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     data[ABS_VOLUME_STATE] = static_cast<int32_t>(absVolumeState_);
     AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
-        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, "
-        "spatializationSceneType: %{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d,"
-        "absVolumeState = %{public}d",
+        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
+        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState = %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE]);
@@ -236,7 +236,7 @@ int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
     int32_t ret = 0;
-    int32_t size = standByEffectHandles_.size();
+    int32_t size = static_cast<int32_t>(standByEffectHandles_.size());
     for (int32_t index = 0; index < size; index++) {
         auto &handle = standByEffectHandles_[index];
         auto const &effectName = effectNames_[index];
@@ -266,6 +266,8 @@ static int32_t CheckHandleAndRelease(AudioEffectHandle handle, AudioEffectLibrar
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
     AudioEffectScene currSceneType, const std::string &effectName, const std::string &effectProperty)
 {
+    Trace trace("AudioEffectChain::AddEffectHandle currSceneType: " +
+        std::to_string(static_cast<int32_t>(currSceneType)) + " effectName: " + effectName);
     int32_t ret;
     int32_t replyData = 0;
     int32_t latencyData = 0;
@@ -319,12 +321,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 
 int32_t AudioEffectChain::UpdateEffectParam()
 {
+    Trace trace("AudioEffectChain::UpdateEffectParam");
     std::lock_guard<std::mutex> lock(reloadMutex_);
     return UpdateEffectParamInner();
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
 {
+    Trace trace("AudioEffectChain::ApplyEffectChain");
     size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
     size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(bufIn), inTotlen);
@@ -346,7 +350,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
     std::lock_guard<std::mutex> lock(reloadMutex_);
-
     for (size_t i = 0; i < standByEffectHandles_.size(); ++i) {
 #ifdef SENSOR_ENABLE
         if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
@@ -504,6 +507,7 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 
     return;
 }
+
 void AudioEffectChain::SetCurrChannelNoCheck(const uint32_t channel)
 {
     currChannelNoCheck_ = channel;
@@ -638,6 +642,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
 int32_t AudioEffectChain::UpdateEffectParamInner()
 {
+    Trace trace("AudioEffectChain::UpdateEffectParamInner");
     latency_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         int32_t replyData;

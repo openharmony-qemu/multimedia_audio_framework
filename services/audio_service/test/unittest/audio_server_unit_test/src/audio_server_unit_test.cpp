@@ -15,6 +15,7 @@
 
 #include "audio_server_unit_test.h"
 
+#include "audio_unit_test.h"
 #include "accesstoken_kit.h"
 #include "audio_utils.h"
 #include "audio_device_info.h"
@@ -42,14 +43,18 @@ static sptr<AudioServer> audioServer;
 
 void AudioServerUnitTest::SetUpTestCase(void)
 {
+    MockNative::GenerateNativeTokenID();
+    MockNative::Mock();
     audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    EXPECT_NE(nullptr, audioServer);
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnDump();
 }
 
 void AudioServerUnitTest::TearDownTestCase(void)
 {
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnStop();
+    MockNative::Resume();
 }
 
 void AudioServerUnitTest::SetUp(void)
@@ -436,6 +441,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG", "");
     audioServer->SetAudioParameter("mmi", "");
     audioServer->SetAudioParameter("perf_info", "");
+
+    audioServer->SetAudioParameter("VOICE_PHONE_STATUS", "1");
+    audioServer->GetAudioParameter("VOICE_PHONE_STATUS", str);
+    EXPECT_EQ(str, "1");
+
     audioServer->GetAudioParameter("", str);
     audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", str);
     audioServer->GetAudioParameter("perf_info", str);
@@ -771,6 +781,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     EXPECT_TRUE(ret);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    ret = audioServer->CheckRecorderPermission(config);
+    EXPECT_TRUE(ret);
+
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);
 
@@ -1470,10 +1484,9 @@ HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_005, TestSiz
  */
 HWTEST_F(AudioServerUnitTest, CreateAudioWorkgroup_001, TestSize.Level1)
 {
-    int32_t pid = 123;
     sptr<IRemoteObject> object = nullptr;
     int32_t result = -1;
-    audioServer->CreateAudioWorkgroup(pid, object, result);
+    audioServer->CreateAudioWorkgroup(object, result);
     EXPECT_NE(result, 0);
 }
 
@@ -2130,9 +2143,9 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
-    config.appInfo.appTokenId = 12345;
+    config.appInfo.appTokenId = SYSTEM_ABILITY_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    EXPECT_NE(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_DENIED);
 
     config.innerCapMode = MODERN_INNER_CAP;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
@@ -2365,9 +2378,8 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2379,9 +2391,8 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
 {
-    pid_t pid = -1;
-    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, true}};
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2393,10 +2404,9 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_003, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, bool> threads = {};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, 0);
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
+    EXPECT_NE(result, 0);
 }
  
 /**
@@ -2407,9 +2417,8 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_003, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2421,9 +2430,8 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
 {
-    pid_t pid = -1;
-    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 20}};
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2435,10 +2443,9 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, int32_t> threads = {};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, 0);
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
+    EXPECT_NE(result, 0);
 }
 
 #ifdef TEMP_DISABLE
@@ -2484,7 +2491,7 @@ HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t asrVoiceMuteMode = 0;
     bool on = true;
-    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), SUCCESS);
 }
 
 /**
@@ -2530,20 +2537,19 @@ HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ArgDataDump API
+ * @tc.name  : Test SetAudioSceneInner API
  * @tc.type  : FUNC
- * @tc.number: ArgDataDump_001
- * @tc.desc  : Test ArgDataDump interface.
+ * @tc.number: AudioServerSetAudioSceneInner_005
+ * @tc.desc  : Test SetAudioSceneInner interface.
  */
-HWTEST_F(AudioServerUnitTest, ArgDataDump_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1)
 {
-    AudioServerHpaeDump audioServerHpaeDump;
-    std::string dumpString;
-    std::queue<std::u16string> argQue;
-
-    audioServerHpaeDump.ArgDataDump(dumpString, argQue);
-
-    EXPECT_NE(dumpString, "Hpae AudioServer Data Dump:\n\n");
+    EXPECT_NE(nullptr, audioServer);
+    AudioScene audioScene = AUDIO_SCENE_RINGING;
+    BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
+    bool scoExcludeFlag = true;
+    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2617,6 +2623,30 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_003, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_PLAYBACK);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup IPC Interface
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupIPC_001
+ * @tc.desc  : Test AudioWorkgroup IPC with random value
+ */
+HWTEST_F(AudioServerUnitTest, AudioWorkgroupIPC_001, TestSize.Level1)
+{
+    int32_t result = audioServer->ReleaseAudioWorkgroup(1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->AddThreadToGroup(1234, 1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->RemoveThreadFromGroup(1234, 1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->StartGroup(1234, 0, 0);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->StopGroup(1234);
+    EXPECT_NE(result, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

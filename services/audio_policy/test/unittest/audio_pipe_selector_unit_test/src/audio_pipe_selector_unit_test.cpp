@@ -40,6 +40,41 @@ static std::shared_ptr<AudioPipeInfo> MakeTestPipe(AudioPipeRole role, std::stri
     return newPipe;
 }
 
+static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo,
+    std::shared_ptr<PolicyAdapterInfo> &policyAdapterInfo)
+{
+    uint32_t routerFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    policyAdapterInfo->adapterName = "remote";
+    adapterPipeInfo->adapterInfo_ = policyAdapterInfo;
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->pipeInfo_ = adapterPipeInfo;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo_2 = std::make_shared<PipeStreamPropInfo>();
+    propInfo_2->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo_2->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo_2->channels_ = AudioChannel::CHANNEL_6;
+    propInfo_2->channelLayout_ = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    propInfo_2->pipeInfo_ = adapterPipeInfo;
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    info->dynamicStreamPropInfos_ = {propInfo, propInfo_2};
+    info->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->supportPipeMap_.insert({routerFlag, info});
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
 /**
  * @tc.name: GetPipeType_001
  * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_PLAYBACK and flag contains
@@ -492,6 +527,118 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_002, TestSize.Level4)
 }
 
 /**
+ * @tc.name: FetchPipeAndExecute_003
+ * @tc.desc: Test FetchPipeAndExecute selectedPipeInfoList->pipeAction_ == PIPE_ACTION_UPDATE.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfo->name_ = "offload_distributed_output";
+    pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
+    pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
+    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList
+        = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+
+    streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_RELOAD);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name: FetchPipeAndExecute_004
+ * @tc.desc: Test FetchPipeAndExecute selectedPipeInfoList->pipeAction_ == PIPE_ACTION_UPDATE.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfo->name_ = "remote";
+    pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
+    pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
+    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList
+        = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+
+    streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_RELOAD);
+
+    pipeInfo->adapterName_ = "primary";
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_TRUE(selectedPipeInfoList.size() == 2);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
  * @tc.name: FetchPipesAndExecute_002
  * @tc.desc: Test FetchPipesAndExecute streamDescs.size() != 0.
  * @tc.type: FUNC
@@ -896,7 +1043,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_001, TestSize.Level1)
 
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
 
-    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescs);
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "primary";
+    pipe1->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipe1);
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
     EXPECT_TRUE(newPipeInfoList.size() != 0);
 }
 
@@ -910,7 +1064,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
-    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
     streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     streamDesc1->sessionId_ = 100001;
@@ -920,16 +1074,24 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
 
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->adapterName_ = "primary";
-    pipe1->routeFlag_ = 1;
+    pipe1->adapterName_ = "direct";
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT|AUDIO_OUTPUT_FLAG_HD;
     newPipeInfoList.push_back(pipe1);
 
     std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
-    pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    pipe1->adapterName_ = "primary";
+    pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     newPipeInfoList.push_back(pipe2);
 
-    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescs);
-    EXPECT_TRUE(newPipeInfoList.size() == 2);
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipeinfo1 = std::make_shared<AudioPipeInfo>();
+    pipeinfo1->adapterName_ = "offload";
+    pipeinfo1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    newPipeInfoList.push_back(pipeinfo1);
+    streamDescToOldPipeInfo[100001] = pipeinfo1;
+
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
+    EXPECT_FALSE(newPipeInfoList.size() == 2);
 }
 
 /**
@@ -982,6 +1144,241 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
 
     audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_001
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is offload, route flag is normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_002
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is not offload, route flag is normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_003
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is offload, route flag is not normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_004
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is not offload, route flag is not normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_005
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is direct, route flag is normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_HD);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: ProcessNewPipeList_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc1->sessionId_ = 100001;
+    streamDesc1->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc1->createTimeStamp_ = 1;
+    streamDesc1->rendererTarget_ = 1;
+    streamDescs.push_back(streamDesc1);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc2 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc2->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc2->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc2->sessionId_ = 100001;
+    streamDesc2->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc2->createTimeStamp_ = 1;
+    streamDesc2->rendererTarget_ = 0;
+    streamDescs.push_back(streamDesc2);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "primary";
+    pipe1->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipe1);
+
+    std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
+    pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    newPipeInfoList.push_back(pipe2);
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipeinfo1 = std::make_shared<AudioPipeInfo>();
+    pipeinfo1->adapterName_ = "primary";
+    pipeinfo1->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipeinfo1);
+    streamDescToOldPipeInfo[100001] = pipeinfo1;
+
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
+    EXPECT_TRUE(newPipeInfoList.size() == 2);
+}
+
+/**
+ * @tc.name: IsNeedTempMoveToNormal_001
+ * @tc.desc: Test IsNeedTempMoveToNormal_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
+    streamDesc1->sessionId_ = 100001;
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
+}
+
+/**
+ * @tc.name: IsNeedTempMoveToNormal_002
+ * @tc.desc: Test IsNeedTempMoveToNormal_002
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
+    streamDesc1->sessionId_ = 100001;
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
+}
+
+/**
+ * @tc.name: IsNeedTempMoveToNormal_003
+ * @tc.desc: Test IsNeedTempMoveToNormal_003
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->sessionId_ = 100001;
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
+}
+
+/**
+ * @tc.name: IsNeedTempMoveToNormal_004
+ * @tc.desc: Test IsNeedTempMoveToNormal_004
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->sessionId_ = 100001;
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
+}
+
+/**
+ * @tc.name: IsNeedTempMoveToNormal_005
+ * @tc.desc: Test IsNeedTempMoveToNormal_005
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    streamDesc1->sessionId_ = 100001;
+
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDescToOldPipeInfo[100001] = pipe1;
+
+    EXPECT_FALSE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
 }
 
 } // namespace AudioStandard

@@ -19,9 +19,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst);
+void ConvertToFloat(AudioSampleFormat format, unsigned inputSampleCount, void *src, float *dst);
 
-void ConvertFromFloat(AudioSampleFormat format, unsigned n, float *src, void *dst);
+void ConvertFromFloat(AudioSampleFormat format, unsigned inputSampleCount, float *src, void *dst);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

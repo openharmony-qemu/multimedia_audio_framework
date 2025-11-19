@@ -139,10 +139,12 @@ void GetStreamPropInfoForRecordFuzzTest()
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
     adapterPipeInfo->dynamicStreamPropInfos_.push_back(info);
     adapterPipeInfo->streamPropInfos_.push_back(info);
-    AudioChannel tempChannel = g_fuzzUtils.GetData<AudioChannel>();
+    AudioStreamInfo tempStreamInfo = {};
+    tempStreamInfo.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
+    tempStreamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
     AudioEcManager::GetInstance().Init(g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     AudioPolicyConfigManager::GetInstance().OnUpdateRouteSupport(g_fuzzUtils.GetData<bool>());
-    AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempChannel);
+    AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempStreamInfo);
 }
 
 void GetNormalRecordAdapterInfoFuzzTest()
@@ -192,8 +194,10 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest()
     uint32_t sampleRate = g_fuzzUtils.GetData<uint32_t>();
     AudioChannel channels = g_fuzzUtils.GetData<AudioChannel>();
     AudioPolicyConfigManager::GetInstance().SupportImplicitConversion(g_fuzzUtils.GetData<AudioFlag>());
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_PCM, format,
+        channels);
     std::shared_ptr<PipeStreamPropInfo> ret =
-        AudioPolicyConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+        AudioPolicyConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipe(info, streamInfo);
 }
 
 void IsStreamPropMatchFuzzTest()

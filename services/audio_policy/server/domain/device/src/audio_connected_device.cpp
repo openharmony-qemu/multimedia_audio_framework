@@ -25,7 +25,7 @@
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
-
+#include "media_monitor_manager.h"
 
 #include "audio_policy_utils.h"
 
@@ -112,6 +112,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_) {
             return true;
         }
@@ -129,6 +130,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&networkId, &deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_) {
             return true;
         }
@@ -146,6 +148,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&networkId, &deviceType, &macAddress] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_) {
             return true;
         }
@@ -270,6 +273,20 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
     } else {
         dmDeviceMap_.erase(dmDevice.networkId_);
     }
+    WriteDmDeviceChangedEvent(dmDevice, isConnect);
+}
+
+void AudioConnectedDevice::WriteDmDeviceChangedEvent(const DmDevice &dmDevice, bool isConnect)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DM_DEVICE_INFO,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    bean->Add("IS_ADD", isConnect);
+    bean->Add("DEVICE_NAME", dmDevice.deviceName_);
+    bean->Add("NETWORK_ID", dmDevice.networkId_);
+    bean->Add("DM_DEVICE_TYPE", dmDevice.dmDeviceType_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc)
@@ -481,5 +498,24 @@ void AudioConnectedDevice::RegisterNameMonitorHelper()
     dataShareHelper->Release();
 }
 
+bool AudioConnectedDevice::IsEmpty()
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    return connectedDevices_.empty();
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceType(DeviceType type,
+    std::string networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(type != DEVICE_TYPE_NONE, defaultOutputDevice_, "device type is none");
+    CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
+    std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
+    CHECK_AND_RETURN_RET(device == nullptr, device);
+    
+    device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);
+    device->networkId_ = networkId;
+    AUDIO_ERR_LOG("Get device failed, make new %{public}s", device->GetName().c_str());
+    return device;
+}
 }
 }

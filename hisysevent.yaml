@@ -333,8 +333,35 @@ MOVE_STREAM_EXCEPTION:
   STREAM_TYPE: {type: UINT32, desc: stream type}
   ERROR_DESCRIPTION: {type: STRING, desc: error description}
 
+DESIGNATE_AUDIO_CAPTURE_DEVICE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: designate voice recognition audio capture device}
+  APP_NAME: {type: STRING, desc: application/process name}
+  STREAM_TYPE: {type: UINT8, desc: source type of audio capture stream}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type}
+  ERROR_CODE: {type: UINT8, desc: error code}
+
+MODIFY_CAPTURE_DEVICE_SPECIALLY:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: trigger special rule modify audio capture device}
+  APP_NAME: {type: STRING, desc: application or process name}
+  STREAM_TYPE: {type: UINT8, desc: source type of audio capture stream}
+  DEVICE_TYPE_BEFORE_CHANGE: {type: UINT8, desc: audio device type before change}
+  DEVICE_TYPE_AFTER_CHANGE: {type: UINT8, desc: audio device type after change}
+
 VOLUME_API_INVOKE:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: Ivocation of volume-related APIs}
   APP_NAME: {type: STRING, desc: application name}
   FUNC_NAME: {type: STRING, desc: function name}
   PARAM_VALUE: {type: INT32, desc: streamUsage or audioVolumeType enum value}
+
+SUITE_ENGINE_UTILIZATION_STATS:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: audio suite engine utilization statistic}
+  APP_NAME: {type: STRING, arrsize: 20, desc: application name}
+  AUDIO_NODE_TYPE: {type: STRING, desc: audio node type}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+
+SUITE_ENGINE_EXCEPTION:
+  __BASE: {type: FAULT, level: CRITICAL, desc: audio suite engine exception}
+  APP_NAME: {type: STRING, desc: application name}
+  ERROR_SCENE: {type: UINT32, desc: error scene}
+  ERROR_CASE: {type: UINT32, desc: error case}
+  ERROR_DESCRIPTION: {type: STRING, desc: error description}

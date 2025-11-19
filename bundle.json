@@ -22,7 +22,8 @@
           "SystemCapability.Multimedia.Audio.Tone",
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
-          "SystemCapability.Multimedia.Audio.Spatialization"
+          "SystemCapability.Multimedia.Audio.Spatialization",
+          "SystemCapability.Multimedia.Audio.SuiteEngine = false"
         ],
         "features": [
           "audio_framework_feature_wired_audio",
@@ -30,6 +31,7 @@
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
+          "audio_framework_feature_wireless_default_exclude",
           "audio_framework_feature_opensl_es",
           "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
@@ -39,7 +41,9 @@
           "audio_framework_feature_file_io",
           "audio_framework_feature_inner_capturer",
           "audio_framework_feature_low_latency",
-          "audio_framework_feature_device_manager"
+          "audio_framework_feature_device_manager",
+          "audio_framework_feature_mutesink_enable",
+          "audio_framework_feature_audiosuite_support"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -52,6 +56,7 @@
             "accessibility",
             "bluetooth",
             "bundle_framework",
+            "background_task_mgr",
             "c_utils",
             "cellular_data",
             "common_event_service",
@@ -77,6 +82,7 @@
             "input",
             "ipc",
             "kv_store",
+            "libxml2",
             "napi",
             "os_account",
             "power_manager",
@@ -88,16 +94,19 @@
             "bounds_checking_function",
             "pulseaudio",
             "libuv",
+            "libxml2",
             "cJSON",
             "opensles",
+            "openssl",
             "qos_manager",
             "media_foundation",
+            "runtime_core",
             "usb_manager",
+            "ringtone_library",
             "frame_aware_sched",
             "window_manager"
-            ],
+          ],
           "third_party": [
-            "libxml2",
             "openssl"
           ]
         },
@@ -109,18 +118,24 @@
               "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
+              "//foundation/multimedia/audio_framework/frameworks/native/ohaudiosuite:ohaudiosuite",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
+              "//foundation/multimedia/audio_framework/frameworks/taihe:audio_framework_taihe",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
+              "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/modules:pa_extend_modules",
               "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock"
             ]
           },
           "inner_kits": [
+            {
+              "name": "//foundation/multimedia/audio_framework/frameworks/taihe:copy_taihe"
+            },
             {
                 "header": {
                   "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosasdk/include",
@@ -283,6 +298,16 @@
                   "audio_zone_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite",
+              "header": {
+                "header_files": [
+                  "audio_suite_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
               }
             }
           ],

@@ -137,7 +137,10 @@ public:
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     void LoadEffectLibrary();
 
@@ -219,6 +222,8 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void MuteMediaWhenAccountsChanged();
+
     // for effect V3
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
@@ -248,7 +253,6 @@ public:
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
-    int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

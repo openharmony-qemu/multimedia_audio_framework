@@ -77,6 +77,11 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     }
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    if (!a2dpParam_.empty()) {
+        SetAudioParameterInner(a2dpParam_.value);
+        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
+        a2dpParam_ = {};
+    }
     sinkInited_ = true;
     ++sinkInitCount_;
     started_ = false;
@@ -116,6 +121,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
+    AUDIO_INFO_LOG("%{public}s update validState:true", logTypeTag_.c_str());
     validState_ = true;
 }
 
@@ -255,6 +261,7 @@ int32_t BluetoothAudioRenderSink::Pause(void)
 int32_t BluetoothAudioRenderSink::Flush(void)
 {
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -267,6 +274,7 @@ int32_t BluetoothAudioRenderSink::Flush(void)
 int32_t BluetoothAudioRenderSink::Reset(void)
 {
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -279,7 +287,7 @@ int32_t BluetoothAudioRenderSink::Reset(void)
 int32_t BluetoothAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_RET(validState_, ERR_INVALID_HANDLE);
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
@@ -341,13 +349,9 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
-    CHECK_AND_RETURN(IsValidState());
-    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
-    }
+    SetAudioParameterInner(value);
 
+    int32_t ret = 0;
     if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), "A2dpSuspended=0;")) {
         int32_t tryCount = 3;
         while (tryCount-- > 0) {
@@ -367,6 +371,16 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
     }
 }
 
+// need to hold sinkMutex when call this func.
+void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
+{
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr && IsValidState(), "render is nullptr");
+    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
+    }
+}
+
 std::string BluetoothAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     AUDIO_INFO_LOG("not support");
@@ -375,6 +389,7 @@ std::string BluetoothAudioRenderSink::GetAudioParameter(const AudioParamKey key,
 
 int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
@@ -407,6 +422,7 @@ int32_t BluetoothAudioRenderSink::GetVolume(float &left, float &right)
 int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
 {
     Trace trace("BluetoothAudioRenderSink::GetLatency");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
@@ -419,6 +435,7 @@ int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
 
 int32_t BluetoothAudioRenderSink::GetTransactionId(uint64_t &transactionId)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     transactionId = reinterpret_cast<uint64_t>(audioRender_);
@@ -552,7 +569,7 @@ int32_t BluetoothAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &apps
 
 void BluetoothAudioRenderSink::SetInvalidState(void)
 {
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    AUDIO_INFO_LOG("%{public}s update validState:false", logTypeTag_.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     validState_ = false;
     sinkInited_ = false;
@@ -811,7 +828,6 @@ void BluetoothAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
             renderFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }
@@ -940,6 +956,15 @@ int32_t BluetoothAudioRenderSink::CheckBluetoothScenario(void)
         return ERR_NOT_STARTED;
     }
     return SUCCESS;
+}
+
+void BluetoothAudioRenderSink::SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value)
+{
+    a2dpParam_.key = key;
+    a2dpParam_.condition = condition;
+    a2dpParam_.value = value;
+    AUDIO_INFO_LOG("SetBluetoothSinkParam key %{public}u, condition %{public}s, value %{public}s",
+        a2dpParam_.key, a2dpParam_.condition.c_str(), a2dpParam_.value.c_str());
 }
 
 } // namespace AudioStandard

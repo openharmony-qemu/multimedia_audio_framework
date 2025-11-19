@@ -64,36 +64,43 @@ void NapiAudioSystemVolumeChangeCallback::OnSystemVolumeChange(VolumeEvent volum
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_PRERELEASE_LOGI("OnSystemVolumeChange is called volumeType=%{public}d, volumeLevel=%{public}d,"
         "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
-    CHECK_AND_RETURN_LOG(audioSystemVolumeChangeCallback_ != nullptr,
-        "NapiAudioSystemVolumeChangeCallback:No JS callback registered return");
-    std::unique_ptr<AudioSystemVolumeChangeJsCallback> cb = std::make_unique<AudioSystemVolumeChangeJsCallback>();
-    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
-    cb->callback = audioSystemVolumeChangeCallback_;
-    cb->callbackName = AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME;
-    cb->volumeEvent.volumeType = volumeEvent.volumeType;
-    cb->volumeEvent.volume = volumeEvent.volume;
-    cb->volumeEvent.updateUi = volumeEvent.updateUi;
-    cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
-    cb->volumeEvent.networkId = volumeEvent.networkId;
+    CHECK_AND_RETURN_LOG(!audioSystemVolumeChangeCbList_.empty(), "No JS callback registered return");
 
-    return OnJsCallbackSystemVolumeChange(cb);
+    for (auto &item : audioSystemVolumeChangeCbList_) {
+        std::unique_ptr<AudioSystemVolumeChangeJsCallback> cb = std::make_unique<AudioSystemVolumeChangeJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+        cb->callback = item;
+        cb->callbackName = AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME;
+        cb->volumeEvent.volumeType = volumeEvent.volumeType;
+        cb->volumeEvent.volume = volumeEvent.volume;
+        cb->volumeEvent.updateUi = volumeEvent.updateUi;
+        cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
+        cb->volumeEvent.networkId = volumeEvent.networkId;
+
+        OnJsCallbackSystemVolumeChange(cb);
+    }
 }
 
 void NapiAudioSystemVolumeChangeCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    napi_ref callback = nullptr;
-    const int32_t refCount = 1;
-    napi_status status = napi_create_reference(env_, args, refCount, &callback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
-        "NapiAudioSystemVolumeChangeCallback: creating reference for callback fail");
-    callback_ = callback;
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME) {
-        audioSystemVolumeChangeCallback_ = cb;
-    } else {
-        AUDIO_ERR_LOG("NapiAudioSystemVolumeChangeCallback: Unknown callback type: %{public}s", callbackName.c_str());
+    napi_ref callbackRef = nullptr;
+    const int32_t refCount = ARGS_ONE;
+
+    for (auto &item : audioSystemVolumeChangeCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
+        bool isSameCallback = IsSameCallback(env_, args, item->GetRef());
+        CHECK_AND_RETURN_LOG(!isSameCallback, "duplicate JS callback registration");
     }
+
+    napi_status status = napi_create_reference(env_, args, refCount, &callbackRef);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
+        "creating reference for callback fail");
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    audioSystemVolumeChangeCbList_.push_back(cb);
+    AUDIO_INFO_LOG("save callback ref success, list size=%{public}zu", audioSystemVolumeChangeCbList_.size());
 }
 
 void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
@@ -172,17 +179,85 @@ void NapiAudioSystemVolumeChangeCallback::OnJsCallbackSystemVolumeChange(
     napi_call_threadsafe_function(amVolEntTsfn_, event, napi_tsfn_blocking);
 }
 
-bool NapiAudioSystemVolumeChangeCallback::ContainSameJsCallback(napi_value args)
+void NapiAudioSystemVolumeChangeCallback::RemoveCallbackReference(napi_env env, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = audioSystemVolumeChangeCbList_.begin();
+         it != audioSystemVolumeChangeCbList_.end(); ++it) {
+        if (*it == nullptr) {
+            continue;
+        }
+        bool isSameCallback = IsSameCallback(env, args, (*it)->cb_);
+        if (isSameCallback) {
+            napi_status delStatus = napi_delete_reference(env, (*it)->cb_);
+            if (delStatus == napi_ok) {
+                (*it)->cb_ = nullptr;
+            } else {
+                AUDIO_ERR_LOG("failed to delete napi reference for callback");
+            }
+            audioSystemVolumeChangeCbList_.erase(it);
+            AUDIO_INFO_LOG("remove js callback success, list size=%{public}zu",
+                audioSystemVolumeChangeCbList_.size());
+            return;
+        }
+    }
+    AUDIO_WARNING_LOG("no matching callback found to remove");
+}
+
+void NapiAudioSystemVolumeChangeCallback::RemoveAllCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &item : audioSystemVolumeChangeCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
+        napi_status delStatus = napi_delete_reference(env_, item->cb_);
+        if (delStatus == napi_ok) {
+            item->cb_ = nullptr;
+        } else {
+            AUDIO_ERR_LOG("failed to delete napi reference for callback");
+        }
+    }
+    audioSystemVolumeChangeCbList_.clear();
+    AUDIO_INFO_LOG("remove all js callback success");
+}
+
+bool NapiAudioSystemVolumeChangeCallback::IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback)
 {
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
-    napi_get_reference_value(env_, callback_, &copyValue);
-    CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napi_strict_equals(env_, copyValue, args, &isEquals) == napi_ok, false,
-        "Get napi_strict_equals failed");
+    napi_get_reference_value(env, refCallback, &copyValue);
+    if (napi_strict_equals(env, copyValue, callback, &isEquals) != napi_ok) {
+        AUDIO_ERR_LOG("Get napi_strict_equals failed");
+        return false;
+    }
 
     return isEquals;
+}
+
+bool NapiAudioSystemVolumeChangeCallback::ContainSameJsCallback(napi_value args)
+{
+    CHECK_AND_RETURN_RET_LOG(args != nullptr, false, "args is nullptr");
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &item : audioSystemVolumeChangeCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
+        napi_ref ref = item->GetRef();
+        bool isEquals = IsSameCallback(env_, args, ref);
+        if (isEquals) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t NapiAudioSystemVolumeChangeCallback::GetSystemVolumeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return static_cast<int32_t>(audioSystemVolumeChangeCbList_.size());
 }
 } // namespace AudioStandard
 } // namespace OHOS

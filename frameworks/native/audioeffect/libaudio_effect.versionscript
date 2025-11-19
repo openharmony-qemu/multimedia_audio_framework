@@ -30,7 +30,6 @@
     *EnhanceChainManagerInitEnhanceBuffer*;
     *EffectChainManagerCheckEffectOffload*;
     *EffectChainManagerReturnEffectChannelInfo*;
-    *EffectChainManagerReturnMultiChannelInfo*;
     *ConvertChLayoutToPaChMap*;
     *EffectChainManagerGetSpatializationEnabled*;
     *EffectChainManagerGetSceneCount*;
@@ -75,7 +74,6 @@
     *SendInitCommand*;
     *EnhanceChainManagerSendInitCommand*;
     *InitEffectBuffer*;
-    *EffectChainManagerQueryHdiSupportedChannelLayout*;
     *LoadEffectProperties*;
     *ApplyAudioEffectChain*;
     *CheckAndAddSessionID*;
@@ -98,6 +96,8 @@
     *ResetInfo*;
     *SetAbsVolumeStateToEffect*;
     *DeleteStreamVolume*;
+    *ExistAudioEffectChainArm*;
+    *IsChannelLayoutSupportedForDspEffect*;
   local:
     *;
 };

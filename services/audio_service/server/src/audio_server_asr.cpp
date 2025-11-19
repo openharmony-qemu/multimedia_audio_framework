@@ -451,7 +451,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(int32_t asrVoiceMuteMode, bool on)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t AudioServer::IsWhispering(int32_t& whisperRes)

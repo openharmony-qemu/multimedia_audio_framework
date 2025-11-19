@@ -57,6 +57,9 @@ public:
     void SetSpeed(float speed);
     float GetSpeed();
     uint64_t GetLatency();
+
+    bool QueryUnderrun();
+
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
 private:
@@ -64,6 +67,7 @@ private:
     int32_t OnStreamInfoChange(bool needata = true);
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
+    void UpdateDataFlag(HpaeNodeInfo &nodeInfo);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;

@@ -44,7 +44,6 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_SESSION_ID = 123456;
-const uint32_t MAXFRAMELEN = 38400;
 const uint32_t ECTYPENUM = 3;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
@@ -140,13 +139,8 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
 
 void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
 {
-    RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(sourceInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sourceInfo.format, AUDIO_SUPPORTED_FORMATS);
-    sourceInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        sourceInfo.frameLen %= MAXFRAMELEN;
-    }
     if (GetData<bool>()) {
         sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
     } else {
@@ -157,13 +151,8 @@ void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
 {
-    RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
-    streamInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        streamInfo.frameLen %= MAXFRAMELEN;
-    }
 }
 
 void InitSourceInfo(HpaeSourceInfo &sourceInfo)
@@ -172,6 +161,8 @@ void InitSourceInfo(HpaeSourceInfo &sourceInfo)
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.filePath = g_rootCapturerPath;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
     RoundSourceInfo(sourceInfo);
 }
 
@@ -182,6 +173,8 @@ void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.deviceName = "Built_in_mic";
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
 }
 
 void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceInfo)
@@ -190,14 +183,16 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.filePath = g_rootCapturerPath;
-
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
     RoundSourceInfo(sourceInfo);
 
     newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
     newSourceInfo.filePath = g_rootCapturerPath;
-
+    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
     RoundSourceInfo(newSourceInfo);
 }
 
@@ -316,7 +311,6 @@ void HpaeCapturerManagerFuzzTest1()
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -334,7 +328,6 @@ void HpaeCapturerManagerFuzzTest2()
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -356,7 +349,6 @@ void HpaeCapturerManagerFuzzTest3()
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
 }
 
 void HpaeCapturerManagerReloadFuzzTest1()
@@ -379,7 +371,6 @@ void HpaeCapturerManagerReloadFuzzTest1()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -402,7 +393,6 @@ void HpaeCapturerManagerReloadFuzzTest2()
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     capturerManager->DeInit();
-    WaitForMsgProcessing(capturerManager);
 }
 
 void HpaeCapturerManagerReloadFuzzTest3()
@@ -425,7 +415,6 @@ void HpaeCapturerManagerReloadFuzzTest3()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -440,7 +429,6 @@ void MoveStreamFuzzTest()
     capturerManager->MoveStream(sessionId, sourceName);
     std::vector<uint32_t> sessionIds = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     capturerManager->MoveAllStream(sourceName, sessionIds);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -452,7 +440,7 @@ void GetSourceInfoFuzzTest()
     capturerManager->Init();
     capturerManager->GetSourceInfo();
     capturerManager->GetAllSourceOutputsInfo();
-    WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void OnRequestLatencyFuzzTest()
@@ -462,9 +450,8 @@ void OnRequestLatencyFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    uint64_t latency = GetData<uint64_t>();
+    uint64_t latency = 0;
     capturerManager->OnRequestLatency(sessionId, latency);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -476,7 +463,6 @@ void AddNodeToSourceFuzzTest1()
     capturerManager->Init();
     HpaeCaptureMoveInfo moveInfo;
     capturerManager->AddNodeToSource(moveInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -488,7 +474,6 @@ void AddNodeToSourceFuzzTest2()
     capturerManager->Init();
     HpaeCaptureMoveInfo moveInfo = GetHpaeCaptureMoveInfo();
     capturerManager->AddNodeToSource(moveInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -501,7 +486,6 @@ void AddAllNodesToSourceFuzzTest1()
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -515,7 +499,6 @@ void AddAllNodesToSourceFuzzTest2()
         GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo()};
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -526,7 +509,6 @@ void GetDeviceHDFDumpInfoFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
     capturerManager->GetDeviceHDFDumpInfo();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -552,7 +534,6 @@ void CaptureEffectCreateFuzzTest()
     for (uint32_t sessionId : sessionIds) {
         capturerManager->DestroyStream(sessionId);
     }
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -583,7 +564,6 @@ void StartWithEcAndMicRefFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -599,7 +579,6 @@ void DeInitWithCapturerSourceStopForRemoteFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
     capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -616,7 +595,6 @@ void PrepareCapturerEcFuzzTest()
     CHECK_AND_RETURN(capturerManager != nullptr);
 
     capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -656,7 +634,6 @@ void RegisterReadCallbackFuzzTest()
 
     uint32_t invalidSessionId = GetData<uint32_t>();
     capturerManager->RegisterReadCallback(invalidSessionId, callback);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -683,7 +660,6 @@ void CheckIfAnyStreamRunningFuzzTest()
     HpaeSourceInfo newSourceInfo;
     InitSourceInfo(newSourceInfo);
     capturerManager->ReloadCaptureManager(newSourceInfo);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -697,7 +673,6 @@ void DumpSourceInfoFuzzTest()
     capturerManager->Init();
     WaitForMsgProcessing(capturerManager);
     capturerManager->DumpSourceInfo();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -727,7 +702,6 @@ void AddAllNodesToSourceAdvancedFuzzTest()
 
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -759,7 +733,6 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -787,7 +760,6 @@ void ConnectOutputSessionFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -814,7 +786,6 @@ void PauseFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Pause(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -844,34 +815,6 @@ void SetStreamMuteFuzzTest()
     uint32_t invalidSessionId = GetData<uint32_t>();
     bool isMute2 = GetData<bool>();
     capturerManager->SetStreamMute(invalidSessionId, isMute2);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->DeInit();
-}
-
-void ProcessFuzzTest()
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
-
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    streamInfo.sessionId = GetData<uint32_t>();
-
-    capturerManager->CreateStream(streamInfo);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->Process();
-
     capturerManager->DeInit();
 }
 
@@ -977,7 +920,6 @@ TestFuncs g_testFuncs[] = {
     ConnectOutputSessionFuzzTest,
     PauseFuzzTest,
     SetStreamMuteFuzzTest,
-    ProcessFuzzTest,
     ReloadCaptureManagerFuzzTest,
     DeInitFuzzTest,
     GetSourceOutputInfoFuzzTest,

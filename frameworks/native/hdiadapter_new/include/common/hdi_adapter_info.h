@@ -40,6 +40,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_ACCESSORY,
     HDI_ID_TYPE_AI,
     HDI_ID_TYPE_VA,
+    HDI_ID_TYPE_VIRTUAL_INJECTOR,
     HDI_ID_TYPE_NUM,
 };
 
@@ -105,6 +106,7 @@ enum AudioByteSize : int32_t {
 
 #define PRESTORE_INFO_AUDIO_BALANCE "audio_balance"
 #define PRESTORE_INFO_AUDIO_MONO "audio_mono"
+#define PRESTORE_INFO_AUDIO_BT_PARAM "audio_bt_param"
 
 #define TIMEOUT_SECONDS_10 10
 #define TIMEOUT_SECONDS_5 5

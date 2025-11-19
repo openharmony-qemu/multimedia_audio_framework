@@ -294,7 +294,7 @@ void SetSplitStreamTypeFuzzTest()
 {
     PcmBufferInfo pcmBufferInfo;
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
-    HpaeSplitStreamType type = hpaePcmBuffer->GetSplitStreamType();
+    SplitStreamType type = hpaePcmBuffer->GetSplitStreamType();
     hpaePcmBuffer->SetSplitStreamType(type);
 }
 

@@ -37,6 +37,15 @@ public:
     int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
+    int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId, int32_t &ret) override;
+    int32_t StartInjection(uint32_t streamId, int32_t &ret) override;
+    int32_t RemoveIdForInjector(uint32_t streamId) override;
+    int32_t ReleaseCaptureInjector() override;
+    int32_t RebuildCaptureInjector(uint32_t streamId) override;
+    int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue,
+        uint64_t &sendDataSize, uint32_t &timeStamp, int32_t &ret) override;
+    int32_t OnCheckActiveMusicTime(const std::string &reason) override;
+    int32_t CaptureConcurrentCheck(const uint32_t sessionId) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

@@ -1,0 +1,173 @@
+# Copyright (C) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/ets_frontend/ets2abc_config.gni")
+import("//build/ohos.gni")
+import("//build/ohos/taihe_idl/taihe.gni")
+import("../../config.gni")
+
+subsystem_name = "multimedia"
+part_name = "audio_framework"
+taihe_generated_file_path = "$taihe_file_path/out/$subsystem_name/$part_name"
+
+copy_taihe_idl("copy_taihe") {
+  sources = [ "//foundation/multimedia/audio_framework/frameworks/taihe/idl/ohos.multimedia.audio.taihe" ]
+}
+
+ohos_taihe("run_taihe") {
+  taihe_generated_file_path = "$taihe_generated_file_path"
+  deps = [ ":copy_taihe" ]
+  outputs = [
+    "$taihe_generated_file_path/src/ohos.multimedia.audio.ani.cpp",
+    "$taihe_generated_file_path/src/ohos.multimedia.audio.abi.c",
+  ]
+}
+
+taihe_shared_library("audio_taihe") {
+  taihe_generated_file_path = "$taihe_generated_file_path"
+  subsystem_name = "$subsystem_name"
+  part_name = "$part_name"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  include_dirs = [
+    "common",
+    "asrcontroller",
+    "audiorenderer",
+    "audiorenderer/callback",
+    "audiocapturer",
+    "audiocapturer/callback",
+    "audiomanager",
+    "audiomanager/callback",
+    "audioloopback",
+    "audioloopback/callback",
+  ]
+
+  sources = get_target_outputs(":run_taihe")
+  sources += [
+    "asrcontroller/taihe_asr_processing_controller.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_callback_inner.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_callbacks.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_device_change_callback.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_info_change_callback.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_read_data_callback.cpp",
+    "audiocapturer/callback/taihe_capturer_period_position_callback.cpp",
+    "audiocapturer/callback/taihe_capturer_position_callback.cpp",
+    "audiocapturer/taihe_audio_capturer.cpp",
+    "audioloopback/callback/taihe_audio_loopback_callback.cpp",
+    "audioloopback/callback/taihe_audio_loopback_callback_inner.cpp",
+    "audioloopback/taihe_audio_loopback.cpp",
+    "audiomanager/callback/taihe_active_volume_type_change_callback.cpp",
+    "audiomanager/callback/taihe_appvolume_change_callback.cpp",
+    "audiomanager/callback/taihe_audio_capturer_state_callback.cpp",
+    "audiomanager/callback/taihe_audio_manager_callbacks.cpp",
+    "audiomanager/callback/taihe_audio_micstatechange_callback.cpp",
+    "audiomanager/callback/taihe_audio_renderer_state_callback.cpp",
+    "audiomanager/callback/taihe_audio_ringermode_callback.cpp",
+    "audiomanager/callback/taihe_audio_rounting_available_devicechange_callback.cpp",
+    "audiomanager/callback/taihe_audio_routing_manager_callbacks.cpp",
+    "audiomanager/callback/taihe_audio_scene_callbacks.cpp",
+    "audiomanager/callback/taihe_audio_session_callback.cpp",
+    "audiomanager/callback/taihe_audio_session_device_callback.cpp",
+    "audiomanager/callback/taihe_audio_session_state_callback.cpp",
+    "audiomanager/callback/taihe_audio_spatialization_manager_callback.cpp",
+    "audiomanager/callback/taihe_audio_stream_volume_change_callback.cpp",
+    "audiomanager/callback/taihe_audio_system_volume_change_callback.cpp",
+    "audiomanager/callback/taihe_audio_volume_key_event.cpp",
+    "audiomanager/taihe_audio_collaborative_manager.cpp",
+    "audiomanager/taihe_audio_effect_manager.cpp",
+    "audiomanager/taihe_audio_manager.cpp",
+    "audiomanager/taihe_audio_routing_manager.cpp",
+    "audiomanager/taihe_audio_session_manager.cpp",
+    "audiomanager/taihe_audio_spatialization_manager.cpp",
+    "audiomanager/taihe_audio_stream_manager.cpp",
+    "audiomanager/taihe_audio_volume_group_manager.cpp",
+    "audiomanager/taihe_audio_volume_manager.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_callback_inner.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_device_change_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_policy_service_died_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_write_data_callback.cpp",
+    "audiorenderer/callback/taihe_renderer_period_position_callback.cpp",
+    "audiorenderer/callback/taihe_renderer_position_callback.cpp",
+    "audiorenderer/taihe_audio_renderer.cpp",
+    "common/taihe_audio_enum.cpp",
+    "common/taihe_audio_error.cpp",
+    "common/taihe_param_utils.cpp",
+    "src/ani_constructor.cpp",
+  ]
+
+  deps = [
+    ":run_taihe",
+    "../../services/audio_policy:audio_foundation",
+    "../../services/audio_policy:audio_policy_client",
+    "../../services/audio_service:audio_client",
+    "../native/audiocapturer:audio_capturer",
+    "../native/audioloopback:audio_loopback",
+    "../native/audiorenderer:audio_renderer",
+    "../native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "ability_runtime:abilitykit_native",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "napi:ace_napi",
+  ]
+
+  defines = []
+  if (audio_framework_feature_hiview_enable) {
+    defines += [ "FEATURE_HIVIEW_ENABLE" ]
+    external_deps += [ "hiview:libxpower_event_js" ]
+  }
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+    sources += [ "audiorenderer/taihe_toneplayer.cpp" ]
+    deps += [ "../native/toneplayer:audio_toneplayer" ]
+  }
+}
+
+generate_static_abc("audio_framework_taihe_abc") {
+  base_url = "$taihe_generated_file_path"
+  files = [ "$taihe_generated_file_path/@ohos.multimedia.audio.ets" ]
+  is_boot_abc = "True"
+  device_dst_file = "/system/framework/audio_framework_taihe_abc.abc"
+  dependencies = [ ":run_taihe" ]
+}
+
+ohos_prebuilt_etc("audio_framework_etc") {
+  source = "$target_out_dir/audio_framework_taihe_abc.abc"
+  module_install_dir = "framework"
+  part_name = "$part_name"
+  subsystem_name = "$subsystem_name"
+  deps = [ ":audio_framework_taihe_abc" ]
+}
+
+group("audio_framework_taihe") {
+  deps = [
+    ":audio_framework_etc",
+    ":audio_taihe",
+  ]
+}

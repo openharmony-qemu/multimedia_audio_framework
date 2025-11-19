@@ -560,7 +560,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->InitAllDupBuffer(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -600,7 +599,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_NE(SUCCESS, ret);
     ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
     EXPECT_NE(SUCCESS, ret);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -668,7 +666,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
 
@@ -718,7 +715,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
 
@@ -753,7 +749,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -787,7 +782,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -827,7 +821,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_002, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -869,7 +862,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -2788,10 +2780,10 @@ HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_001,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
 {
@@ -2799,43 +2791,64 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
     float volume = 0.5;
 
     // Act
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
     // Assert
     float expectedVolume = 0.0;
-    EXPECT_NE(expectedVolume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+    EXPECT_NE(expectedVolume, AudioService::GetInstance()->audioWorkGroupSystemVolume_);
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_002,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_MUSIC;
     float volume = 0.5;
 
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
-    EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+    EXPECT_EQ(volume, AudioService::GetInstance()->audioWorkGroupSystemVolume_);
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_003,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
     float volume = 0.5;
 
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
-    EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
+    EXPECT_EQ(volume, AudioService::GetInstance()->audioWorkGroupSystemVolume_);
+}
+
+/**
+ * @tc.name  : Test IsStreamTypeFitWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamTypeFitWorkgroup_001,
+ * @tc.desc  : Test IsStreamTypeFitWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, IsStreamTypeFitWorkgroup_001, TestSize.Level1)
+{
+    AudioService *service = AudioService::GetInstance();
+ 
+    EXPECT_TRUE(service->IsStreamTypeFitWorkgroup(STREAM_MUSIC));
+    EXPECT_TRUE(service->IsStreamTypeFitWorkgroup(STREAM_MOVIE));
+    EXPECT_TRUE(service->IsStreamTypeFitWorkgroup(STREAM_SPEECH));
+    EXPECT_TRUE(service->IsStreamTypeFitWorkgroup(STREAM_NAVIGATION));
+    EXPECT_TRUE(service->IsStreamTypeFitWorkgroup(STREAM_VOICE_COMMUNICATION));
+ 
+    EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_ALARM));
+    EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_SYSTEM));
+    EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_NOTIFICATION));
 }
 
 /**
@@ -3091,28 +3104,54 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     audioService->RenderersCheckForAudioWorkgroup(-1);
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(-1));
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(-1));
+
+    audioService->allRendererMap_.clear();
+    AudioWorkgroupPerProcess process;
+    process.permission = true;
+    process.hasSystemPermission = true;
+    auto wg = std::make_shared<AudioWorkgroup>(1);
+    process.groups.emplace(1, std::move(wg));
+
+    AudioResourceService *resService = AudioResourceService::GetInstance();
+    resService->audioWorkgroupMap_.emplace(1, process);
+    EXPECT_TRUE(resService->IsProcessInWorkgroup(1));
+    EXPECT_FALSE(resService->IsProcessHasSystemPermission(1));
+
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_ALARM;
+    processConfig.appInfo.appPid = 1;
+    processConfig.originalSessionId = 1;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> server1 =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(server1, nullptr);
+    audioService->allRendererMap_[1] = server1;
+    audioService->RenderersCheckForAudioWorkgroup(1);
 }
 
 /**
- * @tc.name  : Test GetSystemVolume API
+ * @tc.name  : Test GetSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: GetSystemVolume_001,
- * @tc.desc  : Test GetSystemVolume interface.
+ * @tc.desc  : Test GetSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, GetSystemVolume_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
-    audioService->musicOrVoipSystemVolume_ = 0.5;
+    audioService->audioWorkGroupSystemVolume_ = 0.5;
     float volume = 0.0;
-    volume = audioService->GetSystemVolume();
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 0.5);
 
-    audioService->musicOrVoipSystemVolume_ = 1.0;
-    volume = audioService->GetSystemVolume();
+    audioService->audioWorkGroupSystemVolume_ = 1.0;
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 1.0);
 
-    audioService->musicOrVoipSystemVolume_ = 0.0;
-    volume = audioService->GetSystemVolume();
+    audioService->audioWorkGroupSystemVolume_ = 0.0;
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 0.0);
 }
 

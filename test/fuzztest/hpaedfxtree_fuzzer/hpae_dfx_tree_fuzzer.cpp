@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "hpae_dfx_tree.h"
+#include "hpae_dfx_map_tree.h"
 #include "audio_log.h"
 #include "../fuzz_utils.h"
 
@@ -26,21 +26,9 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t THRESHOLD = 10;
 typedef void (*TestFuncs)();
 
-void LevelOrderTraversalFuzzTest()
-{
-    std::shared_ptr<HpaeDfxTree> hpaeDfxTree = std::make_shared<HpaeDfxTree>();
-    CHECK_AND_RETURN(hpaeDfxTree != nullptr);
-    uint32_t parentNodeId =  g_fuzzUtils.GetData<uint32_t>();
-    HpaeDfxNodeInfo info = {
-        .nodeId = g_fuzzUtils.GetData<uint32_t>(),
-    };
-    hpaeDfxTree->Insert(parentNodeId, info);
-    hpaeDfxTree->LevelOrderTraversal();
-}
-
 void PrintNodeInfoFuzzTest()
 {
-    std::shared_ptr<HpaeDfxTree> hpaeDfxTree = std::make_shared<HpaeDfxTree>();
+    std::shared_ptr<HpaeDfxMapTree> hpaeDfxTree = std::make_shared<HpaeDfxMapTree>();
     CHECK_AND_RETURN(hpaeDfxTree != nullptr);
     string outStr = "test";
     HpaeDfxNodeInfo nodeInfo = {
@@ -57,7 +45,6 @@ void PrintNodeInfoFuzzTest()
     hpaeDfxTree->PrintNodeInfo(outStr, nodeInfo);
 }
 vector<TestFuncs> g_testFuncs = {
-    LevelOrderTraversalFuzzTest,
     PrintNodeInfoFuzzTest,
 };
 } // namespace AudioStandard

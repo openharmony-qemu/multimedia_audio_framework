@@ -32,6 +32,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 
+const int32_t DEFAULT_VALUE_ONE = 1;
 const int32_t DEFAULT_VALUE_TWO = 2;
 const uint32_t DEFAULT_SESSIONID_NUM_FIRST = 12345;
 const uint32_t DEFAULT_SESSIONID_NUM_SECOND = 12346;
@@ -41,10 +42,27 @@ const size_t DEFAULT_FRAMELEN_SECOND = 960;
 const int32_t DEFAULT_TEST_VALUE_FIRST = 100;
 const int32_t DEFAULT_TEST_VALUE_SECOND = 200;
 const float LOUDNESS_GAIN = 1.0f;
+const float FRAME_LENGTH_IN_SECOND = 0.02;
 
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 constexpr uint32_t SAMPLE_RATE_16050 = 16050;
+const size_t FRAMELEN_FOR_11025 = 441;
+const size_t FRAMELEN_FOR_16010 = 1601;
+const size_t FRAMELEN_FOR_16050 = 321;
 
+static HpaeSinkInfo GetRenderTestSinkInfo()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.frameLen = SAMPLE_RATE_48000 * FRAME_LENGTH_IN_SECOND;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    return sinkInfo;
+}
 
 class HpaeProcessClusterTest : public testing::Test {
 public:
@@ -83,18 +101,26 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level
     EXPECT_EQ(retNi.format, nodeInfo.format);
 
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->idConverterMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idLoudnessGainNodeMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
+
     nodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
     nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_SECOND;
     nodeInfo.samplingRate = SAMPLE_RATE_44100;
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode1), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), (DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1 + 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_TWO);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_TWO);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_TWO);
 }
 
 /**
@@ -106,7 +132,7 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_001, TestSize.L
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
-    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.frameLen = FRAMELEN_FOR_11025;
     nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
     nodeInfo.samplingRate = SAMPLE_RATE_11025;
     nodeInfo.channels = STEREO;
@@ -127,10 +153,15 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_001, TestSize.L
     EXPECT_EQ(retNi.format, nodeInfo.format);
 
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->idConverterMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idLoudnessGainNodeMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
 }
 
 /**
@@ -142,7 +173,7 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_002, TestSize.L
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
-    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.frameLen = FRAMELEN_FOR_16010;
     nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
     nodeInfo.customSampleRate = SAMPLE_RATE_16010;
     nodeInfo.channels = STEREO;
@@ -164,10 +195,15 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_002, TestSize.L
     EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
 
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->idConverterMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idLoudnessGainNodeMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
 }
 
 /**
@@ -179,7 +215,7 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_003, TestSize.L
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
-    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.frameLen = FRAMELEN_FOR_16050;
     nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
     nodeInfo.customSampleRate = SAMPLE_RATE_16050;
     nodeInfo.channels = STEREO;
@@ -201,10 +237,15 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_003, TestSize.L
     EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
 
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->idConverterMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idLoudnessGainNodeMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
 }
 
 /**
@@ -238,10 +279,15 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_004, TestSize.L
     EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
 
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeProcessCluster->idConverterMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idLoudnessGainNodeMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
 }
 
 static int32_t g_testValue1 = 0;
@@ -285,11 +331,12 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
         std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode0), SUCCESS);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode1), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode0);
     hpaeProcessCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_TWO);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_TWO);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     hpaeSinkOutputNode->Connect(hpaeProcessCluster);
     std::string deviceClass = "file_io";
@@ -314,9 +361,12 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     EXPECT_EQ(hpaeProcessCluster.use_count(), 1);
     hpaeProcessCluster->DisConnect(hpaeSinkInputNode0);
+    EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
     EXPECT_EQ(hpaeSinkInputNode0.use_count(), 1);
-    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
+
     hpaeProcessCluster->DisConnect(hpaeSinkInputNode1);
+    EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_SECOND), SUCCESS);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), 1);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
 }
@@ -330,24 +380,44 @@ HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
-    HpaeSinkInfo dummySinkInfo;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
 
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
     hpaeProcessCluster->DoProcess();
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
     hpaeProcessCluster->DoProcess();
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
 
     nodeInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
     hpaeProcessCluster =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+
+    sinkInfo.deviceClass = "remote";
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+
+    sinkInfo.deviceName = "DP_MCH_speaker";
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
 }
 
 HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
@@ -372,6 +442,7 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
         std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
     
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(dummySinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(dummySinkInputNode);
     
     AudioBasicFormat basicFormat;
@@ -387,8 +458,10 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     hpaeProcessCluster = nullptr;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->CreateNodes(dummySinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(dummySinkInputNode);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), SUCCESS);
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), SUCCESS);
     
     hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, LOUDNESS_GAIN);
     ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);

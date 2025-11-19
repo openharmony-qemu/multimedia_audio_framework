@@ -192,46 +192,6 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, s
     return sharedMemory;
 }
 
-int32_t AudioSharedMemory::WriteToParcel(const std::shared_ptr<AudioSharedMemory> &memory, MessageParcel &parcel)
-{
-    std::shared_ptr<AudioSharedMemoryImpl> memoryImpl = std::static_pointer_cast<AudioSharedMemoryImpl>(memory);
-    CHECK_AND_RETURN_RET_LOG(memoryImpl != nullptr, ERR_OPERATION_FAILED, "invalid pointer.");
-
-    int32_t fd = memoryImpl->GetFd();
-
-    size_t size = memoryImpl->GetSize();
-    CHECK_AND_RETURN_RET_LOG((size > 0 && size < MAX_MMAP_BUFFER_SIZE), ERR_INVALID_PARAM,
-        "invalid size: %{public}zu", size);
-    uint64_t sizeTmp = static_cast<uint64_t>(size);
-
-    std::string name = memoryImpl->GetName();
-
-    parcel.WriteFileDescriptor(fd);
-    parcel.WriteUint64(sizeTmp);
-    parcel.WriteString(name);
-
-    return SUCCESS;
-}
-
-std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParcel &parcel)
-{
-    int fd = parcel.ReadFileDescriptor();
-
-    uint64_t sizeTmp = parcel.ReadUint64();
-    CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
-    size_t size = static_cast<size_t>(sizeTmp);
-
-    std::string name = parcel.ReadString();
-
-    std::shared_ptr<AudioSharedMemory> memory = AudioSharedMemory::CreateFromRemote(fd, size, name);
-    if (memory == nullptr || memory->GetBase() == nullptr) {
-        AUDIO_ERR_LOG("ReadFromParcel failed");
-        memory = nullptr;
-    }
-    CloseFd(fd);
-    return memory;
-}
-
 bool AudioSharedMemory::Marshalling(Parcel &parcel) const
 {
     return true;
@@ -320,7 +280,7 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, ERR_OPERATION_FAILED, "dataMem_ mmap failed.");
     if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
         syncReadFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_);
-        syncWriteFrame_ = syncReadFrame_ + sizeof(uint32_t);
+        syncWriteFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_ + sizeof(uint32_t));
     }
 
     dataBase_ = dataMem_->GetBase();
@@ -374,61 +334,6 @@ std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::CreateFromRemote(uint32_t 
         AUDIO_ERR_LOG("failed to init.");
         return nullptr;
     }
-    return buffer;
-}
-
-int32_t OHAudioBufferBase::WriteToParcel(const std::shared_ptr<OHAudioBufferBase> &buffer, MessageParcel &parcel)
-{
-    AUDIO_DEBUG_LOG("WriteToParcel start.");
-    AudioBufferHolder bufferHolder = buffer->GetBufferHolder();
-    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
-        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
-        ERROR_INVALID_PARAM, "buffer holder error:%{public}d", bufferHolder);
-
-    auto initInfo = buffer->GetInitializationInfo();
-
-    parcel.WriteUint32(bufferHolder);
-    parcel.WriteUint32(initInfo.totalSizeInFrame);
-    parcel.WriteUint32(initInfo.byteSizePerFrame);
-
-    parcel.WriteFileDescriptor(initInfo.dataFd);
-    parcel.WriteFileDescriptor(initInfo.infoFd);
-
-    AUDIO_DEBUG_LOG("WriteToParcel done.");
-    return SUCCESS;
-}
-
-std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::ReadFromParcel(MessageParcel &parcel)
-{
-    AUDIO_DEBUG_LOG("ReadFromParcel start.");
-    uint32_t holder = parcel.ReadUint32();
-    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
-        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
-        return nullptr;
-    }
-    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
-         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
-    uint32_t totalSizeInFrame = parcel.ReadUint32();
-    uint32_t byteSizePerFrame = parcel.ReadUint32();
-
-    int dataFd = parcel.ReadFileDescriptor();
-    int infoFd = parcel.ReadFileDescriptor();
-
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
-        byteSizePerFrame, bufferHolder, dataFd, infoFd);
-    if (buffer == nullptr) {
-        AUDIO_ERR_LOG("ReadFromParcel failed.");
-    } else if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
-        byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
-        AUDIO_WARNING_LOG("data in shared memory diff.");
-    } else {
-        AUDIO_DEBUG_LOG("Read some data done.");
-    }
-    CloseFd(dataFd);
-    CloseFd(infoFd);
-    AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
 
@@ -663,7 +568,7 @@ int32_t OHAudioBufferBase::GetWritableDataFrames()
     uint64_t write = basicBufferInfo_->curWriteFrame.load();
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
-    uint32_t temp = write - read;
+    uint64_t temp = write - read;
     CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
         result, "failed to GetWritableDataFrames.");
     result = static_cast<int32_t>(totalSizeInFrame_ - temp);
@@ -676,7 +581,7 @@ int32_t OHAudioBufferBase::GetReadableDataFrames()
     uint64_t write = basicBufferInfo_->curWriteFrame.load();
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
-    uint32_t temp = write - read;
+    uint64_t temp = write - read;
     CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
         result, "failed to GetWritableDataFrames.");
     result = static_cast<int32_t>(temp);
@@ -727,6 +632,9 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
     if (writeFrame == oldWritePos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldWritePos >= basePos, ERR_INVALID_PARAM,
+        "oldWritePos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldWritePos, basePos);
     CHECK_AND_RETURN_RET_LOG(writeFrame > oldWritePos, ERR_INVALID_PARAM, "Too small writeFrame:%{public}" PRIu64".",
         writeFrame);
 
@@ -759,6 +667,9 @@ int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
     if (readFrame == oldReadPos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldReadPos >= oldBasePos, ERR_INVALID_PARAM,
+        "oldReadPos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldReadPos, oldBasePos);
 
     // new read position should not be bigger than write position or less than old read position
     CHECK_AND_RETURN_RET_LOG(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),

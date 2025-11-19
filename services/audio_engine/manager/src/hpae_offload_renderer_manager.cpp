@@ -34,7 +34,10 @@ constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
-{}
+{
+    HpaeNodeInfo nodeInfo;
+    renderNoneEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+}
 
 HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 {
@@ -48,20 +51,15 @@ HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
 {
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
-        HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen : 0;
+        HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ? nodeInfo.customSampleRate : nodeInfo.samplingRate)
+        / nodeInfo.frameLen : 0;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.effectInfo = streamInfo.effectInfo;
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode->SetAppUid(streamInfo.uid);
     AddNodeToMap(sinkInputNode);
@@ -78,15 +76,25 @@ int32_t HpaeOffloadRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSink
 void HpaeOffloadRendererManager::AddNodeToMap(std::shared_ptr<HpaeSinkInputNode> node)
 {
     sinkInputNodeMap_[node->GetSessionId()] = node;
+    renderNoneEffectNode_->AudioOffloadRendererCreate(node->GetNodeInfo(), sinkInfo_);
     if (curNode_ == nullptr) {
         curNode_ = node;
+        CreateOffloadNodes();
     }
 }
 
 void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
 {
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    if (node != nullptr) {
+        renderNoneEffectNode_->AudioOffloadRendererRelease(node->GetNodeInfo(), sinkInfo_);
+#ifdef ENABLE_HIDUMP_DFX
+        OnNotifyDfxNodeAdmin(false, node->GetNodeInfo());
+#endif
+    }
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
+        DestroyOffloadNodes();
         curNode_ = nullptr;
     }
 }
@@ -101,6 +109,7 @@ void HpaeOffloadRendererManager::SetCurrentNode()
     for (auto [_, node]: sinkInputNodeMap_) {
         curNode_ = node;
         if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
+            CreateOffloadNodes();
             ConnectInputSession();
             break;
         }
@@ -114,13 +123,16 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // 7s history buffer to rewind
-    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen;
+    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ?
+        nodeInfo.customSampleRate : nodeInfo.samplingRate) / nodeInfo.frameLen;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
     HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     AddNodeToMap(node);
-
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     if (!isConnect || node->GetState() != HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u not need connect session", sessionId);
         return;
@@ -129,9 +141,6 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     if (node->GetState() == HPAE_SESSION_RUNNING && node->GetSessionId() == curNode_->GetSessionId()) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
         ConnectInputSession();
-        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-            sinkOutputNode_->RenderSinkStart();
-        }
     }
 }
 
@@ -152,7 +161,10 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         auto node = CreateInputSession(streamInfo);
         node->SetState(HPAE_SESSION_PREPARED);
@@ -176,6 +188,7 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::DestroyStream");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "DestroyStream not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
@@ -190,46 +203,71 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
     return SUCCESS;
 }
 
+int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
+{
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "curNode_ not exist, fail to create offload nodes");
+    HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
+    outputNodeInfo.sessionId = curNode_->GetSessionId();
+    outputNodeInfo.streamType = curNode_->GetStreamType();
+    sinkOutputNode_->SetNodeInfo(outputNodeInfo);
+ 
+    HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
+    converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
+    loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
+    AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        outputNodeInfo.sessionId,
+        converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(), converterForOutput_->GetNodeId());
+    return SUCCESS;
+}
+ 
+int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
+{
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr && converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
+        converterForOutput_ != nullptr, ERROR, "offload nodes not exist, fail to destroy offload nodes");
+    AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        curNode_->GetSessionId(), converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(),
+        converterForOutput_->GetNodeId());
+    converterForLoudness_ = nullptr;
+    loudnessGainNode_ = nullptr;
+    converterForOutput_ = nullptr;
+
+    return SUCCESS;
+}
+
 int32_t HpaeOffloadRendererManager::ConnectInputSession()
 {
     if (curNode_->GetState() != HPAE_SESSION_RUNNING) {
         return SUCCESS;
     }
-
-    HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
-    outputNodeInfo.sessionId = curNode_->GetSessionId();
-    outputNodeInfo.streamType = curNode_->GetStreamType();
-    sinkOutputNode_->SetNodeInfo(outputNodeInfo);
     sinkOutputNode_->SetSpeed(curNode_->GetSpeed());
-
     // single stream manager
-    HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
-    converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
     sinkOutputNode_->Connect(converterForOutput_);
     // if there's no loudness algo, audio format will be converted to output device format at the first converternode
-    loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     converterForOutput_->Connect(loudnessGainNode_);
-    converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
     loudnessGainNode_->Connect(converterForLoudness_);
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
-
+    renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
+    if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
+        sinkOutputNode_->RenderSinkStart();
+    }
     return SUCCESS;
 }
 
 int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Start");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Start not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Start sessionId %{public}u", sessionId);
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
-            if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-                sinkOutputNode_->RenderSinkStart();
-            }
         }
     };
     SendRequest(request, __func__);
@@ -243,28 +281,26 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     loudnessGainNode_->DisConnect(converterForLoudness_);
     converterForOutput_->DisConnect(loudnessGainNode_);
     sinkOutputNode_->DisConnect(converterForOutput_);
-    converterForLoudness_ = nullptr;
-    loudnessGainNode_ = nullptr;
-    converterForOutput_ = nullptr;
+    renderNoneEffectNode_->AudioOffloadRendererStop(curNode_->GetNodeInfo(), sinkInfo_);
     return SUCCESS;
 }
 
 int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Pause");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        auto state = curNode_->GetState();
+        node->SetState(HPAE_SESSION_PAUSED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
-            auto state = curNode_->GetState();
-            curNode_->SetState(HPAE_SESSION_PAUSED);
             if (state == HPAE_SESSION_RUNNING) {
                 sinkOutputNode_->StopStream();
             }
         }
-        node->SetState(HPAE_SESSION_PAUSED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -273,6 +309,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Flush");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Flush not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
@@ -290,6 +327,7 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Drain");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
@@ -306,17 +344,19 @@ int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
 int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Stop");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
+        auto state = curNode_->GetState();
+        node->SetState(HPAE_SESSION_STOPPED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
-            if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
+            if (state == HPAE_SESSION_RUNNING) {
                 sinkOutputNode_->StopStream();
             }
         }
-        node->SetState(HPAE_SESSION_STOPPED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -330,6 +370,8 @@ int32_t HpaeOffloadRendererManager::Release(uint32_t sessionId)
 void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
+    Trace trace("HpaeOffloadRendererManager::MoveAllStreamToNewSink[" +
+        sinkName + "]_moveType[" + std::to_string(moveType) + "]");
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
 
@@ -377,6 +419,8 @@ int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, c
 int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
 {
     auto request = [this, sessionId, sinkName]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::MoveStream to [" +
+            sinkName + "]");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         if (node == nullptr) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]",
@@ -411,6 +455,7 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
 int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
 {
     auto request = [this, isSuspend]() {
+        Trace trace("HpaeOffloadRendererManager::SuspendStreamManager[" + std::to_string(isSuspend) + "]");
         if (isSuspend_ == isSuspend) {
             return;
         }
@@ -448,13 +493,16 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
+        Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
             DisConnectInputSession();
+            DestroyOffloadNodes();
         }
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 
         if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+            CreateOffloadNodes();
             ConnectInputSession();
         }
     };
@@ -467,6 +515,7 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
+        Trace trace("HpaeOffloadRendererManager::Init[" + std::to_string(isReload) + "]");
         InitSinkInner(isReload);
     };
     SendRequest(request, __func__, true);
@@ -528,6 +577,7 @@ bool HpaeOffloadRendererManager::DeactivateThread()
 
 int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
 {
+    Trace trace("HpaeOffloadRendererManager::DeInit[" + std::to_string(isMoveDefault) + "]");
     if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->DeactivateThread();
         hpaeSignalProcessThread_ = nullptr;
@@ -637,6 +687,8 @@ void HpaeOffloadRendererManager::UpdateAppsUid()
 int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
 {
     auto request = [this, sessionId, state]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::SetOffloadPolicy[" +
+            std::to_string(state) + "]");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "SetOffloadPolicy not find sessionId %{public}u", sessionId);
         node->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
@@ -668,6 +720,8 @@ int32_t HpaeOffloadRendererManager::UpdateMaxLength(uint32_t sessionId, uint32_t
 int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type)
 {
     auto request = [this, sessionId, type]() {
+        Trace trace("[" + std::to_string(sessionId) +
+            "]HpaeOffloadRendererManager::SetOffloadRenderCallbackType[" + std::to_string(type) + "]");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "SetOffloadRenderCallbackType not find sessionId %{public}u",
             sessionId);
@@ -686,6 +740,8 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
 void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
 {
     auto request = [this, sessionId, speed]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::SetSpeed[" +
+            std::to_string(speed) + "]");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "SetSpeed not find sessionId %{public}u", sessionId);
         node->SetSpeed(speed);
@@ -712,6 +768,7 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     CHECK_AND_RETURN_RET_LOG(node, ERR_INVALID_OPERATION,
         "GetSinkInputInfo not find sessionId %{public}u", sessionId);
     sinkInputInfo.nodeInfo = node->GetNodeInfo();
+    sinkInputInfo.rendererSessionInfo.state = node->GetState();
     return SUCCESS;
 }
 
@@ -749,7 +806,26 @@ void HpaeOffloadRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperati
 
 void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
-    latency = sinkOutputNode_->GetLatency();
+    uint64_t processLatency = 0;
+
+    if (converterForLoudness_) {
+        processLatency += converterForLoudness_->GetLatency();
+    }
+
+    if (loudnessGainNode_) {
+        processLatency += loudnessGainNode_->GetLatency();
+    }
+
+    if (converterForOutput_) {
+        processLatency += converterForOutput_->GetLatency();
+    }
+
+    if (sinkOutputNode_) {
+        processLatency += sinkOutputNode_->GetLatency();
+    }
+
+    latency += processLatency;
+    return;
 }
 
 void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)
@@ -791,6 +867,8 @@ std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()
 int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
     auto request = [this, sessionId, loudnessGain]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::SetLoudnessGain[" +
+            std::to_string(loudnessGain) + "]");
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "sessionId %{public}d, sinkInputNode is nullptr", sessionId);
         node->SetLoudnessGain(loudnessGain);

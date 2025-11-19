@@ -19,6 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
+#include <thread>
 #include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
@@ -111,7 +112,7 @@ private:
     int32_t testFlag_ = 0;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     struct IAudioRender *audioRender_ = nullptr;
     bool audioBalanceState_ = false;
     float leftBalanceCoef_ = 1.0f;
@@ -125,6 +126,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::mutex sinkMutex_;
+    std::thread testThread_;
 };
 
 } // namespace AudioStandard

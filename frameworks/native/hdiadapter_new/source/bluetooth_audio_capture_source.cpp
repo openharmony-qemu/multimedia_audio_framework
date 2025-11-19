@@ -90,6 +90,7 @@ void BluetoothAudioCaptureSource::DeInit(void)
         deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
     }
     audioCapture_ = nullptr;
+    AUDIO_INFO_LOG("update validState:true");
     validState_ = true;
 }
 
@@ -219,7 +220,7 @@ int32_t BluetoothAudioCaptureSource::Reset(void)
 int32_t BluetoothAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_RET(validState_, ERR_INVALID_HANDLE);
     Trace trace("BluetoothAudioCaptureSource::CaptureFrame");
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
 
@@ -350,7 +351,7 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
 
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("update validState:%{public}s", (audioScene == AUDIO_SCENE_DEFAULT) ? "true" : "false");
     validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
     return SUCCESS;
 }
@@ -389,7 +390,7 @@ int32_t BluetoothAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &a
 
 void BluetoothAudioCaptureSource::SetInvalidState(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("update validState:false");
     std::lock_guard<std::mutex> lock(statusMutex_);
     validState_ = false;
     sourceInited_ = false;
@@ -546,7 +547,6 @@ void BluetoothAudioCaptureSource::CheckUpdateState(char *frame, size_t replyByte
             captureFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }

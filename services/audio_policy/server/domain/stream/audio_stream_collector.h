@@ -26,6 +26,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK
+};
+
 class AudioStreamCollector {
 public:
     static AudioStreamCollector& GetAudioStreamCollector()
@@ -89,6 +96,7 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
+    std::vector<int32_t> GetPlayingMediaSessionIdList();
     int32_t ResumeStreamState();
     bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();

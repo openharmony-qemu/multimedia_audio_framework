@@ -89,6 +89,9 @@ public:
     int32_t SetSystemVolumeLevel(const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0);
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType,
+        int32_t volumeDegree, int32_t volumeFlag = 0);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType);
     bool IsVolumeProxyEnable();
 
     int32_t EnableChangeReport(pid_t clientPid, bool enable);
@@ -98,6 +101,8 @@ public:
     pid_t GetClientPid();
 
     bool CheckDeviceInZone(AudioDeviceDescriptor device);
+
+    bool CheckExistUidInZone();
 
 private:
     int32_t zoneId_ = -1;

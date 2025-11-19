@@ -28,6 +28,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,6 +92,8 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
         uint32_t method) override;
+
+    int32_t SetRebuildFlag() override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     int32_t GetAudioHapticsSyncId() override;
@@ -107,7 +110,7 @@ public:
     void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        AudioStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &endpoint = nullptr);
+        AudioStreamInfo &serverStreamInfo);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
@@ -125,6 +128,11 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
 
+    bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
+
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
     std::time_t GetStartMuteTime() override;
@@ -132,7 +140,6 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -148,12 +155,16 @@ public:
     uint32_t GetByteSizePerFrame() override;
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
+    void UpdateStreamInfo() override;
+
+    void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 public:
     const AudioProcessConfig processConfig_;
 
 private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
+    void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     bool CheckBGCapturer();
@@ -168,6 +179,10 @@ private:
     int32_t CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf, BufferDesc &resampleOutBuf,
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
+    void RemoveStreamInfo();
+    void ReleaseCaptureInjector();
+    void RebuildCaptureInjector();
+    bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -182,7 +197,7 @@ private:
     bool isMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
-    bool isInited_ = false;
+    std::atomic<bool> isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
@@ -194,9 +209,13 @@ private:
     uint32_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_ = false;
     std::shared_ptr<OHAudioBufferBase> processBuffer_ = nullptr;
+    std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
+    bool needConvert_ = false;
+    AudioStreamInfo serverStreamInfo_;
+    FormatKey formatKey_;
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
@@ -217,10 +236,18 @@ private:
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
     std::atomic<int32_t> audioHapticsSyncId_ = 0;
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
 
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
 
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
+
+    std::atomic<bool> rebuildFlag_ = false;
+
+    std::string logUtilsTag_ = "";
+
+    mutable int64_t volumeDataCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

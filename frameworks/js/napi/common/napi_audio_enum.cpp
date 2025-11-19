@@ -135,6 +135,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
     {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"NEARLINK_PORT", DEVICE_TYPE_NEARLINK_PORT},
+    {"SYSTEM_PRIVATE", DEVICE_TYPE_SYSTEM_PRIVATE},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
@@ -261,6 +263,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
     {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
+    {"NOTIFICATION", NapiAudioEnum::NOTIFICATION},
+    {"NAVIGATION", NapiAudioEnum::NAVIGATION},
     {"ALL", NapiAudioEnum::ALL}
 };
 
@@ -554,6 +558,18 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
     {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
+    {"PLAYBACK", NORMAL_PLAYBACK},
+    {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferredRecordCategoryMap = {
+    {"PREFERRED_NONE", PREFERRED_NONE},
+    {"PREFERRED_DEFAULT", PREFERRED_DEFAULT},
+    {"PREFERRED_LOW_LATENCY", PREFERRED_LOW_LATENCY},
+    {"PREFERRED_HIGH_QUALITY", PREFERRED_HIGH_QUALITY},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -722,6 +738,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
+        DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
+        DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
+            CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1185,6 +1204,21 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalRenderTarget(int32_t target)
+{
+    bool result = false;
+    switch (target) {
+        case NORMAL_PLAYBACK:
+        case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
 {
     bool result = false;
@@ -1295,6 +1329,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_RING:
         case AudioStreamType::STREAM_DTMF:
+        case AudioStreamType::STREAM_VOICE_RING:
             result = NapiAudioEnum::RINGTONE;
             break;
         case AudioStreamType::STREAM_MUSIC:
@@ -1565,6 +1600,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_ULTRASONIC:
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
+        case STREAM_USAGE_VOICE_RINGTONE:
             result = true;
             break;
         default:

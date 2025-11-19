@@ -74,7 +74,9 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceByStatusInfo(const DStatusInfo &statusInfo);
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);
@@ -83,6 +85,7 @@ public:
     void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     uint32_t GetPaIndexByPortName(const std::string &portName);
+    void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -129,6 +132,7 @@ private:
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
+    int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
 #ifdef BLUETOOTH_ENABLE
     void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
@@ -137,6 +141,8 @@ private:
         AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
+    void ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
+        const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
     void AddEarpiece();
@@ -149,8 +155,6 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
     int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         AudioModuleInfo &moduleInfo, std::string &currentActivePort);
-
-    void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
 
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);

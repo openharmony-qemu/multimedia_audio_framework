@@ -43,9 +43,10 @@ void AudioOffloadStream::SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_
         }
     }
 
+    CHECK_AND_RETURN_LOG(offloadAdapter < OFFLOAD_IN_ADAPTER_SIZE, "Invalid offload adapter");
     AUDIO_INFO_LOG("Set offload session: %{public}u", sessionId);
     offloadSessionIdMap_[offloadAdapter] = sessionId;
-    SetOffloadStatusInternal(sessionId);
+    SetOffloadStatusInternal(sessionId, offloadAdapter);
 }
 
 void AudioOffloadStream::UnsetOffloadStatus(uint32_t sessionId)
@@ -55,7 +56,8 @@ void AudioOffloadStream::UnsetOffloadStatus(uint32_t sessionId)
     for (auto &iter : offloadSessionIdMap_) {
         if (iter.second == sessionId) {
             iter.second = NO_OFFLOAD_STREAM_SESSIONID;
-            UnsetOffloadStatusInternal(sessionId);
+            CHECK_AND_CONTINUE_LOG(iter.first < OFFLOAD_IN_ADAPTER_SIZE, "Invalid offload adapter");
+            UnsetOffloadStatusInternal(sessionId, iter.first);
         }
     }
 }
@@ -92,7 +94,7 @@ void AudioOffloadStream::HandlePowerStateChanged(PowerMgr::PowerState state)
 }
 
 // must be called with offloadMutex_ lock
-void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId)
+void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
     AUDIO_INFO_LOG("Set offload enable for stream: %{public}u", sessionId);
 
@@ -100,19 +102,19 @@ void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId)
     // 1) Set offload enabled and current power state to renderer stream in audioservice
     // 2) Set offload stream sessionId to volume module
     // 3) Update pipe type in stream collector
-    audioPolicyManager_.SetOffloadSessionId(sessionId);
+    audioPolicyManager_.SetOffloadSessionId(sessionId, offloadAdapter);
     AudioServerProxy::GetInstance().SetOffloadModeProxy(
         sessionId, static_cast<int32_t>(currentPowerState_), false);
     streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_OFFLOAD);
 }
 
 // must be called with offloadMutex_ lock
-void AudioOffloadStream::UnsetOffloadStatusInternal(uint32_t sessionId)
+void AudioOffloadStream::UnsetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
     AUDIO_INFO_LOG("Unset offload enable for stream: %{public}u", sessionId);
 
     AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
-    audioPolicyManager_.ResetOffloadSessionId();
+    audioPolicyManager_.ResetOffloadSessionId(offloadAdapter);
     streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_NORMAL_OUT);
 }
 

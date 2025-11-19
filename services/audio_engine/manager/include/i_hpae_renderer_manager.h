@@ -20,8 +20,9 @@
 #include "i_capturer_stream.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_stream_manager.h"
-#include "hpae_dfx_tree.h"
+#include "hpae_dfx_map_tree.h"
 #include "hpae_co_buffer_node.h"
+#include "hpae_sink_virtual_output_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -96,7 +97,9 @@ public:
 
     virtual void UploadDumpSinkInfo(std::string& deviceName);
 
-    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
+    virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo);
+
+    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId);
 
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo)
     {
@@ -108,10 +111,11 @@ public:
     virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual std::string GetDeviceHDFDumpInfo() = 0;
+    virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
 
 private:
 #ifdef ENABLE_HIDUMP_DFX
-    HpaeDfxTree dfxTree_;
+    HpaeDfxMapTree dfxTree_;
 #endif
 };
 }  // namespace HPAE

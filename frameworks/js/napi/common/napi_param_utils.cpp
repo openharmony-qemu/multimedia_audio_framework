@@ -76,7 +76,7 @@ napi_status NapiParamUtils::GetParam(const napi_env &env, napi_callback_info inf
 napi_status NapiParamUtils::GetValueInt32(const napi_env &env, int32_t &value, napi_value in)
 {
     napi_status status = napi_get_value_int32(env, in, &value);
-    CHECK_AND_RETURN_RET_PRELOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
+    CHECK_AND_RETURN_RET(status == napi_ok, status);
     return status;
 }
 
@@ -92,7 +92,7 @@ napi_status NapiParamUtils::GetValueInt32(const napi_env &env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_named_property failed");
+    CHECK_AND_RETURN_RET(status == napi_ok, status);
     status = GetValueInt32(env, value, jsValue);
     return status;
 }
@@ -683,6 +683,15 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerInfo(env, &(opts->capturerInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
 
+    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    bool argTransFlag = false;
+    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
+    opts->preferredInputDevice = device;
+
     if (napi_get_named_property(env, in, "playbackCaptureConfig", &result) == napi_ok) {
         return GetPlaybackCaptureConfig(env, &(opts->playbackCaptureConfig), result);
     }
@@ -795,6 +804,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     SetValueString(env, "networkId", volumeEvent.networkId, result);
     SetValueInt32(env, "volumeMode",
         NapiAudioEnum::GetJsAudioVolumeMode(static_cast<AudioVolumeMode>(volumeEvent.volumeMode)), result);
+    SetValueInt32(env, "percentage", static_cast<int32_t>(volumeEvent.volumeDegree), result);
     return napi_ok;
 }
 

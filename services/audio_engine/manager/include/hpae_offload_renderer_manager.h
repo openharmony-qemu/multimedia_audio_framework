@@ -98,6 +98,8 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
+    int32_t CreateOffloadNodes();
+    int32_t DestroyOffloadNodes();
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
     void DeleteInputSession();
@@ -116,6 +118,7 @@ private:
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForOutput_ = nullptr;
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeOffloadSinkOutputNode> sinkOutputNode_ = nullptr;
+    std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;

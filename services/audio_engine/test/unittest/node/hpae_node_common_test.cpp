@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1";
+std::string DEFAULT_NODE_STRING_KEY = "1_48000_2_1_4"; // _4 is channelLayout mono
 std::string DEFAULT_SCENE_MUSIC = "SCENE_MUSIC";
 std::string DEFAULT_SCENE_EXTRA = "SCENE_EXTRA";
 constexpr size_t DEFAULT_LEN = 100;

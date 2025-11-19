@@ -42,7 +42,7 @@
 #include "fast_audio_stream.h"
 #include "linear_pos_time_model.h"
 #include "volume_tools.h"
-#include "format_converter.h"
+#include "audio_stream_common.h"
 #include "ring_buffer_wrapper.h"
 #include "iaudio_process.h"
 #include "process_cb_stub.h"
@@ -59,13 +59,14 @@ constexpr int32_t MAX_RETRY_COUNT = 8;
 static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
+static constexpr int32_t LOG_COUNT_LIMIT = 200;
 }
 
 class ProcessCbImpl;
 class AudioProcessInClientInner : public AudioProcessInClient,
     public std::enable_shared_from_this<AudioProcessInClientInner> {
 public:
-    AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy, bool isVoipMmap, AudioStreamInfo targetStreamInfo);
+    AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy, bool isVoipMmap);
     ~AudioProcessInClientInner();
 
     int32_t SaveDataCallback(const std::shared_ptr<AudioDataCallback> &dataCallback) override;
@@ -153,14 +154,14 @@ public:
 
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
+    void SetRebuildFlag() override;
+
     bool IsRestoreNeeded() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
 private:
-    static bool ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
-    static bool ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
 
     bool InitAudioBuffer();
 
@@ -225,7 +226,6 @@ private:
         INVALID
     };
     AudioProcessConfig processConfig_;
-    bool needConvert_ = false;
     size_t clientByteSizePerFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t clientSpanSizeInFrame_ = 240;
@@ -234,7 +234,6 @@ private:
     uint32_t sessionId_ = 0;
     bool isVoipMmap_ = false;
 
-    AudioStreamInfo targetStreamInfo_;
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
@@ -285,6 +284,8 @@ private:
     };
 
     std::atomic<HandleInfo> lastHandleInfo_;
+
+    int32_t sleepCount_ = LOG_COUNT_LIMIT;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -316,9 +317,8 @@ int32_t ProcessCbImpl::OnEndpointChange(int32_t status)
 std::mutex g_audioServerProxyMutex;
 sptr<IStandardAudioService> gAudioServerProxy = nullptr;
 
-AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy, bool isVoipMmap,
-    AudioStreamInfo targetStreamInfo) : processProxy_(ipcProxy), isVoipMmap_(isVoipMmap),
-    targetStreamInfo_(targetStreamInfo)
+AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &ipcProxy, bool isVoipMmap)
+    : processProxy_(ipcProxy), isVoipMmap_(isVoipMmap)
 {
     processProxy_->GetSessionId(sessionId_);
     AUDIO_INFO_LOG("Construct with sessionId: %{public}d", sessionId_);
@@ -369,22 +369,10 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     bool ret = AudioProcessInClient::CheckIfSupport(config);
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
         "CheckIfSupport failed!");
-    AudioStreamInfo targetStreamInfo = AudioPolicyManager::GetInstance().GetFastStreamInfo(config.originalSessionId);
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
-    bool isVoipMmap = false;
-    if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
-        config.rendererInfo.streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
-        config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        resetConfig.streamInfo = targetStreamInfo;
-        if (config.audioMode == AUDIO_MODE_RECORD) {
-            resetConfig.streamInfo.format = config.streamInfo.format;
-            resetConfig.streamInfo.channels = config.streamInfo.channels;
-        }
-    } else {
-        isVoipMmap = true;
-    }
+    bool isVoipMmap = AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType);
 
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = nullptr;
@@ -400,7 +388,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     sptr<IAudioProcess> iProcessProxy = iface_cast<IAudioProcess>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(iProcessProxy != nullptr, nullptr, "Create failed when iface_cast.");
     std::shared_ptr<AudioProcessInClientInner> process =
-        std::make_shared<AudioProcessInClientInner>(iProcessProxy, isVoipMmap, targetStreamInfo);
+        std::make_shared<AudioProcessInClientInner>(iProcessProxy, isVoipMmap);
     if (!process->Init(config, weakStream)) {
         AUDIO_ERR_LOG("Init failed!");
         process = nullptr;
@@ -688,7 +676,7 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
 
 void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream)
 {
-    logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
+    logUtilsTag_ = "ProcessClientPlay::" + std::to_string(sessionId_);
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
@@ -719,7 +707,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 
 void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> weakStream)
 {
-    logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
+    logUtilsTag_ = "ProcessClientRec::" + std::to_string(sessionId_);
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
@@ -752,10 +740,6 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak
 {
     AUDIO_INFO_LOG("Call Init.");
     processConfig_ = config;
-    if (!isVoipMmap_ && (config.streamInfo.format != targetStreamInfo_.format ||
-        config.streamInfo.channels != targetStreamInfo_.channels)) {
-        needConvert_ = true;
-    }
     clientByteSizePerFrame_ = GetFormatSize(config.streamInfo);
 
     AUDIO_DEBUG_LOG("Using clientByteSizePerFrame_:%{public}zu", clientByteSizePerFrame_);
@@ -868,36 +852,6 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
     return SUCCESS;
 }
 
-// only support convert to SAMPLE_S32LE STEREO
-bool AudioProcessInClientInner::ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
-{
-    Trace traceConvert("APIC::ChannelFormatS32Convert");
-    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
-        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
-        return false;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::S16StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S16MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
-        return true; // no need convert, copy is done in NoFormatConvert:CopyData
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::F32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::F32StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-
-    return false;
-}
-
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
@@ -923,35 +877,6 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
     return true;
-}
-
-// only support convert to SAMPLE_S16LE STEREO
-bool AudioProcessInClientInner::ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
-{
-    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
-        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
-        return false;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
-        return true; // no need convert, copy is done in NoFormatConvert:CopyData
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::S32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-
-    return false;
 }
 
 void AudioProcessInClientInner::CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
@@ -985,36 +910,15 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
 
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
 {
-    int32_t ret = 0;
-    if (!needConvert_) {
-        Trace traceNoConvert("APIC::NoFormatConvert:CopyData");
-        AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
-        if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
-            CopyWithVolume(srcDesc, dstDesc);
-        } else {
-            ret = memcpy_s(static_cast<void *>(dstDesc.buffer), dstDesc.dataLength,
-                static_cast<void *>(srcDesc.buffer), srcDesc.dataLength);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
-        }
-        return SUCCESS;
-    }
-
-    // need convert
-    Trace traceConvert("APIC::FormatConvert");
-    AudioStreamData srcData = {processConfig_.streamInfo, srcDesc, 0, 0};
-    AudioStreamData dstData = {targetStreamInfo_, dstDesc, 0, 0};
-    bool succ = false;
-    if (targetStreamInfo_.format == SAMPLE_S16LE) {
-        succ = ChannelFormatS16Convert(srcData, dstData);
-    } else if (targetStreamInfo_.format == SAMPLE_S32LE) {
-        succ = ChannelFormatS32Convert(srcData, dstData);
-    }
-    CHECK_AND_RETURN_RET_LOG(succ, ERR_OPERATION_FAILED, "Convert data failed!");
+    Trace trace("ProcessData Client Data");
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
-        ProcessVolume(dstData);
+        CopyWithVolume(srcDesc, dstDesc);
+    } else {
+        int32_t ret = memcpy_s(static_cast<void *>(dstDesc.buffer), dstDesc.dataLength,
+            static_cast<void *>(srcDesc.buffer), srcDesc.dataLength);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
     }
-
     return SUCCESS;
 }
 
@@ -1108,10 +1012,15 @@ bool AudioProcessInClientInner::WaitIfBufferEmpty(const BufferDesc &bufDesc)
 {
     if (bufDesc.dataLength == 0) {
         const uint32_t sleepTimeUs = isVoipMmap_ ? VOIP_WAIT_FOR_NEXT_CB_US : FAST_WAIT_FOR_NEXT_CB_US;
-        AUDIO_WARNING_LOG("%{public}u", sleepTimeUs);
+        if (sleepCount_++ == LOG_COUNT_LIMIT) {
+            sleepCount_ = 0;
+            AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
+        }
         usleep(sleepTimeUs);
         return false;
     }
+
+    sleepCount_ = LOG_COUNT_LIMIT;
     return true;
 }
 
@@ -1132,7 +1041,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         return SUCCESS;
     };
 
-    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), ERR_INVALID_PARAM);
+    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), SUCCESS);
 
     ExitStandByIfNeed();
 
@@ -1170,10 +1079,12 @@ int32_t AudioProcessInClientInner::Start()
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
-    // eg: 100005_dump_process_client_audio_48000_2_1.pcm
-    std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        ".pcm";
+    // eg: 100005_dump_process_client_play/rec_audio_48000_2_1.pcm
+    std::string dumpFileName = std::to_string(sessionId_);
+    dumpFileName += processConfig_.audioMode == AUDIO_MODE_PLAYBACK ?
+        "_dump_process_client_play_audio_" : "_dump_process_client_rec_audio_";
+    dumpFileName += (std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
+        ".pcm");
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
@@ -1822,6 +1733,7 @@ RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreS
 void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
     uint32_t code)
 {
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "processProxy_ is null.");
     processProxy_->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 
@@ -1836,6 +1748,12 @@ bool AudioProcessInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->GetStopFlag();
+}
+
+void AudioProcessInClientInner::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetRebuildFlag processProxy_ is nullptr");
+    processProxy_->SetRebuildFlag();
 }
 
 void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)

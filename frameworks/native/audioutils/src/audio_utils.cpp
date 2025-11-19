@@ -89,6 +89,9 @@ const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+const int32_t MAX_VOLUME_DEGREE = 100;
+const int32_t MIN_VOLUME_DEGREE = 0;
+const int32_t VOLUME_LEVEL_ZERO = 0;
 
 const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -205,6 +208,9 @@ bool Util::IsScoSupportSource(const SourceType sourceType)
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        return false;
+    }
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
 }
 
@@ -1359,6 +1365,16 @@ std::string GetTime()
     return curTime;
 }
 
+std::string GetField(const std::string &src, const char* field, const char sep)
+{
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
 int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;
@@ -1731,6 +1747,7 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
 }
 
 bool VolumeUtils::isPCVolumeEnable_ = false;
+bool VolumeUtils::isVolumeFixEnable_ = false;
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
@@ -1907,6 +1924,16 @@ bool VolumeUtils::IsPCVolumeEnable()
     return isPCVolumeEnable_;
 }
 
+void VolumeUtils::SetVolumeFixEnable(const bool& isVolumeFixEnable)
+{
+    isVolumeFixEnable_ = isVolumeFixEnable;
+}
+
+bool VolumeUtils::IsVolumeFixEnable()
+{
+    return isVolumeFixEnable_;
+}
+
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
 {
     std::unordered_map<AudioStreamType, AudioVolumeType> map = GetVolumeMap();
@@ -1924,6 +1951,26 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsag
         return GetVolumeTypeFromStreamType(it->second);
     }
     return STREAM_MUSIC;
+}
+
+std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamUsageMap_ = {
+    {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION}},
+    {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
+    {STREAM_ALARM, {STREAM_USAGE_ALARM}},
+    {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
+    {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},
+    {STREAM_ULTRASONIC, {STREAM_USAGE_ULTRASONIC}},
+    {STREAM_MUSIC, {STREAM_USAGE_MUSIC}}
+};
+
+std::vector<StreamUsage> VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType)
+{
+    auto it = streamToStreamUsageMap_.find(volumeType);
+    if (it != streamToStreamUsageMap_.end()) {
+        return it->second;
+    }
+    return {STREAM_USAGE_MUSIC};
 }
 
 std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<StreamUsage> &streamUsages,
@@ -1964,6 +2011,57 @@ std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeTy
     } else {
         return defaultVolumeToStreamUsageMap_.count(volumeType) ? defaultVolumeToStreamUsageMap_[volumeType] : emptySet;
     }
+}
+
+int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
+{
+    CHECK_AND_RETURN_RET_LOG(degree >= MIN_VOLUME_DEGREE && degree <= MAX_VOLUME_DEGREE && maxLevel > 0,
+        -1, "invalid input, degree:%{public}d, maxLevel:%{public}d", degree, maxLevel);
+
+    if (degree == MIN_VOLUME_DEGREE) {
+        return VOLUME_LEVEL_ZERO;
+    }
+
+    if (degree == MAX_VOLUME_DEGREE) {
+        return maxLevel;
+    }
+
+    int32_t level = (degree - 1) * (maxLevel - 1) / (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) + 1;
+    return level;
+}
+
+int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
+{
+    int32_t divider = maxLevel - 1;
+    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && level <= maxLevel && divider > 0,
+        -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
+
+    if (level == VOLUME_LEVEL_ZERO) {
+        return MIN_VOLUME_DEGREE;
+    }
+    
+    if (level == maxLevel) {
+        return MAX_VOLUME_DEGREE;
+    }
+
+    int32_t degree = ((level * 2 - 1) * (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider + 1) / 2;
+    return degree;
+}
+
+int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
+{
+    int32_t divider = maxLevel - 1;
+    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && divider > 0,
+        -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
+
+    if (level == maxLevel) {
+        return MAX_VOLUME_DEGREE;
+    }
+
+    int32_t quotient = (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider;
+    int32_t ceiling = level * quotient;
+
+    return ceiling;
 }
 
 std::string GetEncryptStr(const std::string &src)
@@ -2120,7 +2218,7 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-bool g_injectSwitch = system::GetBoolParameter("const.multimedia.audio.inject", false);
+bool g_injectSwitch = system::GetBoolParameter("persist.multimedia.audio.inject", false);
 bool IsInjectEnable()
 {
     return g_injectSwitch;

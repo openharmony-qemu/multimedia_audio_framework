@@ -16,7 +16,7 @@
 <audioStrategyRouter version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
     <strategy name="MEDIA_RENDER" routers="AppSelectRouter,UserSelectRouter,PairDeviceRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="CALL_RENDER"  routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,CockpitPhoneRouter,StreamFilterRouter,DefaultRouter"/>
-    <strategy name="RING_RENDER"  routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
+    <strategy name="RING_RENDER"  routers="AppSelectRouter,UserSelectRouter,PairDeviceRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="TONE_RENDER"  routers="AppSelectRouter,UserSelectRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="RECORD_CAPTURE" routers="AppSelectRouter,UserSelectRouter,PairDeviceRouter,PrivacyPriorityRouter,PublicPriorityRouter,StreamFilterRouter,DefaultRouter"/>
     <strategy name="CALL_CAPTURE"  routers="AppSelectRouter,UserSelectRouter,PairDeviceRouter,PrivacyPriorityRouter,CockpitPhoneRouter,StreamFilterRouter,DefaultRouter"/>

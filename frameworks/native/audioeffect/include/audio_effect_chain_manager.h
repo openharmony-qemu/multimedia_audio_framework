@@ -131,7 +131,6 @@ public:
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
-    int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate();
     int32_t StreamVolumeUpdate(const std::string sessionIDString, const float streamVolume);
@@ -154,11 +153,12 @@ public:
     void UpdateStreamUsage();
     int32_t InitEffectBuffer(const std::string &sessionID);
     int32_t QueryEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
-    int32_t QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout);
     void LoadEffectProperties();
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
     int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t DeleteStreamVolume(const std::string StringSessionID);
+    bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -179,7 +179,7 @@ private:
     int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
-    void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    int32_t UpdateCurrSceneTypeAndStreamUsageForDsp();
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
@@ -213,6 +213,7 @@ private:
     int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
     void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
+    bool IsDeviceTypeSupportingSpatialization();
     std::string GetEffectChainByMode(std::string effectChainKey);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;
@@ -255,6 +256,8 @@ private:
     std::condition_variable cv_;
     bool defaultEffectChainCreated_ = false;
     bool absVolumeState_ = true;
+    int32_t currDspStreamUsage_ = -2;
+    AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

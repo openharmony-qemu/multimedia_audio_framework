@@ -68,10 +68,10 @@ void HpaeManagerImpl::DumpSourceInfo(std::string deviceName)
     manager_->DumpSourceInfo(std::move(deviceName));
 }
 
-void HpaeManagerImpl::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
+void HpaeManagerImpl::DumpAllAvailableDevice()
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->DumpAllAvailableDevice(devicesInfo);
+    manager_->DumpAllAvailableDevice();
 }
 
 void HpaeManagerImpl::DumpSinkInputsInfo()
@@ -615,6 +615,12 @@ int32_t HpaeManagerImpl::PeekAudioData(
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
+}
+
+bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

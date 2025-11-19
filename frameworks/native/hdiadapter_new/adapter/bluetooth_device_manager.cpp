@@ -102,10 +102,11 @@ void BluetoothDeviceManager::AllAdapterSetMicMute(bool isMute)
     AUDIO_INFO_LOG("not support");
 }
 
-void BluetoothDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+int32_t BluetoothDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("not support");
+    return ERR_DEVICE_NOT_SUPPORTED;
 }
 
 std::string BluetoothDeviceManager::GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

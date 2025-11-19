@@ -21,6 +21,7 @@
 #include "audio_policy_service.h"
 #include "inner_event.h"
 #include "event_handler.h"
+#include "audio_policy_client_holder.h"
 
 #include <thread>
 #include <memory>
@@ -277,6 +278,105 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendVolumeKeyEventCallback_002, TestSiz
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = AudioStreamType::STREAM_DEFAULT;
     EXPECT_TRUE(audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent));
+}
+
+/**
+ * @tc.name  : Test SendWakeupCloseEvent API
+ * @tc.number: SendVolumeDegreeEventCallback_001
+ * @tc.desc  : Test SendVolumeDegreeEventCallback function when volume type is STREAM_VOICE_CALL_ASSISTANT.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendVolumeDegreeEventCallback_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = AudioStreamType::STREAM_VOICE_CALL_ASSISTANT;
+    EXPECT_FALSE(audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent));
+}
+
+/**
+ * @tc.name  : HandleVolumeDegreeEvent_Test_001
+ * @tc.number: HandleVolumeDegreeEvent_Test_001
+ * @tc.desc  : Test HandleVolumeKeyEvent function
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->volumeEvent.volumeType = STREAM_SYSTEM;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::VOLUME_DEGREE_EVENT, eventContextObj);
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    auto volumeChangeCb = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(volumeChangeCb, nullptr);
+    volumeChangeCb->hasSystemPermission_ = false;
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_SET_VOLUME_DEGREE_CHANGE, true);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, nullptr);
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleVolumeDegreeEvent(event));
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_SET_VOLUME_DEGREE_CHANGE, true);
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, volumeChangeCb);
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleVolumeDegreeEvent(event));
+
+    volumeChangeCb->hasSystemPermission_ = true;
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleVolumeDegreeEvent(event));
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.number: HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.desc  : Test HandleCollaborationEnabledChangeForCurrentDeviceEvent function
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001,
+    TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->collaborationEnabled = true;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        eventContextObj);
+
+    bool testEnabled = true;
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(AudioPolicyServerHandler::EventAudioServerCmd::
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    std::shared_ptr<AudioPolicyClientHolder> testHolder = nullptr;
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = testHolder;
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, true);
+
+    std::unordered_map<CallbackChange, bool> testCallBackChangeMap;
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = true;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    testCallBackChangeMap.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = false;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = nullptr;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, false);
 }
 
 /**

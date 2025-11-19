@@ -96,7 +96,7 @@ public:
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void ResetAudioEndpoint();
+    std::shared_ptr<AudioEndpoint> GetEndPointByType(AudioEndpoint::EndpointType type);
 #endif
 
     void Dump(std::string &dumpString);
@@ -142,24 +142,6 @@ public:
     int32_t UnloadModernOffloadCapSource();
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
-    void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
-
-    bool UpdateResumeInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
-    bool RemoveResumeInterruptEventMap(uint32_t sessionId);
-    bool IsStreamInterruptResume(uint32_t sessionId);
-
-    bool UpdatePauseInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
-    bool RemovePauseInterruptEventMap(uint32_t sessionId);
-    bool IsStreamInterruptPause(uint32_t sessionId);
-
-    bool IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState);
-    bool UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState);
-    void RemoveSwitchStreamMap(uint32_t sessionId);
-
-    bool IsBackgroundCaptureAllowed(uint32_t sessionId);
-    bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
-    void RemoveBackgroundCaptureMap(uint32_t sessionId);
-    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
 private:
     AudioService();
@@ -196,11 +178,11 @@ private:
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
-    void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
-    float GetSystemVolume();
-    void UpdateSystemVolume(AudioStreamType streamType, float volume);
+    float GetSystemVolumeForWorkgroup();
+    bool IsStreamTypeFitWorkgroup(AudioStreamType streamType);
+    void UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
     std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
     int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
@@ -221,14 +203,6 @@ private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
-    std::mutex audioSwitchStreamMutex_;
-    std::map<uint32_t, SwitchState> audioSwitchStreamMap_;
-    std::mutex backgroundCaptureMutex_;
-    std::map<uint32_t, bool> backgroundCaptureMap_;
-    std::mutex resumeInterruptEventMutex_;
-    std::map<uint32_t, InterruptEventInternal> resumeInterruptEventMap_;
-    std::mutex pauseInterruptEventMutex_;
-    std::map<uint32_t, InterruptEventInternal> pauseInterruptEventMap_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
@@ -271,8 +245,8 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
-    std::mutex musicOrVoipSystemVolumeMutex_;
-    float musicOrVoipSystemVolume_ = 0.0f;
+    std::mutex audioWorkGroupSystemVolumeMutex_;
+    float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
 };

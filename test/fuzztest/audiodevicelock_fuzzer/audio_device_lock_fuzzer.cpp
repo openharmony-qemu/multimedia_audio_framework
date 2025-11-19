@@ -38,6 +38,7 @@
 #include "audio_info.h"
 #include "device_status_listener.h"
 #include "audio_policy_service.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -138,6 +139,11 @@ const vector<AudioDeviceUsage> AudioDeviceUsageVec = {
     D_ALL_DEVICES,
 };
 
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
+
 void RegisterTrackerFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -146,6 +152,7 @@ void RegisterTrackerFuzzTest()
     AudioStreamChangeInfo streamChangeInfo;
     sptr<IRemoteObject> object = nullptr;
     int32_t apiVersion = GetData<int32_t>();
+    OnStop();
 }
 
 void SendA2dpConnectedWhileRunningFuzzTest()
@@ -156,6 +163,7 @@ void SendA2dpConnectedWhileRunningFuzzTest()
     RendererState rendererState = static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
     uint32_t sessionId = GetData<uint32_t>();
     audioDeviceLock->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    OnStop();
 }
 
 void HandleAudioCaptureStateFuzzTest()
@@ -169,6 +177,7 @@ void HandleAudioCaptureStateFuzzTest()
         static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
+    OnStop();
 }
 
 void UpdateTrackerFuzzTest()
@@ -181,6 +190,7 @@ void UpdateTrackerFuzzTest()
         static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
     streamChangeInfo.audioRendererChangeInfo.rendererState =
         static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
+    OnStop();
 }
 
 void RegisteredTrackerClientDiedFuzzTest()
@@ -188,6 +198,7 @@ void RegisteredTrackerClientDiedFuzzTest()
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
     pid_t uid = static_cast<pid_t>(GetData<uint8_t>() % uidCount);
+    OnStop();
 }
 
 void OnDeviceStatusUpdatedFuzzTest()
@@ -200,6 +211,7 @@ void OnDeviceStatusUpdatedFuzzTest()
     updatedDesc.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
     bool isConnected = GetData<uint32_t>() % NUM_2;
     audioDeviceLock->OnDeviceStatusUpdated(updatedDesc, isConnected);
+    OnStop();
 }
 
 void GetCurrentRendererChangeInfosFuzzTest()
@@ -210,12 +222,14 @@ void GetCurrentRendererChangeInfosFuzzTest()
     };
     bool hasBTPermission = GetData<uint32_t>() % NUM_2;
     bool hasSystemPermission = GetData<uint32_t>() % NUM_2;
+    OnStop();
 }
 
 void GetVolumeGroupInfosFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(GetData<uint32_t>() % NUM_2);
+    OnStop();
 }
 
 void SetAudioSceneFuzzTest()
@@ -223,6 +237,7 @@ void SetAudioSceneFuzzTest()
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t audioSceneCount = static_cast<int32_t>(AudioScene::AUDIO_SCENE_MAX - AudioScene::AUDIO_SCENE_INVALID) + 1;
     AudioScene audioScene = static_cast<AudioScene>(GetData<uint8_t>() % audioSceneCount - 1);
+    OnStop();
 }
 
 void AudioDeviceLockGetDevicesFuzzTest()
@@ -244,6 +259,7 @@ void AudioDeviceLockGetDevicesFuzzTest()
     }
     DeviceFlag deviceFlag = testDeviceFlags[GetData<uint32_t>() % testDeviceFlags.size()];
     audioDeviceLock->GetDevices(deviceFlag);
+    OnStop();
 }
 
 void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest()
@@ -255,6 +271,7 @@ void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest()
     AudioRendererInfo rendererInfo;
     std::string networkId = "test_network_id";
     audioDeviceLock->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+    OnStop();
 }
 
 void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest()
@@ -266,6 +283,7 @@ void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest()
     AudioCapturerInfo captureInfo;
     std::string networkId = "test_network_id";
     audioDeviceLock->GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+    OnStop();
 }
 
 void AudioDeviceLockUpdateAppVolumeFuzzTest()
@@ -277,6 +295,7 @@ void AudioDeviceLockUpdateAppVolumeFuzzTest()
     int32_t appUid = GetData<int32_t>();
     int32_t volume = GetData<int32_t>();
     audioDeviceLock->UpdateAppVolume(appUid, volume);
+    OnStop();
 }
 
 void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest()
@@ -295,6 +314,7 @@ void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest()
     DeviceInfoUpdateCommand command =
         testDeviceInfoUpdateCommands[GetData<uint32_t>() % testDeviceInfoUpdateCommands.size()];
     audioDeviceLock->OnDeviceInfoUpdated(desc, command);
+    OnStop();
 }
 
 void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest()
@@ -307,6 +327,7 @@ void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest()
     DStatusInfo statusInfo;
     bool isStop = GetData<uint32_t>() % NUM_2;
     audioDeviceLock->OnDeviceStatusUpdated(statusInfo, isStop);
+    OnStop();
 }
 
 void AudioDeviceLockGetExcludedDevicesFuzzTest()
@@ -318,6 +339,7 @@ void AudioDeviceLockGetExcludedDevicesFuzzTest()
 
     AudioDeviceUsage audioDevUsage = AudioDeviceUsageVec[GetData<uint32_t>() % AudioDeviceUsageVec.size()];
     audioDeviceLock->GetExcludedDevices(audioDevUsage);
+    OnStop();
 }
 
 void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
@@ -330,6 +352,7 @@ void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
     AudioDeviceDescriptor desc;
     bool isConnected = GetData<uint32_t>() % NUM_2;
     audioDeviceLock->OnPnpDeviceStatusUpdated(desc, isConnected);
+    OnStop();
 }
 
 void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
@@ -342,6 +365,7 @@ void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
     std::string macAddress = "test_mac_address";
     bool support = GetData<uint32_t>() % NUM_2;
     audioDeviceLock->UpdateSpatializationSupported(macAddress, support);
+    OnStop();
 }
 
 void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()
@@ -356,6 +380,7 @@ void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()
     bool hasSystemPermission = GetData<bool>();
     int32_t apiVersion = GetData<int32_t>();
     audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, hasBTPermission, hasSystemPermission, apiVersion);
+    OnStop();
 }
 
 TestFuncs g_testFuncs[] = {

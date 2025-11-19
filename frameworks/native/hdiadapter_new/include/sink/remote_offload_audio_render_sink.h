@@ -144,6 +144,8 @@ private:
     void CalcHdiPosition(uint64_t frames, int64_t timeSec, int64_t timeNanoSec);
     void FlushResetPosition();
     int32_t EstimateRenderPosition();
+    int32_t FlushInner(void);
+    void CheckFlushThread();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -171,7 +173,7 @@ private:
     bool isNeedRestart_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     sptr<RemoteIAudioRender> audioRender_ = nullptr;
     // for signal detect
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
@@ -220,6 +222,7 @@ private:
     int64_t lastSystemTimeNS_ = 0;
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
+    std::shared_ptr<std::thread> flushThread_;
 };
 
 } // namespace AudioStandard

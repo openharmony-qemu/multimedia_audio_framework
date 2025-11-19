@@ -337,6 +337,25 @@ int32_t IpcStreamInServer::GetRate(int32_t &rate)
     return ERR_OPERATION_FAILED;
 }
 
+ int32_t IpcStreamInServer::SetTarget(int32_t target, int32_t &ret)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        rendererInServer_->SetTarget(static_cast<RenderTarget>(target), ret);
+        return SUCCESS;
+    }
+    AUDIO_ERR_LOG("SetTarget failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t IpcStreamInServer::SetRebuildFlag()
+{
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        capturerInServer_->SetRebuildFlag();
+        return SUCCESS;
+    }
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::SetLowPowerVolume(float volume)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {

@@ -60,6 +60,11 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) override;
+    void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) override;
+    void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) override;
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
     virtual void OnReloadAudioPortCb(int32_t portId) override;
@@ -79,6 +84,7 @@ public:
     virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
 
 private:
     std::mutex lock_;

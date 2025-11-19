@@ -21,6 +21,7 @@
 #include "audio_interrupt_service.h"
 #include "istandard_audio_zone_client.h"
 #include "audio_policy_server_handler.h"
+#include "audio_zone.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,6 +69,9 @@ public:
     bool IsSystemVolumeProxyEnable(int32_t zoneId);
     int32_t SetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag);
     int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType);
+    int32_t SetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType,
+        int32_t volumeDegree, int32_t volumeFlag);
+    int32_t GetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
@@ -95,6 +99,7 @@ public:
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
+    bool CheckExistUidInAudioZone();
 
 private:
     AudioZoneService() = default;

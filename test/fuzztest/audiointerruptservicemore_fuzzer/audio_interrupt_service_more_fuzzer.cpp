@@ -162,7 +162,7 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
 {
     int id = GetData<int>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
+    interruptService->ClearAudioFocusInfoListOnAccountsChanged(id, 1);
 }
 
 typedef void (*TestFuncs[4])();

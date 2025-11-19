@@ -17,6 +17,7 @@
 #define RENDERER_IN_SERVER_H
 
 #include <mutex>
+#include <optional>
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -98,6 +99,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
     void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
+    void OnCheckActiveMusicTime(const std::string &reason);
 
     int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
@@ -121,7 +123,6 @@ public:
     // for dual tone
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
-    int32_t InitDualToneStream(const std::string &dupSinkName);
 
     void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
@@ -137,6 +138,10 @@ public:
     int32_t GetActualStreamManagerType() const noexcept;
     
     bool Dump(std::string &dumpString);
+    bool DumpNormal(std::string &dumpString);
+    bool DumpVoipAndDirect(std::string &dumpString);
+    void DumpStreamInfo(std::string &dumpString);
+    void DumpStatusInfo(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
@@ -151,6 +156,8 @@ public:
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
+    void RemoveIdForInjector();
+    int32_t SetTarget(RenderTarget target, int32_t &ret);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -172,6 +179,7 @@ private:
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    void WriteSilenceDupBuffer(const BufferDesc &bufferDesc, BufferWrap &bufferWrap, int32_t innerCapId);
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
@@ -194,6 +202,19 @@ private:
     bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
     bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
     void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
+    void UpdateStreamInfo();
+    void RemoveStreamInfo();
+    void OnWriteDataFinish();
+    void PauseInner();
+    void InitDupBufferInner(int32_t innerCapId);
+    void ClearInnerCapBufferForInject();
+    // only for a2dp offload
+    void WaitForDataConnection();
+
+    int32_t DisableDualToneInner();
+    void PreDualToneBufferSilenceForOffload();
+
+    int32_t WriteData(int8_t *inputData, size_t requestDataLen);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -222,6 +243,7 @@ private:
     // for dual sink tone
     std::mutex dualToneMutex_;
     std::atomic<bool> isDualToneEnabled_ = false;
+    std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
@@ -262,7 +284,7 @@ private:
     bool isInSilentState_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
-    int32_t renderEmptyCountForInnerCap_ = 0;
+    std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_;
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
@@ -287,6 +309,15 @@ private:
 
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
+
+    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
+
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
+
+    bool isDataLinkConnected_ = true;
+    std::mutex dataConnectionMutex_;
+    std::condition_variable dataConnectionCV_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

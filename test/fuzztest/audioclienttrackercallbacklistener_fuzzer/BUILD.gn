@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioClientTrackerCallbackListenerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audioclienttrackercallbacklistener_fuzzer"
 
   include_dirs = [
@@ -32,7 +32,10 @@ ohos_fuzztest("AudioClientTrackerCallbackListenerFuzzTest") {
   ]
   configs = []
 
-  sources = [ "audio_client_tracker_callback_listener_fuzzer.cpp" ]
+  sources = [
+    "audio_client_tracker_callback_listener_fuzzer.cpp",
+    "../../../services/audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+  ]
 
   deps = [
     "../../../services/audio_service/idl:audio_framework_interface",

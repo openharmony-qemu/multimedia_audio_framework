@@ -42,6 +42,12 @@ namespace AudioStandard {
 namespace {
 constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
+constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
+constexpr int32_t DEFAULT_DSP_STREAMUSAGE = 1;
+constexpr int32_t DEFAULT_STREAM_OR_VOLUME_TYPE = 1;
+constexpr float INITIAL_DSP_VOLUME = -1.0f;
+constexpr float DEFAULT_SYSTEM_VOLUME = 1.0f;
+constexpr float DEFAULT_STREAM_VOLUME = 1.0f;
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
@@ -64,6 +70,8 @@ SessionEffectInfo DEFAULT_INFO = {
     "SCENE_MOVIE",
     INFOCHANNELS,
     INFOCHANNELLAYOUT,
+    DEFAULT_DSP_STREAMUSAGE,
+    DEFAULT_STREAM_OR_VOLUME_TYPE,
 };
 }
 
@@ -1019,9 +1027,18 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSensorState_003, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_001, TestSize.Level1)
 {
     AudioEffectScene sceneType = SCENE_MUSIC;
-
+    AudioEffectChainManager::GetInstance()->currDspSceneType_ = SCENE_INITIAL;
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
-    EXPECT_TRUE(result == SUCCESS || result == ERROR);
+    
+    if (result == SUCCESS) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_MUSIC);
+        int32_t resultTemp = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_MUSIC);
+        EXPECT_EQ(resultTemp, SUCCESS);
+    } else if (result == ERROR) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_INITIAL);
+    }
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1034,10 +1051,17 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
 {
     AudioEffectScene sceneType = SCENE_MUSIC;
 
+    AudioEffectChainManager::GetInstance()->currDspSceneType_ = SCENE_INITIAL;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
-    EXPECT_TRUE(result == SUCCESS || result == ERROR);
+
+    if (result == SUCCESS) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_MUSIC);
+    } else if (result == ERROR) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_INITIAL);
+    }
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1049,11 +1073,18 @@ HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_002, TestSize.Level1)
 HWTEST(AudioEffectChainManagerUnitTest, SetHdiParam_003, TestSize.Level1)
 {
     AudioEffectScene sceneType = SCENE_OTHERS;
-
+    
+    AudioEffectChainManager::GetInstance()->currDspSceneType_ = SCENE_INITIAL;
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     int32_t result = AudioEffectChainManager::GetInstance()->SetHdiParam(sceneType);
-    EXPECT_TRUE(result == SUCCESS || result == ERROR);
+
+    if (result == SUCCESS) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_OTHERS);
+    } else if (result == ERROR) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspSceneType_, SCENE_INITIAL);
+    }
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -1227,70 +1258,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_004, TestSize.Le
     int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfo(sceneType, channels,
         channelLayout);
     EXPECT_EQ(ERROR, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_001
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_001, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 2;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_002
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_002, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 3;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    const char *sceneType2 = "SCENE_MUSIC";
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType2, true);
-
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType2);
-    EXPECT_EQ(ERROR, result);
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_003
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_003, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 3;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    AudioEffectChainManager::GetInstance()->isInitialized_ = false;
-    AudioEffectChainManager::GetInstance()->initializedLogFlag_ = false;
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -2247,30 +2214,6 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectApVolumeUpdate_001, TestSize.Level
 }
 
 /**
-* @tc.name   : Test EffectDspVolumeUpdate API
-* @tc.number : EffectDspVolumeUpdate_001
-* @tc.desc   : Test EffectDspVolumeUpdate interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    const char *sceneType = "SCENE_MUSIC";
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
-    const std::string sessionID = "12345";
-    int32_t ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    EXPECT_EQ(ret, ERROR);
-    std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
-    ret = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
 * @tc.name   : Test StreamVolumeUpdate API
 * @tc.number : StreamVolumeUpdate_001
 * @tc.desc   : Test StreamVolumeUpdate interface.
@@ -2316,6 +2259,7 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;
     const std::string scenePairType = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneType, scenePairType, sessions);
+    AudioEffectVolume::GetInstance()->SetStreamVolume("12345", 0.0);
     maxSessionID = 99999;
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneType, scenePairType, sessions);
 }
@@ -2603,6 +2547,29 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_003, Te
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"test", nullptr});
     AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
     EXPECT_TRUE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.begin()->second == nullptr);
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    string sessionID1 = "123456";
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
+
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(!AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -2885,6 +2852,38 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+/**
+* @tc.name   : Test CheckProcessClusterInstances API
+* @tc.number : CheckProcessClusterInstances_005
+* @tc.desc   : Test CheckProcessClusterInstances interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_005, TestSize.Level1)
+{
+    std::string sceneType = "test";
+    std::string  scene = "SCENE_DEFAULT";
+    std::string effect = sceneType + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string defaultScene = scene + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>("123", headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effect, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[effect] = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({defaultScene, audioEffectChain});
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultScene] = nullptr;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 /*
 * @tc.name   : Test InitEffectBufferInner
 * @tc.number : InitEffectBufferInner_001
@@ -3255,103 +3254,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SendEffectApVolume_003, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"test", audioEffectChain});
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
     auto ret = AudioEffectChainManager::GetInstance()->SendEffectApVolume(audioEffectVolume);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_001
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_001, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 0;
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_002
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_002, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_003
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_003, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    sessionEffectInfo.channels = 5;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->initializedLogFlag_ = false;
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_004
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_004, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    sessionEffectInfo.channels = 20;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->isInitialized_ = true;
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_005
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_005, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = CH_LAYOUT_STEREO;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channels = 0;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
     EXPECT_EQ(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -3984,6 +3886,174 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAbsVolumeStateToEffect_001, TestSize.
     EXPECT_EQ(ret, SUCCESS);
     ret = AudioEffectChainManager::GetInstance()->EffectApAbsVolumeStateUpdate(absVolumeState);
     EXPECT_EQ(ret, SUCCESS);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_001
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_001, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    AudioEffectMode effectMode = EFFECT_NONE;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_002
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_002, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_UNKNOWN";
+    AudioEffectMode effectMode = EFFECT_DEFAULT;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_003
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_003, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    AudioEffectMode effectMode = EFFECT_DEFAULT;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    std::string deviceType = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string effectChainKey = sceneType + "_&_EFFECT_DEFAULT_&_" + deviceType;
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    
+    if (!AudioEffectChainManager::GetInstance()->sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        EXPECT_EQ(ret, false);
+    } else {
+        EXPECT_EQ(ret, true);
+    }
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect API
+* @tc.number : IsChannelLayoutSupportedForDspEffect_004
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffect_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    EXPECT_EQ(ret, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test EffectDspVolumeUpdate API
+* @tc.number : EffectDspVolumeUpdate_001
+* @tc.desc   : Test EffectDspVolumeUpdate interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume), SUCCESS);
+    EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
+
+    const std::string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    audioEffectVolume->SetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE, DEFAULT_SYSTEM_VOLUME);
+    audioEffectVolume->SetStreamVolume(sessionID, DEFAULT_STREAM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE), DEFAULT_SYSTEM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetStreamVolume(sessionID), DEFAULT_STREAM_VOLUME);
+
+    int32_t ret = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
+    if (ret == SUCCESS) {
+        EXPECT_EQ(audioEffectVolume->GetDspVolume(), DEFAULT_SYSTEM_VOLUME * DEFAULT_STREAM_VOLUME);
+    } else if (ret == ERROR) {
+        EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
+    }
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test EffectDspVolumeUpdate API
+* @tc.number : EffectDspVolumeUpdate_002
+* @tc.desc   : Test EffectDspVolumeUpdate interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume), SUCCESS);
+    EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
+
+    const std::string sessionID = "123456";
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    audioEffectVolume->SetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE, DEFAULT_SYSTEM_VOLUME);
+    audioEffectVolume->SetStreamVolume(sessionID, DEFAULT_STREAM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE), DEFAULT_SYSTEM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetStreamVolume(sessionID), DEFAULT_STREAM_VOLUME);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    int32_t ret = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
+    if (ret == SUCCESS) {
+        EXPECT_EQ(audioEffectVolume->GetDspVolume(), DEFAULT_SYSTEM_VOLUME * DEFAULT_STREAM_VOLUME);
+        int32_t retTemp = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
+        EXPECT_EQ(audioEffectVolume->GetDspVolume(), DEFAULT_SYSTEM_VOLUME * DEFAULT_STREAM_VOLUME);
+        EXPECT_EQ(retTemp, SUCCESS);
+    } else if (ret == ERROR) {
+        EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
+    }
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateCurrSceneTypeAndStreamUsageForDsp API
+* @tc.number : UpdateCurrSceneTypeAndStreamUsageForDsp_001
+* @tc.desc   : Test UpdateCurrSceneTypeAndStreamUsageForDsp interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateCurrSceneTypeAndStreamUsageForDsp_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->maxSessionID_ = static_cast<uint32_t>(std::stoul("123456"));
+    AudioEffectChainManager::GetInstance()->maxSessionIDToSceneType_ = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->currDspStreamUsage_ = INITIAL_DSP_STREAMUSAGE;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["123456"] = DEFAULT_INFO;
+    int32_t result = AudioEffectChainManager::GetInstance()->UpdateCurrSceneTypeAndStreamUsageForDsp();
+    
+    if (result == SUCCESS) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspStreamUsage_, DEFAULT_DSP_STREAMUSAGE);
+        int32_t resultTemp = AudioEffectChainManager::GetInstance()->UpdateCurrSceneTypeAndStreamUsageForDsp();
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspStreamUsage_, DEFAULT_DSP_STREAMUSAGE);
+        EXPECT_EQ(resultTemp, SUCCESS);
+    } else if (result == ERROR) {
+        EXPECT_EQ(AudioEffectChainManager::GetInstance()->currDspStreamUsage_, INITIAL_DSP_STREAMUSAGE);
+    }
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 } // namespace AudioStandard

@@ -16,6 +16,7 @@
 #define NAPI_DFX_UTILS_H
 
 #include <string>
+#include <cstdint>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -23,6 +24,21 @@ namespace AudioStandard {
 class NapiDfxUtils {
 public:
     static void SendVolumeApiInvokeEvent(int32_t uid, const std::string &functionName, int32_t paramValue);
+
+    struct SteamDirection {
+        static constexpr bool playback = false;
+        static constexpr bool capture = true;
+    };
+ 
+    struct MainThreadCallFunc {
+        static constexpr uint8_t write = 0;
+        static constexpr uint8_t writeCb = 1;
+        static constexpr uint8_t read = 0;
+        static constexpr uint8_t readCb = 1;
+    };
+ 
+    static void ReportAudioMainThreadEvent(int32_t uid, bool direction,
+        uint8_t usageOrSourceType, uint8_t functionType);
 };
 } // namespace AudioStandard
 } // namespace OHOS

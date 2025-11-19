@@ -38,6 +38,7 @@
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 #include "audio_capturer_options.h"
+#include "audio_collaborative_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,8 +93,6 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    AudioStreamInfo GetFastStreamInfo(uint32_t sessionId);
-
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
@@ -109,6 +108,13 @@ public:
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
+
+    int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress);
+
+    int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter);
+
+    int32_t DisconnectSco();
 
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
@@ -183,6 +189,12 @@ public:
 
     int32_t UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
         std::shared_ptr<AudioManagerDeviceChangeCallback> &cb);
+
+    int32_t SetDeviceInfoUpdateCallback(const int32_t clientId,
+        const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &callback);
+
+    int32_t UnsetDeviceInfoUpdateCallback(const int32_t clientId,
+        std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb);
 
     int32_t SetRingerModeCallback(const int32_t clientId,
         const std::shared_ptr<AudioRingerModeCallback> &callback, API_VERSION api_v = API_9);
@@ -414,7 +426,7 @@ public:
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
     bool IsAbsVolumeScene();
 
@@ -422,6 +434,8 @@ public:
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, const bool updateUi);
+
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
@@ -499,14 +513,6 @@ public:
     int32_t UnsetDistributedRoutingRoleCallback();
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object);
 
@@ -653,7 +659,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
@@ -708,6 +714,18 @@ public:
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    int32_t RestoreDistributedDeviceInfo();
+
+    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
+    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
+        int32_t volumeFlag, int32_t uid);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
+    int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
 
 private:
     AudioPolicyManager() {}

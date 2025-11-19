@@ -114,11 +114,10 @@ private:
     shared_ptr<AudioDeviceDescriptor> FetchCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE,
         const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
-    bool HasScoDevice();
     vector<shared_ptr<AudioDeviceDescriptor>> FetchRingRenderDevices(StreamUsage streamUsage, int32_t clientUID,
         RouterType &routerType);
     void DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        StreamUsage streamUsage, int32_t clientUID, RouterType &routerType);
+        FetchDeviceInfo &info, RouterType &routerType);
     shared_ptr<AudioDeviceDescriptor> FetchCallCaptureDevice(SourceType sourceType, int32_t clientUID,
         RouterType &routerType, const uint32_t sessionID = 0);
     shared_ptr<AudioDeviceDescriptor> FetchRecordCaptureDevice(SourceType sourceType, int32_t clientUID,

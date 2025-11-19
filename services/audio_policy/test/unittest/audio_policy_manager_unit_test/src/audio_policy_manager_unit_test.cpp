@@ -411,22 +411,6 @@ HWTEST(AudioPolicyManager, GetInputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetFastStreamInfo.
-* @tc.number: GetFastStreamInfo.
-* @tc.desc  : Test GetFastStreamInfo.
-*/
-HWTEST(AudioPolicyManager, GetFastStreamInfo_001, TestSize.Level2)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    AudioStreamInfo streamInfo = audioPolicyManager_->GetFastStreamInfo(0);
-
-    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
-    EXPECT_EQ(streamInfo.encoding, ENCODING_PCM);
-    EXPECT_EQ(streamInfo.channels, STEREO);
-}
-
-/**
 * @tc.name  : Test SetMicrophoneBlockedCallback.
 * @tc.number: SetMicrophoneBlockedCallback.
 * @tc.desc  : Test SetMicrophoneBlockedCallback.
@@ -730,6 +714,28 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManager.
+* @tc.number: SetSystemVolumeDegree_001.
+* @tc.desc  : Test SetSystemVolumeDegree.
+*/
+HWTEST(AudioPolicyManager, SetSystemVolumeDegree_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    int32_t volumeDegree = 4;
+    auto result = audioPolicyManager_->SetSystemVolumeDegree(volumeType, volumeDegree, 0, 0);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = audioPolicyManager_->GetSystemVolumeDegree(volumeType, 0);
+    EXPECT_EQ(result, volumeDegree);
+
+    result = audioPolicyManager_->GetMinVolumeDegree(volumeType);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
 * @tc.number: GetDirectPlaybackSupport_001.
 * @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
 */
@@ -820,6 +826,41 @@ HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
     ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
     EXPECT_EQ(ret, -1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: RegisterCollaborationEnabledForCurrentDeviceEventListener_001.
+* @tc.desc  : Test RegisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, RegisterCollaborationEnabledForCurrentDeviceEventListener_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    auto testCallback = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    audioPolicyManager_->isAudioPolicyClientRegisted_ = false;
+    audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
+    int32_t ret = audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->
+        GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnregisterCollaborationEnabledForCurrentDeviceEventListener_001.
+* @tc.desc  : Test UnregisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventListener_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

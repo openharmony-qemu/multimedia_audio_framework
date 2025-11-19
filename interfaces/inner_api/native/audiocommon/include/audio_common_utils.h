@@ -27,11 +27,17 @@ public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
     static void SetPCVolumeEnable(const bool& isPCVolumeEnable);
     static bool IsPCVolumeEnable();
+    static void SetVolumeFixEnable(const bool& isPCVolumeEnable);
+    static bool IsVolumeFixEnable();
     static AudioVolumeType GetVolumeTypeFromStreamUsage(StreamUsage streamUsage);
     static std::set<StreamUsage> GetOverlapStreamUsageSet(const std::set<StreamUsage>& streamUsages,
         AudioVolumeType volumeType);
     static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
     static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+    static std::vector<StreamUsage> GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType);
+    static int32_t VolumeDegreeToLevel(int32_t degree, int32_t maxLevel);
+    static int32_t VolumeLevelToDegree(int32_t level, int32_t maxLevel);
+    static int32_t GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel);
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
 
@@ -39,10 +45,12 @@ private:
     static std::unordered_map<AudioStreamType, AudioVolumeType> audioPCVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
     static bool isPCVolumeEnable_;
+    static bool isVolumeFixEnable_;
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> defaultVolumeToStreamUsageMap_;
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
     static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
+    static std::map<AudioVolumeType, std::vector<StreamUsage>> streamToStreamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -73,50 +73,36 @@ void HdiAdapterManager::ReleaseDeviceManager(HdiDeviceManagerType type)
     deviceManagers_[type].reset();
 }
 
-uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::string &info, bool isResident)
+uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::string &info, bool isResident,
+    bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
-    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    CHECK_AND_RETURN_RET(isResident, id);
     AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, info.c_str(),
         id);
-    IncRefCount(id);
+    CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+    ProcessIdUseCount(id, isResident, tryCreate);
     return id;
 }
 
 uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info,
-    bool isResident)
+    bool isResident, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    CHECK_AND_RETURN_RET(isResident, id);
-    IncRefCount(id);
+    ProcessIdUseCount(id, isResident, tryCreate);
     return id;
 }
 
 uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-    const std::string &info, bool isResident)
+    const std::string &info, bool isResident, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType, info);
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), sourceType, info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    CHECK_AND_RETURN_RET(isResident, id);
-    IncRefCount(id);
+    ProcessIdUseCount(id, isResident, tryCreate);
     return id;
 }
 
@@ -131,7 +117,8 @@ void HdiAdapterManager::ReleaseId(uint32_t &id)
 
 std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t renderId, bool tryCreate)
 {
-    CHECK_AND_RETURN_RET(IdHandler::GetInstance().CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
+    IdHandler &idHandler = IdHandler::GetInstance();
+    CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
 
     std::lock_guard<std::mutex> lock(renderSinkMtx_);
     if (renderSinks_.count(renderId) != 0 && renderSinks_[renderId].sink_ != nullptr) {
@@ -149,7 +136,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t rend
         return nullptr;
     }
     DoRegistSinkCallback(renderId, renderSink);
-    DoSetSinkPrestoreInfo(renderSink);
+    DoSetSinkPrestoreInfo(renderSink, idHandler.ParseType(renderId));
     renderSinks_[renderId].sink_ = renderSink;
     return renderSinks_[renderId].sink_;
 }
@@ -404,14 +391,14 @@ void HdiAdapterManager::DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAud
     }
 }
 
-void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink)
+void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink, uint32_t type)
 {
     float audioBalance = 0.0;
     int32_t ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BALANCE, audioBalance);
     if (ret == SUCCESS) {
         sink->SetAudioBalanceValue(audioBalance);
     } else {
-        AUDIO_WARNING_LOG("get %s fail", PRESTORE_INFO_AUDIO_BALANCE);
+        AUDIO_WARNING_LOG("get %{public}s fail", PRESTORE_INFO_AUDIO_BALANCE);
     }
 
     bool audioMono = false;
@@ -419,8 +406,36 @@ void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> 
     if (ret == SUCCESS) {
         sink->SetAudioMonoState(audioMono);
     } else {
-        AUDIO_WARNING_LOG("get %s fail", PRESTORE_INFO_AUDIO_MONO);
+        AUDIO_WARNING_LOG("get %{public}s fail", PRESTORE_INFO_AUDIO_MONO);
     }
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
+    ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    if (ret == SUCCESS && type == HDI_ID_TYPE_BLUETOOTH) {
+        sink->SetBluetoothSinkParam(param.first, param.second.first, param.second.second);
+        AUDIO_INFO_LOG("Set AudioParamKey %{public}u, condition %{public}s, value %{public}s",
+            param.first, param.second.first.c_str(), param.second.second.c_str());
+        sinkPrestoreInfo_.Erase(PRESTORE_INFO_AUDIO_BT_PARAM);
+        AUDIO_INFO_LOG("SetBluetoothSinkParam SUCCESS");
+    }
+}
+
+void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate)
+{
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
+    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+        IdHandler::GetInstance().IncInfoIdUseCount(id);
+    }
+    if (!isResident) {
+        CHECK_AND_RETURN(!tryCreate);
+        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            // IdHandler::GetInstance().GetId will create infoId and add it in the infoIdMap for the new info.
+            // When getting id temporarily, if id is not in the map, delete infoId in the infoIdMap and its usecount.
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+        }
+        return;
+    }
+    IncRefCount(id);
 }
 
 } // namespace AudioStandard

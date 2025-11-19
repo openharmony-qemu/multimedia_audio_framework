@@ -75,12 +75,11 @@ public:
     int32_t FillCurrentOutputDeviceChangedEvent(
         int32_t callerPid,
         AudioStreamDeviceChangeReason changeReason,
-        const std::shared_ptr<AudioDeviceDescriptor> descriptor,
         CurrentOutputDeviceChangedEvent &deviceChangedEvent);
     bool IsSessionInputDeviceChanged(int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc);
     void MarkSystemApp(int32_t pid);
     bool IsSystemApp(int32_t pid);
-    bool IsSystemAppWithMixStrategy(int32_t pid);
+    bool IsSystemAppWithMixStrategy(const AudioInterrupt &audioInterrupt);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

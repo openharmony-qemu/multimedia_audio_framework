@@ -15,6 +15,7 @@
 #include "hpae_signal_process_thread.h"
 #include "audio_qosmanager.h"
 #include "parameter.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,8 +31,8 @@ void HpaeSignalProcessThread::ActivateThread(const std::weak_ptr<HpaeStreamManag
     running_.store(true);
     auto threadFunc = std::bind(&HpaeSignalProcessThread::Run, this);
     thread_ = std::thread(threadFunc);
-    if (streamManager_.lock() != nullptr) {
-        pthread_setname_np(thread_.native_handle(), streamManager_.lock()->GetThreadName().c_str());
+    if (auto manager = streamManager_.lock()) {
+        pthread_setname_np(thread_.native_handle(), manager->GetThreadName().c_str());
     }
 }
 
@@ -55,23 +56,34 @@ void HpaeSignalProcessThread::Run()
 {
     int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
     SetThreadQosLevelAsync(setPriority);
-    while (running_.load() && streamManager_.lock() != nullptr) {
+    auto manager = streamManager_.lock();
+    while (running_.load() && manager != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            condition_.wait(lock, [this] {
-                return !running_.load() || streamManager_.lock()->IsRunning() ||
-                    streamManager_.lock()->IsMsgProcessing() || recvSignal_.load();
+            condition_.wait(lock, [this, manager] {
+                return !running_.load() || manager->IsRunning() ||
+                    manager->IsMsgProcessing() || recvSignal_.load();
             });
         }
-        if (streamManager_.lock()) {
-            streamManager_.lock()->HandleMsg();
-            streamManager_.lock()->Process();
-        }
+        manager->HandleMsg();
+        manager->Process();
         recvSignal_.store(false);
     }
     ResetThreadQosLevel();
 }
 
+void HpaeSignalProcessThread::SleepUntilNotify(int64_t sleepInUs)
+{
+    auto manager = streamManager_.lock();
+    CHECK_AND_RETURN(manager);
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto duration = std::chrono::microseconds(sleepInUs);
+    condition_.wait_for(lock, duration, [this, manager] {
+        return !running_.load() ||
+               manager->IsMsgProcessing() ||
+               recvSignal_.load();
+    });
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -1858,11 +1858,11 @@ HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test IsAllowedStartBackgroud.
-* @tc.number: Audio_Renderer_IsAllowedStartBackgroud_001
-* @tc.desc  : Test IsAllowedStartBackgroud interface, IsAllowedPlayback is false.
+* @tc.name  : Test IsAllowedStartBackground.
+* @tc.number: Audio_Renderer_IsAllowedStartBackground_001
+* @tc.desc  : Test IsAllowedStartBackground interface, IsAllowedPlayback is false.
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
     shared_ptr<AudioRendererPrivate> audioRenderer =
@@ -1872,16 +1872,17 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_001, TestSi
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
-    auto ret = audioRenderer->IsAllowedStartBackgroud();
+    bool silentControl = false;
+    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
 /**
-* @tc.name  : Test IsAllowedStartBackgroud.
-* @tc.number: Audio_Renderer_IsAllowedStartBackgroud_002
-* @tc.desc  : Test IsAllowedStartBackgroud interface, IsAllowedPlayback is false.
+* @tc.name  : Test IsAllowedStartBackground.
+* @tc.number: Audio_Renderer_IsAllowedStartBackground_002
+* @tc.desc  : Test IsAllowedStartBackground interface, IsAllowedPlayback is false.
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
     shared_ptr<AudioRendererPrivate> audioRenderer =
@@ -1891,7 +1892,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_002, TestSi
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    auto ret = audioRenderer->IsAllowedStartBackgroud();
+    bool silentControl = false;
+    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -2293,7 +2295,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_001, TestSize.Lev
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2311,7 +2313,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_001, TestSize.
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEFAULT_REASON;
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2414,6 +2416,85 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_002, TestSize.Lev
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test GenerateNewStream.
+* @tc.number: Audio_Renderer_GenerateNewStream_003
+* @tc.desc  : Test GenerateNewStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    RendererState previousState = RENDERER_NEW;
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.eStreamType = STREAM_MUSIC;
+    switchInfo.target = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+
+    auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
+        previousState, switchInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test GenerateNewStream.
+* @tc.number: Audio_Renderer_GenerateNewStream_004
+* @tc.desc  : Test GenerateNewStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    RendererState previousState = RENDERER_NEW;
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.eStreamType = STREAM_MUSIC;
+    switchInfo.target = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    audioRenderer->audioInterruptCallback_ = nullptr;
+    auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
+        previousState, switchInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test GenerateNewStream.
+* @tc.number: Audio_Renderer_GenerateNewStream_005
+* @tc.desc  : Test GenerateNewStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    AudioInterrupt audioInterrupt;
+    audioRenderer->audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(
+        testAudioStreamStub, audioInterrupt);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    RendererState previousState = RENDERER_NEW;
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.eStreamType = STREAM_MUSIC;
+    switchInfo.target = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    
+    auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
+        previousState, switchInfo);
     EXPECT_EQ(ret, false);
 }
 
@@ -2432,7 +2513,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**

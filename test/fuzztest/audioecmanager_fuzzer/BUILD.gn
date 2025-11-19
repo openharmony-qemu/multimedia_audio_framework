@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioEcManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audioecmanager_fuzzer"
 
   include_dirs = [
@@ -48,6 +48,7 @@ ohos_fuzztest("AudioEcManagerFuzzTest") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",

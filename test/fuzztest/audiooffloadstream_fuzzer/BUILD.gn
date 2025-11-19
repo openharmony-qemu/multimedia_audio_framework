@@ -15,9 +15,10 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioOffloadStreamFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiooffloadstream_fuzzer"
 
   include_dirs = [
@@ -60,6 +61,9 @@ ohos_fuzztest("AudioOffloadStreamFuzzTest") {
 
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
   }
 }
 

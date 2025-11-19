@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -128,15 +129,16 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
+    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     vol.isMute = volumeVector_[index].isMute;
-    vol.volumeFloat = volumeVector_[index].volumeFloat;
+    vol.volumeFloat = mdmMute ? 0.0f : volumeVector_[index].volumeFloat;
     vol.volumeInt = volumeVector_[index].volumeInt;
     return true;
 }
 
 void PolicyHandler::SetActiveOutputDevice(DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetActiveOutputDevice to device[%{public}d].", deviceType);
+    AUDIO_INFO_LOG("device[%{public}d].", deviceType);
     deviceType_ = deviceType;
 }
 
@@ -259,12 +261,6 @@ int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
-}
-
-int32_t PolicyHandler::CaptureConcurrentCheck(const uint32_t &sessionID)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    return iPolicyProvider_->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

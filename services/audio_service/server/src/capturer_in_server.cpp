@@ -208,8 +208,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
-
-    CaptureConcurrentCheck(streamIndex_);
 }
 // LCOV_EXCL_STOP
 
@@ -262,32 +260,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
 }
 // LCOV_EXCL_STOP
 
-
-static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
-{
-    switch (status) {
-        case I_STATUS_IDLE:
-            return CAPTURER_PREPARED;
-        case I_STATUS_STARTING:
-        case I_STATUS_STARTED:
-        case I_STATUS_FLUSHING_WHEN_STARTED:
-            return CAPTURER_RUNNING;
-        case I_STATUS_PAUSING:
-        case I_STATUS_PAUSED:
-        case I_STATUS_FLUSHING_WHEN_PAUSED:
-            return CAPTURER_PAUSED;
-        case I_STATUS_STOPPING:
-        case I_STATUS_STOPPED:
-        case I_STATUS_FLUSHING_WHEN_STOPPED:
-            return CAPTURER_STOPPED;
-        case I_STATUS_RELEASING:
-        case I_STATUS_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
-    }
-}
-
 // LCOV_EXCL_START
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 {
@@ -318,7 +290,6 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
-    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr!");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
@@ -327,7 +298,9 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
     lastPosInc_ = static_cast<uint64_t>(readLen) / sizePerPos;
 
-    capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
+    if (capturerClock_ != nullptr) {
+        capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
+    }
 
     AUDIO_DEBUG_LOG("update buffer timestamp pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
         curProcessPos_, timestamp);
@@ -484,12 +457,6 @@ bool CapturerInServer::CheckBGCapture()
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
 
     if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AudioService::GetInstance()->UpdateBackgroundCaptureMap(streamIndex_, true);
-        return true;
-    }
-
-    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_)) {
-        AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
 
@@ -515,19 +482,17 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_STARTED);
-    } else {
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator：already on, Stream:%{public}u.", streamIndex_);
+        AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("MicIndicator:turn on，Stream:%{public}u", streamIndex_);
+        AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -545,10 +510,6 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
         capturerState,
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
-
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
-        AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
-    }
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
@@ -571,6 +532,7 @@ int32_t CapturerInServer::Start()
     }
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
+        CaptureConcurrentCheck(streamIndex_);
     }
     return ret;
 }
@@ -611,6 +573,7 @@ int32_t CapturerInServer::StartInner()
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
+    RebuildCaptureInjector();
 
     if (capturerClock_ != nullptr) {
         capturerClock_->Start();
@@ -619,6 +582,15 @@ int32_t CapturerInServer::StartInner()
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
+
+void CapturerInServer::RebuildCaptureInjector()
+{
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
+    }
+    rebuildFlag_ = false;
+}
 
 // LCOV_EXCL_START
 int32_t CapturerInServer::Pause()
@@ -644,6 +616,7 @@ int32_t CapturerInServer::Pause()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
@@ -722,6 +695,7 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -745,12 +719,15 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
     }
+
+    ReleaseCaptureInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
@@ -760,7 +737,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
 
-    capturerClock_ = nullptr;
     CapturerClockManager::GetInstance().DeleteCapturerClock(streamIndex_);
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -786,6 +762,13 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     return SUCCESS;
 }
 
+void CapturerInServer::ReleaseCaptureInjector()
+{
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
+    }
+}
+
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybackCaptureConfig &config)
 {
@@ -806,6 +789,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybac
 int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     Trace trace("UpdatePlaybackCaptureConfig:" + ProcessConfig::DumpInnerCapConfig(config));
+    std::lock_guard<std::mutex> lock(filterConfigLock_);
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
         ERR_INVALID_OPERATION, "This not a inner-cap source!");
 
@@ -907,17 +891,21 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             processConfig_.appInfo.appUid,
             processConfig_.appInfo.appPid,
             processConfig_.appInfo.appTokenId,
-            HandleStreamStatusToCapturerState(status_)
+            status_.load() == I_STATUS_STARTED ? CAPTURER_RUNNING : CAPTURER_PREPARED
         };
         AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
             "Reason:NEED_RESTORE", streamIndex_, info.callerUid, info.appTokenId);
-        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_WAITING);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
         audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
+}
+
+void  CapturerInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
 }
 
 int64_t CapturerInServer::GetLastAudioDuration()
@@ -946,7 +934,7 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
         return;
     }
     std::atomic_store(&lastStatus_, status_);
-    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
 // LCOV_EXCL_STOP

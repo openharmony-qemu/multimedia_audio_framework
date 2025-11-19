@@ -23,6 +23,7 @@
 #include <sstream>
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -108,9 +109,14 @@ public:
         return nodeInfo_.sessionId;
     }
 
-    virtual AudioStreamType GetStreamType()
+    virtual AudioStreamType GetStreamType() const
     {
         return nodeInfo_.streamType;
+    }
+
+    virtual StreamUsage GetEffectStreamUsage() const
+    {
+        return nodeInfo_.effectInfo.streamUsage;
     }
 
     virtual HpaeProcessorType GetSceneType()
@@ -128,6 +134,11 @@ public:
         return nodeInfo_.deviceNetId;
     }
 
+    virtual std::string GetDeviceName()
+    {
+        return nodeInfo_.deviceName;
+    }
+
     virtual std::string GetNodeName()
     {
         return nodeInfo_.nodeName;
@@ -140,12 +151,13 @@ public:
 
     virtual std::string GetTraceInfo()
     {
-        std::ostringstream oss;
-        oss << "rate[" << nodeInfo_.samplingRate << "]_"
-            << "ch[" << static_cast<int32_t>(nodeInfo_.channels) << "]_"
-            << "len[" << nodeInfo_.frameLen << "]_"
-            << "bit[" << static_cast<int32_t>(nodeInfo_.format) << "]";
-        return oss.str();
+        CHECK_AND_RETURN_RET(traceInfo_.empty(), traceInfo_);
+        auto rate = "rate[" + std::to_string(nodeInfo_.samplingRate) + "]_";
+        auto ch = "ch[" + std::to_string(static_cast<int32_t>(nodeInfo_.channels)) + "]_";
+        auto len = "len[" + std::to_string(nodeInfo_.frameLen) + "]_";
+        auto bit = "bit[" + std::to_string(static_cast<int32_t>(nodeInfo_.format)) + "]";
+        traceInfo_ = rate + ch + len + bit;
+        return traceInfo_;
     }
 private:
     static uint32_t GenerateHpaeNodeId()
@@ -163,6 +175,7 @@ private:
     HpaeNodeInfo nodeInfo_;
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
+    std::string traceInfo_ = "";
 };
 
 template <typename T>
@@ -180,6 +193,7 @@ public:
     void AddInput(InputPort<T> *input, const std::shared_ptr<HpaeNode> &node);
     bool RemoveInput(InputPort<T> *input, HpaeBufferType bufferType = HPAE_BUFFER_TYPE_DEFAULT);
     size_t GetInputNum() const;
+    uint32_t GetNodeId();
 private:
     std::set<InputPort<T>*> inputPortSet_;
     std::vector<T> outputData_;
@@ -398,6 +412,11 @@ bool OutputPort<T>::RemoveInput(InputPort<T> *input, HpaeBufferType bufferType)
     return true;
 }
 
+template <class T>
+uint32_t OutputPort<T>::GetNodeId()
+{
+    return hpaeNode_->GetNodeId();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

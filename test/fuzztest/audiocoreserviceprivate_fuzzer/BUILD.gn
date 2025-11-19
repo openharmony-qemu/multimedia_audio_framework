@@ -15,9 +15,10 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioCoreServicePrivateFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiocoreserviceprivate_fuzzer"
 
   include_dirs = [
@@ -42,9 +43,11 @@ ohos_fuzztest("AudioCoreServicePrivateFuzzTest") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
+    "../../../services/audio_service/idl:audio_framework_interface",
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
@@ -91,9 +94,14 @@ ohos_fuzztest("AudioCoreServicePrivateFuzzTest") {
     ]
   }
 
-  defines = []
+  defines = [ "BLUETOOTH_ENABLE" ]
+
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+    defines += [ "BLUETOOTH_PART_ENABLE" ]
   }
 }
 

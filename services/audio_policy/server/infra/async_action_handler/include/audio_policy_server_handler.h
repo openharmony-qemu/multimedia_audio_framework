@@ -82,6 +82,9 @@ public:
         SESSION_DEVICE_CHANGE,
         SESSION_INPUT_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
+        VOLUME_DEGREE_EVENT,
+        AUDIO_DEVICE_INFO_UPDATE,
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -114,6 +117,7 @@ public:
         uint32_t routeFlag;
         AudioErrors errorCode;
         int32_t callerPid_ = -1;
+        bool collaborationEnabled;
     };
 
     struct RendererDeviceChangeEvent {
@@ -154,11 +158,13 @@ public:
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
     bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
+    bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
@@ -211,6 +217,7 @@ public:
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
+    void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -218,8 +225,10 @@ protected:
 private:
     /* Handle Event*/
     void HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDeviceInfoUpdatedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRequestCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAbandonCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -260,11 +269,13 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleOtherServiceSecondEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
+    void HandleCollaborationEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);

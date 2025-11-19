@@ -61,7 +61,7 @@ int32_t SinkAdapterUnLockOffloadRunningLock(struct SinkAdapter *adapter);
 
 // remote extend function
 int32_t SinkAdapterSplitRenderFrame(struct SinkAdapter *adapter, char *data, uint64_t len, uint64_t *writeLen,
-    const char *streamType);
+    uint32_t splitStreamType);
 int32_t SinkSetDeviceConnectedFlag(struct SinkAdapter *adapter, bool flag);
 
 #ifdef __cplusplus

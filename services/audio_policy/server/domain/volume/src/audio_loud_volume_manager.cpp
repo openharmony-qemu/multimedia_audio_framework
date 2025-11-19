@@ -91,6 +91,10 @@ bool LoudVolumeManager::GetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bo
 bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode)
 {
     bool isHolding = false;
+    if (funcHoldType != LOUD_VOLUME_MODE_MUSIC && funcHoldType != LOUD_VOLUME_MODE_VOICE) {
+        AUDIO_ERR_LOG("funHoldType error : %{public}d", funcHoldType);
+        return false;
+    }
     bool isInLoudVolumeMode = GetLoudVolumeHoldMap(funcHoldType, isHolding);
     switch (setVolMode) {
         case LOUD_VOLUME_SWITCH_ON:
@@ -182,8 +186,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
             bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_ON);
             CHECK_AND_RETURN_RET_LOG(ret != false, false, "set LoudVolume on error");
             return true;
-        } else if (triggerTime == ENABLE_TRIGGER_TIMES && (mSec - upTriggerTimeMSec < MAX_LOUD_VOLUME_MSEC) &&
-            (mSec - upTriggerTimeMSec > MIN_LOUD_VOLUME_MSEC)) {
+        } else if (triggerTime == ENABLE_TRIGGER_TIMES && (mSec - upTriggerTimeMSec > MIN_LOUD_VOLUME_MSEC)) {
             triggerTime++;
         } else {
             triggerTime = ENABLE_TRIGGER_TIMES;

@@ -20,6 +20,7 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
+#include "hpae_injector_renderer_manager.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -36,6 +37,8 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {
         return std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    } else if (sinkInfo.deviceName == VIRTUAL_INJECTOR) {
+        return std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
     }
     return std::make_shared<HpaeRendererManager>(sinkInfo);
 }
@@ -49,20 +52,37 @@ void IHpaeRendererManager::UploadDumpSinkInfo(std::string& deviceName)
 #endif
 };
 
-void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo)
+void IHpaeRendererManager::OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo)
 {
 #ifdef ENABLE_HIDUMP_DFX
-    AUDIO_INFO_LOG("%{public}s preNodeId %{public}u nodeName:%{public}s, NodeId: %{public}u",
-        isConnect ? "connect" : "disconnect",
-        preNodeId,
-        nodeInfo.nodeName.c_str(),
-        nodeInfo.nodeId);
-    if (isConnect) {
-        dfxTree_.Insert(preNodeId, nodeInfo);
+    AUDIO_INFO_LOG("%{public}s node, nodeName:%{public}s nodeId:%{public}u",
+        isAdd ? "Add" : "Remove", nodeInfo.nodeName.c_str(), nodeInfo.nodeId);
+    if (isAdd) {
+        dfxTree_.AddNode(nodeInfo);
     } else {
-        dfxTree_.Remove(nodeInfo.nodeId);
+        dfxTree_.RemoveNode(nodeInfo.nodeId);
     }
 #endif
+};
+
+void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId)
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("%{public}s preNodeId:%{public}u, NodeId:%{public}u",
+        isConnect ? "connect" : "disconnect", parentId, childId);
+    if (isConnect) {
+        dfxTree_.ConnectNodes(parentId, childId);
+    } else {
+        dfxTree_.DisConnectNodes(parentId, childId);
+    }
+#endif
+};
+
+int32_t IHpaeRendererManager::SetSinkVirtualOutputNode(
+    const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return ERROR;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

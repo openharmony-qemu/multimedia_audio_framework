@@ -1,0 +1,132 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../audio_framework_test_sources.gni")
+import("../../config.gni")
+
+group("audio_suite_packages") {
+  deps = [
+    ":audio_suite",
+    ":audio_suite_capabilities",
+  ]
+}
+
+config("audio_suite_public_config") {
+  include_dirs = [
+    "client/manager/include",
+    "client/config/include",
+    "client/node/include",
+    "client/utils/include",
+    "../../frameworks/native/audioutils/include",
+    "../audio_engine/utils/",
+    "../audio_engine/plugin/channel_converter/include/",
+    "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiosuite/include",
+  ]
+
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  ldflags = [ "-Wl" ]
+}
+
+audio_ohos_library("audio_suite") {
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = true
+
+  public_configs = [ ":audio_suite_public_config" ]
+
+  if (audio_framework_feature_audiosuite_support) {
+    include_dirs = [
+      "client/manager/include",
+      "../../frameworks/native/audioutils/include",
+      "../../frameworks/native/audioschedule/include",
+      "../audio_engine/buffer",
+      "../audio_engine/plugin/resample/include",
+      "../audio_service/common/include/limiter",
+      "../../interfaces/inner_api/native/audiocommon/include/",
+    ]
+
+    sources = [
+      "client/manager/src/audio_suite_engine.cpp",
+      "client/manager/src/audio_suite_manager.cpp",
+      "client/manager/src/audio_suite_pipeline.cpp",
+      "client/node/src/audio_suite_input_node.cpp",
+      "client/node/src/audio_suite_output_node.cpp",
+      "client/node/src/audio_suite_process_node.cpp",
+      "client/node/src/audio_suite_aiss_node.cpp",
+      "client/node/src/audio_suite_env_node.cpp",
+      "client/node/src/audio_suite_eq_node.cpp",
+      "client/node/src/audio_suite_mixer_node.cpp",
+      "client/node/src/audio_suite_nr_node.cpp",
+      "client/node/src/audio_suite_soundfield_node.cpp",
+      "client/node/src/audio_suite_voice_beautifier_node.cpp",
+      "client/utils/src/audio_suite_manager_thread.cpp",
+      "client/utils/src/audio_suite_common.cpp",
+      "client/utils/src/audio_suite_pcm_buffer.cpp",
+      "client/utils/src/audio_suite_format_conversion.cpp",
+      "client/utils/src/audio_suite_algo_interface.cpp",
+      "client/utils/src/audio_suite_eq_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_env_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_nr_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_soundfield_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_aiss_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_voice_beautifier_algo_interface_impl.cpp",
+      "client/config/src/audio_suite_capabilities_parser.cpp",
+      "client/config/src/audio_suite_capabilities.cpp",
+    ]
+
+    deps = [
+      "../audio_engine:audio_engine_utils",
+      "../audio_engine:audio_engine_plugins",
+      "../../frameworks/native/audioutils:audio_utils",
+      "../../frameworks/native/audioschedule:audio_schedule",
+      "../audio_service:audio_common",
+      "../../frameworks/native/audioutils:audio_xml_utils",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_single",
+      "media_foundation:media_monitor_client",
+      "media_foundation:media_monitor_common",
+      "samgr:samgr_proxy",
+    ]
+  }
+
+  version_script = "libaudio_suite.versionscript"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_suite_capabilities") {
+  source = "client/config/file/audio_suite_capabilities.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
+  part_name = "audio_framework"
+}

@@ -221,6 +221,8 @@ public:
     void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    int32_t SetRenderTarget(RenderTarget renderTarget) override;
+    RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
 
 private:
@@ -239,6 +241,7 @@ private:
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
+    void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void CallClientHandle();
     bool WriteCallbackFunc();
@@ -254,7 +257,6 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
-    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -315,7 +317,7 @@ private:
     bool streamTrackerRegistered_ = false;
 
     std::atomic<bool> needSetThreadPriority_ = true;
-
+    RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
 
@@ -330,7 +332,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
-    uint64_t engineTotalSizeInFrame_ = 0;
+    std::atomic<uint32_t> cacheSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -367,8 +369,6 @@ private:
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
-    std::mutex dataConnectionMutex_;
-    std::condition_variable dataConnectionCV_;
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
@@ -451,8 +451,15 @@ private:
         float speed = 1.0;
     };
     std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
-    std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
-    std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
+    struct AudioWriteState {
+        uint64_t unprocessedFramesBytes_;
+        uint64_t totalBytesWrittenAfterFlush_;
+        uint64_t perPeriodFrame_;
+        AudioWriteState(uint64_t unprocessed = 0, uint64_t written = 0, uint64_t frame = 0)
+            : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), perPeriodFrame_(frame) {}
+    };
+    std::atomic<AudioWriteState> audioWriteState_;
+    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
@@ -468,7 +475,6 @@ private:
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
-    bool isDataLinkConnected_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,

@@ -72,7 +72,8 @@ void AudioBackgroundManagerHandleSessionStateChangeFuzzTest()
     if (isClear) {
         audioBackgroundManagerTest.appStatesMap_.clear();
     }
-    audioBackgroundManagerTest.HandleSessionStateChange(uid, pid);
+    bool silentControl = g_fuzzUtils.GetData<bool>();
+    audioBackgroundManagerTest.HandleSessionStateChange(uid, pid, silentControl);
 }
 
 void AudioBackgroundManagerNotifyFreezeStateChangeFuzzTest()

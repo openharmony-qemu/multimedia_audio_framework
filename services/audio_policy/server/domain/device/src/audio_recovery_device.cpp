@@ -35,6 +35,7 @@ constexpr uint32_t INITIAL_STREAM_RESTORATION_WAIT_US = 1000000;
 constexpr uint32_t RETRY_INTERVAL_US = 300000;
 constexpr int32_t EXCLUDED = 0;
 constexpr int32_t UNEXCLUDED = 1;
+constexpr int32_t BLUETOOTH_UID = 1002;
 } // namespace
 
 static std::string GetEncryptAddr(const std::string &addr)
@@ -51,6 +52,25 @@ static std::string GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
+}
+
+static bool IsBtRecognition(const sptr<AudioCapturerFilter> &filter)
+{
+    CHECK_AND_RETURN_RET(filter, false);
+    return filter->uid == BLUETOOTH_UID && filter->capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION;
+}
+
+static void SetPreferredDevice(AudioScene scene, SourceType srcType,
+    const sptr<AudioCapturerFilter> &audioCapturerFilter, const shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
+        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, desc);
+    } else if (IsBtRecognition(audioCapturerFilter)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECOGNITION_CAPTURE, desc);
+    } else {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, desc);
+    }
 }
 
 void AudioRecoveryDevice::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
@@ -192,6 +212,7 @@ void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDev
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && selectedDesc[0] != nullptr, ERROR, "ptr is nullptr");
     AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] mac[%{public}s] " \
         "streamUsage[%{public}d] callerUid[%{public}d] audioDeviceSelectMode[%{public}d]", audioRendererFilter->uid,
         selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
@@ -260,6 +281,7 @@ void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeR
     audioCapturerSession_.ReloadSourceForDeviceChange(
         currentInputDevice,
         currentOutputDevice, caller);
+    CHECK_AND_RETURN_LOG(audioA2dpOffloadManager_ != nullptr, "audioA2dpOffloadManager_ is nullptr");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
@@ -393,7 +415,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     // check size == 1 && input device
     int32_t res = audioDeviceCommon_.DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
-    if (audioCapturerFilter->uid != -1) {
+    if (audioCapturerFilter->uid != -1 && !IsBtRecognition(audioCapturerFilter)) {
         audioAffinityManager_.AddSelectCapturerDevice(audioCapturerFilter->uid, selectedDesc[0]);
         vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
         streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
@@ -424,14 +446,10 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
             audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
     }
-
+    auto ret = RefreshVirtualDevice(selectedDesc[0]);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    if (scene == AUDIO_SCENE_PHONE_CALL || scene == AUDIO_SCENE_PHONE_CHAT ||
-        srcType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE, selectedDesc[0]);
-    } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE, selectedDesc[0]);
-    }
+    SetPreferredDevice(scene, srcType, audioCapturerFilter, selectedDesc[0]);
     audioActiveDevice_.NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("SelectInputDevice_2");
 
@@ -439,6 +457,26 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice");
+    return SUCCESS;
+}
+
+int32_t AudioRecoveryDevice::RefreshVirtualDevice(shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc, ERR_NULL_POINTER, "desc is nullptr");
+    bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(desc);
+    if (isVirtualDevice == true) {
+        desc->connectState_ = VIRTUAL_CONNECTED;
+    }
+    SetDeviceEnableAndUsage(desc);
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc->macAddress_);
+    }
+    // If the selected device is virtual device, connect it.
+    if (isVirtualDevice) {
+        int32_t ret = ConnectVirtualDevice(desc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Connect device [%{public}s] failed",
+            GetEncryptStr(desc->macAddress_).c_str());
+    }
     return SUCCESS;
 }
 

@@ -33,6 +33,7 @@ static constexpr float EPSILON = 1e-6f;
 static constexpr uint32_t SAMPLE_RATE = 48000;
 static constexpr float DB_TO_AMPLITUDE_BASE = 10.0f;
 static constexpr float DB_TO_AMPLITUDE_DIVISOR = 20.0f;
+static constexpr uint64_t DEFAULT_LATENCY_IN_US = 5000;
 static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
     .libraryName = "loudness",
     .effectName = "loudness",
@@ -72,6 +73,9 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
 
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeLoudnessGainNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -89,6 +93,9 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -230,6 +237,12 @@ float HpaeLoudnessGainNode::GetLoudnessGain()
 bool HpaeLoudnessGainNode::IsLoudnessAlgoOn()
 {
     return handle_ != nullptr;
+}
+
+uint64_t HpaeLoudnessGainNode::GetLatency(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(handle_ != nullptr, 0);
+    return DEFAULT_LATENCY_IN_US;
 }
 
 }  // namespace HPAE

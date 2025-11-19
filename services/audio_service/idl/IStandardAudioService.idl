@@ -68,7 +68,6 @@ interface IStandardAudioService {
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
-    void ResetAudioEndpoint();
     void ResetRouteForDisconnect([in] int type);
     void GetEffectLatency([in] String sessionId, [out] unsigned int latency);
     void UpdateLatencyTimestamp([in] String timestamp, [in] boolean isRenderer);
@@ -127,24 +126,26 @@ interface IStandardAudioService {
     void SetSessionMuteState([in] unsigned int sessionId, [in] boolean insert, [in] boolean muteFlag);
     void SetLatestMuteState([in] unsigned int sessionId, [in] boolean muteFlag);
     void ForceStopAudioStream([in] int audioType);
-    void CreateAudioWorkgroup([in] int pid, [in] IRemoteObject object, [out] int workgroupId);
-    void ReleaseAudioWorkgroup([in] int pid, [in] int workgroupId);
-    void AddThreadToGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
-    void RemoveThreadFromGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
-    void StartGroup([in] int pid, [in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
-    void StopGroup([in] int pid, [in] int workgroupId);
+    void CreateAudioWorkgroup([in] IRemoteObject object, [out] int workgroupId);
+    void ReleaseAudioWorkgroup([in] int workgroupId);
+    void AddThreadToGroup([in] int workgroupId, [in] int tokenId);
+    void RemoveThreadFromGroup([in] int workgroupId, [in] int tokenId);
+    void StartGroup([in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
+    void StopGroup([in] int workgroupId);
     void SetBtHdiInvalidState();
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
-    [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
-    void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
+    [oneway] void ImproveAudioWorkgroupPrio([in] Map<int, boolean> threads);
+    void RestoreAudioWorkgroupPrio([in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);
     void GetVolumeBySessionId([in] unsigned int sessionId, [out] float volume);
+    void AddCaptureInjector([in] unsigned int sinkPortidx, [out] String rate, [out] String format,
+        [out] String channels, [out] String bufferSize);
+    void RemoveCaptureInjector([in] unsigned int sinkPortidx);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
-    void SendInterruptEventToAudioServer([in] unsigned int sessionId, [in] InterruptEventInternal interruptEvent);
     void GetPrivacyTypeAudioServer([in] unsigned int sessionId, [out] int privacyType, [out] int ret);
 }

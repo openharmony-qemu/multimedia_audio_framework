@@ -38,7 +38,7 @@ public:
     virtual int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) = 0;
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
-    virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
+    virtual void DumpAllAvailableDevice() = 0;
     virtual void DumpSinkInputsInfo() = 0;
     virtual void DumpSourceOutputsInfo() = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
@@ -152,6 +152,8 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
     virtual int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
+
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

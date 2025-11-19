@@ -32,6 +32,12 @@ namespace OHOS {
 namespace AudioStandard {
 OffloadAudioRenderSink::~OffloadAudioRenderSink()
 {
+    if (sinkInited_) {
+        DeInit();
+    }
+#ifdef SUPPORT_OLD_ENGINE
+    CheckFlushThread();
+#endif
     AUDIO_INFO_LOG("volumeDataCount: %{public}" PRId64, volumeDataCount_);
 }
 
@@ -49,7 +55,7 @@ int32_t OffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
 
 void OffloadAudioRenderSink::DeInit(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::DeInit");
     std::lock_guard<std::mutex> lock(sinkMutex_);
     std::lock_guard<std::mutex> switchDeviceLock(switchDeviceMutex_);
@@ -80,8 +86,12 @@ int32_t OffloadAudioRenderSink::Start(void)
 
     if (started_) {
         if (isFlushing_) {
+#ifdef SUPPORT_OLD_ENGINE
             isNeedRestart_ = true;
             AUDIO_ERR_LOG("start fail, will restart after flush");
+#else
+            AUDIO_ERR_LOG("start fail, during flush");
+#endif
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -104,14 +114,14 @@ int32_t OffloadAudioRenderSink::Start(void)
 int32_t OffloadAudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_INFO_LOG("in");
+    AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::Stop");
     DeInitLatencyMeasurement();
     if (!started_) {
         UnLockOffloadRunningLock();
         return SUCCESS;
     }
-    int32_t ret = Flush();
+    int32_t ret = FlushInner();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail");
     AudioXCollie audioXCollie("OffloadAudioRenderSink::Stop", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -136,14 +146,16 @@ int32_t OffloadAudioRenderSink::Pause(void)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t OffloadAudioRenderSink::Flush(void)
+#ifdef SUPPORT_OLD_ENGINE
+int32_t OffloadAudioRenderSink::FlushInner(void)
 {
-    Trace trace("OffloadAudioRenderSink::Flush");
+    Trace trace("OffloadAudioRenderSink::FlushInner");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "duplicate flush");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
+    CheckFlushThread();
     isFlushing_ = true;
-    std::thread([&] {
+    flushThread_ = std::make_shared<std::thread>([&] {
         auto future = async(std::launch::async, [&] {
             std::lock_guard<std::mutex> lock(sinkMutex_);
             CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
@@ -162,9 +174,43 @@ int32_t OffloadAudioRenderSink::Flush(void)
             isNeedRestart_ = false;
             Start();
         }
-    }).detach();
+    });
     renderPos_ = 0;
     return SUCCESS;
+}
+
+void OffloadAudioRenderSink::CheckFlushThread()
+{
+    if (flushThread_ != nullptr && flushThread_->joinable()) {
+        flushThread_->join();
+    }
+    flushThread_.reset();
+}
+
+#else
+int32_t OffloadAudioRenderSink::FlushInner(void)
+{
+    Trace trace("OffloadAudioRenderSink::FlushInner");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "duplicate flush");
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+
+    isFlushing_ = true;
+    renderPos_ = 0;
+    int32_t ret = audioRender_->Flush(audioRender_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
+    }
+    isFlushing_ = false;
+    return SUCCESS;
+}
+#endif
+
+int32_t OffloadAudioRenderSink::Flush(void)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    Trace trace("OffloadAudioRenderSink::Flush");
+    return FlushInner();
 }
 
 int32_t OffloadAudioRenderSink::Reset(void)
@@ -172,10 +218,15 @@ int32_t OffloadAudioRenderSink::Reset(void)
     Trace trace("OffloadAudioRenderSink::Reset");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
+#ifdef SUPPORT_OLD_ENGINE
     isNeedRestart_ = true;
-    int32_t ret = Flush();
+#endif
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    int32_t ret = FlushInner();
     if (ret != SUCCESS) {
+#ifdef SUPPORT_OLD_ENGINE
         isNeedRestart_ = false;
+#endif
         AUDIO_ERR_LOG("reset fail");
         return ERR_OPERATION_FAILED;
     }
@@ -785,7 +836,6 @@ void OffloadAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
             renderFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }

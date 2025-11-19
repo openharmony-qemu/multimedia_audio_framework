@@ -27,6 +27,7 @@
 #include "hpae_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
+#include "audio_volume.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -39,6 +40,7 @@ static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr uint32_t TEST_SESSION_ID = 123456;
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
@@ -85,8 +87,27 @@ static AudioProcessConfig GetInnerCapConfig()
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.innerCapId = 1;
-    config.originalSessionId = 123456; // 123456: session id
+    config.originalSessionId = TEST_SESSION_ID;
     return config;
+}
+
+static void AddStreamVolume()
+{
+    StreamVolumeParams param;
+    param.sessionId = TEST_SESSION_ID;
+    param.streamType = AudioStreamType::STREAM_MUSIC;
+    param.streamUsage = 0;
+    param.uid = CAPTURER_FLAG;
+    param.pid = CAPTURER_FLAG;
+    param.isSystemApp = false;
+    param.mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    param.isVKB = false;
+    AudioVolume::GetInstance()->AddStreamVolume(param);
+}
+
+static void RemoveStreamVolume()
+{
+    AudioVolume::GetInstance()->RemoveStreamVolume(TEST_SESSION_ID);
 }
 
 std::shared_ptr<HpaeRendererStreamImpl> HpaeRendererStreamUnitTest::CreateHpaeRendererStreamImpl()
@@ -342,8 +363,18 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
     unit->offloadEnable_ = false;
-    float volume = 0.0f;
-    auto ret = unit->OffloadSetVolume(volume);
+    auto ret = unit->OffloadSetVolume();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    AddStreamVolume();
+    struct VolumeValues volumes = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::string volumeDeviceClass = unit->deviceClass_ == "remote_offload" ? "remote" : "offload";
+    uint32_t originStreamIndex = unit->streamIndex_;
+    float volume = AudioVolume::GetInstance()->GetVolume(unit->streamIndex_, unit->processConfig_.streamType,
+        volumeDeviceClass, &volumes);
+    AudioVolume::GetInstance()->SetHistoryVolume(unit->streamIndex_, volume);
+    ret = unit->OffloadSetVolume();
+    RemoveStreamVolume();
+    unit->streamIndex_ = originStreamIndex;
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -657,10 +688,14 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_026, TestSize.Level1)
 {
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
+    unit->lastPrintTimestamp_.store(0);
     uint64_t latency = 0;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "remote_offload";
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+    unit->lastPrintTimestamp_.store(timestampCurrent[0]);
     ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
@@ -875,6 +910,105 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
 
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
+}
+
+/**
+ * @tc.name  : Test OnQueryUnderrun.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_036
+ * @tc.desc  : Test OnQueryUnderrun.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    unit->writeCallback_ = mockWriteCallback;
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // not callback mode, return false
+
+    unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1);
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // writecallback null, return false
+
+    unit->writeCallback_ = mockWriteCallback;
+    size_t framesize = 0;
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(framesize))
+        .WillOnce(DoAll(SetArgReferee<0>(0), Return(SUCCESS)))
+        .WillOnce(DoAll(SetArgReferee<0>(1), Return(SUCCESS)));
+    EXPECT_EQ(unit->OnQueryUnderrun(), true); // requestDataLen == 0, return true
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // requestDataLen != 0, return false
+}
+
+/**
+ * @tc.name  : Test OnStreamData with noWaitDataFlag.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_037
+ * @tc.desc  : Test OnStreamData with noWaitDataFlag.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+ 
+    std::vector<int8_t> buffer(2048);
+    AudioCallBackStreamInfo info = {
+        .needData = true,
+        .requestDataLen = 1024,
+        .inputData = buffer.data(),
+    };
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCallback;
+    unit->noWaitDataFlag_ = false; // when start
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ false, do not write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1024), // enough dataLen, noWaitDataFlag_ false, write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ true, write
+            Return(0)
+    ));
+    EXPECT_CALL(*mockWriteCallback, OnWriteData(::testing::_, ::testing::_))
+        .WillOnce(Return(-1))
+        .WillOnce(Return(0))
+        .WillOnce(Return(0));
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
+    EXPECT_FALSE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success even if not enough data
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+}
+
+/**
+ * @tc.name  : Test Start.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_038
+ * @tc.desc  : Test Start with noWaitDataFlag_.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(DUP_PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    int32_t ret = rendererStreamImpl->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
+
+    rendererStreamImpl->noWaitDataFlag_ = true;
+    int32_t syncId = 123;
+    ret = rendererStreamImpl->StartWithSyncId(syncId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
 }
 }
 }

@@ -177,7 +177,9 @@ void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
 
 void AudioPolicyConfigManager::OnHasEarpiece()
 {
-    for (const auto &adapterInfo : audioPolicyConfig_.adapterInfoMap) {
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
+    for (const auto &adapterInfo : adapterInfoMap) {
         hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(),
             [](const auto& deviceInfo) {
                 return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
@@ -376,7 +378,7 @@ uint32_t AudioPolicyConfigManager::GetSinkLatencyFromXml() const
 void AudioPolicyConfigManager::GetAudioAdapterInfos(
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap)
 {
-    adapterInfoMap = audioPolicyConfig_.adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
 }
 
 void AudioPolicyConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
@@ -411,8 +413,10 @@ bool AudioPolicyConfigManager::GetAdapterInfoFlag()
 
 bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
 {
-    auto it = audioPolicyConfig_.adapterInfoMap.find(type);
-    if (it == audioPolicyConfig_.adapterInfoMap.end()) {
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
+    auto it = adapterInfoMap.find(type);
+    if (it == adapterInfoMap.end()) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }
@@ -545,7 +549,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
-AudioSampleFormat AudioPolicyConfigManager::ParseFormat(std::string format)
+AudioSampleFormat AudioPolicyConfigManager::ParseFormat(const std::string format)
 {
     auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
     if (it != AudioDefinitionPolicyUtils::formatStrToEnum.end()) {
@@ -573,13 +577,13 @@ void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioS
 
 void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
-    std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
+    std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &streamInfo)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
     if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
-        auto fastStreamPropinfo = GetStreamPropInfoFromPipe(
-            adapterPipeInfo, desc->streamInfo_.format, desc->streamInfo_.samplingRate, tempChannel);
+        AudioStreamInfo temp(streamInfo.samplingRate, ENCODING_PCM, desc->streamInfo_.format, streamInfo.channels);
+        auto fastStreamPropinfo = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
         if (fastStreamPropinfo != nullptr) {
             AUDIO_INFO_LOG("Find fast streamPropInfo from %{public}s", adapterPipeInfo->name_.c_str());
             // Use *ptr to get copy and avoid modify the source data from XML
@@ -601,8 +605,8 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
     if (useMatchingPropInfo) {
-        auto streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, desc->streamInfo_.format,
-            desc->streamInfo_.samplingRate, tempChannel);
+        AudioStreamInfo temp(streamInfo.samplingRate, ENCODING_PCM, desc->streamInfo_.format, streamInfo.channels);
+        auto streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
         if (streamProp != nullptr) {
             // Use *ptr to get copy and avoid modify the source data from XML
             *info = *streamProp;
@@ -687,15 +691,21 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
-        GetStreamPropInfoForRecord(desc, pipeIt->second, info, temp.channels);
+        GetStreamPropInfoForRecord(desc, pipeIt->second, info, temp);
         return;
     }
 
-    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, temp.format, temp.samplingRate, temp.channels);
-    if (streamProp != nullptr) {
-        info = streamProp;
-        return;
+    // dynamic
+    if (pipeIt->second->name_ == "multichannel_output") {
+        auto streamProp = GetStreamPropInfoForMultiChannel(desc, pipeIt->second, temp.channelLayout);
+        if (streamProp != nullptr) {
+            info = streamProp;
+            return;
+        }
     }
+
+    bool matchState = MatchStreamPropInfo(info, pipeIt->second, temp);
+    CHECK_AND_RETURN(!matchState);
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
         info = pipeIt->second->streamPropInfos_.front();
@@ -706,8 +716,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         AUDIO_INFO_LOG("Find streamPropInfo failed, choose normal flag");
         desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
             AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-        auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
-            desc->streamInfo_.samplingRate, desc->streamInfo_.channels);
+        AudioStreamInfo streamInfo(desc->streamInfo_.samplingRate, ENCODING_PCM, desc->streamInfo_.format,
+            desc->streamInfo_.channels);
+        auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, streamInfo);
         if (streamProp != nullptr) {
             info = streamProp;
             return;
@@ -733,7 +744,7 @@ void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStrea
        16k or 48k first here, then do resample in endpoint */
     if ((desc->streamInfo_.samplingRate != SAMPLE_RATE_16000) &&
         (desc->streamInfo_.samplingRate != SAMPLE_RATE_48000)) {
-        desc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+        streamInfo.samplingRate = SAMPLE_RATE_48000;
     }
 }
 
@@ -796,12 +807,33 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetSuitableStreamP
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
+    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
 
     AUDIO_INFO_LOG("use dynamic streamProp");
+
+    AudioChannel channels = streamInfo.channels;
+    AudioChannelLayout channelLayout = streamInfo.channelLayout;
+    uint32_t sampleRate = streamInfo.samplingRate;
+    // for audiovivid, need convert to 5.1.2 channelLayout
+    if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
+        channels = CHANNEL_8;
+        channelLayout = CH_LAYOUT_5POINT1POINT2;
+    }
+
+    // first match channelLayout
+    std::list<std::shared_ptr<PipeStreamPropInfo>> channelLayoutMatchInfos;
+    for (auto &streamProp : info->dynamicStreamPropInfos_) {
+        CHECK_AND_CONTINUE(streamProp && streamProp->channelLayout_ == channelLayout);
+        channelLayoutMatchInfos.push_back(streamProp);
+    }
+    if (!channelLayoutMatchInfos.empty()) {
+        return GetSuitableStreamPropInfo(channelLayoutMatchInfos, sampleRate);
+    }
+
+    // second match channels
     std::list<std::shared_ptr<PipeStreamPropInfo>> channelMatchInfos;
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
         CHECK_AND_CONTINUE(streamProp && streamProp->channels_ == channels);
@@ -812,12 +844,28 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
         : GetSuitableStreamPropInfo(channelMatchInfos, sampleRate);
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
+bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
+    std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
 {
-    std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+    AudioStreamInfo temp(streamInfo.samplingRate, streamInfo.encoding, streamInfo.format, streamInfo.channels,
+        streamInfo.channelLayout);
+    std::shared_ptr<PipeStreamPropInfo> streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
+    if (streamProp != nullptr) {
+        info = streamProp;
+        return true;
+    }
+    return false;
+}
+
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
+    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
+{
+    std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, streamInfo);
     CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);
 
+    AudioSampleFormat format = streamInfo.format;
+    uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
+    AudioChannel channels = streamInfo.channels;
     for (auto &streamProp : info->streamPropInfos_) {
         if (streamProp->format_ == format &&
             streamProp->sampleRate_ == sampleRate &&
@@ -886,6 +934,45 @@ bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamIn
         }
     }
     return false;
+}
+
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoForMultiChannel(
+    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
+    AudioChannelLayout channelLayout)
+{
+    auto tempStreamProp = info->streamPropInfos_.front();
+
+    // for audiovivid, need convert to 5.1.2 channelLayout
+    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
+        tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_8)) /
+            static_cast<uint32_t>(tempStreamProp->channels_));
+        tempStreamProp->channels_ = CHANNEL_8;
+        tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1POINT2;
+    }
+
+    // for pcm, need match channelLayout
+    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_PCM) {
+        for (auto &streamProp : info->streamPropInfos_) {
+            if (streamProp && streamProp->channelLayout_ == channelLayout) {
+                tempStreamProp = streamProp;
+                break;
+            }
+        }
+    }
+
+    if (AudioPolicyManagerFactory::GetAudioPolicyManager().
+        IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_)) {
+        return tempStreamProp;
+    }
+
+    AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, tempStreamProp->channelLayout_);
+    // use default 5.1 channelLayout for multi channel pipe
+    tempStreamProp->bufferSize_ =
+        ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
+        static_cast<uint32_t>(tempStreamProp->channels_));
+    tempStreamProp->channels_ = CHANNEL_6;
+    tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1;
+    return tempStreamProp;
 }
 }
 }

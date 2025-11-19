@@ -21,7 +21,7 @@ import("../../../config.gni")
 audio_framework_root = "../../.."
 
 ohos_fuzztest("AudioCollaborativeServiceFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiocollaborativeservice_fuzzer"
 
   include_dirs = [
@@ -57,6 +57,10 @@ ohos_fuzztest("AudioCollaborativeServiceFuzzTest") {
   ]
 
   defines = []
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 group("fuzztest") {

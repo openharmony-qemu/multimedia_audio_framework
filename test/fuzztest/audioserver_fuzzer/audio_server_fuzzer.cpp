@@ -16,6 +16,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+#include <fuzzer/FuzzedDataProvider.h>
 #include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
@@ -27,19 +28,23 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 const int32_t NUM_2 = 2;
-const int32_t LIMITSIZE = 4;
-const int32_t SHIFT_LEFT_8 = 8;
-const int32_t SHIFT_LEFT_16 = 16;
-const int32_t SHIFT_LEFT_24 = 24;
 const uint32_t LIMIT_MIN = 0;
 const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
 const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
+const int32_t MAX_BYTES = 1024;
+const size_t MAX_BUNDLE_NAME_LENGTH = 64;
+constexpr size_t MAX_RANDOM_STRING_LENGTH = 128;
+const size_t THRESHOLD = 10;
+constexpr float SCALE = 128.0f;
+constexpr float BIAS  = 1.0f;
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
@@ -102,6 +107,248 @@ const vector<HdiIdType> g_testHdiIdTypes = {
     HDI_ID_TYPE_NUM,
 };
 
+const std::vector<AudioParamKey> g_audioParamKeys = {
+    NONE,
+    VOLUME,
+    INTERRUPT,
+    PARAM_KEY_STATE,
+    A2DP_SUSPEND_STATE,
+    BT_HEADSET_NREC,
+    BT_WBS,
+    A2DP_OFFLOAD_STATE,
+    GET_DP_DEVICE_INFO,
+    GET_PENCIL_INFO,
+    GET_UWB_INFO,
+    USB_DEVICE,
+    PERF_INFO,
+    MMI,
+    PARAM_KEY_LOWPOWER
+};
+
+const std::vector<DeviceRole> g_testDeviceRoles = {
+    DEVICE_ROLE_NONE,
+    INPUT_DEVICE,
+    OUTPUT_DEVICE,
+    DEVICE_ROLE_MAX
+};
+
+const std::vector<AudioScene> g_audioScenes = {
+    AUDIO_SCENE_DEFAULT,
+    AUDIO_SCENE_RINGING,
+    AUDIO_SCENE_PHONE_CALL,
+    AUDIO_SCENE_PHONE_CHAT,
+    AUDIO_SCENE_CALL_START,
+    AUDIO_SCENE_CALL_END,
+    AUDIO_SCENE_VOICE_RINGING
+};
+
+const vector<std::u16string> gTestDumpArges = {
+    u"-fb",
+    u"test",
+    u"test2",
+    u"test3",
+};
+
+const vector<std::string> params = {
+    "address=card2;device=0 role=1",
+    "address=card2;device=0 role=2"
+};
+
+const vector<int32_t> gTestSystemAbilityId = {
+    0,
+    AUDIO_POLICY_SERVICE_ID,
+    AUDIO_DISTRIBUTED_SERVICE_ID,
+};
+
+const vector<std::string> gTestAudioParameterKeys = {
+    "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
+    "A2dpSuspended",
+    "AUDIO_EXT_PARAM_KEY_LOWPOWER",
+    "bt_headset_nrec",
+    "bt_wbs",
+    "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
+    "mmi",
+    "perf_info",
+};
+
+const vector<std::string> tetsNetworkId = {
+    "LocalDevice",
+    "TestNetwork",
+};
+
+const vector<AudioParamKey> audioParamKey {
+    NONE,
+    VOLUME,
+    INTERRUPT,
+    PARAM_KEY_STATE,
+    A2DP_SUSPEND_STATE,
+    BT_HEADSET_NREC,
+    BT_WBS,
+    A2DP_OFFLOAD_STATE,
+    GET_DP_DEVICE_INFO,
+    GET_PENCIL_INFO,
+    GET_UWB_INFO,
+    USB_DEVICE,
+    PERF_INFO,
+    MMI,
+    PARAM_KEY_LOWPOWER,
+};
+
+const vector<PlayerType> gPlayerType = {
+    PLAYER_TYPE_DEFAULT,
+    PLAYER_TYPE_SOUND_POOL,
+    PLAYER_TYPE_AV_PLAYER,
+};
+
+static const vector<string> testPairs = {
+    "unprocess_audio_effect",
+    "test",
+};
+
+static const vector<string> testKeys = {
+    "AUDIO_EXT_PARAM_KEY_LOWPOWER",
+    "need_change_usb_device#C",
+    "getSmartPAPOWER",
+    "show_RealTime_ChipModel",
+    "perf_info",
+};
+
+static const vector<AudioScene> testAudioScenes = {
+    AUDIO_SCENE_INVALID,
+    AUDIO_SCENE_DEFAULT,
+    AUDIO_SCENE_RINGING,
+    AUDIO_SCENE_PHONE_CALL,
+    AUDIO_SCENE_PHONE_CHAT,
+    AUDIO_SCENE_CALL_START,
+    AUDIO_SCENE_CALL_END,
+    AUDIO_SCENE_VOICE_RINGING,
+    AUDIO_SCENE_MAX,
+};
+static const vector<BluetoothOffloadState> testBluetoothOffloadStates = {
+    NO_A2DP_DEVICE,
+    A2DP_NOT_OFFLOAD,
+    A2DP_OFFLOAD,
+};
+
+const vector<string> newTestPairs = {
+    "OPEN",
+    "CLOSE",
+    "UPLOAD",
+    "test"
+};
+
+const std::vector<SourceType> g_sourceTypes = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+};
+
+const std::vector<AudioSampleFormat> g_audioSampleFormats = {
+    SAMPLE_U8,
+    SAMPLE_S16LE,
+    SAMPLE_S24LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE,
+    INVALID_WIDTH
+};
+
+const std::vector<AudioEncodingType> g_audioEncodingTypes = {
+    ENCODING_INVALID,
+    ENCODING_PCM,
+    ENCODING_AUDIOVIVID,
+    ENCODING_EAC3
+};
+
+const std::vector<AudioMode> g_audioModes = {
+    AUDIO_MODE_PLAYBACK,
+    AUDIO_MODE_RECORD
+};
+
+const std::vector<AudioChannel> g_audioChannels = {
+    CHANNEL_UNKNOW,
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_11,
+    CHANNEL_12,
+    CHANNEL_13,
+    CHANNEL_14,
+    CHANNEL_15,
+    CHANNEL_16
+};
+
+const std::vector<StreamUsage> g_streamUsages = {
+    STREAM_USAGE_INVALID,
+    STREAM_USAGE_UNKNOWN,
+    STREAM_USAGE_MEDIA,
+    STREAM_USAGE_VOICE_COMMUNICATION,
+    STREAM_USAGE_VOICE_ASSISTANT,
+    STREAM_USAGE_ALARM,
+    STREAM_USAGE_VOICE_MESSAGE,
+    STREAM_USAGE_NOTIFICATION_RINGTONE,
+    STREAM_USAGE_NOTIFICATION,
+    STREAM_USAGE_ACCESSIBILITY,
+    STREAM_USAGE_SYSTEM,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK,
+    STREAM_USAGE_NAVIGATION,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_VIDEO_COMMUNICATION,
+    STREAM_USAGE_RANGING,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+    STREAM_USAGE_VOICE_RINGTONE,
+    STREAM_USAGE_VOICE_CALL_ASSISTANT
+};
+
+static const std::vector<DataTransferStateChangeType> g_dataTransferStateChangeTypes = {
+    AUDIO_STREAM_START,
+    AUDIO_STREAM_STOP,
+    AUDIO_STREAM_PAUSE,
+    DATA_TRANS_STOP,
+    DATA_TRANS_RESUME,
+};
+
+AudioRendererDataTransferStateChangeInfo ConsumeAudioRendererDataTransferStateChangeInfo(FuzzedDataProvider &provider);
+
+AudioRendererDataTransferStateChangeInfo ConsumeAudioRendererDataTransferStateChangeInfo(FuzzedDataProvider &provider)
+{
+    AudioRendererDataTransferStateChangeInfo ret;
+    ret.clientPid = provider.ConsumeIntegral<int32_t>();
+    ret.clientUID = provider.ConsumeIntegral<int32_t>();
+    ret.sessionId = provider.ConsumeIntegral<int32_t>();
+    ret.streamUsage = g_streamUsages[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
+    ret.stateChangeType = g_dataTransferStateChangeTypes[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
+    ret.isBackground = provider.ConsumeIntegral<int32_t>() % NUM_2;
+    for (int i = 0; i < MAX_DATATRANS_TYPE; i++) {
+        ret.badDataRatio[i] = provider.ConsumeIntegral<int32_t>();
+    }
+    return ret;
+}
+
 class DataTransferStateChangeCallbackInnerFuzzTest : public DataTransferStateChangeCallbackInner {
 public:
     void OnDataTransferStateChange(const int32_t &callbackId,
@@ -118,27 +365,15 @@ uint32_t GetArrLength(T& arr)
     }
     return sizeof(arr) / sizeof(arr[0]);
 }
-uint32_t Convert2Uint32(const uint8_t *ptr)
-{
-    if (ptr == nullptr) {
-        return 0;
-    }
-    /* Move the 0th digit to the left by 24 bits, the 1st digit to the left by 16 bits,
-       the 2nd digit to the left by 8 bits, and the 3rd digit not to the left */
-    return (ptr[0] << SHIFT_LEFT_24) | (ptr[1] << SHIFT_LEFT_16) | (ptr[2] << SHIFT_LEFT_8) | (ptr[3]);
-}
 
-void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_MAX - LIMIT_MIN + 1) + LIMIT_MIN;
-    rawData = rawData + OFFSET;
-    size = size - OFFSET;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(LIMIT_MIN, LIMIT_MAX);
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
+    auto payload = provider.ConsumeBytes<unsigned char>(MAX_BYTES);
+    data.WriteBuffer(payload.data(), payload.size());
     data.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
@@ -158,30 +393,28 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     AudioServerPtr->OnRemoteRequest(code, data, reply, option);
-    if (size < LIMITSIZE) {
+    std::string netWorkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    if (g_audioParamKeys.empty()) {
         return;
     }
-    std::string netWorkId(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
-    std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
-    std::string value(reinterpret_cast<const char*>(rawData), size - 1);
+    AudioParamKey key = g_audioParamKeys[provider.ConsumeIntegral<uint32_t>() % g_audioParamKeys.size()];
+    std::string condition = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string value = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     AudioServerPtr->OnRenderSinkParamChange(netWorkId, key, condition, value);
 }
 
 float Convert2Float(const uint8_t *ptr)
 {
     float floatValue = static_cast<float>(*ptr);
-    return floatValue / 128.0f - 1.0f;
+    return floatValue / SCALE - BIAS;
 }
 
-void AudioServerOffloadSetVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerOffloadSetVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    float volume = Convert2Float(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    float volume = provider.ConsumeFloatingPoint<float>();
     data.WriteFloat(volume);
     MessageParcel reply;
     MessageOption option;
@@ -190,14 +423,12 @@ void AudioServerOffloadSetVolumeFuzzTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerNotifyStreamVolumeChangedFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sizeMs = provider.ConsumeIntegral<uint32_t>();
     data.WriteUint32(sizeMs);
     MessageParcel reply;
     MessageOption option;
@@ -206,14 +437,12 @@ void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t
         data, reply, option);
 }
 
-void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerResetRouteForDisconnectFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     data.WriteInt32(deviceType);
     MessageParcel reply;
     MessageOption option;
@@ -222,14 +451,12 @@ void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t s
         data, reply, option);
 }
 
-void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
+void AudioServerGetEffectLatencyTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string sessionId(reinterpret_cast<const char*>(rawData), size);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string sessionId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteString(sessionId);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -238,15 +465,13 @@ void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
+void AudioServerUpdateLatencyTimestampTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string timestamp(reinterpret_cast<const char*>(rawData), size - 1);
-    bool isRenderer = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string timestamp = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    bool isRenderer = provider.ConsumeBool();
     data.WriteString(timestamp);
     data.WriteBool(isRenderer);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -256,15 +481,13 @@ void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerGetMaxAmplitudeTest(const uint8_t *rawData, size_t size)
+void AudioServerGetMaxAmplitudeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool isOutputDevice = *reinterpret_cast<const bool*>(rawData);
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
+    bool isOutputDevice = provider.ConsumeBool();
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     data.WriteBool(isOutputDevice);
     data.WriteInt32(deviceType);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -274,43 +497,27 @@ void AudioServerGetMaxAmplitudeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerResetAudioEndpointTest(const uint8_t *rawData, size_t size)
+void AudioServerCreatePlaybackCapturerManagerTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT),
-        data, reply, option);
-}
-
-void AudioServerCreatePlaybackCapturerManagerTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    data.WriteInt32(deviceType);
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER),
         data, reply, option);
 }
 
-void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
+void AudioServerSetOutputDeviceSinkTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
-    std::string sinkName(reinterpret_cast<const char*>(rawData), size - 1);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteInt32(deviceType);
     data.WriteString(sinkName);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -320,14 +527,12 @@ void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioMonoStateTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool audioMono = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool audioMono = provider.ConsumeBool();
     data.WriteBool(audioMono);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -336,14 +541,12 @@ void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetVoiceVolumeTest(const uint8_t *rawData, size_t size)
+void AudioServerSetVoiceVolumeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    float volume = *reinterpret_cast<const float*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    float volume = provider.ConsumeFloatingPoint<float>();
     data.WriteFloat(volume);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -352,16 +555,17 @@ void AudioServerSetVoiceVolumeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerCheckRemoteDeviceStateTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRemoteDeviceStateTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string networkId(reinterpret_cast<const char*>(rawData), size - 1);
-    DeviceRole deviceRole = *reinterpret_cast<const DeviceRole*>(rawData);
-    bool isStartDevice = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    if (g_testDeviceRoles.empty()) {
+        return;
+    }
+    DeviceRole deviceRole = g_testDeviceRoles[provider.ConsumeIntegral<uint32_t>() % g_testDeviceRoles.size()];
+    bool isStartDevice = provider.ConsumeBool();
     data.WriteString(networkId);
     data.WriteInt32(static_cast<int32_t>(deviceRole));
     data.WriteBool(isStartDevice);
@@ -372,16 +576,13 @@ void AudioServerCheckRemoteDeviceStateTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerNotifyDeviceInfoTest(const uint8_t *rawData, size_t size)
+void AudioServerNotifyDeviceInfoTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string networkId(reinterpret_cast<const char*>(rawData), size - 1);
-    bool connected = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    bool connected = provider.ConsumeBool();
     data.WriteString(networkId);
     data.WriteBool(connected);
 
@@ -392,15 +593,12 @@ void AudioServerNotifyDeviceInfoTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerGetAudioParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerGetAudioParameterTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string key(reinterpret_cast<const char*>(rawData), size - 1);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string key = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteString(key);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -409,16 +607,13 @@ void AudioServerGetAudioParameterTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetAudioParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioParameterTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    std::string key(reinterpret_cast<const char*>(rawData), size - 1);
-    std::string value(reinterpret_cast<const char*>(rawData), size - 1);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string key = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string value = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteString(key);
     data.WriteString(value);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -428,15 +623,12 @@ void AudioServerSetAudioParameterTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetMicrophoneMuteTest(const uint8_t *rawData, size_t size)
+void AudioServerSetMicrophoneMuteTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool isMute = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool isMute = provider.ConsumeBool();
     data.WriteBool(isMute);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -445,14 +637,12 @@ void AudioServerSetMicrophoneMuteTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetAudioBalanceValueTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioBalanceValueTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    float audioBalance = *reinterpret_cast<const float*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    float audioBalance = provider.ConsumeFloatingPoint<float>();
     data.WriteFloat(audioBalance);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -461,14 +651,15 @@ void AudioServerSetAudioBalanceValueTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioSceneTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    AudioScene audioScene = *reinterpret_cast<const AudioScene*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_audioScenes.empty()) {
+        return;
+    }
+    AudioScene audioScene = g_audioScenes[provider.ConsumeIntegral<uint32_t>() % g_audioScenes.size()];
     data.WriteInt32(static_cast<int32_t>(audioScene));
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -477,16 +668,14 @@ void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetOffloadModeTest(const uint8_t *rawData, size_t size)
+void AudioServerSetOffloadModeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
-    int32_t state = *reinterpret_cast<const int32_t*>(rawData);
-    bool isAppBack = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
+    int32_t state = provider.ConsumeIntegral<int32_t>();
+    bool isAppBack = provider.ConsumeBool();
     data.WriteUint32(sessionId);
     data.WriteInt32(state);
     data.WriteBool(isAppBack);
@@ -497,14 +686,12 @@ void AudioServerSetOffloadModeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
+void AudioServerUnsetOffloadTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     data.WriteUint32(sessionId);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -513,14 +700,12 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckHibernateStateTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    bool hibernate = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool hibernate = provider.ConsumeBool();
     data.WriteBool(hibernate);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -529,14 +714,12 @@ void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerSetSessionMuteStateTest(const uint8_t *rawData, size_t size)
+void AudioServerSetSessionMuteStateTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sessionId = 10;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     data.WriteInt32(sessionId);
     data.WriteBool(true);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -546,15 +729,12 @@ void AudioServerSetSessionMuteStateTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerNotifyMuteStateChangeTest(const uint8_t *rawData, size_t size)
+void AudioServerNotifyMuteStateChangeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    uint32_t sessionId = 10;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     data.WriteInt32(sessionId);
     data.WriteBool(true);
 
@@ -565,16 +745,11 @@ void AudioServerNotifyMuteStateChangeTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupCreateTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupCreateTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -583,17 +758,12 @@ void AudioServerAudioWorkgroupCreateTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupReleaseTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupReleaseTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     data.WriteInt32(static_cast<int32_t>(workgroupId));
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -603,18 +773,13 @@ void AudioServerAudioWorkgroupReleaseTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupAddThreadTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupAddThreadTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
+    int32_t tokenId = provider.ConsumeIntegral<int32_t>();
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteInt32(static_cast<int32_t>(tokenId));
 
@@ -625,18 +790,13 @@ void AudioServerAudioWorkgroupAddThreadTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupRemoveThreadTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupRemoveThreadTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
+    int32_t tokenId = provider.ConsumeIntegral<int32_t>();
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteInt32(static_cast<int32_t>(tokenId));
 
@@ -647,19 +807,14 @@ void AudioServerAudioWorkgroupRemoveThreadTest(const uint8_t *rawData, size_t si
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupStartGroupTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupStartGroupTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    uint64_t startTime = *reinterpret_cast<const int32_t*>(rawData);
-    uint64_t deadlineTime = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
+    uint64_t startTime = provider.ConsumeIntegral<uint64_t>();
+    uint64_t deadlineTime = provider.ConsumeIntegral<uint64_t>();
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteUint64(static_cast<int32_t>(startTime));
     data.WriteUint64(static_cast<int32_t>(deadlineTime));
@@ -671,17 +826,12 @@ void AudioServerAudioWorkgroupStartGroupTest(const uint8_t *rawData, size_t size
         data, reply, option);
 }
 
-void AudioServerAudioWorkgroupStopGroupTest(const uint8_t *rawData, size_t size)
+void AudioServerAudioWorkgroupStopGroupTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    data.WriteInt32(static_cast<int32_t>(testPid));
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     data.WriteInt32(static_cast<int32_t>(workgroupId));
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -691,66 +841,48 @@ void AudioServerAudioWorkgroupStopGroupTest(const uint8_t *rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerDumpTest(const uint8_t *rawData, size_t size)
+void AudioServerDumpTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    vector<std::u16string> gTestDumpArges = {
-        u"-fb",
-        u"test",
-        u"test2",
-        u"test3",
-    };
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::vector<std::u16string> args(gTestDumpArges.begin(), gTestDumpArges.begin() +
-        (static_cast<uint32_t>(size) % gTestDumpArges.size()));
-    int32_t fd = static_cast<int32_t>(size);
+        (provider.ConsumeIntegral<uint32_t>() % gTestDumpArges.size()));
+    int32_t fd = provider.ConsumeIntegral<int32_t>();
 
     audioServerPtr->Dump(fd, args);
 }
 
-void AudioServerGetUsbParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerGetUsbParameterTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    const vector<std::string> params = {
-        "address=card2;device=0 role=1",
-        "address=card2;device=0 role=2"
-    };
-    std::string param = params[*reinterpret_cast<const uint32_t*>(rawData) % params.size()];
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string param = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetUsbParameter(param);
 }
 
-void AudioServerOnAddSystemAbilityTest(const uint8_t *rawData, size_t size)
+void AudioServerOnAddSystemAbilityTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    vector<int32_t> gTestSystemAbilityId = {
-        0,
-        AUDIO_POLICY_SERVICE_ID,
-        AUDIO_DISTRIBUTED_SERVICE_ID,
-    };
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
-    uint32_t id = static_cast<uint32_t>(size) % gTestSystemAbilityId.size();
-    std::string deviceId = "0";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gTestSystemAbilityId.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestSystemAbilityId.size();
+    std::string deviceId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
 
     audioServerPtr->OnAddSystemAbility(gTestSystemAbilityId[id], deviceId);
 }
 
-void AudioServerSetExtraParametersTest(const uint8_t *rawData, size_t size)
+void AudioServerSetExtraParametersTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::vector<std::pair<std::string, std::string>> kvpairs;
-    uint32_t id = static_cast<uint32_t>(size) % g_testKeys.size();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testKeys.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % g_testKeys.size();
     std::string key = g_testKeys[id];
     std::pair<std::string, std::string> kvpair = std::make_pair(g_testKeys[id], g_testKeys[id]);
     kvpairs.push_back(kvpair);
@@ -758,119 +890,72 @@ void AudioServerSetExtraParametersTest(const uint8_t *rawData, size_t size)
     audioServerPtr->ParseAudioParameter();
 }
 
-void AudioServerSetAudioParameterByKeyTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioParameterByKeyTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gTestAudioParameterKeys.empty()) {
         return;
     }
-    vector<std::string> gTestAudioParameterKeys = {
-        "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
-        "A2dpSuspended",
-        "AUDIO_EXT_PARAM_KEY_LOWPOWER",
-        "bt_headset_nrec",
-        "bt_wbs",
-        "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
-        "mmi",
-        "perf_info",
-    };
-
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t id = static_cast<uint32_t>(size) % gTestAudioParameterKeys.size();
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestAudioParameterKeys.size();
     audioServerPtr->SetAudioParameter(gTestAudioParameterKeys[id], "");
 }
 
-void AudioServerGetExtraParametersTest(const uint8_t *rawData, size_t size)
+void AudioServerGetExtraParametersTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testKeys.empty()) {
         return;
     }
-
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t id = static_cast<uint32_t>(size) % g_testKeys.size();
-    bool isAudioParameterParsed = static_cast<uint32_t>(size) % NUM_2;
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % g_testKeys.size();
+    bool isAudioParameterParsed = provider.ConsumeIntegral<uint32_t>() % NUM_2;
     audioServerPtr->isAudioParameterParsed_.store(isAudioParameterParsed);
     std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     audioServerPtr->GetExtraParameters(g_testKeys[id], subKeys, result);
 }
 
-void AudioServerGetAudioParameterByIdTest(const uint8_t *rawData, size_t size)
+void AudioServerGetAudioParameterByIdTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    string str = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    if (audioParamKey.empty() || tetsNetworkId.empty()) {
         return;
     }
-
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    vector<std::string> tetsNetworkId = {
-        "LocalDevice",
-        "TestNetwork",
-    };
-    vector<AudioParamKey> audioParamKey {
-        NONE,
-        VOLUME,
-        INTERRUPT,
-        PARAM_KEY_STATE,
-        A2DP_SUSPEND_STATE,
-        BT_HEADSET_NREC,
-        BT_WBS,
-        A2DP_OFFLOAD_STATE,
-        GET_DP_DEVICE_INFO,
-        GET_PENCIL_INFO,
-        GET_UWB_INFO,
-        USB_DEVICE,
-        PERF_INFO,
-        MMI,
-        PARAM_KEY_LOWPOWER,
-    };
-    string str = "test";
-    uint32_t id = static_cast<uint32_t>(size) % audioParamKey.size();
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % audioParamKey.size();
     AudioParamKey key = static_cast<AudioParamKey>(audioParamKey[id]);
-    id = static_cast<uint32_t>(size) % tetsNetworkId.size();
+    id = provider.ConsumeIntegral<uint32_t>() % tetsNetworkId.size();
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->GetAudioParameter(tetsNetworkId[id], key, "", str);
 }
 
-void AudioServerIsFastBlockedTest(const uint8_t *rawData, size_t size)
+void AudioServerIsFastBlockedTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gPlayerType.empty()) {
         return;
     }
-
-    vector<PlayerType> gPlayerType = {
-        PLAYER_TYPE_DEFAULT,
-        PLAYER_TYPE_SOUND_POOL,
-        PLAYER_TYPE_AV_PLAYER,
-    };
-
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
-    uint32_t id = static_cast<uint32_t>(size) % gPlayerType.size();
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gPlayerType.size();
     audioServerPtr->IsFastBlocked(static_cast<uint32_t>(id), gPlayerType[id]);
 }
 
-void AudioServerCheckRemoteDeviceStateTestTwo(const uint8_t *rawData, size_t size)
+void AudioServerCheckRemoteDeviceStateTestTwo()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool isStartDevice = provider.ConsumeIntegral<uint32_t>() % NUM_2;
+    if (g_testDeviceRoles.empty()) {
         return;
     }
-    vector<DeviceRole> gDeviceRole = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX,
-    };
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    bool isStartDevice = static_cast<uint32_t>(size) % NUM_2;
-    uint32_t id = static_cast<uint32_t>(size) % gDeviceRole.size();
-    audioServerPtr->CheckRemoteDeviceState("LocalDevice", gDeviceRole[id], isStartDevice);
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % g_testDeviceRoles.size();
+    audioServerPtr->CheckRemoteDeviceState("LocalDevice", g_testDeviceRoles[id], isStartDevice);
 }
 
-void AudioServerCreateAudioStreamTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateAudioStreamTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     sptr<IRemoteObject> remoteObject = nullptr;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->NotifyProcessStatus();
@@ -880,34 +965,24 @@ void AudioServerCreateAudioStreamTest(const uint8_t *rawData, size_t size)
         AudioServer::VASSISTANT_UID,
         AudioServer::MEDIA_SERVICE_UID,
     };
-    uint32_t id = static_cast<uint32_t>(size) % gTestCallingUid.size();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gTestCallingUid.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestCallingUid.size();
     config.audioMode = AUDIO_MODE_RECORD;
     remoteObject = audioServerPtr->CreateAudioStream(config, gTestCallingUid[id], pipeinfoGuard);
-    vector<AudioParamKey> audioParamKey {
-        NONE,
-        VOLUME,
-        INTERRUPT,
-        PARAM_KEY_STATE,
-        A2DP_SUSPEND_STATE,
-        BT_HEADSET_NREC,
-        BT_WBS,
-        A2DP_OFFLOAD_STATE,
-        GET_DP_DEVICE_INFO,
-        GET_PENCIL_INFO,
-        GET_UWB_INFO,
-        USB_DEVICE,
-        PERF_INFO,
-        MMI,
-        PARAM_KEY_LOWPOWER,
-    };
 
     config.audioMode = static_cast<AudioMode>(-1);
     audioServerPtr->IsNormalIpcStream(config);
-    id = static_cast<uint32_t>(size) % audioParamKey.size();
+    if (audioParamKey.empty()) {
+        return;
+    }
+    id = provider.ConsumeIntegral<uint32_t>() % audioParamKey.size();
     audioServerPtr->OnRenderSinkParamChange("", audioParamKey[id], "", "");
     audioServerPtr->OnCaptureSourceParamChange("", audioParamKey[id], "", "");
     audioServerPtr->OnWakeupClose();
-    id = static_cast<uint32_t>(size) % NUM_2;
+    id = provider.ConsumeIntegral<uint32_t>() % NUM_2;
     audioServerPtr->OnCapturerState(static_cast<bool>(id), id, id);
     audioServerPtr->SetParameterCallback(remoteObject);
     audioServerPtr->SetWakeupSourceCallback(remoteObject);
@@ -915,63 +990,48 @@ void AudioServerCreateAudioStreamTest(const uint8_t *rawData, size_t size)
     audioServerPtr->RegistCoreServiceProvider(remoteObject);
 }
 
-void AudioServerSetSinkRenderEmptyTest(const uint8_t *rawData, size_t size)
+void AudioServerSetSinkRenderEmptyTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
-    uint32_t id = static_cast<uint32_t>(size) % NUM_2;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % NUM_2;
     audioServerPtr->SetSinkRenderEmpty("primary", id);
 }
 
-void AudioServerOnRenderSinkStateChangeTest(const uint8_t *rawData, size_t size)
+void AudioServerOnRenderSinkStateChangeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
-    uint32_t id = static_cast<uint32_t>(size) % NUM_2;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % NUM_2;
     audioServerPtr->OnRenderSinkStateChange(id, static_cast<bool>(id));
 }
 
-void AudioServerCreateHdiSinkPortTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateHdiSinkPortTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t renderId = 0;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     IAudioSinkAttr attr;
-    std::string deviceClass = "audio_test_class";
-    std::string idInfo = "audio_indo";
+    std::string deviceClass = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
 }
 
-void AudioServerCreateHdiSourcePortTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateHdiSourcePortTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     uint32_t captureId = 0;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     IAudioSourceAttr attr;
-    std::string deviceClass = "audio_test_class";
-    std::string idInfo = "audio_indo";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string deviceClass = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
 }
 
-void AudioServerRegisterDataTransferCallbackTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterDataTransferCallbackTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     sptr<IRemoteObject> object = focusListenerStub->AsObject();
@@ -979,28 +1039,21 @@ void AudioServerRegisterDataTransferCallbackTest(const uint8_t *rawData, size_t 
     audioServerPtr->RegisterDataTransferCallback(object);
 }
 
-void AudioServerWriteServiceStartupErrorTest(const uint8_t *rawData, size_t size)
+void AudioServerWriteServiceStartupErrorTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->WriteServiceStartupError();
 }
 
-void AudioServerProcessKeyValuePairsTest(const uint8_t *rawData, size_t size)
+void AudioServerProcessKeyValuePairsTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    string key = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    string value{};
+    if (testPairs.empty()) {
         return;
     }
-    static const vector<string> testPairs = {
-        "unprocess_audio_effect",
-        "test",
-    };
-    string key = "test_key";
-    string value{};
-    string pairTest = testPairs[static_cast<uint32_t>(size) % testPairs.size()];
+    string pairTest = testPairs[provider.ConsumeIntegral<uint32_t>() % testPairs.size()];
     std::vector<std::pair<std::string, std::string>> kvpairs;
     kvpairs.push_back(make_pair(pairTest, "test_value"));
     set<std::string> subKeys = {"effect"};
@@ -1011,85 +1064,57 @@ void AudioServerProcessKeyValuePairsTest(const uint8_t *rawData, size_t size)
     audioServerPtr->ProcessKeyValuePairs(key, kvpairs, subKeyMap, value);
 }
 
-void AudioServerSetA2dpAudioParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerSetA2dpAudioParameterTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    string renderValue;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    string renderValue = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
 
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetA2dpAudioParameter(renderValue);
 }
 
-void AudioServerGetAudioParameterByKeyTest(const uint8_t *rawData, size_t size)
+void AudioServerGetAudioParameterByKeyTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    string value = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    if (testKeys.empty()) {
         return;
     }
-    static const vector<string> testKeys = {
-        "AUDIO_EXT_PARAM_KEY_LOWPOWER",
-        "need_change_usb_device#C",
-        "getSmartPAPOWER",
-        "show_RealTime_ChipModel",
-        "perf_info",
-    };
-
-    string value = "test";
-    string key = testKeys[static_cast<uint32_t>(size) % testKeys.size()];
+    string key = testKeys[provider.ConsumeIntegral<uint32_t>() % testKeys.size()];
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->GetAudioParameter(key, value);
 }
 
-void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerGetDPParameterTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
     std::string condition;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetDPParameter(condition);
 }
 
-void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioSceneByDeviceTypeTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t index = provider.ConsumeIntegral<uint32_t>();
+    bool scoExcludeFlag = provider.ConsumeBool();
+    if (testBluetoothOffloadStates.empty()) {
         return;
     }
-    uint32_t index = static_cast<uint32_t>(size);
-    static const vector<AudioScene> testAudioScenes = {
-        AUDIO_SCENE_INVALID,
-        AUDIO_SCENE_DEFAULT,
-        AUDIO_SCENE_RINGING,
-        AUDIO_SCENE_PHONE_CALL,
-        AUDIO_SCENE_PHONE_CHAT,
-        AUDIO_SCENE_CALL_START,
-        AUDIO_SCENE_CALL_END,
-        AUDIO_SCENE_VOICE_RINGING,
-        AUDIO_SCENE_MAX,
-    };
-    static const vector<BluetoothOffloadState> testBluetoothOffloadStates = {
-        NO_A2DP_DEVICE,
-        A2DP_NOT_OFFLOAD,
-        A2DP_OFFLOAD,
-    };
-    bool scoExcludeFlag = static_cast<bool>(index % NUM_2);
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
-    AudioScene audioScene = testAudioScenes[static_cast<uint32_t>(size) % testAudioScenes.size()];
+    if (testAudioScenes.empty()) {
+        return;
+    }
+    AudioScene audioScene = testAudioScenes[provider.ConsumeIntegral<uint32_t>() % testAudioScenes.size()];
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAudioScene(audioScene, a2dpOffloadFlag, scoExcludeFlag);
 }
 
-void AudioServerNotifyDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerNotifyDeviceInfoFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    std::string networkId = "test_network_id";
-    bool connected = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    bool connected = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (audioServerPtr == nullptr) {
         return;
@@ -1097,13 +1122,10 @@ void AudioServerNotifyDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
     audioServerPtr->NotifyDeviceInfo(networkId, connected);
 }
 
-void AudioServerSetVoiceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetVoiceVolumeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    float volume = *reinterpret_cast<const float*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    float volume = provider.ConsumeFloatingPoint<float>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (audioServerPtr == nullptr) {
         return;
@@ -1111,22 +1133,16 @@ void AudioServerSetVoiceVolumeFuzzTest(const uint8_t *rawData, size_t size)
     audioServerPtr->SetVoiceVolume(volume);
 }
 
-void AudioServerCheckRemoteDeviceStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRemoteDeviceStateFuzzTest()
 {
-    static const vector<DeviceRole> testDeviceRole = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX,
-    };
-    if (rawData == nullptr || size < LIMITSIZE || testDeviceRole.size() == 0) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    uint32_t deviceId = provider.ConsumeIntegral<uint32_t>();
+    if (g_testDeviceRoles.empty()) {
         return;
     }
-
-    std::string networkId = "test_network_id";
-    uint32_t deviceId = *reinterpret_cast<const uint32_t*>(rawData);
-    DeviceRole deviceRole = testDeviceRole[deviceId % testDeviceRole.size()];
-    bool isStartDevice = *reinterpret_cast<const bool*>(rawData);
+    DeviceRole deviceRole = g_testDeviceRoles[deviceId % g_testDeviceRoles.size()];
+    bool isStartDevice = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (audioServerPtr == nullptr) {
         return;
@@ -1134,13 +1150,10 @@ void AudioServerCheckRemoteDeviceStateFuzzTest(const uint8_t *rawData, size_t si
     audioServerPtr->CheckRemoteDeviceState(networkId, deviceRole, isStartDevice);
 }
 
-void AudioServerSetAudioBalanceValueFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioBalanceValueFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    float audioBalance = *reinterpret_cast<const float*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    float audioBalance = provider.ConsumeFloatingPoint<float>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (audioServerPtr == nullptr) {
         return;
@@ -1148,1054 +1161,960 @@ void AudioServerSetAudioBalanceValueFuzzTest(const uint8_t *rawData, size_t size
     audioServerPtr->SetAudioBalanceValue(audioBalance);
 }
 
-void AudioServerRemoveRendererDataTransferCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRemoveRendererDataTransferCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RemoveRendererDataTransferCallback(testPid);
 }
 
-void AudioServerRegisterDataTransferCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterDataTransferCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    auto payload = provider.ConsumeBytes<unsigned char>(MAX_BYTES);
+    data.WriteBuffer(payload.data(), payload.size());
     data.RewindRead(0);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterDataTransferCallback(object);
 }
 
-void AudioServerRegisterDataTransferMonitorParamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterDataTransferMonitorParamFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t testCallbackId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t testCallbackId = provider.ConsumeIntegral<int32_t>();
     DataTransferMonitorParam param;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterDataTransferMonitorParam(testCallbackId, param);
 }
 
-void AudioServerUnregisterDataTransferMonitorParamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerUnregisterDataTransferMonitorParamFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t testCallbackId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t testCallbackId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->UnregisterDataTransferMonitorParam(testCallbackId);
 }
 
-void AudioServerOnDataTransferStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerOnDataTransferStateChangeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t testCallbackId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t testPid = provider.ConsumeIntegral<int32_t>();
+    int32_t testCallbackId = provider.ConsumeIntegral<int32_t>();
     AudioRendererDataTransferStateChangeInfo info;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->OnDataTransferStateChange(testPid, testCallbackId, info);
 }
 
-void AudioServerOnMuteStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterDataTransferStateChangeCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t testCallbackId = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t testUid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t testSessionId = *reinterpret_cast<const uint32_t*>(rawData);
-    bool testIsMuted = *reinterpret_cast<const bool*>(rawData);
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->OnMuteStateChange(testPid, testCallbackId, testUid, testSessionId, testIsMuted);
-}
-
-void AudioServerRegisterDataTransferStateChangeCallbackFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterDataTransferStateChangeCallback();
 }
 
-void AudioServerInitMaxRendererStreamCntPerUidFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerInitMaxRendererStreamCntPerUidFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->InitMaxRendererStreamCntPerUid();
 }
 
-void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetPcmDumpParameterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (newTestPairs.empty()) {
         return;
     }
-    const vector<string> testPairs = {
-        "OPEN",
-        "CLOSE",
-        "UPLOAD",
-        "test"
-    };
-    string pairTest = testPairs[*reinterpret_cast<const uint32_t*>(rawData) % testPairs.size()];
+    string pairTest = newTestPairs[provider.ConsumeIntegral<uint32_t>() % newTestPairs.size()];
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back(make_pair(pairTest, "test_value"));
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetPcmDumpParameter(params);
 }
 
-void AudioServerSuspendRenderSinkFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSuspendRenderSinkFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string sinkName = "test_sinkName";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SuspendRenderSink(sinkName);
 }
 
-void AudioServerRestoreRenderSinkFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRestoreRenderSinkFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string sinkName = "test_sinkName";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RestoreRenderSink(sinkName);
 }
 
-void AudioServerSetAudioParameterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioParameterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string networkId = "test_networkId";
-    int32_t key = *reinterpret_cast<const int32_t*>(rawData);
-    std::string condition = "test_condition";
-    std::string value = "test_value";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    int32_t key = provider.ConsumeIntegral<int32_t>();
+    std::string condition = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    std::string value = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAudioParameter(networkId, key, condition, value);
 }
 
-void AudioServerGetTransactionIdFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetTransactionIdFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testDeviceTypes.empty() || g_testDeviceRoles.empty()) {
         return;
     }
-    const vector<DeviceRole> g_deviceRole = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX
-    };
-    DeviceType deviceType = g_testDeviceTypes[*reinterpret_cast<const uint32_t*>(rawData) % g_testDeviceTypes.size()];
-    DeviceRole deviceRole = g_deviceRole[*reinterpret_cast<const uint32_t*>(rawData) % g_deviceRole.size()];
-    uint64_t transactionId = *reinterpret_cast<const uint64_t*>(rawData);
+    DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceRole deviceRole = g_testDeviceRoles[provider.ConsumeIntegral<uint32_t>() % g_testDeviceRoles.size()];
+    uint64_t transactionId = provider.ConsumeIntegral<uint64_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetTransactionId(deviceType, deviceRole, transactionId);
 }
 
-void AudioServerSetIORoutesFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetIORoutesFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testDeviceTypes.empty() || g_testDeviceFlags.empty()) {
         return;
     }
-    uint32_t deviceTypeCount = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    DeviceType deviceType = g_testDeviceTypes[deviceTypeCount];
-    uint32_t deviceFlagCount = static_cast<uint32_t>(size) % g_testDeviceFlags.size();
-    DeviceFlag deviceFlag = g_testDeviceFlags[deviceFlagCount];
+    DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceFlag deviceFlag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     std::pair<DeviceType, DeviceFlag> activeDevice = std::make_pair(deviceType, deviceFlag);
     activeDevices.push_back(activeDevice);
-    uint32_t index = static_cast<uint32_t>(size);
-    static const vector<BluetoothOffloadState> testBluetoothOffloadStates = {
-        NO_A2DP_DEVICE,
-        A2DP_NOT_OFFLOAD,
-        A2DP_OFFLOAD
-    };
+    uint32_t index = provider.ConsumeIntegral<uint32_t>();
+    if (testBluetoothOffloadStates.empty()) {
+        return;
+    }
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
-    std::string deviceName = "test_deviceName";
+    std::string deviceName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetIORoutes(activeDevices, a2dpOffloadFlag, deviceName);
     std::vector<DeviceType> deviceTypes = {deviceType};
     audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
 }
 
-void AudioServerUpdateActiveDeviceRouteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerUpdateActiveDeviceRouteFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t type = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t flag = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t a2dpOffloadFlag = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t type = provider.ConsumeIntegral<int32_t>();
+    int32_t flag = provider.ConsumeIntegral<int32_t>();
+    int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->UpdateActiveDeviceRoute(type, flag, a2dpOffloadFlag);
 }
 
-void AudioServerUpdateActiveDevicesRouteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerUpdateActiveDevicesRouteFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     std::vector<IntPair> activeDevices;
-    int32_t a2dpOffloadFlag = *reinterpret_cast<const int32_t*>(rawData);
-    std::string deviceName = "test_deviceName";
+    int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
+    std::string deviceName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
 }
 
-void AudioServerSetDmDeviceTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetDmDeviceTypeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint16_t dmDeviceType = *reinterpret_cast<const uint16_t*>(rawData);
-    int32_t deviceTypeIn = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint16_t dmDeviceType = provider.ConsumeIntegral<uint16_t>();
+    int32_t deviceTypeIn = provider.ConsumeIntegral<int32_t>();
     std::vector<IntPair> activeDevices;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetDmDeviceType(dmDeviceType, deviceTypeIn);
 }
 
-void AudioServerSetAudioMonoStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioMonoStateFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool audioMono = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool audioMono = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAudioMonoState(audioMono);
 }
 
-void AudioServerGetHapBuildApiVersionFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetHapBuildApiVersionFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t callerUid = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t callerUid = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetHapBuildApiVersion(callerUid);
 }
 
-void AudioServerResetRecordConfigFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerResetRecordConfigFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ResetRecordConfig(config);
 }
 
-void AudioServerResetProcessConfigFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerResetProcessConfigFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ResetProcessConfig(config);
 }
 
-void AudioServerCheckStreamInfoFormatFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckStreamInfoFormatFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckStreamInfoFormat(config);
 }
 
-void AudioServerCheckRendererFormatFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRendererFormatFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckRendererFormat(config);
 }
 
-void AudioServerCheckRecorderFormatFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRecorderFormatFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckRecorderFormat(config);
 }
 
-void AudioServerCheckConfigFormatFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckConfigFormatFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckConfigFormat(config);
 }
 
-void AudioServerSendCreateErrorInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSendCreateErrorInfoFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
-    int32_t errorCode = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SendCreateErrorInfo(config, errorCode);
 }
 
-void AudioServerCheckMaxRendererInstancesFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckMaxRendererInstancesFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckMaxRendererInstances();
 }
 
-void AudioServerCheckMaxLoopbackInstancesFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckMaxLoopbackInstancesFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
-    uint8_t index = *reinterpret_cast<const uint8_t*>(rawData);
+    uint8_t index = provider.ConsumeIntegral<uint8_t>();
     AudioMode audioMode = static_cast<AudioMode>(index % modeCount);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckMaxLoopbackInstances(audioMode);
 }
 
-void AudioServerCheckAndWaitAudioPolicyReadyFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckAndWaitAudioPolicyReadyFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckAndWaitAudioPolicyReady();
 }
 
-void AudioServerIsSatelliteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerIsSatelliteFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
-    int32_t callingUid = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t callingUid = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->IsSatellite(config, callingUid);
 }
 
-void AudioServerCreateAudioProcessFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateAudioProcessFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<IRemoteObject> client = nullptr;
     AudioProcessConfig config;
     AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
-    int32_t errorCode = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateAudioProcess(config, errorCode, filterConfig, client);
 }
 
-void AudioServerCreateAudioProcessInnerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateAudioProcessInnerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
-    int32_t errorCode = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateAudioProcessInner(config, errorCode, filterConfig);
 }
 
-void AudioServerPermissionCheckerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerPermissionCheckerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->PermissionChecker(config);
 }
 
-void AudioServerCheckPlaybackPermissionFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckPlaybackPermissionFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckPlaybackPermission(config);
 }
 
-void AudioServerCheckInnerRecorderPermissionFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckInnerRecorderPermissionFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckInnerRecorderPermission(config);
 }
 
-void AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    AudioProcessConfig config;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    config.callerUid = provider.ConsumeIntegral<int32_t>();
+    if (g_sourceTypes.empty()) {
         return;
     }
-    AudioProcessConfig config;
-    config.callerUid = g_fuzzUtils.GetData<int32_t>();
-    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
-    config.appInfo.appTokenId = g_fuzzUtils.GetData<uint32_t>();
-    config.appInfo.appFullTokenId = g_fuzzUtils.GetData<uint64_t>();
-    config.originalSessionId = g_fuzzUtils.GetData<uint32_t>();
-    config.appInfo.appUid = g_fuzzUtils.GetData<int32_t>();
-    config.appInfo.appPid = g_fuzzUtils.GetData<int32_t>();
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
+    config.appInfo.appTokenId = provider.ConsumeIntegral<uint32_t>();
+    config.appInfo.appFullTokenId = provider.ConsumeIntegral<uint64_t>();
+    config.originalSessionId = provider.ConsumeIntegral<uint32_t>();
+    config.appInfo.appUid = provider.ConsumeIntegral<int32_t>();
+    config.appInfo.appPid = provider.ConsumeIntegral<int32_t>();
 
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->HandleCheckRecorderBackgroundCapture(config);
 }
 
-void AudioServerSetForegroundListFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetForegroundListFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::vector<std::string> list = {"test_list"};
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::vector<std::string> list = {provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH)};
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetForegroundList(list);
 }
 
-void AudioServerCreatePlaybackCapturerManagerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreatePlaybackCapturerManagerFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool isSuccess = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool isSuccess = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreatePlaybackCapturerManager(isSuccess);
 }
 
-void AudioServerRegisterAudioCapturerSourceCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterAudioCapturerSourceCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterAudioCapturerSourceCallback();
 }
 
-void AudioServerRegisterAudioRendererSinkCallbackFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerRegisterAudioRendererSinkCallbackFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterAudioRendererSinkCallback();
 }
 
-void AudioServerGetMaxAmplitudeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetMaxAmplitudeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool isOutputDevice = *reinterpret_cast<const bool*>(rawData);
-    std::string deviceClass = "test_deviceClass";
-    float maxAmplitude = *reinterpret_cast<const float*>(rawData);
-    int32_t sourceType = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool isOutputDevice = provider.ConsumeBool();
+    std::string deviceClass = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    float maxAmplitude = provider.ConsumeFloatingPoint<float>();
+    int32_t sourceType = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetMaxAmplitude(isOutputDevice, deviceClass, sourceType, maxAmplitude);
 }
 
-void AudioServerGetVolumeDataCountFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetVolumeDataCountFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string sinkName = "test_sinkName";
-    int64_t volumeData = *reinterpret_cast<const int64_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string sinkName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    int64_t volumeData = provider.ConsumeIntegral<int64_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetVolumeDataCount(sinkName, volumeData);
 }
 
-void AudioServerUpdateLatencyTimestampFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerUpdateLatencyTimestampFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string timestamp(reinterpret_cast<const char*>(rawData), size - 1);
-    bool isRenderer = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string timestamp = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    bool isRenderer = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->UpdateLatencyTimestamp(timestamp, isRenderer);
 }
 
-void AudioServerCheckHibernateStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckHibernateStateFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool hibernate = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool hibernate = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CheckHibernateState(hibernate);
 }
 
-void AudioServerCreateIpcOfflineStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateIpcOfflineStreamFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t errorCode = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> client = nullptr;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateIpcOfflineStream(errorCode, client);
 }
 
-void AudioServerGetOfflineAudioEffectChainsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetOfflineAudioEffectChainsFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::vector<std::string> effectChains = {"test_effectChains"};
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::vector<std::string> effectChains = {provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH)};
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetOfflineAudioEffectChains(effectChains);
 }
 
-void AudioServerGetStandbyStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetStandbyStatusFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
-    bool isStandby = *reinterpret_cast<const bool*>(rawData);
-    int64_t enterStandbyTime = *reinterpret_cast<const int64_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
+    bool isStandby = provider.ConsumeBool();
+    int64_t enterStandbyTime = provider.ConsumeIntegral<int64_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
 }
 
-void AudioServerGenerateSessionIdFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGenerateSessionIdFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GenerateSessionId(sessionId);
 }
 
-void AudioServerNotifyAudioPolicyReadyFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerNotifyAudioPolicyReadyFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->NotifyAudioPolicyReady();
 }
 
-void AudioServerGetAllSinkInputsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerGetAllSinkInputsFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     std::vector<SinkInput> sinkInputs;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetAllSinkInputs(sinkInputs);
 }
 
-void AudioServerReleaseCaptureLimitFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerReleaseCaptureLimitFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t innerCapId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t innerCapId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ReleaseCaptureLimit(innerCapId);
 }
 
-void AudioServerLoadHdiAdapterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerLoadHdiAdapterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t devMgrType = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string adapterName = "test_adapterName";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t devMgrType = provider.ConsumeIntegral<uint32_t>();
+    std::string adapterName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->LoadHdiAdapter(devMgrType, adapterName);
 }
 
-void AudioServerUnloadHdiAdapterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerUnloadHdiAdapterFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t devMgrType = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string adapterName = "test_adapterName";
-    bool force = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t devMgrType = provider.ConsumeIntegral<uint32_t>();
+    std::string adapterName = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
+    bool force = provider.ConsumeBool();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->UnloadHdiAdapter(devMgrType, adapterName, force);
 }
 
-void AudioServerCreateSinkPortFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateSinkPortFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t idBase = *reinterpret_cast<const uint32_t*>(rawData);
-    uint32_t idType = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string idInfo = "test_idInfo";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t idBase = provider.ConsumeIntegral<uint32_t>();
+    uint32_t idType = provider.ConsumeIntegral<uint32_t>();
+    std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     IAudioSinkAttr attr;
-    uint32_t renderId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
 }
 
-void AudioServerCreateSourcePortFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateSourcePortFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t idBase = *reinterpret_cast<const uint32_t*>(rawData);
-    uint32_t idType = *reinterpret_cast<const uint32_t*>(rawData);
-    std::string idInfo = "test_idInfo";
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t idBase = provider.ConsumeIntegral<uint32_t>();
+    uint32_t idType = provider.ConsumeIntegral<uint32_t>();
+    std::string idInfo = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     IAudioSourceAttr attr;
-    uint32_t captureId = *reinterpret_cast<const uint32_t*>(rawData);
+    uint32_t captureId = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
 }
 
-void AudioServerDestroyHdiPortFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerDestroyHdiPortFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t id = *reinterpret_cast<const uint32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t id = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->DestroyHdiPort(id);
 }
 
-void AudioServerSetDeviceConnectedFlagFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetDeviceConnectedFlagFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    bool flag = *reinterpret_cast<const bool*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool flag = provider.ConsumeIntegral<uint32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetDeviceConnectedFlag(flag);
 }
 
-void AudioServerSetBtHdiInvalidStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetBtHdiInvalidStateFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetBtHdiInvalidState();
 }
 
-void AudioServerCreateAudioWorkgroupFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateAudioWorkgroupFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<IRemoteObject> object = nullptr;
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->CreateAudioWorkgroup(pid, object, workgroupId);
+    audioServerPtr->CreateAudioWorkgroup(object, workgroupId);
 }
 
-void AudioServerReleaseAudioWorkgroupFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerReleaseAudioWorkgroupFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ReleaseAudioWorkgroup(pid, workgroupId);
+    audioServerPtr->ReleaseAudioWorkgroup(workgroupId);
 }
 
-void AudioServerAddThreadToGroupFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerAddThreadToGroupFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
+    int32_t tokenId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->AddThreadToGroup(pid, workgroupId, tokenId);
+    audioServerPtr->AddThreadToGroup(workgroupId, tokenId);
 }
 
-void AudioServerForceStopAudioStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerForceStopAudioStreamFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t audioType = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t audioType = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ForceStopAudioStream(audioType);
 }
 
-void AudioServerStartGroupFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerStartGroupFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    uint64_t startTime = *reinterpret_cast<const uint64_t*>(rawData);
-    uint64_t deadlineTime = *reinterpret_cast<const uint64_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
+    uint64_t startTime = provider.ConsumeIntegral<uint64_t>();
+    uint64_t deadlineTime = provider.ConsumeIntegral<uint64_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StartGroup(pid, workgroupId, startTime, deadlineTime);
+    audioServerPtr->StartGroup(workgroupId, startTime, deadlineTime);
 }
 
-void AudioServerStopGroupFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerStopGroupFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StopGroup(pid, workgroupId);
+    audioServerPtr->StopGroup(workgroupId);
 }
 
-void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetActiveOutputDeviceFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testDeviceTypes.empty()) {
         return;
     }
-    int32_t deviceTypeId = *reinterpret_cast<const int32_t*>(rawData) % g_testDeviceTypes.size();
+    int32_t deviceTypeId = provider.ConsumeIntegral<int32_t>() % g_testDeviceTypes.size();
     int32_t deviceType = g_testDeviceTypes[deviceTypeId];
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
-void AudioServerResetRecordConfigSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerResetRecordConfigSourceTypeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    if (g_sourceTypes.empty()) {
+        return;
+    }
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
     audioServerPtr->ResetRecordConfig(config);
 }
 
-void AudioServerResetProcessConfigCallerUidFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerResetProcessConfigCallerUidFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.callerUid = g_fuzzUtils.GetData<int32_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    config.callerUid = provider.ConsumeIntegral<int32_t>();
     audioServerPtr->ResetProcessConfig(config);
 }
 
-void AudioServerCheckStreamInfoFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckStreamInfoFormatNotContainFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.streamInfo.format = g_fuzzUtils.GetData<AudioSampleFormat>();
-    config.streamInfo.encoding = g_fuzzUtils.GetData<AudioEncodingType>();
-    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
-    config.streamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_audioSampleFormats.empty() || g_audioEncodingTypes.empty() || g_audioModes.empty() ||
+     g_audioChannels.empty()) {
+        return;
+    }
+    g_audioSampleFormats[provider.ConsumeIntegral<uint32_t>() % g_audioSampleFormats.size()];
+    config.streamInfo.format = g_audioSampleFormats[provider.ConsumeIntegral<uint32_t>() % g_audioSampleFormats.size()];
+    config.streamInfo.encoding =
+        g_audioEncodingTypes[provider.ConsumeIntegral<uint32_t>() % g_audioEncodingTypes.size()];
+    config.audioMode = g_audioModes[provider.ConsumeIntegral<uint32_t>() % g_audioModes.size()];
+    config.streamInfo.channels = g_audioChannels[provider.ConsumeIntegral<uint32_t>() % g_audioChannels.size()];
     audioServerPtr->CheckStreamInfoFormat(config);
 }
 
-void AudioServerCheckRendererFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRendererFormatNotContainFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_streamUsages.empty()) {
+        return;
+    }
+    config.rendererInfo.streamUsage = g_streamUsages[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
     audioServerPtr->CheckRendererFormat(config);
 }
 
-void AudioServerCheckRecorderFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRecorderFormatNotContainFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
-    config.capturerInfo.capturerFlags = g_fuzzUtils.GetData<int32_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_sourceTypes.empty()) {
+        return;
+    }
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
+    config.capturerInfo.capturerFlags = provider.ConsumeIntegral<int32_t>();
     audioServerPtr->CheckRecorderFormat(config);
 }
 
-void AudioServerCreateAudioProcessInnerAudioModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCreateAudioProcessInnerAudioModeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
-    int32_t errorCode = g_fuzzUtils.GetData<int32_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
-    config.rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    if (g_audioModes.empty() || g_streamUsages.empty()) {
+        return;
+    }
+    config.audioMode = g_audioModes[provider.ConsumeIntegral<uint32_t>() % g_audioModes.size()];
+    config.rendererInfo.streamUsage = g_streamUsages[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
     audioServerPtr->CreateAudioProcessInner(config, errorCode, filterConfig);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
-void AudioServerHandleCheckCaptureLimitFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerHandleCheckCaptureLimitFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_sourceTypes.empty()) {
+        return;
+    }
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
     audioServerPtr->HandleCheckCaptureLimit(config, filterConfig);
 }
 
-void AudioServerInnerCheckCaptureLimitFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerInnerCheckCaptureLimitFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    int32_t innerCapId = g_fuzzUtils.GetData<int32_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    int32_t innerCapId = provider.ConsumeIntegral<int32_t>();
     audioServerPtr->InnerCheckCaptureLimit(filterConfig, innerCapId);
 }
 #endif
 
-void AudioServerIsNormalIpcStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerIsNormalIpcStreamFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_audioModes.empty()) {
+        return;
+    }
+    config.audioMode = g_audioModes[provider.ConsumeIntegral<uint32_t>() % g_audioModes.size()];
     audioServerPtr->IsNormalIpcStream(config);
 }
 
-void AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    bool isStartDevice = g_fuzzUtils.GetData<bool>();
-    int32_t deviceRole = g_fuzzUtils.GetData<int32_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool isStartDevice = provider.ConsumeBool();
+    int32_t deviceRole = provider.ConsumeIntegral<int32_t>();
     audioServerPtr->CheckRemoteDeviceState("LocalDevice", deviceRole, isStartDevice);
 }
 
-void AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
-    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_sourceTypes.empty()) {
+        return;
+    }
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
     audioServerPtr->CheckInnerRecorderPermission(config);
 }
 
-void AudioServerSetRenderWhitelistFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerSetRenderWhitelistFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     std::vector<std::string> list;
-    list.push_back(g_fuzzUtils.GetData<std::string>());
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    list.push_back(provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH));
     audioServerPtr->SetRenderWhitelist(list);
 }
 
+void AudioServerCheckVoiceCallRecorderPermissionFuzzTest()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto tokenID = static_cast<Security::AccessToken::AccessTokenID>(provider.ConsumeIntegral<uint64_t>());
+
+    (void)audioServerPtr->CheckVoiceCallRecorderPermission(tokenID);
+}
+
+void AudioServerAddAndRemoveCaptureInjectorFuzzTest()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto sinkPortidx = provider.ConsumeIntegral<uint32_t>();
+    auto rate = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto format = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto channels = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto bufferSize = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+
+    (void)audioServerPtr->AddCaptureInjector(sinkPortidx, rate, format, channels, bufferSize);
+    (void)audioServerPtr->RemoveCaptureInjector(sinkPortidx);
+}
+
+void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
+{
+    DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    
+    auto callbackId = provider.ConsumeIntegral<int32_t>();
+    auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
+
+    dataTransferStateChangeCallbackInnerImpl.OnDataTransferStateChange(callbackId, info);
+}
+
+void DataTransferStateChangeCallbackInnerImplReportEventFuzzTest()
+{
+    DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
+
+    dataTransferStateChangeCallbackInnerImpl.ReportEvent(info);
+}
+
+void PipeInfoGuardSetReleaseFlagFuzzTest()
+{
+    PipeInfoGuard pipeinfoGuard(0);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    pipeinfoGuard.SetReleaseFlag(provider.ConsumeIntegral<int32_t>() % NUM_2);
+}
+
+TestFuncs g_testFuncs[] = {
+    AudioServerDumpTest,
+    AudioServerGetUsbParameterTest,
+    AudioServerOnAddSystemAbilityTest,
+    AudioServerSetExtraParametersTest,
+    AudioServerSetAudioParameterByKeyTest,
+    AudioServerGetExtraParametersTest,
+    AudioServerGetAudioParameterByIdTest,
+    AudioServerIsFastBlockedTest,
+    AudioServerCheckRemoteDeviceStateTestTwo,
+    AudioServerCreateAudioStreamTest,
+    AudioServerSetSinkRenderEmptyTest,
+    AudioServerOnRenderSinkStateChangeTest,
+    AudioServerCreateHdiSinkPortTest,
+    AudioServerCreateHdiSourcePortTest,
+    AudioServerFuzzTest,
+    AudioServerOffloadSetVolumeFuzzTest,
+    AudioServerNotifyStreamVolumeChangedFuzzTest,
+    AudioServerResetRouteForDisconnectFuzzTest,
+    AudioServerGetEffectLatencyTest,
+    AudioServerGetMaxAmplitudeTest,
+    AudioServerCreatePlaybackCapturerManagerTest,
+    AudioServerSetOutputDeviceSinkTest,
+    AudioServerSetAudioMonoStateTest,
+    AudioServerSetVoiceVolumeTest,
+    AudioServerCheckRemoteDeviceStateTest,
+    AudioServerNotifyDeviceInfoTest,
+    AudioServerGetAudioParameterTest,
+    AudioServerSetAudioParameterTest,
+    AudioServerSetMicrophoneMuteTest,
+    AudioServerSetAudioBalanceValueTest,
+    AudioServerSetAudioSceneTest,
+    AudioServerUpdateLatencyTimestampTest,
+    AudioServerSetOffloadModeTest,
+    AudioServerUnsetOffloadTest,
+    AudioServerCheckHibernateStateTest,
+    AudioServerSetSessionMuteStateTest,
+    AudioServerNotifyMuteStateChangeTest,
+    AudioServerAudioWorkgroupCreateTest,
+    AudioServerAudioWorkgroupReleaseTest,
+    AudioServerAudioWorkgroupAddThreadTest,
+    AudioServerAudioWorkgroupRemoveThreadTest,
+    AudioServerAudioWorkgroupStartGroupTest,
+    AudioServerAudioWorkgroupStopGroupTest,
+    AudioServerRegisterDataTransferCallbackTest,
+    AudioServerProcessKeyValuePairsTest,
+    AudioServerSetA2dpAudioParameterTest,
+    AudioServerGetAudioParameterByKeyTest,
+    AudioServerGetDPParameterTest,
+    AudioServerSetAudioSceneByDeviceTypeTest,
+    AudioServerNotifyDeviceInfoFuzzTest,
+    AudioServerSetVoiceVolumeFuzzTest,
+    AudioServerCheckRemoteDeviceStateFuzzTest,
+    AudioServerSetAudioBalanceValueFuzzTest,
+    AudioServerRemoveRendererDataTransferCallbackFuzzTest,
+    AudioServerRegisterDataTransferCallbackFuzzTest,
+    AudioServerRegisterDataTransferMonitorParamFuzzTest,
+    AudioServerUnregisterDataTransferMonitorParamFuzzTest,
+    AudioServerOnDataTransferStateChangeFuzzTest,
+    AudioServerSetAudioParameterFuzzTest,
+    AudioServerGetTransactionIdFuzzTest,
+    AudioServerSetIORoutesFuzzTest,
+    AudioServerUpdateActiveDeviceRouteFuzzTest,
+    AudioServerUpdateActiveDevicesRouteFuzzTest,
+    AudioServerSetDmDeviceTypeFuzzTest,
+    AudioServerSetAudioMonoStateFuzzTest,
+    AudioServerGetHapBuildApiVersionFuzzTest,
+    AudioServerSendCreateErrorInfoFuzzTest,
+    AudioServerIsSatelliteFuzzTest,
+    AudioServerCreateAudioProcessFuzzTest,
+    AudioServerCreateAudioProcessInnerFuzzTest,
+    AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest,
+    AudioServerSetForegroundListFuzzTest,
+    AudioServerCreatePlaybackCapturerManagerFuzzTest,
+    AudioServerGetMaxAmplitudeFuzzTest,
+    AudioServerUpdateLatencyTimestampFuzzTest,
+    AudioServerCheckHibernateStateFuzzTest,
+    AudioServerCreateIpcOfflineStreamFuzzTest,
+    AudioServerGetOfflineAudioEffectChainsFuzzTest,
+    AudioServerGetStandbyStatusFuzzTest,
+    AudioServerGenerateSessionIdFuzzTest,
+    AudioServerReleaseCaptureLimitFuzzTest,
+    AudioServerLoadHdiAdapterFuzzTest,
+    AudioServerUnloadHdiAdapterFuzzTest,
+    AudioServerCreateSinkPortFuzzTest,
+    AudioServerCreateSourcePortFuzzTest,
+    AudioServerDestroyHdiPortFuzzTest,
+    AudioServerSetDeviceConnectedFlagFuzzTest,
+    AudioServerCreateAudioWorkgroupFuzzTest,
+    AudioServerReleaseAudioWorkgroupFuzzTest,
+    AudioServerAddThreadToGroupFuzzTest,
+    AudioServerForceStopAudioStreamFuzzTest,
+    AudioServerStartGroupFuzzTest,
+    AudioServerStopGroupFuzzTest,
+    AudioServerSetActiveOutputDeviceFuzzTest,
+    AudioServerResetRecordConfigSourceTypeFuzzTest,
+    AudioServerResetProcessConfigCallerUidFuzzTest,
+    AudioServerCheckStreamInfoFormatNotContainFuzzTest,
+    AudioServerCheckRendererFormatNotContainFuzzTest,
+    AudioServerCheckRecorderFormatNotContainFuzzTest,
+    AudioServerCreateAudioProcessInnerAudioModeFuzzTest,
+#ifdef HAS_FEATURE_INNERCAPTURER
+    AudioServerHandleCheckCaptureLimitFuzzTest,
+    AudioServerInnerCheckCaptureLimitFuzzTest,
+#endif
+    AudioServerIsNormalIpcStreamFuzzTest,
+    AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
+    AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
+    AudioServerSetRenderWhitelistFuzzTest,
+    AudioServerCheckVoiceCallRecorderPermissionFuzzTest,
+    AudioServerAddAndRemoveCaptureInjectorFuzzTest,
+    DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest,
+    DataTransferStateChangeCallbackInnerImplReportEventFuzzTest,
+    PipeInfoGuardSetReleaseFlagFuzzTest,
+};
+
+void FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return;
+    }
+
+    // initialize data
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return;
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioServerDumpTest,
-    OHOS::AudioStandard::AudioServerGetUsbParameterTest,
-    OHOS::AudioStandard::AudioServerOnAddSystemAbilityTest,
-    OHOS::AudioStandard::AudioServerSetExtraParametersTest,
-    OHOS::AudioStandard::AudioServerSetAudioParameterByKeyTest,
-    OHOS::AudioStandard::AudioServerGetExtraParametersTest,
-    OHOS::AudioStandard::AudioServerGetAudioParameterByIdTest,
-    OHOS::AudioStandard::AudioServerIsFastBlockedTest,
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTestTwo,
-    OHOS::AudioStandard::AudioServerCreateAudioStreamTest,
-    OHOS::AudioStandard::AudioServerSetSinkRenderEmptyTest,
-    OHOS::AudioStandard::AudioServerOnRenderSinkStateChangeTest,
-    OHOS::AudioStandard::AudioServerCreateHdiSinkPortTest,
-    OHOS::AudioStandard::AudioServerCreateHdiSourcePortTest,
-    OHOS::AudioStandard::AudioServerFuzzTest,
-    OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
-    OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,
-    OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest,
-    OHOS::AudioStandard::AudioServerGetEffectLatencyTest,
-    OHOS::AudioStandard::AudioServerGetMaxAmplitudeTest,
-    OHOS::AudioStandard::AudioServerResetAudioEndpointTest,
-    OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerTest,
-    OHOS::AudioStandard::AudioServerSetOutputDeviceSinkTest,
-    OHOS::AudioStandard::AudioServerSetAudioMonoStateTest,
-    OHOS::AudioStandard::AudioServerSetVoiceVolumeTest,
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTest,
-    OHOS::AudioStandard::AudioServerNotifyDeviceInfoTest,
-    OHOS::AudioStandard::AudioServerGetAudioParameterTest,
-    OHOS::AudioStandard::AudioServerSetAudioParameterTest,
-    OHOS::AudioStandard::AudioServerSetMicrophoneMuteTest,
-    OHOS::AudioStandard::AudioServerSetAudioBalanceValueTest,
-    OHOS::AudioStandard::AudioServerSetAudioSceneTest,
-    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampTest,
-    OHOS::AudioStandard::AudioServerSetOffloadModeTest,
-    OHOS::AudioStandard::AudioServerUnsetOffloadTest,
-    OHOS::AudioStandard::AudioServerCheckHibernateStateTest,
-    OHOS::AudioStandard::AudioServerSetSessionMuteStateTest,
-    OHOS::AudioStandard::AudioServerNotifyMuteStateChangeTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupCreateTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupReleaseTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupAddThreadTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupRemoveThreadTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupStartGroupTest,
-    OHOS::AudioStandard::AudioServerAudioWorkgroupStopGroupTest,
-    OHOS::AudioStandard::AudioServerRegisterDataTransferCallbackTest,
-    OHOS::AudioStandard::AudioServerWriteServiceStartupErrorTest,
-    OHOS::AudioStandard::AudioServerProcessKeyValuePairsTest,
-    OHOS::AudioStandard::AudioServerSetA2dpAudioParameterTest,
-    OHOS::AudioStandard::AudioServerGetAudioParameterByKeyTest,
-    OHOS::AudioStandard::AudioServerGetDPParameterTest,
-    OHOS::AudioStandard::AudioServerSetAudioSceneByDeviceTypeTest,
-    OHOS::AudioStandard::AudioServerNotifyDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioServerSetVoiceVolumeFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateFuzzTest,
-    OHOS::AudioStandard::AudioServerSetAudioBalanceValueFuzzTest,
-    OHOS::AudioStandard::AudioServerRemoveRendererDataTransferCallbackFuzzTest,
-    OHOS::AudioStandard::AudioServerRegisterDataTransferCallbackFuzzTest,
-    OHOS::AudioStandard::AudioServerRegisterDataTransferMonitorParamFuzzTest,
-    OHOS::AudioStandard::AudioServerUnregisterDataTransferMonitorParamFuzzTest,
-    OHOS::AudioStandard::AudioServerOnDataTransferStateChangeFuzzTest,
-    OHOS::AudioStandard::AudioServerRegisterDataTransferStateChangeCallbackFuzzTest,
-    OHOS::AudioStandard::AudioServerInitMaxRendererStreamCntPerUidFuzzTest,
-    OHOS::AudioStandard::AudioServerSetPcmDumpParameterFuzzTest,
-    OHOS::AudioStandard::AudioServerSuspendRenderSinkFuzzTest,
-    OHOS::AudioStandard::AudioServerRestoreRenderSinkFuzzTest,
-    OHOS::AudioStandard::AudioServerSetAudioParameterFuzzTest,
-    OHOS::AudioStandard::AudioServerGetTransactionIdFuzzTest,
-    OHOS::AudioStandard::AudioServerSetIORoutesFuzzTest,
-    OHOS::AudioStandard::AudioServerUpdateActiveDeviceRouteFuzzTest,
-    OHOS::AudioStandard::AudioServerUpdateActiveDevicesRouteFuzzTest,
-    OHOS::AudioStandard::AudioServerSetDmDeviceTypeFuzzTest,
-    OHOS::AudioStandard::AudioServerSetAudioMonoStateFuzzTest,
-    OHOS::AudioStandard::AudioServerGetHapBuildApiVersionFuzzTest,
-    OHOS::AudioStandard::AudioServerResetRecordConfigFuzzTest,
-    OHOS::AudioStandard::AudioServerResetProcessConfigFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckStreamInfoFormatFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRendererFormatFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRecorderFormatFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckConfigFormatFuzzTest,
-    OHOS::AudioStandard::AudioServerSendCreateErrorInfoFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckMaxRendererInstancesFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckMaxLoopbackInstancesFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckAndWaitAudioPolicyReadyFuzzTest,
-    OHOS::AudioStandard::AudioServerIsSatelliteFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateAudioProcessFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateAudioProcessInnerFuzzTest,
-    OHOS::AudioStandard::AudioServerPermissionCheckerFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckPlaybackPermissionFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionFuzzTest,
-    OHOS::AudioStandard::AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest,
-    OHOS::AudioStandard::AudioServerSetForegroundListFuzzTest,
-    OHOS::AudioStandard::AudioServerCreatePlaybackCapturerManagerFuzzTest,
-    OHOS::AudioStandard::AudioServerRegisterAudioCapturerSourceCallbackFuzzTest,
-    OHOS::AudioStandard::AudioServerRegisterAudioRendererSinkCallbackFuzzTest,
-    OHOS::AudioStandard::AudioServerGetMaxAmplitudeFuzzTest,
-    OHOS::AudioStandard::AudioServerGetVolumeDataCountFuzzTest,
-    OHOS::AudioStandard::AudioServerUpdateLatencyTimestampFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckHibernateStateFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateIpcOfflineStreamFuzzTest,
-    OHOS::AudioStandard::AudioServerGetOfflineAudioEffectChainsFuzzTest,
-    OHOS::AudioStandard::AudioServerGetStandbyStatusFuzzTest,
-    OHOS::AudioStandard::AudioServerGenerateSessionIdFuzzTest,
-    OHOS::AudioStandard::AudioServerNotifyAudioPolicyReadyFuzzTest,
-    OHOS::AudioStandard::AudioServerGetAllSinkInputsFuzzTest,
-    OHOS::AudioStandard::AudioServerReleaseCaptureLimitFuzzTest,
-    OHOS::AudioStandard::AudioServerLoadHdiAdapterFuzzTest,
-    OHOS::AudioStandard::AudioServerUnloadHdiAdapterFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateSinkPortFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateSourcePortFuzzTest,
-    OHOS::AudioStandard::AudioServerDestroyHdiPortFuzzTest,
-    OHOS::AudioStandard::AudioServerSetDeviceConnectedFlagFuzzTest,
-    OHOS::AudioStandard::AudioServerSetBtHdiInvalidStateFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateAudioWorkgroupFuzzTest,
-    OHOS::AudioStandard::AudioServerReleaseAudioWorkgroupFuzzTest,
-    OHOS::AudioStandard::AudioServerAddThreadToGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest,
-    OHOS::AudioStandard::AudioServerStartGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerStopGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest,
-    OHOS::AudioStandard::AudioServerResetRecordConfigSourceTypeFuzzTest,
-    OHOS::AudioStandard::AudioServerResetProcessConfigCallerUidFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckStreamInfoFormatNotContainFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRendererFormatNotContainFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRecorderFormatNotContainFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateAudioProcessInnerAudioModeFuzzTest,
-#ifdef HAS_FEATURE_INNERCAPTURER
-    OHOS::AudioStandard::AudioServerHandleCheckCaptureLimitFuzzTest,
-    OHOS::AudioStandard::AudioServerInnerCheckCaptureLimitFuzzTest,
-#endif
-    OHOS::AudioStandard::AudioServerIsNormalIpcStreamFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
-    OHOS::AudioStandard::AudioServerSetRenderWhitelistFuzzTest,
-    OHOS::AudioStandard::AudioServerOnMuteStateChangeFuzzTest
-};
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    uint32_t len = OHOS::AudioStandard::GetArrLength(g_testPtrs);
-    if (len > 0) {
-        uint8_t firstByte = *data % len;
-        if (firstByte >= len) {
-            return 0;
-        }
-        data = data + 1;
-        size = size - 1;
-        g_testPtrs[firstByte](data, size);
-    }
+    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerWriteServiceStartupErrorTest();
+    OHOS::AudioStandard::AudioServerRegisterDataTransferStateChangeCallbackFuzzTest();
+    OHOS::AudioStandard::AudioServerInitMaxRendererStreamCntPerUidFuzzTest();
+    OHOS::AudioStandard::AudioServerResetRecordConfigFuzzTest();
+    OHOS::AudioStandard::AudioServerResetProcessConfigFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckStreamInfoFormatFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckRendererFormatFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckRecorderFormatFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckConfigFormatFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckMaxRendererInstancesFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckAndWaitAudioPolicyReadyFuzzTest();
+    OHOS::AudioStandard::AudioServerPermissionCheckerFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckPlaybackPermissionFuzzTest();
+    OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionFuzzTest();
+    OHOS::AudioStandard::AudioServerRegisterAudioCapturerSourceCallbackFuzzTest();
+    OHOS::AudioStandard::AudioServerRegisterAudioRendererSinkCallbackFuzzTest();
+    OHOS::AudioStandard::AudioServerNotifyAudioPolicyReadyFuzzTest();
+    OHOS::AudioStandard::AudioServerGetAllSinkInputsFuzzTest();
+    OHOS::AudioStandard::AudioServerSetBtHdiInvalidStateFuzzTest();
+    OHOS::AudioStandard::AudioServerGetDPParameterTest();
     return 0;
 }

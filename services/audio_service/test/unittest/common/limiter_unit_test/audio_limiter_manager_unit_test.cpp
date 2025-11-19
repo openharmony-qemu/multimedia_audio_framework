@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #include <gtest/gtest.h>
 #include <parcel.h>
 
@@ -27,9 +26,9 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t TEST_MAX_REQUEST = 7680; // buffer size for 20ms 2channel 48000Hz
+const int32_t TEST_MAX_REQUEST = 7680;  // buffer size for 20ms 2channel 48000Hz
 const int32_t AUDIO_MS_PER_S = 1000;
-const int32_t PROC_COUNT = 4; // process 4 times
+const int32_t PROC_COUNT = 4;  // process 4 times
 static AudioLmtManager *limiterManager;
 
 class AudioLimiterManagerUnitTest : public testing::Test {
@@ -40,16 +39,19 @@ public:
     void TearDown();
 };
 
-void AudioLimiterManagerUnitTest::SetUpTestCase(void) {}
+void AudioLimiterManagerUnitTest::SetUpTestCase(void)
+{}
 
-void AudioLimiterManagerUnitTest::TearDownTestCase(void) {}
+void AudioLimiterManagerUnitTest::TearDownTestCase(void)
+{}
 
 void AudioLimiterManagerUnitTest::SetUp(void)
 {
     limiterManager = AudioLmtManager::GetInstance();
 }
 
-void AudioLimiterManagerUnitTest::TearDown(void) {}
+void AudioLimiterManagerUnitTest::TearDown(void)
+{}
 
 /**
  * @tc.name  : Test CreateLimiter API
@@ -114,7 +116,7 @@ HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_002, TestSize.Level1)
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -250,7 +252,10 @@ HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->GetLatency(sinkIndex);
-    EXPECT_EQ(ret, TEST_MAX_REQUEST * AUDIO_MS_PER_S/ (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
+    EXPECT_EQ(ret,
+        TEST_MAX_REQUEST * AUDIO_MS_PER_S /
+            (static_cast<uint8_t>(SAMPLE_F32LE) * static_cast<uint32_t>(SAMPLE_RATE_48000) *
+                static_cast<uint8_t>(STEREO) * PROC_COUNT));
 }
-} // namespace AudioStandard
-} // namespace OHOS
+}  // namespace AudioStandard
+}  // namespace OHOS

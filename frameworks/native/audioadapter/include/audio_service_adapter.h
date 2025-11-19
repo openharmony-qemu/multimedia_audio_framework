@@ -242,6 +242,19 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) NOT_SUPPORT_RET
+
+    virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
+    /**
+     * @brief Check is channelLayout support for multichannel render manager
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

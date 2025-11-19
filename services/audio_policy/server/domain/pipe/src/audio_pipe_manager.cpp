@@ -17,11 +17,13 @@
 #endif
 
 #include "audio_pipe_manager.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t FIRST_SESSIONID = 100000;
+const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 AudioPipeManager::AudioPipeManager()
 {
@@ -308,6 +310,21 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescByIdInner(
     return nullptr;
 }
 
+int32_t AudioPipeManager::GetClientUidBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->sessionId_ == sessionId) {
+                return desc->callerUid_ == MEDIA_SERVICE_UID ? desc->appInfo_.appUid : desc->callerUid_;
+            }
+        }
+    }
+    return -1;
+}
+
 int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const uint32_t routeFlag)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -591,6 +608,56 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         if (desc->rendererInfo_.streamUsage == usage && desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t AudioPipeManager::IsCaptureVoipCall()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    VoipType type = VoipType::NO_VOIP;
+    AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    for (const auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is null");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is null");
+            bool isRunning = stream->IsRunning();
+            CHECK_AND_CONTINUE_LOG(isRunning == true, "isRunning is false");
+            if ((stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
+                    stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                audioInjectorPolicy.SetVoipType(NORMAL_VOIP);
+                audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
+                type = NORMAL_VOIP;
+            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
+                audioInjectorPolicy.SetVoipType(FAST_VOIP);
+                audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
+                return FAST_VOIP;
+            }
+        }
+    }
+    return type;
+}
+
+uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+        CHECK_AND_CONTINUE_LOG((*iter) != nullptr, "iter is null");
+        if ((*iter)->name_ == portName) {
+            return (*iter)->paIndex_;
+        }
+    }
+    return HDI_INVALID_ID;
+}
+
+bool AudioPipeManager::HasPrimarySink()
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->adapterName_ == PRIMARY_CLASS) {
             return true;
         }
     }

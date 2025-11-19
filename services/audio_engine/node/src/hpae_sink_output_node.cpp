@@ -33,7 +33,6 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
-static constexpr uint64_t MS_PER_FRAME = 20; // 20ms
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -41,11 +40,14 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
-    AUDIO_INFO_LOG("name is %{public}s", sinkOutAttr_.adapterName.c_str());
+    renderSize_ = renderFrameData_.size();
+    outputSize_ = renderSize_;
+    AUDIO_INFO_LOG("name is %{public}s renderSize = %{public}zu", sinkOutAttr_.adapterName.c_str(),
+        renderSize_);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -55,6 +57,9 @@ HpaeSinkOutputNode::~HpaeSinkOutputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -79,13 +84,8 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
     }
-    
-    std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    CHECK_AND_RETURN(!outputVec.empty());
-    HpaePcmBuffer *outputData = outputVec.front();
-    HandlePaPower(outputData);
-    ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
+
+    CHECK_AND_RETURN(ReadDataAndConvertFormat());
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
 
@@ -95,9 +95,9 @@ void HpaeSinkOutputNode::DoProcess()
     intervalTimer_.Stop();
 #endif
     HandleHapticParam(renderFrameTimes_);
-    renderFrameTimes_ += MS_PER_FRAME;
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
-    if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
+    renderFrameTimes_ += FRAME_LEN_20MS;
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
+    if (ret != SUCCESS || writeLen != renderSize_) {
         AUDIO_ERR_LOG("RenderFrame failed");
         if (GetDeviceClass() != "remote") {
             periodTimer_.Stop();
@@ -107,6 +107,9 @@ void HpaeSinkOutputNode::DoProcess()
     }
     periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
+    std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
+        renderFrameData_.begin());
+    currentSize_ -= renderSize_;
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t elapsed = timer.Elapsed();
@@ -158,7 +161,7 @@ void HpaeSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeId());
     }
 #endif
 }
@@ -169,7 +172,7 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         auto preNodeReal = preNode->GetSharedInstance();
-        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), preNodeReal->GetNodeId());
     }
 #endif
 }
@@ -348,15 +351,16 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    streamRunningNum_ = appsUid.size();
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
-    if (GetDeviceClass() != "primary" || !pcmBuffer->IsValid()) {
+    if (GetDeviceClass() != "primary") {
         return;
     }
-    if (pcmBuffer->IsSilence()) {
+    if (pcmBuffer->IsSilence() && streamRunningNum_ > 0) {
         if (!isDisplayPaPowerState_) {
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
             isDisplayPaPowerState_ = true;
@@ -384,7 +388,8 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
         if (!isOpenPaPower_) {
             int32_t ret = audioRendererSink_->SetPaPower(true);
             isOpenPaPower_ = true;
-            AUDIO_INFO_LOG("Volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+            AUDIO_INFO_LOG("Volume change to non zero or no stream running, \
+                open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
                 GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
         }
     }
@@ -425,6 +430,30 @@ void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
             ";haptic_offset=" + std::to_string(syncTime);
         audioRendererSink_->SetAudioParameter(key, condition, param);
     }
+}
+
+bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
+{
+    while (currentSize_ < renderSize_) {
+        std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
+        CHECK_AND_RETURN_RET(!outputVec.empty(), false);
+        HpaePcmBuffer *outputData = outputVec.front();
+        CHECK_AND_RETURN_RET_LOG(outputData, false, "outputData is nullptr");
+        HandlePaPower(outputData);
+        uint32_t frameLen = outputData->GetFrameLen();
+        uint32_t channels = outputData->GetChannelCount();
+        uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
+        uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
+        if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
+            outputSize_ = frameLen * channels * GetSizeFromFormat(GetBitWidth());
+            AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
+            renderFrameData_.resize(outputSize_ + renderSize_);
+        }
+        ConvertFromFloat(
+            GetBitWidth(), channels * frameLen, outputData->GetPcmDataBuffer(), renderFrameData_.data() + currentSize_);
+        currentSize_ += outputSize_;
+    }
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

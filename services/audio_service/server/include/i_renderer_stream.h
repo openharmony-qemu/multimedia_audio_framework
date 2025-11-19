@@ -34,6 +34,7 @@ public:
 class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
+    virtual bool OnQueryUnderrun() { return false; };
 };
 
 class IRendererStream : public IStream {
@@ -62,7 +63,7 @@ public:
     virtual int32_t UnsetOffloadMode() = 0;
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) = 0;
-    virtual int32_t OffloadSetVolume(float volume) = 0;
+    virtual int32_t OffloadSetVolume() = 0;
     virtual int32_t SetOffloadDataCallbackState(int32_t state) = 0;
     virtual size_t GetWritableSize() = 0;
     virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) = 0;

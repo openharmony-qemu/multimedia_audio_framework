@@ -534,12 +534,11 @@ void AudioSessionService::NotifyAppStateChange(const int32_t pid, bool isBackSta
 int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
     int32_t callerPid,
     AudioStreamDeviceChangeReason changeReason,
-    const std::shared_ptr<AudioDeviceDescriptor> descriptor,
     CurrentOutputDeviceChangedEvent &deviceChangedEvent)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
-    if (session == sessionMap_.end()) {
+    if ((session == sessionMap_.end()) || (session->second == nullptr)) {
         return ERROR;
     }
 
@@ -548,13 +547,13 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
         return ERROR;
     }
 
-    CHECK_AND_RETURN_RET((!session->second->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
+    CHECK_AND_RETURN_RET((session->second->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
         (changeReason == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)), ERROR,
         "device of session %{public}d is not changed", callerPid);
 
     deviceChangedEvent.changeReason = changeReason;
-    deviceChangedEvent.recommendedAction = session->second->IsRecommendToStopAudio(changeReason, descriptor) ?
-        OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
+    deviceChangedEvent.recommendedAction = session->second->IsRecommendToStopAudio(changeReason,
+        deviceChangedEvent.devices[0]) ? OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
         OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
 
     return SUCCESS;
@@ -592,13 +591,16 @@ bool AudioSessionService::IsSystemApp(int32_t pid)
     return false;
 }
 
-bool AudioSessionService::IsSystemAppWithMixStrategy(int32_t pid)
+bool AudioSessionService::IsSystemAppWithMixStrategy(const AudioInterrupt &audioInterrupt)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(pid);
+    auto session = sessionMap_.find(audioInterrupt.pid);
     if (session != sessionMap_.end()) {
         return session->second->IsActivated() && session->second->IsSystemApp() &&
-               session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
+               session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_CALL &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION;
     }
 
     return false;

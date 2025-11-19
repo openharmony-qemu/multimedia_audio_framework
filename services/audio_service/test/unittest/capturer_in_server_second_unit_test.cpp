@@ -787,6 +787,38 @@ HWTEST_F(CapturerInServerSecondUnitTest, ConfigServerBuffer_001, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test RebuildCaptureInjector.
+ * @tc.type  : FUNC
+ * @tc.number: RebuildCaptureInjector_001.
+ * @tc.desc  : Test OnStatusUpdate interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RebuildCaptureInjector_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, capturerInServer_);
+    capturerInServer_->RebuildCaptureInjector();
+}
+
+/**
+ * @tc.name  : Test RebuildCaptureInjector.
+ * @tc.type  : FUNC
+ * @tc.number: RebuildCaptureInjector_002.
+ * @tc.desc  : Test OnStatusUpdate interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RebuildCaptureInjector_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, capturerInServer_);
+    capturerInServer_->RebuildCaptureInjector();
+}
+
+/**
  * @tc.name  : Test OnStatusUpdate.
  * @tc.type  : FUNC
  * @tc.number: OnStatusUpdate_001.

@@ -60,31 +60,46 @@ class FormatConverter {
 public:
     static bool DataAccumulationFromVolume(const std::vector<AudioStreamData> &srcDataList,
         const AudioStreamData &dstData);
+
+    static bool DataAccumulationWithoutVolume(const std::vector<AudioStreamData> &srcDataList,
+        const AudioStreamData &dstData);
+
+    static bool AutoConvert(FormatKey key, const BufferDesc &srcData, const BufferDesc &dstData);
+        
+    static void InitFormatHandlers();
+    static FormatHandlerMap &GetFormatHandlers();
+
+    // to S16 Stereo
     static int32_t S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-    static int32_t S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
+    // to S32 Stereo
     static int32_t S16MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-    static int32_t F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
+    // to S16 Mono
+    static int32_t S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
-    static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    // to F32 Mono
     static int32_t S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-    static int32_t F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-    static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
+    // to F32 Stereo
+    static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    
     static int32_t S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
     static int32_t S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
+private:
+    static void InitToS16StereoHandlers(FormatHandlerMap& handlers);
+    static void InitToS32StereoHandlers(FormatHandlerMap& handlers);
 
-    static void InitFormatHandlers();
-    static FormatHandlerMap &GetFormatHandlers();
-private:
-    static void InitS16ToFormatHandlers(FormatHandlerMap& handlers);
-    static void InitF32ToFormatHandlers(FormatHandlerMap& handlers);
-private:
     static FormatHandlerMap formatHandlers;
 };
 

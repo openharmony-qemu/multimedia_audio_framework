@@ -167,8 +167,10 @@ void AudioPnpServer::OpenAndReadWithSocket()
             OsalMSleep(UEVENT_POLL_WAIT_TIME);
             continue;
         }
-
-        if (((uint32_t)fd.revents & (POLLIN | POLLERR)) != 0) {
+        if ((fd.revents & POLLERR) == POLLERR) {
+            AUDIO_ERR_LOG("audio event poll error");
+        }
+        if ((fd.revents & (POLLIN | POLLERR)) != 0) {
             memset_s(&msg, sizeof(msg), 0, sizeof(msg));
             rcvLen = AudioSocketThread::AudioPnpReadUeventMsg(socketFd, msg, UEVENT_MSG_LEN);
             if (rcvLen <= 0) {

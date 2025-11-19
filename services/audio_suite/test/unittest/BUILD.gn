@@ -1,0 +1,190 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../config.gni")
+
+if (audio_framework_feature_audiosuite_support) {
+  module_output_path = "audio_framework/audio_framework_suite"
+
+  config("audio_suite_unit_config") {
+    visibility = [ ":*" ]
+
+    cflags = [
+      "-Wall",
+      "-Werror",
+      "-fno-access-control",
+      "-DENABLE_HIDUMP_DFX",
+    ]
+
+    include_dirs = [
+      "./tool",
+      "../../client/manager/include",
+      "../../client/node/include",
+      "../../client/utils/include",
+      "../../../audio_engine/buffer",
+      "../../../audio_engine/plugin/channel_converter/include/",
+      "../../../audio_engine/plugin/resample/include",
+      "../../../audio_service/common/include/limiter",
+      "../../../../interfaces/inner_api/native/audiocommon/include",
+      "../../../../interfaces/inner_api/native/audiosuite/include",
+      "../../../audio_engine/node/include",
+    ]
+  }
+
+  ohos_unittest("audio_suite_manager_test") {
+    module_out_path = module_output_path
+    sources = [
+      "manager/audio_suite_engine_manager_test.cpp",
+    ]
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../:audio_suite_static",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+    ]
+  }
+
+  ohos_unittest("audio_suite_node_test") {
+    module_out_path = module_output_path
+    sources = [
+      "tool/audio_suite_unittest_tools.cpp",
+      "node/audio_suite_input_node_test.cpp",
+      "node/audio_suite_output_node_test.cpp",
+      "node/audio_suite_channel_test.cpp",
+      "node/audio_suite_eq_node_test.cpp",
+      "node/audio_suite_env_node_test.cpp",
+      "node/audio_suite_mixer_node_test.cpp",
+      "node/audio_suite_aiss_node_test.cpp",
+      "node/audio_suite_process_node_test.cpp",
+      "node/audio_suite_soundfield_node_test.cpp",
+      "node/audio_suite_nr_node_test.cpp",
+      "node/audio_suite_voice_beautifier_node_test.cpp",
+    ]
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../:audio_suite_static",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+    ]
+    resource_config_file = "./resource/ohos_test.xml"
+  }
+
+  ohos_unittest("audio_suite_utils_test") {
+    module_out_path = module_output_path
+    sources = [
+      "tool/audio_suite_unittest_tools.cpp",
+      "utils/audio_suite_pcm_buffer_test.cpp",
+      "utils/audio_suite_manager_thread_test.cpp",
+      "utils/audio_suite_common_test.cpp",
+      "utils/audio_suite_env_algo_interface_test.cpp",
+      "utils/audio_suite_eq_algo_interface_test.cpp",
+      "utils/audio_suite_aiss_algo_interface_test.cpp",
+      "utils/audio_suite_algo_interface_test.cpp",
+      "utils/audio_suite_nr_algo_interface_impl_test.cpp",
+      "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
+      "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
+    ]
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../:audio_suite_static",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "hilog:libhilog",
+    ]
+    resource_config_file = "./resource/ohos_test.xml"
+  }
+
+  ohos_executable("aiss_algo_demo_wav") {
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    sources = [
+      "demo/aiss_algo_demo_wav.cpp",
+    ]
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../:audio_suite_static",
+      "../../../audio_engine:audio_engine_utils",
+      "../../../audio_service:audio_common",
+      "../../../audio_engine:audio_engine_plugins",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+    ]
+
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
+}

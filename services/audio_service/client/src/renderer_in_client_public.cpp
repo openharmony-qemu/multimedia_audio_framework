@@ -66,11 +66,12 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 static constexpr int CB_QUEUE_CAPACITY = 3;
+constexpr uint32_t TONE_PLAYER_CACHE_SIZE = 4;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
-static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
+static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
@@ -118,12 +119,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTING) {
-        UpdateDataLinkState(false, false);
-        return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTED) {
-        UpdateDataLinkState(true, true);
-        return SUCCESS;
     }
 
     if (operation == RESTORE_SESSION) {
@@ -147,15 +142,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     callServerCV_.notify_all();
     return SUCCESS;
-}
-
-void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotify)
-{
-    std::lock_guard<std::mutex> stateLock(dataConnectionMutex_);
-    isDataLinkConnected_ = isConnected;
-    if (needNotify) {
-        dataConnectionCV_.notify_all();
-    }
 }
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
@@ -312,7 +298,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, false, "Now in injection mode.​​");
     uint64_t readPos = 0;
     int64_t handleTime = 0;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
@@ -381,6 +367,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
 
     uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
@@ -395,10 +383,18 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
-        ", lastSpeedFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
-        framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+    if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
+        AUDIO_INFO_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+            ", lastSpeedFlushReadIndex_ %{public}" PRIu64
+            ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+            framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+            lastPrintTimestamp_.store(timestampCurrent[0]);
+    } else {
+        AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+            ", lastSpeedFlushReadIndex_ %{public}" PRIu64
+            ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+            framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+    }
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -571,6 +567,24 @@ AudioRendererRate RendererInClientInner::GetRenderRate()
     return rendererRate_;
 }
 
+int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
+{
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+    int32_t ret = ERROR;
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
+    renderTarget_ = renderTarget;
+    return ret;
+}
+
+RenderTarget RendererInClientInner::GetRenderTarget()
+{
+    AUDIO_INFO_LOG("Get RenderRate %{public}d", renderTarget_);
+    return renderTarget_;
+}
+
 int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
     if (callback == nullptr) {
@@ -610,7 +624,7 @@ void RendererInClientInner::OnFirstFrameWriting()
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
-    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    AUDIO_INFO_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
 }
 
@@ -1000,17 +1014,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     FlushBeforeStart();
 
-    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
-    if (!isDataLinkConnected_) {
-        AUDIO_INFO_LOG("data-connection blocking starts.");
-        stopWaiting = dataConnectionCV_.wait_for(
-            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
-                return isDataLinkConnected_;
-            });
-        AUDIO_INFO_LOG("data-connection blocking ends.");
-    }
-    dataConnectionWaitLock.unlock();
-
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         // start the callback-write thread
@@ -1291,6 +1294,7 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
     size_t minCbBufferSize =
         static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
+    SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;
@@ -1419,6 +1423,9 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
         InitCallbackBuffer(bufferDurationInUs);
     }
+    if (rendererInfo_.playerType == PLAYER_TYPE_TONE_PLAYER) {
+        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_);
+    }
     return SUCCESS;
 }
 
@@ -1466,6 +1473,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.defaultOutputDevice = defaultOutputDevice_;
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
+    info.target = renderTarget_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1497,7 +1505,8 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    info.unprocessSamples = unprocessedFramesBytes_.load() +
+    info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
+        audioWriteState_.load().perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 
@@ -1790,6 +1799,7 @@ error:
 
 int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
     if (ret == SUCCESS) {
@@ -1810,6 +1820,7 @@ DeviceType RendererInClientInner::GetDefaultOutputDevice()
 
 int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
         ERR_INVALID_PARAM, "Timestampbase is not allowed");
@@ -1820,10 +1831,11 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-
-    uint64_t unprocessSamples = unprocessedFramesBytes_.load();
+    
     // cal latency between readIdx and framesWritten
-    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load();
+    AudioWriteState state = audioWriteState_.load();
+    uint64_t unprocessSamples = state.unprocessedFramesBytes_;
+    uint64_t samplesWritten = state.totalBytesWrittenAfterFlush_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
@@ -1840,6 +1852,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     }
     // between unprocessSamples and framesWritten there is sonic
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
+    
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
     framePosition += dropPosition_.load();

@@ -30,6 +30,7 @@
 #include "audio_event_utils.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -183,6 +184,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
                 -1, "GetPreferredOutputDeviceDescInner", bypassType);
+        for (size_t i = 0; i < descs.size(); i++) {
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
+            deviceList.push_back(devDesc);
+        }
+
+        FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
+            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+        info.caller = "GetPreferredOutputDeviceDescInner";
+        descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
@@ -345,7 +355,7 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
 {
     RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
@@ -397,6 +407,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
         audioA2dpOffloadFlag_.SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
+    CHECK_AND_RETURN_LOG(updateVolume, "no need to updateVolume");
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(devDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
@@ -421,9 +433,10 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     }
     descForCb.push_back(audioDescriptor);
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
+    AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     if (updatedDesc.connectState_ == VIRTUAL_CONNECTED) {
         AUDIO_INFO_LOG("The device is virtual device, no need to update preferred device");
         return; // No need to update preferred device for virtual device
@@ -824,9 +837,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
-    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
-        rendererChangeInfo->sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front(), newSinkName);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front());
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -958,7 +969,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 deviceType, rendererChangeInfo->sessionId);
             AudioStreamType streamType = streamCollector_.GetStreamType(rendererChangeInfo->sessionId);
             if (!IsDualStreamWhenRingDual(streamType)) {
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(rendererChangeInfo->sessionId, streamType));
                 audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
             }
         } else {
@@ -984,7 +995,6 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
-    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 
@@ -992,8 +1002,8 @@ void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
 {
     CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
-    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
     audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
@@ -1252,8 +1262,9 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
+    CHECK_AND_RETURN(desc != nullptr);
     int32_t ret;
-    if (Util::IsScoSupportSource(sourceType)) {
+    if (desc->isVrSupported_ && Util::IsScoSupportSource(sourceType)) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
@@ -1262,7 +1273,7 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
                 std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchInputDevice(capturerChangeInfos);
         }
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
+        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
@@ -1383,9 +1394,9 @@ int32_t AudioDeviceCommon::MoveToRemoteInputDevice(std::vector<SourceOutput> sou
 }
 
 int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState)
+    ConnectState connectState, bool isVrSupported)
 {
-    if (handleFlag && connectState != DEACTIVE_CONNECTED) {
+    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
@@ -1653,6 +1664,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
     if (hasRunningRecognitionCapturerStream) {
         return;
     }
+    audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
     Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
 }
 

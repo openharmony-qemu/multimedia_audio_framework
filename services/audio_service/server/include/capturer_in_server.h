@@ -64,9 +64,12 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
+    void SetRebuildFlag();
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
+
+    void ReleaseCaptureInjector();
 
 private:
     bool CheckBGCapture();
@@ -78,6 +81,7 @@ private:
     void HandleOperationFlushed();
     void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
+    void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
 
     std::mutex statusLock_;
@@ -90,6 +94,7 @@ private:
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;
 
+    std::mutex filterConfigLock_;
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;
@@ -114,6 +119,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+    std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};

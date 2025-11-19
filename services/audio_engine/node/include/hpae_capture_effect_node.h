@@ -27,7 +27,6 @@ namespace HPAE {
 constexpr uint32_t SCENE_TYPE_OFFSET = 32;
 constexpr uint32_t CAPTURER_ID_OFFSET = 16;
 constexpr uint32_t BITLENGTH = 8;
-constexpr uint32_t FRAME_LEN = 20;
 
 struct CaptureEffectAttr {
     uint32_t micChannels;
@@ -43,12 +42,15 @@ public:
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
         HpaeNodeInfo &nodeInfo) override;
-    bool GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
-    int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
+    virtual bool GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo,
+        HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
+    virtual int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
+    void GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout);
     void SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
         AudioBufferConfig micrefConfig);
 

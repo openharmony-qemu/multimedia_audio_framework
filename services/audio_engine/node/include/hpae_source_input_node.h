@@ -16,6 +16,7 @@
 #ifndef HPAE_SOURCE_INTPUT_NODE_H
 #define HPAE_SOURCE_INTPUT_NODE_H
 #include <memory>
+#include "hpae_backoff_controller.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 #include "source/i_audio_capture_source.h"
@@ -52,7 +53,6 @@ public:
     int32_t CapturerSourceStop(void);
     StreamManagerState GetSourceState(void);
     int32_t SetSourceState(StreamManagerState sourceState);
-    int32_t WriteCapturerData(char *data, int32_t dataSize);
     size_t GetOutputPortNum();
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
@@ -60,12 +60,15 @@ public:
     HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
+    void SetInjectState(bool isInjecting);
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
     void SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
+    void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
@@ -79,12 +82,17 @@ private:
     std::unordered_map<HpaeSourceBufferType, OutputPort<HpaePcmBuffer *>> outputStreamMap_; // output port
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> nodeInfoMap_; // nodeInfo, portInfo
     std::unordered_map<HpaeSourceBufferType, PcmBufferInfo> pcmBufferInfoMap_; // bufferInfo
-    std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_; // output buffer
+    // output buffer, fixed framelen of 20ms
+    std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_;
+    // request data size of captureframe, maybe unequal to output buffer size
     std::unordered_map<HpaeSourceBufferType, size_t> frameByteSizeMap_;
-    std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_;
-    std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;
+    std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_; // store any size data for process
+    std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;      // size of stored data
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
+
+    bool isInjecting_ = false; // mark injecting state
+    HpaeBackoffController backoffController_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

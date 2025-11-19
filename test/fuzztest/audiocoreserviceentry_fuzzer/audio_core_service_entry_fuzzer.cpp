@@ -306,7 +306,24 @@ void AudioCoreServiceEventEntryOnForcedDeviceSelectedFuzzTest()
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     std::string macAddress = "11-22-33-44-55-66";
+    eventEntry->OnPrivacyDeviceSelected(devType, macAddress);
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
+     
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceId_ = GetData<uint32_t>();
+    devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc->macAddress_ = macAddress;
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devMan.AddNewDevice(devDesc);
+    auto devDesc2 = make_shared<AudioDeviceDescriptor>();
+    devDesc2->deviceId_ = GetData<uint32_t>();
+    devDesc2->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc2->macAddress_ = macAddress;
+    devDesc2->deviceRole_ = INPUT_DEVICE;
+    devMan.AddNewDevice(devDesc2);
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 void AudioCoreServiceEventEntryIsArmUsbDeviceFuzzTest()

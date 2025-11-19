@@ -19,7 +19,7 @@ import("../../../sensor.gni")
 import("../../../window_manager.gni")
 
 ohos_fuzztest("AudioEffectServiceFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_engine"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audioeffectservice_fuzzer"
 
   include_dirs = [

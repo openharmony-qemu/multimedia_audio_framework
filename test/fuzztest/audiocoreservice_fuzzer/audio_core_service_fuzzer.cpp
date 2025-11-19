@@ -287,12 +287,6 @@ void AudioCoreServiceOnUpdateAnahsSupportFuzzTest()
     audioCoreService->OnUpdateAnahsSupport(anahsShowType);
 }
 
-void AudioCoreServiceUnregisterBluetoothListenerFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    audioCoreService->UnregisterBluetoothListener();
-}
-
 void AudioCoreServiceIsNoRunningStreamFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -335,7 +329,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServiceSetAudioDeviceAnahsCallbackFuzzTest,
     AudioCoreServiceUnsetAudioDeviceAnahsCallbackFuzzTest,
     AudioCoreServiceOnUpdateAnahsSupportFuzzTest,
-    AudioCoreServiceUnregisterBluetoothListenerFuzzTest,
     AudioCoreServiceIsNoRunningStreamFuzzTest,
     AudioCoreServiceBluetoothServiceCrashedCallbackFuzzTest,
 };

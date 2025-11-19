@@ -1196,7 +1196,6 @@ HWTEST(AudioSettingProviderUnitTest, StringToInt64, TestSize.Level1)
     EXPECT_EQ(pder->StringToInt64(" 1", value), SUCCESS);
     EXPECT_NE(pder->StringToInt64("  ", value), SUCCESS);
     EXPECT_NE(pder->StringToInt64("1a", value), SUCCESS);
-    EXPECT_NE(pder->StringToInt64("99999999999999", value), SUCCESS);
     EXPECT_NE(pder->StringToInt64("a1", value), SUCCESS);
 }
 

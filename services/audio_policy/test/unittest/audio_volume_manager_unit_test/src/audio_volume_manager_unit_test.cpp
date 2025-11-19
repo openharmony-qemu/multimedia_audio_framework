@@ -294,7 +294,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -343,21 +343,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_015
-* @tc.desc  : Test UpdateSafeVolumeByS4 interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
-{
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    AudioDeviceDescriptor audioDeviceDescriptor;
-
-    audioVolumeManager.UpdateSafeVolumeByS4();
-    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
-    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: SetVolumeForSwitchDevice_001
 * @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
 */
@@ -369,7 +354,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, true);
+        audioDeviceDescriptor, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -386,7 +371,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_002, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -403,7 +388,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_003, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, true);
+        audioDeviceDescriptor, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -420,7 +405,43 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_004, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_005
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_005, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager.increaseNIsShowing_ = true;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_006
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_006, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager.restoreNIsShowing_ = true;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -436,7 +457,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -759,24 +780,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_032, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_033
-* @tc.desc  : Test DeviceIsSupportSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_033, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_034
 * @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
 */
@@ -1035,72 +1038,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_045, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_046
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_046, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    auto ret = audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_EQ(ret, volumeLevel);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_047
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_047, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_CAR;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    auto ret = audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_EQ(ret, volumeLevel);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_048
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_WATCH;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    audioVolumeManager->isBtFirstBoot_ = true;
-    audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_049
 * @tc.desc  : Test CreateCheckMusicActiveThread interface.
 */
@@ -1250,10 +1187,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
     bool support = true;
     std::string macAddress = "11:22:33:44:55:66";
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -1269,7 +1206,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1287,7 +1224,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, 0);
 }
 
@@ -1337,6 +1274,47 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_001
+* @tc.desc  : Test SetSystemVolumeDegree interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDb(streamType, volumeDegree, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_ALL);
+    EXPECT_EQ(ret, volumeDegree);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(streamType, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_002
+* @tc.desc  : Test SetSystemVolumeDegreeToDbInner interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t invalidZone = 1;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDbInner(streamType, volumeDegree, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_063
 * @tc.desc  : Test Init interface.
 */
@@ -1370,7 +1348,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     zoneId = 1;
     ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1393,6 +1371,234 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_068
+* @tc.desc  : Test CheckLowerDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_068, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 10;
+    auto ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    audioVolumeManager.CheckLowerDeviceVolume(DEVICE_TYPE_SPEAKER);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_VolumeLimit_001
+* @tc.desc  : Test volume limit interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_VolumeLimit_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    int32_t zoneId = 0;
+    int32_t volumeLevel = 2;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    auto &manager = static_cast<AudioAdapterManager &>(audioVolumeManager->audioPolicyManager_);
+    float oldLimit = manager.volumeLimit_.load();
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
+    audioVolumeManager->CheckReduceOtherActiveVolume(streamType, volumeLevel);
+    float newLimit = manager.volumeLimit_.load();
+    EXPECT_NE(newLimit, oldLimit);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_069
+* @tc.desc  : Test CheckRestoreDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_069, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 10;
+    auto ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.audioPolicyManager_.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioVolumeManager.CheckRestoreDeviceVolume(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_070
+* @tc.desc  : Test SetRestoreVolumeLevel interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_070, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.audioPolicyManager_.Init();
+    audioVolumeManager.audioPolicyManager_.SetDataShareReady(true);
+    const int32_t curVolume = 100;
+    audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curVolume);
+    EXPECT_EQ(audioVolumeManager.btRestoreVol_, curVolume);
+    audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
+    EXPECT_EQ(audioVolumeManager.wiredRestoreVol_, curVolume);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_008
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Level1)
+{
+    auto avm = std::make_shared<AudioVolumeManager>();
+    AudioDeviceDescriptor desc;
+    avm->SetVolumeForSwitchDevice(desc, false);
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    avm->SetVolumeForSwitchDevice(desc, false);
+    avm->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    avm->SetVolumeForSwitchDevice(desc, false);
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t ret = avm->SetVolumeForSwitchDevice(desc, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_071
+* @tc.desc  : Test OnCheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_071, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Started";
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    reason = "Paused";
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_072
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Default";
+    audioVolumeManager.safeVolumeExit_ = true;
+    int32_t ret = audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(ret, 0);
+    audioVolumeManager.safeVolumeExit_ = false;
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    audioVolumeManager.safeVolumeExit_ = true;
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_073
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_073, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_074
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_074, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_075
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_076
+* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    bool support = false;
+    std::string macAddress = "11:22:33:44:55:66";
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 } // namespace AudioStandard
 } // namespace OHOS

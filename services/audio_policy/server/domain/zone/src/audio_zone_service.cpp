@@ -495,6 +495,27 @@ int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType v
     return zone->GetSystemVolumeLevel(volumeType);
 }
 
+int32_t AudioZoneService::SetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType,
+    int32_t volumeDegree, int32_t volumeFlag)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
+        "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
+    return zone->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag);
+}
+
+int32_t AudioZoneService::GetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
+        "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
+    return zone->GetSystemVolumeDegree(volumeType);
+}
+
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
@@ -625,9 +646,8 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
     }
     
     CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
-    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
-        tmp, zoneClientManager_,
-        AudioZoneInterruptReason::REMOTE_INJECT);
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId, tmp, zoneClientManager_,
+        AudioZoneInterruptReason::REMOTE_INJECT, interrupts);
     int32_t ret;
     if (deviceTag.empty()) {
         ret = tmp->InjectInterruptToAudioZone(zoneId, interrupts);
@@ -635,7 +655,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
         ret = tmp->InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
     }
     for (auto &report : reporters) {
-        report->ReportInterrupt();
+        report->ReportInterrupt(deviceTag);
     }
     return ret;
 }
@@ -723,6 +743,17 @@ bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto &it : zoneMaps_) {
         if (it.second->CheckDeviceInZone(device)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioZoneService::CheckExistUidInAudioZone()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        if (it.second->CheckExistUidInZone()) {
             return true;
         }
     }

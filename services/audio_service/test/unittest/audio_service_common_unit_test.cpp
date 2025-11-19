@@ -408,23 +408,6 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_007, TestSize.Level1)
 /**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
-* @tc.number: OHAudioBuffer_008
-* @tc.desc  : Test OHAudioBuffer interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_008, TestSize.Level1)
-{
-    MessageParcel parcel;
-
-    int32_t ret = g_oHAudioBuffer->WriteToParcel(g_oHAudioBuffer, parcel);
-    EXPECT_EQ(SUCCESS, ret);
-
-    g_oHAudioBuffer = g_oHAudioBuffer->ReadFromParcel(parcel);
-    EXPECT_NE(nullptr, g_oHAudioBuffer);
-}
-
-/**
-* @tc.name  : Test OHAudioBuffer API
-* @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_009
 * @tc.desc  : Test OHAudioBuffer interface.
 */
@@ -473,28 +456,6 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
     });
     EXPECT_EQ(futexCode, FUTEX_SUCCESS);
     threadSetReadIndex.join();
-}
-
-/**
-* @tc.name  : Test OHAudioBuffer API
-* @tc.type  : FUNC
-* @tc.number: OHAudioBuffer_011
-* @tc.desc  : Test OHAudioBuffer interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + 1);
-    parcel.WriteUint32(100);
-    parcel.WriteUint32(10);
-    parcel.WriteUint32(2);
-    int dataFd = 1;
-    int infoFd = 2;
-    parcel.WriteFileDescriptor(dataFd);
-    parcel.WriteFileDescriptor(infoFd);
-
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
-    EXPECT_EQ(buffer, nullptr);
 }
 
 /**
@@ -1462,54 +1423,6 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ReadFromParcel API
-* @tc.type  : FUNC
-* @tc.number: ReadFromParcel_001
-* @tc.desc  : Test ReadFromParcel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_001, TestSize.Level1)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
-* @tc.name  : Test ReadFromParcel API
-* @tc.type  : FUNC
-* @tc.number: ReadFromParcel_002
-* @tc.desc  : Test ReadFromParcel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_002, TestSize.Level1)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
-    parcel.WriteUint32(0);
-    int dataFd = 1;
-    int infoFd = 2;
-    parcel.WriteFileDescriptor(dataFd);
-    parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
- * @tc.name  : Test ReadFromParcel API
- * @tc.type  : FUNC
- * @tc.number: AudioSharedMemory_ReadFromParcel_001
- * @tc.desc  : Test AudioSharedMemory::ReadFromParcel interface.
- */
-HWTEST(AudioServiceCommonUnitTest, AudioSharedMemory_ReadFromParcel_001, TestSize.Level4)
-{
-    MessageParcel parcel;
-    parcel.WriteUint64(100);
-    parcel.WriteString("testName");
-    auto memory = AudioSharedMemory::ReadFromParcel(parcel);
-    EXPECT_EQ(memory, nullptr);
-}
-
-/**
  * @tc.name  : Test Unmarshalling API
  * @tc.type  : FUNC
  * @tc.number: OHAudioBufferBase_Unmarshalling_001
@@ -1545,66 +1458,6 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_001, TestS
 
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
         byteSizePerFrame, bufferHolder, dataFd, infoFd);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
- * @tc.name  : Test ReadFromParcel API
- * @tc.type  : FUNC
- * @tc.number: OHAudioBufferBase_ReadFromParcel_001
- * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
- */
-HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_001, TestSize.Level4)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_ONLY));
-    parcel.WriteUint32(100);
-    parcel.WriteUint32(10);
-    int dataFd = 1;
-    int infoFd = 2;
-    parcel.WriteFileDescriptor(dataFd);
-    parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
- * @tc.name  : Test ReadFromParcel API
- * @tc.type  : FUNC
- * @tc.number: OHAudioBufferBase_ReadFromParcel_002
- * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
- */
-HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_002, TestSize.Level4)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
-    parcel.WriteUint32(100);
-    parcel.WriteUint32(10);
-    int dataFd = 1;
-    int infoFd = 2;
-    parcel.WriteFileDescriptor(dataFd);
-    parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
-    EXPECT_EQ(buffer, nullptr);
-}
-
-/**
- * @tc.name  : Test ReadFromParcel API
- * @tc.type  : FUNC
- * @tc.number: OHAudioBufferBase_ReadFromParcel_003
- * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
- */
-HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_003, TestSize.Level4)
-{
-    MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
-    parcel.WriteUint32(100);
-    parcel.WriteUint32(10);
-    int dataFd = 3;
-    int infoFd = 4;
-    parcel.WriteFileDescriptor(dataFd);
-    parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
     EXPECT_EQ(buffer, nullptr);
 }
 

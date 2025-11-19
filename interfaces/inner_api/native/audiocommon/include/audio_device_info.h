@@ -372,12 +372,19 @@ enum PreferredType {
     AUDIO_RING_RENDER = 3,
     AUDIO_RECORD_CAPTURE = 4,
     AUDIO_TONE_RENDER = 5,
+    AUDIO_RECOGNITION_CAPTURE = 6,
 };
 
 enum BluetoothOffloadState {
     NO_A2DP_DEVICE = 0,
     A2DP_NOT_OFFLOAD = 1,
     A2DP_OFFLOAD = 2,
+};
+
+enum SleSelectState {
+    USER_SELECT_INVALID = 0,
+    USER_NOT_SELECT_SLE = 1,
+    USER_SELECT_SLE = 2,
 };
 
 struct VolumeBehavior : public Parcelable {
