@@ -88,8 +88,9 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
         return false;
     }
     for (auto &windowState : windowStates) {
-        if (windowState.isVisible_ && (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
-            windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND)) {
+        if (windowState.isVisible_ &&
+            (windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_ACTIVE) ||
+            windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_FOREGROUND))) {
             AUDIO_INFO_LOG("AudioInterruptService app window front desk,"
                 " windowState.state_ = %{public}d", windowState.state_);
             return true;
