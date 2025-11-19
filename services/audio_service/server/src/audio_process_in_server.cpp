@@ -73,7 +73,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId_ = PolicyHandler::GetInstance().GenerateSessionId(processConfig_.appInfo.appUid);
+        sessionId_ = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId_ = processConfig.originalSessionId;
     }
