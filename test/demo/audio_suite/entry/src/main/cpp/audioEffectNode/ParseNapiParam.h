@@ -11,6 +11,6 @@
 class ParseNapiParam {
 };
 
-napi_status parseNapiString(napi_env env, napi_value value, std::string &result);
+napi_status ParseNapiString(napi_env env, napi_value value, std::string &result);
 
 #endif //TEST1_PARSENAPIPARAM_H

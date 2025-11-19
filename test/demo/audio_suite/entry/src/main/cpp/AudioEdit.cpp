@@ -31,19 +31,16 @@
 #include "audioEffectNode/Output.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/ParseNapiParam.h"
-#include "audioEffectNode/AudioConfigParam.h"
 #include "audioEffectNode/Equailizer.h"
-#include "audioEffectNode/CompareFile.h"
 #include "audioEffectNode/SoundField.h"
-#include "audioEffectNode/Env.h"
 #include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/AissEffect.h"
-#include "/utils/Constant.h"
-#include "./utils/utils.h"
+#include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "audioSuiteError/AudioSuiteError.h"
+#include "multiPipelineEdit/MultiPipelineEdit.h"
 
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -54,29 +51,14 @@
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
-bool g_multiRenderFrameFlag = false;
 void *g_aissTapAudioData = (char *)malloc(1024 * 1024 * 100);
-bool g_globalFinishFlag = true;
-int32_t g_tapDataTotalSize = 0;
+
+const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
 
 const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
-
-napi_value ReturnResult(napi_env env, OH_AudioSuite_Result result)
-{
-    std::string resultMessage = GetErrorMessage(result);
-    napi_value sum;
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
-    } else {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
-    }
-    napi_create_int64(env, static_cast<int>(result), &sum);
-}
 
 static napi_ref callbackStringArrayRef = nullptr;
 static napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info info)
@@ -99,25 +81,6 @@ static napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info i
 
     napi_value result;
     napi_get_undefined(env, &result);
-    return result;
-}
-
-OH_AudioSuite_Result StartPipelineAndCheckState()
-{
-    // 启动管线
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_StartPipeline(g_audioSuitePipeline);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_audioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return result;
-    }
-
-    // 获取管线状态
-    OH_AudioSuite_PipelineState pipeLineState;
-    result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_audioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
-        static_cast<int>(result), static_cast<int>(pipeLineState));
     return result;
 }
 
@@ -196,15 +159,16 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取通道数
     unsigned int channels;
-    napi_get_value_uint32(env, argv[0], &channels);
+    napi_get_value_uint32(env, argv[ARG_0], &channels);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat channels is %{public}d", channels);
     // 获取采样率
     unsigned int sampleRate;
-    napi_get_value_uint32(env, argv[1], &sampleRate);
+    napi_get_value_uint32(env, argv[ARG_1], &sampleRate);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat sampleRate is %{public}d", sampleRate);
     // 获取位深
     unsigned int bitsPerSample;
-    napi_get_value_uint32(env, argv[ARG_3], &bitsPerSample);
+    napi_get_value_uint32(env, argv[ARG_2], &bitsPerSample);
+    ConvertBitsPerSample(bitsPerSample);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat bitsPerSample is %{public}d",
         bitsPerSample);
 
@@ -251,6 +215,10 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     if (!GetAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
+    std::vector<std::string> audioFormat = {
+        std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
+    };
+    CallStringArrayCallback(audioFormat);
     // 为资源实例创建对应的解封器
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
@@ -269,14 +237,10 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         updateInputNodeParams.sampleRate = sampleRate;
         updateInputNodeParams.bitsPerSample = bitsPerSample;
         UpdateInputNode(napiValue, result, updateInputNodeParams);
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
-    std::vector<std::string> audioFormat = {
-        std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
-    };
-    CallStringArrayCallback(audioFormat);
-    return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
@@ -320,7 +284,7 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
 
     // 获取inputId参数
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[0], inputId);
+    napi_status status = ParseNapiString(env, argv[0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong inputId is %{public}s",
         inputId.c_str());
     
@@ -359,7 +323,7 @@ static napi_value DeleteNode(napi_env env, napi_callback_info info)
 
     // 获取nodeId参数
     std::string nodeId;
-    napi_status status = parseNapiString(env, argv[0], nodeId);
+    napi_status status = ParseNapiString(env, argv[0], nodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteNode nodeId is %{public}s",
         nodeId.c_str());
     
@@ -381,27 +345,27 @@ static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
     std::string inputId;
     napi_status status = GetEqModeParameters(env, argv, equailizerMode, equailizerId, inputId);
     if (status != napi_ok) {
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
 
     // 创建均衡器效果节点
     Node eqNode = GetOrCreateEqualizerNodeByMode(equailizerId, inputId);
     if (!eqNode.physicalNode) {
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
     bool bypass = equailizerMode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(eqNode.physicalNode, bypass);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---SetEquailizerMode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     if (bypass) {
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equailizerMode));
-    return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 // 设置均衡器频带增益
@@ -415,17 +379,17 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     EqBandGainsParams params;
     napi_status status = GetEqBandGainsParameters(env, argv, frequencyBandGains, params);
     if (status != napi_ok) {
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
     // 创建均衡器效果节点
     Node eqNode = GetOrCreateEqualizerNodeByGains(params.equailizerId, params.inputId, params.selectedNodeId);
     if (!eqNode.physicalNode) {
-        return ReturnResult(env, static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
 
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, frequencyBandGains);
-    return ReturnResult(env, static_cast<OH_AudioSuite_Result>(result));
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
@@ -466,7 +430,7 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // inputId
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[ARG_0], inputId);
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
                  inputId.c_str());
     // 获取二参、美化类型
@@ -475,11 +439,11 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
     // 获取三参、效果节点id
     std::string voiceBeautifierId;
-    status = parseNapiString(env, argv[ARG_2], voiceBeautifierId);
+    status = ParseNapiString(env, argv[ARG_2], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[ARG_3], selectNodeId);
+    status = ParseNapiString(env, argv[ARG_3], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
                  selectNodeId.c_str());
      //调用添加美化效果节点接口
@@ -515,10 +479,10 @@ static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info,
     size_t argc = 4;
     napi_value argv[4] = {nullptr, nullptr, nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    napi_status status = parseNapiString(env, argv[ARG_1], params.inputId);
-    napi_get_value_uint32(env, argv[ARG_2], &params.mode);
-    status = parseNapiString(env, argv[ARG_3], params.fieldEffectId);
-    status = parseNapiString(env, argv[ARG_4], params.selectedNodeId);
+    napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
+    napi_get_value_uint32(env, argv[ARG_1], &params.mode);
+    status = ParseNapiString(env, argv[ARG_2], params.fieldEffectId);
+    status = ParseNapiString(env, argv[ARG_3], params.selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest FieldEffect inputId==%{public}s mode==%{public}zd, " \
         "fieldEffectId==%{public}s, selectedNodeId==%{public}s", \
@@ -586,7 +550,7 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
+    napi_status status = ParseNapiString(env, argv[ARG_1], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect inputId is %{public}s",
         inputId.c_str());
 
@@ -597,7 +561,7 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
 
     // 获取三参
     std::string fieldEffectId;
-    status = parseNapiString(env, argv[ARG_3], fieldEffectId);
+    status = ParseNapiString(env, argv[ARG_3], fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest fieldEffectId is %{public}s",
         fieldEffectId.c_str());
 
@@ -639,12 +603,12 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     void *data;
     napi_create_arraybuffer(env, g_tapDataTotalSize, &data, &napiValue);
     std::copy(
-        reinterpret_cast<const char*>(g_aissTapAudioData),
-        reinterpret_cast<const char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        reinterpret_cast<const char*>(g_tapTotalBuff),
+        reinterpret_cast<const char*>(g_tapTotalBuff) + g_tapDataTotalSize,
         reinterpret_cast<char*>(data));
     std::fill(
-        reinterpret_cast<char*>(g_aissTapAudioData),
-        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        reinterpret_cast<char*>(g_tapTotalBuff),
+        reinterpret_cast<char*>(g_tapTotalBuff) + g_tapDataTotalSize,
         0);
     g_tapDataTotalSize = 0;
     return napiValue;
@@ -777,6 +741,7 @@ static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
         g_writeDataBufferMap.size());
     ProcessPipeline();
+    g_playTotalAudioData = (char *)malloc(MAX_PLAY_RESULT_BUFFER_SIZE);
     // start
     OH_AudioRenderer_Start(audioRenderer);
     return nullptr;
@@ -794,8 +759,9 @@ static napi_value AudioRendererPause(napi_env env, napi_callback_info info)
 static napi_value AudioRendererStop(napi_env env, napi_callback_info info)
 {
     // stop
-    g_isRecord = false;
     OH_AudioRenderer_Stop(audioRenderer);
+    // 停止管线
+    OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
     return nullptr;
 }
 
@@ -830,7 +796,7 @@ static napi_value getOptions(napi_env env, napi_callback_info info)
     
     //获取nodeId
     std::string nodeId;
-    parseNapiString(env, argv[0], nodeId);
+    ParseNapiString(env, argv[0], nodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions nodeId is %{public}s", nodeId.c_str());
     Node node = g_nodeManager->GetNodeById(nodeId);
     //根据不同效果类型获取效果参数
@@ -846,9 +812,42 @@ static napi_value getEffectNodeList(napi_env env, napi_callback_info info)
     return GetSupportedAudioNodeTypes(env);
 }
 
+const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
+    {"audioEditNodeInitMultiPipeline", nullptr, AudioEditNodeInitMultiPipeline,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioInAndOutInit", nullptr, MultiAudioInAndOutInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiPipelineEnvPrepare", nullptr, MultiPipelineEnvPrepare,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSetFormat", nullptr, MultiSetFormat,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSetEqualizerMode", nullptr, MultiSetEqualizerMode,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSetEqualizerFrequencyBandGains", nullptr, MultiSetEqualizerFrequencyBandGains,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiStartFieldEffect", nullptr, MultiStartFieldEffect,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiStartEnvEffect", nullptr, MultiStartEnvEffect,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAddAudioSeparation", nullptr, MultiAddAudioSeparation,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAddNoiseReduction", nullptr, MultiAddNoiseReduction,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiStartVBEffect", nullptr, MultiStartVBEffect,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiDeleteSong", nullptr, MultiDeleteSong,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"destroyMultiPipeline", nullptr, DestroyMultiPipeline,
+        nullptr, nullptr, nullptr, napi_default, nullptr}
+};
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
-    napi_property_descriptor desc[] = {
+    std::vector<napi_property_descriptor> desc = {
         {"record", nullptr, Record, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioRendererInit", nullptr, AudioRendererInit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioRendererDestory", nullptr, AudioRendererDestory, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -875,7 +874,6 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"addNoiseReduction", nullptr, addNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetFieldEffect", nullptr, resetFieldEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetVBEffect", nullptr, resetVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"resetAudioSeparation", nullptr, resetAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteNoiseReduction", nullptr, deleteNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteSong", nullptr, DeleteSong, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteAudioSeparation", nullptr, deleteAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -887,7 +885,8 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
             napi_default, nullptr},
         {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr}};
-    napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
+    desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
+    napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;
 }
 EXTERN_C_END

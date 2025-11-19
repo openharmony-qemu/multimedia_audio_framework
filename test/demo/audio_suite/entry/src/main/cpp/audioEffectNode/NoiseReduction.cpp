@@ -34,16 +34,16 @@ napi_value addNoiseReduction(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
+    napi_status status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     std::string inputIdStr;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputIdStr);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputIdStr);
     std::string selectNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_2], selectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "uuid:%{public}s, inputId:%{public}s, "
                  "selectNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectNodeId.c_str());
 
     napi_value ret = nullptr;
-    Node node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_NOISE_REDUCTION);
+    Node node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_NOISE_REDUCTION);
     if (node.physicalNode == nullptr) {
         napi_create_int32(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
         return ret;
@@ -51,13 +51,13 @@ napi_value addNoiseReduction(napi_env env, napi_callback_info info)
 
     int insertRes = -1;
     if (selectNodeId.empty()) {
-        insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
+        insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
     } else {
         insertRes = g_nodeManager->insertNode(uuidStr, selectNodeId, Direction::LATER);
     }
 
     if (insertRes != AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, NR_TAG, "addEffectNodeToNodeManager ERROR!");
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, NR_TAG, "AddEffectNodeToNodeManager ERROR!");
         napi_create_int32(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
         return ret;
     }
@@ -73,7 +73,7 @@ napi_value deleteNoiseReduction(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string uuidStr;
-    parseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "uuid==%{public}s", uuidStr.c_str());
 
     OH_AudioSuite_Result result;

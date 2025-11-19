@@ -39,6 +39,6 @@ enum class AudioSuiteResult {
 extern const std::map<AudioSuiteResult, std::string> errorMessages;
 
 // 获取错误码对应的错误信息
-const std::string& GetErrorMessage(AudioSuiteResult result);
+std::string GetErrorMessage(AudioSuiteResult result);
 
 #endif //AUDIOEDITTESTAPP_AUDIOSUITEERROR_H

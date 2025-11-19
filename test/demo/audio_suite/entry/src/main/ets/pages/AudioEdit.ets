@@ -6,7 +6,7 @@ import {StyleConst} from '../utils/StyleConst';
 import audioNapi from 'libentry.so';
 import {Logger} from '../utils/Logger';
 import {JSON, util} from '@kit.ArkTS';
-import {SongInfo, NodeType, Node, colorMap, SoundFiledType} from '../utils/importSongs/InterfaceInfo';
+import {SongInfo, NodeType, Node, ColorMap, SoundFiledType} from '../utils/importSongs/InterfaceInfo';
 
 const TAG: string = 'AudioEditTestApp_AudioEdit';
 
@@ -110,13 +110,15 @@ export struct AudioEdit {
                                 ]
                             }
 
-                            this.songWaveList.set(inputId, songInfo);
+                            this.songWaveList.set(inputId, SongInfo);
                             this.aissOptionMap.set(inputId, -1);
                             this.aissConfirmedMap.set(inputId, true);
                             this.fieldEffectNumMap.set(inputId, SoundFiledType.SOUND_FIELD_CLOSE);
                             this.fieldEffectIdMap.set(inputId, '');
                             this.voiceBeautifierIdMap.set(inputId, '');
                             this.voiceBeautifierNumMap.set(inputId, 0);
+                            this.environmentEffectUriToIdMap.set(inputId, '');
+                            this.environmentEffectNumMap.set(inputId, 0);
                             Logger.info(TAG, `input ID is , ${inputId}`);
                         }
                     })
@@ -231,26 +233,6 @@ export struct AudioEdit {
                                 let type: NodeType = 
                                     this.aissOptionMap.get(this.pitchSong) == 0 ? NodeType.VOICE : NodeType.ACCOMPANIMENT;
                                 this.insertEffectLabel(uuid, type);
-                                this.forceRenderByEffectBtn();
-                            } else {
-                                let ret: number = audioNapi.resetAudioSeparation(this.aissOptionMap.get(this.pitchSong), oldId);
-                                if (ret != 0) {
-                                    this.getUIContext().showAlertDialog({
-                                        message: '重置分离节点失败\n请单击弹窗外任意处关闭弹窗',
-                                        autoCancel: true
-                                    });
-                                    return;
-                                }
-                                let index: number | undefined =
-                                    this.songWaveList.get(this.pitchSong)?.nodes?.findIndex(label => label.type === NodeType.VOICE ||
-                                    label.type === NodeType.ACCOMPANIMENT
-                                    );
-                                if (index === undefined) {
-                                    return;
-                                }
-                                let type: NodeType =
-                                    this.aissOptionMap.get(this.pitchSong) == 0 ? NodeType.VOICE : NodeType.ACCOMPANIMENT;
-                                this.resetEffectLabel(index, oldId, type);
                                 this.forceRenderByEffectBtn();
                             }
                             this.aissOptionMap.set(this.pitchSong, -1);
@@ -478,8 +460,8 @@ export struct AudioEdit {
                     this.envEffectShow = false;
                     if(this.environmentEffectNumMap.get(this.pitchSong) != undefined) {
                         let oldId: string | undefined = this.environmentEffectUriToIdMap.get(this.pitchSong);
-                        if(oldId == undefined) {
-                            if (this.environmentEffectNumMap.get(this.pitchSong) == 1) {
+                        if(oldId == '') {
+                            if (this.environmentEffectNumMap.get(this.pitchSong) == 0) {
                                 this.envEffectShow = false;
                                 return;
                             }
@@ -500,7 +482,7 @@ export struct AudioEdit {
                         } else {
                             let ret: number = audioNapi.resetEnvEffect(this.pitchSong, oldId, this.environmentEffectNumMap.get(this.pitchSong));
                             if(ret == 0) {
-                                if (this.environmentEffectNumMap.get(this.pitchSong) == 1) {
+                                if (this.environmentEffectNumMap.get(this.pitchSong) == 0) {
                                     this.deleteEffectLabel(NodeType.ENV);
                                     this.environmentEffectUriToIdMap.set(this.pitchSong, undefined);
                                     this.forceRenderByEffectBtn();
@@ -523,7 +505,7 @@ export struct AudioEdit {
                     Radio({ value: 'close', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 0)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 1)
+                            this.environmentEffectNumMap.set(this.pitchSong, 0)
                         })
                     Text('无').fontSize(20)
                 }
@@ -533,7 +515,7 @@ export struct AudioEdit {
                     Radio({ value: 'broadcast', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 1)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 2)
+                            this.environmentEffectNumMap.set(this.pitchSong, 1)
                         })
                     Text('广播').fontSize(20)
                 }
@@ -543,7 +525,7 @@ export struct AudioEdit {
                     Radio({ value: 'earpiece', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 2)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 3)
+                            this.environmentEffectNumMap.set(this.pitchSong, 2)
                         })
                     Text('听筒').fontSize(20)
                 }
@@ -553,7 +535,7 @@ export struct AudioEdit {
                     Radio({ value: 'underWater', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 3)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 4)
+                            this.environmentEffectNumMap.set(this.pitchSong, 3)
                         })
                     Text('水下').fontSize(20)
                 }
@@ -563,7 +545,7 @@ export struct AudioEdit {
                     Radio({ value: 'gramophone', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 4)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 5)
+                            this.environmentEffectNumMap.set(this.pitchSong, 4)
                         })
                     Text('留声机').fontSize(20)
                 }
@@ -627,7 +609,7 @@ export struct AudioEdit {
                         this.forceRenderByEffectBtn();
                     } else {
                         //修改节点
-                        let resultPcmBuffer = audioNapi.resetVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), voiceBeautifierId);
+                        let ret = audioNapi.resetVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), voiceBeautifierId);
                         if (ret !== 0) {
                           Logger.error(TAG, `resetVoiceBeautify error number is ${ret}`);
                           this.getUIContext().showAlertDialog({
@@ -790,7 +772,7 @@ export struct AudioEdit {
     @Builder
     BalanceBuilder() {
         Column() {
-            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.spaceBetween, alignItems: ItemAlign.Center }) {
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
                 Column() {
                     Image($r('app.media.close_window'))
                         .width(20)
@@ -810,7 +792,7 @@ export struct AudioEdit {
                         this.songWaveList.get(this.pitchSong)?.nodes?.push({
                             id: nodeId,
                             type: NodeType.EQ,
-                            color: colorMap.get(NodeType.EQ)
+                            color: ColorMap.get(NodeType.EQ)
                         });
                     }
                     this.forceRenderByEffectBtn();
@@ -876,7 +858,7 @@ export struct AudioEdit {
             }.margin({ top:$r('app.float.margin_35')})
 
             Column() {
-                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.spaceBetween, alignItems:ItemAlign.Center }) {
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems:ItemAlign.Center }) {
                     ForEach(this.balanceModeList.slice(0, 5), (item: string, index: number) => {
                         Button(item)
                             .align(Alignment.Center)
@@ -893,7 +875,7 @@ export struct AudioEdit {
                     })
                 }
 
-                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.spaceBetween, alignItems:ItemAlign.Center }) {
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems:ItemAlign.Center }) {
                     ForEach(this.balanceModeList.slice(5, 10), (item: string, index: number) => {
                         Button(item)
                             .align(Alignment.Center)
@@ -912,7 +894,7 @@ export struct AudioEdit {
                 .margin({ top: '20vp', bottom: '70vp'})
             }
 
-            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.spaceBetween, alignItems:ItemAlign.Center }) {
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems:ItemAlign.Center }) {
                 ForEach(this.balanceBandGains, (item: number, index: number) => {
                     Column() {
                         Text(`${item}`).fontSize(12)
@@ -995,7 +977,7 @@ export struct AudioEdit {
                 .margin({ right: $r('app.float.margin_35') })
                 .listDirection(Axis.Horizontal)
                 .alignListItem(ListItemAlign.Center)
-                .ScrollBar(BarState.Off)
+                .scrollBar(BarState.Off)
             }
         } else {
             Image($r('app.media.chevron_down'))
@@ -1281,7 +1263,7 @@ export struct AudioEdit {
                     .margin({ right: $r('app.float.margin_35') })
                 Text(info.songName).margin({ right: 30 }).fontColor(Color.White)
             }
-            .justifyContent(FlexAlign.spaceBetween)
+            .justifyContent(FlexAlign.SpaceBetween)
 
             Row() {
                 List() {
@@ -1352,7 +1334,7 @@ export struct AudioEdit {
             this.songWaveList.get(this.pitchSong)?.nodes?.push({
                 id: effectNodeId,
                 type: type,
-                color: colorMap.get(type)
+                color: ColorMap.get(type)
             });
         }
         return true;
@@ -1369,7 +1351,7 @@ export struct AudioEdit {
     resetEffectLabel(index: number, effectNodeId: string, destType: NodeType): boolean {
         let nodeArray: Node[] | undefined = this.songWaveList.get(this.pitchSong)?.nodes;
         if (index != undefined && nodeArray != undefined) {
-            nodeArray[index] = { id: effectNodeId, type: destType, color: colorMap.get(destType) };
+            nodeArray[index] = { id: effectNodeId, type: destType, color: ColorMap.get(destType) };
         }
         return true;
     }

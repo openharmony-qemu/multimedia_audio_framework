@@ -34,23 +34,23 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[NAPI_ARGV_INDEX_1], uuidStr);
+    napi_status status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     std::string inputIdStr;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_2], inputIdStr);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputIdStr);
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_3], selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid:%{public}s, inputId:%{public}s,"
                  "selectedNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectedNodeId.c_str());
     napi_value ret = nullptr;
-    Node node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
+    Node node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
     if (node.physicalNode == nullptr) {
         napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
         return ret;
     }
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
+        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
         if (insertRes == NODE_MANAGER_OPERATION_ERROR) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "AddEffectNodeToNodeManager ERROR!");
             return ret;
         }
     } else {
@@ -67,46 +67,6 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     return ret;
 }
 
-napi_value resetAudioSeparation(napi_env env, napi_callback_info info)
-{
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "resetAudioSeparation---IN");
-    size_t argc = 2;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取一参分离mode
-    unsigned int arg1 = 0;
-    napi_get_value_uint32(env, argv[NAPI_ARGV_INDEX_0], &arg1);
-    // 获取二参aissNodeId
-    std::string aissNodeId;
-    parseNapiString(env, argv[NAPI_ARGV_INDEX_1], aissNodeId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid==%{public}s,size==%{public}zd",
-                 aissNodeId.c_str(), aissNodeId.size());
-
-    napi_value ret;
-    Node node = g_nodeManager->GetNodeById(aissNodeId);
-    
-    OH_AudioSuite_Result result;
-
-    result = g_nodeManager->disconnect(aissNodeId, node.nextNodeId);
-    if (result != AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG,
-                     "resetAudioSeparation: disconnect ERROR---%{public}u", result);
-        napi_create_int32(env, result, &ret);
-        return ret;
-    }
-    result = g_nodeManager->connectByPort(aissNodeId, node.nextNodeId);
-    if (result != AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG,
-                     "resetAudioSeparation: connectByPort ERROR---%{public}u", result);
-        napi_create_int32(env, result, &ret);
-        return ret;
-    }
-
-    napi_create_int32(env, result, &ret);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "resetAudioSeparation: operation success");
-    return ret;
-}
-
 napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "deleteAudioSeparation IN");
@@ -115,7 +75,7 @@ napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取uuid
     std::string uuidStr;
-    parseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid==%{public}s", uuidStr.c_str());
 
     OH_AudioSuite_Result result;

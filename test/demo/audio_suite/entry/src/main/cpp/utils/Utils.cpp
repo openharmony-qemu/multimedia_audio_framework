@@ -3,10 +3,14 @@
  */
 
 #include "Utils.h"
+#include "audioSuiteError/AudioSuiteError.h"
+#include <hilog/log.h>
 
 const int CONSTANT_0 = 0;
 
 const int CONSTANT_1 = 1;
+const int GLOBAL_RESMGR = 0xFF00;
+const char *UTILS_TAG = "[AudioEditTestApp_utils_cpp]";
 
 // 解析 napi 字符串参数
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
@@ -114,7 +118,9 @@ OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
             audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
             break;
         case DemoBitsPerSample::DEMO_SAMPLE_F32LE:
-            audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
+            audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
+            break;
+        default:
             break;
     }
     return audioSampleFormat;
@@ -136,6 +142,8 @@ void ConvertBitsPerSample(unsigned int& bitsPerSample)
         case DemoBitsPerSample::DEMO_BITSPERSAMPLE_32:
             bitsPerSample = DemoBitsPerSample::DEMO_SAMPLE_F32LE;
             break;
+        default:
+            break;
     }
 }
 
@@ -150,5 +158,50 @@ int32_t GetBitsPerSample(OH_Audio_SampleFormat sampleFormat)
             return DemoBitsPerSample::DEMO_BITSPERSAMPLE_24;
         default:
             return DemoBitsPerSample::DEMO_BITSPERSAMPLE_32;
+    }
+}
+
+OH_EnvironmentType GetEnvEnumByNumber(int num)
+{
+    OH_EnvironmentType type;
+    switch (num) {
+        case ARG_1:
+            type = ENVIRONMENT_TYPE_BROADCAST;
+            break;
+        case ARG_2:
+            type = ENVIRONMENT_TYPE_EARPIECE;
+            break;
+        case ARG_3:
+            type = ENVIRONMENT_TYPE_UNDERWATER;
+            break;
+        case ARG_4:
+            type = ENVIRONMENT_TYPE_GRAMOPHONE;
+            break;
+        default:
+            break;
+    }
+    return type;
+}
+
+napi_value ReturnResult(napi_env env, AudioSuiteResult result)
+{
+    std::string resultMessage = GetErrorMessage(result);
+    napi_value sum;
+    if (result != AudioSuiteResult::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, UTILS_TAG,
+            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
+    } else {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, UTILS_TAG,
+            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
+    }
+    napi_create_int64(env, static_cast<int>(result), &sum);
+    return sum;
+}
+
+void FreeBuffer(void *buffer)
+{
+    if (buffer != nullptr) {
+        free(buffer);
+        buffer = nullptr;
     }
 }

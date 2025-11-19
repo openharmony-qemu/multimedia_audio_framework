@@ -52,13 +52,12 @@ const std::map<AudioSuiteResult, std::string> errorMessages = {
 };
 
 // 获取错误码对应的错误信息
-const std::string& GetErrorMessage(AudioSuiteResult result)
+std::string GetErrorMessage(AudioSuiteResult result)
 {
     auto it = errorMessages.find(result);
     if (it != errorMessages.end()) {
         return it->second;
     } else {
-        static const std::string unknownError = "Unknown Error";
-        return unknownError;
+        return "Unknown Error";
     }
 }
