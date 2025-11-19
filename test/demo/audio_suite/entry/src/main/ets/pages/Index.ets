@@ -41,11 +41,11 @@ struct Index {
           Logger.info(TAG, 'Succeeded in setting the system bar properties.');
         }).catch((err: BusinessError) => {
           Logger.error(TAG,
-            'Failed to set the system bar properties. Cause code: ${err.code}, message: ${err.message}');
+            `Failed to set the system bar properties. Cause code: ${err.code}, message: ${err.message}`);
         });
       } catch (exception) {
         Logger.error(TAG,
-        'Failed to set the system bar properties. Cause code: ${exception.code}, message: ${exception.message}');
+        `Failed to set the system bar properties. Cause code: ${exception.code}, message: ${exception.message}`);
       }
     })
   }
