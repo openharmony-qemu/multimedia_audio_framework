@@ -297,7 +297,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    IAudioStream::streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
+    IAudioStream::StreamClass streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
