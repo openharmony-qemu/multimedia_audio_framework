@@ -27,6 +27,7 @@
 #include "audio_engine_manager.h"
 #include "none_mix_engine.h"
 #include "audio_utils.h"
+#include "core_service_hander.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,7 +57,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = 0;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+        sessionId = CoreServiceHander::GetInstance().GenerateSessionId();
     } else {
         sessionId = processConfig.originalSessionId;
     }
