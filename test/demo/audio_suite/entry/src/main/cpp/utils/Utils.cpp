@@ -118,7 +118,7 @@ OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
             audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
             break;
         case DemoBitsPerSample::DEMO_SAMPLE_F32LE:
-            audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE;
+            audioSampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
             break;
         default:
             break;

@@ -166,6 +166,7 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     // 获取位深
     unsigned int bitsPerSample;
     napi_get_value_uint32(env, argv[ARG_2], &bitsPerSample);
+    ConvertBitsPerSample(bitsPerSample);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat bitsPerSample is %{public}d",
         bitsPerSample);
 
