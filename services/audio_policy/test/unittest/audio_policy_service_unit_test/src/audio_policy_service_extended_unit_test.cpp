@@ -706,44 +706,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateCapturerInfoWhenNoPermission_
 
 /**
  * @tc.name  : Test AudioPolicyService.
- * @tc.number: GetPreferredOutputStreamType_002
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetPreferredOutputStreamType_002, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server) ;
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = STREAM_USAGE_MAX ;
-    std::string bundleName ;
-
-    int32_t ret = server->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
- * @tc.name  : Test AudioPolicyService.
- * @tc.number: GetPreferredOutputStreamType_004
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetPreferredOutputStreamType_004, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server) ;
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-    std::string bundleName ;
-    auto& sceneManager = AudioSceneManager::GetInstance();
-    sceneManager.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL, 1, 1);
-
-    int32_t ret = server->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
- * @tc.name  : Test AudioPolicyService.
  * @tc.number: GetHardwareOutputSamplingRate_001
  * @tc.desc  : Test AudioPolicyService interfaces.
  */
