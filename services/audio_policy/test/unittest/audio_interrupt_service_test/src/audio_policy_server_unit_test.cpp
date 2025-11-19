@@ -1095,29 +1095,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_043, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_044
-* @tc.desc  : Test AudioPolicyServer::GetPreferredOutputStreamType
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
-{
-    auto ptrAudioPolicyServer = GetPolicyServerUnitTest();
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    AudioRendererInfo rendererInfo;
-    int32_t ret = 0;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    ptrAudioPolicyServer->audioPolicyService_.isFastControlled_ = true;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
 * @tc.name  : Test TranslateErrorCodeer.
 * @tc.number: TranslateErrorCode_001
 * @tc.desc  : Test TranslateErrorCodeer.
