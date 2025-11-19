@@ -53,6 +53,8 @@ const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
 void *g_aissTapAudioData = (char *)malloc(1024 * 1024 * 100);
 
+const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
+
 const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
@@ -739,6 +741,7 @@ static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
         g_writeDataBufferMap.size());
     ProcessPipeline();
+    g_playTotalAudioData = (char *)malloc(MAX_PLAY_RESULT_BUFFER_SIZE);
     // start
     OH_AudioRenderer_Start(audioRenderer);
     return nullptr;
@@ -756,7 +759,6 @@ static napi_value AudioRendererPause(napi_env env, napi_callback_info info)
 static napi_value AudioRendererStop(napi_env env, napi_callback_info info)
 {
     // stop
-    g_isRecord = false;
     OH_AudioRenderer_Stop(audioRenderer);
     // 停止管线
     OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
