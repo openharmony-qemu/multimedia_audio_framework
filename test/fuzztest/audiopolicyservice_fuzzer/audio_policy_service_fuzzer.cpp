@@ -633,17 +633,6 @@ void AudioPolicyServiceUpdateDescWhenNoBTPermissionFuzztest(const uint8_t *rawDa
     GetServerPtr()->audioPolicyService_.UpdateDescWhenNoBTPermission(fuzzAudioDeviceDescriptorSptrVector);
 }
 
-void AudioPolicyServiceGetPreferredOutputStreamTypeFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioRendererInfo rendererInfo;
-    std::string bundleName = "bundleName";
-    GetServerPtr()->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-}
-
 void AudioPolicyServiceGetProcessDeviceInfoFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -961,7 +950,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceUpdateCapturerInfoWhenNoPermissionFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetCurrentCapturerChangeInfosFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUpdateDescWhenNoBTPermissionFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredOutputStreamTypeFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetProcessDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetVoipDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceInitSharedVolumeFuzztest,
