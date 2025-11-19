@@ -758,6 +758,8 @@ static napi_value AudioRendererStop(napi_env env, napi_callback_info info)
     // stop
     g_isRecord = false;
     OH_AudioRenderer_Stop(audioRenderer);
+    // 停止管线
+    OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
     return nullptr;
 }
 
