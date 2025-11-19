@@ -165,20 +165,20 @@ OH_EnvironmentType GetEnvEnumByNumber(int num)
 {
     OH_EnvironmentType type;
     switch (num) {
-    case ARG_1:
-        type = ENVIRONMENT_TYPE_BROADCAST;
-        break;
-    case ARG_2:
-        type = ENVIRONMENT_TYPE_EARPIECE;
-        break;
-    case ARG_3:
-        type = ENVIRONMENT_TYPE_UNDERWATER;
-        break;
-    case ARG_4:
-        type = ENVIRONMENT_TYPE_GRAMOPHONE;
-        break;
-    default:
-        break;
+        case ARG_1:
+            type = ENVIRONMENT_TYPE_BROADCAST;
+            break;
+        case ARG_2:
+            type = ENVIRONMENT_TYPE_EARPIECE;
+            break;
+        case ARG_3:
+            type = ENVIRONMENT_TYPE_UNDERWATER;
+            break;
+        case ARG_4:
+            type = ENVIRONMENT_TYPE_GRAMOPHONE;
+            break;
+        default:
+            break;
     }
     return type;
 }
