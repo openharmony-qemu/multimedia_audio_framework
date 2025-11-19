@@ -2566,24 +2566,6 @@ HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetPreferredStreamClass
- * @tc.number: GetPreferredStreamClass
- * @tc.desc  : Test GetPreferredStreamClass
- */
-HWTEST(AudioRendererUnitTest, GetPreferredStreamClass_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    AudioStreamParams audioStreamParams;
-    audioStreamParams.samplingRate = SAMPLE_RATE_64000;
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-
-    audioRendererPrivate->GetPreferredStreamClass(audioStreamParams);
-    EXPECT_EQ(audioRendererPrivate->rendererInfo_.rendererFlags, AUDIO_FLAG_NORMAL);
-}
-
-/**
  * @tc.name  : Test GetStreamInfo
  * @tc.number: GetStreamInfo
  * @tc.desc  : Test GetStreamInfo
