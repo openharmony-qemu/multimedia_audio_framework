@@ -53,7 +53,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('音频格式')
                             .fontWeight(FontWeight.Bold)
-                            .fontColor(Color.White)
+                            .fontColor($r('app.color.index_title_text_color'))
                     }
                     .margin({ top: $r('app.float.margin_10') })
 
@@ -113,7 +113,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('声道')
                             .fontWeight(FontWeight.Bold)
-                            .fontColor(Color.White)
+                            .fontColor($r('app.color.index_title_text_color'))
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -150,7 +150,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('位深')
                             .fontWeight(FontWeight.Bold)
-                            .fontColor(Color.White)
+                            .fontColor($r('app.color.index_title_text_color'))
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -179,9 +179,9 @@ export struct SetFormatDialog {
                             .margin({ right: '20vp' })
                             .margin({ bottom: $r('app.float.margin_10') })
                             .fontWeight(FontWeight.Bold)
-                            .fontColor(Color.White)
+                            .fontColor($r('app.color.index_title_text_color'))
                         TextInput({ text: this.newAudioFileName, placeholder: '输入保存的音频文件名' })
-                            .backgroundColor(Color.White)
+                            .backgroundColor($r('app.color.index_title_text_color'))
                             .onChange((value: string) => {
                                 this.newAudioFileName = value;
                             })
@@ -217,7 +217,7 @@ export struct SetFormatDialog {
             .padding({ top: $r('app.float.margin_10'), left: $r('app.float.margin_10'), right: $r('app.float.margin_10') })
             .backgroundColor($r('app.color.main_backgroundColor'))
         }
-        .edgeEffect(EdgeEffect.Spring)
+        .edgeEffect(EdgeEffect.None)
 
     }
 
@@ -233,6 +233,7 @@ export struct SetFormatDialog {
         .margin({ right: 10 })
         .checked(param.isChecked)
         .radioStyle({
+            checkedBackgroundColor: $r('app.color.index_audio_clip_card'),
         })
         .onChange((isChecked: boolean) => {
             if (isChecked) {
@@ -240,6 +241,6 @@ export struct SetFormatDialog {
             }
         })
         Text(param.label).margin({ right: '20vp' }).fontSize(14)
-            .fontColor(Color.White)
+            .fontColor($r('app.color.index_title_text_color'))
     }
 }

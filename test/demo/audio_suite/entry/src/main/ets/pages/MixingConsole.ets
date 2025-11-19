@@ -15,7 +15,7 @@ import { fileUri, picker } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import fs, { ReadOptions } from '@ohos.file.fs';
-import { AlertDialog, SymbolGlyphModifier } from '@kit.ArkUI';
+import { AlertDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import display from '@ohos.display';
 
 import { getDateStringWithTimeStamp } from '../utils/Util';
@@ -75,6 +75,11 @@ export struct MixingConsole {
 
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
+        let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
+        window.getLastWindow(context).then((windowClass) => {
+            // 设置屏幕横屏
+            windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION_LANDSCAPE);
+        });
         this.isPlayRealTime = false;
         // 初始化空列表（保留5个空位）
         this.inputList = Array(this.MAX_TRACKS).fill(null);
@@ -135,6 +140,10 @@ export struct MixingConsole {
         } catch (e) {
             Logger.info(TAG, `audioEditDestory error: ${JSON.stringify(e)}`);
         }
+        let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
+        window.getLastWindow(context).then((windowClass) => {
+            windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION);
+        });
     }
 
     // 设置弹窗
@@ -347,9 +356,11 @@ export struct MixingConsole {
                     })
                 }
                 .height('100%')
-                .width('60%')
+                .layoutWeight(1)
                 .backgroundColor($r('app.color.mixing_console_backgroundColor'))
                 .padding({left: $r('app.float.margin_10'), right: $r('app.float.margin_10')})
+
+                Blank().width(1).backgroundColor($r('app.color.index_audio_clip_card'))
 
                 // 右侧
                 Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
@@ -513,7 +524,7 @@ export struct MixingConsole {
                 .width("10%")
                 .margin({right: $r('app.float.margin_5')})
                 .textAlign(TextAlign.Center)
-                .backgroundColor(Color.White)
+                .fontColor(Color.White)
         }
     }
 
