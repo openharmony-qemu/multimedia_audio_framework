@@ -78,5 +78,5 @@ OH_EnvironmentType GetEnvEnumByNumber(int num);
 
 napi_value ReturnResult(napi_env env, AudioSuiteResult result);
 
-void freeBuffer(void *buffer);
+void FreeBuffer(void *buffer);
 #endif //#define AUDIOEDITTESTAPP_UTILS_H

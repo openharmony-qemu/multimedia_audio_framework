@@ -157,15 +157,15 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取通道数
     unsigned int channels;
-    napi_get_value_uint32(env, argv[0], &channels);
+    napi_get_value_uint32(env, argv[ARG_0], &channels);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat channels is %{public}d", channels);
     // 获取采样率
     unsigned int sampleRate;
-    napi_get_value_uint32(env, argv[1], &sampleRate);
+    napi_get_value_uint32(env, argv[ARG_1], &sampleRate);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat sampleRate is %{public}d", sampleRate);
     // 获取位深
     unsigned int bitsPerSample;
-    napi_get_value_uint32(env, argv[ARG_3], &bitsPerSample);
+    napi_get_value_uint32(env, argv[ARG_2], &bitsPerSample);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat bitsPerSample is %{public}d",
         bitsPerSample);
 
@@ -808,24 +808,36 @@ static napi_value getEffectNodeList(napi_env env, napi_callback_info info)
 }
 
 const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
-        {"audioEditNodeInitMultiPipeline", nullptr, AudioEditNodeInitMultiPipeline, nullptr, nullptr, nullptr,
-         napi_default, nullptr},
-        {"multiAudioInAndOutInit", nullptr, MultiAudioInAndOutInit, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiPipelineEnvPrepare", nullptr, MultiPipelineEnvPrepare, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiSetFormat", nullptr, MultiSetFormat, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiSetEqualizerMode", nullptr, MultiSetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiSetEqualizerFrequencyBandGains", nullptr, MultiSetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
-         napi_default, nullptr},
-        {"multiStartFieldEffect", nullptr, MultiStartFieldEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiStartEnvEffect", nullptr, MultiStartEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiAddAudioSeparation", nullptr, MultiAddAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiAddNoiseReduction", nullptr, MultiAddNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiStartVBEffect", nullptr, MultiStartVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio, nullptr, nullptr, nullptr,
-        napi_default, nullptr},
-        {"multiDeleteSong", nullptr, MultiDeleteSong, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"destroyMultiPipeline", nullptr, DestroyMultiPipeline, nullptr, nullptr, nullptr, napi_default, nullptr}
+        {"audioEditNodeInitMultiPipeline", nullptr, AudioEditNodeInitMultiPipeline,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiAudioInAndOutInit", nullptr, MultiAudioInAndOutInit,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiPipelineEnvPrepare", nullptr, MultiPipelineEnvPrepare,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiSetFormat", nullptr, MultiSetFormat,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiSetEqualizerMode", nullptr, MultiSetEqualizerMode,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiSetEqualizerFrequencyBandGains", nullptr, MultiSetEqualizerFrequencyBandGains,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiStartFieldEffect", nullptr, MultiStartFieldEffect,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiStartEnvEffect", nullptr, MultiStartEnvEffect,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiAddAudioSeparation", nullptr, MultiAddAudioSeparation,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiAddNoiseReduction", nullptr, MultiAddNoiseReduction,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiStartVBEffect", nullptr, MultiStartVBEffect,
+            nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer,
+            nullptr, nullptr, nullptr,napi_default, nullptr},
+        {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio,
+            nullptr, nullptr, nullptr,napi_default, nullptr},
+        {"multiDeleteSong", nullptr, MultiDeleteSong,
+        nullptr, nullptr, nullptr,napi_default, nullptr},
+        {"destroyMultiPipeline", nullptr,MultiPipeline,
+            nullptr, nullptr, nullptr,napi_default, nullptr}
 };
 
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
