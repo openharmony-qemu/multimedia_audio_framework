@@ -608,7 +608,7 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
-    std::lock_guard lock(firstFrameWritingMutex_);
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
@@ -620,7 +620,7 @@ void RendererInClientInner::OnFirstFrameWriting()
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
     {
-        std::lock_guard lock(firstFrameWritingMutex_);
+        std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
@@ -1459,6 +1459,14 @@ void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
     streamTrackerRegistered_ = trackerRegisteredState;
 }
 
+void RendererInClientInner::GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info)
+{
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
+    if (firstFrameWritingCb_) {
+        info.rendererFirstFrameWritingCallback = firstFrameWritingCb_;
+    }
+}
+
 void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
     info.params = streamParams_;
@@ -1485,6 +1493,8 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
         info.lastCallStartByUserTid = lastCallStartByUserTid_;
     }
+
+    GetRendererFirstFrameWritingCallback(info);
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
