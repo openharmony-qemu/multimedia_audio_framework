@@ -117,6 +117,8 @@ export struct AudioEdit {
                             this.fieldEffectIdMap.set(inputId, '');
                             this.voiceBeautifierIdMap.set(inputId, '');
                             this.voiceBeautifierNumMap.set(inputId, 0);
+                            this.environmentEffectUriToIdMap.set(inputId, '');
+                            this.environmentEffectNumMap.set(inputId, 0);
                             Logger.info(TAG, `input ID is , ${inputId}`);
                         }
                     })
@@ -459,7 +461,7 @@ export struct AudioEdit {
                     if(this.environmentEffectNumMap.get(this.pitchSong) != undefined) {
                         let oldId: string | undefined = this.environmentEffectUriToIdMap.get(this.pitchSong);
                         if(oldId == undefined) {
-                            if (this.environmentEffectNumMap.get(this.pitchSong) == 1) {
+                            if (this.environmentEffectNumMap.get(this.pitchSong) == 0) {
                                 this.envEffectShow = false;
                                 return;
                             }
@@ -480,7 +482,7 @@ export struct AudioEdit {
                         } else {
                             let ret: number = audioNapi.resetEnvEffect(this.pitchSong, oldId, this.environmentEffectNumMap.get(this.pitchSong));
                             if(ret == 0) {
-                                if (this.environmentEffectNumMap.get(this.pitchSong) == 1) {
+                                if (this.environmentEffectNumMap.get(this.pitchSong) == 0) {
                                     this.deleteEffectLabel(NodeType.ENV);
                                     this.environmentEffectUriToIdMap.set(this.pitchSong, undefined);
                                     this.forceRenderByEffectBtn();
@@ -503,7 +505,7 @@ export struct AudioEdit {
                     Radio({ value: 'close', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 0)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 1)
+                            this.environmentEffectNumMap.set(this.pitchSong, 0)
                         })
                     Text('无').fontSize(20)
                 }
@@ -513,7 +515,7 @@ export struct AudioEdit {
                     Radio({ value: 'broadcast', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 1)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 2)
+                            this.environmentEffectNumMap.set(this.pitchSong, 1)
                         })
                     Text('广播').fontSize(20)
                 }
@@ -523,7 +525,7 @@ export struct AudioEdit {
                     Radio({ value: 'earpiece', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 2)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 3)
+                            this.environmentEffectNumMap.set(this.pitchSong, 2)
                         })
                     Text('听筒').fontSize(20)
                 }
@@ -533,7 +535,7 @@ export struct AudioEdit {
                     Radio({ value: 'underWater', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 3)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 4)
+                            this.environmentEffectNumMap.set(this.pitchSong, 3)
                         })
                     Text('水下').fontSize(20)
                 }
@@ -543,7 +545,7 @@ export struct AudioEdit {
                     Radio({ value: 'gramophone', group: 'envEffect'})
                         .checked(this.environmentEffectNumMap.get(this.pitchSong) === 4)
                         .onChange(() => {
-                            this.environmentEffectNumMap.set(this.pitchSong, 5)
+                            this.environmentEffectNumMap.set(this.pitchSong, 4)
                         })
                     Text('留声机').fontSize(20)
                 }
