@@ -160,7 +160,6 @@ private:
     uint32_t GetOverflowCountInner() const;
     CapturerState GetStatusInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
-    IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
@@ -192,7 +191,6 @@ private:
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
     AudioCaptureMode audioCaptureMode_ = CAPTURE_MODE_NORMAL;
-    bool isFastVoipSupported_ = false;
     std::mutex setCapturerCbMutex_;
     mutable std::shared_mutex capturerMutex_;
     std::mutex capturerPolicyServiceDiedCbMutex_;
