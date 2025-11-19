@@ -1132,7 +1132,8 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1193,7 +1194,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
