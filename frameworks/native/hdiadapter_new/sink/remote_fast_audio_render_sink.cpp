@@ -470,7 +470,7 @@ int32_t RemoteFastAudioRenderSink::CreateRender(void)
     void *render = deviceManager->CreateRender(deviceNetworkId_, &param, &deviceDesc, hdiRenderId_);
     audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
-    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, this);
+    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, shared_from_this());
     if (param.type == AUDIO_MMAP_NOIRQ || param.type == AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer();
     }

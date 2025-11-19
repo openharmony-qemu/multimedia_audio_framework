@@ -237,7 +237,7 @@ int32_t RemoteDeviceManager::HandleEvent(const std::string &adapterName, const A
 }
 
 void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
-    IDeviceManagerCallback *callback)
+    std::shared_ptr<IDeviceManagerCallback> callback)
 {
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
@@ -250,7 +250,7 @@ void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterNam
 }
 
 void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
-    IDeviceManagerCallback *callback)
+    std::shared_ptr<IDeviceManagerCallback> callback)
 {
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
@@ -585,7 +585,7 @@ int32_t RemoteDeviceManager::HandleRenderParamEvent(const std::string &adapterNa
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    IDeviceManagerCallback *renderCallback = nullptr;
+    std::shared_ptr<IDeviceManagerCallback> renderCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->renderCallbackMtx_);
         if (wrapper->renderCallbacks_.size() != 1) {
@@ -606,7 +606,7 @@ int32_t RemoteDeviceManager::HandleCaptureParamEvent(const std::string &adapterN
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    IDeviceManagerCallback *captureCallback = nullptr;
+    std::shared_ptr<IDeviceManagerCallback> captureCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->captureCallbackMtx_);
         if (wrapper->captureCallbacks_.size() != 1) {

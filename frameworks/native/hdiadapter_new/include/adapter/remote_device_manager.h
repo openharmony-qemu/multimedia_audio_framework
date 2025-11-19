@@ -63,8 +63,8 @@ typedef struct RemoteAdapterWrapper {
     std::mutex renderMtx_;
     std::mutex captureMtx_;
     int32_t routeHandle_ = -1;
-    std::unordered_map<uint32_t, IDeviceManagerCallback *> renderCallbacks_;
-    std::unordered_map<uint32_t, IDeviceManagerCallback *> captureCallbacks_;
+    std::unordered_map<uint32_t, std::shared_ptr<IDeviceManagerCallback>> renderCallbacks_;
+    std::unordered_map<uint32_t, std::shared_ptr<IDeviceManagerCallback>> captureCallbacks_;
     std::mutex renderCallbackMtx_;
     std::mutex captureCallbackMtx_;
     sptr<RemoteIAudioCallback> hdiCallback_ = nullptr;
@@ -94,9 +94,9 @@ public:
     int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value, void *reserved) override;
     void RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
-        IDeviceManagerCallback *callback) override;
+        std::shared_ptr<IDeviceManagerCallback> callback) override;
     void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
-        IDeviceManagerCallback *callback) override;
+        std::shared_ptr<IDeviceManagerCallback> callback) override;
     void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) override;
     void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) override;
 

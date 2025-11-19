@@ -668,7 +668,7 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
     void *render = deviceManager->CreateRender(deviceNetworkId_, &param, &deviceDesc, wrapper.hdiRenderId_);
     wrapper.audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
     CHECK_AND_RETURN_RET(wrapper.audioRender_ != nullptr, ERR_NOT_STARTED);
-    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, wrapper.hdiRenderId_, this);
+    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, wrapper.hdiRenderId_, shared_from_this());
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("create render success, cost: [%{public}" PRId64 "]ms", stamp);

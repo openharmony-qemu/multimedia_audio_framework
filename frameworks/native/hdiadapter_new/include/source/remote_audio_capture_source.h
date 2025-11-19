@@ -31,7 +31,8 @@ typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 
-class RemoteAudioCaptureSource : public IAudioCaptureSource, public IDeviceManagerCallback {
+class RemoteAudioCaptureSource : public IAudioCaptureSource, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteAudioCaptureSource> {
 public:
     RemoteAudioCaptureSource(const std::string &deviceNetworkId);
     ~RemoteAudioCaptureSource();

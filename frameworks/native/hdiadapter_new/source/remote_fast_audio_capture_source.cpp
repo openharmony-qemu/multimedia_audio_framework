@@ -501,7 +501,7 @@ int32_t RemoteFastAudioCaptureSource::CreateCapture(void)
     void *capture = deviceManager->CreateCapture(deviceNetworkId_, &param, &deviceDesc, hdiCaptureId_);
     audioCapture_.ForceSetRefPtr(static_cast<IAudioCapture *>(capture));
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED);
-    deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, this);
+    deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, shared_from_this());
     if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer(param);
     }
