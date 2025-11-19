@@ -213,6 +213,10 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     if (!GetAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
+    std::vector<std::string> audioFormat = {
+        std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
+    };
+    CallStringArrayCallback(audioFormat);
     // 为资源实例创建对应的解封器
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
@@ -234,10 +238,6 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
-    std::vector<std::string> audioFormat = {
-        std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
-    };
-    CallStringArrayCallback(audioFormat);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 

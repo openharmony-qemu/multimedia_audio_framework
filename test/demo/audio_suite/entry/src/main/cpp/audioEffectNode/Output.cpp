@@ -126,8 +126,8 @@ OH_AudioSuite_Result AudioRenderFrame(
 
 void SaveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize)
 {
-    char *bufferAsChar = static_cast<char*>(buffer);
-    std::copy(bufferAsChar, bufferAsChar + bufferSize, static_cast<char *>(totalData));
+    std::copy(static_cast<char *>(buffer), static_cast<char *>(buffer) + bufferSize,
+              static_cast<char *>(totalData) + totalSize);
     totalSize += bufferSize;
 }
 
