@@ -23,7 +23,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
-#include "hisysevent.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,22 +113,23 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
+std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
+
 void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
 {
-    std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
     size_t equalPos = value.find('=');
     if (equalPos != std::string::npos) {
-        std::string subStr = value.subStr(0, equalPos);
+        std::string subStr = value.substr(0, equalPos);
         if (muteType.count(subStr)) {
             auto tokenId = IPCSkeleton::GetCallingFullTokenID();
             std::string bundleName = GetBundleNameByToken(tokenId);
-            AUDIO_INFO_LOG("tokenId: %{public}" PRIu64 ", bundleName: %{public}s", tokenId, bundleName.c_str());
-            auto ret = HiSysEventWrite(HiViewDFX::HiSysEvent::Domain::AUDIO,
-                "MUTE_BUNDLE_NAME", HiViewDFX::HiSysEvent::EventType::STATISTIC,
-                "MUTETYPE", value.c_str(),
-                "BUNDLENAME", bundleName.c_str());
-            CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                "write event fail: MUTE_BUNDLE_NAME, ret = %{public}d", ret);
+            AUDIO_INFO_LOG("bundleName: %{public}s", bundleName.c_str());
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::MUTE_BUNDLE_NAME,
+                Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+            bean->Add("MUTETYPE", value);
+            bean->Add("BUNDLENAME", bundleName);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         }
     }
 }
