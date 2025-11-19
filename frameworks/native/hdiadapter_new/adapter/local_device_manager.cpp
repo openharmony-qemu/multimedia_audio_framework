@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,11 +113,32 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
+void LocalDeviceManager::ReprotBundleNameEvent(const std::string &value)
+{
+    std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
+    size_t equalPos = value.find('=');
+    if (equalPos != std::string::npos) {
+        std::string subStr = value.subStr(0, equalPos);
+        if (muteType.count(subStr)) {
+            auto tokenId = IPCSkeleton::GetCallingFullTokenID();
+            std::string bundleName = GetBundleNameByToken(tokenId);
+            AUDIO_INFO_LOG("tokenId: %{public}" PRIu64 ", bundleName: %{public}s", tokenId, bundleName.c_str());
+            auto ret = HiSysEventWrite(HiViewDFX::HiSysEvent::Domain::AUDIO,
+                "MUTE_BUNDLE_NAME", HiViewDFX::HiSysEvent::EventType::STATISTIC,
+                "MUTETYPE", value.c_str(),
+                "BUNDLENAME", bundleName.c_str());
+            CHECK_AND_RETURN_LOG(ret == SUCCESS,
+                "write event fail: MUTE_BUNDLE_NAME, ret = %{public}d", ret);
+        }
+    }
+}
+
 void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
+    ReprotBundleNameEvent(value);
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     // LCOV_EXCL_START
     if (wrapper == nullptr || wrapper->adapter_ == nullptr) {

@@ -88,6 +88,7 @@ private:
     void SaveSetParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value);
     int32_t HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node);
+    void ReprotBundleNameEvent(const std::string &value);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
