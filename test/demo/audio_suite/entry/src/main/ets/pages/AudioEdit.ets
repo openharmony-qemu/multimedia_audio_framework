@@ -460,7 +460,7 @@ export struct AudioEdit {
                     this.envEffectShow = false;
                     if(this.environmentEffectNumMap.get(this.pitchSong) != undefined) {
                         let oldId: string | undefined = this.environmentEffectUriToIdMap.get(this.pitchSong);
-                        if(oldId == undefined) {
+                        if(oldId == '') {
                             if (this.environmentEffectNumMap.get(this.pitchSong) == 0) {
                                 this.envEffectShow = false;
                                 return;
