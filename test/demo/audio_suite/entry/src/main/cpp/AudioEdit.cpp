@@ -603,12 +603,12 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     void *data;
     napi_create_arraybuffer(env, g_tapDataTotalSize, &data, &napiValue);
     std::copy(
-        reinterpret_cast<const char*>(g_aissTapAudioData),
-        reinterpret_cast<const char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        reinterpret_cast<const char*>(g_tapTotalBuff),
+        reinterpret_cast<const char*>(g_tapTotalBuff) + g_tapDataTotalSize,
         reinterpret_cast<char*>(data));
     std::fill(
-        reinterpret_cast<char*>(g_aissTapAudioData),
-        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        reinterpret_cast<char*>(g_tapTotalBuff),
+        reinterpret_cast<char*>(g_tapTotalBuff) + g_tapDataTotalSize,
         0);
     g_tapDataTotalSize = 0;
     return napiValue;
