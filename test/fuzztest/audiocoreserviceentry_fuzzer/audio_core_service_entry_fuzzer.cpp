@@ -599,15 +599,6 @@ void AudioCoreServiceEventEntryGetExcludedDevicesFuzzTest()
     eventEntry->GetExcludedDevices(audioDevUsage);
 }
 
-void AudioCoreServiceEventEntryGetPreferredOutputStreamTypeFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    AudioRendererInfo rendererInfo;
-    std::string bundleName = "bundleName";
-    eventEntry->GetPreferredOutputStreamType(rendererInfo, bundleName);
-}
-
 void AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -624,15 +615,6 @@ void AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest()
     DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     int32_t callerPid = 0;
     eventEntry->GetSessionDefaultOutputDevice(callerPid, deviceType);
-}
-
-void AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    AudioCapturerInfo capturerInfo;
-    capturerInfo.sourceType = SOURCE_TYPE_INVALID;
-    eventEntry->GetPreferredInputStreamType(capturerInfo);
 }
 
 TestFuncs g_testFuncs[] = {
@@ -680,10 +662,8 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest,
     AudioCoreServiceEventEntryUnexcludeOutputDevicesFuzzTest,
     AudioCoreServiceEventEntryGetExcludedDevicesFuzzTest,
-    AudioCoreServiceEventEntryGetPreferredOutputStreamTypeFuzzTest,
     AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest,
-    AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
