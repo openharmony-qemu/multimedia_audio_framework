@@ -45,8 +45,6 @@ public:
 
     void SetActiveOutputDevice(DeviceType deviceType);
 
-    uint32_t GenerateSessionId(int32_t uid);
-
     DeviceType GetActiveOutPutDevice();
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
@@ -54,8 +52,6 @@ public:
     int32_t NotifyWakeUpCapturerRemoved();
 
     bool IsAbsVolumeSupported();
-
-    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
