@@ -36,6 +36,7 @@
 #include "audio_usb_manager.h"
 #endif
 #include "audio_zone_service.h"
+#include "audio_bluetooth_manager.h"
 #include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
@@ -1291,22 +1292,6 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
         return ERROR;
     }
     return streamCollector_.SetLowPowerVolume(streamId, volume);
-}
-
-int32_t AudioPolicyServer::GetFastStreamInfo(AudioStreamInfo &streamInfo, uint32_t sessionId)
-{
-    streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    streamInfo.format = audioConfigManager_.GetFastFormat();
-
-    // change to SAMPLE_S16LE for bluetooth
-    if (streamInfo.format == SAMPLE_S32LE) {
-        AUDIO_INFO_LOG("Before change fast format is %{public}d", streamInfo.format);
-        bool isA2dpOffload = coreService_->IsA2dpOffloadStream(sessionId);
-        DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        streamInfo.format = (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && !isA2dpOffload) ? SAMPLE_S16LE : SAMPLE_S32LE;
-    }
-    AUDIO_INFO_LOG("Fast format is %{public}d", streamInfo.format);
-    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::GetLowPowerVolume(int32_t streamId, float &outVolume)
@@ -3852,6 +3837,12 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -5067,15 +5058,16 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed)
+int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage,
+    bool &isAllowed, bool &silentControl)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != MEDIA_SERVICE_UID) {
         auto callerPid = IPCSkeleton::GetCallingPid();
-        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid);
+        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, streamUsage, silentControl);
         return SUCCESS;
     }
-    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid);
+    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, streamUsage, silentControl);
     return SUCCESS;
 }
 
@@ -5455,6 +5447,15 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
 {
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::DisconnectSco()
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("not system SA calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return Bluetooth::AudioHfpManager::DisconnectSco();
 }
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)

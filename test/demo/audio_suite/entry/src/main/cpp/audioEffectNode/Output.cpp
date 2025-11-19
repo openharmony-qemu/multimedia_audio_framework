@@ -4,7 +4,7 @@
 
 #include "Output.h"
 #include "./Input.h"
-#include "../utils/Utils.h"
+#include "../utils/utils.h"
 #include "hilog/log.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
@@ -40,7 +40,7 @@ OH_AudioSuite_Result RenDerFrame()
     char *totalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     char *tapTotalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     // 获取位深
-    int32_t bitsPerSample = getBitsPerSample(g_audioFormatOutput.sampleFormat);
+    int32_t bitsPerSample = GetBitsPerSample(g_audioFormatOutput.sampleFormat);
     int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate *
         g_audioFormatOutput.channelCount / MILLISECONDS_PER_SECOND * bitsPerSample / BITS_PER_BYTE;
     bool finishedFlag = false;
@@ -126,7 +126,8 @@ OH_AudioSuite_Result AudioRenderFrame(
 
 void SaveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize)
 {
-    std::copy(buffer, buffer + bufferSize, static_cast<char *>(totalData));
+    char *bufferAsChar = static_cast<char*>(buffer);
+    std::copy(bufferAsChar, bufferAsChar + bufferSize, static_cast<char *>(totalData));
     totalSize += bufferSize;
 }
 

@@ -989,23 +989,103 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_063, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_064
+* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+* @tc.number: ScoInputDeviceFetchedForRecongnition_001
 * @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
 */
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_064, TestSize.Level1)
+HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
 {
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool handleFlag = true;
-    std::string address = "";
-    ConnectState connectState = CONNECTED;
-    int32_t ret = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(SUCCESS, ret);
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
 
-    handleFlag = false;
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    ret = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ERROR, ret);
+    bool handleFlag = false;
+    std::string address = "00:11:22:33:44:55";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
+
+    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+* @tc.number: ScoInputDeviceFetchedForRecongnition_002
+* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_002, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    bool handleFlag = true;
+    std::string address = "00:11:22:33:44:55";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
+
+    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+* @tc.number: ScoInputDeviceFetchedForRecongnition_003
+* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_003, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    bool handleFlag = true;
+    std::string address = "00:11:22:33:44:55";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = false;
+
+    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+* @tc.number: ScoInputDeviceFetchedForRecongnition_004
+* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_004, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    bool handleFlag = true;
+    std::string address = "00:11:22:33:44:55";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = true;
+
+    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+* @tc.number: ScoInputDeviceFetchedForRecongnition_005
+* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_005, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    bool handleFlag = true;
+    std::string address = "00:11:22:33:44:55";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = true;
+
+    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1522,6 +1602,64 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
     deviceList = audioDeviceCommon.GetPreferredOutputDeviceDescInner(
         rendererInfo, networkId, uid);
     EXPECT_EQ(deviceList[0]->deviceId_, 2);
+}
+
+/**
+* @tc.name  : Test BluetoothScoFetch.
+* @tc.number: BluetoothScoFetch_001
+* @tc.desc  : Test BluetoothScoFetch interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_001, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->isVrSupported_ = true;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerChangeInfos.push_back(capturerChangeInfo);
+
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
+    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, SOURCE_TYPE_VOICE_RECOGNITION);
+    const AudioDeviceDescriptor& activeDevice = audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
+    EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
+    EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
+}
+
+/**
+* @tc.name  : Test BluetoothScoFetch.
+* @tc.number: BluetoothScoFetch_002
+* @tc.desc  : Test BluetoothScoFetch interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_002, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->isVrSupported_ = false;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
+    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerChangeInfos.push_back(capturerChangeInfo);
+
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
+    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, SOURCE_TYPE_VOICE_RECOGNITION);
+    const AudioDeviceDescriptor& activeDevice = audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
+    EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
+    EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

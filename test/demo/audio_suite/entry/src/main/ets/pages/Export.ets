@@ -55,12 +55,6 @@ export struct Export {
 
   aboutToAppear(): void {
     Logger.info(TAG, 'aboutToAppear');
-    this.sampleRate = this.playList.get('format')?.sampleRate ?? 8000;
-    this.channels = this.playList.get('format')?.channels ?? 1;
-    // this.bitsPerSample = this.playList.get('format')?.bitsPerSample ?? 16;
-    this.bitsPerSample = 32;
-    Logger.info(TAG,
-      'export sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}')
   }
 
   build() {

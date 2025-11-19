@@ -83,6 +83,7 @@ public:
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}
+    void WriteDmDeviceChangedEvent(const DmDevice &dmDevice, bool isConnect);
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     std::mutex dmDeviceMtx_;

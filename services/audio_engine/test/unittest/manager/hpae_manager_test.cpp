@@ -1345,11 +1345,8 @@ HWTEST_F(HpaeManagerUnitTest, GetAllSinks003, TestSize.Level1)
     hpaeManager_->DumpSourceInfo(audioModuleInfo1.name);
     hpaeManager_->DumpSourceInfo("virtual1");
     
-    HpaeDeviceInfo devicesInfo_;
-    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    hpaeManager_->DumpAllAvailableDevice();
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(devicesInfo_.sinkInfos.size() > 0, true);
-    EXPECT_EQ(devicesInfo_.sourceInfos.size() > 0, true);
 }
 
 HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level1)
@@ -1754,11 +1751,8 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerTestHidumperWithoutCallback, TestSize.
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DumpSourceInfo(sourceAudioModuleInfo.name);
     WaitForMsgProcessing(hpaeManager_);
-    HpaeDeviceInfo deviceInfo;
-    hpaeManager_->DumpAllAvailableDevice(deviceInfo);
+    hpaeManager_->DumpAllAvailableDevice();
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(deviceInfo.sinkInfos.size() > 0, true);
-    EXPECT_EQ(deviceInfo.sourceInfos.size() > 0, true);
     hpaeManager_->DumpSinkInputsInfo();
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DumpSourceOutputsInfo();

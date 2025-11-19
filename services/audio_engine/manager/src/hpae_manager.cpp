@@ -538,22 +538,21 @@ void HpaeManager::DumpSourceInfo(std::string deviceName)
     SendRequest(request, __func__);
 }
 
-void HpaeManager::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
+void HpaeManager::DumpAllAvailableDevice()
 {
-    auto request = [this, &devicesInfo]() {
+    auto request = [this]() {
         AUDIO_INFO_LOG("DumpAllAvailableDevice");
-        devicesInfo.sinkInfos.clear();
+        HpaeDeviceInfo devicesInfo;
         for (auto rendererPair : rendererManagerMap_) {
             devicesInfo.sinkInfos.emplace_back(
                 HpaeSinkSourceInfo{rendererPair.first, rendererPair.second->GetDeviceHDFDumpInfo()});
         }
-        devicesInfo.sourceInfos.clear();
         for (auto capturerPair : capturerManagerMap_) {
             devicesInfo.sourceInfos.emplace_back(
                 HpaeSinkSourceInfo{capturerPair.first, capturerPair.second->GetDeviceHDFDumpInfo()});
         }
         if (auto callback = dumpCallback_.lock()) {
-            callback->OnDumpAllAvailableDeviceCb(SUCCESS);
+            callback->OnDumpAllAvailableDeviceCb(SUCCESS, std::move(devicesInfo));
         }
     };
     SendRequest(request, __func__);

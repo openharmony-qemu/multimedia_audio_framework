@@ -25,7 +25,7 @@
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
-
+#include "media_monitor_manager.h"
 
 #include "audio_policy_utils.h"
 
@@ -273,6 +273,20 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
     } else {
         dmDeviceMap_.erase(dmDevice.networkId_);
     }
+    WriteDmDeviceChangedEvent(dmDevice, isConnect);
+}
+
+void AudioConnectedDevice::WriteDmDeviceChangedEvent(const DmDevice &dmDevice, bool isConnect)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DM_DEVICE_INFO,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    bean->Add("IS_ADD", isConnect);
+    bean->Add("DEVICE_NAME", dmDevice.deviceName_);
+    bean->Add("NETWORK_ID", dmDevice.networkId_);
+    bean->Add("DM_DEVICE_TYPE", dmDevice.dmDeviceType_);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &deviceDesc)

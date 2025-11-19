@@ -4,7 +4,7 @@
 
 #include "hilog/log.h"
 #include "Equailizer.h"
-#include "./utils/Utils.h"
+#include "./utils/utils.h"
 #include "./EffectNode.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
@@ -53,19 +53,19 @@ napi_status GetEqModeParameters(
     napi_env env, napi_value *argv, unsigned int &equailizerMode, std::string &equailizerId, std::string &inputId)
 {
     napi_status status = napi_get_value_uint32(env, argv[ARG_0], &equailizerMode);
-    status = parseNapiString(env, argv[ARG_1], equailizerId);
-    status = parseNapistring(env, argv[ARG_2], inputId);
+    status = ParseNapiString(env, argv[ARG_1], equailizerId);
+    status = ParseNapiString(env, argv[ARG_2], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
         "audioEditTest GetEqModeParameters equailizerMode: %{public}d, equailizerId: %{public}s, inputId: %{public}s",
         equailizerMode, equailizerId.c_str(), inputId.c_str());
     return status;
 }
 
-napi_status GetEqBandGainsParameters(napi_env, env, napi_value *argv,
+napi_status GetEqBandGainsParameters(napi_env env, napi_value *argv,
     OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params)
 {
     // 遍历数组并打印每个元素
-    for (uint32_t i = 0; i < length; ++i) {
+    for (uint32_t i = 0; i < EQUALIZER_BAND_NUM; ++i) {
         napi_value element;
         napi_get_element(env, argv[ARG_0], i, &element);
         unsigned int value;
@@ -73,9 +73,9 @@ napi_status GetEqBandGainsParameters(napi_env, env, napi_value *argv,
         frequencyBandGains.gains[i] = value;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG, "audioEditTest getEqBandGainsParamters"
             " element at index %{public}d is %{public}d", i, frequencyBandGains.gains[i]);
-        napi_status status = parseNapiString(env, argv[ARG_1], params.equailizerId);
-        status = parseNapiString(env, argv[ARG_2], params.inputId);
-        status = parseNapiString(env, argv[ARG_3], params.selectedNodeId);
+        napi_status status = ParseNapiString(env, argv[ARG_1], params.equailizerId);
+        status = ParseNapiString(env, argv[ARG_2], params.inputId);
+        status = ParseNapiString(env, argv[ARG_3], params.selectedNodeId);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
             "audioEditTest equailizerId: %{public}s, inputId: %{public}s, selectedNodeId: %{public}s",
             params.equailizerId.c_str(), params.inputId.c_str(), params.selectedNodeId.c_str());
@@ -85,15 +85,15 @@ napi_status GetEqBandGainsParameters(napi_env, env, napi_value *argv,
 
 Node GetOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId)
 {
-    Node eqNode = g_nodeManager->getNodeById(equailizerId);
+    Node eqNode = g_nodeManager->GetNodeById(equailizerId);
     if (!eqNode.physicalNode) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
             "audioEditTest GetOrCreateEqualizerNodeByMode create");
         eqNode.id = equailizerId;
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         g_nodeManager->createNode(equailizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
-        eqNode = g_nodeManager->getNodeById(equailizerId);
-        int32_t result = addEffectNodeManager(inputId, equailizerId);
+        eqNode = g_nodeManager->GetNodeById(equailizerId);
+        int32_t result = AddEffectNodeToNodeManager(inputId, equailizerId);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
             "audioEditTest addEffectNodeManager result: %{public}d", result);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -105,7 +105,7 @@ Node GetOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inpu
 
 Node GetOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId)
 {
-    Node eqNode = g_nodeManager->getNodeById(equailizerId);
+    Node eqNode = g_nodeManager->GetNodeById(equailizerId);
     if (!eqNode.physicalNode) {
         // 创建均衡器节点
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
@@ -114,7 +114,7 @@ Node GetOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inp
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         g_nodeManager->createNode(equailizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
         // 获取效果节点
-        eqNode = g_nodeManager->getNodeById(equailizerId);
+        eqNode = g_nodeManager->GetNodeById(equailizerId);
         if (selectedNodeId.empty()) {
             int result = AddEffectNodeToNodeManager(inputId, equailizerId);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,

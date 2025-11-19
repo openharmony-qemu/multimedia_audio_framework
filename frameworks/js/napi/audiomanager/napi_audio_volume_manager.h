@@ -103,6 +103,8 @@ private:
         napi_value *args, const std::string &cbName);
     static void UnregisterCallbackFir(napi_env env, napi_value *args,
         size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static napi_value OnVolumePercentageChange(napi_env env, napi_callback_info info);
+    static napi_value OffVolumePercentageChange(napi_env env, napi_callback_info info);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
     static napi_value RegisterActiveVolumeTypeChangeCallback(napi_env env, napi_value *args,

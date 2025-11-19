@@ -241,7 +241,7 @@ void NapiAudioVolumeKeyEventEx::RemoveCallbackReference(napi_env env, napi_value
         }
         bool isSameCallback = IsSameCallback(env_, callback, temp->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("find audioSceneChanged callback, remove it");
+            AUDIO_INFO_LOG("find key event callback, remove it");
             napi_delete_reference(env_, temp->cb_);
             temp->cb_ = nullptr;
             audioVolumeKeyEventCbList_.erase(it);

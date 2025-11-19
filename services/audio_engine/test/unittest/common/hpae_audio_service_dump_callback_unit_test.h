@@ -22,7 +22,7 @@ class HpaeAudioServiceDumpCallbackUnitTest : public AudioServiceHpaeDumpCallback
 public:
     void OnDumpSinkInfoCb(std::string& dumpStr, int32_t result) override {}
     void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) override {}
-    void OnDumpAllAvailableDeviceCb(int32_t result) override {}
+    void OnDumpAllAvailableDeviceCb(int32_t result, HpaeDeviceInfo &&devicesInfo) override {}
     void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) override
     {
         if (result == 0) {

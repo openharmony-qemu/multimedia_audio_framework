@@ -332,9 +332,9 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         Trace trace("HpaeRendererManager::DestroyStream id[" +
             std::to_string(sessionId) + "]");
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Release not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RELEASED);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
         DeleteInputSession(sessionId);
@@ -520,8 +520,6 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
     if (!outputCluster_->IsProcessClusterConnected(sceneType) && !sceneClusterMap_[sceneType]->GetConnectedFlag()) {
         outputCluster_->Connect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
-    } else {
-        outputCluster_->UpdateStreamInfo(sceneClusterMap_[sceneType]);
     }
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
         uint32_t latency = outputCluster_->GetHdiLatency();
@@ -774,9 +772,9 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Pause");
         AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
         }
@@ -834,9 +832,9 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Stop");
         AUDIO_INFO_LOG("Stop sessionId %{public}u deviceName %{public}s ", sessionId, sinkInfo_.deviceName.c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Stop not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputSession(sessionId);
         }

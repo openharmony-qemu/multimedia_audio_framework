@@ -15,10 +15,10 @@
     "abilities": [
       {
         "name": "EntryAbility",
-        "srcEntry": "./ets/entryability/EntryAbility.ets",
-        "description": "$string:EntryAbility_desc",
+        "srcEntry": "./ets/ability/MainAbility.ets",
+        "description": "$string:MainAbility_desc",
         "icon": "$media:layered_image",
-        "label": "$string:EntryAbility_label",
+        "label": "$string:MainAbility_label",
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,

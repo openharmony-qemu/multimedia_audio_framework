@@ -12,14 +12,12 @@ export interface SongInfo {
     singerName?: string | Resource;
     albumCover?: pixelMap;
     albumName?: string | Resource;
-    pcmBuffer?: ArrayBuffer;
     wavBuffer?: ArrayBuffer;
-    wavHeaderBuffer?: ArrayBuffer;
     channels?: number;
     sampleRate?: number;
-    bitsPerSample?: number；
-    formatCategory?: number;
+    bitsPerSample?: number;
     isPlay?: boolean;
+    fd?: number;
 }
 
 export interface Node {
@@ -205,3 +203,13 @@ export const AudioSeparationMap = new Map<AudioSeparationType | undefined, strin
     [AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE, '人声'],
     [AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE, '伴奏']
 ])
+
+// 定义映射表：数字 -> NodeType
+export const numberToNodeTypeMap = new Map<number, NodeType>([
+  [201, NodeType.EQ],
+  [202, NodeType.NR],
+  [203, NodeType.FIELD],
+  [204, NodeType.SEPARATION],
+  [205, NodeType.VB],
+  [206, NodeType.ENV]
+]);

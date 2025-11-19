@@ -117,7 +117,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_StartPipeline(OH_AudioSuitePipeline* au
  * Once the pipeline is stopped, {@link OH_AudioSuiteEngine_RenderFrame}
  * should not be used for executing audio processing.
  *
- * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
+ * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioSuitePipeline is nullptr, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_PIPELINE_NOT_EXIST} if pipeline does not exist or has already been destroyed.
@@ -129,7 +129,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_StopPipeline(OH_AudioSuitePipeline* aud
 /**
  * @brief Request to get one pipeline state
  *
- * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
+ * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @param pipelineState Pipeline state, which will be returned as the output parameter.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioSuitePipeline is nullptr, e.t.c.
@@ -160,7 +160,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetPipelineState(
  *
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
  * @param audioData Audio data pointer, where user should read.
- * @param requestFrameSize Size of audio data user specified
+ * @param requestFrameSize Size of audio data user specified.
  * @param responseSize Size of audio data the system realy write.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
@@ -186,7 +186,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
  * For the audio source separation node, audioDataArray should have two elements:
  * the first element carries the vocal sound, and the second element carries the background sound.
  *
- * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
+ * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @param audioDataArray Audio data array pointer, where user should read,
  * The size of each one-dimensional array should be consistent.
  * @param responseSize Size of audio data the system realy write,
@@ -222,7 +222,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder** build
  *
  * This function must be called when you are done using the builder.
  *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
  * @since 22
@@ -236,7 +236,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Destroy(OH_AudioNodeBuilder* build
  * and the properties of the new nodes differ from those of the previously created nodes,
  * the application must call this interface to clear all properties, such as audio node type, e.t.c
  *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
  * @since 22
@@ -249,8 +249,8 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Reset(OH_AudioNodeBuilder* builder
  * When creating a node, other parameters are validated based on the node type,
  * so this method needs to be executed for all types of nodes.
  *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
-* @param type Audio node type. {@link OH_AudioNode_Type}
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
+ * @param type Audio node type. {@link OH_AudioNode_Type}
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
  * @since 22
@@ -266,8 +266,8 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(OH_AudioNodeBuilder* b
  * the set audioFormat is used to specify the format in which the application ultimately wants to retrieve the data.
  * Other types of nodes do not support this setting.
  *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
- * @param audioFormat audio node format
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
+ * @param audioFormat audio node format.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT} if an unsupported format is set in audioFormat.
@@ -303,7 +303,7 @@ typedef int32_t (*OH_InputNode_RequestDataCallback)(
 /**
  * @brief Set input node request data callback, Only {@link INPUT_NODE_TYPE_DEFAULT} support this setting.
  *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create()
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
  * @param callback Callback to functions that will write audio data.
  * @param userData Pointer to an application data structure that will be passed to the callback functions.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
@@ -320,9 +320,9 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
  * The application can determine the cause of the error through the return value.
  * If more detailed error information is needed, please use the xx interface to obtain it.
  *
- * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
- * @param builder Audio node builder created by OH_AudioSuiteNodeBuilder_Create()
- * @param audioNode Pointer to a viriable to receive the audio node
+ * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
+ * @param builder Audio node builder created by OH_AudioSuiteNodeBuilder_Create.
+ * @param audioNode Pointer to a viriable to receive the audio node.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr or not valid value.
  * or {@link #AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS} the number of nodes
@@ -341,7 +341,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreateNode(
  * If the pipeline is not in the stopped state and the node is in an active processing path,
  * the operation will return that deletion is not supported.
  *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr,
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -356,7 +356,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode* audioNode);
  * When application call this interface with an input node or output node,
  * it will return {@link #AUDIOSUITE_ERROR_INVALID_PARAM}
  *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param bypassStatus node bypass status, which will be returned as the output parameter,
  * When the value of bypassStatusfalse is false, it indicates that the node has not been set to bypass;
  * when it is true, it means the node has been set to bypass.
@@ -375,7 +375,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetNodeBypassStatus(
  * This command can only be set to effect node. when bypass is set true,
  * the effect node only passes data to the next node without performing any effect processing.
  *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode()
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param bypass This parameter determines whether the node merely forwards data transparently.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
@@ -388,8 +388,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_BypassEffectNode(OH_AudioNode* audioNod
  * @brief Set the audio format for input and output nodes, specify the audio format of the audio source for
  * the input node, or specify the target audio format for the output node.
  *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode()
- * @param audioFormat Audio Format
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param audioFormat Audio Format.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr.
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -405,8 +405,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetAudioFormat(OH_AudioNode* audioNode,
  * Node connections follow a specific order: the input node is the starting point of the pipeline,
  * multiple effect nodes can be connected in between, and the output node is the endpoint of the pipeline.
  *
- * @param sourceAudioNode source node Reference created by OH_AudioSuiteEngine_CreateNode
- * @param destAudioNode dest node Reference created by OH_AudioSuiteEngine_CreateNode
+ * @param sourceAudioNode source node Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param destAudioNode dest node Reference created by OH_AudioSuiteEngine_CreateNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. sourceAudioNode is nullptr, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -421,8 +421,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(
  * This command alters the pipeline's topology and may result in partial data loss.
  * It is recommended to perform this operation when the engine is in a stopped state.
  *
- * @param sourceAudioNode Preceding audio node Reference created by OH_AudioSuiteEngine_CreateNode
- * @param destAudioNode Subsequent audio node Reference created by OH_AudioSuiteEngine_CreateNode
+ * @param sourceAudioNode Preceding audio node Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param destAudioNode Subsequent audio node Reference created by OH_AudioSuiteEngine_CreateNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. sourceAudioNode is nullptr, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -432,10 +432,21 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(
 OH_AudioSuite_Result OH_AudioSuiteEngine_DisconnectNodes(OH_AudioNode* sourceAudioNode, OH_AudioNode* destAudioNode);
 
 /**
+ * @brief Request to check whether the current system supports a specific node type.
+ *
+ * @param nodeType Audio node type. {@link OH_AudioNode_Type}
+ * @param isSupported True means this node type is supported.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if param nullptr or not valid value.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool* isSupported);
+
+/**
  * @brief Set equalier frequency band gains of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
- * @param frequencyBandGains the equalizer frequency band gains
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param frequencyBandGains The equalizer frequency band gains.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not an equalizer node.
@@ -448,7 +459,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
 /**
  * @brief Get equalier frequency band gains of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode().
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param frequencyBandGains Current equalizer frequency band gains of audioNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -463,8 +474,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
 /**
  * @brief Set sound field type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
- * @param soundFieldType the sound field type
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param soundFieldType The sound field type.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not an soundfield node.
@@ -476,7 +487,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFieldType(OH_AudioNode* audioNo
 /**
  * @brief Get sound field type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode().
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param soundFieldType Current sound field type of audioNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -491,8 +502,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
 /**
  * @brief Set environment type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
- * @param environmentType The environment type
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param environmentType The environment type.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not an environment node.
@@ -505,7 +516,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(
 /**
  * @brief Get environment type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param environmentType Current environment type of audioNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -520,8 +531,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
 /**
  * @brief Set voice beautifier type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
- * @param voiceBeautifierType the voice beautifier type
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param voiceBeautifierType the voice beautifier type.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not an voiceBeautifier node.
@@ -534,7 +545,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetVoiceBeautifierType(
 /**
  * @brief Get voice beautifier type of audio node.
  *
- * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
  * @param voiceBeautifierType Current voice beautifier type of audioNode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
@@ -547,15 +558,173 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
     OH_AudioNode* audioNode, OH_VoiceBeautifierType* voiceBeautifierType);
 
 /**
-*@brief Request to determine whether the current system supports a specific node type.
-*
-*@param nodeType Audio node type. {@link OH_AudioNode_Type}
-*@param isSupported True means this node type is supported
-*@return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
-*or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if param nullptr or not valid value.
-*@since 22
-*/
-OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool* isSupported);
+ * @brief Set position parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param position Position parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderPositionParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderPositionParams position);
+
+/**
+ * @brief Get position parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param position Position parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderPositionParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderPositionParams* position);
+
+/**
+ * @brief Set rotation parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param rotation Rotation parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderRotationParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderRotationParams rotation);
+
+/**
+ * @brief Get rotation parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param rotation Rotation parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderRotationParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderRotationParams* rotation);
+
+/**
+ * @brief Set extension parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param extension Extension parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderExtensionParams extension);
+
+/**
+ * @brief Get extension parameters for space rendering
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param extension Extension parameters.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(
+    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderExtensionParams* extension);
+
+/**
+ * @brief Set the tempo and pitch adjustment parameters.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param speed value range: [0.5, 10.0] for Tempo
+ * @param pitch value range: [0.1, 5.0] for Pitch
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a tempo and pitch node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(OH_AudioNode* audioNode, float speed, float pitch);
+
+/**
+ * @brief Get the tempo and pitch adjustment parameters.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param speed value range: [0.5, 10.0] for Tempo.
+ * @param pitch value range: [0.1, 5.0] for Pitch.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a tempo and pitch node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetTempoAndPitch(OH_AudioNode* audioNode, float* speed, float* pitch);
+
+/**
+ * @brief Set pure change voice option of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param option Change voice option. {@link #OH_AudioSuite_PureVoiceChangeOption}
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a pure voice change node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetPureVoiceChangeOption(
+    OH_AudioNode* audioNode, OH_AudioSuite_PureVoiceChangeOption option);
+
+/**
+ * @brief Get pure voice change option of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param option Change voice option. {@link #OH_AudioSuite_PureVoiceChangeOption}
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a pure voice change node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetPureVoiceChangeOption(
+    OH_AudioNode* audioNode, OH_AudioSuite_PureVoiceChangeOption* option);
+
+/**
+ * @brief Set general voice change type of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param type Change voice type. {@link #OH_AudioSuite_GeneralVoiceChangeType}
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a general voice change node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetGeneralVoiceChangeType(
+    OH_AudioNode* audioNode, OH_AudioSuite_GeneralVoiceChangeType type);
+
+/**
+ * @brief Get general voice change type of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param type Change voice type. {@link #OH_AudioSuite_GeneralVoiceChangeType}
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a general voice change node.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * @since 23
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetGeneralVoiceChangeType(
+    OH_AudioNode* audioNode, OH_AudioSuite_GeneralVoiceChangeType* type);
+
 
 #ifdef __cplusplus
 }

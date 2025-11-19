@@ -357,7 +357,9 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_016, TestSize.Level4)
     int32_t uid = 1;
     int32_t pid = 1;
     bool isAllowed = false;
-    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, isAllowed), SUCCESS);
+    int32_t streamUsage = 1;
+    bool silentControl = false;
+    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl), SUCCESS);
 }
 
 /**
@@ -374,22 +376,6 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_017, TestSize.Level4)
 
     audioPolicyServer_->audioPolicyServerHandler_.reset();
     EXPECT_EQ(audioPolicyServer_->SetCallbackStreamUsageInfo(streamUsages), AUDIO_ERR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: GetFastStreamInfo_001
-* @tc.desc  : Test AudioPolicyServer interfaces.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, GetFastStreamInfo_001, TestSize.Level1)
-{
-    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
-    audioPolicyServer_->coreService_->Init();
-    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
-    AudioStreamInfo info;
-    audioPolicyServer_->audioConfigManager_.OnFastFormatParsed(AudioSampleFormat::SAMPLE_S32LE);
-    audioPolicyServer_->GetFastStreamInfo(info, 0);
-    ASSERT_EQ(AudioSampleFormat::SAMPLE_S32LE, info.format);
 }
 } // AudioStandard
 } // OHOS

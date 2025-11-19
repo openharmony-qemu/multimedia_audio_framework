@@ -142,6 +142,11 @@ ohos_shared_library("audio_common") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
+  ldflags = [ 
+      "-Wl,--emit-relocs", 
+      "-Wl,--no-relax", 
+      "-mno-fix-cortex-a53-843419" 
+  ]
 }
 
 config("audio_client_public_config") {
@@ -240,7 +245,8 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
-    "${audio_framework_root}/services/audio_service/idl:audio_client_idl_interface",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",

@@ -90,6 +90,7 @@ public:
     bool IsStreamUsageActive(const StreamUsage &usage);
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
+    bool HasPrimarySink();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

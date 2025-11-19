@@ -51,6 +51,7 @@ ohos_unittest("audio_oh_audio_workgroup_unit_test") {
 
   deps = [
     "../../../../ohaudio:ohaudio",
+    "../../../../../../services/audio_service:audio_client",
   ]
 
   external_deps = [

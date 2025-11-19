@@ -1376,6 +1376,43 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_010, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteEngine_ConnectNodes.
+ * @tc.number: OH_AudioSuiteEngine_ConnectNodes_011
+ * @tc.desc  : Test node destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_011, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteEngine_DisconnectNodes.
  * @tc.number: OH_AudioSuiteEngine_DisconnectNodes_001
  * @tc.desc  : Test nullptr.
@@ -1874,6 +1911,42 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeBypassStatus_004, Test
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetNodeBypassStatus.
+ * @tc.number: OH_AudioSuiteEngine_GetNodeBypassStatus_005
+ * @tc.desc  : Test destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeBypassStatus_005, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *mixNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
+
+    ret = OH_AudioSuiteEngine_BypassEffectNode(mixNode, true);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    bool bypass = false;
+    ret = OH_AudioSuiteEngine_GetNodeBypassStatus(mixNode, &bypass);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
+    EXPECT_EQ(bypass, false);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteEngine_BypassEffectNode.
  * @tc.number: OH_AudioSuiteEngine_BypassEffectNode_001
  * @tc.desc  : Test nullptr.
@@ -1980,6 +2053,37 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_BypassEffectNode_004, TestSiz
 
     ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_BypassEffectNode.
+ * @tc.number: OH_AudioSuiteEngine_BypassEffectNode_005
+ * @tc.desc  : Test destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_BypassEffectNode_005, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *mixNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_BypassEffectNode(mixNode, true);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2239,6 +2343,268 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetVoiceBeautifierType_002, T
     CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(inputNode, VOICE_BEAUTIFIER_TYPE_CLEAR);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderPositionParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderPositionParams_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderPositionParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_SpaceRenderPositionParams position = {1, 2, 3};
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(nullptr, position);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderPositionParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderPositionParams_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderPositionParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioSuite_SpaceRenderPositionParams position = {1, 2, 3};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(inputNode, position);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderRotationParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderRotationParams_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderRotationParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_SpaceRenderRotationParams rotation = {1, 2, 3, 5, SPACE_RENDER_CW};
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(nullptr, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderRotationParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderRotationParams_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderRotationParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioSuite_SpaceRenderRotationParams rotation = {1, 2, 3, 5, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(inputNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderExtensionParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderExtensionParams_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderExtensionParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_SpaceRenderExtensionParams extension = {1, 1};
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(nullptr, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetSpaceRenderExtensionParams.
+ * @tc.number: OH_AudioSuiteEngine_SetSpaceRenderExtensionParams_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSpaceRenderExtensionParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioSuite_SpaceRenderExtensionParams extension = {1, 1};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(inputNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetTempoAndPitch.
+ * @tc.number: OH_AudioSuiteEngine_SetTempoAndPitch_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetTempoAndPitch_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetTempoAndPitch(nullptr, 1.0, 1.0);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetTempoAndPitch.
+ * @tc.number: OH_AudioSuiteEngine_SetTempoAndPitch_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetTempoAndPitch_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    ret = OH_AudioSuiteEngine_SetTempoAndPitch(inputNode, 1.0, 1.0);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetPureVoiceChangeOption.
+ * @tc.number: OH_AudioSuiteEngine_SetPureVoiceChangeOption_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetPureVoiceChangeOption_001, TestSize.Level0)
+{
+    OH_AudioSuite_PureVoiceChangeOption option = {PURE_VOICE_CHANGE_FEMALE, PURE_VOICE_CHANGE_TYPE_SEASONED};
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetPureVoiceChangeOption(nullptr, option);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetPureVoiceChangeOption.
+ * @tc.number: OH_AudioSuiteEngine_SetPureVoiceChangeOption_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetPureVoiceChangeOption_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioSuite_PureVoiceChangeOption option = {PURE_VOICE_CHANGE_FEMALE, PURE_VOICE_CHANGE_TYPE_SEASONED};
+    ret = OH_AudioSuiteEngine_SetPureVoiceChangeOption(inputNode, option);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetGeneralVoiceChangeType.
+ * @tc.number: OH_AudioSuiteEngine_SetGeneralVoiceChangeType_001
+ * @tc.desc  : Test nullptr.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetGeneralVoiceChangeType_001, TestSize.Level0)
+{
+    OH_AudioSuite_GeneralVoiceChangeType type = GENERAL_VOICE_CHANGE_TYPE_WAR;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(nullptr, type);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_SetGeneralVoiceChangeType.
+ * @tc.number: OH_AudioSuiteEngine_SetGeneralVoiceChangeType_002
+ * @tc.desc  : Test node type not support.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetGeneralVoiceChangeType_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioSuite_GeneralVoiceChangeType type = GENERAL_VOICE_CHANGE_TYPE_WAR;
+    ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(inputNode, type);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
@@ -2682,6 +3048,446 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetVoiceBeautifierType_002, T
     ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode, &voiceBeautifierType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(voiceBeautifierType, VOICE_BEAUTIFIER_TYPE_CD);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderPositionParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderPositionParams_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderPositionParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSpaceRenderPositionParams(nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderPositionParams(audioNode, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_SpaceRenderPositionParams position;
+    ret = OH_AudioSuiteEngine_GetSpaceRenderPositionParams(audioNode, &position);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderPositionParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderPositionParams_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderPositionParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
+
+    OH_AudioSuite_SpaceRenderPositionParams position = {1, 2, 3};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode, position);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderPositionParams(audioNode, &position);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderRotationParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderRotationParams_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderRotationParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSpaceRenderRotationParams(nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderRotationParams(audioNode, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_SpaceRenderRotationParams rotation;
+    ret = OH_AudioSuiteEngine_GetSpaceRenderRotationParams(audioNode, &rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderRotationParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderRotationParams_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderRotationParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
+
+    OH_AudioSuite_SpaceRenderRotationParams rotation = {1, 2, 3, 5, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderRotationParams(audioNode, &rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderExtensionParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderExtensionParams_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderExtensionParams_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_SpaceRenderExtensionParams extension;
+    ret = OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode, &extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetSpaceRenderExtensionParams.
+ * @tc.number: OH_AudioSuiteEngine_GetSpaceRenderExtensionParams_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderExtensionParams_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
+
+    OH_AudioSuite_SpaceRenderExtensionParams extension = {1, 1};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode, &extension);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetTempoAndPitch.
+ * @tc.number: OH_AudioSuiteEngine_GetTempoAndPitch_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetTempoAndPitch_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetTempoAndPitch(nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetTempoAndPitch(audioNode, nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    float speed;
+    float pitch;
+    ret = OH_AudioSuiteEngine_GetTempoAndPitch(audioNode, &speed, &pitch);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetTempoAndPitch.
+ * @tc.number: OH_AudioSuiteEngine_GetTempoAndPitch_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetTempoAndPitch_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_TEMPO_PITCH, &audioNode);
+
+    ret = OH_AudioSuiteEngine_SetTempoAndPitch(audioNode, 1.0, 1.0);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    float speed;
+    float pitch;
+    ret = OH_AudioSuiteEngine_GetTempoAndPitch(audioNode, &speed, &pitch);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetPureVoiceChangeOption.
+ * @tc.number: OH_AudioSuiteEngine_GetPureVoiceChangeOption_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetPureVoiceChangeOption_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetPureVoiceChangeOption(nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_PureVoiceChangeOption option = {PURE_VOICE_CHANGE_FEMALE, PURE_VOICE_CHANGE_TYPE_SEASONED};
+    ret = OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode, &option);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetPureVoiceChangeOption.
+ * @tc.number: OH_AudioSuiteEngine_GetPureVoiceChangeOption_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetPureVoiceChangeOption_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_PURE_VOICE_CHANGE, &audioNode);
+
+    OH_AudioSuite_PureVoiceChangeOption option = {PURE_VOICE_CHANGE_FEMALE, PURE_VOICE_CHANGE_TYPE_SEASONED};
+    ret = OH_AudioSuiteEngine_SetPureVoiceChangeOption(audioNode, option);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode, &option);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetGeneralVoiceChangeType.
+ * @tc.number: OH_AudioSuiteEngine_GetGeneralVoiceChangeType_001
+ * @tc.desc  : Test nullptr and not support node type.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetGeneralVoiceChangeType_001, TestSize.Level0)
+{
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetGeneralVoiceChangeType(nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &audioNode);
+
+    ret = OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode, nullptr);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    OH_AudioSuite_GeneralVoiceChangeType type;
+    ret = OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode, &type);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetGeneralVoiceChangeType.
+ * @tc.number: OH_AudioSuiteEngine_GetGeneralVoiceChangeType_002
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetGeneralVoiceChangeType_002, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_GENERAL_VOICE_CHANGE, &audioNode);
+
+    ret = OH_AudioSuiteEngine_SetGeneralVoiceChangeType(audioNode, GENERAL_VOICE_CHANGE_TYPE_WAR);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuite_GeneralVoiceChangeType type;
+    ret = OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode, &type);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

@@ -68,6 +68,20 @@ public:
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) override;
     int32_t SetEqualizerFrequencyBandGains(
         uint32_t nodeId, AudioEqualizerFrequencyBandGains frequencyBandGains) override;
+    int32_t SetSpaceRenderPositionParams(
+        uint32_t nodeId, AudioSpaceRenderPositionParams position) override;
+    int32_t GetSpaceRenderPositionParams(
+        uint32_t nodeId, AudioSpaceRenderPositionParams &position) override;
+    int32_t SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation) override;
+    int32_t GetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams &rotation) override;
+    int32_t SetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams extension) override;
+    int32_t GetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams &extension) override;
+    int32_t SetTempoAndPitch(uint32_t nodeId, float speed, float pitch) override;
+    int32_t GetTempoAndPitch(uint32_t nodeId, float &speed, float &pitch) override;
+    int32_t SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption option) override;
+    int32_t GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption &option) override;
+    int32_t SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type) override;
+    int32_t GetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType &type) override;
     int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) override;
     int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) override;
     int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) override;
@@ -156,6 +170,48 @@ void ParseValue(const std::string valueStr, T &result)
     float value;
     iss >> value;
     result = static_cast<T>(value);
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> result.x >> comma >> result.y >> comma >> result.z;
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    int directionInt;
+    iss >> result.x >> comma >> result.y >> comma >> result.z >> comma >> result.surroundTime >> comma >>
+        directionInt;
+    result.surroundDirection = static_cast<AudioSurroundDirection>(directionInt);
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> result.extRadius >> comma >> result.extAngle;
+}
+
+void ParseValue(const std::string valueStr, float &speed, float &pitch)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> speed >> comma >> pitch;
+}
+
+void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    int32_t genderInt;
+    int32_t typeInt;
+    iss >> genderInt >> comma >> typeInt;
+    option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
+    option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
 }
 
 void ParseValue(const std::string &valueStr, int32_t *result)

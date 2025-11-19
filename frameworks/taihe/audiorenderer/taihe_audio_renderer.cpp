@@ -547,24 +547,28 @@ void AudioRendererImpl::SetTargetSync(RenderTarget target)
         return;
     }
     int32_t ret = audioRenderer_->SetTarget(static_cast<OHOS::AudioStandard::RenderTarget>(renderTarget));
-    if (ret == OHOS::AudioStandard::SUCCESS) {
-        return;
+    switch (ret) {
+        case OHOS::AudioStandard::SUCCESS:
+            break;
+        case OHOS::AudioStandard::ERR_PERMISSION_DENIED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION, "Permission denied.");
+            break;
+        case OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Caller is not a system application.");
+            break;
+        case OHOS::AudioStandard::ERR_ILLEGAL_STATE:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
+                "Operation not permit at running and release state.");
+            break;
+        case OHOS::AudioStandard::ERR_NOT_SUPPORTED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED,
+                "Current renderer is not supported to set target.");
+            break;
+        default:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
+                "Audio client call audio service error, System error.");
+            break;
     }
-    if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION, "Permission denied.");
-    } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Caller is not a system application.");
-    } else if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
-            "Operation not permit at running and release state.");
-    } else if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED,
-            "Current renderer is not supported to set target.");
-    } else {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
-            "Audio client call audio service error, System error.");
-    }
-    return;
 }
 
 RenderTarget AudioRendererImpl::GetTarget()
