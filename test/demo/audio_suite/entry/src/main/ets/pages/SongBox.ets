@@ -124,17 +124,17 @@ export struct SongBox {
   getPcmFileBuffer(uri: string, songType?: string): boolean {
     try {
       let path: string = new fileUri.FileUri(uri).path;
-      Logger.info(TAG, 'getPcmFileBuffer path: ${JSON.stringify(path)}');
+      Logger.info(TAG, `getPcmFileBuffer path: ${JSON.stringify(path)}`);
       let file = fs.openSync(path, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
       let fsStat = fs.statSync(path);
-      Logger.info(TAG, 'failSize : ${fsStat.size}');
+      Logger.info(TAG, `failSize : ${fsStat.size}`);
       let buffer = new ArrayBuffer(fsStat.size);
       let readOption: ReadOptions = {
         offset: 0, // 期望读取文件的位置。可选，默认从当前位置开始读
         length: fsStat.size // 每次期望读取数据的长度。可选，默认缓冲区长度
       }
       fs.readSync(file.fd, buffer, readOption);
-      Logger.info(TAG, 'getPcmFileBuffer buffer length: ${buffer.byteLength}');
+      Logger.info(TAG, `getPcmFileBuffer buffer length: ${buffer.byteLength}`);
       let songName = this.playList.get(uri)?.songName ?? '';
       this.playList.set(uri, {
         uri: uri,
@@ -145,7 +145,7 @@ export struct SongBox {
       });
       return true;
     } catch (e) {
-      Logger.error(TAG, 'getPcmFileBuffer error: ${JSON.stringify(e)}');
+      Logger.error(TAG, `getPcmFileBuffer error: ${JSON.stringify(e)}`);
       return false;
     }
   }
