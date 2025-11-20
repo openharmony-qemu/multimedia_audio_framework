@@ -1406,7 +1406,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_001, TestSi
         if (i < MAX_FAST_STREAM_COUNT) {
             EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
         } else {
-            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL); 
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
         }
     }
 }
@@ -1435,7 +1435,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_002, TestSi
         if (i < MAX_FAST_STREAM_COUNT) {
             EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
         } else {
-            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL); 
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
         }
     }
 }
@@ -1464,7 +1464,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_003, TestSi
         if (i % 2 == 0) {
             EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
         } else {
-            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST); 
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
         }
     }
 }
@@ -1494,10 +1494,10 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_004, TestSi
             if (i % 2 == 0) {
                 EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
             } else {
-                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST); 
+                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
             }
         } else {
-            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST); 
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
         }
     }
 }
