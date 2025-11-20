@@ -42,6 +42,7 @@ namespace {
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
+    constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
 }
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
@@ -441,6 +442,9 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
 
 int32_t HpaeRendererManager::UpdateClusterStreamInfo(HpaeProcessorType sceneType)
 {
+    // everytime state change need update cluster stream info, so refresh timestamp here
+    lastSessionStateChangeTime_ = ClockTime::GetCurNano();
+
     uint32_t minSessionId = UINT32_MAX;
     std::shared_ptr<HpaeSinkInputNode> updateNode = nullptr;
     for (const auto &[mapSessionId, mapNodePtr] : sinkInputNodeMap_) {
@@ -1571,6 +1575,9 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
 // if not one stream underrun, return false, refresh lastOnUnderrunTime_
 bool HpaeRendererManager::QueryOneStreamUnderrun()
 {
+    auto curTime = ClockTime::GetCurNano();
+    auto gapTime = curTime > lastSessionStateChangeTime_ ? curTime - lastSessionStateChangeTime_ : 0;
+    CHECK_AND_RETURN_RET(gapTime > STABLE_RUNNING_TIME_IN_NS, false);
     CHECK_AND_RETURN_RET(!IsRemoteDevice() && appsUid_.size() == 1 && hpaeSignalProcessThread_, false);
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {

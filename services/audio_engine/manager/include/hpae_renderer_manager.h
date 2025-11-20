@@ -173,6 +173,7 @@ private:
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
+    int64_t lastSessionStateChangeTime_ = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
