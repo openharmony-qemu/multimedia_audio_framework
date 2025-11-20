@@ -1171,7 +1171,7 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
  * @tc.number: NeedUseTempBuffer_01
  * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
  */
-HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1205,7 +1205,7 @@ HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
  * @tc.number: PrepareStreamDataBuffer_01
  * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
  */
-HWTEST_F(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
