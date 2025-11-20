@@ -1360,9 +1360,13 @@ bool CapturerInClientInner::DrainAudioStream(bool stopFlag)
     return false;
 }
 
-void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize)
+void CapturerInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
-    AUDIO_WARNING_LOG("Not Supported Yet");
+    AUDIO_INFO_LOG("NSetPreferredFrameSize to %{public}d", frameSize);
+    int32_t sampleRate = clientConfig_.streamInfo.samplingRate;
+    CHECK_AND_RETURN(sampleRate != 0);
+    int32_t duration = frameSize * AUDIO_US_PER_SECOND / sampleRate * AUDIO_MS_PER_SECOND;
+    InitCallbackBuffer(duration);
 }
 
 void CapturerInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)

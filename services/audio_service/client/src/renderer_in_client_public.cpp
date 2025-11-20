@@ -1285,7 +1285,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     return WriteInner(buffer, bufferSize);
 }
 
-void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
+void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
@@ -1293,8 +1293,9 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    size_t minSize = static_cast<size_t>(isRecreate ? MIN_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
     size_t minCbBufferSize =
-        static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+        static_cast<size_t>(minSize * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
     SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
