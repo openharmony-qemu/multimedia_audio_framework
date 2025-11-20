@@ -5453,13 +5453,13 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::DisconnectSco()
+int32_t AudioPolicyServer::SetActiveHfpDevice(const std::string& macAddress)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("not system SA calling!");
         return ERR_OPERATION_FAILED;
     }
-    return Bluetooth::AudioHfpManager::DisconnectSco();
+    return Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
 }
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)
