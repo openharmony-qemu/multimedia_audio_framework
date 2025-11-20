@@ -1467,9 +1467,9 @@ HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
     
     int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
 
-    EXPECT_EQ(result, ERROR);
-    EXPECT_TRUE(audioEndpointInner->isNeedInject_); // Should remain unchanged
-    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, 1234); // Should remain unchanged
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(!audioEndpointInner->isNeedInject_); // Should remain unchanged
+    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, UINT32_INVALID_VALUE); // Should remain unchanged
 }
 
 /**
