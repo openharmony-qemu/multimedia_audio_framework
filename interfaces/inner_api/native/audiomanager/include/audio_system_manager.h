@@ -1225,23 +1225,23 @@ public:
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
     /**
-    * @brief Load the split module for audio stream separation.
-    *
-    * @param splitArgs Specifies the types of audio to be split into different streams.
-    * @param networkId The network identifier of the output device.
-    * @return Returns {@link SUCCESS} if the module is loaded successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    * @since 12
-    */
+     * @brief Load the split module for audio stream separation.
+     *
+     * @param splitArgs Specifies the types of audio to be split into different streams.
+     * @param networkId The network identifier of the output device.
+     * @return Returns {@link SUCCESS} if the module is loaded successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     * @since 12
+     */
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     /**
-    * @brief Set Custmoized Ring Back Tone mute state.
-    *
-    * @param isMute Specifies whether the Customized Ring Back Tone is muted.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set Custmoized Ring Back Tone mute state.
+     *
+     * @param isMute Specifies whether the Customized Ring Back Tone is muted.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t SetVoiceRingtoneMute(bool isMute);
 
     /**
@@ -1255,54 +1255,54 @@ public:
     int32_t SetForegroundList(std::vector<std::string> list);
 
     /**
-    * @brief Get standby state.
-    *
-    * @param sessionId Specifies which stream to be check.
-    * @param isStandby true means the stream is in standby status.
-    * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
-    * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
-    */
+     * @brief Get standby state.
+     *
+     * @param sessionId Specifies which stream to be check.
+     * @param isStandby true means the stream is in standby status.
+     * @param enterStandbyTime Specifies when the stream enter standby status, in MONOTONIC time.
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
+     * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
+     */
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
 
     /**
-    * @brief Set App AVSession state change.
-    *
-    * @param uid Specifies uid of app.
-    * @param pid Specifies pid of app.
-    * @param hasSession Specifies whether app has AVSession.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set App AVSession state change.
+     *
+     * @param uid Specifies uid of app.
+     * @param pid Specifies pid of app.
+     * @param hasSession Specifies whether app has AVSession.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession);
 
     /**
-    * @brief Set App Freeze state change.
-    *
-    * @param pidList Specifies all pid list to change state.
-    * @param isFreeze Specifies Freeze or Unfreeze state.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Set App Freeze state change.
+     *
+     * @param pidList Specifies all pid list to change state.
+     * @param isFreeze Specifies Freeze or Unfreeze state.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
     /**
-    * @brief RSS reboot reset all proxy Freeze state change.
-    *
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief RSS reboot reset all proxy Freeze state change.
+     *
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t ResetAllProxy();
 
     /**
-    * @brief Notify process background state.
-    *
-    * @param uid Specifies uid of app.
-    * @param pid Specifies pid of app.
-    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
-    * in {@link audio_errors.h}.
-    */
+     * @brief Notify process background state.
+     *
+     * @param uid Specifies uid of app.
+     * @param pid Specifies pid of app.
+     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     */
     int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
 
     /**
@@ -1317,22 +1317,22 @@ public:
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
-    * @brief check capture limit
-    *
-    * @param AudioPlaybackCaptureConfig inner capture filter info
-    * @param innerCapId unique identifier of inner capture
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
+     * @brief check capture limit
+     *
+     * @param AudioPlaybackCaptureConfig inner capture filter info
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @test
+     */
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
 
     /**
-    * @brief release capture limit
-    *
-    * @param innerCapId unique identifier of inner capture
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
+     * @brief release capture limit
+     *
+     * @param innerCapId unique identifier of inner capture
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @test
+     */
     int32_t ReleaseCaptureLimit(int32_t innerCapId);
 #endif
 
@@ -1442,87 +1442,87 @@ public:
         const std::shared_ptr<StreamVolumeChangeCallback> &callback = nullptr);
 
     /**
-    * @brief create audio workgroup
-    *
-    * @return Returns id of workgroup. id < 0 if failed.
-    * @test
-    */
+     * @brief create audio workgroup
+     *
+     * @return Returns id of workgroup. id < 0 if failed.
+     * @test
+     */
     int32_t CreateAudioWorkgroup();
 
     /**
-    * @brief release audio workgroup.
-    *
-    * @param workgroupId audio workgroup id.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief release audio workgroup.
+     *
+     * @param workgroupId audio workgroup id.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t ReleaseAudioWorkgroup(int32_t workgroupId);
 
     /**
-    * @brief add thread to audio workgroup.
-    *
-    * @param workgroupId workgroupId audio workgroup id.
-    * @param tokenId the thread id of add workgroupId.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief add thread to audio workgroup.
+     *
+     * @param workgroupId workgroupId audio workgroup id.
+     * @param tokenId the thread id of add workgroupId.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId);
 
     /**
-    * @brief remove thread to audio workgroup.y
-    *
-    * @param workgroupId workgroupId audio workgroup id.
-    * @param tokenId the thread id of remove workgroupId.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief remove thread to audio workgroup.y
+     *
+     * @param workgroupId workgroupId audio workgroup id.
+     * @param tokenId the thread id of remove workgroupId.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId);
 
     /**
-    * @brief the deadline workgroup starts to take effect.
-    *
-    * @param workgroupId workgroupId audio workgroup id.
-    * @param startTime timestamp when the deadline task starts to be executed.
-    * @param deadlineTime complete a periodic task within the time specified by deadlineTime.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief the deadline workgroup starts to take effect.
+     *
+     * @param workgroupId workgroupId audio workgroup id.
+     * @param startTime timestamp when the deadline task starts to be executed.
+     * @param deadlineTime complete a periodic task within the time specified by deadlineTime.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime,
         std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
     /**
-    * @brief stop the deadline workgroup.
-    *
-    * @param workgroupId workgroupId audio workgroup id.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief stop the deadline workgroup.
+     *
+     * @param workgroupId workgroupId audio workgroup id.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t StopGroup(int32_t workgroupId);
 
     /**
-    * @brief set focus stream type when process volume key event.
-    *
-    * @param volumeType Audio stream type.
-    * @param duration duration time to last or cancel force type.
-    * @return Returns {@link AUDIO_OK} if the operation is successfully.
-    * @test
-    */
+     * @brief set focus stream type when process volume key event.
+     *
+     * @param volumeType Audio stream type.
+     * @param duration duration time to last or cancel force type.
+     * @return Returns {@link AUDIO_OK} if the operation is successfully.
+     * @test
+     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
     /**
-    * @brief set stream volume by sessionId.
-    *
-    * @param sessionId stream sessionId.
-    * @param volume return stream volume.
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
+     * @brief set stream volume by sessionId.
+     *
+     * @param sessionId stream sessionId.
+     * @param volume return stream volume.
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @test
+     */
     int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 
     /**
-    * @brief clean resouce.
-    * @test
-    */
+     * @brief clean resouce.
+     * @test
+     */
     void CleanUpResource();
 
     /**
