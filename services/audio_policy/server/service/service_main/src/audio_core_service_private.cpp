@@ -3084,6 +3084,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
         Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
+        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
