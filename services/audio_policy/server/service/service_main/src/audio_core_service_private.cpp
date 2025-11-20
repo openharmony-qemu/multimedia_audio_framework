@@ -3083,8 +3083,9 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
+        audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
         Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-
+        
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s, result: %{public}d",
