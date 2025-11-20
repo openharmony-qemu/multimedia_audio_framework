@@ -428,7 +428,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     (void)isFlush;
 
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -496,7 +496,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -542,7 +542,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
         scheduleGuards_[METHOD_START] = nullptr;
     }

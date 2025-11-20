@@ -319,8 +319,8 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         raw8 += (split - 1) * channel;
     }
 
-    for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= static_cast<int32_t>(size);
+    for (size_t i = 0; i < channel; i++) {
+        volMaps.volStart[i] /= static_cast<int32_t>(size);
     }
     return;
 }
@@ -365,8 +365,8 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw16 += (split - 1) * channel;
     }
 
-    for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= static_cast<int32_t>(size);
+    for (size_t i = 0; i < channel; i++) {
+        volMaps.volStart[i] /= static_cast<int32_t>(size);
     }
     return;
 }
@@ -413,9 +413,9 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw8 += (split - 1) * channel * byteSizePerData;
     }
 
-    for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= RIGHT_SHIFT_8; // equal to " >> INT24_SHIFT"
-        volMaps.volStart[index] = static_cast<int32_t>(volSums[index] / size);
+    for (size_t i = 0; i < channel; i++) {
+        volSums[i] /= RIGHT_SHIFT_8; // equal to " >> INT24_SHIFT"
+        volMaps.volStart[i] = static_cast<int32_t>(volSums[i] / size);
     }
     return;
 }
@@ -464,9 +464,9 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw32 += (split - 1) * channel;
     }
 
-    for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= static_cast<int64_t>(size);
-        volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
+    for (size_t i = 0; i < channel; i++) {
+        volSums[i] /= static_cast<int64_t>(size);
+        volMaps.volStart[i] = static_cast<int32_t>(volSums[i]);
     }
     return;
 }
@@ -511,9 +511,9 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         raw32 += (split - 1) * channel;
     }
 
-    for (size_t index = 0; index < channel; index++) {
-        volSums[index] = (volSums[index] * INT32_MAX) / static_cast<double>(size);
-        volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
+    for (size_t i = 0; i < channel; i++) {
+        volSums[i] = (volSums[i] * INT32_MAX) / static_cast<double>(size);
+        volMaps.volStart[i] = static_cast<int32_t>(volSums[i]);
     }
     return;
 }

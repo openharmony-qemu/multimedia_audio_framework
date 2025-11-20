@@ -1232,7 +1232,7 @@ int32_t RendererInServer::Flush()
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> dupLock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
@@ -1242,7 +1242,7 @@ int32_t RendererInServer::Flush()
         }
     }
     if (isDualToneEnabled_) {
-        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        std::lock_guard<std::mutex> dualLock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->Flush();
         }

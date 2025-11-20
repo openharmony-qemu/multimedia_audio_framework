@@ -802,7 +802,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCa
     std::vector<std::shared_ptr<RendererInServer>> renderers;
 
     {
-        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        std::lock_guard<std::mutex> maplock(rendererMapMutex_);
         if (filteredRendererMap_.count(innerCapId)) {
             for (size_t i = 0; i < filteredRendererMap_[innerCapId].size(); i++) {
                 std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[innerCapId][i].lock();
