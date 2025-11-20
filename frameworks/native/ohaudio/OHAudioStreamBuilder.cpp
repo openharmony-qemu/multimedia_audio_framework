@@ -22,6 +22,9 @@
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B82
+
 using OHOS::AudioStandard::OHAudioStreamBuilder;
 using OHOS::AudioStandard::AudioSampleFormat;
 using OHOS::AudioStandard::StreamUsage;

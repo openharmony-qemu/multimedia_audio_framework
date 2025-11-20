@@ -1837,9 +1837,10 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
 
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
-    for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        std::string sinkName = localDeviceDescriptor->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
+    std::vector<uint64_t> sessionIdForLog{};
+    std::string sinkName = localDeviceDescriptor->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
             "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
+    for (size_t i = 0; i < sinkInputIds.size(); i++) {
         if (sinkName == BLUETOOTH_SPEAKER) {
             std::string activePort = BLUETOOTH_SPEAKER;
             audioPolicyManager_.SuspendAudioDevice(activePort, false);
@@ -1847,11 +1848,19 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
-        AUDIO_INFO_LOG("streamId %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
+        sessionIdForLog.push_back(sinkInputIds[i].streamId);
         audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
-
     isCurrentRemoteRenderer_ = false;
+    CHECK_AND_RETURN_RET(!sessionIdForLog.empty(), SUCCESS);
+    std::stringstream logstream;
+    for (auto sessionid : sessionIdForLog) {
+        logstream << sessionid;
+        logstream << ", ";
+    }
+    std::string result = logstream.str();
+    result.pop_back();
+    AUDIO_INFO_LOG("sinkName %{public}s, streamId %{public}s", sinkName.c_str(), result.c_str());
     return SUCCESS;
 }
 

@@ -30,6 +30,8 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B82
 namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
