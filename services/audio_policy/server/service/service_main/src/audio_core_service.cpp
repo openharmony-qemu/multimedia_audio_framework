@@ -572,6 +572,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        int32_t ret = deviceDesc->networkId_ != LOCAL_NETWORK_ID ? FetchOutputDeviceAndRoute("StartClient") : 0;
+        JUDGE_AND_WARNING_LOG(ret != SUCCESS, "FetchOutputDeviceAndRoute failed");
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
@@ -1086,7 +1088,8 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
-    if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
+    if (mode == AUDIO_MODE_PLAYBACK &&
+        (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID)) {
         return ret; // only update tracker in new and prepared
     }
 
@@ -1436,7 +1439,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
 
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
-    // here will update volume， must after UpdateStreamDeviceMap
+    // here will update volume must after UpdateStreamDeviceMap
     UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
@@ -1672,6 +1675,16 @@ void AudioCoreService::RestoreDistributedDeviceInfo()
 {
     AUDIO_INFO_LOG("try to restore distributed device");
     CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
+
+    std::vector<Media::MediaMonitor::MonitorDmDeviceInfo> dmDeviceInfos;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDmDeviceInfo(dmDeviceInfos);
+    for (const auto &dmDeviceInfo : dmDeviceInfos) {
+        DmDevice dmDev;
+        dmDev.deviceName_ = dmDeviceInfo.deviceName_;
+        dmDev.networkId_ = dmDeviceInfo.networkId_;
+        dmDev.dmDeviceType_ = dmDeviceInfo.dmDeviceType_;
+        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+    }
 
     std::vector<std::string> deviceInfos;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDistributedDeviceInfo(deviceInfos);

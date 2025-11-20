@@ -15,174 +15,176 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_suite"
+if (audio_framework_feature_audiosuite_support) {
+  module_output_path = "audio_framework/audio_framework_suite"
 
-config("audio_suite_unit_config") {
-  visibility = [ ":*" ]
+  config("audio_suite_unit_config") {
+    visibility = [ ":*" ]
 
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-fno-access-control",
-    "-DENABLE_HIDUMP_DFX",
-  ]
+    cflags = [
+      "-Wall",
+      "-Werror",
+      "-fno-access-control",
+      "-DENABLE_HIDUMP_DFX",
+    ]
 
-  include_dirs = [
-    "./tool",
-    "../../client/manager/include",
-    "../../client/node/include",
-    "../../client/utils/include",
-    "../../../audio_engine/buffer",
-    "../../../audio_engine/plugin/channel_converter/include/",
-    "../../../audio_engine/plugin/resample/include",
-    "../../../audio_service/common/include/limiter",
-    "../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../interfaces/inner_api/native/audiosuite/include",
-    "../../../audio_engine/node/include",
-  ]
-}
-
-ohos_unittest("audio_suite_manager_test") {
-  module_out_path = module_output_path
-  sources = [
-    "manager/audio_suite_engine_manager_test.cpp",
-  ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
+    include_dirs = [
+      "./tool",
+      "../../client/manager/include",
+      "../../client/node/include",
+      "../../client/utils/include",
+      "../../../audio_engine/buffer",
+      "../../../audio_engine/plugin/channel_converter/include/",
+      "../../../audio_engine/plugin/resample/include",
+      "../../../audio_service/common/include/limiter",
+      "../../../../interfaces/inner_api/native/audiocommon/include",
+      "../../../../interfaces/inner_api/native/audiosuite/include",
+      "../../../audio_engine/node/include",
+    ]
   }
 
-  configs = [ ":audio_suite_unit_config" ]
+  ohos_unittest("audio_suite_manager_test") {
+    module_out_path = module_output_path
+    sources = [
+      "manager/audio_suite_engine_manager_test.cpp",
+    ]
 
-  deps = [
-    "../../:audio_suite_static",
-  ]
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "googletest:gmock",
-    "hilog:libhilog",
-  ]
-}
+    configs = [ ":audio_suite_unit_config" ]
 
-ohos_unittest("audio_suite_node_test") {
-  module_out_path = module_output_path
-  sources = [
-    "tool/audio_suite_unittest_tools.cpp",
-    "node/audio_suite_input_node_test.cpp",
-    "node/audio_suite_output_node_test.cpp",
-    "node/audio_suite_channel_test.cpp",
-    "node/audio_suite_eq_node_test.cpp",
-    "node/audio_suite_env_node_test.cpp",
-    "node/audio_suite_mixer_node_test.cpp",
-    "node/audio_suite_aiss_node_test.cpp",
-    "node/audio_suite_process_node_test.cpp",
-    "node/audio_suite_soundfield_node_test.cpp",
-    "node/audio_suite_nr_node_test.cpp",
-    "node/audio_suite_voice_beautifier_node_test.cpp",
-  ]
+    deps = [
+      "../../:audio_suite_static",
+    ]
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+    ]
   }
 
-  configs = [ ":audio_suite_unit_config" ]
+  ohos_unittest("audio_suite_node_test") {
+    module_out_path = module_output_path
+    sources = [
+      "tool/audio_suite_unittest_tools.cpp",
+      "node/audio_suite_input_node_test.cpp",
+      "node/audio_suite_output_node_test.cpp",
+      "node/audio_suite_channel_test.cpp",
+      "node/audio_suite_eq_node_test.cpp",
+      "node/audio_suite_env_node_test.cpp",
+      "node/audio_suite_mixer_node_test.cpp",
+      "node/audio_suite_aiss_node_test.cpp",
+      "node/audio_suite_process_node_test.cpp",
+      "node/audio_suite_soundfield_node_test.cpp",
+      "node/audio_suite_nr_node_test.cpp",
+      "node/audio_suite_voice_beautifier_node_test.cpp",
+    ]
 
-  deps = [
-    "../../:audio_suite_static",
-  ]
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "googletest:gmock",
-    "hilog:libhilog",
-  ]
-  resource_config_file = "./resource/ohos_test.xml"
-}
+    configs = [ ":audio_suite_unit_config" ]
 
-ohos_unittest("audio_suite_utils_test") {
-  module_out_path = module_output_path
-  sources = [
-    "tool/audio_suite_unittest_tools.cpp",
-    "utils/audio_suite_pcm_buffer_test.cpp",
-    "utils/audio_suite_manager_thread_test.cpp",
-    "utils/audio_suite_common_test.cpp",
-    "utils/audio_suite_env_algo_interface_test.cpp",
-    "utils/audio_suite_eq_algo_interface_test.cpp",
-    "utils/audio_suite_aiss_algo_interface_test.cpp",
-    "utils/audio_suite_algo_interface_test.cpp",
-    "utils/audio_suite_nr_algo_interface_impl_test.cpp",
-    "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
-    "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
-  ]
+    deps = [
+      "../../:audio_suite_static",
+    ]
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+    ]
+    resource_config_file = "./resource/ohos_test.xml"
   }
 
-  configs = [ ":audio_suite_unit_config" ]
+  ohos_unittest("audio_suite_utils_test") {
+    module_out_path = module_output_path
+    sources = [
+      "tool/audio_suite_unittest_tools.cpp",
+      "utils/audio_suite_pcm_buffer_test.cpp",
+      "utils/audio_suite_manager_thread_test.cpp",
+      "utils/audio_suite_common_test.cpp",
+      "utils/audio_suite_env_algo_interface_test.cpp",
+      "utils/audio_suite_eq_algo_interface_test.cpp",
+      "utils/audio_suite_aiss_algo_interface_test.cpp",
+      "utils/audio_suite_algo_interface_test.cpp",
+      "utils/audio_suite_nr_algo_interface_impl_test.cpp",
+      "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
+      "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
+    ]
 
-  deps = [
-    "../../:audio_suite_static",
-  ]
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-  ]
-  resource_config_file = "./resource/ohos_test.xml"
-}
+    configs = [ ":audio_suite_unit_config" ]
 
-ohos_executable("aiss_algo_demo_wav") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
+    deps = [
+      "../../:audio_suite_static",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "hilog:libhilog",
+    ]
+    resource_config_file = "./resource/ohos_test.xml"
   }
 
-  sources = [
-    "demo/aiss_algo_demo_wav.cpp",
-  ]
+  ohos_executable("aiss_algo_demo_wav") {
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
 
-  configs = [ ":audio_suite_unit_config" ]
+    sources = [
+      "demo/aiss_algo_demo_wav.cpp",
+    ]
 
-  deps = [
-    "../../:audio_suite_static",
-    "../../../audio_engine:audio_engine_utils",
-    "../../../audio_service:audio_common",
-    "../../../audio_engine:audio_engine_plugins",
-  ]
+    configs = [ ":audio_suite_unit_config" ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
+    deps = [
+      "../../:audio_suite_static",
+      "../../../audio_engine:audio_engine_utils",
+      "../../../audio_service:audio_common",
+      "../../../audio_engine:audio_engine_plugins",
+    ]
 
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+    ]
+
+    part_name = "audio_framework"
+    subsystem_name = "multimedia"
+  }
 }

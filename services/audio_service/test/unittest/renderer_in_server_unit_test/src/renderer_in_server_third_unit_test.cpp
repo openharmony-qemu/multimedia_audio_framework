@@ -1021,10 +1021,10 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureEnqueueBuffe
     CaptureInfo captureInfo;
     int32_t innerCapId = 1;
     
-    rendererInServer->renderEmptyCountForInnerCap_ = 1;
+    rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 1;
     rendererInServer->spanSizeInByte_ = 10;
     rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
-    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
+    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId], 0);
 }
 
 /**
@@ -1045,10 +1045,10 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureEnqueueBuffe
     CaptureInfo captureInfo;
     int32_t innerCapId = 1;
     
-    rendererInServer->renderEmptyCountForInnerCap_ = 0;
+    rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 0;
     rendererInServer->spanSizeInByte_ = 10;
     rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
-    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
+    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId], 0);
 }
 
 /**
@@ -1072,7 +1072,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureOtherStream_
     int32_t innerCapId = 1;
 
     rendererInServer->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
-    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
+    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId], 0);
 }
 
 /**
@@ -1095,7 +1095,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureOtherStream_
     int32_t innerCapId = 1;
 
     rendererInServer->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
-    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
+    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId], 0);
 }
 
 /**

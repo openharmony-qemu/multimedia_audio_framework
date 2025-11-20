@@ -447,7 +447,7 @@ int32_t HpaeRendererStreamImpl::SetPrivacyType(int32_t privacyType)
 
 int32_t HpaeRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
 {
-    privacyType_ = privacyType;
+    privacyType = privacyType_;
     return SUCCESS;
 }
 

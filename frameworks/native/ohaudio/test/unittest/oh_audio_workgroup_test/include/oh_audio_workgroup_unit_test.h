@@ -21,6 +21,7 @@
 #include "audio_info.h"
 #include "audio_common_log.h"
 #include "native_audio_resource_manager.h"
+#include "../../../../OHAudioResourceManager.h"
 
 namespace OHOS {
 namespace AudioStandard {

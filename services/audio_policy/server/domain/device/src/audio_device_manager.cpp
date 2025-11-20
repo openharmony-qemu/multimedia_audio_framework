@@ -26,6 +26,8 @@
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -1646,8 +1648,7 @@ int32_t AudioDeviceManager::SetPreferredInputDevice(
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDevice(const uint32_t sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG(preferredInputDeviceInfo_.count(sessionID), nullptr,
-        "sessionID %{public}d: preferredInputDevice is empty", sessionID);
+    CHECK_AND_RETURN_RET(preferredInputDeviceInfo_.count(sessionID), nullptr, sessionID);
     shared_ptr<AudioDeviceDescriptor> preferredInputDevice = preferredInputDeviceInfo_[sessionID].first;
     shared_ptr<AudioDeviceDescriptor> onlinePreferredInputDevice = nullptr;
 

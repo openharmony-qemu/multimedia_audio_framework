@@ -2,20 +2,21 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
  */
 import { StyleConst } from "../utils/StyleConst";
-import { Node, NodeType, colorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
+import { Node, NodeType, ColorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
 import { Logger } from '../utils/Logger';
 import audioNapi from 'libentry.so';
 import { importSingleSong } from '../utils/importSongs/ImportSongs';
 import { SetFormatDialog } from './customDialog/SetFormatDialog';
 import { CheckNodeDialog } from './customDialog/CheckNodeDialog';
 import { JSON, util } from '@kit.ArkTS';
-import { saveFileBuffer, RealTimeSaveFileBuffer } from '../utils/ExportFile';
+import { saveFileBuffer, RealTimeSaveFileBuffer, MainTitleTextModifier } from '../utils/ExportFile';
 import { taskpool } from '@kit.ArkTS';
 import { fileUri, picker } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import fs, { ReadOptions } from '@ohos.file.fs';
-import { AlertDialog } from '@kit.ArkUI';
+import { AlertDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import display from '@ohos.display';
 
 import { getDateStringWithTimeStamp } from '../utils/Util';
 
@@ -29,26 +30,33 @@ export function MixingConsoleBuilder() {
 @Component
 export struct MixingConsole {
     pageInfos: NavPathStack = new NavPathStack();
+    // 主标题样式修改器
+    @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
+    private symbolModifier: SymbolGlyphModifier =
+        new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')]);
+    // 判断是否是横屏
+    @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
 
     @State param: number = 0;
     @State inputList: SongInfo[] = [];
     private MAX_TRACKS: number = 5; // 最大音轨数
     @State nodeList: Map<string, SongInfo> = new Map();
     private wavBuffer: ArrayBuffer = new ArrayBuffer(0);
+    private fd: number = -1;
     // 是否录制
-    @State isRecord: boolean = false;
+    @State g_isRecord: boolean = false;
     // 导出中
     @State isExported: boolean = false;
     @State mixerList: Array<Node> = [];
     @State mixerNode: Node = {
         id: util.generateRandomUUID(true),
         type: NodeType.MIXER,
-        color: colorMap[NodeType.MIXER]
+        color: ColorMap[NodeType.MIXER]
     }
     @State outputNode: Node = {
         id: util.generateRandomUUID(true),
         type: NodeType.OUTPUT,
-        color: colorMap[NodeType.OUTPUT]
+        color: ColorMap[NodeType.OUTPUT]
     }
     // 是否播放
     @State isPlay: boolean = false;
@@ -56,9 +64,9 @@ export struct MixingConsole {
     // 导出样式
     @State newAudioFileName: string = '';
     @State audioFormate: string = '.wav';
-    @State sampleRate: number = 48000;
-    @State channels: number = 2;
-    @State bitsPerSample: number = 32;
+    @State sampleRate: number = -1;
+    @State channels: number = -1;
+    @State bitsPerSample: number = -1;
     // 节点操作弹窗参数
     @State isLeft: boolean = true;
     @State selectedNode: string = '';
@@ -67,25 +75,51 @@ export struct MixingConsole {
 
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
+        let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
+        window.getLastWindow(context).then((windowClass) => {
+            // 设置屏幕横屏
+            windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION_LANDSCAPE);
+        });
         this.isPlayRealTime = false;
         // 初始化空列表（保留5个空位）
         this.inputList = Array(this.MAX_TRACKS).fill(null);
         
-
-        
         audioNapi.registerFinishedCallback((result: boolean) => {
             this.finished = result;
-            Logger.info(TAG, `finished: ${JSON.stringify(this.finished)}`);
+            Logger.info(TAG, `registerFinishedCallback finished: ${JSON.stringify(this.finished)}`);
             if (this.finished) {
-                if (this.isRecord) {
+                if (this.g_isRecord) {
                     taskpool.execute(RealTimeSaveFileBuffer).then(async (value: object) => {
                         Logger.info(TAG, 'taskpool onClick then');
                         this.SaveBuffer(value as ArrayBuffer);
                     });
                 }
                 this.isExported = false;
-                this.isRecord = false;
+                this.g_isRecord = false;
                 this.isPlay = false;
+            }
+        })
+
+        audioNapi.registerAudioFormatCallback((result: string[]) => {
+            Logger.info(TAG, `registerAudioFormatCallback string size: ${JSON.stringify(result.length)}, result: ${result}`);
+            this.sampleRate = Number(result[0]);
+            this.channels = Number(result[1]);
+            switch (Number(result[2])) {
+                case 0:
+                    this.bitsPerSample = 8;
+                    break;
+                case 1:
+                    this.bitsPerSample = 16;
+                    break;
+                case 2:
+                    this.bitsPerSample = 24;
+                    break;
+                case 3:
+                    this.bitsPerSample = 32;
+                    break;
+                case 4:
+                    this.bitsPerSample = 32;
+                    break;
             }
         })
     }
@@ -106,6 +140,10 @@ export struct MixingConsole {
         } catch (e) {
             Logger.info(TAG, `audioEditDestory error: ${JSON.stringify(e)}`);
         }
+        let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
+        window.getLastWindow(context).then((windowClass) => {
+            windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION);
+        });
     }
 
     // 设置弹窗
@@ -123,6 +161,7 @@ export struct MixingConsole {
 
             }
         }),
+        maskColor: $r('app.color.mixing_console_mask_color'),
     });
 
     // 查看效果节点信息弹窗
@@ -165,57 +204,86 @@ export struct MixingConsole {
 
     build() {
         NavDestination() {
-            Column() {
-                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween }) {
-                    Row() {
-                        Image($r('app.media.ic_set'))
-                            .width('30')
-                            .height('30')
-                            .onClick(() => {
-                                // 弹窗， 导出的音频格式
-                                this.dialogControllerSet?.open();
-                            })
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                Row() {
+                    Image($r('app.media.ic_set'))
+                        .width('30')
+                        .height('30')
+                        .onClick(() => {
+                            // 弹窗，导出的音频格式
+                            this.dialogControllerSet?.open();
+                        })
 
-                    }
-                    Row() {
-                        // 导出（保存）
-                        Image(this.isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
-                            .width('30')
-                            .height('30')
-                            .margin({right: $r('app.float.margin_5')})
-                            .onClick(() => {
-                                audioNapi.record();
-                                this.isRecord = true;
-                            })
-                        // 播放
-                        Image(!this.isPlay ? $r('app.media.ic_record_playing') : $r('app.media.ic_record_paused'))
-                            .width('30')
-                            .height('30')
-                            .margin({right: $r('app.float.margin_5')})
-                            .onClick(() => {
-                                this.isPlayRealTime = true;
-                                this.isPlay = !this.isPlay;
-                                // 播放
-                                if (this.isPlay) {
-                                    // 初始化 renderer
-                                    audioNapi.audioRendererInit();
-                                    // 点击播放，才开始 AudioRenderer
-                                    audioNapi.audioRendererStart();
-                                } else {
-                                    // 暂停
-                                    audioNapi.audioRendererStop();
-                                    // 将buffer的map中的 totalWriteAudioDataSize 置为 0
-                                    audioNapi.resetTotalWriteAudioDataSize();
-                                }
-                            })
-                    }
-                    .alignItems(VerticalAlign.Center)
                 }
+                Row() {
+                    // 保存
+                    Image($r('app.media.ic_save'))
+                        .width('30')
+                        .height('30')
+                        .onClick(() => {
+                            taskpool.execute(saveFileBuffer).then(async (value: object) => {
+                                Logger.info(TAG, 'taskpool onClick save mixingConsole start');
+                                this.SaveBuffer(value as ArrayBuffer);
+                                // 将buffer的map中的 totalWriteAudioDataSize 置为 0
+                                audioNapi.resetTotalWriteAudioDataSize();
+                            });
+                        })
+                }.visibility(this.param === 1 ? Visibility.Visible : Visibility.None)
+                Row() {
+                    // 录制
+                    Image(this.g_isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
+                        .width('30')
+                        .height('30')
+                        .margin({right: $r('app.float.margin_5')})
+                        .onClick(() => {
+                            audioNapi.record();
+                            this.g_isRecord = true;
+                        })
+                    // 播放
+                    Image(!this.isPlay ? $r('app.media.ic_record_playing') : $r('app.media.ic_record_paused'))
+                        .width('30')
+                        .height('30')
+                        .margin({right: $r('app.float.margin_5')})
+                        .onClick(() => {
+                            if (this.nodeList.size === 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: '至少选中一个音频才可以播放',
+                                    confirm: {
+                                        value: '确定',
+                                        action: () => {
+                                        }
+                                    },
+                                    cancel: () => {
+                                        Logger.info(TAG, `cancel`);
+                                    }
+                                });
+                                return;
+                            }
+                            this.isPlayRealTime = true;
+                            this.isPlay = !this.isPlay;
+                            // 播放
+                            if (this.isPlay) {
+                                // 初始化 Renderer
+                                audioNapi.audioRendererInit();
+                                // 点击播放，才开始 AudioRenderer
+                                audioNapi.audioRendererStart();
+                            } else {
+                                // 暂停
+                                audioNapi.audioRendererStop();
+                                // 将buffer的map中的 totalWriteAudioDataSize 置为 0
+                                audioNapi.resetTotalWriteAudioDataSize();
+                            }
+                        })
+                }
+                .alignItems(VerticalAlign.Center)
+                .visibility(this.param === 2 ? Visibility.Visible : Visibility.None)
             }
-            .height("8%")
-            .width(StyleConst.FULL_WIDTH)
+            .height(this.isHorizontalScreen ? '15%' : "10%")
+            .width(StyleConst.NINETY_FIVE_PERCENT_WIDTH)
+            .borderRadius('10')
             .margin({bottom: $r('app.float.margin_10')})
-            .padding({left: $r('app.float.margin_35'), right: $r('app.float.margin_35')})
+            .padding({ left: $r('app.float.margin_35'), right: $r('app.float.margin_35') })
+            .backgroundColor($r('app.color.index_audio_clip_card'))
 
             Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween }) {
                 // 左侧
@@ -240,7 +308,7 @@ export struct MixingConsole {
                                             let inputInfo: Node = {
                                                 id: inputId,
                                                 type: NodeType.INPUT,
-                                                color: colorMap.get(NodeType.INPUT)
+                                                color: ColorMap.get(NodeType.INPUT)
                                             }
                                             let nodesArray: Array<Node> = [];
                                             nodesArray.push(inputInfo);
@@ -253,42 +321,17 @@ export struct MixingConsole {
                                                     this.inputList[index] = value;
                                                     this.getPcmFileBuffer(this.inputList[index]);
                                                     if (this.wavBuffer.byteLength !== 0) {
-                                                        const dataView = new DataView(this.wavBuffer);
-                                                        // 获取通道数，通道数位于22字节
-                                                        this.channels = dataView.getUint16(22, true);
-                                                        // 获取采样率，采样率位于第24到28字节
-                                                        this.sampleRate = dataView.getUint32(24, true);
-                                                        // 获取位深，位深位于第34字节
-                                                        this.bitsPerSample = dataView.getUint16(34, true);
-                                                        // 格式类别 int 还是 float(3)
-                                                        const formatCategory = dataView.getUint16(20, true);
-                                                        Logger.info(TAG, `formatCategory: ${formatCategory}`);
-                                                        // 获取音频的长度
-                                                        const fmtSize = dataView.getUint32(16, true); // fmt chunk size
-                                                        let offset = 20 + fmtSize;
-                                                        let pcmLength = 0;
-                                                        while (offset <= this.wavBuffer.byteLength) {
-                                                            const chunkId = dataView.getUint32(offset, true);
-                                                            offset += 4;
-                                                            const chunkSize = dataView.getUint32(offset, true);
-                                                            offset += 4;
-                                                            // 'data' 在 ASCII 小端字节
-                                                            if (chunkId === 0x61746164) {
-                                                                // 找到了 data 块， 返回其大小
-                                                                pcmLength = chunkSize;
-                                                                break;
-                                                            }                    
-                                                            offset += chunkSize;                                        
-                                                        }
-                                                        Logger.info(TAG, `pcmLength: ${pcmLength}`);
-                                                        // 设置音频参数
-                                                        tmpInfo.channels = this.channels;
-                                                        tmpInfo.sampleRate = this.sampleRate;
-                                                        tmpInfo.bitsPerSample = this.bitsPerSample;
-
-                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.channels, this.sampleRate, this.bitsPerSample, formatCategory,
-                                                            pcmLength, this.wavBuffer.slice(offset, offset + pcmLength));
+                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
                                                     }
+                                                    Logger.info(TAG, `fd: ${this.fd}`);
+                                                    fs.closeSync(this.fd);
+                                                    setTimeout(() => {
+                                                        if (tmpInfo) {
+                                                            tmpInfo.sampleRate = this.sampleRate;
+                                                            tmpInfo.channels = this.channels;
+                                                            tmpInfo.bitsPerSample = this.bitsPerSample;
+                                                        }
+                                                    }, 100);
                                                     this.nodeList.set(inputId, tmpInfo);
                                                 }
                                             }
@@ -303,6 +346,7 @@ export struct MixingConsole {
                                             }
                                         });
                                     })
+                                    .backgroundColor($r('app.color.index_audio_clip_card'))
                                     .margin({top: $r('app.float.margin_5')})
                                 }
                             }
@@ -312,9 +356,11 @@ export struct MixingConsole {
                     })
                 }
                 .height('100%')
-                .width('60%')
-                .backgroundColor(Color.Black)
+                .layoutWeight(1)
+                .backgroundColor($r('app.color.mixing_console_backgroundColor'))
                 .padding({left: $r('app.float.margin_10'), right: $r('app.float.margin_10')})
+
+                Blank().width(1).backgroundColor($r('app.color.index_audio_clip_card'))
 
                 // 右侧
                 Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
@@ -353,11 +399,11 @@ export struct MixingConsole {
                 }
                 .height('100%')
                 .width('38%')
-                .backgroundColor(Color.Black)
+                .backgroundColor($r('app.color.mixing_console_backgroundColor'))
             }
             .height('90%')
-            .width(StyleConst.FULL_WIDTH)
-            .backgroundColor(Color.Gray)
+            .width(StyleConst.NINETY_FIVE_PERCENT_WIDTH)
+            .backgroundColor($r('app.color.index_audio_clip_card'))
         }
         .onReady((context: NavDestinationContext) => {
             this.pageInfos = context.pathStack;
@@ -376,9 +422,12 @@ export struct MixingConsole {
                Logger.info(TAG, `this param is invalid: ${this.param}`); 
             }
         })
-        .title('混音台')
+        .title(this.param === 1 ? $r('app.string.mixing_console_cascade') : $r('app.string.mixing_console_playing'),
+            {mainTitleModifier: this.mainTitleModifier})
         .height('100%')
         .width('100%')
+        .backgroundColor($r('app.color.main_backgroundColor'))
+        .backButtonIcon(this.symbolModifier)
     }
 
     @Builder 
@@ -402,7 +451,7 @@ export struct MixingConsole {
                         let inputInfo: Node = {
                             id: nodeId,
                             type: NodeType.INPUT,
-                            color: colorMap.get(NodeType.INPUT)
+                            color: ColorMap.get(NodeType.INPUT)
                         }
                         if(nodesArray.length > 0){
                             nodesArray[0] = inputInfo
@@ -414,43 +463,19 @@ export struct MixingConsole {
                         //获取音频的相关参数
                         this.getPcmFileBuffer(songInfo);
                         if(this.wavBuffer.byteLength !== 0) {
-                            const dataView = new DataView(this.wavBuffer);
-                            // 获取通道数，通道数位于22字节
-                            this.channels = dataView.getUint16(22, true);
-                            // 获取采样率，采样率位于24到28字节
-                            this.sampleRate = dataView.getUint32(24, true);
-                            // 获取位深，位深位于34字节
-                            this.bitsPerSample = dataView.getUint16(34, true);
-                            // 格式类别 int 还是 float（3） ...
-                            const formatCategory = dataView.getUint16(20, true);
-                            Logger.info(TAG, `formatCategory: ${formatCategory}`);
-                            // 获取音频的长度
-                            const fmtSize = dataView.getUint32(16,true); // fmt chunk size
-                            let offset = 20 + fmtSize;
-                            let pcmLength = 0;
-                            while (offset <= this.wavBuffer.byteLength) {
-                                const chunkId = dataView.getUint32(offset, true);
-                                offset += 4;
-                                const chunkSize = dataView.getUint32(offset, true);
-                                offset += 4;
-                                // 'data' 在 ASCII 小端字节
-                                if(chunkId === 0x61746164){
-                                    // 找到了 data 块， 返回其大小
-                                    pcmLength = chunkSize;
-                                    break;
+                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                            Logger.info(TAG, `fd: %{public}`);
+                            setTimeout(() => {
+                                if (songInfo) {
+                                    songInfo.sampleRate = this.sampleRate;
+                                    songInfo.channels = this.channels;
+                                    songInfo.bitsPerSample = this.bitsPerSample;
                                 }
-                                offset += chunkSize;
-                            }
-                            Logger.info(TAG, `pcmLength: ${pcmLength}`);
-                            //设置音频参数
-                            songInfo.channels = this.channels;
-                            songInfo.sampleRate = this.sampleRate;
-                            songInfo.bitsPerSample  = this.bitsPerSample;
-                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.channels, this.sampleRate, this.bitsPerSample, formatCategory,
-                                pcmLength, this.wavBuffer.slice(offset, offset + pcmLength));
+                            }, 100);
+                            fs.closeSync(this.fd);
                         }
                         this.nodeList.set(nodeId, songInfo)
-                        const index = this.inputList.findIndex(song => song.nodeId === nodeId);
+                        const index = this.inputList.findIndex(song => song?.nodeId === nodeId);
                         if(index !== -1 && songInfo.uri !== undefined){
                             this.inputList[index] = songInfo
                         }
@@ -479,7 +504,7 @@ export struct MixingConsole {
                     .width("15%")
                     .margin({right: $r('app.float.margin_5')})
                     .textAlign(TextAlign.Center)
-                    .backgroundColor(colorMap.get(type))
+                    .backgroundColor(ColorMap.get(type))
                     .fontSize($r('app.float.font_size_10'))
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -491,7 +516,7 @@ export struct MixingConsole {
                 .width("10%")
                 .margin({right: $r('app.float.margin_5')})
                 .textAlign(TextAlign.Center)
-                .backgroundColor(colorMap.get(type))
+                .backgroundColor(ColorMap.get(type))
                 .borderRadius(5)
         }   else{
             Text("+")
@@ -499,7 +524,7 @@ export struct MixingConsole {
                 .width("10%")
                 .margin({right: $r('app.float.margin_5')})
                 .textAlign(TextAlign.Center)
-                .backgroundColor(Color.Brown)
+                .fontColor(Color.White)
         }
     }
 
@@ -521,11 +546,11 @@ export struct MixingConsole {
             }
             fs.readSync(file.fd, buffer, readOption);
             Logger.info(TAG, `getPcmFileBuffer buffer length: ${buffer.byteLength}`);
-            const wavView = newUint8Array(buffer);
+            const wavView = new Uint8Array(buffer);
             let dataBuffer = wavView.slice(44).buffer;
             Logger.info(TAG, `wavBuffer length: ${buffer.byteLength}`);
             this.wavBuffer = buffer;
-            fs.closeSync(file.fd);
+            this.fd = file.fd;
             return true;
         } catch (e) {
             Logger.error(TAG, `getPcmFileBuffer error: ${JSON.stringify(e)}`);
@@ -535,8 +560,6 @@ export struct MixingConsole {
 
     async SaveBuffer(value: ArrayBuffer) {
         try {
-            Logger.info(TAG,
-                `SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels:${this.channels}, bitsPerSample: ${this.bitsPerSample}`);
             let pcmBuffer = value;
             Logger.info(TAG, `SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}`);
             if(pcmBuffer.byteLength === 0) {
@@ -571,11 +594,6 @@ export struct MixingConsole {
                     let wavBuffer = this.writeWavFileHeader(pcmBuffer);
                     let writeLen = fs.writeSync(file.fd, wavBuffer);
                     Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-                    fs.closeSync(file);
-                } else {
-                    // 处理pcm
-                    let writeLen = fs.writeSync(file.fd, pcmBuffer);
-                    Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
                     fs.closeSync(file);
                 }
             }) 
@@ -617,7 +635,7 @@ export struct MixingConsole {
         dv.setUint32(4, totalDataLen, true);
         this.writeString(dv, 8, 'WAVE');
         // 写入 fmt 块
-        this.writeString(dv, 12, 'fmt');
+        this.writeString(dv, 12, 'fmt ');
         // fmt块大小
         dv.setUint32(16, 16, true);
         // 格式类别

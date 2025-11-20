@@ -27,6 +27,7 @@ static constexpr AudioSamplingRate VM_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat VM_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel VM_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VM_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+static std::string VOICE_BEAUTIFIER_TYPE = "VoiceBeautifierType";
 
 AudioSuiteVoiceBeautifierNode::AudioSuiteVoiceBeautifierNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER,
@@ -73,7 +74,7 @@ int32_t AudioSuiteVoiceBeautifierNode::DeInit()
 
 int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string value)
 {
-    CHECK_AND_RETURN_RET_LOG(name == "VoiceBeautifierType", ERROR, "wrong options name.");
+    CHECK_AND_RETURN_RET_LOG(name == VOICE_BEAUTIFIER_TYPE, ERROR, "wrong options name.");
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
 
     if (algoInterface_->SetParameter(name, value)) {
@@ -89,7 +90,7 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
 int32_t AudioSuiteVoiceBeautifierNode::GetOptions(std::string name, std::string &value)
 {
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "voiceBeautifierType is empty.");
-    CHECK_AND_RETURN_RET_LOG(name == "VoiceBeautifierType", ERROR, "wrong options name.");
+    CHECK_AND_RETURN_RET_LOG(name == VOICE_BEAUTIFIER_TYPE, ERROR, "wrong options name.");
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
 
     value = paraValue_;
@@ -104,7 +105,6 @@ AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vec
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), nullptr, "voiceBeautifierType is empty, skip signalProccess.");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid input format");
 
-    // 调算法
     AUDIO_DEBUG_LOG("start apply algo.");
     vmAlgoInputs_[0] = inputs[0]->GetPcmData();
     vmAlgoOutputs_[0] = outPcmBuffer_.GetPcmData();

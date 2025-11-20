@@ -241,6 +241,7 @@ void AudioResourceService::AudioWorkgroupDeathRecipient::SetNotifyCb(NotifyCbFun
 void AudioResourceService::OnWorkgroupRemoteDied(const std::shared_ptr<AudioWorkgroup> &workgroup,
     const sptr<IRemoteObject> &remoteObj)
 {
+    std::lock_guard<std::mutex> lock(workgroupLock_);
     ReleaseWorkgroupDeathRecipient(workgroup, remoteObj);
 
     std::vector<int> pidsToDelete;

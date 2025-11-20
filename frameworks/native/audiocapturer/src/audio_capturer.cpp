@@ -30,6 +30,8 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B82
 namespace OHOS {
 namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
@@ -1492,7 +1494,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
-    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    callbackLoopTid_ = audioStream->GetCallbackLoopTid();
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {

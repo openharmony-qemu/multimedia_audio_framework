@@ -242,6 +242,9 @@ bool NapiAudioSystemVolumeChangeCallback::ContainSameJsCallback(napi_value args)
     
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto &item : audioSystemVolumeChangeCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
         napi_ref ref = item->GetRef();
         bool isEquals = IsSameCallback(env_, args, ref);
         if (isEquals) {

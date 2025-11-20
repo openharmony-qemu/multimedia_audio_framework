@@ -144,11 +144,9 @@ private:
     void RecordReSyncPosition();
     void InitAudiobuffer(bool resetReadWritePos);
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
-    void ProcessSingleData(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol);
     void ResetZeroVolumeState();
     void HandleZeroVolumeStartEvent();
     void HandleZeroVolumeStopEvent();
-    void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
     void ZeroVolumeCheck(const int32_t vol);
     int64_t GetPredictNextReadTime(uint64_t posInFrame);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
@@ -222,7 +220,6 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
-    void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     void SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,

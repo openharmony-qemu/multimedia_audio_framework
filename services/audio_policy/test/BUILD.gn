@@ -3357,6 +3357,7 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
   }
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
@@ -5120,6 +5121,7 @@ ohos_unittest("audio_usb_manager_unit_test") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_runtime:wantagent_innerkits",
     "background_task_mgr:bgtaskmgr_innerkits",
     "bluetooth:btframework",

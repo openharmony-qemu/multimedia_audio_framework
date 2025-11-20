@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("//build/config/features.gni")
 
 ohos_fuzztest("AudioSuiteEngineFuzzTest") {
-module_out_path = "audio_framework/audio_framework_route"
+module_out_path = "audio_framework/audio_suite"
 fuzz_config_file = "../audiosuiteengine_fuzzer"
 
 include_dirs = [

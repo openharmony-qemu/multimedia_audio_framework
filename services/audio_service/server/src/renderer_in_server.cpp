@@ -47,6 +47,8 @@
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -845,8 +847,11 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     int32_t innerCapId)
 {
     int32_t engineFlag = GetEngineFlag();
-    if (renderEmptyCountForInnerCap_ > 0) {
-        size_t emptyBufferSize = static_cast<size_t>(renderEmptyCountForInnerCap_) * spanSizeInByte_;
+    if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) !=
+        renderEmptyCountForInnerCapToInnerCapIdMap_.end() &&
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] > 0) {
+        size_t emptyBufferSize = static_cast<size_t>
+            (renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId]) * spanSizeInByte_;
         auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
         BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
         memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
@@ -855,7 +860,7 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
         } else {
             captureInfo.dupStream->EnqueueBuffer(emptyBufferDesc);
         }
-        renderEmptyCountForInnerCap_ = 0;
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 0;
     }
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("OtherStreamEnqueue running");
@@ -1233,7 +1238,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
-                renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
+                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
                 InitDupBufferInner(capInfo.first);
             }
         }
@@ -1453,6 +1458,7 @@ int32_t RendererInServer::DisableAllInnerCap()
 
 int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
@@ -1468,6 +1474,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
@@ -1655,7 +1662,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         capInfo.dupStream->Start();
 
         if (offloadEnable_) {
-            renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
+            renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
         }
     }
     return SUCCESS;
@@ -2319,6 +2326,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
 
 int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
         processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED, skipForce);
 }

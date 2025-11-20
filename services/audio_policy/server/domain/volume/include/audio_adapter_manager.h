@@ -461,6 +461,7 @@ private:
         AudioStreamType streamType);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> desc);
+    void SetPrimarySinkExist(bool isPrimarySinkExist);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -515,6 +516,7 @@ private:
     VolumeDataMaintainer volumeDataMaintainer_;
     AudioActiveDevice &audioActiveDevice_;
     AudioConnectedDevice &audioConnectedDevice_;
+    std::atomic<bool> isPrimarySinkExist_ {true};
 
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
@@ -535,6 +537,7 @@ private:
     std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
+    std::mutex setVoiceStatusMutex_;
     std::mutex setMaxVolumeMutex_;
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =

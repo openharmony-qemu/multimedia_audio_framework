@@ -118,7 +118,6 @@ interface IAudioPolicy {
     void GetCurrentRendererChangeInfos([out] List<sharedptr<AudioRendererChangeInfo>> audioRendererChangeInfos);
     void GetCurrentCapturerChangeInfos([out] List<sharedptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos);
     void SetLowPowerVolume([in] int streamId, [in] float volume);
-    void GetFastStreamInfo([out] AudioStreamInfo streamInfo, [in] unsigned int sessionId);
     void GetLowPowerVolume([in] int streamId, [out] float retVolume);
     void UpdateStreamState([in] int clientUid, [in] int streamSetState, [in] int streamUsage);
     void GetSingleStreamVolume([in] int streamId, [out] float retVolume);
@@ -230,7 +229,7 @@ interface IAudioPolicy {
     void GetInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetAudioDeviceAnahsCallback([in] IRemoteObject object);
     void UnsetAudioDeviceAnahsCallback();
-    void IsAllowedPlayback([in] int uid, [in] int pid, [out] boolean isAllowed);
+    void IsAllowedPlayback([in] int uid, [in] int pid, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
@@ -303,5 +302,7 @@ interface IAudioPolicy {
     void SelectPrivateDevice([in] int devType, [in] String macAddress);
     void ForceSelectDevice([in] int devType, [in] String macAddress, [in] sptr<AudioRendererFilter> filter);
     void RestoreDistributedDeviceInfo();
+    void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
+    void DisconnectSco();
 }
 

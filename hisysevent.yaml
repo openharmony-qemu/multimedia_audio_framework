@@ -365,3 +365,7 @@ SUITE_ENGINE_EXCEPTION:
   ERROR_SCENE: {type: UINT32, desc: error scene}
   ERROR_CASE: {type: UINT32, desc: error case}
   ERROR_DESCRIPTION: {type: STRING, desc: error description}
+
+VOLUME_SETTING_STATISTICS:
+  __BASE: {type: STATISTIC, level: MINOR, desc: volume setting statistics}
+  LOUD_VOLUME_TIMES: {type: INT32, desc: loud volume times}

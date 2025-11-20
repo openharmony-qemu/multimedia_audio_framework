@@ -357,7 +357,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ScoInputDeviceFetchedForRecongnition(
-        bool handleFlag, const std::string &address, ConnectState connectState);
+        bool handleFlag, const std::string &address, ConnectState connectState, bool isVrSupported = true);
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);

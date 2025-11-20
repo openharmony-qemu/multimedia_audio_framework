@@ -25,7 +25,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 constexpr uint32_t MEMORY_ALIGN_BYTE_NUM = 64;
-constexpr uint32_t SECONDS_TO_MS = 1000; // 1秒对应毫秒数
+constexpr uint32_t SECONDS_TO_MS = 1000;
 
 enum PcmDataDuration : uint32_t {
     PCM_DATA_DEFAULT_DURATION_20_MS = 20,
@@ -96,11 +96,11 @@ private:
     std::vector<uint8_t, AlignedAllocator<uint8_t, MEMORY_ALIGN_BYTE_NUM>> pcmDataBuffer_;
 
     PcmBufferFormat pcmBufferFormat_;
-    uint32_t frameLen_;             // 帧长，单通道采样点数， 采样率 *（20/40）/ 1000
-    uint32_t sampleCount_;          // 总采样点数， 通道数 * 采样率 *（20/40）/ 1000
-    uint32_t dataByteSize_;         // 数据长度. 单位Byte
-    uint32_t frames_;               // 帧数， 单位20ms
-    uint32_t duration_;             // 单帧时长， 20ms/40ms
+    uint32_t frameLen_;             // Frame length, single-channel sample count: sample rate * (20/40) / 1000
+    uint32_t sampleCount_;          // Total sample count: number of channels * sample rate * (20/40) / 1000
+    uint32_t dataByteSize_;         // Data size. Unit: Bytes.
+    uint32_t frames_;               // Number of frames, unit: 20ms
+    uint32_t duration_;             // Single frame duration, 20ms/40ms
     bool isFinished_ = false;
 };
 }

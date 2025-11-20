@@ -353,7 +353,6 @@ bool DfxMsgManager::Enqueue(const DfxMessage &msg)
 
     if (CheckoutSystemAppUtil::CheckoutSystemApp(msg.appUid)) {
         Trace trace("skip system app dfx msg.., appuid=" + std::to_string(msg.appUid));
-        AUDIO_WARNING_LOG("skip system app dfx msg.., appuid=%{public}d", msg.appUid);
         return false;
     }
 
@@ -678,7 +677,6 @@ bool DfxMsgManager::CheckCanAddAppInfo(int32_t appUid)
     bool ret = false;
     if (CheckoutSystemAppUtil::CheckoutSystemApp(appUid)) {
         Trace trace("skip system app dfx msg.., appuid=" + std::to_string(appUid));
-        AUDIO_WARNING_LOG("skip system app dfx msg.., appuid=%{public}d", appUid);
         return ret;
     }
 

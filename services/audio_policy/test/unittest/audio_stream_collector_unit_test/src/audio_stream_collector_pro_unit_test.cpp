@@ -1173,9 +1173,11 @@ HWTEST_F(AudioStreamCollectorUnitTest, PostReclaimMemoryTask_001, TestSize.Level
     collector.audioPolicyServerHandler_ = nullptr;
     collector.PostReclaimMemoryTask();
     collector.audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    collector.activatedReclaimMemory_ = false;
     collector.PostReclaimMemoryTask();
     std::string retString = system::GetParameter("persist.ace.testmode.enabled", "0");
     system::SetParameter("persist.ace.testmode.enabled", "1");
+    collector.activatedReclaimMemory_ = true;
     collector.PostReclaimMemoryTask();
     collector.ReclaimMem();
     collector.isActivatedMemReclaiTask_ = true;

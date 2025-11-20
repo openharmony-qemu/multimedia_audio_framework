@@ -110,7 +110,7 @@ public:
     void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        AudioStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &endpoint = nullptr);
+        AudioStreamInfo &serverStreamInfo);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
@@ -140,7 +140,6 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -157,12 +156,15 @@ public:
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
     void UpdateStreamInfo() override;
+
+    void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 public:
     const AudioProcessConfig processConfig_;
 
 private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
+    void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
     bool CheckBGCapturer();
@@ -211,6 +213,9 @@ private:
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
+    bool needConvert_ = false;
+    AudioStreamInfo serverStreamInfo_;
+    FormatKey formatKey_;
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
@@ -240,8 +245,9 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpFACName_;
-    FILE *dumpFAC_ = nullptr;
+    std::string logUtilsTag_ = "";
+
+    mutable int64_t volumeDataCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

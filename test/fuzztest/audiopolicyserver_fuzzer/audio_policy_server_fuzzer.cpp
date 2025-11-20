@@ -433,15 +433,6 @@ void AudioPolicyServerSetLowPowerVolumeFuzzTest()
     audioPolicyServer->SetLowPowerVolume(streamId, volume);
 }
 
-void AudioPolicyServerGetFastStreamInfoFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamInfo streamInfo;
-    uint32_t sessionId = GetData<uint32_t>();
-    audioPolicyServer->GetFastStreamInfo(streamInfo, sessionId);
-}
-
 void AudioPolicyServerGetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -1025,8 +1016,10 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest()
     int32_t uid = GetData<int32_t>();
     int32_t pid = GetData<int32_t>();
     bool isAllowed = GetData<bool>();
+    int32_t streamUsage = GetData<StreamUsage>();
+    bool silentControl = GetData<bool>();
 
-    audioPolicyServer->IsAllowedPlayback(uid, pid, isAllowed);
+    audioPolicyServer->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
 }
 
 void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
@@ -2094,7 +2087,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest,
     AudioPolicyServerGetAppVolumeLevelInternalFuzzTest,
     AudioPolicyServerSetLowPowerVolumeFuzzTest,
-    AudioPolicyServerGetFastStreamInfoFuzzTest,
     AudioPolicyServerGetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetSingleStreamVolumeFuzzTest,
     AudioPolicyServerIsVolumeUnadjustableFuzzTest,

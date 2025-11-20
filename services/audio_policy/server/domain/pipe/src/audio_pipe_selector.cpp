@@ -25,6 +25,9 @@
 #include "audio_service_enum.h"
 #include "audio_injector_policy.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B84
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -220,6 +223,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         AUDIO_INFO_LOG("[PipeFetchInfo] Name %{public}s, PipeAction: %{public}d",
             newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
 
+        std::vector<uint64_t> sessionIdForLog{};
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
             if (streamDescToOldPipeInfo.find(streamDesc->sessionId_) == streamDescToOldPipeInfo.end()) {
                 AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
@@ -227,10 +231,24 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
             streamDesc->SetOldRoute(streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute());
+            if (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute() == newPipeInfo->GetRoute()) {
+                sessionIdForLog.push_back(streamDesc->GetSessionId());
+                continue;
+            }
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d --> %{public}d, "
                 "sAction %{public}d", streamDesc->GetSessionId(),
                 streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
                 newPipeInfo->GetRoute(), streamDesc->GetAction());
+        }
+        if (!sessionIdForLog.empty()) {
+            std::stringstream logstream;
+            for (auto sessionid : sessionIdForLog) {
+                logstream << sessionid;
+                logstream << ", ";
+            }
+            std::string result = logstream.str();
+            result.pop_back();
+            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
@@ -311,7 +329,8 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
         bool isUpdate = false;
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
             isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
-            AUDIO_INFO_LOG("isUpdate: %{public}d, action: %{public}d", isUpdate, streamDescInPipe->streamAction_);
+            JUDGE_AND_INFO_LOG(isUpdate == true, "isUpdate: %{public}d, action: %{public}d", isUpdate,
+                streamDescInPipe->streamAction_);
         }
         if (isUpdate && pipeInfo->GetAction() != PIPE_ACTION_NEW) {
             pipeInfo->SetAction(PIPE_ACTION_UPDATE);

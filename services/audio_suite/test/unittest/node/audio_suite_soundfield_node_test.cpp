@@ -61,39 +61,39 @@ HWTEST_F(AudioSuiteSoundFieldNodeUnitTest, TestSetAndGetOptions, TestSize.Level0
     std::string value = "";
     std::string newValue = "";
 
-    // 未初始化 无效
+    // Uninitialized, invalid
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
     EXPECT_EQ(node->SetOptions(name, value), ERROR);
     EXPECT_EQ(node->GetOptions(name, newValue), ERROR);
 
-    // 初始化
+    // Initialization
     ASSERT_EQ(node->Init(), SUCCESS);
 
-    // 前置
+    // Front facing mode
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
     EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, newValue), SUCCESS);
     EXPECT_EQ(newValue == value, true);
 
-    // 宏大
+    // Grand mode
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_GRAND));
     EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, newValue), SUCCESS);
     EXPECT_EQ(newValue == value, true);
 
-    // 聆听
+    // Near (listening) mode
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_NEAR));
     EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, newValue), SUCCESS);
     EXPECT_EQ(newValue == value, true);
 
-    // 宽广
+    // Wide mode
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_WIDE));
     EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, newValue), SUCCESS);
     EXPECT_EQ(newValue == value, true);
 
-    // 无效值
+    // Invalid values
     EXPECT_EQ(node->GetOptions("unKnownType", newValue), ERROR);
     EXPECT_EQ(node->SetOptions("unKnownType", value), ERROR);
     EXPECT_EQ(node->SetOptions(name, "9"), ERROR);

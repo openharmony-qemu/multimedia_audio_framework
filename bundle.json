@@ -23,7 +23,7 @@
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
           "SystemCapability.Multimedia.Audio.Spatialization",
-          "SystemCapability.Multimedia.Audio.SuiteEngine"
+          "SystemCapability.Multimedia.Audio.SuiteEngine = false"
         ],
         "features": [
           "audio_framework_feature_wired_audio",
@@ -42,7 +42,8 @@
           "audio_framework_feature_inner_capturer",
           "audio_framework_feature_low_latency",
           "audio_framework_feature_device_manager",
-          "audio_framework_feature_mutesink_enable"
+          "audio_framework_feature_mutesink_enable",
+          "audio_framework_feature_audiosuite_support"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",

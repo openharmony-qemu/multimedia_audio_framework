@@ -140,6 +140,11 @@ void AudioCaptureSource::DeInit(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    if (audioCapture_ != nullptr && !attr_.isPrimarySinkExist_) {
+        struct AudioSceneDescriptor sceneDesc;
+        InitSceneDesc(sceneDesc, AUDIO_SCENE_DEFAULT);
+        audioCapture_->SelectScene(audioCapture_, &sceneDesc);
+    }
     sourceInited_ = false;
     started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();

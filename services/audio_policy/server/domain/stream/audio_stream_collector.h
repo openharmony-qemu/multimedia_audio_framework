@@ -26,6 +26,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK
+};
+
 class AudioStreamCollector {
 public:
     static AudioStreamCollector& GetAudioStreamCollector()
@@ -147,6 +154,7 @@ private:
     bool CheckAudioStateIdle();
     std::atomic_bool isActivatedMemReclaiTask_ = false;
     std::mutex clearMemoryMutex_;
+    bool activatedReclaimMemory_ = false;
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 };

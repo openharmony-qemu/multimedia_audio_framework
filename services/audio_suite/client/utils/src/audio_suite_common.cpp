@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; // 最大分配容量
+static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; // Maximum allocation capacity.
 
 int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
 {

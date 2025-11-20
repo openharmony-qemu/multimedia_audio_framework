@@ -438,6 +438,11 @@ audio_ohos_library("audio_policy_service") {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
+  if (target_platform == "watch" ||
+    target_platform == "glasses") {
+    defines += [ "ACTIVATED_RECLAIM_MEMORY" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
   subsystem_name = "multimedia"

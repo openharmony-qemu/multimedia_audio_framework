@@ -23,6 +23,8 @@
 #include "audio_core_service.h"
 #include "audio_ec_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B84
 namespace OHOS {
 namespace AudioStandard {
 

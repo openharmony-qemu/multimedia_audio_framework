@@ -68,10 +68,10 @@ void HpaeManagerImpl::DumpSourceInfo(std::string deviceName)
     manager_->DumpSourceInfo(std::move(deviceName));
 }
 
-void HpaeManagerImpl::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
+void HpaeManagerImpl::DumpAllAvailableDevice()
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->DumpAllAvailableDevice(devicesInfo);
+    manager_->DumpAllAvailableDevice();
 }
 
 void HpaeManagerImpl::DumpSinkInputsInfo()

@@ -130,8 +130,6 @@ public:
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
-    int32_t GetFastStreamInfo(AudioStreamInfo &streamInfo, uint32_t sessionId) override;
-
     int32_t GetLowPowerVolume(int32_t streamId, float &outVolume) override;
 
     int32_t GetSingleStreamVolume(int32_t streamId, float &outVolume) override;
@@ -172,6 +170,8 @@ public:
 
     int32_t ForceSelectDevice(int32_t devType, const std::string &macAddress,
         const sptr<AudioRendererFilter> &filter) override;
+
+    int32_t DisconnectSco() override;
 
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
@@ -419,6 +419,8 @@ public:
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, int32_t volumeType,
         int32_t volume, bool updateUi) override;
 
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus) override;
+
     int32_t GetAvailableDevices(int32_t usage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) override;
 
@@ -571,7 +573,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed) override;
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage, bool &isAllowed,
+        bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 

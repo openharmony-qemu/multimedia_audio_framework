@@ -672,7 +672,7 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
 int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
-    int32_t muteFactor = GetStreamMute(streamType) ? 0 : 1;
+    int32_t muteFactor = GetStreamMuteInternal(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(streamType, volumeLevel);
@@ -1115,6 +1115,8 @@ bool AudioAdapterManager::IsDistributedVolumeType(AudioStreamType streamType)
 
 void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
+    std::lock_guard<std::mutex> lock(setVoiceStatusMutex_);
+    CHECK_AND_RETURN_LOG(isSleVoiceStatus_ != isSleVoiceStatus, "the isSleVoiceStatus state has not changed");
     isSleVoiceStatus_ = isSleVoiceStatus;
     AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
@@ -1134,7 +1136,6 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     if (osAccountReady) {
         LoadVolumeMap();
         LoadMuteStatusMap();
-        UpdateSafeVolume();
     } else {
         AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
     }
@@ -1956,6 +1957,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         }
     }
     GetHdiSourceTypeToAudioSourceAttr(attr, attr.sourceType);
+    attr.isPrimarySinkExist_ = isPrimarySinkExist_.load();
     return attr;
 }
 
@@ -2206,7 +2208,7 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioActiveDevice_.GetActiveOutputDevices();
+    auto descs = audioConnectedDevice_.GetCopy();
     for (auto &device: descs) {
         UpdateSafeVolumeInner(device);
     }
@@ -3339,6 +3341,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
+    UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
     AUDIO_INFO_LOG("update ok for dp casting");
@@ -3485,6 +3488,11 @@ void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
+}
+
+void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
+{
+    isPrimarySinkExist_ = isPrimarySinkExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

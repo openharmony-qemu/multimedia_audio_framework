@@ -430,7 +430,7 @@ void RenderInServerInnerCaptureEnqueueBufferFuzzTest()
     audioProcessConfig.streamType = STREAM_MUSIC;
     captureInfo.dupStream = std::make_shared<ProRendererStreamImpl>(audioProcessConfig, true);
     int32_t innerCapId = g_fuzzUtils.GetData<int32_t>();
-    renderer->renderEmptyCountForInnerCap_ = g_fuzzUtils.GetData<int32_t>();
+    renderer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = g_fuzzUtils.GetData<int32_t>();
     renderer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
 }
 

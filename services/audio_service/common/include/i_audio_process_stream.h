@@ -88,7 +88,6 @@ public:
  
     virtual bool GetSilentState() = 0;
     virtual void SetSilentState(bool state) = 0;
-    virtual void AddMuteWriteFrameCnt(int64_t muteFrameCnt) = 0;
     virtual void AddMuteFrameSize(int64_t muteFrameCnt) {}
     virtual void AddNormalFrameSize() {}
     virtual void AddNoDataFrameSize() {}
@@ -104,6 +103,8 @@ public:
     {
         return SUCCESS;
     }
+
+    virtual void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
