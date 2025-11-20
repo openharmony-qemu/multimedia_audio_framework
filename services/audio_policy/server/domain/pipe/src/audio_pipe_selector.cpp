@@ -134,7 +134,8 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<Au
     AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
 }
 
-void AudioPipeSelector::CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
