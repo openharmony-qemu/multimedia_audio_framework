@@ -149,6 +149,15 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
 
     /**
+     * @brief stop the current audio port
+     *
+     * @param audioPortName Name of the default audio sink/source to be stop
+     * @return Returns {@link SUCCESS} if stop is success; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t StopAudioPort(const std::string &audioPortName) = 0;
+    
+    /**
      * @brief mute the device or unmute
      *
      * @param sinkName Name of the audio sink

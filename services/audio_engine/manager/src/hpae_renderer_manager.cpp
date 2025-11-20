@@ -867,8 +867,8 @@ bool HpaeRendererManager::CheckIsStreamRunning()
 
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
-    Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
+        Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
         if (isSuspend_ == isSuspend) {
             return;
         }
@@ -883,6 +883,17 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             CheckIsStreamRunning()) {
             outputCluster_->Start();
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::StopManager()
+{
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "output cluster is nullptr");
+        outputCluster_->Stop();
     };
     SendRequest(request, __func__);
     return SUCCESS;

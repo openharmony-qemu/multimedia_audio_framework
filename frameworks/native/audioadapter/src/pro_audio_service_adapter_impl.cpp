@@ -143,6 +143,15 @@ int32_t ProAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bo
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::StopAudioPort(const std::string &audioPortName)
+{
+    Trace trace("StopAudioPort");
+    lock_guard<mutex> lock(lock_);
+    AUDIO_INFO_LOG("StopAudioPort [%{public}s]", audioPortName.c_str());
+    IHpaeManager::GetHpaeManager().StopAudioPort(audioPortName);
+    return SUCCESS;
+}
+
 bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_INFO_LOG("[%{public}s] : [%{public}d] isSync [%{public}d]", sinkName.c_str(), isMute, isSync);

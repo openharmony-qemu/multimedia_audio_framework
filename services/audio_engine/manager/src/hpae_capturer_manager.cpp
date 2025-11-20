@@ -1033,6 +1033,15 @@ std::string HpaeCapturerManager::GetDeviceHDFDumpInfo()
     return config;
 }
 
+int32_t HpaeCapturerManager::StopManager()
+{
+    auto request = [this] {
+        CapturerSourceStop();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
     const SourceType &sourceType)
 {
