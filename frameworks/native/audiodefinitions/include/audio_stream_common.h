@@ -23,6 +23,7 @@ namespace AudioStandard {
 class AudioStreamCommon {
 public:
     static bool IsVoipMmap(StreamUsage streamUsage = STREAM_USAGE_INVALID, SourceType sourceType = SOURCE_TYPE_INVALID);
+    static bool CompareFormatAndChannel(const AudioStreamInfo &infoA, const AudioStreamInfo &infoB);
 };
 } // namespace AudioStandard
 } // namespace OHOS

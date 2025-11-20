@@ -1872,6 +1872,172 @@ HWTEST(AudioProcessInServerUnitTest, RebuildCaptureInjector_002, TestSize.Level1
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
+ * @tc.number: RendererResample_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, RendererResample_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    BufferDesc buffer;
+    audioProcessInServer->RendererResample(buffer);
+    size_t spanSizeInByte = 128;
+    audioProcessInServer->resampleBuffer_.buffer = new uint8_t[spanSizeInByte];
+    audioProcessInServer->resampleBuffer_.bufLength = spanSizeInByte;
+    audioProcessInServer->resampleBuffer_.dataLength = spanSizeInByte;
+    audioProcessInServer->handleRendererDataType_ = AudioProcessInServer::RESAMPLE_ACTION;
+    audioProcessInServer->RendererResample(buffer);
+    EXPECT_EQ(audioProcessInServer->resampleBuffer_.bufLength, spanSizeInByte);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererConvertServer_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, RendererConvertServer_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    BufferDesc buffer;
+    size_t spanSizeInByte = 128;
+    audioProcessInServer->convertedBuffer_.buffer = new uint8_t[spanSizeInByte];
+    audioProcessInServer->convertedBuffer_.bufLength = spanSizeInByte;
+    audioProcessInServer->convertedBuffer_.dataLength = spanSizeInByte;
+    audioProcessInServer->RendererConvertServer(buffer);
+    audioProcessInServer->handleRendererDataType_ = AudioProcessInServer::CONVERT_TO_SERVER_ACTION;
+    audioProcessInServer->RendererConvertServer(buffer);
+    EXPECT_EQ(buffer.bufLength, spanSizeInByte);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererConvertF32_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, RendererConvertF32_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    BufferDesc buffer;
+    size_t spanSizeInByte = 128;
+    audioProcessInServer->f32Buffer_.buffer = new uint8_t[spanSizeInByte];
+    audioProcessInServer->f32Buffer_.bufLength = spanSizeInByte;
+    audioProcessInServer->f32Buffer_.dataLength = spanSizeInByte;
+    audioProcessInServer->RendererConvertF32(buffer);
+    audioProcessInServer->handleRendererDataType_ = AudioProcessInServer::CONVERT_TO_F32_ACTION;
+    audioProcessInServer->RendererConvertF32(buffer);
+    EXPECT_EQ(buffer.bufLength, spanSizeInByte);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: InitRendererStream_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, InitRendererStream_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+
+    uint32_t spanTime = 5;
+    AudioStreamInfo client {SAMPLE_RATE_16000, AudioEncodingType::ENCODING_PCM, SAMPLE_F32LE, STEREO};
+    AudioStreamInfo server {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    audioProcessInServer->InitRendererStream(spanTime, client, server);
+    EXPECT_NE(audioProcessInServer->resampleBuffer_.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: InitRendererStream_002
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, InitRendererStream_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+
+    uint32_t spanTime = 5;
+    AudioStreamInfo client {SAMPLE_RATE_16000, AudioEncodingType::ENCODING_PCM, SAMPLE_S16LE, MONO};
+    AudioStreamInfo server {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    audioProcessInServer->InitRendererStream(spanTime, client, server);
+    EXPECT_NE(audioProcessInServer->f32Buffer_.buffer, nullptr);
+    EXPECT_NE(audioProcessInServer->resampleBuffer_.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: InitRendererStream_003
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, InitRendererStream_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+
+    uint32_t spanTime = 5;
+    AudioStreamInfo client {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_F32LE, MONO};
+    AudioStreamInfo server {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    audioProcessInServer->InitRendererStream(spanTime, client, server);
+    EXPECT_NE(audioProcessInServer->convertedBuffer_.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: InitCapturerStream_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, InitCapturerStream_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+
+    uint32_t spanSizeInByte = 120;
+    AudioStreamInfo client {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    AudioStreamInfo server {SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM, SAMPLE_S16LE, STEREO};
+
+    audioProcessInServer->InitCapturerStream(spanSizeInByte, client, server);
+    EXPECT_EQ(audioProcessInServer->convertedBuffer_.buffer, nullptr);
+
+    client.channels = MONO;
+    audioProcessInServer->InitCapturerStream(spanSizeInByte, client, server);
+    EXPECT_NE(audioProcessInServer->convertedBuffer_.buffer, nullptr);
+
+    client.samplingRate = SAMPLE_RATE_16000;
+    audioProcessInServer->InitCapturerStream(spanSizeInByte, client, server);
+    EXPECT_NE(audioProcessInServer->convertedBuffer_.buffer, nullptr);
+
+    client.channels = STEREO;
+    audioProcessInServer->InitCapturerStream(spanSizeInByte, client, server);
+    EXPECT_NE(audioProcessInServer->convertedBuffer_.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
  * @tc.number: ReleaseCaptureInjector_001
  * @tc.desc  : Test AudioProcessInServer interface.
  */

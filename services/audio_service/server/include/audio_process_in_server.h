@@ -53,6 +53,14 @@ private:
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
+
+    enum HandleRendererDataType {
+        NONE_ACTION = 0,
+        CONVERT_TO_F32_ACTION = 0x1,
+        RESAMPLE_ACTION = 0x10,
+        CONVERT_TO_SERVER_ACTION = 0x100,
+    };
+
     static sptr<AudioProcessInServer> Create(const AudioProcessConfig &processConfig,
         ProcessReleaseCallback *releaseCallback);
     virtual ~AudioProcessInServer();
@@ -172,6 +180,14 @@ private:
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    void InitRendererStream(uint32_t spanTime,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void InitCapturerStream(uint32_t spanSizeInByte,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void RendererResample(BufferDesc &buffer);
+    void RendererConvertF32(BufferDesc &buffer);
+    void RendererConvertServer(BufferDesc &buffer);
+
     bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
@@ -217,10 +233,18 @@ private:
     std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
-    BufferDesc convertedBuffer_ = {};
-    bool needConvert_ = false;
     AudioStreamInfo serverStreamInfo_;
-    FormatKey formatKey_;
+    BufferDesc resampleBuffer_ = {};
+    BufferDesc f32Buffer_ = {};
+    BufferDesc convertedBuffer_ = {};
+    std::unique_ptr<uint8_t []> resampleBufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> f32BufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> convertedBufferNew_ = nullptr;
+
+    FormatKey dataToServerKey_;
+    FormatKey clientToResampleKey_;
+    int32_t handleRendererDataType_ = NONE_ACTION;
+    
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
