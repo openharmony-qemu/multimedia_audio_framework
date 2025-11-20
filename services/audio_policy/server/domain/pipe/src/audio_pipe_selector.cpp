@@ -136,13 +136,16 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<Au
 
 void AudioPipeSelector::CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    int32_t fastNum = 0;
+    int32_t fastOutputNum = 0;
+    int32_t fastInputNum = 0;
     for (auto streamDesc : streamDescs) {
-        if (streamDesc->routeFlag_ != AUDIO_OUTPUT_FLAG_FAST) {
+        if (streamDesc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
+            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
+            streamDesc->ResetToNormalRoute(false);
             continue;
         }
-        if (++fastNum > MAX_FAST_STREAM_COUNT) {
-            AUDIO_INFO_LOG("reach fast limit, set %{publiv}u to normal", streamDesc->sessionId_);
+        if (streamDesc->routeFlag_ == AUDIO_INTPUT_FLAG_FAST && ++fastInputNum > MAX_FAST_STREAM_COUNT) {
+            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
             continue;
         }
