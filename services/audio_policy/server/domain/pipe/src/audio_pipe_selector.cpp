@@ -145,7 +145,7 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
             streamDesc->ResetToNormalRoute(false);
             continue;
         }
-        if (streamDesc->routeFlag_ == AUDIO_INTPUT_FLAG_FAST && ++fastInputNum > MAX_FAST_STREAM_COUNT) {
+        if (streamDesc->routeFlag_ == AUDIO_INPUT_FLAG_FAST && ++fastInputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
             continue;
