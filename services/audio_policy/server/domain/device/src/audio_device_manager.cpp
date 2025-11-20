@@ -463,17 +463,17 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (IsUsb(descriptor->deviceType_)) {
-                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
-            }
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK_IN) {
-                return true;
-            } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
-                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+            switch (descriptor->deviceType_) {
+                case DEVICE_TYPE_USB_HEADSET:
+                case DEVICE_TYPE_USB_ARM_HEADSET:
+                case DEVICE_TYPE_BLUETOOTH_A2DP:
+                case DEVICE_TYPE_BLUETOOTH_SCO:
+                case DEVICE_TYPE_NEARLINK:
+                case DEVICE_TYPE_NEARLINK_IN:
+                case DEVICE_TYPE_REMOTE_DAUDIO:
+                    return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+                default:
+                    return true;
             }
         }
         return false;
