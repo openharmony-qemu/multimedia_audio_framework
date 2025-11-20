@@ -178,7 +178,6 @@ void NapiAudioVolumeGroupManager::Destructor(napi_env env, void *nativeObject, v
     }
     auto obj = static_cast<NapiAudioVolumeGroupManager*>(nativeObject);
     ObjectRefMap<NapiAudioVolumeGroupManager>::DecreaseRef(obj);
-    AUDIO_PRERELEASE_LOGI("Decrease obj count");
 }
 
 napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_info info)
