@@ -164,6 +164,15 @@ public:
     virtual void OnReadData(size_t length) {}
 };
 
+class AudioRendererFirstFrameWritingCallbackTest : public AudioRendererFirstFrameWritingCallback {
+public:
+    virtual ~AudioRendererFirstFrameWritingCallbackTest() = default;
+    /**
+    * Called when first buffer to be enqueued.
+    */
+    virtual void OnFirstFrameWriting(uint64_t latency) {}
+};
+
 class CapturerPositionCallbackTest : public CapturerPositionCallback {
 public:
     virtual ~CapturerPositionCallbackTest() = default;
@@ -2838,5 +2847,25 @@ HWTEST(RendererInClientInnerUnitTest, GetRenderTarget_001, TestSize.Level1)
     auto ret = ptrRendererInClientInner->GetRenderTarget();
     EXPECT_EQ(ret, NORMAL_PLAYBACK);
 }
+
+/**
+ * @tc.name  : Test GetSwitchInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetSwitchInfo_001
+ * @tc.desc  : Test GetSwitchInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, GetSwitchInfo_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    IAudioStream::SwitchInfo info;
+    ptrRendererInClientInner->GetSwitchInfo(info);
+    EXPECT_EQ(info.rendererFirstFrameWritingCallback, nullptr);
+    ptrRendererInClientInner->firstFrameWritingCb_ = std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    ptrRendererInClientInner->GetSwitchInfo(info);
+    EXPECT_NE(info.rendererFirstFrameWritingCallback, nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
