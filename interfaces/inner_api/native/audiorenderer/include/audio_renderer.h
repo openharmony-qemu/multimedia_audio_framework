@@ -1121,7 +1121,7 @@ public:
     static bool CheckSupportedSamplingRates(uint32_t rates);
 
     /**
-     * @brief Sef the render target
+     * @brief Set the render target
      * @param target The target at which the stream needs to be rendered.
      * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -1135,6 +1135,14 @@ public:
      * @since 22
      */
     virtual RenderTarget GetTarget() const { return NORMAL_PLAYBACK; }
+
+    /**
+     * @brief Obtains the current render running flag
+     * @return Returns {@link SUCCESS} if keep running is successfully get; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

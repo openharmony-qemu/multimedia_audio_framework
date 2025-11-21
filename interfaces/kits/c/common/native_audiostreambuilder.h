@@ -460,6 +460,21 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererFastStatusChangeCallback(
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(OH_AudioStreamBuilder* builder,
     OH_AudioCapturer_OnFastStatusChange callback, void* userData);
 
+/**
+ * @brief Sets keep running flag for AudioRenderer stream.
+ * By default, audio driver will enter standby mode when there is no audio data for a while, but some applications
+ * want to disable auto standby to achieve lower audio starting latency.
+ * This function only supports system application to use while using {@link #AUDIOSTREAM_LATENCY_MODE_FAST}
+ * latency mode. If not supported, audio system will keep enabling auto standby.
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create().
+ * @param keepRunning use {@code true} to enable keep running function. Default value is {@code false}.
+ * @return
+ *     {@link #AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link #AUDIOSTREAM_ERROR_INVALID_PARAM} the param of builder is nullptr.
+ * @since 23
+*/
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererKeepRunning(OH_AudioStreamBuilder* builder, bool keepRunning);
+
 #ifdef __cplusplus
 }
 #endif
