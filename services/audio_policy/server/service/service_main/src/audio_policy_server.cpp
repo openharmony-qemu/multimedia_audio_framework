@@ -3843,6 +3843,9 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
 
 int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
     audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
     return SUCCESS;
 }
