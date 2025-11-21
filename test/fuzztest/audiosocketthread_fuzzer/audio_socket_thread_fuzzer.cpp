@@ -135,6 +135,9 @@ void AudioSocketThreadDetectAnalogHeadsetStateFuzzTest()
 {
     AudioSocketThread audioSocketThread;
     std::ofstream ofs(SWITCH_STATE_PATH);
+    if (!ofs.is_open()) {
+        return;
+    }
     ofs << '1';
     ofs.close();
     AudioEvent audioEvent;
@@ -157,6 +160,9 @@ void AudioSocketThreadReadAndScanDpStateFuzzTest()
     AudioSocketThread audioSocketThread;
     std::string testPath = "/tmp/test_path";
     std::ofstream file(testPath);
+    if (!file.is_open()) {
+        return;
+    }
     file << '1';
     file.close();
     uint32_t eventType = g_fuzzUtils.GetData<uint32_t>();
