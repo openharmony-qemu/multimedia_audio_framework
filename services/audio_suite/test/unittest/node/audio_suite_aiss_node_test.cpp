@@ -75,6 +75,8 @@ namespace {
         AudioSuitePcmBuffer *outputBuffer = impl->SignalProcess(inputs);
         EXPECT_NE(outputBuffer, nullptr);
         inputFile.close();
+
+        EXPECT_EQ(impl->DeInit(), SUCCESS);
     }
 
     HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest001, TestSize.Level0)
@@ -82,6 +84,8 @@ namespace {
         std::shared_ptr<AudioSuiteAissNode> impl = std::make_shared<AudioSuiteAissNode>();
         int32_t ret = impl->DoProcess();
         EXPECT_EQ(ret, ERROR);
+
+        EXPECT_EQ(impl->DeInit(), SUCCESS);
     }
  
     HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest002, TestSize.Level0)
