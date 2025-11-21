@@ -2118,7 +2118,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetUnderflowCount(info.underFlowCount);
 
     if (info.userSettedPreferredFrameSize.has_value()) {
-        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value());
+        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
     }
 
     audioStream->SetSilentModeAndMixWithOthers(info.silentModeAndMixWithOthers);
@@ -2561,7 +2561,7 @@ void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    currentStream->SetPreferredFrameSize(frameSize);
+    currentStream->SetPreferredFrameSize(frameSize, false);
 }
 
 void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)

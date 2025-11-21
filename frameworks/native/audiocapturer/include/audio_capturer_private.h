@@ -140,6 +140,7 @@ private:
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     IAudioStream::StreamClass DecideStreamClassAndUpdateCapturerInfo(uint32_t flag);
     int32_t InitInputDeviceChangeCallback();
+    void ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);

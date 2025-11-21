@@ -126,7 +126,7 @@ public:
 
     int64_t GetFramesRead() override;
 
-    void SetPreferredFrameSize(int32_t frameSize) override;
+    void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     
@@ -560,7 +560,7 @@ int64_t AudioProcessInClientInner::GetFramesRead()
     return audioBuffer_->GetCurReadFrame();
 }
 
-void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize)
+void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
     size_t originalSpanSizeInFrame = static_cast<size_t>(spanSizeInFrame_);
     size_t tmp = static_cast<size_t>(frameSize);

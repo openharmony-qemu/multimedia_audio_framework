@@ -135,7 +135,7 @@ public:
     bool DrainAudioStream(bool stopFlag = false) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
-    void SetPreferredFrameSize(int32_t frameSize) override;
+    void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;

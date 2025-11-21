@@ -1484,9 +1484,16 @@ uint32_t AudioCapturerPrivate::GetOverflowCount() const
     return currentStream->GetOverflowCount();
 }
 
+void AudioCapturerPrivate::ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream)
+{
+    CHECK_AND_RETURN(info.userSettedPreferredFrameSize.has_value());
+    // audioStream is checked in SetSwitchInfo
+    audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
+}
+
 int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream != nullptr, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
@@ -1495,6 +1502,8 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
+
+    ReconfigBufferSize(info, audioStream);
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
