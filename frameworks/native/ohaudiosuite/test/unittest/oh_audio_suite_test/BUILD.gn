@@ -15,7 +15,7 @@ import("//build/test.gni")
 import("../../../../../../config.gni")
 
 if (audio_framework_feature_audiosuite_support) {
-  module_output_path = "audio_framework/audio_framework_route/audio_ndk"
+  module_output_path = "audio_framework/audio_suite/audio_ndk"
   audio_framework_root = "//foundation/multimedia/audio_framework"
 
   config("audio_suite_config") {
