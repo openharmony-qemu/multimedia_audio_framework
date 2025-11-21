@@ -197,6 +197,13 @@ int32_t HpaeManagerImpl::SuspendAudioDevice(std::string &audioPortName, bool isS
     return manager_->SuspendAudioDevice(audioPortName, isSuspend);
 }
 
+int32_t HpaeManagerImpl::StopAudioPort(const std::string &audioPortName)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE,
+        "manager is nullptr");
+    return manager_->StopAudioPort(audioPortName);
+}
+
 bool HpaeManagerImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false,

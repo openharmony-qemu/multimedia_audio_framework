@@ -213,6 +213,11 @@ int32_t HpaeInjectorRendererManager::SuspendStreamManager(bool isSuspend)
     return SUCCESS;
 }
 
+int32_t HpaeInjectorRendererManager::StopManager()
+{
+    return SUCCESS;
+}
+
 int32_t HpaeInjectorRendererManager::SetMute(bool isMute)
 {
     AUDIO_ERR_LOG("Unsupported operation");

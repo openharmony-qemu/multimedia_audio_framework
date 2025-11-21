@@ -151,6 +151,26 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
     return SUCCESS;
 }
 
+int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
+{
+    auto request = [this, audioPortName]() {
+        AUDIO_INFO_LOG("HpaeManager::stop audio port: %{public}s", audioPortName.c_str());
+        auto renderManager = GetRendererManagerByName(audioPortName);
+        if (renderManager != nullptr) {
+            renderManager->StopManager();
+            return;
+        }
+        auto captureManager = GetCapturerManagerByName(audioPortName);
+        if (captureManager != nullptr) {
+            captureManager->StopManager();
+            return;
+        }
+        AUDIO_WARNING_LOG("can not find audio port: %{public}s", audioPortName.c_str());
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 bool HpaeManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     auto request = [this, sinkName, isMute, isSync]() {

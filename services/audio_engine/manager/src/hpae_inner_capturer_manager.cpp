@@ -486,6 +486,7 @@ int32_t HpaeInnerCapturerManager::SuspendStreamManager(bool isSuspend)
 {
     Trace trace("HpaeInnerCapturerManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
+        CHECK_AND_RETURN_LOG(hpaeInnerCapSinkNode_ != nullptr, "inner sink node is nullptr");
         if (isSuspend) {
             // todo fadout
             hpaeInnerCapSinkNode_->InnerCapturerSinkStop();
@@ -493,6 +494,17 @@ int32_t HpaeInnerCapturerManager::SuspendStreamManager(bool isSuspend)
             // todo fadout
             hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
         }
+    };
+    SendRequestInner(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::StopManager()
+{
+    Trace trace("StopManager");
+    auto request = [this] {
+        CHECK_AND_RETURN_LOG(hpaeInnerCapSinkNode_ != nullptr, "inner sink node is nullptr");
+        hpaeInnerCapSinkNode_->InnerCapturerSinkStop();
     };
     SendRequestInner(request, __func__);
     return SUCCESS;
