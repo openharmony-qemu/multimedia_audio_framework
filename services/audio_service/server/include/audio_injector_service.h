@@ -30,7 +30,8 @@ public:
         AudioStreamInfo &streamInfo);
     void SetSinkPortIdx(uint32_t sinkPortIdx);
     uint32_t GetSinkPortIdx();
-    AudioModuleInfo &GetModuleInfo();
+    AudioModuleInfo GetModuleInfo();
+    void SetModuleInfo(AudioStreamInfo &streamInfo);
 private:
     AudioInjectorService();
     ~AudioInjectorService() = default;

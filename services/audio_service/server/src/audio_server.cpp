@@ -3202,7 +3202,7 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
     CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
     ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "add injector fail!");
-    AudioModuleInfo &info = AudioInjectorService::GetInstance().GetModuleInfo();
+    AudioModuleInfo info = AudioInjectorService::GetInstance().GetModuleInfo();
     rate = info.rate;
     format = info.format;
     channels = info.channels;

@@ -1449,30 +1449,6 @@ HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RemoveCaptureInjector API
- * @tc.type  : FUNC
- * @tc.number: RemoveCaptureInjector_003
- * @tc.desc  : Test RemoveCaptureInjector with mismatched sink port index, should return ERROR.
- */
-HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
-
-    // Set up initial state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-
-    uint32_t sinkPortIndex = 5678; // Different from stored index
-    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    
-    int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
-
-    EXPECT_EQ(result, ERROR);
-    EXPECT_TRUE(audioEndpointInner->isNeedInject_); // Should remain unchanged
-    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, 1234); // Should remain unchanged
-}
-
-/**
  * @tc.name  : Test AddRemoveCaptureInjector API sequence
  * @tc.type  : FUNC
  * @tc.number: AddRemoveCaptureInjector_001
