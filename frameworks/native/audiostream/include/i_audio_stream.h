@@ -187,6 +187,7 @@ public:
     virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
+    virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;

@@ -96,6 +96,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+    int32_t GetKeepRunning(bool &keepRunning) const override;
 
     void InitCallbackHandler();
     void SafeSendCallbackEvent(uint32_t eventCode, int64_t data);

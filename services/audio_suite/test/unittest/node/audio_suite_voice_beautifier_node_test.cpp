@@ -25,7 +25,7 @@ using namespace testing;
 using namespace std;
 
 namespace {
-static std::string g_inputfile001 = "/data/audiosuite/vb/48000_2_S16LE.pcm";
+static std::string g_inputfile001 = "/data/audiosuite/vb/48000_2_16.pcm";
 static std::string g_outputfile001 = "/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm";
 static std::string g_targetfile001 = "/data/audiosuite/vb/vb_48000_2_S16LE_target.pcm";
 

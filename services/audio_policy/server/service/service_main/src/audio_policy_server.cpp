@@ -1879,6 +1879,8 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectOutputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (auto desc : audioDeviceDescriptors) {
@@ -1914,6 +1916,8 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectInputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectInputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
     for (auto desc : audioDeviceDescriptors) {
@@ -3839,6 +3843,9 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
 
 int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
     audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
     return SUCCESS;
 }
@@ -5449,13 +5456,13 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::DisconnectSco()
+int32_t AudioPolicyServer::SetActiveHfpDevice(const std::string& macAddress)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("not system SA calling!");
         return ERR_OPERATION_FAILED;
     }
-    return Bluetooth::AudioHfpManager::DisconnectSco();
+    return Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
 }
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)

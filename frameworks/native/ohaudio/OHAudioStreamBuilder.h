@@ -40,6 +40,7 @@ public:
     OH_AudioStream_Result SetPreferredFrameSize(int32_t frameSize);
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
+    OH_AudioStream_Result SetRendererKeepRunning(bool keepRunning);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
     OH_AudioStream_Result SetAudioVolumeMode(AudioVolumeMode volumeMode);
@@ -90,6 +91,7 @@ private:
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
     AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool keepRunning_ = false;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
 
@@ -129,6 +131,9 @@ private:
     void *capturerFastStatusChangeUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
     InterruptStrategy strategy_ = InterruptStrategy::DEFAULT;
+
+    void ConfigureRenderer(OHAudioRenderer *audioRenderer);
+    void ConfigureCapturer(OHAudioCapturer *audioCapturer);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -608,7 +608,7 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
-    std::lock_guard lock(firstFrameWritingMutex_);
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
@@ -620,7 +620,7 @@ void RendererInClientInner::OnFirstFrameWriting()
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
     {
-        std::lock_guard lock(firstFrameWritingMutex_);
+        std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
@@ -1132,7 +1132,8 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1193,7 +1194,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1459,6 +1461,14 @@ void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
     streamTrackerRegistered_ = trackerRegisteredState;
 }
 
+void RendererInClientInner::GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info)
+{
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
+    if (firstFrameWritingCb_) {
+        info.rendererFirstFrameWritingCallback = firstFrameWritingCb_;
+    }
+}
+
 void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
     info.params = streamParams_;
@@ -1485,6 +1495,8 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
         info.lastCallStartByUserTid = lastCallStartByUserTid_;
     }
+
+    GetRendererFirstFrameWritingCallback(info);
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)

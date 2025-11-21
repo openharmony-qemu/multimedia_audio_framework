@@ -58,6 +58,7 @@ public:
     bool IsRunning(void) override;
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
+    int32_t StopManager() override;
 
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;

@@ -102,6 +102,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
+    SetKeepRunning(processConfig_.rendererInfo.keepRunning);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -202,6 +203,17 @@ int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
     return SUCCESS;
+}
+
+void AudioProcessInServer::SetKeepRunning(bool keepRunning)
+{
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsSystemApp(), "SetKeepRunning: No system permission");
+    keepRunning_ = keepRunning;
+}
+
+bool AudioProcessInServer::GetKeepRunning()
+{
+    return keepRunning_;
 }
 
 void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)

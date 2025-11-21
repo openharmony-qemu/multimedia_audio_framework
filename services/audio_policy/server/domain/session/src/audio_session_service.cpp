@@ -600,6 +600,7 @@ bool AudioSessionService::IsSystemAppWithMixStrategy(const AudioInterrupt &audio
                session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_CALL &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION;
     }
 

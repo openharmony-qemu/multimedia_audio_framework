@@ -41,6 +41,7 @@ void AudioAffinityParserUnitTest::SetUp(void)
 }
 void AudioAffinityParserUnitTest::TearDown(void)
 {
+    ASSERT_TRUE(mockAudioXmlNode_ != nullptr);
     EXPECT_CALL(*(mockAudioXmlNode_), FreeDoc()).Times(1);
     audioAffinityParser_ = nullptr;
     mockAudioXmlNode_ = nullptr;

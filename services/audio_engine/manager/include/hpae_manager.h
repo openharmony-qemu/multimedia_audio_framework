@@ -106,6 +106,7 @@ public:
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
+    int32_t StopAudioPort(const std::string &audioPortName) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t GetAllSinks() override;

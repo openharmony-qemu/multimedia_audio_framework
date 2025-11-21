@@ -50,6 +50,7 @@ public:
     int32_t MoveAllStream(const std::string& sinkName, const std::vector<uint32_t>& sessionIds,
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
+    int32_t StopManager() override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;

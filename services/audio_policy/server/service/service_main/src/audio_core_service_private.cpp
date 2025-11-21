@@ -2265,11 +2265,6 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "HandleFetchOutputWhenNoRunningStream");
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
-    if (descs.front()->deviceType_ != DEVICE_TYPE_NONE &&
-        (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT || reason.IsSetAudioScene())) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
-            descs.front()->deviceName_, descs.front()->networkId_);
-    }
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
     if (descs.front()->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(descs.front(), tmpOutputDeviceDesc)) {
         AUDIO_DEBUG_LOG("output device is not change");
@@ -2284,6 +2279,10 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     ActivateOutputDevice(streamDesc, reason);
 
+    if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            descs.front()->deviceName_, descs.front()->networkId_);
+    }
     if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         string condition = string("address=") + descs.front()->macAddress_ + " role=" + to_string(OUTPUT_DEVICE);
         string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
@@ -3054,6 +3053,14 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
     }
 }
 
+void AudioCoreService::DeactivateBluetoothDevice(bool isRunning)
+{
+    CHECK_AND_RETURN(isRunning);
+    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
+    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -3083,9 +3090,8 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
-        audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
-        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-        
+        DeactivateBluetoothDevice(isRunning);
+
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s, result: %{public}d",

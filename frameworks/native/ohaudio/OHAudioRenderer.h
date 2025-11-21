@@ -252,6 +252,7 @@ public:
     void SetInterruptMode(InterruptMode mode);
     void SetSilentModeAndMixWithOthers(bool on);
     bool GetSilentModeAndMixWithOthers();
+    int32_t GetKeepRunning(bool &keepRunning);
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
     FastStatus GetFastStatus();
 

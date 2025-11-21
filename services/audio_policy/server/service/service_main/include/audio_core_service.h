@@ -556,6 +556,7 @@ private:
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
+    void DeactivateBluetoothDevice(bool isRunning);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
@@ -578,7 +579,7 @@ private:
 
     // for remote
     void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

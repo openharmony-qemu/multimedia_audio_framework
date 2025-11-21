@@ -301,8 +301,8 @@ interface IAudioPolicy {
     void IsSupportInnerCaptureOffload([out] boolean ret);
     void SelectPrivateDevice([in] int devType, [in] String macAddress);
     void ForceSelectDevice([in] int devType, [in] String macAddress, [in] sptr<AudioRendererFilter> filter);
+    void SetActiveHfpDevice([in] String macAddress);
     void RestoreDistributedDeviceInfo();
     void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
-    void DisconnectSco();
 }
 

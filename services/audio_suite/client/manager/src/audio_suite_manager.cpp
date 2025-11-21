@@ -264,7 +264,8 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     if (!stopWaiting) {
         WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, "CreateNode timeout");
         AUDIO_ERR_LOG("CreateNode timeout");
-        return INVALID_NODE_ID;
+        nodeId = INVALID_NODE_ID;
+        return ERROR;
     }
 
     AUDIO_INFO_LOG("CreateNode leave");

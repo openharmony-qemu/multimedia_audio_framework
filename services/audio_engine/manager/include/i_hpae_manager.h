@@ -61,6 +61,7 @@ public:
     virtual bool IsRunning() = 0;
     virtual bool IsMsgProcessing() = 0;
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
+    virtual int32_t StopAudioPort(const std::string &audioPortName) = 0;
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
     virtual int32_t SetSourceOutputMute(int32_t uid, bool setMute) = 0;
     virtual int32_t GetAllSinks() = 0;

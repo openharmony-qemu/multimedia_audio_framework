@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -112,12 +113,34 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
+std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
+
+void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
+{
+    size_t equalPos = value.find('=');
+    if (equalPos != std::string::npos) {
+        std::string subStr = value.substr(0, equalPos);
+        if (muteType.count(subStr)) {
+            auto tokenId = IPCSkeleton::GetCallingFullTokenID();
+            std::string bundleName = GetBundleNameByToken(tokenId);
+            AUDIO_INFO_LOG("bundleName: %{public}s", bundleName.c_str());
+            std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+                Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::MUTE_BUNDLE_NAME,
+                Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+            bean->Add("MUTETYPE", value);
+            bean->Add("BUNDLENAME", bundleName);
+            Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        }
+    }
+}
+
 int32_t LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
     Trace trace("LocalDeviceManager::SetAudioParameter" + std::to_string(key));
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
+    ReportBundleNameEvent(value);
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     // LCOV_EXCL_START
     if (wrapper == nullptr || wrapper->adapter_ == nullptr) {

@@ -299,6 +299,8 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     void RecordDropPosition(size_t dataLength);
+
+    void GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
