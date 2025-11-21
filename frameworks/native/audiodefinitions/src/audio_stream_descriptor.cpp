@@ -60,6 +60,22 @@ AudioStreamDescriptor::AudioStreamDescriptor(
 {
 }
 
+AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor)
+{
+    CHECK_AND_RETURN_LOG(streamDescriptor != nullptr, "Error input parameter");
+    for (auto &deviceDesc : streamDescriptor->newDeviceDescs_) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr);
+        newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+    }
+    for (auto &deviceDesc : streamDescriptor->oldDeviceDescs_) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr);
+        oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+    }
+    streamStatus_ = streamDescriptor->streamStatus_;
+    sessionId_ = streamDescriptor->sessionId_;
+    rendererInfo_.streamUsage = streamDescriptor->rendererInfo_.streamUsage;
+}
+
 void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
 {
     streamDesc.streamInfo_ = streamInfo_;

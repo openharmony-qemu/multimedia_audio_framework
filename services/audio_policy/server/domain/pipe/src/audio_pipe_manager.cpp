@@ -25,6 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t FIRST_SESSIONID = 100000;
+const uint32_t RING_SESSIONID = 1;
+const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 AudioPipeManager::AudioPipeManager()
@@ -492,6 +494,80 @@ void AudioPipeManager::UpdateModemStreamDevice(std::vector<std::shared_ptr<Audio
         entry.second->oldDeviceDescs_ = entry.second->newDeviceDescs_;
         entry.second->newDeviceDescs_ = deviceDescs;
     }
+}
+
+void AudioPipeManager::UpdateRingAndVoipStreamStatus(const AudioScene audioScene)
+{
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
+
+    if (ringAndVoipDescMap_[RING_SESSIONID] == nullptr || ringAndVoipDescMap_[VOIP_SESSIONID] == nullptr) {
+        AUDIO_INFO_LOG("init map");
+        std::shared_ptr<AudioStreamDescriptor> ringStreamDesc = std::make_shared<AudioStreamDescriptor>();
+        CHECK_AND_RETURN_LOG(ringStreamDesc != nullptr, "ring is nullptr!");
+        ringStreamDesc->rendererInfo_.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
+        ringStreamDesc->sessionId_ = RING_SESSIONID;
+        ringAndVoipDescMap_[RING_SESSIONID] = ringStreamDesc;
+        std::shared_ptr<AudioStreamDescriptor> voipStreamDesc = std::make_shared<AudioStreamDescriptor>();
+        CHECK_AND_RETURN_LOG(voipStreamDesc != nullptr, "voip is nullptr!");
+        voipStreamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        voipStreamDesc->sessionId_ = VOIP_SESSIONID;
+        ringAndVoipDescMap_[VOIP_SESSIONID] = voipStreamDesc;
+    }
+
+    if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STARTED;
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+    } else if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STARTED;
+        ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+    } else {
+        ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+    }
+}
+
+void AudioPipeManager::UpdateRingAndVoipStreamDevice(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs)
+{
+    std::lock_guard<std::shared_mutex> pLock(pipeListLock_);
+
+    CHECK_AND_RETURN(ringAndVoipDescMap_[RING_SESSIONID] != nullptr && ringAndVoipDescMap_[VOIP_SESSIONID] != nullptr);
+
+    ringAndVoipDescMap_[RING_SESSIONID]->oldDeviceDescs_ = ringAndVoipDescMap_[RING_SESSIONID]->newDeviceDescs_;
+    ringAndVoipDescMap_[RING_SESSIONID]->newDeviceDescs_ = ringDeviceDescs;
+
+    ringAndVoipDescMap_[VOIP_SESSIONID]->oldDeviceDescs_ = ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_;
+    ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_ = voipDeviceDescs;
+}
+
+std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescForAudioScene(const AudioScene audioScene)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+        if (ringAndVoipDescMap_[RING_SESSIONID] != nullptr) {
+            return std::make_shared<AudioStreamDescriptor>(ringAndVoipDescMap_[RING_SESSIONID]);
+        }
+    }
+    if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+        if (ringAndVoipDescMap_[VOIP_SESSIONID] != nullptr) {
+            return std::make_shared<AudioStreamDescriptor>(ringAndVoipDescMap_[VOIP_SESSIONID]);
+        }
+    }
+    return nullptr;
+}
+
+std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetRingAndVoipDescMap()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> copiedMap;
+    for (auto &entry : ringAndVoipDescMap_) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
+        copiedMap[entry.first] = std::make_shared<AudioStreamDescriptor>(entry.second);
+    }
+    return copiedMap;
 }
 
 bool AudioPipeManager::IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs)

@@ -79,6 +79,11 @@ public:
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    void UpdateRingAndVoipStreamStatus(const AudioScene audioScene);
+    void UpdateRingAndVoipStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs);
+    std::shared_ptr<AudioStreamDescriptor> GetStreamDescForAudioScene(const AudioScene audioScene);
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetRingAndVoipDescMap();
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
     std::vector<uint32_t> GetStreamIdsByUidAndPid(int32_t uid, int32_t pid);
@@ -98,6 +103,7 @@ private:
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
 };
