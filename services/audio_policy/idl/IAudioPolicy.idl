@@ -304,5 +304,6 @@ interface IAudioPolicy {
     void SetActiveHfpDevice([in] String macAddress);
     void RestoreDistributedDeviceInfo();
     void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
+    void GetVirtualCall([out] boolean isVirtualCall);
 }
 

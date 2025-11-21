@@ -1839,6 +1839,11 @@ int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
     return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
 }
 
+bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
+{
+    return Bluetooth::AudioHfpManager::IsVirtualCall();
+}
+
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)
 {
     if ((oldDeviceType == DEVICE_TYPE_USB_HEADSET || oldDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) &&

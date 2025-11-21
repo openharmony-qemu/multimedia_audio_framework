@@ -2904,6 +2904,15 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     return gsp->SetVirtualCall(isVirtual);
 }
 
+bool AudioPolicyManager::GetVirtualCall()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    bool isVirtualCall = true;
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, isVirtualCall, "audio policy manager proxy is NULL.");
+    gsp->GetVirtualCall(isVirtualCall);
+    return isVirtualCall;
+}
+
 int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
     const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
 {
