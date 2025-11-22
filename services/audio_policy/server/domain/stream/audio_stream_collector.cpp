@@ -1036,6 +1036,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
+    PostReclaimMemoryTask();
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
