@@ -115,7 +115,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id, AudioMode
 
 std::string AudioEndpointInner::GetEndpointName()
 {
-    return GenerateEndpointKey(deviceInfo_, id_);
+    return endpointName_;
 }
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
@@ -246,7 +246,7 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId, const std::optiona
 
     // eg: /data/local/tmp/LocalDevice6_0_c2s_dup_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig.streamInfo;
-    dupDumpName_ = GetEndpointName() + "_c2s_dup_" + std::to_string(tempInfo.samplingRate) + "_" +
+    dupDumpName_ = endpointName_ + "_c2s_dup_" + std::to_string(tempInfo.samplingRate) + "_" +
         std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupDumpName_, &dumpC2SDup_);
 
@@ -552,7 +552,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
         streamInfo.format);
     deviceInfo_ = deviceInfo;
     dstStreamInfo_ = streamInfo;
-
+    endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
     if (deviceInfo.deviceRole_ == INPUT_DEVICE) {
         return ConfigInputPoint(deviceInfo);
     }
@@ -583,7 +583,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
     }
 
     if (checker != nullptr) {
-        checker->AddOperation(fastRenderId_, GetEndpointName(), GetStatus());
+        checker->AddOperation(fastRenderId_, endpointName_, GetStatus());
     }
 
     Volume vol = {true, 1.0f, 0};
@@ -981,7 +981,7 @@ bool AudioEndpointInner::StopDevice()
         bool status = false;
         if (checker != nullptr) {
             AUDIO_INFO_LOG("AudioEndpointSinkAdapter CheckOtherKeysRunning");
-            status = checker->IsOtherEndpointRunning(fastRenderId_, GetEndpointName());
+            status = checker->IsOtherEndpointRunning(fastRenderId_, endpointName_);
         }
         if (!status) {
             AUDIO_INFO_LOG("no other endpoint is running, so stop all streams belong to this renderid.");
@@ -1882,11 +1882,11 @@ int32_t AudioEndpointInner::CreateAndCfgLimiter(const size_t bufLength, const Au
         return SUCCESS;
     }
 
-    /* create limiter */
+    // create limiter
     limiter_ = std::make_shared<AudioLimiter>(fastCaptureId_);
     CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, ERROR, "limiter make fail.");
     
-    /* config limiter */
+    // config limiter
     int32_t ret = limiter_->SetConfig(bufLength, sizeof(float), streamInfo.samplingRate, streamInfo.channels);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "limiter config fail.");
 
@@ -1899,7 +1899,7 @@ int32_t AudioEndpointInner::LimitMixData(float *inBuff, float *outBuff, const si
     int32_t ret = CreateAndCfgLimiter(bufLength, streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "create limiter fail.");
 
-    /* proc limit */
+    // proc limit
     int32_t frameLen = bufLength / sizeof(float);
     ret = limiter_->Process(frameLen, inBuff, outBuff);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "limiter process fail.");
@@ -1909,13 +1909,13 @@ int32_t AudioEndpointInner::LimitMixData(float *inBuff, float *outBuff, const si
 
 void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
 {
-    /* pre proc */
+    // pre proc
     CHECK_AND_RETURN(IsInjectEnable());
     isConvertReadFormat_ = false;
     CHECK_AND_RETURN(isNeedInject_ == true);
     CHECK_AND_RETURN_LOG(endpointType_ == TYPE_VOIP_MMAP, "type error, cur only support voip inject.");
 
-    /* peek renderer data */
+    // peek renderer data
     AudioStreamInfo streamInfo = {};
     BufferDesc rendererOrgDesc = {};
     int32_t ret = PeekRendererInjectData(readBuf, rendererOrgDesc, streamInfo);
@@ -1923,23 +1923,23 @@ void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
     DumpFileUtil::WriteDumpFile(dumpPeekDup_, static_cast<void *>(rendererOrgDesc.buffer),
         rendererOrgDesc.bufLength);
 
-    /* convert format */
+    // convert format
     BufferDesc rendererConvDesc = {};
     BufferDesc captureConvDesc = {};
     ret = ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo, rendererConvDesc, captureConvDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "convert format data fail.");
-    /* mix */
+    // mix
     size_t floatBufLength = readBuf.bufLength * 2; // unit of byte, 2 is int16_t to float
     float *mixBuff = MixRendererAndCaptureData(floatBufLength, rendererConvDesc, captureConvDesc);
     DumpFileUtil::WriteDumpFile(dumpMixDup_, static_cast<void *>(mixBuff), floatBufLength);
 
-    /* limit */
+    // limit
     float *outBuff = reinterpret_cast<float*>(ReallocVectorBufferAndClear(captureConvBuffer_,
         floatBufLength)); // reuse buffer
     ret = LimitMixData(mixBuff, outBuff, floatBufLength, streamInfo);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "limiter fail.");
 
-    /* post proc */
+    // post proc
     isConvertReadFormat_ = true;
 }
 
@@ -1964,7 +1964,7 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
             static_cast<void *>(readBuf.buffer), readBuf.bufLength);
     }
 
-    /* inject renderer data to capture data, here only support voip */
+    // inject renderer data to capture data, here only support voip
     InjectToCaptureDataProc(readBuf);
 
     WriteToProcessBuffers(readBuf);
@@ -2350,21 +2350,18 @@ int32_t AudioEndpointInner::AddCaptureInjector(const uint32_t &sinkPortIndex, co
         "sinkPortIndex not match, inputIdx:%{public}u, objIdx:%{public}u",
         sinkPortIndex, injectSinkPortIndex);
 
-    /* need update basic info for renderer output expect data */
-    AudioModuleInfo &moduleInfo = injector_.GetModuleInfo();
-    moduleInfo.rate = ConvertToStringForSampleRate(dstStreamInfo_.samplingRate);
-    moduleInfo.format = ConvertToStringForFormat(dstStreamInfo_.format);
-    moduleInfo.channels = ConvertToStringForChannel(dstStreamInfo_.channels);
+    // need update basic info for renderer output expect data
+    injector_.SetModuleInfo(dstStreamInfo_);
 
     std::lock_guard<std::mutex> lock(injectLock_);
     isNeedInject_ = true;
     injectSinkPortIdx_ = sinkPortIndex;
 
-    dupPeekName_ = GetEndpointName() + "injector_peek_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
+    dupPeekName_ = endpointName_ + "injector_peek_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(dstStreamInfo_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupPeekName_, &dumpPeekDup_);
 
-    dupMixName_ = GetEndpointName() + "injector_mix_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
+    dupMixName_ = endpointName_ + "injector_mix_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupMixName_, &dumpMixDup_);
 
@@ -2391,7 +2388,7 @@ void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newS
     endpointStatus_ = newStatus;
     // update the status corresponding to getEndpointName in the map
     if (checker != nullptr) {
-        checker->UpdateStatus(fastRenderId_, GetEndpointName(), endpointStatus_.load());
+        checker->UpdateStatus(fastRenderId_, endpointName_, endpointStatus_.load());
     }
 }
 

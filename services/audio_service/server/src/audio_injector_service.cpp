@@ -45,9 +45,22 @@ uint32_t AudioInjectorService::GetSinkPortIdx()
     return sinkPortIndex_;
 }
 
-AudioModuleInfo &AudioInjectorService::GetModuleInfo()
+AudioModuleInfo AudioInjectorService::GetModuleInfo()
 {
     return moduleInfo_;
+}
+
+void AudioInjectorService::SetModuleInfo(AudioStreamInfo &streamInfo)
+{
+    moduleInfo_.rate = ConvertToStringForSampleRate(streamInfo.samplingRate);
+    moduleInfo_.format = ConvertToStringForFormat(streamInfo.format);
+    moduleInfo_.channels = ConvertToStringForChannel(streamInfo.channels);
+
+    uint32_t formateByte = PcmFormatToBits(streamInfo.format);
+    uint32_t channels = static_cast<uint32_t>(streamInfo.channels);
+    uint32_t samplingRate = static_cast<uint32_t>(streamInfo.samplingRate);
+    moduleInfo_.bufferSize =
+        std::to_string(samplingRate * channels * formateByte * 20 / AUDIO_MS_PER_SECOND); // 20 is spanSize
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS

@@ -102,7 +102,6 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
-    SetKeepRunning(processConfig_.rendererInfo.keepRunning);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
