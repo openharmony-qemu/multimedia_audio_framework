@@ -50,6 +50,7 @@
 #include "i_hpae_soft_link.h"
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
+#include "audio_policy_async_action_handler.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -350,6 +351,9 @@ private:
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     bool InVideoCommFastBlockList(const std::string &bundleName);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    void ActivateNearlinkDeviceAsync(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -361,6 +365,7 @@ private:
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
+    void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
     void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration, std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -670,6 +675,28 @@ private:
     AudioInjectorPolicy &audioInjectorPolicy_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+};
+
+class ActivateNearlinkDeviceAction : public PolicyAsyncAction {
+public:
+    ActivateNearlinkDeviceAction(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> &ringAndVoipDescMap,
+        const AudioStreamDeviceChangeReasonExt reason)
+        : streamDesc_(streamDesc), ringAndVoipDescMap_(ringAndVoipDescMap), reason_(reason)
+    {}
+    void Exec() override
+    {
+        AudioCoreService::GetCoreService()->ActivateNearlinkDeviceAsync(streamDesc_, reason_);
+        for (auto &entry : ringAndVoipDescMap_) {
+            CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
+            SleAudioDeviceManager::GetInstance().UpdateSleStreamTypeCount(entry.second);
+        }
+    }
+
+private:
+    std::shared_ptr<AudioStreamDescriptor> streamDesc_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_;
+    const AudioStreamDeviceChangeReasonExt reason_;
 };
 }
 }
