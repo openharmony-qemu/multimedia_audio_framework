@@ -98,6 +98,7 @@ private:
     static AudioCategory GetAudioCategory(AudioScene audioScene);
     AudioPortPin GetAudioPortPin(void) const noexcept;
     uint32_t GetUniqueId(void) const;
+    void CheckJank();
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     void InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene);
@@ -187,7 +188,7 @@ private:
     AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t currentDevicesSize_ = 0;
     bool forceSetRouteFlag_ = false;
-    int32_t paStatus_ = 1;
+    std::atomic<int32_t> paStatus_ = 1;
     std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;

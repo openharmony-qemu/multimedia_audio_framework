@@ -267,7 +267,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data), static_cast<uint32_t>(len),
         &writeLen);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
+    CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     if (stamp >= RENDER_FRAME_LIMIT) {
         AUDIO_WARNING_LOG("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
@@ -283,6 +283,13 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     }
 
     return SUCCESS;
+}
+
+void AudioRenderSink::CheckJank()
+{
+    int64_t stamp = paStatus_ == 1 ? ClockTime::GetCurNano() : INIT_LASTWRITTEN_TIME;
+    Trace trace("AudioRenderSink::CheckJank:" + std::to_string(stamp));
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, stamp);
 }
 
 int64_t AudioRenderSink::GetVolumeDataCount()
@@ -584,7 +591,7 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_);
+    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_.load());
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
         AUDIO_INFO_LOG("param: %{public}s", param.c_str());
