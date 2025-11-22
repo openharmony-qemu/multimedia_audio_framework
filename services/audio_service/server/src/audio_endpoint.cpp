@@ -49,6 +49,7 @@ namespace {
     static constexpr int64_t RECORD_DELAY_TIME_NS = 4000000; // 4ms = 4 * 1000 * 1000ns
     static constexpr int64_t RECORD_VOIP_DELAY_TIME_NS = 20000000; // 20ms = 20 * 1000 * 1000ns
     static constexpr int64_t MAX_SPAN_DURATION_NS = 100000000; // 100ms = 100 * 1000 * 1000ns
+    static constexpr size_t MAX_TRANS_BUFFER_SIZE = 1 * 1024 * 1024; // 1M
     static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s = 3 * 1000 * 1000 * 1000ns
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME_NS = 200000000; // 200ms = 200 * 1000 * 1000ns
     static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 2000000000; // 2000ms = 2000 * 1000 * 1000ns
@@ -686,6 +687,17 @@ int32_t AudioEndpointInner::GetAdapterBufferInfo(const AudioDeviceDescriptor &de
     return SUCCESS;
 }
 
+// transBuffer_ is in heap, and can be accessed much more faster than dstAudioBuffer_
+void AudioEndpointInner::InitTransBuffer()
+{
+    dstSpanSizeInByte_ = dstSpanSizeInframe_ * dstByteSizePerFrame_;
+    if (dstSpanSizeInByte_ == 0 || dstSpanSizeInByte_ > MAX_TRANS_BUFFER_SIZE) {
+        AUDIO_WARNING_LOG("dstSpanSizeInByte is too large:%{public}zu, use default value.", dstSpanSizeInByte_);
+        dstSpanSizeInByte_ = MAX_TRANS_BUFFER_SIZE;
+    }
+    transBuffer_ = std::make_unique<uint8_t []>(dstSpanSizeInByte_);
+}
+
 int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo)
 {
     AUDIO_INFO_LOG("enter, deviceRole %{public}d.", deviceInfo.deviceRole_);
@@ -732,8 +744,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &dev
         AUDIO_WARNING_LOG("memset buffer fail, ret %{public}d, fd %{public}d.", ret, dstBufferFd_);
     }
     InitAudiobuffer(true);
-
-    AUDIO_DEBUG_LOG("end, fd %{public}d.", dstBufferFd_);
+    InitTransBuffer();
     return SUCCESS;
 }
 
@@ -1289,6 +1300,7 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
 
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
+    Trace trace("AudioEndpointInner::ProcessData");
     if (srcDataList.size() == 0) {
         memset_s(dstData.bufferDesc.buffer, dstData.bufferDesc.bufLength, 0,
             dstData.bufferDesc.bufLength);
@@ -1350,6 +1362,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
 
 AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 {
+    Trace trace("AudioEndpointInner::CalculateVolume");
     Volume vol = {true, 1.0f, 0};
     AudioStreamType streamType = processList_[i]->GetAudioStreamType();
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -1413,6 +1426,7 @@ bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, Au
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
+    Trace trace("GetAllReadyProcessDataSub");
     auto processServer = processList_[i];
     CHECK_AND_RETURN_LOG(processServer, "processServer is nullptr!");
     RingBufferWrapper ringBuffer;
@@ -1460,14 +1474,24 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
 
     AudioStreamData dstStreamData;
     dstStreamData.streamInfo = dstStreamInfo_;
-    int32_t ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, dstStreamData.bufferDesc);
-    CHECK_AND_RETURN_RET_LOG(((ret == SUCCESS && dstStreamData.bufferDesc.buffer != nullptr)), false,
+    dstStreamData.bufferDesc.buffer = transBuffer_.get();
+    dstStreamData.bufferDesc.dataLength = dstSpanSizeInByte_;
+    dstStreamData.bufferDesc.bufLength = dstSpanSizeInByte_;
+
+    // do volume and mix work
+    ProcessData(audioDataList, dstStreamData);
+
+    // do memcpy|write work
+    BufferDesc hdiBuffer;
+    int32_t ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, hdiBuffer);
+    CHECK_AND_RETURN_RET_LOG(((ret == SUCCESS && hdiBuffer.buffer != nullptr)), false,
         "GetWriteBuffer failed, ret:%{public}d", ret);
 
     Trace trace("AudioEndpoint::WriteDstBuffer=>" + std::to_string(curWritePos));
-    // do write work
-    ProcessData(audioDataList, dstStreamData);
-    
+    ret = memcpy_s(static_cast<void *>(hdiBuffer.buffer), hdiBuffer.bufLength,
+        static_cast<void *>(dstStreamData.bufferDesc.buffer), dstStreamData.bufferDesc.bufLength);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, false, "memcpy failed, length: %{public}zu-%{public}zu", hdiBuffer.bufLength,
+        dstStreamData.bufferDesc.bufLength);
     CheckJank(curWritePos);
 
     {

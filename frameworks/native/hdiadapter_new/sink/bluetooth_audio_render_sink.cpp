@@ -52,7 +52,6 @@ BluetoothAudioRenderSink::~BluetoothAudioRenderSink()
 {
     DeInit();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -177,7 +176,6 @@ int32_t BluetoothAudioRenderSink::Start(void)
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             continue;
         }
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
         started_ = true;
         return CheckBluetoothScenario();
     }
@@ -236,7 +234,6 @@ int32_t BluetoothAudioRenderSink::Resume(void)
     }
     int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "resume fail");
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     paused_ = false;
     return SUCCESS;
 }
@@ -841,7 +838,6 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
         Trace trace("BluetoothAudioRenderSink::DoRenderFrame");
         stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void *)&data, len, &writeLen);
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
             AUDIO_PRERELEASE_LOGW("A2dp RenderFrame, len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms, "
