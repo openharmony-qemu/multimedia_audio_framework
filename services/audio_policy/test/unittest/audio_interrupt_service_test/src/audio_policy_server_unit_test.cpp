@@ -1223,21 +1223,6 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
 }
 
 /**
-* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
-* @tc.number: ChangeVolumeOnVoiceAssistant_001
-* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
-*/
-HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
-    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
-}
-
-/**
 * @tc.name  : Test MaxOrMinVolumeOption.
 * @tc.number: MaxOrMinVolumeOption_001
 * @tc.desc  : Test AudioPolicyServer::MaxOrMinVolumeOption
@@ -1604,20 +1589,6 @@ HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
     ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
 }
 
-/**
-* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
-* @tc.number: ChangeVolumeOnVoiceAssistant_002
-* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
-*/
-HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_002, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
-    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
-}
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_046
