@@ -48,6 +48,7 @@ AudioSuiteEngine::AudioSuiteEngine(AudioSuiteManagerCallback& callback)
     RegisterHandler(RENDER_FRAME, &AudioSuiteEngine::HandleRenderFrame);
     RegisterHandler(MULTI_RENDER_FRAME, &AudioSuiteEngine::HandleMultiRenderFrame);
     RegisterHandler(GET_OPTIONS, &AudioSuiteEngine::HandleGetOptions);
+    RegisterHandler(SET_OPTIONS, &AudioSuiteEngine::HandleSetOptions);
 
     AUDIO_INFO_LOG("AudioEditEngine Create");
 }
@@ -648,24 +649,28 @@ int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::str
         AUDIO_INFO_LOG("SetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine SetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnSetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine SetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnSetOptions(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline SetOptions node failed, pipeline is nullptr.");
+            managerCallback_.OnSetOptions(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
         int32_t ret = pipeline->SetOptions(nodeId, name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("pipeline SetOptions node failed, ret = %{public}d.", ret);
+            managerCallback_.OnSetOptions(ret);
             return;
         }
     };
@@ -810,6 +815,11 @@ void AudioSuiteEngine::HandleMultiRenderFrame(int32_t result, uint32_t pipelineI
 void AudioSuiteEngine::HandleGetOptions(int32_t result)
 {
     managerCallback_.OnGetOptions(result);
+}
+
+void AudioSuiteEngine::HandleSetOptions(int32_t result)
+{
+    managerCallback_.OnSetOptions(result);
 }
 
 }  // namespace AudioSuite

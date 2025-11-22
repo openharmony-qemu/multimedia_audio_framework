@@ -109,6 +109,7 @@ public:
     void OnRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnGetOptions(int32_t result) override;
+    void OnSetOptions(int32_t result) override;
 
 private:
     void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
@@ -156,6 +157,8 @@ private:
     int32_t disConnectNodesResult_ = 0;
     bool isFinishGetOptions_ = false;
     int32_t getOptionsResult_ = 0;
+    bool isFinishSetOptions_ = false;
+    int32_t setOptionsResult_ = 0;
     std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
