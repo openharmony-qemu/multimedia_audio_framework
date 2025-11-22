@@ -462,6 +462,7 @@ private:
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetPrimarySinkExist(bool isPrimarySinkExist);
+    int32_t StopAudioPort(std::string oldSinkName);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

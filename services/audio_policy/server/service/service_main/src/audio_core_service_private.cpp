@@ -3077,6 +3077,14 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
     }
 }
 
+void AudioCoreService::DeactivateBluetoothDevice(bool isRunning)
+{
+    CHECK_AND_RETURN(isRunning);
+    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
+    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -3106,8 +3114,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
-        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+        DeactivateBluetoothDevice(isRunning);
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {

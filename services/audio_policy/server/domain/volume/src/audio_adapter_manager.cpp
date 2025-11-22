@@ -3287,6 +3287,12 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
 
+int32_t AudioAdapterManager::StopAudioPort(std::string oldSinkName)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter_ is null");
+    return audioServiceAdapter_->StopAudioPort(oldSinkName);
+}
+
 int32_t AudioAdapterManager::AddCaptureInjector()
 {
     AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();

@@ -2157,4 +2157,39 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetUsedMoveInfos001, TestSize.Level1)
     results = hpaeManager_->GetUsedMoveInfos(moveInfos);
     EXPECT_EQ(results.size(), 0);
 }
+
+HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    std::string sourceName = "test";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->rendererManagerMap_["test"] = nullptr;
+    EXPECT_EQ(hpaeManager_->StopAudioPort("test"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, StopAudioPort002, TestSize.Level4)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    std::string sourceName = "test";
+    HpaeSinkInfo sinkInfo;
+    auto rendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    hpaeManager_->rendererManagerMap_.insert_or_assign(sourceName, rendererManager);
+    EXPECT_EQ(hpaeManager_->StopAudioPort("test"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, StopAudioPort003, TestSize.Level4)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    hpaeManager_->capturerManagerMap_["test"] = nullptr;
+    hpaeManager_->rendererManagerMap_["test"] = nullptr;
+    EXPECT_EQ(hpaeManager_->StopAudioPort("test"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
 }  // namespace
