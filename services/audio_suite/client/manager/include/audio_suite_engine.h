@@ -106,6 +106,7 @@ private:
     void HandleRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleMultiRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleGetOptions(int32_t result);
+    void HandleSetOptions(int32_t result);
 
 private:
     std::atomic<bool> isInit_ = false;

@@ -39,6 +39,7 @@ enum PipelineMsgCode {
     RENDER_FRAME,
     MULTI_RENDER_FRAME,
     GET_OPTIONS,
+    SET_OPTIONS,
 };
 
 class ISendMsgCallback {

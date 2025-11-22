@@ -879,6 +879,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
     auto request = [this, nodeId, name, value]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
+            TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
 
@@ -887,8 +888,10 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
+            TriggerCallback(SET_OPTIONS, ret);
             return;
         }
+        TriggerCallback(SET_OPTIONS, SUCCESS);
     };
 
     SendRequest(request, __func__);
