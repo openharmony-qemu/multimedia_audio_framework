@@ -26,6 +26,7 @@ using namespace testing;
 using namespace std;
 
 namespace {
+
 static std::string g_inputfile001 = "/data/audiosuite/tempo_pitch/in_48000_1_s16le.pcm";
 static std::string g_outfile001 = "/data/audiosuite/tempo_pitch/out_48000_1_s16le_0.8_0.8.pcm";
 static std::string g_outfile002 = "/data/audiosuite/tempo_pitch/out_48000_1_s16le_1.0_0.8.pcm";
@@ -56,12 +57,32 @@ public:
     }
     void TearDown(void){};
     int32_t DoprocessTest(float speed, float pitch, std::string inputFile, std::string outputFile);
+    std::vector<uint8_t> ReadInputFile(std::string inputFile, size_t frameSizeInput);
 
     PcmBufferFormat outFormat_ = {SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO, SAMPLE_S16LE};
     std::unique_ptr<AudioSuitePcmBuffer> buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
 };
 
-int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(float speed, float pitch, std::string inputFile, std::string outputFile)
+std::vector<uint8_t> AudioSuiteTempoPitchNodeTest::ReadInputFile(std::string inputFile, size_t frameSizeInput)
+{
+    std::ifstream ifs(inputFile, std::ios::binary);
+    CHECK_AND_RETURN_RET(ifs.is_open(), std::vector<uint8_t>());
+    ifs.seekg(0, std::ios::end);
+    size_t inputFileSize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    // Padding zero then send to apply
+    size_t zeroPaddingSize =
+        (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
+    size_t inputFileBufferSize = inputFileSize + zeroPaddingSize;
+    std::vector<uint8_t> inputfileBuffer(inputFileBufferSize, 0);  // PCM data padding 0
+    ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), inputFileSize);
+    ifs.close();
+    return inputfileBuffer;
+}
+
+int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
+    float speed, float pitch, std::string inputFile, std::string outputFile)
 {
     std::shared_ptr<AudioSuiteTempoPitchNode> node = std::make_shared<AudioSuiteTempoPitchNode>();
     node->Init();
@@ -80,28 +101,16 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(float speed, float pitch, st
         node->GetOutputPort();
 
     size_t frameSizeInput = buffer->GetDataSize();
+    CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
     // Read input file
-    std::ifstream ifs(inputFile, std::ios::binary);
-    CHECK_AND_RETURN_RET(ifs.is_open(), ERROR);
-    ifs.seekg(0, std::ios::end);
-    size_t inputFileSize = ifs.tellg();
-    ifs.seekg(0, std::ios::beg);
-
-    // Padding zero then send to apply
-    EXPECT_NE(frameSizeInput, 0);
-    size_t zeroPaddingSize =
-        (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
-    size_t inputFileBufferSize = inputFileSize + zeroPaddingSize;
-    std::vector<uint8_t> inputfileBuffer(inputFileBufferSize, 0);  // PCM data padding 0
-    ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), inputFileSize);
-    ifs.close();
-    // open outfile
+    std::vector<uint8_t> inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
+    CHECK_AND_RETURN_RET(inputfileBuffer.empty() == false, ERROR);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out | std::ios::app);
-
+    
     uint8_t *readPtr = inputfileBuffer.data();
-    int32_t frames = inputFileBufferSize / frameSizeInput;
+    int32_t frames = inputfileBuffer.size() / frameSizeInput;
     int32_t frameIndex = 0;
-    while(!node->GetAudioNodeDataFinishedFlag()) {
+    while (!node->GetAudioNodeDataFinishedFlag()) {
         EXPECT_CALL(*mockInputNode_, DoProcess())
             .WillRepeatedly(::testing::Invoke([&]() {
             if (frameIndex == frames - 1) {
@@ -207,7 +216,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
             return SUCCESS;
         }));
     std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true);
-    EXPECT_EQ(result.size() ,1);
+    EXPECT_EQ(result.size(), 1);
 
     node->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
