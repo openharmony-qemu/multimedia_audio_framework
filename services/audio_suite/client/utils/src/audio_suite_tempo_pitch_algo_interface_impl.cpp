@@ -18,10 +18,6 @@
 #endif
 
 #include <dlfcn.h>
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <sstream>
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
