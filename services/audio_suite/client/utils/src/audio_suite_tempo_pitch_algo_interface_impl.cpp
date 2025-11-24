@@ -97,7 +97,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
         return ERROR;
     }
 
-    if(PitchInit(pitchSoName) != SUCCESS) {
+    if (PitchInit(pitchSoName) != SUCCESS) {
         AUDIO_ERR_LOG("Pitch init error");
         Deinit();
         return ERROR;
@@ -140,7 +140,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::SetParameter(const std::string &p
     CHECK_AND_RETURN_RET_LOG(tempoAlgoHandle_, ERROR, "Invalid tempoAlgoHandle_");
     CHECK_AND_RETURN_RET_LOG(pitchAlgoHandle_, ERROR, "Invalid pitchAlgoHandle_");
     std::vector<float> params = ParseStringToFloatArray(paramValue, ',');
-    CHECK_AND_RETURN_RET_LOG(params.size() == 2, ERROR, "ParseStringToFloatArray error");
+    CHECK_AND_RETURN_RET_LOG(params.size() == ALGO_PARAM_LENGTH, ERROR, "ParseStringToFloatArray error");
 
     speedRate_ = params[0];
     pitchRate_ = params[1];
