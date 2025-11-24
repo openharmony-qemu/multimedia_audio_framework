@@ -113,10 +113,15 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "TempoPitchNode SetOptions ERROR");
 
     float speedRate = ParseStringToSpeedRate(value, ',');
-    CHECK_AND_RETURN_RET_LOG(speedRate > 0.0f, ERROR, "TempoPitchNode ParseStringToSpeedRate ERROR");
-    // Add 512 bytes of expansion
-    size_t outBufferSize =
-        static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate)) + RESIZE_EXPAND_BYTES;
+    size_t outBufferSize = 0;
+    if (speedRate != 0.0f) {
+        // Add 512 bytes of expansion
+        outBufferSize =
+            static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate)) + RESIZE_EXPAND_BYTES;
+    } else {
+        AUDIO_ERR_LOG("TempoPitchNode ParseStringToSpeedRate ERROR");
+        return ERROR;
+    }
     outBuffer_.resize(outBufferSize);
     currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
     bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;
