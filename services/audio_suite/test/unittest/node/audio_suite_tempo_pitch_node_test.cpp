@@ -17,11 +17,6 @@
 #include <gmock/gmock.h>
 #include "audio_suite_tempo_pitch_node.h"
 #include "audio_suite_unittest_tools.h"
-#include <string>
-#include <cstdint>
-#include <memory>
-#include <fstream>
-#include <vector>
 
 using namespace OHOS;
 using namespace AudioStandard;
