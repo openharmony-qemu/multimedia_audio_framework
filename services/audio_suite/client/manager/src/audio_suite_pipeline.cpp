@@ -664,7 +664,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId same destNodeId.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -684,7 +684,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -731,7 +731,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     if (reverseConnections_.find(destNodeId) == reverseConnections_.end()) {
@@ -739,7 +739,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (reverseConnections_[destNodeId].size() <= 1) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     return destNode->DisConnect(srcNode);

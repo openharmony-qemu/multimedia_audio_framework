@@ -89,8 +89,12 @@ static OH_AudioSuite_Result ConvertError(int32_t err)
         return AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
         return AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS;
+    } else if (err == OHOS::AudioStandard::ERR_MEMORY_ALLOC_FAILED) {
+        return AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED;
     } else if (err == (int32_t)AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING) {
         return AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING;
+    } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_TIMEOUT) {
+        return AUDIOSUITE_ERROR_TIMEOUT;
     }
     return AUDIOSUITE_ERROR_SYSTEM;
 }

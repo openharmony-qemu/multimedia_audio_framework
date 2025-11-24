@@ -1480,10 +1480,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisconnectNodes_002, TestSize
     CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(outputNode, mixNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(mixNode, inputNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1520,7 +1520,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisconnectNodes_003, TestSize
     CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(mixNode, mixNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1558,7 +1558,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisconnectNodes_004, TestSize
     CreateNode(pipelineTwo, EFFECT_NODE_TYPE_AUDIO_MIXER, &destMixNode);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(srcMixNode, destMixNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyNode(srcMixNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1622,7 +1622,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisconnectNodes_005, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(inputNodeOne, eqNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1671,7 +1671,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisconnectNodes_006, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DisconnectNodes(eqNode, mixNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
