@@ -185,6 +185,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyDump::GetDumpDevi
         audioConnectedDevice_.GetDevicesInner(deviceFlag);
     if (!hasSystemPermission) {
         for (std::shared_ptr<AudioDeviceDescriptor> desc : deviceDescs) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
