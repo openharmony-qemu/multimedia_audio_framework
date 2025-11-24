@@ -22,6 +22,7 @@
 #include "imedia_api.h"
 #include "audio_hms_ainr_api.h"
 #include "audio_voicemorphing_api.h"
+#include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
 
 namespace OHOS {
@@ -29,6 +30,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 const std::string AISS_LIBRARY_INFO_SYM_AS_STR = "AISSLIB";
+const std::string PITCH_LIBRARY_INFO_SYM_AS_STR = "PITCHLIB";
 
 class AudioSuiteCapabilities {
 public:
@@ -75,6 +77,7 @@ private:
     int32_t LoadSfCapability(NodeCapability &nc);
     int32_t LoadEnvCapability(NodeCapability &nc);
     int32_t LoadAissCapability(NodeCapability &nc);
+    int32_t LoadTempoPitchCapability(NodeCapability &nc);
     std::unordered_map<AudioNodeType, NodeCapability> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
 };
