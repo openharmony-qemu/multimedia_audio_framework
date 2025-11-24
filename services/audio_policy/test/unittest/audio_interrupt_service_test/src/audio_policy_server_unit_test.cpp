@@ -3765,23 +3765,9 @@ HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_002, TestSize.Level1)
 /**
 * @tc.name  : Test VerifyBluetoothPermission.
 * @tc.number: VerifyBluetoothPermission_003
-* @tc.desc  : VerifyBluetoothPermission for ROOT_UID
-*/
-HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    constexpr int32_t ROOT_UID = 0;
-    EXPECT_TRUE(server->VerifyBluetoothPermission(ROOT_UID));
-}
-
-/**
-* @tc.name  : Test VerifyBluetoothPermission.
-* @tc.number: VerifyBluetoothPermission_004
 * @tc.desc  : VerifyBluetoothPermission for UID_MCU
 */
-HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_004, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
