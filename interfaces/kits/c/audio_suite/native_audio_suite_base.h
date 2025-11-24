@@ -285,6 +285,19 @@ typedef enum {
      * @since 22
      */
     AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING = 11,
+    /**
+     * @error Operation timed out.
+     *
+     * @since 22
+     */
+    AUDIOSUITE_ERROR_TIMEOUT = 12,
+    /**
+     * @error Memory allocation failed.
+     *
+     * @since 22
+     */
+    AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED = 13,
+
 } OH_AudioSuite_Result;
 /**
  * @brief Define the audio sample format.
