@@ -617,11 +617,15 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
+#ifdef SUPPORT_LOW_LATENCY
+    IAudioStream::StreamClass streamClass;
+#else
     if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
         rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     }
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
+#endif
 
     int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
