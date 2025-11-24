@@ -101,6 +101,27 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevi
     return descs;
 }
 
+bool AudioRouterCenter::HasScoDevice()
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
+    for (auto &desc : descs) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+            return true;
+        }
+    }
+
+    vector<shared_ptr<AudioDeviceDescriptor>> publicDescs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+    for (auto &desc : publicDescs) {
+        if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc->deviceType_ == DEVICE_TYPE_NEARLINK) &&
+            desc->deviceCategory_ == BT_CAR) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
@@ -139,7 +160,8 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
     if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
         return true;
     }
-    if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+    if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
+        HasScoDevice()) {
         return true;
     }
     return false;
