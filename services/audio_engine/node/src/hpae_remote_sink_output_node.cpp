@@ -120,6 +120,11 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         }
         SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
+        // navigation not send empty
+        if (type == STREAM_NAVIGATION && !outputData->IsValid()) {
+            AUDIO_WARNING_LOG("navigation not send empty chunk");
+            continue;
+        }
         StreamUsage usage = outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN;
         audioRendererSink_->UpdateStreamInfo(splitStreamType, type, usage);
         ConvertFromFloat(
