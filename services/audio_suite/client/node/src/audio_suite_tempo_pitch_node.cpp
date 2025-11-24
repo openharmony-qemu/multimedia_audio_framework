@@ -114,7 +114,7 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
 
     float speedRate = ParseStringToSpeedRate(value, ',');
     size_t outBufferSize = 0;
-    if (speedRate != 0.0f) {
+    if (!FLOAT_COMPARE_EQ(speedRate, 0.0f)) {
         // Add 512 bytes of expansion
         outBufferSize =
             static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate)) + RESIZE_EXPAND_BYTES;
