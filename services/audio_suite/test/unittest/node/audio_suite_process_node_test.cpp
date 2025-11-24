@@ -208,7 +208,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
     inputNodeOutputPort.reset();
 }
 
-HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
+HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
 {
     EXPECT_EQ(node_->Flush(), SUCCESS);
     AudioFormat audioFormat = {
