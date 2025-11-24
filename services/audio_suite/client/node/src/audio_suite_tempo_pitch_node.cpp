@@ -150,6 +150,7 @@ int32_t AudioSuiteTempoPitchNode::PadBufferToPcmBuffer(AudioSuitePcmBuffer &pcmB
 
 int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** tempOut)
 {
+    CHECK_AND_RETURN_RET_LOG(tempOut != nullptr, ERROR, "DoProcessPreOutputs input para is nullptr");
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
@@ -232,6 +233,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
 
 int32_t AudioSuiteTempoPitchNode::SplitDataToQueue(uint8_t* outBuffer, int32_t outFrameBytes)
 {
+    CHECK_AND_RETURN_RET_LOG(outBuffer != nullptr, ERROR, "SplitDataToQueue input para is nullptr");
     int32_t copyRet = -1;
     uint8_t *readPtr = outBuffer;
     uint8_t *writePtr = currentDataBuffer_.data() + TEMPO_PITCH_PCM_FRAME_BYTES - bufferRemainSize_;
