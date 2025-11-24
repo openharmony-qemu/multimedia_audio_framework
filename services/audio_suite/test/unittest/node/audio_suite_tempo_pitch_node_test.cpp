@@ -72,6 +72,7 @@ std::vector<uint8_t> AudioSuiteTempoPitchNodeTest::ReadInputFile(std::string inp
     ifs.seekg(0, std::ios::beg);
 
     // Padding zero then send to apply
+    CHECK_AND_RETURN_RET(frameSizeInput > 0, std::vector<uint8_t>());
     size_t zeroPaddingSize =
         (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
     size_t inputFileBufferSize = inputFileSize + zeroPaddingSize;
