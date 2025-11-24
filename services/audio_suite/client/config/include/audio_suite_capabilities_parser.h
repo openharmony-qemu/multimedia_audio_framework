@@ -43,7 +43,8 @@ static const std::map<std::string, AudioNodeType>
         {"SOUND_FIELD", NODE_TYPE_SOUND_FIELD},
         {"AUDIO_SEPARATION", NODE_TYPE_AUDIO_SEPARATION},
         {"VOICE_BEAUTIFIER", NODE_TYPE_VOICE_BEAUTIFIER},
-        {"ENVIRONMENT_EFFECT", NODE_TYPE_ENVIRONMENT_EFFECT}};
+        {"ENVIRONMENT_EFFECT", NODE_TYPE_ENVIRONMENT_EFFECT},
+        {"TEMPO_PITCH", NODE_TYPE_TEMPO_PITCH}};
 
 class AudioSuiteCapabilitiesParser {
 public:
