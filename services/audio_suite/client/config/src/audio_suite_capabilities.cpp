@@ -121,6 +121,53 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
+int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
+{
+    AUDIO_INFO_LOG("LoadTempoPitchCapability start.");
+    std::istringstream iss(nc.soName);
+    std::string tempoSoName = "";
+    std::string pitchSoName = "";
+    std::getline(iss, tempoSoName, ',');
+    std::getline(iss, pitchSoName);
+    CHECK_AND_RETURN_RET_LOG(!tempoSoName.empty() && !pitchSoName.empty(), ERROR,
+        "LoadTempoPitchCapability parse so name fail");
+    // tempo
+    std::string tempoSoPath = nc.soPath + tempoSoName;
+    void *tempoSoHandle = dlopen(tempoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(tempoSoHandle != nullptr, ERROR,
+        "dlopen algo: %{private}s so fail, error: %{public}s", tempoSoPath.c_str(), dlerror());
+    using GET_SPEC_FUNC = AudioPVSpec(*)(void);
+    GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
+    CHECK_AND_RETURN_RET_LOG(pvGetSpecFunc != nullptr,
+        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
+        tempoSoPath.c_str(), "PVGetSpec");
+    AudioPVSpec spec = pvGetSpecFunc();
+    nc.supportedOnThisDevice = spec.currentDeviceSupport;
+    nc.isSupportRealtime = spec.realTimeSupport;
+    dlclose(tempoSoHandle);
+    tempoSoHandle = nullptr;
+    // pitch
+    std::string pitchSoPath = nc.soPath + pitchSoName;
+    void *pitchLibHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(pitchLibHandle != nullptr,
+        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        pitchSoPath.c_str(), dlerror());
+    AudioEffectLibrary *audioEffectLibHandle =
+        static_cast<AudioEffectLibrary *>(dlsym(pitchLibHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
+    CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle != nullptr,
+        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
+        pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
+    struct AlgoSupportConfig supportConfig = {};
+    audioEffectLibHandle->supportEffect(&supportConfig);
+    nc.supportedOnThisDevice &= supportConfig.isSupport;
+    nc.isSupportRealtime &= supportConfig.isRealTime;
+
+    dlclose(pitchLibHandle);
+    pitchLibHandle = nullptr;
+    AUDIO_INFO_LOG("LoadTempoPitchCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported)
 {
     CHECK_AND_RETURN_RET_LOG(isSupported != nullptr,
