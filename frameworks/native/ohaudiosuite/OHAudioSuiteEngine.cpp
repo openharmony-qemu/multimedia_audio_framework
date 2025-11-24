@@ -684,6 +684,10 @@ using namespace OHOS::AudioStandard::AudioSuite;
 
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MIN = -10;
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MAX = 10;
+static constexpr float SPEED_RATE_MIN = 0.5f;
+static constexpr float SPEED_RATE_MAX = 10.0f;
+static constexpr float PITCH_RATE_MIN = 0.1f;
+static constexpr float PITCH_RATE_MAX = 5.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -1209,6 +1213,10 @@ int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, flo
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_TEMPO_PITCH, ERR_NOT_SUPPORTED,
         "SetTempoAndPitch failed, node type = %{public}d must be tempo and pitch type.",
         static_cast<int32_t>(node->GetNodeType()));
+    CHECK_AND_RETURN_RET_LOG(speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX,
+        ERR_INVALID_PARAM, "SetTempoAndPitch failed, speed must be in the 0.5~10.0");
+    CHECK_AND_RETURN_RET_LOG(pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX,
+        ERR_INVALID_PARAM, "SetTempoAndPitch failed, pitch must be in the 0.1~5.0");
 
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
