@@ -124,11 +124,11 @@ static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
 };
 
 static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
-    {"primary", PIPE_TYPE_NORMAL_OUT},
-    {"a2dp", PIPE_TYPE_NORMAL_OUT},
-    {"remote", PIPE_TYPE_NORMAL_OUT},
-    {"dp", PIPE_TYPE_NORMAL_OUT},
-    {"multichannel", PIPE_TYPE_MULTICHANNEL},
+    {"primary", PIPE_TYPE_OUT_NORMAL},
+    {"a2dp", PIPE_TYPE_OUT_NORMAL},
+    {"remote", PIPE_TYPE_OUT_NORMAL},
+    {"dp", PIPE_TYPE_OUT_NORMAL},
+    {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
 };
 
 static long StringToNum(const std::string &str)

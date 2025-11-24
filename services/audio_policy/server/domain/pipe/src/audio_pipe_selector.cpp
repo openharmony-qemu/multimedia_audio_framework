@@ -32,13 +32,13 @@ namespace OHOS {
 namespace AudioStandard {
 
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
-    {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_NORMAL_OUT},
-    {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_NORMAL_IN},
-    {AUDIO_OUTPUT_FLAG_FAST, PIPE_TYPE_NORMAL_OUT},
-    {AUDIO_INPUT_FLAG_FAST, PIPE_TYPE_NORMAL_IN},
-    {AUDIO_OUTPUT_FLAG_LOWPOWER, PIPE_TYPE_OFFLOAD},
-    {AUDIO_OUTPUT_FLAG_MULTICHANNEL, PIPE_TYPE_MULTICHANNEL},
-    {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_DIRECT_OUT},
+    {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_OUT_NORMAL},
+    {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_IN_NORMAL},
+    {AUDIO_OUTPUT_FLAG_FAST, PIPE_TYPE_OUT_NORMAL},
+    {AUDIO_INPUT_FLAG_FAST, PIPE_TYPE_IN_NORMAL},
+    {AUDIO_OUTPUT_FLAG_LOWPOWER, PIPE_TYPE_OUT_OFFLOAD},
+    {AUDIO_OUTPUT_FLAG_MULTICHANNEL, PIPE_TYPE_OUT_MULTICHANNEL},
+    {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
 static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
@@ -351,36 +351,36 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         if (flag & AUDIO_OUTPUT_FLAG_FAST) {
             if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-                return PIPE_TYPE_CALL_OUT;
+                return PIPE_TYPE_OUT_VOIP;
             } else {
-                return PIPE_TYPE_LOWLATENCY_OUT;
+                return PIPE_TYPE_OUT_LOWLATENCY;
             }
         } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
             if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-                return PIPE_TYPE_CALL_OUT;
+                return PIPE_TYPE_OUT_VOIP;
             } else {
-                return PIPE_TYPE_DIRECT_OUT;
+                return PIPE_TYPE_OUT_DIRECT_NORMAL;
             }
         } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
-            return PIPE_TYPE_MULTICHANNEL;
+            return PIPE_TYPE_OUT_MULTICHANNEL;
         } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
-            return PIPE_TYPE_OFFLOAD;
+            return PIPE_TYPE_OUT_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION) {
-            return PIPE_TYPE_CALL_OUT;
+            return PIPE_TYPE_OUT_CELLULAR_CALL;
         } else {
-            return PIPE_TYPE_NORMAL_OUT;
+            return PIPE_TYPE_OUT_NORMAL;
         }
     } else {
         if (flag & AUDIO_INPUT_FLAG_FAST) {
             if (flag & AUDIO_INPUT_FLAG_VOIP) {
-                return PIPE_TYPE_CALL_IN;
+                return PIPE_TYPE_IN_VOIP;
             } else {
-                return PIPE_TYPE_LOWLATENCY_IN;
+                return PIPE_TYPE_IN_LOWLATENCY;
             }
         } else if (flag & AUDIO_INPUT_FLAG_AI) {
-            return PIPE_TYPE_NORMAL_IN_AI;
+            return PIPE_TYPE_IN_NORMAL_AI;
         } else {
-            return PIPE_TYPE_NORMAL_IN;
+            return PIPE_TYPE_IN_NORMAL;
         }
     }
 }
@@ -429,7 +429,7 @@ void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, Aud
 {
     /* becasue call in indicate voip and cell, so can't modify xml */
     CHECK_AND_RETURN(IsInjectEnable() && action != PLAY_BOTH);
-    if (existingPipe == PIPE_TYPE_CALL_IN && commingPipe == PIPE_TYPE_CALL_IN) {
+    if (existingPipe == PIPE_TYPE_IN_VOIP && commingPipe == PIPE_TYPE_IN_VOIP) {
         action = PLAY_BOTH;
     }
 }
@@ -438,10 +438,11 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
-    AudioPipeType existingPipe = GetPipeType(existingStream->routeFlag_, existingStream->audioMode_);
-    AudioPipeType commingPipe = GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_);
-    ConcurrencyAction action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
-        existingPipe, commingPipe);
+    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        existingStream->routeFlag_, existingStream->audioMode_);
+    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        incomingStream->routeFlag_, incomingStream->audioMode_);
+    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {

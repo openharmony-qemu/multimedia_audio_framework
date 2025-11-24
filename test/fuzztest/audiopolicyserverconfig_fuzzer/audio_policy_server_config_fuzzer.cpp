@@ -37,8 +37,7 @@ void AudioConcurrencyParserLoadConfigFuzzTest(const uint8_t* rawData, size_t siz
     }
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyMap;
     concurrencyMap[std::make_pair(PIPE_TYPE_UNKNOWN, PIPE_TYPE_UNKNOWN)] = PLAY_BOTH;
-    concurrencyMap[std::make_pair(PIPE_TYPE_SPATIALIZATION, PIPE_TYPE_SPATIALIZATION)] = CONCEDE_INCOMING;
-    concurrencyMap[std::make_pair(PIPE_TYPE_NORMAL_OUT, PIPE_TYPE_NORMAL_OUT)] = CONCEDE_EXISTING;
+    concurrencyMap[std::make_pair(PIPE_TYPE_OUT_NORMAL, PIPE_TYPE_OUT_NORMAL)] = CONCEDE_EXISTING;
     AudioConcurrencyParser audioConcurrencyParser;
     audioConcurrencyParser.LoadConfig(concurrencyMap);
 }

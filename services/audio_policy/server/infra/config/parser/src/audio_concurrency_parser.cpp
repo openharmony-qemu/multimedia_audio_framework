@@ -66,7 +66,8 @@ void AudioConcurrencyParser::ParseIncoming(const std::string &existing, std::sha
             std::pair<AudioPipeType, AudioPipeType> concurrencyPair =
                 std::make_pair(audioPipeTypeMap_[existing], audioPipeTypeMap_[incoming]);
             ConcurrencyAction concurrencyAction = (action == "play both" || action == "mix") ? PLAY_BOTH :
-                (action == "concede existing" ? CONCEDE_EXISTING : CONCEDE_INCOMING);
+                (action == "concede existing" ? CONCEDE_EXISTING : (action == "concede incoming" ?
+                CONCEDE_INCOMING : CONCEDE_BOTH));
             concurrencyMap.emplace(concurrencyPair, concurrencyAction);
         }
         curNode->MoveToNext();

@@ -675,6 +675,8 @@ private:
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 
+    AudioConcurrencyService &audioConcurrencyService_;
+
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 

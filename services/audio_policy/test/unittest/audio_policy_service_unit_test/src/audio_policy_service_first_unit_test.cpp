@@ -139,10 +139,10 @@ static const std::vector<BluetoothOffloadState>flags = {
 };
 static const std::vector<AudioPipeType>pipeTypes = {
     PIPE_TYPE_UNKNOWN,
-    PIPE_TYPE_NORMAL_OUT,
-    PIPE_TYPE_NORMAL_IN,
-    PIPE_TYPE_OFFLOAD,
-    PIPE_TYPE_MULTICHANNEL
+    PIPE_TYPE_OUT_NORMAL,
+    PIPE_TYPE_IN_NORMAL,
+    PIPE_TYPE_OUT_OFFLOAD,
+    PIPE_TYPE_OUT_MULTICHANNEL
 };
 static const std::vector<Media::MediaMonitor::PreferredType>preferredTypes = {
     Media::MediaMonitor::MEDIA_RENDER,
@@ -810,15 +810,15 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 aaa");
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 bbb");
-    pipeType = PIPE_TYPE_OFFLOAD;
+    pipeType = PIPE_TYPE_OUT_OFFLOAD;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(OFFLOAD_PRIMARY_SPEAKER, retPortName);
 
-    pipeType = PIPE_TYPE_MULTICHANNEL;
+    pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(MCH_PRIMARY_SPEAKER, retPortName);
 
-    pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 
@@ -828,19 +828,19 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
 
     // case 2 InternalDeviceType::DEVICE_TYPE_EARPIECE
     deviceType = DEVICE_TYPE_EARPIECE;
-    pipeType = PIPE_TYPE_OFFLOAD;
+    pipeType = PIPE_TYPE_OUT_OFFLOAD;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(OFFLOAD_PRIMARY_SPEAKER, retPortName);
 
     // case 3 InternalDeviceType::DEVICE_TYPE_SPEAKER
     deviceType = DEVICE_TYPE_SPEAKER;
-    pipeType = PIPE_TYPE_MULTICHANNEL;
+    pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(MCH_PRIMARY_SPEAKER, retPortName);
 
     // case 4 InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    pipeType = PIPE_TYPE_NORMAL_IN;
+    pipeType = PIPE_TYPE_IN_NORMAL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
@@ -860,19 +860,19 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_002, TestSize.Level1)
 
     // case 5 InternalDeviceType::DEVICE_TYPE_WIRED_HEADPHONES
     deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
-    pipeType = PIPE_TYPE_OFFLOAD;
+    pipeType = PIPE_TYPE_OUT_OFFLOAD;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(OFFLOAD_PRIMARY_SPEAKER, retPortName);
 
     // case 6 InternalDeviceType::DEVICE_TYPE_USB_HEADSET
     deviceType = DEVICE_TYPE_USB_HEADSET;
-    pipeType = PIPE_TYPE_MULTICHANNEL;
+    pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(MCH_PRIMARY_SPEAKER, retPortName);
 
     // case 7 InternalDeviceType::DEVICE_TYPE_BLUETOOTH_SCO
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    pipeType = PIPE_TYPE_NORMAL_IN;
+    pipeType = PIPE_TYPE_IN_NORMAL;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
     // case 8 InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET

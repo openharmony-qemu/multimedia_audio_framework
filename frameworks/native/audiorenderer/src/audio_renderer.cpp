@@ -762,31 +762,31 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_VOIP;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
@@ -2234,7 +2234,7 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         info.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
         info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_DIRECT) {
-        info.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+        info.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         info.rendererFlags = AUDIO_FLAG_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_NORMAL) {
         info.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
@@ -2490,8 +2490,8 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
     bean->Add("CLIENT_UID", appInfo_.appUid);
     bean->Add("IS_PLAYBACK", 1);
     bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
-    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
-    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
+    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_OUT_LOWLATENCY);
+    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_OUT_NORMAL);
     bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -2581,17 +2581,13 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
     if (GetUnderflowCountInner() < WRITE_UNDERRUN_NUM) {
         return;
     }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    AudioPipeType pipeType = PIPE_TYPE_OUT_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+        pipeType = PIPE_TYPE_OUT_LOWLATENCY;
     } else if (streamClass == IAudioStream::PA_STREAM) {
         if (audioStream_->GetOffloadEnable()) {
-            pipeType = PIPE_TYPE_OFFLOAD;
-        } else if (audioStream_->GetSpatializationEnabled()) {
-            pipeType = PIPE_TYPE_SPATIALIZATION;
-        } else if (audioStream_->GetHighResolutionEnabled()) {
-            pipeType = PIPE_TYPE_HIGHRESOLUTION;
+            pipeType = PIPE_TYPE_OUT_OFFLOAD;
         }
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(

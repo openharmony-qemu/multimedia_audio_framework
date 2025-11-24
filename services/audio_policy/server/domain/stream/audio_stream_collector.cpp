@@ -113,8 +113,6 @@ AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
     (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
-    audioConcurrencyService_->Init();
 #ifdef ACTIVATED_RECLAIM_MEMORY
     activatedReclaimMemory_ = true;
     AUDIO_INFO_LOG("activated Reclaim Memory is %{public}d", activatedReclaimMemory_);
@@ -1525,12 +1523,6 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
-}
-
-ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
-    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
-{
-    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

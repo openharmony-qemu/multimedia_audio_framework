@@ -1084,7 +1084,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, ExistStreamForPipe_001, TestSize.Level1)
 
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->clientUID = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = AudioPipeType::PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = AudioPipeType::PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     bool result = collector.ExistStreamForPipe(pipeType);
     EXPECT_FALSE(result);

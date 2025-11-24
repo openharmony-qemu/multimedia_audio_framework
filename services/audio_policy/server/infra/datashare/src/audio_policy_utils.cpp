@@ -300,9 +300,9 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             // BTH tells us that a2dpoffload is OK
             if (audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
-                if (pipeType == PIPE_TYPE_OFFLOAD) {
+                if (pipeType == PIPE_TYPE_OUT_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
-                } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+                } else if (pipeType == PIPE_TYPE_OUT_MULTICHANNEL) {
                     portName = MCH_PRIMARY_SPEAKER;
                 } else {
                     portName = PRIMARY_SPEAKER;
@@ -318,9 +318,9 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_NEARLINK:
-            if (pipeType == PIPE_TYPE_OFFLOAD) {
+            if (pipeType == PIPE_TYPE_OUT_OFFLOAD) {
                 portName = OFFLOAD_PRIMARY_SPEAKER;
-            } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+            } else if (pipeType == PIPE_TYPE_OUT_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
             } else {
                 portName = PRIMARY_SPEAKER;
