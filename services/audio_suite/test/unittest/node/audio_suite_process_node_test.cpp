@@ -210,11 +210,11 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
 
 HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
 {
+    EXPECT_EQ(node_->Flush(), SUCCESS);
     AudioFormat audioFormat = {
             {CH_LAYOUT_STEREO, STEREO},
             SAMPLE_S16LE,
             SAMPLE_RATE_48000};
-    EXPECT_EQ(node_->Flush(), SUCCESS);
     node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_NOISE_REDUCTION, audioFormat);
     EXPECT_EQ(node_->Flush(), SUCCESS);
     node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_SOUND_FIELD, audioFormat);
