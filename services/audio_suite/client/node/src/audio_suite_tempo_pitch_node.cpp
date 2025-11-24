@@ -19,9 +19,6 @@
 
 #include "audio_suite_tempo_pitch_node.h"
 #include "audio_utils.h"
-#include <iostream>
-#include <string>
-#include <fstream>
 
 namespace OHOS {
 namespace AudioStandard {
