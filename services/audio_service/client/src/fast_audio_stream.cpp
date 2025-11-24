@@ -1276,7 +1276,8 @@ bool FastAudioStream::IsDataCallbackSet() const
 
 int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
 {
-    keepRunning = rendererInfo_.keepRunning;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR, "processClient_ is null");
+    processClient_->GetKeepRunning(keepRunning);
     return SUCCESS;
 }
 } // namespace AudioStandard

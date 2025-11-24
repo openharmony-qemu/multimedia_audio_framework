@@ -1141,6 +1141,12 @@ int32_t AudioProcessInServer::SetRebuildFlag()
     return SUCCESS;
 }
 
+int32_t AudioProcessInServer::GetServerKeepRunning(bool &keepRunning)
+{
+    keepRunning = keepRunning_;
+    return SUCCESS;
+}
+
 int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
