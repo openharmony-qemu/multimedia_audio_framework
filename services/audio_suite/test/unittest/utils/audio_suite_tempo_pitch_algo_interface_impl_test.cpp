@@ -14,14 +14,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <iostream>
-#include <vector>
-#include <cstdint>
-#include <cstring>
-#include <fstream>
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
-#include "audio_suite_algo_interface.h"
-#include "audio_suite_pcm_buffer.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
