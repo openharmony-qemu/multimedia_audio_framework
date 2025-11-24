@@ -297,7 +297,6 @@ typedef enum {
      * @since 22
      */
     AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED = 13,
-
 } OH_AudioSuite_Result;
 /**
  * @brief Define the audio sample format.
