@@ -26,44 +26,6 @@ extern "C" {
 struct PVStruct;
 typedef struct PVStruct *PVParam;
 
-struct PVStruct {
-    short inBuffer1[FFT_FRAME_LEN];
-    short inBuffer2[FFT_FRAME_LEN];
-    int outBuffer[FFT_FRAME_LEN];
-    int OutHistData[FFT_FRAME_LEN];
- 
-    short InHistData[FFT_FRAME_LEN];
-    int signOfPhaReset; // 补0后相位归置标志
-    int signOfMagReset; // 补0后幅度因子重置标志
-    int lengthOfMagReset;
-    int countSign_test;
-    float countSign2_test;
- 
-    int readPosition;
-    int writePosition;
-    int readPosition_out;
-    int writePosition_out;
-    int signOfcount;                      // 超存个数
-    int overBuffer;                       // 超存标志
-    int count_i;                          // 计算次数
-    int numCount;                         // 传入次数
-    short InBufferData[PV_MAX_BUFFER];    // 输入缓存区
- 
-    float fftPart1[FFT_LENGTH + 4];
-    float fftPart2[FFT_LENGTH + 4];
-    float fftNewOut[FFT_LENGTH + 4];
-    float dphi[FFT_LENGTH + 4];
-    int fftOutput[FFT_LENGTH + 4];
- 
-    float speed;
-    int numChannels;
-    int numInputSamples;
-    int sampleRate;
- 
-    float syn_hopsize; // mag计算因子
-    float phase[FFT_LENGTH + 4];
-};
-
 typedef struct {
     bool currentDeviceSupport;
     bool realTimeSupport;
