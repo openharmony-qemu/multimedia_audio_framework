@@ -470,7 +470,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. sourceAudioNode is nullptr, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_INVALID_STATE} if pipline state is invalid, e.g. can not find output node, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
- * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT} if sourceAudioNode and destAudioNode are the same node, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if sourceAudioNode and destAudioNode are the same node, e.t.c.
  * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 22
