@@ -49,6 +49,7 @@
     *GetAudioScoDeviceMac*;
     *GetScoCategory*;
     *GetConnectionState*;
+    *connectionState_*;
   local:
     *;
 };
