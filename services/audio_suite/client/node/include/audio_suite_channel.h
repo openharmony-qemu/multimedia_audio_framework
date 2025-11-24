@@ -267,6 +267,12 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
         CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, std::vector<T>(), "audionode is nullptr.");
         audioNode_->DoProcess();
     }
+
+    if (audioNode_->GetNodeType() == NODE_TYPE_TEMPO_PITCH) {
+        while (outputData_.empty() && !audioNode_->GetAudioNodeDataFinishedFlag()) {
+            audioNode_->DoProcess();
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(!outputData_.empty(), std::vector<T>(), "outputData is empty.");
     CHECK_AND_RETURN_RET_LOG(outputData_.size() == convert_.size(), std::vector<T>(), "input data num err.");
 
