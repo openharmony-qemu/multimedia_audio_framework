@@ -154,7 +154,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
-        Trace trace("wangrubin SignalProcess start");
+        Trace trace("AudioSuiteTempoPitchNode::SignalProcess Start");
         if (SignalProcess(preOutputs) == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
@@ -197,7 +197,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
     }
     CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
         "node type = %{public}d inputstream is null!", GetNodeType());
-    Trace trace("wangrubin DoProcess start");
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data
@@ -225,7 +224,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
     }
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
     outputStream_->WriteDataToOutput(tempOut);
-    trace.End();
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     return SUCCESS;
