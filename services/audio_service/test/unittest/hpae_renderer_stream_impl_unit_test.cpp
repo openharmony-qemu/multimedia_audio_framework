@@ -44,6 +44,7 @@ static constexpr uint32_t TEST_SESSION_ID = 123456;
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
+    format = format > SAMPLE_F32LE ? -1 : format;
     return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
 }
 
