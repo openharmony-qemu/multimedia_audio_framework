@@ -229,6 +229,10 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
             case NODE_TYPE_NOISE_REDUCTION:
                 CHECK_AND_RETURN_RET_LOG(LoadAinrCapability(nc) == SUCCESS, ERROR, "LoadAinrCapability failed.");
                 break;
+            case NODE_TYPE_TEMPO_PITCH:
+                CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(nc) == SUCCESS, ERROR,
+                    "LoadTempoPitchCapability failed.");
+                break;
             default:
                 AUDIO_ERR_LOG("no such nodeType: %{public}d configured.", nodeType);
                 return ERROR;
