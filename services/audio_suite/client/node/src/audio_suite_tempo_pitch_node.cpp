@@ -140,7 +140,7 @@ int32_t AudioSuiteTempoPitchNode::PadBufferToPcmBuffer(AudioSuitePcmBuffer &pcmB
     auto writePtr = currentDataBuffer_.begin() + TEMPO_PITCH_PCM_FRAME_BYTES - bufferRemainSize_;
     currentDataBuffer_.insert(writePtr, bufferRemainSize_, 0);
 
-    int copyRet = memcpy_s(pcmBuffer.GetPcmData(), TEMPO_PITCH_PCM_FRAME_BYTES, 
+    int copyRet = memcpy_s(pcmBuffer.GetPcmData(), TEMPO_PITCH_PCM_FRAME_BYTES,
         currentDataBuffer_.data(), TEMPO_PITCH_PCM_FRAME_BYTES);
     CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "pcmBuffer copy not enough");
 
@@ -246,7 +246,7 @@ int32_t AudioSuiteTempoPitchNode::SplitDataToQueue(uint8_t* outBuffer, int32_t o
 
         if (bufferRemainSize_ == 0) {
             std::vector<uint8_t> tempOutput(TEMPO_PITCH_PCM_FRAME_BYTES);
-            copyRet = memcpy_s(tempOutput.data(), TEMPO_PITCH_PCM_FRAME_BYTES, 
+            copyRet = memcpy_s(tempOutput.data(), TEMPO_PITCH_PCM_FRAME_BYTES,
                 currentDataBuffer_.data(), TEMPO_PITCH_PCM_FRAME_BYTES);
             CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "tempOutput copy not enough");
  
