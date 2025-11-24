@@ -33,6 +33,7 @@
 #include "audio_suite_soundfield_node.h"
 #include "audio_suite_mixer_node.h"
 #include "audio_suite_voice_beautifier_node.h"
+#include "audio_suite_tempo_pitch_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +45,7 @@ std::mutex AudioSuitePipeline::allocateIdLock;
 uint32_t AudioSuitePipeline::allocateId = 0;
 
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
-    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_AUDIO_MIXER + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
+    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_TEMPO_PITCH + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
     std::lock_guard<std::mutex> lock(allocateIdLock);
     id_ = ++allocateId;
@@ -331,6 +332,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
+    } else if (builder.nodeType == NODE_TYPE_TEMPO_PITCH) {
+        AUDIO_INFO_LOG("Create AudioSuiteTempoPitchNode");
+        node = std::make_shared<AudioSuiteTempoPitchNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
