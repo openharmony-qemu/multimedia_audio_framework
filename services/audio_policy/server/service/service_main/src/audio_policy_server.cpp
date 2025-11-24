@@ -506,7 +506,9 @@ bool AudioPolicyServer::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, Audi
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
     if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
-        audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        ((audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            audioPolicyManager_.IsAbsVolumeScene()) ||
+            audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK)) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 }

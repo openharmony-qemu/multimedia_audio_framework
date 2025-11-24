@@ -118,10 +118,26 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_002, TestSize.Level4)
 */
 HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
 {
+    bool isEnable = true;
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
     audioPolicyServer_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
+
+    isEnable = false;
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
+    streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_ASSISTANT);
+
+    audioPolicyServer_->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
+
+    streamInFocus = AudioStreamType::STREAM_ALARM;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_ALARM);
 }
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
