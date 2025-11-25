@@ -686,6 +686,9 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     } else {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
     }
+    if (audioSceneManager_.IsHangUpScene()) {
+        audioVolumeManager_.RefreshActiveDeviceVolume();
+    }
     if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
         audioVolumeManager_.IsAppRingMuted(uid)) {
         audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.

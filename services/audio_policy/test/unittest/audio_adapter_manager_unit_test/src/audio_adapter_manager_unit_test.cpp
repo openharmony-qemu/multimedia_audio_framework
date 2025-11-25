@@ -451,19 +451,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeLimit_001, TestSize.Level1)
     float volume = 0.5f;
     int32_t volumeLevel = 5;
 
+    auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+    ASSERT_NE(desc, nullptr);
     EXPECT_EQ(audioAdapterManager->SetVolumeDb(STREAM_MUSIC), SUCCESS);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_VOICE_CALL_ASSISTANT, DEVICE_TYPE_SPEAKER);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_ULTRASONIC, DEVICE_TYPE_SPEAKER);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_VOICE_CALL_ASSISTANT, desc);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_ULTRASONIC, desc);
     audioAdapterManager->UpdateOtherStreamVolume(STREAM_VOICE_CALL);
 
     AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_VOICE_CALL, DEVICE_TYPE_SPEAKER);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, desc);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_VOICE_CALL, desc);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, desc);
     AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
     float newLimit = audioAdapterManager->volumeLimit_.load();
     EXPECT_NE(newLimit, oldLimit);
-    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, desc);
 
     newLimit = audioAdapterManager->volumeLimit_.load();
     EXPECT_EQ(oldLimit, newLimit);

@@ -116,5 +116,11 @@ bool AudioSceneManager::IsInPhoneCallScene()
 {
     return audioScene_ == AUDIO_SCENE_PHONE_CALL;
 }
+
+bool AudioSceneManager::IsHangUpScene()
+{
+    return (lastAudioScene_ == AUDIO_SCENE_PHONE_CALL || lastAudioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
+        audioScene_ == AUDIO_SCENE_DEFAULT;
+}
 }
 }

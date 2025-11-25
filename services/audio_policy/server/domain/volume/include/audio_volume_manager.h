@@ -147,7 +147,7 @@ public:
     void DealWithPauseAndStop(const std::string &reason);
     std::string DoLoopCheck(const std::string &reason);
     int32_t CheckActiveMusicTime(const std::string &reason = "Default");
-
+    void RefreshActiveDeviceVolume();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

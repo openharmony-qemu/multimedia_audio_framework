@@ -688,7 +688,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
         volumeDb = 1.0f;
     }
 
-    DepressVolume(volumeDb, volumeLevel, streamType, device->deviceType_);
+    DepressVolume(volumeDb, volumeLevel, streamType, device);
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
         volumeDegree:%{public}d device:%{public}s",
         streamType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
@@ -1217,8 +1217,10 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
-    AudioStreamType streamType, DeviceType deviceType)
+    AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    DeviceType deviceType = device->deviceType_;
     if (streamType == STREAM_VOICE_CALL_ASSISTANT ||
         streamType == STREAM_ULTRASONIC) {
         return;
@@ -1240,8 +1242,9 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     bool updateLimit = volumeType == STREAM_VOICE_CALL || volumeLimit_.load() == MAX_STREAM_VOLUME;
     if (streamInCall) {
         if (updateLimit) {
+            int32_t volumeLevelForCall = GetStreamVolumeInternal(device, STREAM_VOICE_CALL);
             float newLimit = volumeType == STREAM_VOICE_CALL?
-                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, deviceType);
+                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevelForCall, deviceType);
             SetVolumeLimit(newLimit);
         }
     } else {
