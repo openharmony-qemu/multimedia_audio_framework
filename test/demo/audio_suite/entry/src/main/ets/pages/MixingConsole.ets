@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
  */
+ 
 import { StyleConst } from "../utils/StyleConst";
 import {
     Node,
@@ -12,7 +13,8 @@ import {
     PIPELINECASCADMODE_1,
     outputNodeSongNameMap,
     PIPELINECASCADMODE_2,
-    PIPELINECASCADMODE_3
+    PIPELINECASCADMODE_3,
+    BitsPerSampleMode
 } from "../utils/importSongs/InterfaceInfo";
 import { Logger } from '../utils/Logger';
 import audioNapi from 'libentry.so';
@@ -554,7 +556,7 @@ export struct MixingConsole {
                     let inputInfo: Node = {
                         id: inputId,
                         type: NodeType.INPUT,
-                        color: colorMap.get(NodeType.INPUT)
+                        color: ColorMap.get(NodeType.INPUT)
                     };
                     let tempInfo: SongInfo = {
                         uri: inputId,
@@ -571,6 +573,7 @@ export struct MixingConsole {
                     let audioFormat = `${value.sampleRate} ${value.channels} ${value.bitsPerSample} ${value.bufferLength}`;
                     audioNapi.initByPipelineCascad(inputId, this.outputNode.id, this.mixerNode.id, audioFormat, value.buffer);
                 });
+            }
         })
         .title(this.param.mode === 1 ? $r('app.string.mixing_console_cascade') : $r('app.string.mixing_console_playing'),
             {mainTitleModifier: this.mainTitleModifier})

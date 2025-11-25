@@ -3,6 +3,7 @@
  */
 
 #include <thread>
+#include <sstream>
 #include "Input.h"
 #include "./utils/Utils.h"
 #include "./Output.h"
@@ -425,21 +426,21 @@ void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &
 
 napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsByCascad &params)
 {
-    napi_status status = parseNapiString(env, argv[0], params.inputId);
-    status = parseNapiString(env, argv[1], params.outputId);
-    status = parseNapiString(env, argv[2], params.mixerId);
+    napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
+    status = ParseNapiString(env, argv[ARG_1], params.outputId);
+    status = ParseNapiString(env, argv[ARG_2], params.mixerId);
     std::string audioFormat;
-    status = parseNapiString(env, argv[3], audioFormat);
+    status = ParseNapiString(env, argv[ARG_3], audioFormat);
     std::istringstream iss(audioFormat);
     iss >> params.sampleRate >> params.channels >> params.bitsPerSample >> params.pcmBufferSize;
  
     // 设置采样率
-    g_audioFormatInput.samplingRate = setSamplingRate(params.sampleRate);
+    g_audioFormatInput.samplingRate = SetSamplingRate(params.sampleRate);
     // 设置声道
     g_audioFormatInput.channelCount = params.channels;
-    g_audioFormatInput.channelLayout = setChannelLayout(params.channels);
+    g_audioFormatInput.channelLayout = SetChannelLayout(params.channels);
      // 设置位深
-    g_audioFormatInput.sampleFormat = setSampleFormat(params.bitsPerSample);
+    g_audioFormatInput.sampleFormat = SetSampleFormat(params.bitsPerSample);
     // 设置编码格式
     g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
@@ -449,10 +450,10 @@ napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsBy
     g_audioFormatOutput.sampleFormat = g_audioFormatInput.sampleFormat;
     g_audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
  
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, 
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest ParseArgumentsByCascad inputId: %{public}s, outputId: %{public}s, mixerId: %{public}s, "
         "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d, pcmBufferSize: %{public}d",
-        params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str(), params.sampleRate, 
+        params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str(), params.sampleRate,
         params.channels, params.bitsPerSample, params.pcmBufferSize);
     
     return status;

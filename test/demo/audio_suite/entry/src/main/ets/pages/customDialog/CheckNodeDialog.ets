@@ -640,7 +640,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             soundFiledType: this.selectedSoundFiled
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);

@@ -173,7 +173,8 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     unsigned int bitsPerSampleMode;
     napi_get_value_uint32(env, argv[ARG_3], &bitsPerSampleMode);
     ConvertBitsPerSample(bitsPerSample, bitsPerSampleMode);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat bitsPerSample: %{public}d, bitsPerSampleMode: %{public}d",
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "audioEditTest SetFormat bitsPerSample: %{public}d, bitsPerSampleMode: %{public}d",
         bitsPerSample, bitsPerSampleMode);
 
     // 设置采样率
@@ -204,7 +205,7 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     // 获取音频buffer
     void *pcmBuffer = nullptr;
     size_t pcmBufferSize = static_cast<size_t>(params.pcmBufferSize);
-    status = napi_get_arraybuffer_info(env, argv[4], &pcmBuffer, &pcmBufferSize);
+    status = napi_get_arraybuffer_info(env, argv[ARG_4], &pcmBuffer, &pcmBufferSize);
     g_totalSize = params.pcmBufferSize;
     if (g_totalBuff != nullptr) {
         g_totalBuff = nullptr;
@@ -214,23 +215,23 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     if (status != 0) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
-    memcpy(g_totalBuff, static_cast<char *>(pcmBuffer), g_totalSize);
+    std::copy(static_cast<char *>(pcmBuffer), static_cast<char *>(pcmBuffer) + g_totalSize, g_totalBuff);
     
     napi_value napiValue;
     OH_AudioSuite_Result result;
-    Node inputNode = g_nodeManager->getNodeById(params.inputId);
+    Node inputNode = g_nodeManager->GetNodeById(params.inputId);
     if (inputNode.id.empty()) {
-        createInputNode(env, params.inputId, napiValue, result);
+        CreateInputNode(env, params.inputId, napiValue, result);
     } else {
         UpdateInputNodeParams updateInputNodeParams;
         updateInputNodeParams.inputId = params.inputId;
         updateInputNodeParams.channels = params.channels;
         updateInputNodeParams.sampleRate = params.sampleRate;
         updateInputNodeParams.bitsPerSample = params.bitsPerSample;
-        updateInputNode(napiValue, result, updateInputNodeParams);
+        UpdateInputNode(napiValue, result, updateInputNodeParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
-    manageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
@@ -446,16 +447,15 @@ static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     SoundSpeedToneParams params;
-    napi_status status = getSoundSpeedToneParameters(env, argv, params);
+    napi_status status = GetSoundSpeedToneParameters(env, argv, params);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
     // 创建音速音调节点
-    Node soundSpeedToneNode = getOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
+    Node soundSpeedToneNode = GetOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
     if (!soundSpeedToneNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(0));
     }
-    // 调用音速音调底层api  OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(OH_AudioNode* audioNode, float speed, float pitch);
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetTempoAndPitch(soundSpeedToneNode.physicalNode, params.soundSpeed, params.soundTone);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
@@ -889,10 +889,11 @@ static napi_value SetIsRecord(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
  
     bool isRecord;
-    napi_get_value_bool(env, argv[g_argvIndex_0], &isRecord);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord isRecord: %{public}s", isRecord ? "true" : "false");
+    napi_get_value_bool(env, argv[ARG_0], &isRecord);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "SetIsRecord isRecord: %{public}s", isRecord ? "true" : "false");
     if (isRecord) {
-        g_play_resultTotalSize = 0;
+        g_playResultTotalSize = 0;
     }
     return nullptr;
 }
@@ -905,7 +906,8 @@ static napi_value SetSeparationMode(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
  
     napi_status status = napi_get_value_uint32(env, argv[0], &g_separationMode);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetSeparationMode g_separationMode: %{public}d", g_separationMode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "SetSeparationMode g_separationMode: %{public}d", g_separationMode);
     
     return ReturnResult(env, static_cast<AudioSuiteResult>(status));
 }

@@ -9,10 +9,6 @@
 #include "napi/native_api.h"
 #include "./EffectNode.h"
  
-class SoundSpeedTone {
- 
-};
- 
 struct SoundSpeedToneParams {
     std::string inputId;
     std::string soundSpeedToneId;
@@ -21,8 +17,8 @@ struct SoundSpeedToneParams {
     std::string selectedNodeId;
 };
  
-napi_status getSoundSpeedToneParameters(napi_env env, napi_value *argv, SoundSpeedToneParams &params);
+napi_status GetSoundSpeedToneParameters(napi_env env, napi_value *argv, SoundSpeedToneParams &params);
  
-Node getOrCreateSpeedToneNode(std::string& soundSpeedToneId, std::string& inputId, std::string selectedNodeId);
+Node GetOrCreateSpeedToneNode(std::string& soundSpeedToneId, std::string& inputId, std::string selectedNodeId);
  
 #endif //AUDIOEDITTESTAPP_SOUNDSPEEDTONE_H

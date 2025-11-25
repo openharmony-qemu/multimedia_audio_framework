@@ -41,10 +41,10 @@ void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
     } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE) {
         *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_24;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S24LE;
-    }  else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE){
+    }  else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE) {
         *bitsPerSample = DEMO_BITSPERSAMPLE_32;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S32LE;
-    } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE){
+    } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE) {
         *bitsPerSample = DEMO_BITSPERSAMPLE_32;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
     }
@@ -132,7 +132,7 @@ OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
 }
 
 // 位深转换
-void ConvertBitsPerSample(unsigned int& bitsPerSample, , unsigned int& bitsPerSampleMode)
+void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode)
 {
     switch (bitsPerSample) {
         case DemoBitsPerSample::DEMO_BITSPERSAMPLE_8:
