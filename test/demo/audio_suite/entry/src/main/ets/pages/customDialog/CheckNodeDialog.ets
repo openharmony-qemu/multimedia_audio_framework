@@ -542,6 +542,8 @@ struct SoundSpeedToneComponent {
 
 @CustomDialog
 struct EffectNodeDialog {
+    @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
+    @StorageLink('currentPipelineId') currentPipelineId: string = '';
     @Prop selectedNode: string = '';
     @Prop selectedEffectNode: NodeType;
     @Prop currentInputId: string = '';
@@ -579,9 +581,15 @@ struct EffectNodeDialog {
                     },
                     onAgree: () => {
                         let equailizerId = util.generateRandomUUID(true);
-                        let result =
-                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId,
-                                this.currentInputId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId);
+                        } else {
+                            result =
+                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId,
+                                this.selectedNode);
+                        }
                         if (result !== 0) {
                             Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                             this.getUIContext().showAlertDialog({
@@ -612,8 +620,15 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result = audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId,
-                            this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -625,7 +640,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: ColorMap.get(this.selectedEffectNode),
+                            color: colorMap.get(this.selectedEffectNode),
                             soundFiledType: this.selectedSoundFiled
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -642,8 +657,15 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result = audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment,
-                            this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加环境节点失败',
@@ -673,8 +695,16 @@ struct EffectNodeDialog {
 
                         //添加效果节点到混音台---数据处理
                         const nodeId = util.generateRandomUUID(true);
-                        //预留编辑降噪功能方法
-                        let result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiAddNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        } else {
+                            //预留编辑降噪功能方法
+                            result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        }
+            
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -702,9 +732,15 @@ struct EffectNodeDialog {
                         // 调用napi的底层效果节点
                         let voiceBeautifierId = util.generateRandomUUID(true);
                         Logger.error(TAG, `-----${this.selectedNode}`)
-                        let result =
-                            audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier,
-                                voiceBeautifierId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加美化节点失败',
@@ -733,9 +769,14 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result =
-                            audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId,
-                                this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiAddAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
+                        } else {
+                            result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: `添加${AudioSeparationMap.get(this.selectedAudioSeparation)}失败`,

@@ -41,8 +41,11 @@ void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
     } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE) {
         *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_24;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S24LE;
-    }  else {
-        *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_32;
+    }  else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE){
+        *bitsPerSample = DEMO_BITSPERSAMPLE_32;
+        *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S32LE;
+    } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE){
+        *bitsPerSample = DEMO_BITSPERSAMPLE_32;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
     }
 }

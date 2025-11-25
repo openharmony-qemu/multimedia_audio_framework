@@ -16,6 +16,13 @@ export async function saveFileBuffer(): Promise<ArrayBuffer> {
 }
 
 @Concurrent
+export async function saveMulFileBuffer(pipelineId: string): Promise<ArrayBuffer> {
+  audioNapi.multiPipelineEnvPrepare(pipelineId);
+  let pcmBuffer = audioNapi.multiSaveFileBuffer();
+  return pcmBuffer;
+}
+
+@Concurrent
 export async function multiPipelineSaveFileBuffer(pipelineId: string, outputInfo:OutputFile, multiRenderFlag:boolean): Promise<ArrayBuffer[]> {
     const TAG: string = 'AudioEditTestApp_AudioEdit';
     Logger.info(TAG, `multiPipelineSaveFileBuffer start---pipelineId:${pipelineId}, multiRenderFlag:${multiRenderFlag}`)

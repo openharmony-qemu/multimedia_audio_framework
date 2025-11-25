@@ -75,6 +75,10 @@
     {
       "name": "accompaniment",
       "value": "伴奏"
+    },
+    {
+      "name": "renderer",
+      "value": "渲染"
     }
   ]
 }

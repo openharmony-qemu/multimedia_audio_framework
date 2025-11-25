@@ -91,6 +91,8 @@ export struct MixingConsole {
     @State isPipelineCascad: boolean = false;
     // 管线级联
     @StorageLink('pipelineCascadMap') pipelineCascadMap: Map<string, OutSong> = new Map();
+    @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
+    @StorageLink('currentPipelineId') currentPipelineId: string = '';
     @State bitsPerSampleMode: number = BitsPerSampleMode.FLOAT;
 
     aboutToAppear(): void {
@@ -244,23 +246,43 @@ export struct MixingConsole {
                         .width('30')
                         .height('30')
                         .onClick(() => {
+                            // 在管线级联页面进行渲染
+                            if (this.param.pipelineCascadMode === PIPELINECASCADMODE_1 || this.param.pipelineCascadMode === PIPELINECASCADMODE_2) {
+                                this.pipelineCascadMap.set(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || '', {
+                                    pipelineId: this.param.pipelineId ?? '',
+                                    sampleRate: this.sampleRate,
+                                    channels: this.channels,
+                                    bitsPerSample: this.bitsPerSample,
+                                    pipelineCascadMode: this.param.pipelineCascadMode,
+                                });
+                                Logger.info(TAG, `this.pipelineCascadMap: ${this.pipelineCascadMap.size}`);
+                                this.pageInfos.pop(this.pipelineCascadMap.get(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || ''));
+                                return;
+                            }
+                            if (this.sampleRate === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入采样率'
+                                });
+                                return;
+                            }
+                            if (this.channels === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入声道'
+                                });
+                                return;
+                            }
+                            if (this.bitsPerSample === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入位深'
+                                });
+                                return;
+                            }
                             taskpool.execute(saveFileBuffer).then(async (value: object) => {
                                 Logger.info(TAG,
                                     `taskpool onClick save mixingConsole start, param.mode: ${this.param.mode}, length: ${(value as ArrayBuffer).byteLength}`);
-                                // 管线级联，不需要保存到本地
-                                if (this.param.pipelineCascadMode === PIPELINECASCADMODE_1 || this.param.pipelineCascadMode === PIPELINECASCADMODE_2) {
-                                    this.pipelineCascadMap.set(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || '', {
-                                        buffer: value as ArrayBuffer,
-                                        bufferLength: (value as ArrayBuffer).byteLength,
-                                        sampleRate: this.sampleRate,
-                                        channels: this.channels,
-                                        bitsPerSample: this.bitsPerSample,
-                                        pipelineCascadMode: this.param.pipelineCascadMode,
-                                    });
-                                    Logger.info(TAG, `this.pipelineCascadMap: ${this.pipelineCascadMap.size}`);
-                                    this.pageInfos.pop(outputNodeSongNameMap.get(this.param.pipelineCascadMode));
-                                    return;
-                                }
                                 this.SaveBuffer(value as ArrayBuffer);
                                 // 将buffer的map中的 totalWriteAudioDataSize 置为 0
                                 audioNapi.resetTotalWriteAudioDataSize();
@@ -390,9 +412,34 @@ export struct MixingConsole {
                                                     this.inputList[index] = value;
                                                     this.getPcmFileBuffer(this.inputList[index]);
                                                     if (this.wavBuffer.byteLength !== 0) {
-                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                        // 管线级联
+                                                        if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
+                                                            if (!this.param.pipelineId || this.param.pipelineId === '') {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: 'pipelineId是空'
+                                                                });
+                                                                return;
+                                                            }
+                                                            if (audioNapi.multiPipelineEnvPrepare(this.param.pipelineId) !== 0) {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: '创建管线失败'
+                                                                });
+                                                                return;
+                                                            }
+                                                            if (audioNapi.multiAudioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: '创建input节点失败'
+                                                                });
+                                                                return;
+                                                            }
+                                                        } else {
+                                                            audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                            Logger.error(TAG, `fd: ${this.fd}`);
+                                                        }
                                                     }
-                                                    Logger.info(TAG, `fd: ${this.fd}`);
                                                     fs.closeSync(this.fd);
                                                     setTimeout(() => {
                                                         if (tmpInfo) {
@@ -477,10 +524,19 @@ export struct MixingConsole {
         .onReady((context: NavDestinationContext) => {
             this.pageInfos = context.pathStack;
             this.param = (context.pathInfo.param) as NavigationParams;
+            if (this.param.pipelineCascadMode === 0 || this.param.pipelineCascadMode === 3) {
+                this.isCurrentMulPipeline = false;
+            }
+            if (this.param.pipelineCascadMode === 1 || this.param.pipelineCascadMode === 2) {
+                this.isCurrentMulPipeline = true;
+                if (this.param.pipelineId) {
+                    this.currentPipelineId = this.param.pipelineId;
+                }
+            }
             this.paramMode = this.param.mode;
             Logger.info(TAG, `this.param.mode is ${this.param.mode}`);
             // 工作模式
-            if (this.param !== 0) {
+            if (this.param.mode !== 0 && this.param.pipelineCascadMode !== 1 && this.param.pipelineCascadMode !== 2) {
                 try {
                     let result = audioNapi.audioEditNodeInit(this.param.mode);
                     Logger.info(TAG, `audioEditNodeInit result: ${result}`);
@@ -557,8 +613,33 @@ export struct MixingConsole {
                         //获取音频的相关参数
                         this.getPcmFileBuffer(songInfo);
                         if(this.wavBuffer.byteLength !== 0) {
-                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
-                            Logger.info(TAG, `fd: %{public}`);
+                            // 管线级联
+                            if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
+                                if (!this.param.pipelineId || this.param.pipelineId === '') {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: 'pipelineId是空'
+                                    });
+                                    return;
+                                }
+                                if (audioNapi.multiPipelineEnvPrepare(this.param.pipelineId) !== 0) {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: '创建管线失败'
+                                    });
+                                    return;
+                                }
+                                if (audioNapi.multiAudioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: '创建input节点失败'
+                                    });
+                                    return;
+                                }
+                            } else {
+                                audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                Logger.error(TAG, `fd: ${this.fd}`);
+                            }
                             setTimeout(() => {
                                 if (songInfo) {
                                     songInfo.sampleRate = this.sampleRate;
@@ -730,7 +811,7 @@ export struct MixingConsole {
         // fmt块大小
         dv.setUint32(16, 16, true);
         // 格式类别
-        if (this.bitsPerSample === 32) {
+        if (this.bitsPerSample === 32 && this.bitsPerSampleMode === BitsPerSampleMode.FLOAT) {
             dv.setUint16(20, 3, true);
         } else {
             dv.setUint16(20, 1, true);

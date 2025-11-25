@@ -33,19 +33,23 @@ export interface Node {
     soundTone?: number;
 }
 
-export interface OutSong {
-  buffer: ArrayBuffer,
-  bufferLength: number,
-  channels: number;
-  sampleRate: number;
-  bitsPerSample: number;
+export interface  OutSong {
+  pipelineId: string,
+  channels?: number;
+  sampleRate?: number;
+  bitsPerSample?: number;
   pipelineCascadMode: number;
+  buffer?: ArrayBuffer,
+  bufferLength?: number,
+  isRenderer?: boolean,
+  isRendererFinished?: boolean,
 }
 
 // 定义接口
 export interface NavigationParams {
   mode: number;
   pipelineCascadMode: number;
+  pipelineId?: string;
 }
 
 export enum BackColor {
