@@ -369,3 +369,4 @@ SUITE_ENGINE_EXCEPTION:
 VOLUME_SETTING_STATISTICS:
   __BASE: {type: STATISTIC, level: MINOR, desc: volume setting statistics}
   LOUD_VOLUME_TIMES: {type: INT32, desc: loud volume times}
+  SCENE_TYPE: {type: UINT8, desc: scene type}
