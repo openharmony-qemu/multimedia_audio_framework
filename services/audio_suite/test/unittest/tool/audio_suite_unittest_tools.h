@@ -39,7 +39,9 @@ int32_t TestEffectNodeSignalProcess(std::shared_ptr<T> node,
     const std::string &targetFile)
 {
     size_t frameSizeInput = inputs[0]->GetDataSize();
-    size_t frameSizeOutput = frameSizeInput;         // 预设条件：算法输入输出格式相同，否则需要根据node信息获取输出长度
+    // Preset condition: Algorithm input and output formats must be identical;
+    // otherwise, output length needs to be obtained based on node information.
+    size_t frameSizeOutput = frameSizeInput;
     uint8_t *inputData = inputs[0]->GetPcmData();
 
     // Read input file

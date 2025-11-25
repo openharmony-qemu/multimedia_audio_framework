@@ -67,7 +67,7 @@ public:
     MOCK_METHOD(int64_t, GetFramesWritten, (), (override));
     MOCK_METHOD(int64_t, GetFramesRead, (), (override));
 
-    MOCK_METHOD(void, SetPreferredFrameSize, (int32_t frameSize), (override));
+    MOCK_METHOD(void, SetPreferredFrameSize, (int32_t frameSize, bool isRecreate), (override));
     MOCK_METHOD(void, UpdateLatencyTimestamp, (std::string &timestamp, bool isRenderer), (override));
 
     MOCK_METHOD(int32_t, SetDefaultOutputDevice, (const DeviceType defaultOutputDevice, bool skipForce), (override));

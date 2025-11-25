@@ -597,7 +597,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_002, TestSize.Level3)
     uint32_t sessionId = 111111;
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
         AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_NORMAL, 0);
     EXPECT_NE(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
         AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
 }
@@ -612,7 +612,7 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     for (size_t i = 0; i < MAX_RECORD_QUEUE_SIZE + 1; ++i) {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT, 0);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_NORMAL, 0);
     }
     EXPECT_NE(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(sessionId),
         AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
@@ -647,11 +647,11 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_005, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_NORMAL, 0);
     for (size_t i = 0; i < MIN_SILENCE_FRAME_COUNT; ++i) {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_NORMAL_OUT, 0);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_NORMAL, 0);
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_NORMAL, 0);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].historyStateDeque.size(),
         static_cast<size_t>(0));
 }
@@ -743,11 +743,11 @@ HWTEST(AudioUtilsPlusUnitTest, GetRunningHapNames_001, TestSize.Level3)
 
     AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId1, tokenId1);
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId1, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId1, false, PIPE_TYPE_OUT_NORMAL, 0);
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId2, tokenId2);
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId2, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId2, false, PIPE_TYPE_OUT_NORMAL, 0);
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId3, tokenId3);
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId3, false, PIPE_TYPE_LOWLATENCY_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId3, false, PIPE_TYPE_OUT_LOWLATENCY, 0);
 
     AudioPerformanceMonitor::GetInstance().GetRunningHapNames(ADAPTER_TYPE_PRIMARY);
 
@@ -769,12 +769,12 @@ HWTEST(AudioUtilsPlusUnitTest, JudgeNoise_001, TestSize.Level3)
     AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
 
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, 0);
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_NORMAL, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_NORMAL, 0);
 
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, true);
 
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_LOWLATENCY, 0);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, false);
 }

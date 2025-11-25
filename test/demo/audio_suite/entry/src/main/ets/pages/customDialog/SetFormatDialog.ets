@@ -53,7 +53,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('音频格式')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor($r('app.color.index_title_text_color'))
                     }
                     .margin({ top: $r('app.float.margin_10') })
 
@@ -94,7 +94,7 @@ export struct SetFormatDialog {
                         wrap: FlexWrap.Wrap
                     }) {
 
-                        Foreach(this.sampleRates, (item: number) => {
+                        ForEach(this.sampleRates, (item: number) => {
                             Row() {
                                 this.createRadio({
                                     value: `${item}`,
@@ -113,7 +113,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('声道')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor($r('app.color.index_title_text_color'))
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -150,7 +150,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('位深')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor($r('app.color.index_title_text_color'))
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -159,7 +159,7 @@ export struct SetFormatDialog {
                         alignItems: ItemAlign.Center,
                         wrap: FlexWrap.Wrap
                     }) {
-                        Foreach(this.bitsPerSamples, (item: number) => {
+                        ForEach(this.bitsPerSamples, (item: number) => {
                             Row() {
                                 this.createRadio({
                                     value: `${item}`,
@@ -179,9 +179,9 @@ export struct SetFormatDialog {
                             .margin({ right: '20vp' })
                             .margin({ bottom: $r('app.float.margin_10') })
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor($r('app.color.index_title_text_color'))
                         TextInput({ text: this.newAudioFileName, placeholder: '输入保存的音频文件名' })
-                        // .backgroundColor($r('app.color.index_title_text_color))
+                            .backgroundColor($r('app.color.index_title_text_color'))
                             .onChange((value: string) => {
                                 this.newAudioFileName = value;
                             })
@@ -190,14 +190,15 @@ export struct SetFormatDialog {
                 }
                 .alignItems(HorizontalAlign.Start)
                 .margin({
-                    bottom: $r('app.float.margin_10')
-                    left: $r('app.float.margin_10')
+                    bottom: $r('app.float.margin_10'),
+                    left: $r('app.float.margin_10'),
                     right: $r('app.float.margin_10')
                 })
 
                 Column() {
-                    Button($r('app.float.save_audio_format'))
+                    Button($r('app.string.save_audio_format'))
                         .opacity(this.nodeList.size === 0 ? 0.2 : 1.0)
+                        .backgroundColor($r('app.color.index_audio_clip_card'))
                         .onClick(() => {
                             if (this.nodeList.size === 0) {
                                 this.getUIContext().showAlertDialog({
@@ -214,8 +215,9 @@ export struct SetFormatDialog {
                 .margin({ bottom: $r('app.float.margin_10') })
             }
             .padding({ top: $r('app.float.margin_10'), left: $r('app.float.margin_10'), right: $r('app.float.margin_10') })
+            .backgroundColor($r('app.color.main_backgroundColor'))
         }
-        .edgeEffect(EdgeEffect.Spring)
+        .edgeEffect(EdgeEffect.None)
 
     }
 
@@ -231,14 +233,14 @@ export struct SetFormatDialog {
         .margin({ right: 10 })
         .checked(param.isChecked)
         .radioStyle({
-            //checkedBackgroundColor: $r('app.color.index_audio_clip_card),
+            checkedBackgroundColor: $r('app.color.index_audio_clip_card'),
         })
         .onChange((isChecked: boolean) => {
             if (isChecked) {
                 param.onChange();
             }
         })
-        Text(param.label).margin({ right: '20vp }).fontSize(14)
-        // .fontColor($r('app.color.index_title_text_color))
+        Text(param.label).margin({ right: '20vp' }).fontSize(14)
+            .fontColor($r('app.color.index_title_text_color'))
     }
 }

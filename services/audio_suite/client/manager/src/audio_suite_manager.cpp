@@ -264,7 +264,8 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     if (!stopWaiting) {
         WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, "CreateNode timeout");
         AUDIO_ERR_LOG("CreateNode timeout");
-        return INVALID_NODE_ID;
+        nodeId = INVALID_NODE_ID;
+        return ERROR;
     }
 
     AUDIO_INFO_LOG("CreateNode leave");
@@ -435,16 +436,22 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    // check
     std::string name = "AudioEqualizerFrequencyBandGains";
     std::string value = "";
     for (size_t idx = 0; idx < sizeof(gains.gains) / sizeof(gains.gains[0]); idx++) {
         value += std::to_string(gains.gains[idx]);
         value += ":";
     }
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "engine SetEqualizerFrequencyBandGains failed, ret = %{public}d", ret);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && setOptionsResult_ == SUCCESS, ERROR,
+        "SetEqualizerFrequencyBandGains timeout or Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+
     return ret;
 }
 
@@ -677,11 +684,16 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    // check
     std::string name = "SoundFieldType";
     std::string value = std::to_string(static_cast<int32_t>(soundFieldType));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSoundFieldType failed, ret = %{public}d", ret);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && setOptionsResult_ == SUCCESS, ERROR,
+        "SetSoundFieldType timeout or Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
     return ret;
 }
 
@@ -691,11 +703,16 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    // check
     std::string name = "EnvironmentType";
     std::string value = std::to_string(static_cast<int32_t>(environmentType));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine EnvironmentType failed, ret = %{public}d", ret);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && setOptionsResult_ == SUCCESS, ERROR,
+        "SetEnvironmentType timeout or Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
     return ret;
 }
 
@@ -705,11 +722,16 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    // check
     std::string name = "VoiceBeautifierType";
     std::string value = std::to_string(static_cast<int32_t>(voiceBeautifierType));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetVoiceBeautifierType failed, ret = %{public}d", ret);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && setOptionsResult_ == SUCCESS, ERROR,
+        "SetVoiceBeautifierType timeout or Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
     return ret;
 }
 
@@ -1100,6 +1122,14 @@ void AudioSuiteManager::OnGetOptions(int32_t result)
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetOptions_ = true;
     getOptionsResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::OnSetOptions(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishSetOptions_ = true;
+    setOptionsResult_ = result;
     callbackCV_.notify_all();
 }
 

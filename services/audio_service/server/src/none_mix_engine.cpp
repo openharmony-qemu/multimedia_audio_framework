@@ -306,7 +306,7 @@ void NoneMixEngine::MixStreams()
     writeCount_++;
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT, appUid);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
         stream_->ReturnIndex(index);
         if (startFadeout_) {
             startFadeout_.store(false);
@@ -316,7 +316,7 @@ void NoneMixEngine::MixStreams()
         ClockTime::RelativeSleep(PERIOD_NS);
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT, appUid);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
     AdjustVoipVolume();
     // fade in or fade out
     if (startFadeout_ || startFadein_) {

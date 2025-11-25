@@ -292,8 +292,10 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
     if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
         volumeDb = 1;
     }
-    AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
-    AUDIO_INFO_LOG("%{public}f", volumeDb);
+    std::thread([volumeDb]() {
+        AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
+        AUDIO_INFO_LOG("%{public}f", volumeDb);
+    }).detach();
 }
 
 void AudioVolumeManager::InitKVStore()
@@ -1263,8 +1265,8 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     int retryCount = 0;
     while (retryCount < maxRetries) {
         retryCount++;
-        int32_t currentVolume =  audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        bool currentMute =  audioPolicyManager_.GetStreamMute(STREAM_MUSIC);
+        int32_t currentVolume = support ? volume : audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+        bool currentMute = support ? (volume == 0) : audioPolicyManager_.GetStreamMute(STREAM_MUSIC);
         if (audioA2dpDevice_.SetA2dpDeviceAbsVolumeSupport(macAddress, support, currentVolume, currentMute)) {
             break;
         }

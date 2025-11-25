@@ -47,15 +47,15 @@ using namespace OHOS::AudioStandard;
 using namespace OHOS::AudioStandard::AudioSuite;
 using namespace std;
 
-// WAV 文件头结构体
+// WAV file header structure
 #pragma pack(push, 1)
 struct WavHeader {
-    // RIFF 块
+    // RIFF chunk
     char riff[4];          // "RIFF"
-    uint32_t chunkSize;    // 文件总大小 - 8 字节
+    uint32_t chunkSize;    // Total file size - 8 bytes
     char wave[4];
 
-    // fmt 子块
+    // fmt subchunk
     char fmt[4];
     uint32_t subchunk1Size;
     uint16_t audioFormat;
@@ -65,7 +65,7 @@ struct WavHeader {
     uint16_t blockAlign;
     uint16_t bitsPerSample;
 
-    // data 子块
+    // data subchunk
     char data[4];
     uint32_t subchunk2Size;
 };
@@ -73,71 +73,71 @@ struct WavHeader {
 
 class WavFile {
 public:
-    // 构造函数
+    // Constructor
     WavFile() : currentFrame(0)
     {
-        // 初始化头部为默认值
+        // Initialize header with default values
         std::fill(reinterpret_cast<char*>(&header), reinterpret_cast<char*>(&header) + sizeof(header), 0);
         memcpy_s(header.riff, sizeof(header.riff), "RIFF", NUM_FOUR);
         memcpy_s(header.wave, sizeof(header.wave), "WAVE", NUM_FOUR);
         memcpy_s(header.fmt, sizeof(header.fmt), "fmt ", NUM_FOUR);
         memcpy_s(header.data, sizeof(header.data), "data", NUM_FOUR);
-        header.subchunk1Size = NUM_SIXTEEN; // PCM 格式
+        header.subchunk1Size = NUM_SIXTEEN; // PCM format
         header.audioFormat = 1;    // PCM
     }
 
-    // 从文件读取 WAV
+    // Read WAV from file
     bool ReadFromFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            printf("无法打开文件: %s\n", filename.c_str());
+            printf("Failed to open file: %s\n", filename.c_str());
             return false;
         }
 
-        // 读取文件头
+        // Read file header
         file.read(reinterpret_cast<char*>(&header), sizeof(WavHeader));
 
-        // 检查是否是有效地 WAV 文件
+        // Check if valid WAV file
         if (!IsValidWavHeader(header)) {
             file.close();
-            printf("无效的 WAV 文件: %s\n", filename.c_str());
+            printf("Invalid WAV file: %s\n", filename.c_str());
             return false;
         }
 
-        // 计算数据大小并读取音频数据
+        // Calculate data size and read audio data
         audioData.resize(header.subchunk2Size);
         file.read(reinterpret_cast<char*>(audioData.data()), header.subchunk2Size);
 
         file.close();
-        currentFrame = 0;  // 重置帧位置
+        currentFrame = 0;  // Reset frame position
         return true;
     }
 
-    // 写入 WAV 到文件
+    // Write WAV to file
     bool WriteToFile(const std::string& filename)
     {
         std::ofstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            printf("无法创建文件: %s\n", filename.c_str());
+            printf("Failed to create file: %s\n", filename.c_str());
             return false;
         }
 
-        // 更新文件头中的大小信息
+        // Update size information in file header
         header.subchunk2Size = static_cast<uint32_t>(audioData.size());
         header.chunkSize = NUM_THIRTY_SIX + header.subchunk2Size;
 
-        // 写入文件头
+        // Write file header
         file.write(reinterpret_cast<const char*>(&header), sizeof(WavHeader));
 
-        // 写入音频数据
+        // Write audio data
         file.write(reinterpret_cast<const char*>(audioData.data()), audioData.size());
 
         file.close();
         return true;
     }
 
-    // 获取每帧的字节数(默认20ms)
+    // Get bytes per frame (default 20ms)
     size_t GetFrameSize() const
     {
         // 20ms * sampleRate / 1000 * numChannels * (bitsPerSample / 8)
@@ -145,96 +145,96 @@ public:
         return samplesPerFrame * header.numChannels * (header.bitsPerSample / NUM_EIGHT);
     }
 
-    // 获取总帧数
+    // Get total number of frames
     size_t GetTotalFrames() const
     {
         size_t frameSize = GetFrameSize();
         if (frameSize == 0) {
             return 0;
         }
-        return (audioData.size() + frameSize - 1) / frameSize; // 向上取整
+        return (audioData.size() + frameSize - 1) / frameSize; // Round up
     }
 
-    // 读取下一帧数据(如果不足一帧,用0补齐)
+    // Read next frame data (pad with zeros if less than full frame)
     size_t ReadNextFrame(uint8_t *data)
     {
         size_t frameSize = GetFrameSize();
         if (frameSize == 0) {
-            printf("无法计算帧大小,请先设置有效的WAV头信息\n");
+            printf("Cannot calculate frame size, please set valid WAV header first\n");
             return 0;
         }
-        std::vector<uint8_t> frame(frameSize, 0); // 初始化为0
+        std::vector<uint8_t> frame(frameSize, 0); // Initialize with zeros
 
-        // 计算当前帧的起始位置
+        // Calculate starting position of current frame
         size_t startPos = currentFrame * frameSize;
 
-        // 如果无数据可读
+        // If no data to read
         if (startPos >= audioData.size()) {
             return 0;
         }
-        // 计算实际可读取的数据量
+        // Calculate actual readable data amount
         size_t bytesToRead = std::min(frameSize, audioData.size() - startPos);
         memcpy_s(data, bytesToRead, audioData.data() + startPos, bytesToRead);
         currentFrame++;
         return bytesToRead;
     }
 
-    // 检查是否还有更多帧可读
+    // Check if more frames available to read
     bool HasMoreFrames() const
     {
         return currentFrame < GetTotalFrames();
     }
 
-    // 重置帧读取位置
+    // Reset frame read position
     void ResetFramePosition()
     {
         currentFrame = 0;
     }
 
-    // 写入一帧数据
+    // Write one frame of data
     void WriteFrame(const std::vector<uint8_t>& frame)
     {
         size_t frameSize = GetFrameSize();
         if (frameSize == 0) {
-            printf("无法计算帧大小,请先设置有效的WAV头信息\n");
+            printf("Cannot calculate frame size, please set valid WAV header first\n");
             return;
         }
         if (frame.size() != frameSize) {
-            printf("帧大小不匹配，预期大小:%zu,实际打下:%lu\n", frameSize, frame.size());
+            printf("Frame size mismatch, expected:%zu, actual:%lu\n", frameSize, frame.size());
             return;
         }
 
-        // 将帧数据追加到音频数据中
+        // Append frame data to audio data
         audioData.insert(audioData.end(), frame.begin(), frame.end());
     }
 
-    // 获取 WAV 文件头
+    // Get WAV file header
     const WavHeader& GetHeader() const
     {
         return header;
     }
 
-    // 设置 WAV 文件头
+    // Set WAV file header
     void SetHeader(const WavHeader& newHeader)
     {
         if (!IsValidWavHeader(newHeader)) {
-            printf("无效的 WAV 文件头\n");
+            printf("Invalid WAV file header\n");
             return;
         }
         header = newHeader;
     }
 
-    // 获取音频数据
+    // Get audio data
     const std::vector<uint8_t>& GetAudioData() const
     {
         return audioData;
     }
 
-    // 设置音频数据
+    // Set audio data
     void SetAudioData(const std::vector<uint8_t>& newData)
     {
         audioData = newData;
-        currentFrame = 0; // 重置帧位置
+        currentFrame = 0; // Reset frame position
     }
 
     void SetChannels(uint16_t channel)
@@ -242,28 +242,28 @@ public:
         header.numChannels = channel;
     }
 
-    // 打印文件头信息
+    // Print header information
     void PrintHeaderInfo() const
     {
         printf("RIFF: %s\n", std::string(header.riff, NUM_FOUR).c_str());
-        printf("文件大小: %d字节\n", header.chunkSize + NUM_EIGHT);
+        printf("File size: %d bytes\n", header.chunkSize + NUM_EIGHT);
         printf("WAVE: %s\n", std::string(header.wave, NUM_FOUR).c_str());
-        printf("格式: %s\n", std::string(header.fmt, NUM_FOUR).c_str());
-        printf("子块1大小: %d\n", header.subchunk1Size);
-        printf("音频格式: %d (1 = PCM)\n", header.audioFormat);
-        printf("声道数: %d\n", header.numChannels);
-        printf("采样率: %d Hz\n", header.sampleRate);
-        printf("字节率: %d 字节/秒\n", header.byteRate);
-        printf("块对齐: %d 字节\n", header.blockAlign);
-        printf("每样本位数: %d 位\n", header.bitsPerSample);
-        printf("数据标识: %s\n", std::string(header.data, NUM_FOUR).c_str());
-        printf("数据大小: %d 字节\n", header.subchunk2Size);
-        printf("每帧大小: %zu 字节\n", GetFrameSize());
-        printf("总帧数: %zu\n", GetTotalFrames());
+        printf("Format: %s\n", std::string(header.fmt, NUM_FOUR).c_str());
+        printf("Subchunk1 size: %d\n", header.subchunk1Size);
+        printf("Audio format: %d (1 = PCM)\n", header.audioFormat);
+        printf("Number of channels: %d\n", header.numChannels);
+        printf("Sample rate: %d Hz\n", header.sampleRate);
+        printf("Byte rate: %d bytes/second\n", header.byteRate);
+        printf("Block align: %d bytes\n", header.blockAlign);
+        printf("Bits per sample: %d bits\n", header.bitsPerSample);
+        printf("Data identifier: %s\n", std::string(header.data, NUM_FOUR).c_str());
+        printf("Data size: %d bytes\n", header.subchunk2Size);
+        printf("Frame size: %zu bytes\n", GetFrameSize());
+        printf("Total frames: %zu\n", GetTotalFrames());
     }
 
 private:
-    // 检查文件头是否是有效的 WAV 文件
+    // Check if header is valid WAV file
     bool IsValidWavHeader(const WavHeader& hdr)
     {
         return (std::string(hdr.riff, NUM_FOUR) == "RIFF" &&
@@ -273,7 +273,7 @@ private:
     }
     WavHeader header;
     std::vector<uint8_t> audioData;
-    size_t currentFrame; // 当前帧位置
+    size_t currentFrame; // Current frame position
 };
 
 int main()

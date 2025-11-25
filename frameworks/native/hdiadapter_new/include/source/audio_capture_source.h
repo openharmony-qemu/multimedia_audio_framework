@@ -174,7 +174,6 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;
-    std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;

@@ -23,6 +23,8 @@
 #include "iaudio_policy_interface.h"
 #include "audio_active_device.h"
 #include "audio_volume_manager.h"
+#include "media_monitor_manager.h"
+#include "media_monitor_info.h"
 
 
 namespace OHOS {
@@ -58,6 +60,7 @@ private:
     const std::map<AudioVolumeType, AudioVolumeType> CONCURRENCY_KSIP_CLOSE_LOUD_VOL_TYPE = {
         {STREAM_RING, STREAM_RING},
     };
+    void LoudVolumeMonitor();
 };
 #endif
 }

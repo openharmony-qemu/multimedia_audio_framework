@@ -88,7 +88,8 @@ AudioCoreService::AudioCoreService()
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
       pipeManager_(AudioPipeManager::GetPipeManager()),
-      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance()),
+      audioConcurrencyService_(AudioConcurrencyService::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -120,6 +121,8 @@ void AudioCoreService::Init()
 
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
+
+    audioConcurrencyService_.Init();
 
     isFastControlled_ = GetFastControlParam();
     // Register device status listener
@@ -1428,6 +1431,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
+    CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {

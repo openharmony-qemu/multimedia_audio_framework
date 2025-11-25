@@ -108,6 +108,7 @@ public:
     uint32_t GetUnderflowCount() const override;
     int32_t SetTarget(RenderTarget target) override;
     RenderTarget GetTarget() const override;
+    int32_t GetKeepRunning(bool &keepRunning) const override;
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;

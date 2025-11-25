@@ -10,6 +10,7 @@
 #include "napi/native_api.h"
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
+#include "audioEffectNode/Input.h"
 #include "NodeManager.h"
 #include "PipelineManager.h"
 #include "callback/RegisterCallback.h"
@@ -47,8 +48,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder,
     std::string inputId, OH_AudioNode_Type type);
 void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &napiValue,
     OH_AudioSuite_Result &result);
-void MultiUpdateInputNode(const std::string &inputId, unsigned int channels, unsigned int sampleRate,
-    unsigned int bitsPerSample, napi_value &napiValue, OH_AudioSuite_Result &result);
+void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);
 void MultiReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize, std::atomic<bool> &isEnd,
     std::shared_ptr<PipelineManager> threadPipelineManager);
 bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &channels, int32_t &bitsPerSample);

@@ -185,6 +185,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
             triggerTime = 0;
             bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_ON);
             CHECK_AND_RETURN_RET_LOG(ret != false, false, "set LoudVolume on error");
+            LoudVolumeMonitor();
             return true;
         } else if (triggerTime == ENABLE_TRIGGER_TIMES && (mSec - upTriggerTimeMSec > MIN_LOUD_VOLUME_MSEC)) {
             triggerTime++;
@@ -203,6 +204,14 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
         triggerTime = 0;
     }
     return false;
+}
+
+void LoudVolumeManager::LoudVolumeMonitor()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_SETTING_STATISTICS,
+        Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 #endif
 }

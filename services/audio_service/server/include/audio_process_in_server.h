@@ -140,6 +140,8 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
+    void SetKeepRunning(bool keepRunning) override;
+    bool GetKeepRunning() override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -221,7 +223,7 @@ private:
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-
+    bool keepRunning_ = false;
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};
     int64_t lastWriteFrame_{};

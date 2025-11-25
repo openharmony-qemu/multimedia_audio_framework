@@ -128,6 +128,10 @@ public:
     {
         return;
     }
+    void OnSetOptions(int32_t result) override
+    {
+        return;
+    }
 };
 
 class IAudioSuitePipelineTestImpl : public IAudioSuitePipeline {

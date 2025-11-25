@@ -492,6 +492,11 @@ public:
         return sharedAudioRenderer_->GetTarget();
     }
 
+    int32_t GetKeepRunning(bool &keepRunning) const override
+    {
+        return sharedAudioRenderer_->GetKeepRunning(keepRunning);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

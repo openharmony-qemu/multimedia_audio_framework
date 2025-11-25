@@ -47,6 +47,8 @@
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 namespace {

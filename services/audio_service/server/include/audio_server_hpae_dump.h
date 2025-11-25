@@ -42,7 +42,7 @@ public:
     void AudioDataDump(std::string &dumpString, std::queue<std::u16string> &argQue) override;
     void OnDumpSinkInfoCb(std::string &dumpStr, int32_t result) override;
     void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) override;
-    void OnDumpAllAvailableDeviceCb(int32_t result) override;
+    void OnDumpAllAvailableDeviceCb(int32_t result, HpaeDeviceInfo &&devicesInfo) override;
     void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) override;
     void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result) override;
 private:

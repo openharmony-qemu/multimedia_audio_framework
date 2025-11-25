@@ -55,6 +55,7 @@ public:
 
     void Exec() override
     {
+        CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService is nullptr");
         interruptService_->UpdateAudioSceneFromInterrupt(audioScene_, changeType_, zoneId_);
     }
 
@@ -2950,10 +2951,14 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
             policyServer_->UpdateDefaultOutputDeviceWhenStarting(streamId);
             break;
         case INTERRUPT_HINT_PAUSE:
-        case INTERRUPT_HINT_STOP:
+        case INTERRUPT_HINT_STOP: {
             SetNonInterruptMute(streamId, muteFlag);
-            policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
+            std::thread stopThread([this, streamId] {
+                policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
+            });
+            stopThread.detach();
             break;
+        }
         default:
             return false;
     }

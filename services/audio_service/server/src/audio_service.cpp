@@ -855,6 +855,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
+    process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 

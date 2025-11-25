@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../../config.gni")
 
 if (audio_framework_feature_audiosuite_support) {
-  module_output_path = "audio_framework/audio_framework_suite"
+  module_output_path = "audio_framework/audio_suite"
 
   config("audio_suite_unit_config") {
     visibility = [ ":*" ]

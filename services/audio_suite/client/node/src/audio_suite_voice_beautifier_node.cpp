@@ -105,7 +105,6 @@ AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vec
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), nullptr, "voiceBeautifierType is empty, skip signalProccess.");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid input format");
 
-    // 调算法
     AUDIO_DEBUG_LOG("start apply algo.");
     vmAlgoInputs_[0] = inputs[0]->GetPcmData();
     vmAlgoOutputs_[0] = outPcmBuffer_.GetPcmData();

@@ -118,7 +118,7 @@ public:
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::FAST_STREAM; }
-    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_LOWLATENCY_IN; }
+    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_IN_LOWLATENCY; }
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
 };
 
@@ -135,7 +135,7 @@ public:
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     IAudioStream::StreamClass GetStreamClass() override { return IAudioStream::FAST_STREAM; }
-    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_CALL_IN; }
+    void GetAudioPipeType(AudioPipeType &pipeType) override { pipeType = PIPE_TYPE_IN_VOIP; }
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
 };
 

@@ -471,6 +471,17 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
     return SUCCESS;
 }
 
+int32_t HpaeOffloadRendererManager::StopManager()
+{
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sink output node is nullptr");
+        sinkOutputNode_->RenderSinkStop();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeOffloadRendererManager::SetMute(bool isMute)
 {
     auto request = [this, isMute]() {

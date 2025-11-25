@@ -115,7 +115,7 @@ public:
 
     virtual int64_t GetFramesRead() = 0;
 
-    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
+    virtual void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 

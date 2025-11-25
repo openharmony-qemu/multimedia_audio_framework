@@ -61,11 +61,11 @@ int32_t AudioPolicyManager::ForceSelectDevice(DeviceType devType, const std::str
     return gsp->ForceSelectDevice(devType, macAddress, filter);
 }
 
-int32_t AudioPolicyManager::DisconnectSco()
+int32_t AudioPolicyManager::SetActiveHfpDevice(const std::string& macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->DisconnectSco();
+    return gsp->SetActiveHfpDevice(macAddress);
 }
 
 

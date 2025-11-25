@@ -35,13 +35,13 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status;
     std::string inputId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_0], inputId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], inputId);
     std::string effectNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_1], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], effectNodeId);
     unsigned int mode = 0;
     napi_get_value_uint32(env, argv[NAPI_ARGV_INDEX_2], &mode);
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_3], selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "inputId:%{public}s, uuid:%{public}s, mode:%{public}d, "
                   "selectedNodeId:%{public}s", inputId.c_str(), effectNodeId.c_str(), mode, selectedNodeId.c_str());
 
@@ -55,9 +55,9 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputId, effectNodeId);
+        int insertRes = AddEffectNodeToNodeManager(inputId, effectNodeId);
         if (insertRes == NODE_MANAGER_OPERATION_ERROR) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -83,21 +83,21 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string inputId;
-    parseNapiString(env, argv[NAPI_ARGV_INDEX_0], inputId);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], inputId);
     std::string effectNodeId;
-    parseNapiString(env, argv[NAPI_ARGV_INDEX_1], effectNodeId);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], effectNodeId);
     unsigned int mode = 0;
     napi_get_value_uint32(env, argv[NAPI_ARGV_INDEX_2], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "inputId:%{public}s, uuid:%{public}s, mode:%{public}d",
                  inputId.c_str(), effectNodeId.c_str(), mode);
 
-    OH_EnvironmentType type = getEnvEnumByNumber(mode);
+    OH_EnvironmentType type = GetEnvEnumByNumber(mode);
     napi_value ret;
     Node node = g_nodeManager->GetNodeById(effectNodeId);
     bool bypass = mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
             "audioEditTest---resetEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
         napi_create_int64(env, result, &ret);
         return ret;
@@ -106,7 +106,7 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, result, &ret);
         return ret;
     }
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
+    result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
                      "OH_AudioSuiteEngine_SetEnvironmentType ERROR---%{public}d", result);
@@ -121,8 +121,8 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
 
 OH_AudioSuite_Result createEnvNodeAndSetType(std::string uuidStr, unsigned int mode, Node &node)
 {
-    OH_EnvironmentType type = getEnvEnumByNumber(mode);
-    node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
+    OH_EnvironmentType type = GetEnvEnumByNumber(mode);
+    node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
     if (node.physicalNode == nullptr) {
         return AUDIOSUITE_ERROR_SYSTEM;
     }
@@ -130,7 +130,7 @@ OH_AudioSuite_Result createEnvNodeAndSetType(std::string uuidStr, unsigned int m
     bool bypass = mode == 0;
     result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
             "audioEditTest---startEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
         return result;
     }

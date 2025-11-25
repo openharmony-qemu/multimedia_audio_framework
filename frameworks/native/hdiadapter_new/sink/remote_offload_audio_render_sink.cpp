@@ -980,7 +980,7 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
     val << "offloadParams=" << attr_.sampleRate << "," << std::to_string(attr_.format) << ","
         << attr_.channel << "," << attr_.channelLayout;
     SetAudioParameter(AudioParamKey::NONE, "", val.str());
-    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, this);
+    deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, shared_from_this());
     return SUCCESS;
 }
 

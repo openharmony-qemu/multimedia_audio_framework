@@ -259,38 +259,7 @@ async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToSceneInf
     let fsStat = fs.statSync(inputPath);
     let buffer = new ArrayBuffer(fsStat.size);
     fs.readSync(file.fd, buffer);
-
     Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-
-    const wavView = new Uint8Array(buffer);
-    let wavHeaderBuffer = wavView.slice(0, 44).buffer;
-    const dataView = new DataView(wavHeaderBuffer);
-    // 获取通道数, 通道数位于22字节
-    const channels: number = dataView.getUint16(22, true);
-    // 获取采样率, 采样率位于第 24 到28 字节
-    const sampleRate: number = dataView.getUint32(24, true);
-    // 获取位深，位深位于 34字节
-    const bitsPerSample: number = dataView.getUint16(34, true);
-    // 获取音频的长度
-    const fmtSize = dataView.getUint32(16, true); // fmt chunk size
-    let offset = 20 + fmtSize;
-    let pcmLength = 0;
-    while (offset <= buffer.byteLength) {
-      const chunkId = dataView.getUint32(offset, true);
-      offset += 4;
-      const chunkSize = dataView.getUint32(offset, true);
-      offset += 4;
-      // 'data' 在 ASCII 小端字节
-      if (chunkId === 0x61746164) {
-        // 找到了 data 块，返回其大小
-        pcmLength = chunkSize;
-        break;
-      }
-      offset += chunkSize;
-    }
-    Logger.info(TAG, `pcmLength: ${pcmLength}`);
-    Logger.info(TAG,
-      `audioEffectNodeTestSuccess01 sampleRate: ${sampleRate}, bitsPerSample: ${bitsPerSample}, channels: ${channels}`);
     let inputNodeStatus =
       audioNapi.multiAudioInAndOutInit(inputFile.inputId, pipelineInfo.outputId, pipelineInfo.mixerId, file.fd,
         buffer.byteLength);

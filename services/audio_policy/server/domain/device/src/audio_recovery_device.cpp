@@ -212,12 +212,9 @@ void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDev
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && selectedDesc[0] != nullptr, ERROR, "ptr is nullptr");
-    AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] mac[%{public}s] " \
-        "streamUsage[%{public}d] callerUid[%{public}d] audioDeviceSelectMode[%{public}d]", audioRendererFilter->uid,
-        selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
-        audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid(), audioDeviceSelectMode);
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
+        ERROR, "ptr exception");
+    SelectOutputDeviceLog(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
 
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
@@ -269,6 +266,16 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;
+}
+
+void AudioRecoveryDevice::SelectOutputDeviceLog(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
+{
+    AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] mac[%{public}s] " \
+        "streamUsage[%{public}d] callerUid[%{public}d] audioDeviceSelectMode[%{public}d]", audioRendererFilter->uid,
+        selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
+        audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid(), audioDeviceSelectMode);
 }
 
 void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason,
@@ -409,6 +416,8 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererF
 int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
+        ERROR, "ptr exception");
     AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] pid[%{public}d]",
         audioCapturerFilter->uid, selectedDesc[0]->deviceType_,
         GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(), IPCSkeleton::GetCallingPid());

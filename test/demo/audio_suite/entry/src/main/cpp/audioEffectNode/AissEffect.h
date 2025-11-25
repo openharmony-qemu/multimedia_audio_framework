@@ -11,8 +11,6 @@ class AissEffect {
 
 napi_value addAudioSeparation(napi_env env, napi_callback_info info);
 
-napi_value resetAudioSeparation(napi_env env, napi_callback_info info);
-
 napi_value deleteAudioSeparation(napi_env env, napi_callback_info info);
 
 #endif //AUDIOEDITTESTAPP_AISSEFFECT_H

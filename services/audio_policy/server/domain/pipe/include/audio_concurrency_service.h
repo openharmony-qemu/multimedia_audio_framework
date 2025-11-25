@@ -37,10 +37,17 @@ public:
 
     void Init();
 
+    static AudioConcurrencyService& GetInstance()
+    {
+        static AudioConcurrencyService instance;
+        return instance;
+    }
+
     ConcurrencyAction GetConcurrencyAction(const AudioPipeType existingPipe, const AudioPipeType commingPipe);
+    AudioPipeType GetPipeTypeByRouteFlag(uint32_t flag, AudioMode audioMode);
 
 private:
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyCfgMap_ = {};
+    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyConfigMap_ = {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

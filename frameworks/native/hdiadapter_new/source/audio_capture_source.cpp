@@ -82,6 +82,14 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
+static std::mutex g_usbAddressMtx;
+static std::unordered_map<uint32_t, std::string> g_usbAddressMap;
+
+static std::string GetAddress(uint32_t key)
+{
+    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
+    return g_usbAddressMap[key];
+}
 
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
@@ -95,6 +103,7 @@ AudioCaptureSource::~AudioCaptureSource()
     isCaptureThreadRunning_ = false;
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
+    g_usbAddressMap.erase(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -140,6 +149,11 @@ void AudioCaptureSource::DeInit(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    if (audioCapture_ != nullptr && !attr_.isPrimarySinkExist_) {
+        struct AudioSceneDescriptor sceneDesc;
+        InitSceneDesc(sceneDesc, AUDIO_SCENE_DEFAULT);
+        audioCapture_->SelectScene(audioCapture_, &sceneDesc);
+    }
     sourceInited_ = false;
     started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -619,7 +633,8 @@ int32_t AudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 
 void AudioCaptureSource::SetAddress(const std::string &address)
 {
-    address_ = address;
+    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
+    g_usbAddressMap[captureId_] = address;
 }
 
 void AudioCaptureSource::DumpInfo(std::string &dumpString)
@@ -877,6 +892,8 @@ uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -958,13 +975,14 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_IN_MIC;
+    std::string address = GetAddress(captureId_);
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
-        if (address_.empty()) {
+        if (address.empty()) {
             AUDIO_INFO_LOG("use attr desc instead");
             deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
         } else {
-            deviceDesc.desc = const_cast<char *>(address_.c_str());
+            deviceDesc.desc = const_cast<char *>(address.c_str());
         }
         return;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
@@ -974,7 +992,7 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
             deviceDesc.pins = PIN_IN_UWB;
         }
     }
-    deviceDesc.desc = const_cast<char *>(address_.c_str());
+    deviceDesc.desc = const_cast<char *>(address.c_str());
 }
 
 void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene)
@@ -1337,7 +1355,8 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
 int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
 {
     Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
-    std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
+    std::string address = GetAddress(captureId_);
+    address = address.empty() ? attr_.macAddress : address;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "deviceManager is nullptr");

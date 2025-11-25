@@ -204,6 +204,17 @@ int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
+void AudioProcessInServer::SetKeepRunning(bool keepRunning)
+{
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsSystemApp(), "SetKeepRunning: No system permission");
+    keepRunning_ = keepRunning;
+}
+
+bool AudioProcessInServer::GetKeepRunning()
+{
+    return keepRunning_;
+}
+
 void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
 {
     muteFlag_ = muteFlag;
@@ -478,12 +489,12 @@ int32_t AudioProcessInServer::Resume()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     HILOG_COMM_INFO("Resume in server success!");

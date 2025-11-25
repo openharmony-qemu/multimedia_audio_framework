@@ -88,7 +88,6 @@ public:
     bool ExistStreamForPipe(AudioPipeType pipeType);
     int32_t GetRendererDeviceInfo(const int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
 
-    ConcurrencyAction GetConcurrencyAction(const AudioPipeType existingPipe, const AudioPipeType commingPipe);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();
@@ -155,9 +154,9 @@ private:
     bool CheckAudioStateIdle();
     std::atomic_bool isActivatedMemReclaiTask_ = false;
     std::mutex clearMemoryMutex_;
+    bool activatedReclaimMemory_ = false;
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

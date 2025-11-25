@@ -108,10 +108,10 @@ export struct Export {
               ForEach(this.sampleRates, (item: number) => {
                 Row() {
                   this.createRadio({
-                    value: '${item}',
+                    value: `${item}`,
                     groupName: 'radioGroupRate',
                     isChecked: this.sampleRate === 16000 ? true : false,
-                    label: '${item} Hz',
+                    label: `${item} Hz`,
                     onChange: () => {
                       this.sampleRate = item;
                     }
@@ -173,10 +173,10 @@ export struct Export {
               ForEach(this.bitsPerSamples, (item: number) => {
                 Row() {
                   this.createRadio({
-                    value: '${item}',
+                    value: `${item}`,
                     groupName: 'radioGroupBitsPerSample',
                     isChecked: this.bitsPerSample === 32 ? true : false,
-                    label: '${item}',
+                    label: `${item}`,
                     onChange: () => {
                       this.bitsPerSample = item;
                     }
@@ -203,7 +203,7 @@ export struct Export {
           Column() {
             Button('保存音频格式').onClick((event: ClickEvent) => {
               Logger.info(TAG,
-                'save sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}')
+                `save sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}`)
               audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample);
             })
               .backgroundColor($r('app.color.index_audio_clip_card'))
@@ -268,9 +268,9 @@ export struct Export {
   async SaveBuffer(value: ArrayBuffer) {
     try {
       Logger.info(TAG,
-        'SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}');
+        `SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}`);
       let pcmBuffer = value;
-      Logger.info(TAG, 'SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}');
+      Logger.info(TAG, `SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}`);
       if (pcmBuffer.byteLength === 0) {
         Logger.info(TAG, 'SaveBuffer error');
       }
@@ -281,15 +281,15 @@ export struct Export {
       } else {
         this.newAudioFileName = this.newAudioFileName + ' ' + getDateStringWithTimeStamp(new Date().getTime());
       }
-      let newFileNames = '${this.newAudioFileName}${this.audioFormate}';
-      Logger.info(TAG, 'SaveBuffer newFileNames is: ${newFileNames}');
+      let newFileNames = `${this.newAudioFileName}${this.audioFormate}`;
+      Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
       documentSaveOptions.newFileNames = [newFileNames];
       let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
       let documentPicker = new picker.DocumentViewPicker(context);
       documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
         if (err) {
           Logger.error(TAG,
-            'DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}');
+            `DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}`);
           return;
         }
         Logger.info(TAG,
@@ -297,45 +297,45 @@ export struct Export {
         let filePath = documentSaveResult;
         // documentSaveResult数组中只有一个路径
         let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, 'SaveBuffer filePath : ${filePath}');
+        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
         if (this.audioFormate === '.wav') {
           // 处理wav
           let wavBuffer = this.writeWavFileHeader(pcmBuffer);
           let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, 'SaveWavBuffer writeLen : ${writeLen}');
+          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
         } else {
           // 处理pcm
           let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, 'SavePcmBuffer writeLen : ${writeLen}');
+          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
         }
       })
     } catch (e) {
-      Logger.error(TAG, 'SaveBuffer catch: ${JSON.stringify(e)}')
+      Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
     }
   }
 
   async SaveTapBuffer(value: ArrayBuffer) {
     try {
       Logger.info(TAG,
-        'SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}');
+        `SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}`);
       let pcmBuffer = value;
-      Logger.info(TAG, 'SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}');
+      Logger.info(TAG, `SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}`);
       if (pcmBuffer.byteLength === 0) {
         Logger.info(TAG, 'SaveBuffer error');
       }
       // picker选择器, 保存PCM文件
       let documentSaveOptions = new picker.DocumentSaveOptions();
-      let newFileNames = 'tap_output${this.audioFormate}';
-      Logger.info(TAG, 'SaveBuffer newFileNames is: ${newFileNames}');
+      let newFileNames = `tap_output${this.audioFormate}`;
+      Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
       documentSaveOptions.newFileNames = [newFileNames];
       let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
       let documentPicker = new picker.DocumentViewPicker(context);
       documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
         if (err) {
           Logger.error(TAG,
-            'DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}');
+            `DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}`);
           return;
         }
         Logger.info(TAG,
@@ -343,22 +343,22 @@ export struct Export {
         let filePath = documentSaveResult;
         // documentSaveResult数组中只有一个路径
         let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, 'SaveBuffer filePath : ${filePath}');
+        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
         if (this.audioFormate === '.wav') {
           // 处理wav
           let wavBuffer = this.writeWavFileHeader(pcmBuffer);
           let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, 'SaveWavBuffer writeLen : ${writeLen}');
+          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
         } else {
           // 处理pcm
           let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, 'SavePcmBuffer writeLen : ${writeLen}');
+          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
         }
       })
     } catch (e) {
-      Logger.error(TAG, 'SaveBuffer catch: ${JSON.stringify(e)}')
+      Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
     }
   }
 
@@ -386,7 +386,7 @@ export struct Export {
   // 定义写 wav 头文件信息的方法
   writeWavFileHeader(pcmBuffer: ArrayBuffer): ArrayBuffer {
     Logger.info(TAG,
-      'writeWavFileHeader sampleRate : ${this.sampleRate} --- channels : ${this.channels} --- bitsPerSample : ${this.bitsPerSample}');
+      `writeWavFileHeader sampleRate : ${this.sampleRate} --- channels : ${this.channels} --- bitsPerSample : ${this.bitsPerSample}`);
     const header = new ArrayBuffer(44);
     const dv = new DataView(header);
     // 写入RIFF快

@@ -309,6 +309,7 @@ private:
     std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
     std::string dupDumpName_ = "";
+    std::string endpointName_ = "";
 
     uint32_t fastRenderId_ = HDI_INVALID_ID;
     uint32_t fastCaptureId_ = HDI_INVALID_ID;

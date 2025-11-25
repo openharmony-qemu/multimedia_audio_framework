@@ -562,6 +562,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
     HDI_CAPTURE_OFFSET_ACCESSORY = 10,
     HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION = 11,
+    HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE = 12,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -596,6 +597,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
 
 std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
 
+uint32_t PcmFormatToBits(AudioSampleFormat format);
 std::string ConvertToStringForFormat(const AudioSampleFormat format);
 std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
 std::string ConvertToStringForChannel(const AudioChannel channel);

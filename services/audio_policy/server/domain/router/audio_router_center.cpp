@@ -152,7 +152,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     FetchDeviceInfo bak = {
-        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
@@ -232,7 +232,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchDupD
         info.streamUsage = fetchDeviceInfo.streamUsage;
         info.clientUID = fetchDeviceInfo.clientUID;
         info.routerType = ROUTER_TYPE_NONE;
-        info.audioPipeType = PIPE_TYPE_NORMAL_OUT;
+        info.audioPipeType = PIPE_TYPE_OUT_NORMAL;
         info.privacyType = fetchDeviceInfo.privacyType;
 
         audioDeviceRefinerCb_->OnAudioDupDeviceRefined(descs, info);
@@ -338,7 +338,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_NORMAL_IN);
+        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;

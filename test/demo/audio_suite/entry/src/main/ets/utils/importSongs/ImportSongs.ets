@@ -11,7 +11,7 @@ import { Logger } from '../Logger';
 const TAG: string = 'AudioEditTestApp_ImportSongs';
 
 // 导入歌曲
-export async function importSongs(playList: Map<string, SongInfo): Promise<Map<string, SongInfo>> {
+export async function importSongs(playList: Map<string, SongInfo>): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
     try {
         let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
@@ -46,7 +46,7 @@ export async function importSongs(playList: Map<string, SongInfo): Promise<Map<s
 }
 
 // 导入歌曲（修改为单文件导入）
-export async function importSingSong(nodeList: Map<string, SongInfo>,
+export async function importSingleSong(nodeList: Map<string, SongInfo>,
     nodeId: string): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
     try {

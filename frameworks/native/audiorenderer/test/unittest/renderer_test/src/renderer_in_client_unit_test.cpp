@@ -164,6 +164,15 @@ public:
     virtual void OnReadData(size_t length) {}
 };
 
+class AudioRendererFirstFrameWritingCallbackTest : public AudioRendererFirstFrameWritingCallback {
+public:
+    virtual ~AudioRendererFirstFrameWritingCallbackTest() = default;
+    /**
+    * Called when first buffer to be enqueued.
+    */
+    virtual void OnFirstFrameWriting(uint64_t latency) {}
+};
+
 class CapturerPositionCallbackTest : public CapturerPositionCallback {
 public:
     virtual ~CapturerPositionCallbackTest() = default;
@@ -1550,11 +1559,11 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_057, TestSize.Level1
     ptrRendererInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
 
     bool needStoreState = true;
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     auto ret = ptrRendererInClientInner->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, false);
 
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     ret = ptrRendererInClientInner->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, false);
 }
@@ -2263,7 +2272,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_083, TestSize.Level1
     bool needStoreState = false;
     EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 }
 
@@ -2838,5 +2847,25 @@ HWTEST(RendererInClientInnerUnitTest, GetRenderTarget_001, TestSize.Level1)
     auto ret = ptrRendererInClientInner->GetRenderTarget();
     EXPECT_EQ(ret, NORMAL_PLAYBACK);
 }
+
+/**
+ * @tc.name  : Test GetSwitchInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetSwitchInfo_001
+ * @tc.desc  : Test GetSwitchInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, GetSwitchInfo_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    IAudioStream::SwitchInfo info;
+    ptrRendererInClientInner->GetSwitchInfo(info);
+    EXPECT_EQ(info.rendererFirstFrameWritingCallback, nullptr);
+    ptrRendererInClientInner->firstFrameWritingCb_ = std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    ptrRendererInClientInner->GetSwitchInfo(info);
+    EXPECT_NE(info.rendererFirstFrameWritingCallback, nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

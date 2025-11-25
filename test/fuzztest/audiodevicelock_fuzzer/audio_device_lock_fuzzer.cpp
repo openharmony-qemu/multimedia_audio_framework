@@ -196,7 +196,7 @@ void UpdateTrackerFuzzTest()
 void RegisteredTrackerClientDiedFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
     pid_t uid = static_cast<pid_t>(GetData<uint8_t>() % uidCount);
     OnStop();
 }

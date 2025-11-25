@@ -110,8 +110,8 @@
             <option name="push" value="aiss_48000_2_S32LE.pcm -> /data/" src="res"/>
             <option name="shell" value="restorecon /data/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/"/>
-            <option name="push" value="soundfield_input_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
-            <option name="push" value="soundfield_target_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
+            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/" src="res"/>
+            <option name="push" value="soundfieldnode_target_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/nr/"/>
             <option name="push" value="ainr_input_16000_1_S16LE.pcm -> /data/audiosuite/nr/" src="res"/>

@@ -55,7 +55,7 @@ void RendererInServerThirdUnitTest::SetUp(void)
     processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     processConfig.streamInfo = testStreamInfo;
     processConfig.streamType = STREAM_MUSIC;
-    processConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     streamListener = streamListenerHolder;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);

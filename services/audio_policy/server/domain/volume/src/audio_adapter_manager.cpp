@@ -1136,7 +1136,6 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     if (osAccountReady) {
         LoadVolumeMap();
         LoadMuteStatusMap();
-        UpdateSafeVolume();
     } else {
         AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
     }
@@ -1958,6 +1957,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         }
     }
     GetHdiSourceTypeToAudioSourceAttr(attr, attr.sourceType);
+    attr.isPrimarySinkExist_ = isPrimarySinkExist_.load();
     return attr;
 }
 
@@ -2208,7 +2208,7 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioActiveDevice_.GetActiveOutputDevices();
+    auto descs = audioConnectedDevice_.GetCopy();
     for (auto &device: descs) {
         UpdateSafeVolumeInner(device);
     }
@@ -3287,6 +3287,12 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
 
+int32_t AudioAdapterManager::StopAudioPort(std::string oldSinkName)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter_ is null");
+    return audioServiceAdapter_->StopAudioPort(oldSinkName);
+}
+
 int32_t AudioAdapterManager::AddCaptureInjector()
 {
     AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
@@ -3341,6 +3347,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
+    UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
     AUDIO_INFO_LOG("update ok for dp casting");
@@ -3487,6 +3494,11 @@ void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
+}
+
+void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
+{
+    isPrimarySinkExist_ = isPrimarySinkExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

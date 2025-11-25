@@ -193,11 +193,11 @@ void DirectPlayBackEngine::MixStreams()
     uint32_t sessionId = stream_->GetStreamIndex();
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT, appUid);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
         stream_->ReturnIndex(index);
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT, appUid);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
     DoRenderFrame(audioBuffer, index, appUid);
 }
 

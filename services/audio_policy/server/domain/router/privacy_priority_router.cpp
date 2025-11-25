@@ -101,13 +101,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     }
 
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
-    if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connecte desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connecte desc type is none, just only add default device.");
+    if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }

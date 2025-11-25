@@ -53,6 +53,7 @@ public:
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
+    int32_t StopManager() override;
     void Process() override;
     void HandleMsg() override;
     int32_t Init(bool isReload = false) override;
@@ -173,6 +174,7 @@ private:
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
+    int64_t lastSessionStateChangeTime_ = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

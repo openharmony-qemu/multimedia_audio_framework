@@ -172,6 +172,9 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     } else {
         AUDIO_INFO_LOG("Deactive A2DP device");
     }
+    if (macAddress == activeA2dpDevice_.GetDeviceAddr()) {
+        return SUCCESS;
+    }
     int32_t ret = a2dpInstance_->SetActiveSinkDevice(device);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "SetActiveA2dpDevice failed. result: %{public}d", ret);
     activeA2dpDevice_ = device;
@@ -477,6 +480,8 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         AUDIO_WARNING_LOG("Active hfp device is changed, need to DisconnectSco for current activeHfpDevice.");
         int32_t ret = DisconnectScoWrapper();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
+    } else {
+        return SUCCESS;
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
