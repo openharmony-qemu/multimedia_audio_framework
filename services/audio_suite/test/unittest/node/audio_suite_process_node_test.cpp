@@ -216,7 +216,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
             SAMPLE_RATE_48000};
 
     auto node = TestAudioSuiteProcessNode(NODE_TYPE_EQUALIZER, audioFormat);
-    EXPECT_EQ(SUCCESS, node.Flush());  
+    EXPECT_EQ(SUCCESS, node.Flush());
     node = TestAudioSuiteProcessNode(NODE_TYPE_NOISE_REDUCTION, audioFormat);
     EXPECT_EQ(SUCCESS, node.Flush());
     node = TestAudioSuiteProcessNode(NODE_TYPE_SOUND_FIELD, audioFormat);
