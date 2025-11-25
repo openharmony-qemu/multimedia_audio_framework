@@ -183,7 +183,7 @@ void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNod
     SourceType sourceType = sourceTypeIt->second;
     sourceStrategyMap->emplace(sourceType,
         AudioSourceStrategyType(hdiSource, adapterStr, pipeStr, audioFlag, priority));
-    SolePipe::SetSolePipeSourceInfo(sourceType, static_cast<uint32_t>audioFlag, pipeStr);
+    SolePipe::SetSolePipeSourceInfo(sourceType, static_cast<uint32_t>(audioFlag), pipeStr);
     AUDIO_INFO_LOG("sourceType: %{public}d, source: %{public}s, hdiSource: %{public}s, adapterStr: %{public}s, "
         "pipeStr: %{public}s, audioFlag: %{public}u, priority: %{public}d",
         sourceType, source.c_str(), hdiSource.c_str(), adapterStr.c_str(), pipeStr.c_str(), audioFlag,
