@@ -874,7 +874,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
 
     Trace trace("AudioEndpointInner::StartDupStream");
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> duplock(dupMutex_);
         for (auto &capture : fastCaptureInfos_) {
             if (capture.second.isInnerCapEnabled && capture.second.dupStream != nullptr) {
                 capture.second.dupStream->Start();
