@@ -529,11 +529,11 @@ size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
     size_t frameLen = 0;
     if (sampleRate == SAMPLE_RATE_11025) {
-        frameLen = FRAME_LEN_40MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_40MS) * sampleRate / MS_PER_SECOND;
     } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
-        frameLen = FRAME_LEN_20MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
     } else {
-        frameLen = FRAME_LEN_100MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_100MS) * sampleRate / MS_PER_SECOND;
     }
     return frameLen;
 }

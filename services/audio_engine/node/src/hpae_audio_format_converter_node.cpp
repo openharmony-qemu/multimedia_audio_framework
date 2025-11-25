@@ -286,7 +286,7 @@ void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo
     PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
     if (outPcmBufferInfo.ch < preNodeInfo_.channels) { // downmix, then resample
         tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
-        tmpOutPcmBufferInfo.frameLen = CalculateFrameLenBySampleRate(tmpOutPcmBufferInfo.rate);
+        tmpOutPcmBufferInfo.frameLen = preNodeInfo_.frameLen;
     } else { // resample, then upmix
         tmpOutPcmBufferInfo.ch = preNodeInfo_.channels;
     }
