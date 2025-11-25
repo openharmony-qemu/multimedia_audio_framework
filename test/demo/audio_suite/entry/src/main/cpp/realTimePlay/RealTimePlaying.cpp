@@ -11,6 +11,7 @@
 #include "./callback/RegisterCallback.h"
 #include "../audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
+#include "../utils/Utils.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *REAL_TIME_PLAYING_TAG = "[AudioEditTestApp_RealTimePlaying_cpp]";
@@ -117,11 +118,13 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
     // 每次保存一次获取的buffer值 ...
     g_playAudioData = (char *)malloc(*writeSize);
     if (g_separationMode == ARG_0) {
-        std::copy(g_playOhAudioDataArray->audioDataArray[ARG_0],
-            g_playOhAudioDataArray->audioDataArray[ARG_0] + *writeSize, static_cast<char *>(g_playAudioData))
+        std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]),
+            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]) + *writeSize,
+            static_cast<char *>(g_playAudioData));
     } else if (g_separationMode == ARG_1) {
-        std::copy(g_playOhAudioDataArray->audioDataArray[ARG_1],
-            g_playOhAudioDataArray->audioDataArray[ARG_1] + *writeSize, static_cast<char *>(g_playAudioData))
+        std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]),
+            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]) + *writeSize,
+            static_cast<char *>(g_playAudioData));
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
