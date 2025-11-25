@@ -37,6 +37,7 @@
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/AissEffect.h"
+#include "audioEffectNode/SoundSpeedTone.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -389,6 +390,29 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
 
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, frequencyBandGains);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+// 设置音速音调效果节点
+static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetSoundSpeedTone start");
+    size_t argc = 5;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    SoundSpeedToneParams params;
+    napi_status status = getSoundSpeedToneParameters(env, argv, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+    // 创建音速音调节点
+    Node soundSpeedToneNode = getOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
+    if (!soundSpeedToneNode.physicalNode) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(0));
+    }
+    // 调用音速音调底层api  OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(OH_AudioNode* audioNode, float speed, float pitch);
+    OH_AudioSuite_Result result =
+        OH_AudioSuiteEngine_SetTempoAndPitch(soundSpeedToneNode.physicalNode, params.soundSpeed, params.soundTone);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
@@ -884,7 +908,9 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
             napi_default, nullptr},
         {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setSoundSpeedTone", nullptr, SetSoundSpeedTone, nullptr, nullptr, nullptr, napi_default, nullptr}
+    };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;

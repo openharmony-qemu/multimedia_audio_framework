@@ -84,7 +84,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('采样率（混音输入最高采样率）')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor($r('app.color.index_title_text_color'))
                     }
 
                     Flex({

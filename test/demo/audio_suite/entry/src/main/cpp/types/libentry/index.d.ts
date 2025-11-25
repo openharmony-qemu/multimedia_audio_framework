@@ -36,3 +36,4 @@ export const deleteNode: (nodeId: string) => number;
 export const registerAudioFormatCallback: (callBackFull: Function) => string[];
 export const getOptions: (nodeId: string) => string;
 export const getEffectNodeList: () => Array<number>;
+export const setSoundSpeedTone: (pitchSong: string, soundSpeedToneId: string, soundSpeed: number, soundTone: number, selectedNodeId?: string) => number;

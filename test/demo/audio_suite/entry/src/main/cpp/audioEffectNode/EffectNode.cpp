@@ -70,6 +70,7 @@ napi_value GetSupportedAudioNodeTypes(napi_env env)
 {
     const int minNodeType = 201;
     const int maxNodeType = 206;
+    const int MAX_NODE_TYPE = 211;
  
     std::vector<OH_AudioNode_Type> supportedTypes;
  
