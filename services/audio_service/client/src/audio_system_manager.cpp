@@ -2062,6 +2062,11 @@ int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
 }
 
+bool AudioSystemManager::GetVirtualCall()
+{
+    return AudioPolicyManager::GetInstance().GetVirtualCall();
+}
+
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
     const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
 {
