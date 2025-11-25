@@ -977,6 +977,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
             default:
                 break;
         }
+        audioPipeSelector_->UpdateRendererPipeInfo(desc);
     }
     pipeManager_->AddAudioPipeInfo(pipeInfo);
 }
