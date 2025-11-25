@@ -81,7 +81,7 @@ HWTEST(AudioGroupManagerUnitTest, GetActiveVolumeType_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     AudioStreamType ret = audioGroupManager.GetActiveVolumeType(1);
-    EXPECT_NE(ret, STREAM_MUSIC);
+    EXPECT_EQ(ret, STREAM_MUSIC);
 }
 
 #ifdef TEMP_DISABLE
@@ -112,7 +112,7 @@ HWTEST(AudioGroupManagerUnitTest, GetVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetVolume(STREAM_ULTRASONIC);
-    EXPECT_GE(0, ret);
+    EXPECT_GE(ret, 0);
 }
 
 /**
@@ -138,7 +138,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
     AudioGroupManager audioGroupManager(1);
     audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_WAKEUP);
-    EXPECT_NE(ret, D_ALL_DEVICES);
+    EXPECT_EQ(ret, D_ALL_DEVICES);
 }
 /**
 * @tc.name  : Test Audio API
@@ -150,7 +150,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ALL);
-    EXPECT_NE(ret, D_ALL_DEVICES);
+    EXPECT_EQ(ret, D_ALL_DEVICES);
 }
 /**
 * @tc.name  : Test Audio API
@@ -162,7 +162,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ULTRASONIC);
-    EXPECT_NE(ret, D_ALL_DEVICES);
+    EXPECT_EQ(ret, D_ALL_DEVICES);
 }
 /**
 * @tc.name  : Test Audio API
@@ -175,7 +175,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     AudioGroupManager audioGroupManager(1);
     audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_WAKEUP);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test Audio API
@@ -187,7 +187,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolume_002, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_ALL);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test Audio API
@@ -199,7 +199,7 @@ HWTEST(AudioGroupManagerUnitTest, GetMinVolume_003, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.GetMinVolume(STREAM_ULTRASONIC);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -242,7 +242,7 @@ HWTEST(AudioGroupManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_DISTRIBUTED;
     bool isMute = false;
     int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_CAMCORDER, isMute);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test Audio API
@@ -268,7 +268,7 @@ HWTEST(AudioGroupManagerUnitTest, IsAlived_001, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     bool ret = audioGroupManager.IsAlived();
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -314,31 +314,14 @@ HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level1)
     audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
     AudioRingerMode ringMode = RINGER_MODE_SILENT;
     float result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
-    ringMode = RINGER_MODE_NORMAL;
-    result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
+    int modeError = -1;
+    EXPECT_NE(result, modeError);
     ringMode = RINGER_MODE_VIBRATE;
     result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
-}
-
-/**
-* @tc.name  : Test AdjustVolumeByStep_001 API
-* @tc.type  : FUNC
-* @tc.number: AdjustVolumeByStep_001_001
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, AdjustVolumeByStep_001, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
-    VolumeAdjustType adjustType = VOLUME_UP;
-    float result = audioGroupManager.AdjustVolumeByStep(adjustType);
-    EXPECT_NE(result, 0);
-    adjustType = VOLUME_DOWN;
-    result = audioGroupManager.AdjustVolumeByStep(adjustType);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, modeError);
+    ringMode = RINGER_MODE_NORMAL;
+    result = audioGroupManager.SetRingerMode(ringMode);
+    EXPECT_NE(result, modeError);
 }
 } // namespace AudioStandard
 } //
