@@ -36,11 +36,11 @@ HWTEST_F(AudioSuiteTempoPitchAlgoInterfaceImplTest, DeinitTest, TestSize.Level0)
     std::shared_ptr<AudioSuiteTempoPitchAlgoInterfaceImpl> algoInterface =
         std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(nc);
     int32_t ret = algoInterface->Deinit();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
     ret = algoInterface->Init();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
     ret = algoInterface->Deinit();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 }
