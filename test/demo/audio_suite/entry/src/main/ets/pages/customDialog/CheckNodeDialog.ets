@@ -781,7 +781,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: soundSpeedToneId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             soundSpeed: this.soundSpeed,
                             soundTone: this.soundTone,
                         }
@@ -1077,10 +1077,10 @@ struct SetNodeDialog {
                     if (leftEffectNode?.audioSeparationType !== undefined) {
                         this.selectedAudioSeparation = leftEffectNode.audioSeparationType
                     }
-                    if (leftEffectNode.soundSpeed !== undefined) {
+                    if (leftEffectNode?.soundSpeed !== undefined) {
                         this.soundSpeed = leftEffectNode.soundSpeed;
                     }
-                    if (leftEffectNode.soundTone !== undefined) {
+                    if (leftEffectNode?.soundTone !== undefined) {
                         this.soundTone = leftEffectNode.soundTone;
                     }
                 }

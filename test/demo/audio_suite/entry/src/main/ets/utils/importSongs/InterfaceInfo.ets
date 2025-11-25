@@ -29,6 +29,8 @@ export interface Node {
     environmentType?: EnvironmentType;
     voiceBeautifierType?: VoiceBeautifierType;
     audioSeparationType?: AudioSeparationType;
+    soundSpeed?: number;
+    soundTone?: number;
 }
 
 export enum BackColor {
