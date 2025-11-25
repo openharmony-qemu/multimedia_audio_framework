@@ -204,7 +204,7 @@ export struct Export {
             Button('保存音频格式').onClick((event: ClickEvent) => {
               Logger.info(TAG,
                 `save sampleRate: ${this.sampleRate}, channels: ${this.channels}, bitsPerSample: ${this.bitsPerSample}`)
-              audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample);
+              audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, 1);
             })
               .backgroundColor($r('app.color.index_audio_clip_card'))
               .margin({bottom: $r('app.float.margin_10')})
@@ -212,7 +212,7 @@ export struct Export {
               .enabled(!this.isExported)
               .backgroundColor($r('app.color.index_audio_clip_card'))
               .onClick(async () => {
-                audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample);
+                audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, 1);
                 this.isExported = true;
                 taskpool.execute(saveFileBuffer).then(async (value: object) => {
                   Logger.info(TAG, 'taskpool onClick start');

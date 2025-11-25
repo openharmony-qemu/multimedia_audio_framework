@@ -422,3 +422,38 @@ void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest nodeManagerConnectInputAndOutput result: %{public}d", static_cast<int>(result));
 }
+
+napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsByCascad &params)
+{
+    napi_status status = parseNapiString(env, argv[0], params.inputId);
+    status = parseNapiString(env, argv[1], params.outputId);
+    status = parseNapiString(env, argv[2], params.mixerId);
+    std::string audioFormat;
+    status = parseNapiString(env, argv[3], audioFormat);
+    std::istringstream iss(audioFormat);
+    iss >> params.sampleRate >> params.channels >> params.bitsPerSample >> params.pcmBufferSize;
+ 
+    // 设置采样率
+    g_audioFormatInput.samplingRate = setSamplingRate(params.sampleRate);
+    // 设置声道
+    g_audioFormatInput.channelCount = params.channels;
+    g_audioFormatInput.channelLayout = setChannelLayout(params.channels);
+     // 设置位深
+    g_audioFormatInput.sampleFormat = setSampleFormat(params.bitsPerSample);
+    // 设置编码格式
+    g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+    
+    g_audioFormatOutput.samplingRate = g_audioFormatInput.samplingRate;
+    g_audioFormatOutput.channelCount = g_audioFormatInput.channelCount;
+    g_audioFormatOutput.channelLayout = g_audioFormatInput.channelLayout;
+    g_audioFormatOutput.sampleFormat = g_audioFormatInput.sampleFormat;
+    g_audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+ 
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, 
+        "audioEditTest ParseArgumentsByCascad inputId: %{public}s, outputId: %{public}s, mixerId: %{public}s, "
+        "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d, pcmBufferSize: %{public}d",
+        params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str(), params.sampleRate, 
+        params.channels, params.bitsPerSample, params.pcmBufferSize);
+    
+    return status;
+}

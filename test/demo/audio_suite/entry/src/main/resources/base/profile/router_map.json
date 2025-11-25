@@ -24,6 +24,11 @@
             "name" : "mixingConsole",
             "pageSourceFile": "src/main/ets/pages/MixingConsole.ets",
             "buildFunction": "MixingConsoleBuilder"
-        }
+        },
+        {
+            "name": "pipelineCascad",
+            "pageSourceFile": "src/main/ets/pages/PipelineCascad.ets",
+            "buildFunction": "PipelineCascadBuilder"
+          }
      ]
 }

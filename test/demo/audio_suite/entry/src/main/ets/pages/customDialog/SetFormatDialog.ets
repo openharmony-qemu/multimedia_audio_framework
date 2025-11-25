@@ -4,7 +4,7 @@
 
 import { MainTitleTextModifier, saveFileBuffer } from '../../utils/ExportFile'
 import { SymbolGlyphModifier } from '@kit.ArkUI';
-import { SongInfo } from '../../utils/importSongs/InterfaceInfo';
+import { BitsPerSampleMode, SongInfo } from '../../utils/importSongs/InterfaceInfo';
 import audioNapi from 'libentry.so';
 
 class RadioParam {
@@ -37,6 +37,7 @@ export struct SetFormatDialog {
     @Link channels: number;
     // 位深
     @Link bitsPerSample: number;
+    @Link bitsPerSampleMode: number;
     private bitsPerSamples: number[] = [8, 16, 24, 32];
     // 导出中
     @State isExported: boolean = false;
@@ -160,16 +161,44 @@ export struct SetFormatDialog {
                         wrap: FlexWrap.Wrap
                     }) {
                         ForEach(this.bitsPerSamples, (item: number) => {
-                            Row() {
-                                this.createRadio({
-                                    value: `${item}`,
-                                    groupName: 'radioGroupBitsPerSample',
-                                    isChecked: this.bitsPerSample === item ? true : false,
-                                    label: `${item}`,
-                                    onChange: () => {
-                                        this.bitsPerSample = item;
-                                    }
-                                })
+                            if (item === 32) {
+                                Row() {
+                                    this.createRadio({
+                                        value: `${item}`,
+                                        groupName: 'radioGroupBitsPerSample',
+                                        isChecked: (this.bitsPerSample === item && this.bitsPerSampleMode === BitsPerSampleMode.INT) ? true : false,
+                                        label: `${item}i`,
+                                        onChange: () => {
+                                            this.bitsPerSample = item;
+                                            this.bitsPerSampleMode = BitsPerSampleMode.INT;
+                                        }
+                                    })
+                                }
+
+                                Row() {
+                                    this.createRadio({
+                                        value: `${item}`,
+                                        groupName: 'radioGroupBitsPerSample',
+                                        isChecked: (this.bitsPerSample === item && this.bitsPerSampleMode === BitsPerSampleMode.FLOAT) ? true : false,
+                                        label: `${item}f`,
+                                        onChange: () => {
+                                            this.bitsPerSample = item;
+                                            this.bitsPerSampleMode = BitsPerSampleMode.FLOAT;
+                                        }
+                                    })
+                                }
+                            } else {
+                                Row() {
+                                    this.createRadio({
+                                        value: `${item}`,
+                                        groupName: 'radioGroupBitsPerSample',
+                                        isChecked: this.bitsPerSample === item ? true : false,
+                                        label: `${item}`,
+                                        onChange: () => {
+                                            this.bitsPerSample = item;
+                                        }
+                                    })
+                                }
                             }
                         })
                     }.margin({ bottom: $r('app.float.margin_10') })
@@ -207,7 +236,7 @@ export struct SetFormatDialog {
                                 });
                                 return;
                             }
-                            audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample);
+                            audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, this.bitsPerSampleMode);
                             this.controller?.close();
                         })
                 }

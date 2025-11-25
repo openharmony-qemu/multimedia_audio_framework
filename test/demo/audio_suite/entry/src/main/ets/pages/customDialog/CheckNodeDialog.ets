@@ -565,6 +565,8 @@ struct EffectNodeDialog {
     @State soundSpeed: number = 1.0;
     // 音调
     @State soundTone: number = 1.0;
+    // 实时播放（音源分离）
+    @Consume isSeparation: boolean = false;
     controllerTwo?: CustomDialogController;
 
     build() {
@@ -739,6 +741,7 @@ struct EffectNodeDialog {
                                 message: `添加${AudioSeparationMap.get(this.selectedAudioSeparation)}失败`,
                                 autoCancel: true
                             });
+                            this.isSeparation = false;
                             return;
                         }
                         //添加效果节点到混音台---数据处理
@@ -751,6 +754,7 @@ struct EffectNodeDialog {
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
                         this.controllerTwo?.close();
+                        this.isSeparation = true;
                     }
                 })
             } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
@@ -1403,57 +1407,29 @@ export struct CheckNodeDialog {
     selectNodeHandle() {
         // 根据 param 过滤可选节点类型
         let filteredNodes: NodeType[] = this.nodes;
-        if (this.param === 2) {
-            // 仅显示“均衡”
-            filteredNodes = [NodeType.EQ];
-            this.getUIContext().showAlertDialog({
-                title: '添加节点',
-                message: '当前模式仅支持添加“均衡”节点',
-                autoCancel: false, // 不允许点击外部关闭
-                primaryButton: {
-                    value: '取消',
-                    action: () => {
-                        Logger.info(TAG, '取消添加均衡节点');
-                    }
-                },
-                secondaryButton: {
-                    value: '确定',
-                    style: DialogButtonStyle.HIGHLIGHT,
-                    defaultFocus: true,
-                    action: () => {
-                        Logger.info(TAG, '确认添加均衡节点');
-                        // 直接设置选中为 EQ，打开效果弹窗
-                        this.selectedEffectNode = NodeType.EQ;
-                        this.select = this.nodes.indexOf(NodeType.EQ); // 保持选中状态一致
-                        this.effectNodeDialog?.open();
-                    }
-                }
-            });
-        } else {
-            // 默认：全部显示（兼容旧逻辑）
-            filteredNodes = this.nodes;
-            this.getUIContext().showTextPickerDialog({
-                range: filteredNodes,
-                selected: this.select,
-                value: this.selectedEffectNode,
-                defaultPickerItemHeight: 40,
-                onAccept: (value: TextPickerResult) => {
-                    Logger.info(TAG, `selectNodeHandle onAccept, value: ${JSON.stringify(value)}`);
-                    // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
-                    this.select = value.index;
-                    // 点击确定后，被选到的文本数据展示到页面
-                    this.selectedEffectNode = value.value as NodeType;
+        // 默认：全部显示（兼容旧逻辑）
+        filteredNodes = this.nodes;
+        this.getUIContext().showTextPickerDialog({
+            range: filteredNodes,
+            selected: this.select,
+            value: this.selectedEffectNode,
+            defaultPickerItemHeight: 40,
+            onAccept: (value: TextPickerResult) => {
+                Logger.info(TAG, `selectNodeHandle onAccept, value: ${JSON.stringify(value)}`);
+                // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
+                this.select = value.index;
+                // 点击确定后，被选到的文本数据展示到页面
+                this.selectedEffectNode = value.value as NodeType;
 
-                    this.effectNodeDialog?.open();
-                },
-                onCancel: () => {
-                    Logger.info(TAG, 'selectNodeHandle onCancel');
-                },
-                onChange: () => {
-                    Logger.info(TAG, 'selectNodeHandle onChange');
-                }
-            })
-        }
+                this.effectNodeDialog?.open();
+            },
+            onCancel: () => {
+                Logger.info(TAG, 'selectNodeHandle onCancel');
+            },
+            onChange: () => {
+                Logger.info(TAG, 'selectNodeHandle onChange');
+            }
+        })
     }
 
     //"-"的弹窗

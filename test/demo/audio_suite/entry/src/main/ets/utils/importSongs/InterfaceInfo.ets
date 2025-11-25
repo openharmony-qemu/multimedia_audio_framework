@@ -33,6 +33,21 @@ export interface Node {
     soundTone?: number;
 }
 
+export interface OutSong {
+  buffer: ArrayBuffer,
+  bufferLength: number,
+  channels: number;
+  sampleRate: number;
+  bitsPerSample: number;
+  pipelineCascadMode: number;
+}
+
+// 定义接口
+export interface NavigationParams {
+  mode: number;
+  pipelineCascadMode: number;
+}
+
 export enum BackColor {
     FIELD_COLOR = '#9869E0',
     SEPARATION_COLOR = '#9869E0',
@@ -219,3 +234,27 @@ export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [206, NodeType.ENV],
   [211, NodeType.SOUND_SPEED_TONE]
 ]);
+
+export const OFFLINEPIPELINE = 1;
+ 
+export const REALTIMEPIPELINE = 2;
+ 
+export const PIPELINECASCADMODE_0 = 0;
+ 
+export const PIPELINECASCADMODE_1 = 1;
+ 
+export const PIPELINECASCADMODE_2 = 2;
+ 
+export const PIPELINECASCADMODE_3 = 3;
+ 
+export const outputNodeSongNameMap = new Map<number, string>([
+  [PIPELINECASCADMODE_1, 'OUTPUT 1'],
+  [PIPELINECASCADMODE_2, 'OUTPUT 2'],
+  [PIPELINECASCADMODE_3, 'OUTPUT 3'],
+]);
+
+// 位深类型
+export enum BitsPerSampleMode {
+  INT = 0,
+  FLOAT = 1,
+}
