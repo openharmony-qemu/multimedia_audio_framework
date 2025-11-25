@@ -121,6 +121,28 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
+int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
+{
+    AudioVoiceMorhpingSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadGeneralCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    return SUCCESS;
+}
+ 
+int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
+{
+    AudioVoiceMphTradSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMphTradGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadPureCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("LoadTempoPitchCapability start.");
@@ -236,6 +258,11 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
             case NODE_TYPE_NOISE_REDUCTION:
                 CHECK_AND_RETURN_RET_LOG(LoadAinrCapability(nc) == SUCCESS, ERROR, "LoadAinrCapability failed.");
                 break;
+            case NODE_TYPE_GENERAL_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadGeneralCapability(nc) == SUCCESS, ERROR, "LoadGeneralCapability failed.");
+                break;
+            case NODE_TYPE_PURE_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadPureCapability(nc) == SUCCESS, ERROR, "LoadPureCapability failed.");
             case NODE_TYPE_TEMPO_PITCH:
                 CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(nc) == SUCCESS, ERROR,
                     "LoadTempoPitchCapability failed.");
