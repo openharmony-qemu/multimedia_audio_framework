@@ -130,7 +130,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
 
     outFile.close();
     node->DisConnect(mockInputNode_);
-    EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
+    CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 0, ERROR);
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
     buffer->SetIsFinished(false);
     node->Flush();
@@ -144,33 +144,33 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessTest, TestSize.Level0)
     float speed = 0.8f;
     float pitch = 0.8f;
     int ret = DoprocessTest(speed, pitch, g_inputfile001, g_outfile001);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
     bool isFileEqual = IsFilesEqual(g_outfile001, g_targetfile001);
-    EXPECT_EQ(isFileEqual, true);
+    EXPECT_EQ(true, isFileEqual);
 
     speed = 1.0f;
     pitch = 0.8f;
     ret = DoprocessTest(speed, pitch, g_inputfile001, g_outfile002);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
     isFileEqual = IsFilesEqual(g_outfile002, g_targetfile002);
-    EXPECT_EQ(isFileEqual, true);
+    EXPECT_EQ(true, isFileEqual);
 
     speed = 0.8f;
     pitch = 1.0f;
     ret = DoprocessTest(speed, pitch, g_inputfile001, g_outfile003);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
     isFileEqual = IsFilesEqual(g_outfile003, g_targetfile003);
-    EXPECT_EQ(isFileEqual, true);
+    EXPECT_EQ(true, isFileEqual);
 }
 
 HWTEST_F(AudioSuiteTempoPitchNodeTest, InitTest, TestSize.Level0)
 {
     std::shared_ptr<AudioSuiteTempoPitchNode> node = std::make_shared<AudioSuiteTempoPitchNode>();
     int ret = node->Init();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(SUCCESS, ret);
 
     ret = node->Init();
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ERROR, ret);
 }
 
 HWTEST_F(AudioSuiteTempoPitchNodeTest, DeInitTest, TestSize.Level0)
@@ -179,7 +179,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DeInitTest, TestSize.Level0)
     std::vector<uint8_t> tempOutput;
     node->readyDataBuffer_.push(tempOutput);
     int ret = node->DeInit();
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ERROR, ret);
 }
 
 HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_001, TestSize.Level0)
@@ -187,11 +187,11 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_001, TestSize.Lev
     std::shared_ptr<AudioSuiteTempoPitchNode> node = std::make_shared<AudioSuiteTempoPitchNode>();
     AudioSuitePcmBuffer* tempOut = nullptr;
     int ret = node->DoProcessPreOutputs(&tempOut);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ERROR, ret);
 
     node->SetBypassEffectNode(true);
     ret = node->DoProcessPreOutputs(&tempOut);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ERROR, ret);
 }
 
 HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Level0)
@@ -206,7 +206,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
         .Times(1).WillRepeatedly(::testing::Return(inputNodeOutputPort));
 
     node->Connect(mockInputNode_);
-    EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 1);
+    EXPECT_EQ(1, inputNodeOutputPort->GetInputNum());
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
         node->GetOutputPort();
     EXPECT_CALL(*mockInputNode_, DoProcess())
@@ -217,10 +217,10 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
             return SUCCESS;
         }));
     std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true);
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(1, result.size());
 
     node->DisConnect(mockInputNode_);
-    EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
+    EXPECT_EQ(0, inputNodeOutputPort->GetInputNum());
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
     node->Flush();
     mockInputNode_.reset();
