@@ -216,7 +216,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
             SAMPLE_RATE_48000};
 
     node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());  
+    EXPECT_EQ(SUCCESS, node_->Flush());
     node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_NOISE_REDUCTION, audioFormat);
     EXPECT_EQ(SUCCESS, node_->Flush());
     node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_SOUND_FIELD, audioFormat);
