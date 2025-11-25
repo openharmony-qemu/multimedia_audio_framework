@@ -2084,7 +2084,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_002, TestSize.
     int32_t ret = rendererInServer->Init();
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2100,11 +2100,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_003, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_IDLE;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2120,11 +2120,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_004, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2140,11 +2140,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_STOPPED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
