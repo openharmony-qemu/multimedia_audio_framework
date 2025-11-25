@@ -843,7 +843,6 @@ void SolePipe::SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, con
 {
     AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
     g_solePipeSourceMap[sourceType] = std::make_pair(routeFlag, pipeName);
-
 }
 
 bool SolePipe::IsSolePipeSource(int32_t sourceType)
@@ -856,7 +855,6 @@ bool SolePipe::GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, 
     auto it = g_solePipeSourceMap.find(sourceType);
     CHECK_AND_RETURN_RET_LOG(it != g_solePipeSourceMap.end(), false, "can not find sourceType:%{public}d", sourceType);
     routeFlag = it->second.first;
-J
     pipeName = it->second.second;
     AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
     return true;
