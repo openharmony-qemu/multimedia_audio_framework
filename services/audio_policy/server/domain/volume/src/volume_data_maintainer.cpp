@@ -105,6 +105,7 @@ void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
     AUDIO_INFO_LOG("SetDataShareReady, isDataShareReady: %{public}d", std::atomic_load(&isDataShareReady));
+    isDataShareReady_ = isDataShareReady;
     if (isDataShareReady) {
         auto descs = audioConnectedDevice_.GetCopy();
         for (auto &desc : descs) {
@@ -795,6 +796,7 @@ void VolumeDataMaintainer::SetVolumeList(std::vector<AudioStreamType> volumeList
 void VolumeDataMaintainer::InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "InitDeviceVolumeMap device is null");
+    CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false");
     LoadDeviceVolumeMapFromDb(device);
     AUDIO_INFO_LOG("InitDeviceVolumeMap device %{public}s", device->GetName().c_str());
 }
@@ -929,6 +931,7 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
 void VolumeDataMaintainer::InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "InitDeviceMuteMap device is null");
+    CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false");
     LoadDeviceMuteMapFromDb(device);
     AUDIO_INFO_LOG("InitDeviceMuteMap device %{public}s", device->GetName().c_str());
 }
