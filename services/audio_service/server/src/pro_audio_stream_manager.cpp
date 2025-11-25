@@ -112,7 +112,7 @@ int32_t ProAudioStreamManager::StopRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
+int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     Trace trace("ProAudioStreamManager::PauseRender");
     AUDIO_DEBUG_LOG("Pause renderer enter");
@@ -124,7 +124,7 @@ int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
     }
     rendererStreamMap_[streamIndex]->Pause();
     if (playbackEngine_) {
-        playbackEngine_->Pause();
+        playbackEngine_->Pause(isStandby);
     }
     return SUCCESS;
 }

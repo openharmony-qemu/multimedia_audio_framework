@@ -31,7 +31,7 @@ public:
     int32_t StartRender(uint32_t streamIndex) override;
     int32_t StopRender(uint32_t streamIndex) override;
     int32_t ReleaseRender(uint32_t streamIndex) override;
-    int32_t PauseRender(uint32_t streamIndex) override;
+    int32_t PauseRender(uint32_t streamIndex, bool isStandby = false) override;
     int32_t GetStreamCount() const noexcept override;
     int32_t TriggerStartIfNecessary() override;
 

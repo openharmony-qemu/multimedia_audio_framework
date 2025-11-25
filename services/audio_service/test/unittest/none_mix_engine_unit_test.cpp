@@ -856,7 +856,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_017, TestSize.Level1)
 
     ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(configRet, true);
     EXPECT_NE(ptrNoneMixEngine->stream_, nullptr);
-    ptrNoneMixEngine->failedCount_.store(100);
 
     ptrNoneMixEngine->MixStreams();
 }
@@ -876,7 +875,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_018, TestSize.Level1)
 
     ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(configRet, true);
     EXPECT_NE(ptrNoneMixEngine->stream_, nullptr);
-    ptrNoneMixEngine->failedCount_.store(10);
     ptrNoneMixEngine->startFadeout_.store(true);
 
     ptrNoneMixEngine->MixStreams();
@@ -897,7 +895,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_019, TestSize.Level1)
 
     ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(configRet, true);
     EXPECT_NE(ptrNoneMixEngine->stream_, nullptr);
-    ptrNoneMixEngine->failedCount_.store(10);
     ptrNoneMixEngine->startFadeout_.store(false);
     ptrNoneMixEngine->startFadein_.store(true);
 
@@ -919,7 +916,6 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_020, TestSize.Level1)
 
     ptrNoneMixEngine->stream_ = std::make_shared<ProRendererStreamImpl>(configRet, true);
     EXPECT_NE(ptrNoneMixEngine->stream_, nullptr);
-    ptrNoneMixEngine->failedCount_.store(10);
     ptrNoneMixEngine->startFadeout_.store(false);
     ptrNoneMixEngine->startFadein_.store(false);
 
