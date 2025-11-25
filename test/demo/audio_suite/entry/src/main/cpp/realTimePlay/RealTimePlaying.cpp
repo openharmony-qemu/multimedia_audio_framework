@@ -99,14 +99,15 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
     g_playOhAudioDataArray->audioDataArray = (void**)malloc(ARG_2 * sizeof(void*));
     for (int i = ARG_0; i < ARG_2; i++) {
         if (audioDataSize <= ARG_0) {
-            return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;;
+            return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
         }
         g_playOhAudioDataArray->audioDataArray[i] = (void*)malloc(audioDataSize);
     }
     g_playOhAudioDataArray->arraySize = ARG_2;
     g_playOhAudioDataArray->requestFrameSize = audioDataSize;
     OH_AudioSuite_Result result =
-        OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, g_playOhAudioDataArray, writeSize, &g_playFinishedFlag);
+        OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, g_playOhAudioDataArray,
+            writeSize, &g_playFinishedFlag);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame result is %{public}d",

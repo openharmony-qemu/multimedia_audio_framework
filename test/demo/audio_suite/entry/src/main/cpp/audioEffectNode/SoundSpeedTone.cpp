@@ -21,8 +21,8 @@ napi_status GetSoundSpeedToneParameters(napi_env env, napi_value *argv, SoundSpe
         status = ParseNapiString(env, argv[ARG_4], params.selectedNodeId);
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SOUND_SPEED_TONE_TAG,
-        "inputId: %{public}s, soundSpeedToneId: %{public}s, soundSpeed: %{public}f, soundTone: %{public}f, selectedNodeId: %{public}s",
-        params.inputId.c_str(), params.soundSpeedToneId.c_str(), params.soundSpeed, params.soundTone, params.selectedNodeId.c_str());
+        "soundSpeedToneId: %{public}s, soundSpeed: %{public}f, soundTone: %{public}f",
+        params.soundSpeedToneId.c_str(), params.soundSpeed, params.soundTone);
     return status;
 }
  
