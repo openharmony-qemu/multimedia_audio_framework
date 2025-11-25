@@ -138,9 +138,13 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
         "dlopen algo: %{private}s so fail, error: %{public}s", tempoSoPath.c_str(), dlerror());
     using GET_SPEC_FUNC = AudioPVSpec(*)(void);
     GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
-    CHECK_AND_RETURN_RET_LOG(pvGetSpecFunc != nullptr,
-        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
-        tempoSoPath.c_str(), "PVGetSpec");
+    if (pvGetSpecFunc == nullptr) {
+        dlclose(tempoSoHandle);
+        tempoSoHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            tempoSoPath.c_str(), "PVGetSpec");
+        return ERROR;
+    }
     AudioPVSpec spec = pvGetSpecFunc();
     nc.supportedOnThisDevice = spec.currentDeviceSupport;
     nc.isSupportRealtime = spec.realTimeSupport;
@@ -148,22 +152,25 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     tempoSoHandle = nullptr;
     // pitch
     std::string pitchSoPath = nc.soPath + pitchSoName;
-    void *pitchLibHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(pitchLibHandle != nullptr,
+    void *pitchSoHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr,
         ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
         pitchSoPath.c_str(), dlerror());
     AudioEffectLibrary *audioEffectLibHandle =
-        static_cast<AudioEffectLibrary *>(dlsym(pitchLibHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
-    CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle != nullptr,
-        ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
-        pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
+        static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
+    if (audioEffectLibHandle == nullptr) {
+        dlclose(pitchSoHandle);
+        pitchSoHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
+        return ERROR;
+    }
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     nc.supportedOnThisDevice &= supportConfig.isSupport;
     nc.isSupportRealtime &= supportConfig.isRealTime;
-
-    dlclose(pitchLibHandle);
-    pitchLibHandle = nullptr;
+    dlclose(pitchSoHandle);
+    pitchSoHandle = nullptr;
     AUDIO_INFO_LOG("LoadTempoPitchCapability end.");
     return SUCCESS;
 }
