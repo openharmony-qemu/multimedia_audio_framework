@@ -263,6 +263,7 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
                 break;
             case NODE_TYPE_PURE_VOICE_CHANGE:
                 CHECK_AND_RETURN_RET_LOG(LoadPureCapability(nc) == SUCCESS, ERROR, "LoadPureCapability failed.");
+                break;
             case NODE_TYPE_TEMPO_PITCH:
                 CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(nc) == SUCCESS, ERROR,
                     "LoadTempoPitchCapability failed.");
