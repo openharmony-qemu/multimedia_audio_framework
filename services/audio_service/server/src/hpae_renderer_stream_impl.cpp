@@ -39,6 +39,7 @@
 #include "volume_tools.h"
 
 using namespace OHOS::AudioStandard::HPAE;
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -326,7 +327,11 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
     framePosition = lastHdiFramePosition_ + frames;
     timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
-    AUDIO_DEBUG_LOG("frame: %{public}" PRIu64, framePosition);
+    bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[GET_REMOTE_OFFLOAD_SPEED_POSITION],
+        PRINT_TIMESTAMP_INTERVAL_NS);
+    AUDIO_LIMIT_INFO_LOG(checkResult, "framesUS: %{public}" PRIu64 ", frames: %{public}" PRIu64
+        ", framePosition: %{public}" PRIu64 ", curLatencyUS: %{public}u, latency: %{public}" PRIu64, framesUS, frames,
+        framePosition, curLatencyUS, latency);
     // latencyMutex_ end
     return SUCCESS;
 }
@@ -365,7 +370,9 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     framePosition = framePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
+    bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[GET_CURRENT_POSITION],
+        PRINT_TIMESTAMP_INTERVAL_NS);
+    AUDIO_LIMIT_INFO_LOG(checkResult, "Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
         framePosition, latency);
     // latencyMutex_ end
     return SUCCESS;
@@ -379,7 +386,8 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     // latencyMutex_ begin
     latency += latency_;
-    AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
+    bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[GET_LATENCY], PRINT_TIMESTAMP_INTERVAL_NS);
+    AUDIO_LIMIT_INFO_LOG(checkResult, "pipe latency: %{public}" PRIu64, latency_);
     // latencyMutex_ begin
     return SUCCESS;
 }
@@ -493,6 +501,10 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
             // from time (us) to sample
             callBackStreamInfo.hdiFramePosition * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
     }
+    bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
+        PRINT_TIMESTAMP_INTERVAL_NS);
+    AUDIO_LIMIT_INFO_LOG(checkResult, "lastFramePosition: %{public}" PRIu64 ", lastHdiFramePosition: %{public}" PRIu64,
+        lastFramePosition_, lastHdiFramePosition_);
 }
 
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)

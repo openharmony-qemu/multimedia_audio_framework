@@ -380,6 +380,14 @@ void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
     }
 }
 
+bool ClockTime::CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval)
+{
+    int64_t curTimestamp = GetCurNano();
+    CHECK_AND_RETURN_RET(lastRecordTimestamp.load() + timeInterval < curTimestamp, false);
+    lastRecordTimestamp.store(curTimestamp);
+    return true;
+}
+
 void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER
