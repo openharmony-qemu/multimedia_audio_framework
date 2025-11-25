@@ -181,6 +181,13 @@ private:
     static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
+class SolePipe {
+public:
+    static void SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName);
+    static bool IsSolePipeSource(int32_t sourceType);
+    static bool GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName);
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len);
