@@ -126,7 +126,7 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 释放内存  
+// 释放内存
 static void Clear()
 {
     // 释放map内存
