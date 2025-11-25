@@ -129,21 +129,22 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
     return audioRendererImpl;
 }
 
-AudioRenderer AudioRendererImpl::CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions)
+AudioRendererOrNull AudioRendererImpl::CreateAudioRendererWrapper(
+    OHOS::AudioStandard::AudioRendererOptions rendererOptions)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
     sRendererOptions_ = std::make_unique<OHOS::AudioStandard::AudioRendererOptions>();
     if (sRendererOptions_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "sRendererOptions_ create failed");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
     *sRendererOptions_ = rendererOptions;
     std::shared_ptr<AudioRendererImpl> impl = AudioRendererImpl::CreateAudioRendererNativeObject();
     if (impl == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "failed to CreateAudioRendererNativeObject");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
-    return make_holder<AudioRendererImpl, AudioRenderer>(impl);
+    return AudioRendererOrNull::make_type_audioRenderer(make_holder<AudioRendererImpl, AudioRenderer>(impl));
 }
 
 void AudioRendererImpl::StartSync()
@@ -1128,14 +1129,14 @@ void AudioRendererImpl::DestroyTaiheCallbacks()
     }
 }
 
-AudioRenderer CreateAudioRendererSync(AudioRendererOptions const &options)
+AudioRendererOrNull CreateAudioRendererSync(AudioRendererOptions const &options)
 {
     OHOS::AudioStandard::AudioRendererOptions rendererOptions;
     if (TaiheParamUtils::GetRendererOptions(&rendererOptions, options) != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
             "parameter verification failed: The param of options must be interface AudioRendererOptions");
         AUDIO_ERR_LOG("get rendererOptions failed");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
     return AudioRendererImpl::CreateAudioRendererWrapper(rendererOptions);
 }
