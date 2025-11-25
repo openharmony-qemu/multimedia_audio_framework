@@ -215,28 +215,29 @@ HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
             SAMPLE_S16LE,
             SAMPLE_RATE_48000};
 
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_NOISE_REDUCTION, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_SOUND_FIELD, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_VOICE_BEAUTIFIER, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_ENVIRONMENT_EFFECT, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_AUDIO_MIXER, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_SPACE_RENDER, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_PURE_VOICE_CHANGE, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_GENERAL_VOICE_CHANGE, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
-    node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_TEMPO_PITCH, audioFormat);
-    EXPECT_EQ(SUCCESS, node_->Flush());
+    auto node = TestAudioSuiteProcessNode(NODE_TYPE_EQUALIZER, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());  
+    node = TestAudioSuiteProcessNode(NODE_TYPE_NOISE_REDUCTION, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_SOUND_FIELD, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_VOICE_BEAUTIFIER, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_AUDIO_MIXER, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_PURE_VOICE_CHANGE, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_GENERAL_VOICE_CHANGE, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node = TestAudioSuiteProcessNode(NODE_TYPE_TEMPO_PITCH, audioFormat);
+    EXPECT_EQ(SUCCESS, node.Flush());
+    node.DeInit();
 }
 
 }
