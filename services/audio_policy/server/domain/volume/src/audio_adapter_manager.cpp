@@ -334,15 +334,16 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, std::
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(desc, volumeType);
 }
 
-void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
+void AudioAdapterManager::SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioVolumeType volumeType, int32_t volumeLevel)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // PC Boot Animation Volume use STREAM_SYSTEM
-    auto desc = audioActiveDevice_.GetDeviceForVolume(volumeType);
     if ((volumeType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) || (audioVolumeMap == STREAM_SYSTEM &&
-        desc->deviceType_ == DEVICE_TYPE_SPEAKER)) {
+        device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
         int32_t volumeLevel =
-            GetStreamVolumeInternal(desc, audioVolumeMap) * (GetStreamMuteInternal(desc, audioVolumeMap) ? 0 : 1);
+            GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
         int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save ringtone volume for boot success %{public}d", volumeLevel);
@@ -601,7 +602,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
     int32_t volumeLevel =
         volumeDataMaintainer_.LoadVolumeFromMap(desc, STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(STREAM_RING, volumeLevel);
+    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
 
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
@@ -675,7 +676,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     int32_t muteFactor = GetStreamMuteInternal(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(streamType, volumeLevel);
+    SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
 
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
     float volumeDb = CalculateVolumeDbByDegree(device->deviceType_, streamType, volumeDegree);
@@ -2249,7 +2250,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     int32_t volumeLevel =
         GetStreamVolumeInternal(desc, STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(STREAM_RING, volumeLevel);
+    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
