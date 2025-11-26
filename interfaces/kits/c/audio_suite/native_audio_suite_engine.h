@@ -48,7 +48,8 @@ extern "C" {
  * @param audioSuiteEngine Pointer to a viriable to receive audioSuiteEngine.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if audioSuiteEngine is nullptr,
- * or {@link #AUDIOSUITE_ERROR_INVALID_STATE} if already create engine.
+ * or {@link #AUDIOSUITE_ERROR_INVALID_STATE} if the engine is already created.
+ * or {@link #AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED} if memory allocation failed.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 22
  */
@@ -83,6 +84,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Destroy(OH_AudioSuiteEngine* audioSuite
  * or {@link #AUDIOSUITE_ERROR_ENGINE_NOT_EXIST} if the engine is not created.
  * or {@link #AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS} if the number of created pipelines exceeds the upper limit.
  * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
+ * or {@link #AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED} if memory allocation failed.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 22
  */
@@ -229,6 +231,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline*
  * @param builder The builder reference to the created result.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED} if memory allocation failed.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 22
  */
@@ -356,6 +359,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
  * Callback function was set, or the constructor node type is an effect node but the audio format or callback
  * function was set.
  * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
+ * or {@link #AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED} if memory allocation failed.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 22
  */

@@ -120,7 +120,7 @@ typedef enum {
     /**
      * Audio mixer node type.
      * The audio format output by the mixer node is as follows:
-     * Sample rate: {@link AudioSamplingRate}.
+     * Sample rate: {@link OH_Audio_SampleRate}.
      * Sample format: {@link AUDIO_SAMPLE_F32LE}.
      * Channels: 2.
      *
@@ -887,6 +887,14 @@ typedef enum {
 } OH_AudioSuite_PureVoiceChangeType;
 
 /**
+ * Use system recommended pitch.
+ * Use in {@Link OH_AudioSuite_PureVoiceChangeOption}.
+ *
+ * @since 23
+ */
+#define OH_PURE_VOICE_DEFAULT_PITCH (0.0f)
+
+/**
  * @brief Define change voice option.
  *
  * @since 23
@@ -904,6 +912,13 @@ typedef struct OH_AudioSuite_PureVoiceChangeOption {
      * @since 23
      */
     OH_AudioSuite_PureVoiceChangeType optionType;
+    /**
+     * Define voice pitch.
+     * If using default pitch in system for best effect, set to {@link OH_PURE_VOICE_DEFAULT_PITCH}.
+     * For custom pitch setting, specify a value with the valid range: [0.3f, 3.0f].
+     * @since 23
+     */
+     float pitch;
 } OH_AudioSuite_PureVoiceChangeOption;
 
 /**
