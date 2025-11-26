@@ -75,7 +75,7 @@ class AudioVolumeUtils {
 public:
     static AudioVolumeUtils &GetInstance();
 
-    bool LoadConfig();
+    void Init();
 
     int32_t GetDefaultVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc, AudioStreamType streamType);
     void GetDefaultVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -101,7 +101,11 @@ public:
 private:
     AudioVolumeUtils() {};
     ~AudioVolumeUtils() {};
+
+    bool LoadConfig();
+
     std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> streamVolumeInfos_;
+    std::mutex streamVolumeInfosMutex_;
 };
 }
 }
