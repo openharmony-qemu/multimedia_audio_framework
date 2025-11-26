@@ -918,7 +918,7 @@ typedef struct OH_AudioSuite_PureVoiceChangeOption {
      * For custom pitch setting, specify a value with the valid range: [0.3f, 3.0f].
      * @since 23
      */
-     float pitch;
+    float pitch;
 } OH_AudioSuite_PureVoiceChangeOption;
 
 /**
