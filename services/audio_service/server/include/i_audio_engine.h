@@ -26,7 +26,7 @@ public:
     virtual int32_t Init(const AudioDeviceDescriptor &type, bool isVoip) = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Stop() = 0;
-    virtual int32_t Pause(bool isStandby = false) = 0;
+    virtual int32_t Pause(bool isStandby) = 0;
     virtual int32_t Flush() = 0;
     virtual bool IsPlaybackEngineRunning() const noexcept = 0;
     virtual uint64_t GetLatency() noexcept = 0;
