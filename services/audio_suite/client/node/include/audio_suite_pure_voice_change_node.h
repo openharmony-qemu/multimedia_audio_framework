@@ -39,8 +39,8 @@ protected:
 private:
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterfaceImpl_;
     bool isInit_ = false;
-    std::vector<uint8_t *> tmpin_;
-    std::vector<uint8_t *> tmpout_;
+    std::vector<uint8_t *> tmpin_{nullptr};
+    std::vector<uint8_t *> tmpout_{nullptr};
     AudioSuitePcmBuffer outPcmBuffer_;
     AudioSuitePcmBuffer outTmpPcmBuffer_;
     std::vector<AudioSuitePcmBuffer> tmpData_;

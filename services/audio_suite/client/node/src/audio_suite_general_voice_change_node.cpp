@@ -36,7 +36,8 @@ AudioSuiteGeneralVoiceChangeNode::AudioSuiteGeneralVoiceChangeNode()
     : AudioSuiteProcessNode(NODE_TYPE_GENERAL_VOICE_CHANGE,
           AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT}, VM_ALGO_SAMPLE_FORMAT, VM_ALGO_SAMPLE_RATE}),
       pcmBufferOutput_(PcmBufferFormat{
-          VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT})
+          VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT}),
+      needPcmBufferFormat_(VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT)
 {}
 
 AudioSuiteGeneralVoiceChangeNode::~AudioSuiteGeneralVoiceChangeNode()
@@ -63,6 +64,7 @@ int32_t AudioSuiteGeneralVoiceChangeNode::DeInit()
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode DeInit begin");
     if (algoInterface_ != nullptr) {
         int32_t ret = algoInterface_->Deinit();
+        algoInterface_ = nullptr;
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to DeInit voice beautifier algorithm");
     }
 
@@ -79,7 +81,7 @@ int32_t AudioSuiteGeneralVoiceChangeNode::SetOptions(std::string name, std::stri
     paraValue_ = value;
 
     int32_t ret = algoInterface_->SetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed %{public}d", ret);
     AUDIO_INFO_LOG("SetOptions SUCCESS");
     return SUCCESS;
 }
@@ -99,8 +101,9 @@ AudioSuitePcmBuffer *AudioSuiteGeneralVoiceChangeNode::SignalProcess(const std::
     Trace trace("AudioSuiteGeneralVoiceChangeNode::SignalProcess Start");
     CHECK_AND_RETURN_RET_LOG(
         !inputs.empty(), nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(
-        inputs[0] != nullptr, nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(needPcmBufferFormat_),
+        nullptr,
+        "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs[0] is nullptr");
 
     tmpin_[0] = inputs[0]->GetPcmData();
     tmpout_[0] = pcmBufferOutput_.GetPcmData();

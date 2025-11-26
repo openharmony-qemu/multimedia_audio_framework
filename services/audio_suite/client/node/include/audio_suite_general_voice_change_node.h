@@ -44,6 +44,7 @@ private:
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
     std::vector<uint8_t *> tmpin_{nullptr};
     std::vector<uint8_t *> tmpout_{nullptr};
+    PcmBufferFormat needPcmBufferFormat_;
 };
 
 }  // namespace AudioSuite

@@ -141,6 +141,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
         delete memSize;
         delete handle_;
         memSize = nullptr;
+        handle_ = nullptr;
         return ERROR;
     }
     delete memSize;

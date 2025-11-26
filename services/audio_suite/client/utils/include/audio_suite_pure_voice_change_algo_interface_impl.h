@@ -75,7 +75,6 @@ private:
     int32_t LoadAlgorithmFunction(void);
     int32_t ApplyAndWaitReady(void);
     void UnApply(void);
-    void Release();
     VoiceMphingAlgoApi vmAlgoApi_{0};
     float *inBuf_ = nullptr;
     float *outBuf_ = nullptr;

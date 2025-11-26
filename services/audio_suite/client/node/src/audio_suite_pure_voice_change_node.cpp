@@ -100,9 +100,6 @@ AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vec
     AUDIO_DEBUG_LOG(
         "AudioSuitePureVoiceChangeNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
 
-    tmpin_.resize(1);
-    tmpout_.resize(1);
-
     tmpin_[0] = inputs[0]->GetPcmData();
     tmpout_[0] = outTmpPcmBuffer_.GetPcmData();
 
