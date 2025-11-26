@@ -177,7 +177,9 @@ void AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest()
     int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    audioAdapterManager->SaveRingtoneVolumeToLocal(volumeType, volumeLevel);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    audioAdapterManager->SaveRingtoneVolumeToLocal(desc, volumeType, volumeLevel);
 }
 
 void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest()
