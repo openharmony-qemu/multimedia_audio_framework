@@ -139,6 +139,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     if (!scratchBuf_) {
         AUDIO_ERR_LOG("Init scratchBuf_ fail");
         delete memSize;
+        delete handle_;
         memSize = nullptr;
         return ERROR;
     }

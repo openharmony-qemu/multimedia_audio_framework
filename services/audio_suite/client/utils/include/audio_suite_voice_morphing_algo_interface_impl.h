@@ -74,7 +74,6 @@ private:
     int32_t LoadAlgorithmFunction(void);
     int32_t ApplyAndWaitReady(void);
     void UnApply(void);
-    void Release();
     VoiceMorphingAlgoApi vmAlgoApi_{0};
     std::vector<uint32_t> inBuf_;
     std::vector<uint32_t> outBuf_;

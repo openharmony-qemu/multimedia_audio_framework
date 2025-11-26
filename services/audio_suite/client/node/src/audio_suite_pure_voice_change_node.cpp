@@ -67,6 +67,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
     }
     algoInterfaceImpl_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeCapability);
+    CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "Failed to create nr algoInterface");
     int32_t ret = algoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterfaceImpl_ Init failed");
     isInit_ = true;
@@ -135,6 +136,10 @@ AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vec
 std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProcessNodePreOutputData()
 {
     if (isSecondFlag) {
+        if (finishFlag) {
+            AUDIO_ERR_LOG("Data read finished.");
+            SetAudioNodeDataFinishedFlag(finishFlag);
+        }
         return tmpDataPointers_;
     }
     tmpData_[0].Reset();  // Clear the 40ms of data required by the algorithm before storing it.
@@ -143,7 +148,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
     int32_t ret = memcpy_s(tmpData_[0].GetPcmData(), tmpData_[0].GetDataSize(), // Copy the first frame 20ms data
         preOutputsFirst[0]->GetPcmData(), preOutputsFirst[0]->GetDataSize());
     CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memcpy failed, ret is %{public}d.", ret);
-    if (GetAudioNodeDataFinishedFlag()) {
+    if (preOutputsFirst[0]->GetIsFinished()) {
         ret = memset_s(tmpData_[0].GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
                        tmpData_[0].GetDataSize() - preOutputsFirst[0]->GetDataSize(),
                        0,
@@ -151,12 +156,16 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
         CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memset failed, ret is %{public}d.", ret);
     } else {
         std::vector<AudioSuitePcmBuffer*>& preOutputsSecond = ReadProcessNodePreOutputData();  // Need second data
+        if (preOutputsSecond[0]->GetIsFinished()) {
+            SetAudioNodeDataFinishedFlag(finishFlag);
+            finishFlag = true;
+        }
         ret = memcpy_s(tmpData_[0].GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
                        tmpData_[0].GetDataSize() - preOutputsFirst[0]->GetDataSize(),
                        preOutputsSecond[0]->GetPcmData(), preOutputsSecond[0]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memcpy failed, ret is %{public}d.", ret);
     }
-
+    tmpDataPointers_.clear();
     for (AudioSuitePcmBuffer& buffer : tmpData_) {
         tmpDataPointers_.push_back(&buffer);
     }

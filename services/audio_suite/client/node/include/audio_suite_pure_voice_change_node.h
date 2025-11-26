@@ -47,6 +47,7 @@ private:
     std::vector<AudioSuitePcmBuffer*> tmpDataPointers_;
     AudioSuitePcmBuffer tmpDataBuffer_;
     bool isSecondFlag = false;
+    bool finishFlag = false;
 };
 
 }  // namespace AudioSuite

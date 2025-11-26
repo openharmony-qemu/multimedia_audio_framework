@@ -31,7 +31,7 @@ namespace AudioSuite {
 namespace {
 constexpr int32_t DEFAULT_FRAME_LEN = 960;  // single channel sample point number.
 constexpr int32_t DEFAULT_CHANNEL_COUNT = 2;
-const std::string voiceMorphingMode = "VoiceBeautifierType";  // "PureVoiceChangeType";
+const std::string voiceMorphingMode = "VoiceBeautifierType";
 const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
 }  // namespace
 
@@ -108,9 +108,6 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Init()
     }
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
-
-    inBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
-    outBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
 
     inBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
     outBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
