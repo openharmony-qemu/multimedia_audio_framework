@@ -36,11 +36,10 @@
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
 #include "window_utils.h"
-#include "audio_policy_async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class UpdateAudioSceneFromInterruptAction : public PolicyAsyncAction {
+class UpdateAudioSceneFromInterruptAction : public AsyncActionHandler::AsyncAction {
 public:
     UpdateAudioSceneFromInterruptAction(std::shared_ptr<AudioInterruptService> interruptService,
         const AudioScene audioScene, AudioInterruptChangeType changeType, int32_t zoneId)
@@ -177,6 +176,11 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     sessionService_.SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+}
+
+void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
+{
+    asyncHandler_ = handler;
 }
 
 const sptr<IStandardAudioService> AudioInterruptService::GetAudioServerProxy()
@@ -3123,9 +3127,11 @@ void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioS
     std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
         std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(), audioScene, changeType, zoneId);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

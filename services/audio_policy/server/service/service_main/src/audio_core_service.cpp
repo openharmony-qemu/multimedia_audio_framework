@@ -152,6 +152,11 @@ std::shared_ptr<AudioCoreService::EventEntry> AudioCoreService::GetEventEntry()
     return eventEntry_;
 }
 
+void AudioCoreService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
+{
+    asyncHandler_ = handler;
+}
+
 void AudioCoreService::DumpPipeManager(std::string &dumpString)
 {
     if (pipeManager_ != nullptr) {

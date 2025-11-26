@@ -367,9 +367,11 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
         std::make_shared<ActivateNearlinkDeviceAction>(pipeManager_->GetStreamDescForAudioScene(audioScene),
         pipeManager_->GetRingAndVoipDescMap(), reason);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 }
 
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)

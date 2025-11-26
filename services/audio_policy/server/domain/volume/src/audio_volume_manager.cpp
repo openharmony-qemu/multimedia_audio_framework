@@ -34,11 +34,10 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
-#include "audio_policy_async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CheckActiveMusicTimeAction : public PolicyAsyncAction {
+class CheckActiveMusicTimeAction : public AsyncActionHandler::AsyncAction {
 public:
     explicit CheckActiveMusicTimeAction(const std::string &reason) : reason_(reason)
     {}
@@ -138,6 +137,11 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_ = nullptr;
     }
     audioPolicyServerHandler_ = nullptr;
+}
+
+void AudioVolumeManager::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
+{
+    asyncHandler_ = handler;
 }
 
 int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
@@ -925,10 +929,12 @@ void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason)
     std::shared_ptr<CheckActiveMusicTimeAction> action =
         std::make_shared<CheckActiveMusicTimeAction>(reason);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = 0;
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 }
 
 void AudioVolumeManager::DealWithPauseAndStop(const std::string &reason)
@@ -947,10 +953,12 @@ std::string AudioVolumeManager::DoLoopCheck(const std::string &reason)
         std::shared_ptr<CheckActiveMusicTimeAction> action =
             std::make_shared<CheckActiveMusicTimeAction>(reason);
         CHECK_AND_RETURN_RET_LOG(action != nullptr, "", "action is nullptr");
-        AsyncActionDesc desc;
-        desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+        AsyncActionHandler::AsyncActionDesc desc;
+        desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
         desc.delayTimeMs = MUSIC_ACTIVE_PERIOD_MS;
-        DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        if (asyncHandler_ != nullptr) {
+            asyncHandler_->PostAsyncAction(desc);
+        }
         innerReason = "Default";
     } else {
         innerReason = "Offload";
