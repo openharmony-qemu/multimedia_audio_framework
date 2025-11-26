@@ -1436,6 +1436,24 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_041, TestSize.Level1)
 /**
  * @tc.name  : Test NoneMixEngine API
  * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_Pause_041
+ * @tc.desc  : Test NoneMixEngine::Pause()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_Pause_041, TestSize.Level1)
+{
+    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
+    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
+
+    ptrNoneMixEngine->isStart_ = true;
+    std::string name = "test";
+    ptrNoneMixEngine->playbackThread_ = std::make_unique<AudioThreadTask>(name);
+    auto ret = ptrNoneMixEngine->Pause(true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
  * @tc.number: NoneMixEngine_042
  * @tc.desc  : Test NoneMixEngine::DoFadeinOut()
  */
