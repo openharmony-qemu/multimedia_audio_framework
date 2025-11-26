@@ -145,6 +145,8 @@ public:
     virtual void SetRebuildFlag() = 0;
 
     virtual bool IsRestoreNeeded() = 0;
+
+    virtual void GetKeepRunning(bool &keepRunning) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
