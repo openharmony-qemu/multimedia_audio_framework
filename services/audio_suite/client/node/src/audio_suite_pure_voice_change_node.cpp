@@ -95,8 +95,9 @@ int32_t AudioSuitePureVoiceChangeNode::DeInit()
 AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuitePureVoiceChangeNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(
-        inputs[0] != nullptr, nullptr, "AudioSuitePureVoiceChangeNode SignalProcess inputs[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()),
+        nullptr,
+        "AudioSuitePureVoiceChangeNode SignalProcess inputs[0] is nullptr");
     AUDIO_DEBUG_LOG(
         "AudioSuitePureVoiceChangeNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
 

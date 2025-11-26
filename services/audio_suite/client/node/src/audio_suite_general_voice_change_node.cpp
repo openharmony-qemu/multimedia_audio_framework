@@ -36,8 +36,7 @@ AudioSuiteGeneralVoiceChangeNode::AudioSuiteGeneralVoiceChangeNode()
     : AudioSuiteProcessNode(NODE_TYPE_GENERAL_VOICE_CHANGE,
           AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT}, VM_ALGO_SAMPLE_FORMAT, VM_ALGO_SAMPLE_RATE}),
       pcmBufferOutput_(PcmBufferFormat{
-          VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT}),
-      needPcmBufferFormat_(VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT)
+          VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT})
 {}
 
 AudioSuiteGeneralVoiceChangeNode::~AudioSuiteGeneralVoiceChangeNode()
@@ -101,7 +100,7 @@ AudioSuitePcmBuffer *AudioSuiteGeneralVoiceChangeNode::SignalProcess(const std::
     Trace trace("AudioSuiteGeneralVoiceChangeNode::SignalProcess Start");
     CHECK_AND_RETURN_RET_LOG(
         !inputs.empty(), nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(needPcmBufferFormat_),
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()),
         nullptr,
         "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs[0] is nullptr");
 
