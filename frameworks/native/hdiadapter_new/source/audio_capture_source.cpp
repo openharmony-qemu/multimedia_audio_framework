@@ -978,14 +978,14 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_IN_MIC;
-    std::string address = GetAddress(captureId_);
+    address_ = GetAddress(captureId_);
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
-        if (address.empty()) {
+        if (address_.empty()) {
             AUDIO_INFO_LOG("use attr desc instead");
             deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
         } else {
-            deviceDesc.desc = const_cast<char *>(address.c_str());
+            deviceDesc.desc = const_cast<char *>(address_.c_str());
         }
         return;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
@@ -995,7 +995,7 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
             deviceDesc.pins = PIN_IN_UWB;
         }
     }
-    deviceDesc.desc = const_cast<char *>(address.c_str());
+    deviceDesc.desc = const_cast<char *>(address_.c_str());
 }
 
 void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene)
@@ -1358,8 +1358,8 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
 int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
 {
     Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
-    std::string address = GetAddress(captureId_);
-    address = address.empty() ? attr_.macAddress : address;
+    address_ = GetAddress(captureId_);
+    std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "deviceManager is nullptr");
