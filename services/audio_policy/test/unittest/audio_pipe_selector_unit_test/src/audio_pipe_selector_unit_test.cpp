@@ -25,6 +25,7 @@ namespace AudioStandard {
 
 static const uint32_t TEST_SESSION_ID_BASE = 100000;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
+static const uint32_t MAX_FAST_STREAM_COUNT = 6;
 
 void AudioPipeSelectorUnitTest::SetUpTestCase(void) {}
 void AudioPipeSelectorUnitTest::TearDownTestCase(void) {}
@@ -1434,5 +1435,124 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_005, TestSize.Level1)
     EXPECT_FALSE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
 }
 
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_001
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_002
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_002
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_003
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_003
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = (i % 2 == 0) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i % 2 == 0) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_004
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_004
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = (i % 2 == 0) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            if (i % 2 == 0) {
+                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+            } else {
+                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+            }
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
