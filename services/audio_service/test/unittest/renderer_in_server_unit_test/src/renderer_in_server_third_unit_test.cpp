@@ -2240,7 +2240,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerUpdateStreamInfo_001, Te
     uint32_t checkCount = rendererInServer->checkCount_;
     rendererInServer->UpdateStreamInfo();
 
-    EXPECT_EQ(checkCount, rendererInServer->checkCount_ + 1);
+    EXPECT_EQ(checkCount + 1, rendererInServer->checkCount_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
