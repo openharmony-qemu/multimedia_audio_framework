@@ -10,6 +10,8 @@
 #include "ohaudio/native_audiostreambuilder.h"
 #include "./callback/RegisterCallback.h"
 #include "../audioEffectNode/Input.h"
+#include "audioEffectNode/Output.h"
+#include "../utils/Utils.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *REAL_TIME_PLAYING_TAG = "[AudioEditTestApp_RealTimePlaying_cpp]";
@@ -31,6 +33,10 @@ bool g_isRecord = false;
 char *g_playTotalAudioData = (char *)malloc(1024 * 1024 * 100);
 
 int32_t g_playResultTotalSize = 0;
+
+OH_AudioDataArray* g_playOhAudioDataArray = new OH_AudioDataArray();
+ 
+uint32_t g_separationMode = -1;
 
 OH_AudioSuite_Result ProcessPipeline()
 {
@@ -78,12 +84,50 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest OH_AudioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
+        return result;
     }
     // 每次保存一次获取的buffer值
     g_playAudioData = (char *)malloc(*writeSize);
     std::copy(audioData, audioData + *writeSize, static_cast<char *>(g_playAudioData));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
+        *writeSize, (g_playFinishedFlag ? "true" : "false"));
+    return result;
+}
+
+OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
+{
+    g_playOhAudioDataArray->audioDataArray = (void**)malloc(ARG_2 * sizeof(void*));
+    for (int i = ARG_0; i < ARG_2; i++) {
+        if (audioDataSize <= ARG_0) {
+            return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
+        }
+        g_playOhAudioDataArray->audioDataArray[i] = (void*)malloc(audioDataSize);
+    }
+    g_playOhAudioDataArray->arraySize = ARG_2;
+    g_playOhAudioDataArray->requestFrameSize = audioDataSize;
+    OH_AudioSuite_Result result =
+        OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, g_playOhAudioDataArray,
+            writeSize, &g_playFinishedFlag);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+            "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame result is %{public}d",
+            static_cast<int>(result));
+        return result;
+    }
+    // 每次保存一次获取的buffer值 ...
+    g_playAudioData = (char *)malloc(*writeSize);
+    if (g_separationMode == ARG_0) {
+        std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]),
+            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]) + *writeSize,
+            static_cast<char *>(g_playAudioData));
+    } else if (g_separationMode == ARG_1) {
+        std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]),
+            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]) + *writeSize,
+            static_cast<char *>(g_playAudioData));
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+        "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
         *writeSize, (g_playFinishedFlag ? "true" : "false"));
     return result;
 }
@@ -103,7 +147,14 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
     }
     int32_t writeSize = 0;
     if (!g_playFinishedFlag) {
-        OneRenDerFrame(audioDataSize, &writeSize);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+            "OneRenDerFrame g_multiRenderFrameFlag: %{public}s", g_multiRenderFrameFlag ? "true" : "false");
+        // 是否有音源分离节点
+        if (!g_multiRenderFrameFlag) {
+            OneRenDerFrame(audioDataSize, &writeSize);
+        } else {
+            OneMulRenDerFrame(audioDataSize, &writeSize);
+        }
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "g_isRecord: %{public}s", g_isRecord ? "true" : "false");
         // 每次保存一次获取的buffer值

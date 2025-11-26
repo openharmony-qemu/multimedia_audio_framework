@@ -7,6 +7,7 @@ import { StyleConst } from '../utils/StyleConst';
 import window from '@ohos.window';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { display } from '@kit.ArkUI';
+import { NavigationParams, OFFLINEPIPELINE, PIPELINECASCADMODE_0, REALTIMEPIPELINE } from '../utils/importSongs/InterfaceInfo';
 
 const TAG: string = 'AudioEditTestApp_Index';
 
@@ -21,7 +22,7 @@ class TitleTextModifier implements AttributeModifier<TextAttribute> {
 @Entry
 @Component
 struct Index {
-  @Provide('pageInfos') papageInfos: NavPathStack = new NavPathStack()
+  @Provide('pageInfos') pageInfos: NavPathStack = new NavPathStack()
 
   // 判断是否是横屏
   @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
@@ -64,7 +65,7 @@ struct Index {
   }
 
   build() {
-    Navigation(this.papageInfos) {
+    Navigation(this.pageInfos) {
       Scroll(this.scrollerIndex) {
         Column() {
           Column() {
@@ -91,7 +92,7 @@ struct Index {
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
             .onClick(() => {
-              this.papageInfos.pushPath({ name: 'audioEdit' })
+              this.pageInfos.pushPath({ name: 'audioEdit' })
             })
           }
           .width(StyleConst.FULL_WIDTH)
@@ -128,7 +129,10 @@ struct Index {
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
             .onClick(() => {
-              this.papageInfos.pushPath({ name: 'mixingConsole',param: 2})
+              this.pageInfos.pushPath({
+                name: 'mixingConsole',
+                param: { mode: REALTIMEPIPELINE, pipelineCascadMode: PIPELINECASCADMODE_0 } as NavigationParams
+              })
             })
           }
           .width(StyleConst.FULL_WIDTH)
@@ -165,7 +169,10 @@ struct Index {
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
             .onClick(() => {
-              this.papageInfos.pushPath({ name: 'mixingConsole',param: 1})
+              this.pageInfos.pushPath({
+                name: 'mixingConsole',
+                param: { mode: OFFLINEPIPELINE, pipelineCascadMode: PIPELINECASCADMODE_0 } as NavigationParams
+              })
             })
           }
           .width(StyleConst.FULL_WIDTH)
@@ -175,6 +182,43 @@ struct Index {
             right: $r('app.float.padding_20')
           })
           .margin({bottom: $r('app.float.margin_10')})
+          .border({ radius: $r('app.float.border_16') })
+          .backgroundColor($r('app.color.index_audio_clip_card'))
+
+          Column() {
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
+              Column() {
+                Image($r('app.media.hand_tap'))
+                  .width(StyleConst.SIXTY_PERCENT_WIDTH)
+                  .height(StyleConst.SIXTY_PERCENT_HEIGHT)
+                  .objectFit(ImageFit.Contain)
+              }
+              .width(StyleConst.THIRTY_PERCENT_WIDTH)
+ 
+              Column() {
+                Text($r('app.string.pipeline_cascad'))
+                  .fontSize($r('app.float.font_size_24'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                  .margin({ bottom: $r('app.float.margin_10') })
+                Text($r('app.string.pipeline_cascad_desc'))
+                  .fontSize($r('app.float.font_size_20'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                  .opacity(0.5)
+              }
+            }
+            .width(StyleConst.FULL_WIDTH)
+            .height(StyleConst.FULL_HEIGHT)
+            .onClick(() => {
+              this.pageInfos.pushPath({ name: 'pipelineCascad' })
+            })
+          }
+          .width(StyleConst.FULL_WIDTH)
+          .height($r('app.float.height_100'))
+          .padding({
+            left: $r('app.float.padding_20'),
+            right: $r('app.float.padding_20')
+          })
+          .margin({ bottom: $r('app.float.margin_10') })
           .border({ radius: $r('app.float.border_16') })
           .backgroundColor($r('app.color.index_audio_clip_card'))
 
@@ -202,7 +246,7 @@ struct Index {
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
             .onClick(() => {
-              this.papageInfos.pushPath({ name: 'autoTest' })
+              this.pageInfos.pushPath({ name: 'autoTest' })
             })
           }
           .width(StyleConst.FULL_WIDTH)

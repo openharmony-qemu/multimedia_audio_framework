@@ -55,6 +55,30 @@
     {
       "name": "save_audio_format",
       "value": "保存导出音频格式"
+    },
+    {
+      "name": "pipeline_cascad",
+      "value": "管线级联"
+    },
+    {
+      "name": "pipeline_cascad_desc",
+      "value": "管线级联 轻松实现"
+    },
+    {
+      "name": "add",
+      "value": "+"
+    },
+    {
+      "name": "human_voice",
+      "value": "人声"
+    },
+    {
+      "name": "accompaniment",
+      "value": "伴奏"
+    },
+    {
+      "name": "renderer",
+      "value": "渲染"
     }
   ]
 }

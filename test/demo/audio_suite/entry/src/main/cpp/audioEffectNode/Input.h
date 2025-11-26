@@ -57,6 +57,16 @@ struct UpdateInputNodeParams {
     unsigned int bitsPerSample;
 };
 
+struct AudioParamsByCascad {
+    std::string inputId;
+    std::string outputId;
+    std::string mixerId;
+    int32_t channels;
+    int32_t sampleRate;
+    int32_t bitsPerSample;
+    int32_t pcmBufferSize;
+};
+
 napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params);
 
 void ResetAllIsResetTotalWriteAudioDataSize();
@@ -85,5 +95,7 @@ void ManageExistingOutputNodes(const std::string &inputId, const std::string &mi
     OH_AudioSuite_Result &result, std::vector<Node> outPutNodes);
 
 void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &outputId, OH_AudioSuite_Result &result);
+
+napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsByCascad &params);
 
 #endif //AUDIOEDITTESTAPP_INPUT_H

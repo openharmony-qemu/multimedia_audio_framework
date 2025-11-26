@@ -23,6 +23,18 @@
     {
       "name": "mixing_console_mask_color",
       "value": "#999"
+    },
+    {
+      "name": "sound_speed_tone_backgroundColor",
+      "value": "#eeeeee"
+    },
+    {
+      "name": "transparent_background_color",
+      "value": "#00000000"
+    },
+    {
+      "name": "selected_button",
+      "value": "#FF44ccff"
     }
   ]
 }
