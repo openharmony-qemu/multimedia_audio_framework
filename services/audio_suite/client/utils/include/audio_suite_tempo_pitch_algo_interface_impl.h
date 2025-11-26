@@ -59,14 +59,14 @@ public:
     int32_t Apply(std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs) override;
 
 private:
-    float speedRate_ = 1.0f;    // 变速
-    float pitchRate_ = 1.0f;    // 变调
+    float speedRate_ = 1.0f;
+    float pitchRate_ = 1.0f;
     int32_t expendSize_ = 0;
-    // tempo
+
     TempoAlgoApi tempoAlgoApi_{0};
     PVParam tempoAlgoHandle_{nullptr};
     void *tempoSoHandle_{nullptr};
-    // pitch
+
     void *pitchSoHandle_{nullptr};
     AudioEffectLibrary* pitchLibHandle_ = nullptr;
     AudioEffectHandle pitchAlgoHandle_ = nullptr;
