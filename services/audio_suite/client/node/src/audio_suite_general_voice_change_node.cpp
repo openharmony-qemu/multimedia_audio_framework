@@ -89,7 +89,6 @@ int32_t AudioSuiteGeneralVoiceChangeNode::GetOptions(std::string name, std::stri
     CHECK_AND_RETURN_RET_LOG(name == setVoiceChangeMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "paraValue_ is empty");
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
-    
     value = paraValue_;
     AUDIO_INFO_LOG("GetOptions SUCCESS");
     return SUCCESS;
