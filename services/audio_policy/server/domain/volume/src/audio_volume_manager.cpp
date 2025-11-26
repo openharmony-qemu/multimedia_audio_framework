@@ -911,14 +911,40 @@ void AudioVolumeManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t cu
 void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason)
 {
     AUDIO_INFO_LOG("reason:%{public}s", reason.c_str());
-    std::thread([this, reason]() {
-        this->CheckActiveMusicTime("Offload");
-        if (std::string("Started") != reason) {
-            startSafeTime_ = 0;
-            startSafeTimeBt_ = 0;
-            startSafeTimeSle_ = 0;
-        }
-    }).detach();
+    std::shared_ptr<CheckActiveMusicTimeAction> action =
+        std::make_shared<CheckActiveMusicTimeAction>(reason);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    desc.delayTimeMs = 0;
+    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+}
+
+void AudioVolumeManager::DealWithPauseAndStop(const std::string &reason)
+{
+    if (std::string("Paused") == reason || std::string("Stopped") == reason) {
+        startSafeTime_ = 0;
+        startSafeTimeBt_ = 0;
+        startSafeTimeSle_ = 0;
+    }
+}
+
+std::string AudioVolumeManager::DoLoopCheck(const std::string &reason)
+{
+    std::string innerReason = "";
+    if (std::string("Default") == reason) {
+        std::shared_ptr<CheckActiveMusicTimeAction> action =
+            std::make_shared<CheckActiveMusicTimeAction>(reason);
+        CHECK_AND_RETURN_RET_LOG(action != nullptr, "", "action is nullptr");
+        AsyncActionDesc desc;
+        desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+        desc.delayTimeMs = MUSIC_ACTIVE_PERIOD_MS;
+        DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        innerReason = "Default";
+    } else {
+        innerReason = "Offload";
+    }
+    return innerReason;
 }
 
 int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
@@ -926,16 +952,9 @@ int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
     std::lock_guard<std::mutex> lock(checkMusicActiveThreadMutex_);
     AUDIO_INFO_LOG("enter");
     int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
+    std::string innerReason = "";
     if (!safeVolumeExit_) {
-        if (std::string("Offload") != reason) {
-            std::shared_ptr<CheckActiveMusicTimeAction> action =
-                std::make_shared<CheckActiveMusicTimeAction>(reason);
-            CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-            AsyncActionDesc desc;
-            desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-            desc.delayTimeMs = MUSIC_ACTIVE_PERIOD_MS;
-            DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
-        }
+        innerReason = DoLoopCheck(reason);
         bool activeMusic = audioSceneManager_.IsStreamActive(STREAM_MUSIC);
         int32_t curDeviceVolume = GetSystemVolumeLevel(STREAM_MUSIC);
         bool isUpSafeVolume = curDeviceVolume > safeVolume ? true : false;
@@ -959,6 +978,7 @@ int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
             startSafeTimeBt_ = 0;
             startSafeTimeSle_ = 0;
         }
+        DealWithPauseAndStop(reason);
     }
     return 0;
 }
