@@ -58,9 +58,13 @@ int32_t AudioSuiteTempoPitchNode::Init()
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
     algoInterface_ = std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(nodeCapability);
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteTempoPitchAlgoInterfaceImpl Init failed");
 
+    currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
+    bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;
+    outBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES + RESIZE_EXPAND_BYTES);
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init end");
     return SUCCESS;
@@ -123,8 +127,6 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
         return ERROR;
     }
     outBuffer_.resize(outBufferSize);
-    currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
-    bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;
     AUDIO_INFO_LOG("TempoPitchNode SetOptions SUCCESS");
     return SUCCESS;
 }
@@ -165,23 +167,23 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
             return ERR_OPERATION_FAILED;
         }
         trace.End();
-        if (!readyDataBuffer_.empty()) {
-            int32_t copyRet = memcpy_s(outPcmBuffer_.GetPcmData(), TEMPO_PITCH_PCM_FRAME_BYTES,
-                readyDataBuffer_.front().data(), TEMPO_PITCH_PCM_FRAME_BYTES);
-            CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "outPcmBuffer not enough");
-            readyDataBuffer_.pop();
-            *tempOut = &outPcmBuffer_;
-        }
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
-        *tempOut = preOutputs[0];
-        if (*tempOut == nullptr) {
-            AUDIO_ERR_LOG("node %{public}d get a null pcmbuffer from prenode", GetNodeType());
-            return ERR_INVALID_READ;
-        }
+        CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
+            "ReadProcessNodePreOutputData failed, preOutputs[0] is nullptr");
+        int32_t ret = SplitDataToQueue(preOutputs[0]->GetPcmData(), preOutputs[0]->GetDataSize());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AudioSuiteTempoPitchNode SplitDataToQueue failed");
     } else {
         AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
         return ERROR;
+    }
+
+    if (!readyDataBuffer_.empty()) {
+        int32_t copyRet = memcpy_s(outPcmBuffer_.GetPcmData(), TEMPO_PITCH_PCM_FRAME_BYTES,
+            readyDataBuffer_.front().data(), TEMPO_PITCH_PCM_FRAME_BYTES);
+        CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "outPcmBuffer not enough");
+        readyDataBuffer_.pop();
+        *tempOut = &outPcmBuffer_;
     }
     // read data finished, but remain buffer
     if (GetAudioNodeDataFinishedFlag() && !readFinishedFlag_) {
@@ -199,6 +201,8 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         "Current node type = %{public}d does not have more data to process.", GetNodeType());
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
+        CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
+            "node type = %{public}d outputStream is null!", GetNodeType());
     }
     CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
         "node type = %{public}d inputstream is null!", GetNodeType());
@@ -211,19 +215,18 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "outPcmBuffer not enough");
         readyDataBuffer_.pop();
         tempOut = &outPcmBuffer_;
-    } else if (readFinishedFlag_) {
-        ret = PadBufferToPcmBuffer(outPcmBuffer_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PadBufferToPcmBuffer ERROR");
-        tempOut = &outPcmBuffer_;
     } else {    // read data from preNode
-        ret = DoProcessPreOutputs(&tempOut);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoProcessPreOutputs ERROR");
+        while (!readFinishedFlag_ && tempOut == nullptr) {
+            ret = DoProcessPreOutputs(&tempOut);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoProcessPreOutputs ERROR");
+        }
+        if (tempOut == nullptr) {
+            ret = PadBufferToPcmBuffer(outPcmBuffer_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PadBufferToPcmBuffer ERROR");
+            tempOut = &outPcmBuffer_;
+        }
     }
-    if (tempOut == nullptr) {
-        AUDIO_INFO_LOG("readyDataBuffer_ is not enough, wait next frame");
-        return SUCCESS;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(tempOut != nullptr, ERROR, "DoProcess return tempOut is nullptr");
     if (readFinishedFlag_ && readyDataBuffer_.empty() && bufferRemainSize_ == TEMPO_PITCH_PCM_FRAME_BYTES) {
         SetAudioNodeDataFinishedFlag(true);
     }
