@@ -553,13 +553,13 @@ int32_t AudioSuiteEngine::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeI
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
             AUDIO_ERR_LOG("DisConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
                 srcNodeId, destNodeId);
-            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            managerCallback_.OnDisConnectNodes(ERR_NOT_SUPPORTED);
             return;
         }
 
         if (nodeMap_[srcNodeId] != nodeMap_[destNodeId]) {
             AUDIO_ERR_LOG("DisConnectNodes failed, not in one pipeline");
-            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            managerCallback_.OnDisConnectNodes(ERR_NOT_SUPPORTED);
             return;
         }
 

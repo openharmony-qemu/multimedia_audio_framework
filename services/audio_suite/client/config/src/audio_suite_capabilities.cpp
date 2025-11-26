@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioSuiteCapabilities"
 #endif
 
+#include <filesystem>
 #include <audio_suite_capabilities.h>
 
 namespace OHOS {
@@ -186,6 +187,11 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
     auto it = audioSuiteCapabilities_.find(nodeType);
     if (it != audioSuiteCapabilities_.end()) {
         NodeCapability &nc = it->second;
+        if (!(std::filesystem::exists(nc.soPath + nc.soName))) {
+            *isSupported = false;
+            AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
+            return SUCCESS;
+        }
         if (nc.general == "yes") {
             AUDIO_INFO_LOG("nodeType: %{public}d is general on all device.", nodeType);
             *isSupported = true;
@@ -198,7 +204,7 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("GetNodeCapability failed for node type: %{public}d.", nodeType);
-                return ERR_INVALID_PARAM;
+                return ERROR;
             }
         }
     } else {
