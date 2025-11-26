@@ -38,7 +38,7 @@ bool AudioCoreServiceUtils::IsDualStreamWhenRingDual(AudioStreamType streamType)
     return false;
 }
 
-bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState rendererState)
+bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState rendererState, const StreamUsage &usage)
 {
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
@@ -46,7 +46,7 @@ bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState ren
     if (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) {
         return true;
     }
-    if (rendererState == RENDERER_PAUSED &&
+    if (rendererState == RENDERER_PAUSED && usage != STREAM_USAGE_ALARM &&
         AudioSceneManager::GetInstance().GetAudioScene(true) != AUDIO_SCENE_RINGING) {
         return true;
     }
