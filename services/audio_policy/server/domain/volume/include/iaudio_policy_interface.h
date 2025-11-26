@@ -39,6 +39,10 @@ enum LoudVolumeHoldType {
     LOUD_VOLUME_MODE_VOICE,
 };
 
+enum volumeStatisticsSceneType : uint8_t {
+    LOUD_VOLUME_SCENE = 0,
+};
+
 enum OffloadAdapter : uint32_t {
     OFFLOAD_IN_PRIMARY = 0,
     OFFLOAD_IN_REMOTE,
