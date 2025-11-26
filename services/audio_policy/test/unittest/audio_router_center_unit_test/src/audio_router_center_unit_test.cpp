@@ -64,21 +64,6 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test StreamFilterRouter.
- * @tc.number: AudioRouterCenter_002
- * @tc.desc  : Test IsMediaFollowCallStrategy interface.
- */
-HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_002, TestSize.Level1)
-{
-    AudioRouterCenter audioRouterCenter;
-    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
-    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
-    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_RINGING));
-    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
-    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_DEFAULT));
-}
-
-/**
- * @tc.name  : Test StreamFilterRouter.
  * @tc.number: AudioRouterCenter_003
  * @tc.desc  : Test FetchOutputDevices interface.
  */
@@ -144,6 +129,75 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
     type = SOURCE_TYPE_INVALID;
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
+}
+
+/**
+ * @tc.name  : Test HasScoDevice.
+ * @tc.number: AudioRouterCenter_007
+ * @tc.desc  : Test HasScoDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_007, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    EXPECT_FALSE(audioRouterCenter.HasScoDevice());
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    EXPECT_TRUE(audioRouterCenter.HasScoDevice());
+}
+
+/**
+ * @tc.name  : Test HasScoDevice.
+ * @tc.number: AudioRouterCenter_008
+ * @tc.desc  : Test HasScoDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_008, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    EXPECT_TRUE(audioRouterCenter.HasScoDevice());
+}
+
+/**
+ * @tc.name  : Test HasScoDevice.
+ * @tc.number: AudioRouterCenter_009
+ * @tc.desc  : Test HasScoDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_009, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_.push_back(desc);
+    EXPECT_FALSE(audioRouterCenter.HasScoDevice());
+    desc->deviceCategory_ = BT_CAR;
+    EXPECT_TRUE(audioRouterCenter.HasScoDevice());
+}
+
+/**
+ * @tc.name  : Test HasScoDevice.
+ * @tc.number: AudioRouterCenter_010
+ * @tc.desc  : Test HasScoDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_010, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_.clear();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_.push_back(desc);
+    EXPECT_FALSE(audioRouterCenter.HasScoDevice());
+    desc->deviceCategory_ = BT_CAR;
+    EXPECT_TRUE(audioRouterCenter.HasScoDevice());
 }
 
 class MockStandardAudioRoutingManagerListener : public StandardAudioRoutingManagerListenerStub {
