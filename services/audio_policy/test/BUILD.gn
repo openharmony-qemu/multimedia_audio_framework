@@ -5125,6 +5125,7 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "ability_runtime:wantagent_innerkits",
     "background_task_mgr:bgtaskmgr_innerkits",
     "bluetooth:btframework",
+    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
