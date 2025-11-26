@@ -134,7 +134,6 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper
         int32_t ret = processBuffer_->GetDataFromStaticBuffer(reinterpret_cast<int8_t*>(processTmpBuffer_.data()),
             spanSizeInByte);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "getStaticBuffer failed ret: %{public}d", ret);
-        processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     } else {
         int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
@@ -397,6 +396,15 @@ int32_t AudioProcessInServer::StartInner()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
+    if (processConfig_.rendererInfo.isStatic) {
+        if (staticBufferProcessor_ == nullptr) {
+            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+        }
+        int32_t ret = staticBufferProcessor_->ProcessBuffer(processBuffer_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
+    }
+
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
@@ -486,6 +494,15 @@ int32_t AudioProcessInServer::Resume()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
+    if (processConfig_.rendererInfo.isStatic) {
+        if (staticBufferProcessor_ == nullptr) {
+            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+        }
+        int32_t ret = staticBufferProcessor_->ProcessBuffer(processBuffer_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     }
 
     for (size_t i = 0; i < listenerList_.size(); i++) {

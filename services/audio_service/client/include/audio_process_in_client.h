@@ -155,6 +155,8 @@ public:
     virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual int32_t SetStaticRenderRate(AudioRendererRate renderRate) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -27,6 +27,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
+#include "audio_static_buffer_process.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -321,6 +322,8 @@ private:
     bool isDataLinkConnected_ = true;
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
+
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

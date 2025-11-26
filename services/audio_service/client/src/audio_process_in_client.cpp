@@ -167,6 +167,8 @@ public:
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo_) override;
+
+    int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -1641,15 +1643,7 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
             return true;
         }
 
-        if (CheckStaticAndOperate()) {
-            return true;
-        }
-
-        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
-        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
-            return true;
-        }
-        return false;
+        return CheckStaticAndOperate();
     });
 
     return (ret == FUTEX_SUCCESS);
@@ -1852,6 +1846,11 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
 {
     if (processConfig_.rendererInfo.isStatic) {
         return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
+    } else {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
+            return true;
+        }
     }
     return false;
 }
@@ -1859,8 +1858,16 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
 int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_ILLEGAL_STATE, "clientBuffer is nullptr!");
     audioBuffer_->GetStaticBufferInfo(staticBufferInfo);
     return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderRate)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_ILLEGAL_STATE, "clientBuffer is nullptr!");
+    return audioBuffer_->SetStaticRenderRate(renderRate);
 }
 
 } // namespace AudioStandard

@@ -1292,6 +1292,7 @@ struct StaticBufferInfo : public Parcelable {
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
+    AudioRendererRate renderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
 
     bool Marshalling(Parcel &parcel) const override
@@ -1300,6 +1301,7 @@ struct StaticBufferInfo : public Parcelable {
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
+        parcel.WriteInt32(renderRate_);
         return sharedMemory_->Marshalling(parcel);
     }
 
@@ -1313,6 +1315,7 @@ struct StaticBufferInfo : public Parcelable {
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();
+        info->renderRate_ = static_cast<AudioRendererRate>(parcel.ReadInt32());
         info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
         return info;
     }

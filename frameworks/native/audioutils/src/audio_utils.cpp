@@ -2229,6 +2229,25 @@ void SetInjectEnable(bool injectSwitch)
     g_injectSwitch = injectSwitch;
 }
 
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)
+{
+    float speed = 1.0f;
+    switch (renderRate) {
+        case RENDER_RATE_NORMAL:
+            speed = 1.0f;
+            break;
+        case RENDER_RATE_DOUBLE:
+            speed = 2.0f;
+            break;
+        case RENDER_RATE_HALF:
+            speed = 0.5f;
+            break;
+        default:
+            speed = 1.0f;
+    }
+    return speed;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

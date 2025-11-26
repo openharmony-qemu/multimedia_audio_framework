@@ -80,6 +80,7 @@ ohos_shared_library("audio_common") {
     "common/src/limiter/audio_limiter.cpp",
     "common/src/limiter/audio_limiter_adapter.cpp",
     "common/src/limiter/audio_limiter_manager.cpp",
+    "common/src/audio_static_buffer_processor.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",

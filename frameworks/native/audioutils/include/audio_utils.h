@@ -604,6 +604,8 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
 bool IsInjectEnable();
 void SetInjectEnable(bool injectSwitch);
 
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

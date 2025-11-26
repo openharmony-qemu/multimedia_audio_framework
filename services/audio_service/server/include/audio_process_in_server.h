@@ -29,6 +29,7 @@
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
 #include "format_converter.h"
+#include "audio_static_buffer_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -246,6 +247,8 @@ private:
 
     std::string dumpFACName_;
     FILE *dumpFAC_ = nullptr;
+
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

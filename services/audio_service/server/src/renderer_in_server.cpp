@@ -350,11 +350,11 @@ void RendererInServer::HandleOperationStarted()
     if (standByEnable_) {
         standByEnable_ = false;
         AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
         playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
     }
     CheckAndWriterRenderStreamStandbySysEvent(false);
     status_ = I_STATUS_STARTED;
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
     startedTime_ = ClockTime::GetCurNano();
     
     lastStartTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1077,6 +1077,16 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
+
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
+    if (processConfig_.rendererInfo.isStatic) {
+        if (staticBufferProcessor_ == nullptr) {
+            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+        }
+        ret = staticBufferProcessor_->ProcessBuffer(audioServerBuffer_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
+    }
+
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
 

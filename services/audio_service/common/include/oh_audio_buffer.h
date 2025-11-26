@@ -108,6 +108,7 @@ struct BasicBufferInfo {
     std::atomic<int64_t> totalLoopTimes_;
     std::atomic<int64_t> currentLoopTimes_;
     std::atomic<size_t> curStaticDataPos_;
+    std::atomic<AudioRendererRate> staticRenderRate_;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -260,11 +261,13 @@ public:
     int32_t IncreaseCurrentLoopTimes();
     void SetStaticMode(bool state);
     bool GetStaticMode();
-
-    int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
-
+    int32_t SetStaticRenderRate(AudioRendererRate renderRate);
+    int32_t GetStaticRenderRate(AudioRendererRate &renderRate);
     void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+
+    int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
+    int32_t SetProcessedBuffer(int8_t *processedData, size_t dataSize);
 
 private:
     int32_t SizeCheck();
@@ -304,6 +307,9 @@ private:
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
+
+    uint8_t *processedStaticBuffer_ = nullptr;
+    size_t processedStaticBufferSize_ = 0;
 };
 
 class OHAudioBuffer : public Parcelable {

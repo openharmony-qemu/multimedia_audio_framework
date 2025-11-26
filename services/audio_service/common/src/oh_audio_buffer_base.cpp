@@ -1031,6 +1031,7 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->totalLoopTimes_.store(0);
     basicBufferInfo_->currentLoopTimes_.store(0);
     basicBufferInfo_->curStaticDataPos_.store(0);
+    basicBufferInfo_->staticRenderRate_.store(RENDER_RATE_NORMAL);
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1146,9 +1147,10 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
 int32_t OHAudioBufferBase::GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen)
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    if (basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_) {
+    if (basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_ ||
+        basicBufferInfo_->streamStatus.load() != STREAM_RUNNING) {
         memset_s(inputData, requestDataLen, 0, requestDataLen);
-        AUDIO_WARNING_LOG("reach totalLoopTimes, no need copyData!");
+        AUDIO_WARNING_LOG("reach totalLoopTimes or stream is not running, no need copyData!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -1157,16 +1159,17 @@ int32_t OHAudioBufferBase::GetDataFromStaticBuffer(int8_t *inputData, size_t req
     size_t curStaticDataPos = basicBufferInfo_->curStaticDataPos_;
     while (remainSize > 0) {
         Trace loopTrace("CopyDataFromSharedBuffer " + std::to_string(remainSize));
-        size_t copySize = std::min({remainSize, totalSizeInByte_, totalSizeInByte_ - curStaticDataPos});
-        CHECK_AND_RETURN_RET_LOG(curStaticDataPos + copySize <= totalSizeInByte_, ERROR_INVALID_PARAM,
+        size_t copySize =
+            std::min({remainSize, processedStaticBufferSize_, processedStaticBufferSize_ - curStaticDataPos});
+        CHECK_AND_RETURN_RET_LOG(curStaticDataPos + copySize <= processedStaticBufferSize_, ERROR_INVALID_PARAM,
             "copySize exeeds totalSizeInByte");
-        int32_t ret = memcpy_s(inputData + offset, copySize, dataBase_ + curStaticDataPos, copySize);
+        int32_t ret = memcpy_s(inputData + offset, copySize, processedStaticBuffer_ + curStaticDataPos, copySize);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "memcpy to inputData failed!");
         curStaticDataPos += copySize;
         remainSize -= copySize;
         offset += copySize;
 
-        if (curStaticDataPos == totalSizeInByte_) {
+        if (curStaticDataPos == processedStaticBufferSize_) {
             // buffer copy finished once
             IncreaseCurrentLoopTimes();
             IncreaseBufferEndCallbackSendTimes();
@@ -1207,6 +1210,32 @@ int32_t OHAudioBufferBase::GetStaticBufferInfo(StaticBufferInfo &staticBufferInf
     staticBufferInfo.currentLoopTimes_ = basicBufferInfo_->currentLoopTimes_.load();
     staticBufferInfo.curStaticDataPos_ = basicBufferInfo_->curStaticDataPos_.load();
     staticBufferInfo.sharedMemory_ = dataMem_;
+    return SUCCESS;
+}
+
+int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
+        "Stream is RUNNING, cannot set renderRate!");
+    basicBufferInfo_->staticRenderRate_.store(renderRate);
+    return SUCCESS;
+}
+
+int32_t OHAudioBufferBase::GetStaticRenderRate(AudioRendererRate &renderRate)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
+        "Stream is RUNNING, cannot set renderRate!");
+    renderRate = basicBufferInfo_->staticRenderRate_.load();
+    return SUCCESS;
+}
+
+int32_t OHAudioBufferBase::SetProcessedBuffer(int8_t *processedData, size_t dataSize)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    processedStaticBuffer_ = processedData;
+    processedStaticBufferSize_ = dataSize;
     return SUCCESS;
 }
 

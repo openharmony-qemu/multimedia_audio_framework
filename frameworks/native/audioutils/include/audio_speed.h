@@ -29,7 +29,7 @@ static const int32_t MAX_SPEED_BUFFER_SIZE = 614400; // 192khz 100ms 8ch float
 class AudioSpeed {
 public:
     AudioSpeed();
-    AudioSpeed(size_t rate, size_t format, size_t channels);
+    AudioSpeed(size_t rate, size_t format, size_t channels, int32_t maxSpeedBufferSize = MAX_SPEED_BUFFER_SIZE);
 
     ~AudioSpeed();
     static float GetPitchForSpeed(float speed);
@@ -62,6 +62,7 @@ private:
     size_t formatSize_ = 1;
     size_t channels_ = 2;
     sonicStream sonicStream_ = nullptr;
+    int32_t maxSpeedBufferSize_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

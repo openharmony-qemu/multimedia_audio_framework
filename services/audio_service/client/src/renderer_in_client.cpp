@@ -475,11 +475,7 @@ void RendererInClientInner::WaitForBufferNeedOperate()
                 return true;
             }
 
-            if (CheckStaticAndOperate()) {
-                return true;
-            }
-
-            return CheckBufferNeedWrite();
+            return CheckStaticAndOperate();
         });
     if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
@@ -1106,8 +1102,9 @@ bool RendererInClientInner::CheckStaticAndOperate()
 {
     if (rendererInfo_.isStatic) {
         return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
+    } else {
+        return CheckBufferNeedWrite();
     }
-    return false;
 }
 
 } // namespace AudioStandard

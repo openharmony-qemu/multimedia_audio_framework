@@ -556,6 +556,10 @@ int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
         AUDIO_INFO_LOG("Set same rate");
         return SUCCESS;
     }
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
+        clientBuffer_->SetStaticRenderRate(renderRate);
+    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     rendererRate_ = renderRate;
     return ipcStream_->SetRate(renderRate);
