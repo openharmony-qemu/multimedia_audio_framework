@@ -1327,7 +1327,6 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     std::function<void()> &moveClientsIndex)
 {
     isExistLoopback_ = false;
-    audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
@@ -1338,11 +1337,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
         }
-        // If there is a sync ID in the process and it is the current first frame.
-        // then the sync ID needs to be recorded.
-        if (processList_[i]->GetAudioHapticsSyncId() > 0 && curRead == 0) {
-            audioHapticsSyncId_ = processList_[i]->GetAudioHapticsSyncId();
-        }
+
         std::function<void()> moveClientIndexFunc;
         GetAllReadyProcessDataSub(i, audioDataList, curRead, moveClientIndexFunc);
         moveClientIndexVector.push_back(moveClientIndexFunc);
@@ -1428,7 +1423,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     auto processServer = processList_[i];
     CHECK_AND_RETURN_LOG(processServer, "processServer is nullptr!");
     RingBufferWrapper ringBuffer;
-    if (!processServer->PrepareRingBuffer(curRead, ringBuffer)) {
+    if (!processServer->PrepareRingBuffer(curRead, ringBuffer, audioHapticsSyncId_)) {
         if (processServer->GetStreamStatus() == STREAM_RUNNING) {
             processServer->AddNoDataFrameSize();
         }

@@ -944,19 +944,27 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_038
+ * @tc.number: CheckAudioHapticsSyncId
  * @tc.desc  : Test AudioProcessInServer interface.
  */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, CheckAudioHapticsSyncId_001, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
 
     int32_t syncId = 100;
-    audioProcessInServerRet.audioHapticsSyncId_.store(syncId);
-    auto ret = audioProcessInServerRet.GetAudioHapticsSyncId();
-    EXPECT_EQ(ret, syncId);
+    audioProcessInServerRet.audioHapticsSyncId_ = syncId;
+    int32_t outerSyncId = 0;
+    audioProcessInServerRet.CheckAudioHapticsSyncId(outerSyncId);
+    EXPECT_EQ(outerSyncId, syncId);
+
+    syncId = -1;
+    outerSyncId = 0;
+    audioProcessInServerRet.audioHapticsSyncId_ = syncId;
+    audioProcessInServerRet.CheckAudioHapticsSyncId(outerSyncId);
+    EXPECT_EQ(audioProcessInServerRet.audioHapticsSyncId_, syncId);
+    EXPECT_EQ(outerSyncId, 0);
 }
 
 /**

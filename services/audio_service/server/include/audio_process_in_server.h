@@ -98,7 +98,7 @@ public:
     int32_t GetServerKeepRunning(bool &keepRunning) override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
-    int32_t GetAudioHapticsSyncId() override;
+    void CheckAudioHapticsSyncId(int32_t &audioHapticsSyncId);
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -131,7 +131,8 @@ public:
     BufferDesc &GetConvertedBuffer() override;
 
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
-    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer,
+        int32_t &audioHapticsSyncId) override;
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
@@ -239,7 +240,8 @@ private:
     std::mutex scheduleGuardsMutex_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
-    std::atomic<int32_t> audioHapticsSyncId_ = 0;
+    std::mutex syncIdLock_;
+    int32_t audioHapticsSyncId_ = 0;
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
 
