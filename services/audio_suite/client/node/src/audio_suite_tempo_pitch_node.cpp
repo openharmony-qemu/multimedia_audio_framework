@@ -57,7 +57,8 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
-    algoInterface_ = std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(nodeCapability);
+    algoInterface_ =
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteTempoPitchAlgoInterfaceImpl Init failed");
