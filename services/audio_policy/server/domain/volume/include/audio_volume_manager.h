@@ -193,7 +193,9 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
 private:
-    int32_t SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId);
+    int32_t SetSystemVolumeLevelExternal(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
+        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
