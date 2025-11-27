@@ -455,6 +455,19 @@ void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, Aud
     }
 }
 
+void AudioPipeSelector::SetPipeTypeBasedOnVoip(AudioPipeType &nowPipeType,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        nowPipeType = PIPE_TYPE_OUT_VOIP;
+    }
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        nowPipeType = PIPE_TYPE_IN_VOIP;
+    }
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
@@ -463,6 +476,8 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         existingStream->routeFlag_, existingStream->audioMode_);
     AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
         incomingStream->routeFlag_, incomingStream->audioMode_);
+    SetPipeTypeBasedOnVoip(existingPipe, existingStream);
+    SetPipeTypeBasedOnVoip(commingPipe, incomingStream);
     ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
