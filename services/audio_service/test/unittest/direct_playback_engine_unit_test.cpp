@@ -210,10 +210,8 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_006, TestSize.Level2
     AudioProcessConfig config;
     enginePtr->stream_ = std::make_shared<ProRendererStreamImpl>(config, true);
     EXPECT_NE(enginePtr->stream_, nullptr);
-    enginePtr->failedCount_.store(10);
     enginePtr->MixStreams();
 
-    enginePtr->failedCount_.store(100);
     enginePtr->MixStreams();
 }
 

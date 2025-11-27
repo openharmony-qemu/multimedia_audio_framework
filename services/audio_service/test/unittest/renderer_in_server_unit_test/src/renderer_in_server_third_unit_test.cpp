@@ -2242,5 +2242,61 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerUpdateStreamInfo_001, Te
 
     EXPECT_EQ(checkCount + 1, rendererInServer->checkCount_);
 }
+
+/**
+ * @tc.name  : Test Init API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerInit_001
+ * @tc.desc  : Test Init API when managerType_ is VOIP_PLAYBACK.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_Voip_StandbyCheck_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->managerType_ = VOIP_PLAYBACK;
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->standByEnable_ = true;
+    rendererInServer->PauseDirectStream();
+    EXPECT_EQ(true, rendererInServer->standByEnable_);
+}
+
+/**
+ * @tc.name  : Test standbycheck API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_Direct_StandbyCheck_001
+ * @tc.desc  : Test standbycheck API when managerType_ is Direct_PLAYBACK.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_Direct_StandbyCheck_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->standByEnable_ = true;
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->PauseDirectStream();
+    EXPECT_EQ(true, rendererInServer->standByEnable_);
+
+    rendererInServer->managerType_ = EAC3_PLAYBACK;
+    rendererInServer->PauseDirectStream();
+    EXPECT_EQ(true, rendererInServer->standByEnable_);
+
+    rendererInServer->managerType_ = VOIP_PLAYBACK;
+    rendererInServer->PauseDirectStream();
+    EXPECT_EQ(true, rendererInServer->standByEnable_);
+
+    rendererInServer->managerType_ = PLAYBACK;
+    rendererInServer->PauseDirectStream();
+    EXPECT_EQ(true, rendererInServer->standByEnable_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

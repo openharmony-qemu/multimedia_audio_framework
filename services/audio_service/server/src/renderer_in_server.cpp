@@ -425,6 +425,14 @@ void RendererInServer::ReConfigDupStreamCallback()
     }
 }
 
+void RendererInServer::PauseDirectStream()
+{
+    // direct standBy need not in here
+    if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) {
+        IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_, true);
+    }
+}
+
 void RendererInServer::StandByCheck()
 {
     Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_.load()));
@@ -437,11 +445,6 @@ void RendererInServer::StandByCheck()
     }
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
         standByCounter_.load(), (standByEnable_ ? "true" : "false"));
-
-    // direct standBy need not in here
-    if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) {
-        return;
-    }
 
     if (standByEnable_) {
         return;
@@ -460,6 +463,8 @@ void RendererInServer::StandByCheck()
     if (managerType_ == PLAYBACK) {
         stream_->Pause(true);
     }
+
+    PauseDirectStream();
 
     if (playerDfx_) {
         playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_BEGIN);

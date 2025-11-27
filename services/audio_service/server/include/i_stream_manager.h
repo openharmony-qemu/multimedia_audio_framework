@@ -52,7 +52,7 @@ public:
         return StartRender(streamIndex);
     }
     virtual int32_t StopRender(uint32_t streamIndex) = 0;
-    virtual int32_t PauseRender(uint32_t streamIndex) = 0;
+    virtual int32_t PauseRender(uint32_t streamIndex, bool isStandby = false) = 0;
     virtual int32_t TriggerStartIfNecessary() = 0;
     virtual int32_t GetStreamCount() const noexcept = 0;
     virtual int32_t CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream) = 0;

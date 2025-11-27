@@ -37,7 +37,6 @@ constexpr int32_t PERIOD_NS = 20000000; // 20ms
 constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
 constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
-constexpr int32_t MAX_ERROR_COUNT = 50;
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
 constexpr int16_t HDI_MONO_CHANNEL_LAYOUT = 4;
@@ -52,7 +51,6 @@ NoneMixEngine::NoneMixEngine()
     : isVoip_(false),
       isStart_(false),
       isInit_(false),
-      failedCount_(0),
       writeCount_(0),
       fwkSyncTime_(0),
       latency_(0),
@@ -70,7 +68,6 @@ NoneMixEngine::NoneMixEngine()
 NoneMixEngine::~NoneMixEngine()
 {
     writeCount_ = 0;
-    failedCount_ = 0;
     fwkSyncTime_ = 0;
     if (playbackThread_) {
         playbackThread_->Stop();
@@ -116,7 +113,6 @@ int32_t NoneMixEngine::Start()
     CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first.");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
-    failedCount_ = 0;
     if (!playbackThread_) {
         playbackThread_ = std::make_unique<AudioThreadTask>(THREAD_NAME);
         playbackThread_->RegisterJob([this] { this->MixStreams(); });
@@ -148,7 +144,6 @@ int32_t NoneMixEngine::Stop()
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    failedCount_ = 0;
     if (playbackThread_) {
         startFadein_ = false;
         startFadeout_ = true;
@@ -190,11 +185,15 @@ int32_t NoneMixEngine::StopAudioSink()
     return ret;
 }
 
-int32_t NoneMixEngine::Pause()
+int32_t NoneMixEngine::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Enter");
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
+        return SUCCESS;
+    }
+    if (isStandby) {
+        PauseAsync();
         return SUCCESS;
     }
     AudioXCollie audioXCollie(
@@ -203,7 +202,6 @@ int32_t NoneMixEngine::Pause()
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    failedCount_ = 0;
     if (playbackThread_) {
         startFadein_ = false;
         startFadeout_ = true;
@@ -300,11 +298,6 @@ void NoneMixEngine::MixStreams()
         StandbySleep();
         return;
     }
-    if (failedCount_ >= MAX_ERROR_COUNT) {
-        AUDIO_WARNING_LOG("failed count is overflow.");
-        PauseAsync();
-        return;
-    }
     std::vector<char> audioBuffer;
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
@@ -315,7 +308,6 @@ void NoneMixEngine::MixStreams()
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
         AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
         stream_->ReturnIndex(index);
-        failedCount_++;
         if (startFadeout_) {
             startFadeout_.store(false);
             cvFading_.notify_all();
@@ -326,7 +318,6 @@ void NoneMixEngine::MixStreams()
     }
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
     AdjustVoipVolume();
-    failedCount_ = 0;
     // fade in or fade out
     if (startFadeout_ || startFadein_) {
         if (startFadeout_) {

@@ -55,7 +55,7 @@ int32_t AudioPlaybackEngine::Stop()
     return SUCCESS;
 }
 
-int32_t AudioPlaybackEngine::Pause()
+int32_t AudioPlaybackEngine::Pause(bool isStandby)
 {
     return SUCCESS;
 }

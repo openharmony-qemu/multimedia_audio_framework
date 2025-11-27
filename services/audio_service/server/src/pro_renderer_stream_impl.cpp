@@ -553,7 +553,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
                 if (statusCallback != nullptr && isFirstNoUnderrunFrame_) {
                     statusCallback->OnStatusUpdate(OPERATION_UNDERFLOW);
                 }
-                [[fallthrough]];
+                break;
             }
             case SUCCESS: {
                 PopSinkBuffer(audioBuffer, index);
@@ -628,6 +628,7 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_
         index = readQueue_.front();
         readQueue_.pop();
         *audioBuffer = sinkBuffer_[index];
+        isFirstFrame_ = false;
     }
     if (readQueue_.empty() && isDrain_) {
         drainSync_.notify_all();
