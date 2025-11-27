@@ -15,7 +15,8 @@
 
 #ifndef AUDIO_SUITE_TEMPO_PITCH_NODE_H
 #define AUDIO_SUITE_TEMPO_PITCH_NODE_H
- 
+
+#include "audio_suite_algo_interface.h"
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
 #include "audio_suite_process_node.h"
 #include <queue>
@@ -43,7 +44,7 @@ private:
     int32_t SplitDataToQueue(uint8_t* outBuffer, int32_t outFrameBytes);
 
     bool isInit_ = false;
-    std::shared_ptr<AudioSuiteTempoPitchAlgoInterfaceImpl> algoInterface_;
+    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
     AudioSuitePcmBuffer outPcmBuffer_;
     std::vector<uint8_t> outBuffer_;
     std::vector<uint8_t> currentDataBuffer_;
