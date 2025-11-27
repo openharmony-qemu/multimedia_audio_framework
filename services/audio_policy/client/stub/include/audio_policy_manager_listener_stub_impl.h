@@ -41,6 +41,7 @@ public:
     int32_t OnBackgroundMute(const int32_t uid) override;
     int32_t OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType, bool &ret) override;
     int32_t OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override;
+    int32_t OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback);

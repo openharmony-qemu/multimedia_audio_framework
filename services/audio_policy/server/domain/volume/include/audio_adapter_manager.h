@@ -88,7 +88,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
@@ -106,7 +107,8 @@ public:
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
-    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType);
 

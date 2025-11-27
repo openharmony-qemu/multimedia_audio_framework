@@ -87,8 +87,8 @@ public:
     int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0,
-        bool syncVolDegree = true);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0, bool syncVolDegree = true);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
@@ -195,7 +195,7 @@ private:
 private:
     int32_t SetSystemVolumeLevelExternal(AudioStreamType streamType, int32_t volumeLevel);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
-        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree);
+        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;

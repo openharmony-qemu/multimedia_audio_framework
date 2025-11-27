@@ -1185,7 +1185,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_001, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int32_t volumeLevel = 1;
     bool mute = true;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1202,7 +1203,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_002, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int32_t volumeLevel = 0;
     bool mute = false;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1219,7 +1221,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_SYSTEM;
     int32_t volumeLevel = 1;
     bool mute = false;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**

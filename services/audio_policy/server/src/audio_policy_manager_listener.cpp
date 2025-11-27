@@ -84,5 +84,13 @@ bool AudioPolicyManagerListenerCallback::OnQueryBundleNameIsInList(const std::st
     listener_->OnQueryBundleNameIsInList(bundleName, listType, ret);
     return ret;
 }
+
+bool AudioPolicyManagerListenerCallback::OnQueryIsForceGetDevByVolumeType(const std::string &bundleName)
+{
+    CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
+    bool ret = false;
+    listener_->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

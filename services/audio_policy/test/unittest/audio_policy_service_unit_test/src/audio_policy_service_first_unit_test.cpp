@@ -2274,7 +2274,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     for (const auto& audioStreamType : audioStreamTypes) {
-        GetServerPtr()->audioVolumeManager_.SetSystemVolumeLevel(audioStreamType, volumeLevel);
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+        GetServerPtr()->audioVolumeManager_.SetSystemVolumeLevel(audioStreamType, volumeLevel, deviceDesc);
         GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 0, 0);
         GetServerPtr()->SetSystemVolumeLevel(audioStreamType, volumeLevel, 1, 0);
         GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetVoiceCallVolume(volumeLevel);

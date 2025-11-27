@@ -266,7 +266,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_112, TestSize.Level1)
     int32_t volumeLevel = 0;
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
 
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -286,7 +287,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_113, TestSize.Level1)
     int32_t volumeLevel = 0;
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_ALL);
 
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
 

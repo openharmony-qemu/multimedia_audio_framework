@@ -136,6 +136,16 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std:
     return SUCCESS;
 }
 
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret)
+{
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioClientInfoMgrCallback is nullptr");
+    ret = audioClientInfoMgrCallback->OnQueryIsForceGetDevByVolumeType(bundleName);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManagerListenerStubImpl::OnRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
     std::shared_ptr<AudioRouteCallback> cb = audioRouteCallback_.lock();

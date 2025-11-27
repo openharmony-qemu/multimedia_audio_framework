@@ -218,6 +218,7 @@ public:
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
+    void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -280,6 +281,9 @@ private:
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
+    bool IsForceGetDevByVolumeType(int32_t uid);
+    bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
+
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
     std::mutex clientCbRendererInfoMapMutex_;
@@ -301,6 +305,8 @@ private:
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
+
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
