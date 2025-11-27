@@ -19,6 +19,7 @@
 #include "audio_suite_soundfield_algo_interface_impl.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
 #include "audio_suite_voice_beautifier_algo_interface_impl.h"
+#include "audio_suite_tempo_pitch_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
