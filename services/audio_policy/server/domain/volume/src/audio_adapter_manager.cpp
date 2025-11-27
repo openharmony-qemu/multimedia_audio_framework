@@ -1437,6 +1437,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_AI) {
             idType = HDI_ID_TYPE_AI;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_UNPROCESS) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_UNPROCESS;
+        }
     }
 }
 

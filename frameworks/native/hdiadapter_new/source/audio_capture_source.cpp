@@ -881,11 +881,23 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
 
+uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const
+{
+    switch (hdiSource) {
+        case AUDIO_INPUT_VOICE_TRANSCRIPTION:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
+        case AUDIO_INPUT_RAW_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESS);
+        default:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
+    }
+}
+
 uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
 {
     AudioInputType hdiSource = MappingAudioInputType(attr_.hdiSourceType);
     if (hdiSource != AUDIO_INPUT_DEFAULT_TYPE) {
-        return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
+        return GenerateUniqueIDByHdiSource(hdiSource);
     }
 
     switch (attr_.sourceType) {
