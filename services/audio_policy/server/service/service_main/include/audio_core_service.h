@@ -585,6 +585,8 @@ private:
     // for remote
     void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
+    bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

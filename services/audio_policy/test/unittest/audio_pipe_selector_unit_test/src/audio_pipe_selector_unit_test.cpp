@@ -221,6 +221,20 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_010, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_011
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag does not contain any specific flags.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_011, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_UNPROCESS;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_UNPROCESS);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.
