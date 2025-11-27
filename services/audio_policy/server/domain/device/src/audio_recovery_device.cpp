@@ -507,9 +507,9 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     shared_ptr<AudioDeviceDescriptor> userSelectedDevice = nullptr;
     PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage & MEDIA_OUTPUT_DEVICES) {
         userSelectedDevice = audioStateManager_.GetPreferredMediaRenderDevice();
-    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+    } else if (audioDevUsage & CALL_OUTPUT_DEVICES) {
         userSelectedDevice = audioStateManager_.GetPreferredCallRenderDevice();
         preferredType = AUDIO_CALL_RENDER;
     }

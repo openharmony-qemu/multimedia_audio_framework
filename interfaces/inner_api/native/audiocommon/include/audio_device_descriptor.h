@@ -132,6 +132,10 @@ public:
             if (deviceDescriptor == nullptr) {
                 return 0;
             }
+            if (!deviceDescriptor->macAddress_.empty()) {
+                return std::hash<std::string>{} (deviceDescriptor->macAddress_) ^
+                std::hash<std::string>{} (deviceDescriptor->networkId_);
+            }
             return std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceType_)) ^
                 std::hash<std::string>{}(deviceDescriptor->macAddress_) ^
                 std::hash<std::string>{}(deviceDescriptor->networkId_);
@@ -147,6 +151,10 @@ public:
             }
             if (lhs == nullptr || rhs == nullptr) {
                 return false;
+            }
+            if (!lhs->macAddress_.empty() && !rhs->macAddress_.empty()) {
+                return lhs->macAddress_ == rhs->macAddress_ &&
+                lhs->networkId_ == rhs->networkId_;
             }
             return lhs->deviceType_ == rhs->deviceType_ &&
                 lhs->macAddress_ == rhs->macAddress_ &&
