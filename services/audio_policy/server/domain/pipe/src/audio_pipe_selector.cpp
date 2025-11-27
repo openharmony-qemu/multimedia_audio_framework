@@ -477,8 +477,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             SetOriginalFlagForcedNormalIfNeed(incomingStream);
             break;
         case CONCEDE_EXISTING:
-            // If action is concede existing, maybe also need to concede incoming
-            CheckAndHandleIncomingConcurrency(existingStream, incomingStream);
             isUpdate = true;
             if (existingStream->IsUseMoveToConcedeType()) {
                 existingStream->SetAction(AUDIO_STREAM_ACTION_MOVE);
