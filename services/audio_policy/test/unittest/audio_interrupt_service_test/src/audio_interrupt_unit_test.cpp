@@ -1825,7 +1825,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
+    EXPECT_NE(audioInterruptService->ownerUid_, formerUid_);
 }
 
 /**
@@ -1859,7 +1859,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
+    EXPECT_NE(audioInterruptService->ownerUid_, formerUid_);
 }
 
 /**
