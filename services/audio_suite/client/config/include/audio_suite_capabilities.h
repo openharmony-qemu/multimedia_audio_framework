@@ -77,6 +77,8 @@ private:
     int32_t LoadSfCapability(NodeCapability &nc);
     int32_t LoadEnvCapability(NodeCapability &nc);
     int32_t LoadAissCapability(NodeCapability &nc);
+    int32_t LoadGeneralCapability(NodeCapability &nc);
+    int32_t LoadPureCapability(NodeCapability &nc);
     int32_t LoadTempoPitchCapability(NodeCapability &nc);
     std::unordered_map<AudioNodeType, NodeCapability> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;

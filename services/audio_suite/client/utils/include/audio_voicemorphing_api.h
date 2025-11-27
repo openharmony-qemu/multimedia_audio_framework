@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 #define AUDIO_VMP_EOK 0
+#define AUDIO_VOICEMPH_EOK 0
 
 typedef struct {
     int scratchSize;
@@ -50,13 +51,64 @@ typedef enum {
     AUDIO_VOICE_MORPH_CLEAR = 0,
     AUDIO_VOICE_MORPH_THEATRE,
     AUDIO_VOICE_MORPH_CD,
-    AUDIO_VOICE_MORPH_RECORDING_STUDIO
+    AUDIO_VOICE_MORPH_RECORDING_STUDIO,
+    AUDIO_VOICE_MPH_SEASONED,
+    AUDIO_VOICE_MPH_CUTE,
+    AUDIO_VOICE_MPH_FEMALE,
+    AUDIO_VOICE_MPH_MALE,
+    AUDIO_VOICE_MPH_MONSTER,
+    AUDIO_VOICE_MPH_TRILL,
+    AUDIO_VOICE_MPH_CYBERPUNK,
+    AUDIO_VOICE_MPH_WAR,
+    AUDIO_VOICE_MPH_MIX,
+    AUDIO_VOICE_MPH_SYNTH
 } AudioVoiceMorphingType;
 
 extern int AudioVoiceMorphingGetsize(AudioVoiceMorphingMemSize *memSize);
 extern int AudioVoiceMorphingInit(char *handle, char *scratchBuf);
 extern int AudioVoiceMorphingSetParam(char *handle, AudioVoiceMorphingType type);
 extern int AudioVoiceMorphingApply(AudioVoiceMorphingData *data, char *handle, char *scratchBuf);
+
+typedef struct {
+    int stateSize;
+    int scratchSize;
+} AudioVoiceMphMemSize;
+
+typedef struct {
+    float *dataIn;
+    float *dataOut;
+    int inCh;
+    int outCh;
+} AudioVoiceMphData;
+
+typedef struct {
+    bool currentDeviceSupport;
+    bool realTimeSupport;
+    int frameLen;
+    int sampleRate;
+    int channel;
+    int dataFormat;
+} AudioVoiceMphTradSpec;
+
+typedef enum {
+    AUDIO_VOICE_MPH_TRAD_SEASONED = 0,
+    AUDIO_VOICE_MPH_TRAD_CUTE,
+    AUDIO_VOICE_MPH_TRAD_FEMALE,
+    AUDIO_VOICE_MPH_TRAD_MALE,
+    AUDIO_VOICE_MPH_TRAD_MONSTER,
+    AUDIO_VOICE_MPH_TRAD_ROBOTS,
+    AUDIO_VOICE_MPH_TRAD_CARTOON
+} AudioVoiceMphTradType;
+
+typedef enum {
+    VMP_TRAD_MALE = 0,
+    VMP_TRAD_FEMALE
+}SpeakerSex;
+
+extern int AudioVoiceMphGetsize(AudioVoiceMphMemSize *memSize);
+extern int AudioVoiceMphInit(char *handle, char *scratchBuf);
+extern int AudioVoiceMphSetPara(char *handle, SpeakerSex gender, AudioVoiceMphTradType type);
+extern int AudioVoiceMphApply(char *handle, char *scratchBuf, AudioVoiceMphData *data);
 
 #ifdef __cplusplus
 }

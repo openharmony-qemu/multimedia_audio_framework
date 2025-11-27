@@ -33,6 +33,8 @@
 #include "audio_suite_soundfield_node.h"
 #include "audio_suite_mixer_node.h"
 #include "audio_suite_voice_beautifier_node.h"
+#include "audio_suite_general_voice_change_node.h"
+#include "audio_suite_pure_voice_change_node.h"
 #include "audio_suite_tempo_pitch_node.h"
 
 namespace OHOS {
@@ -313,6 +315,12 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_ENVIRONMENT_EFFECT) {
         AUDIO_INFO_LOG("Create AudioSuiteEnvNode");
         node = std::make_shared<AudioSuiteEnvNode>();
+    } else if (builder.nodeType == NODE_TYPE_GENERAL_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuiteGeneralVoiceChangeNode");
+        node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    } else if (builder.nodeType == NODE_TYPE_PURE_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuitePureVoiceChangeNode");
+        node = std::make_shared<AudioSuitePureVoiceChangeNode>();
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
