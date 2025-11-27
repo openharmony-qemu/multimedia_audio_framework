@@ -995,7 +995,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
-        clientBuffer_->ResetLoopStatus();
+        clientBuffer_->RefreshLoopTimes();
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
@@ -1120,6 +1120,11 @@ bool RendererInClientInner::StopAudioStream()
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
         return false;
+    }
+
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
+        clientBuffer_->ResetLoopStatus();
     }
 
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {

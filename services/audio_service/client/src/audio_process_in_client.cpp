@@ -1126,7 +1126,7 @@ int32_t AudioProcessInClientInner::Start()
     if (processConfig_.rendererInfo.isStatic) {
         CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
         isLoopTimesSet = false;
-        audioBuffer_->ResetLoopStatus();
+        audioBuffer_->RefreshLoopTimes();
     }
     if (processProxy_->Start() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_IDEL);
@@ -1206,6 +1206,7 @@ int32_t AudioProcessInClientInner::Resume()
     if (processConfig_.rendererInfo.isStatic && isLoopTimesSet) {
         CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
         isLoopTimesSet = false;
+        audioBuffer_->RefreshLoopTimes();
         audioBuffer_->ResetLoopStatus();
     }
 
@@ -1260,6 +1261,11 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
     }
     startFadeout_.store(false);
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
+
+    if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
+        audioBuffer_->ResetLoopStatus();
+    }
 
     audioBuffer_->WakeFutex();
 

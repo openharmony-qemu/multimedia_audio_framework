@@ -201,7 +201,6 @@ bool AudioSharedMemory::Marshalling(Parcel &parcel) const
 
 AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 {
-    // buffer verify check
     // Parcel -> MessageParcel
     MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
     int fd = msgParcel.ReadFileDescriptor();
@@ -1053,15 +1052,21 @@ int32_t OHAudioBufferBase::PreSetLoopTimes(int64_t times)
     return SUCCESS;
 }
 
-int32_t OHAudioBufferBase::ResetLoopStatus()
+int32_t OHAudioBufferBase::RefreshLoopTimes()
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
     basicBufferInfo_->totalLoopTimes_.store(basicBufferInfo_->preSetTotalLoopTimes_);
+    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}ld", basicBufferInfo_->totalLoopTimes_.load());
+    return SUCCESS;
+}
+
+int32_t OHAudioBufferBase::ResetLoopStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
     basicBufferInfo_->currentLoopTimes_.store(0);
     basicBufferInfo_->curStaticDataPos_.store(0);
     basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
     basicBufferInfo_->needSendLoopEndCallback.store(false);
-    AUDIO_INFO_LOG("ResetLoopStatus, curTotalLoopTimes %{public}ld", basicBufferInfo_->totalLoopTimes_.load());
     return SUCCESS;
 }
 
@@ -1222,16 +1227,15 @@ int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
     return SUCCESS;
 }
 
-int32_t OHAudioBufferBase::GetStaticRenderRate(AudioRendererRate &renderRate)
+AudioRendererRate OHAudioBufferBase::GetStaticRenderRate()
 {
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
-    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), RENDER_RATE_NORMAL, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, RENDER_RATE_NORMAL,
         "Stream is RUNNING, cannot set renderRate!");
-    renderRate = basicBufferInfo_->staticRenderRate_.load();
-    return SUCCESS;
+    return basicBufferInfo_->staticRenderRate_.load();
 }
 
-int32_t OHAudioBufferBase::SetProcessedBuffer(int8_t *processedData, size_t dataSize)
+int32_t OHAudioBufferBase::SetProcessedBuffer(uint8_t *processedData, size_t dataSize)
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
     processedStaticBuffer_ = processedData;

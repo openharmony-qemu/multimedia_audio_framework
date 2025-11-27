@@ -201,7 +201,6 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
-    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
 
     uint32_t totalSizeInframe_ = 0;

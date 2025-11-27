@@ -27,7 +27,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
-#include "audio_static_buffer_process.h"
+#include "audio_static_buffer_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -18,6 +18,7 @@
 
 #include "audio_utils.h"
 #include "oh_audio_buffer.h"
+#include "audio_service_log.h"
 #include "audio_speed.h"
 
 namespace OHOS {
@@ -28,16 +29,18 @@ static const int32_t MAX_SPEED_BUFFER_FACTOR = 3;
 class AudioStaticBufferProcessor
 {
 public:
-    static std::shared_ptr<AudioStaticBufferProcessor> CreateInstance(AudioStreamInfo streamInfo);
-    int32_t ProcessBuffer(std::shared_ptr<OHAudioBufferBase> sharedBuffer);
-private:
-    AudioStaticBufferProcessor(AudioStreamInfo streamInfo);
+    static std::shared_ptr<AudioStaticBufferProcessor> CreateInstance(AudioStreamInfo streamInfo,
+        std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+    int32_t ProcessBuffer();
 
+    AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
-    std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
+    std::unique_ptr<uint8_t[]> speedBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
     size_t speedBufferSize_ = 0;
     float curSpeed_ = 1.0f;
-}
+};
 
 } // namespace AudioStandard
 } // namespace OHOS

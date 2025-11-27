@@ -399,9 +399,10 @@ int32_t AudioProcessInServer::StartInner()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
     if (processConfig_.rendererInfo.isStatic) {
         if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+            staticBufferProcessor_ =
+                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
         }
-        int32_t ret = staticBufferProcessor_->ProcessBuffer(processBuffer_);
+        int32_t ret = staticBufferProcessor_->ProcessBuffer();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     }
 
@@ -499,9 +500,10 @@ int32_t AudioProcessInServer::Resume()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
     if (processConfig_.rendererInfo.isStatic) {
         if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+            staticBufferProcessor_ =
+                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
         }
-        int32_t ret = staticBufferProcessor_->ProcessBuffer(processBuffer_);
+        int32_t ret = staticBufferProcessor_->ProcessBuffer();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     }
 

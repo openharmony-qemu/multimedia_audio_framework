@@ -255,6 +255,7 @@ public:
     void SetIsNeedSendLoopEndCallback(bool value);
 
     int32_t PreSetLoopTimes(int64_t times);
+    int32_t RefreshLoopTimes();
     int32_t ResetLoopStatus();
     uint64_t GetTotalLoopTimes();
     uint64_t GetCurrentLoopTimes();
@@ -262,12 +263,12 @@ public:
     void SetStaticMode(bool state);
     bool GetStaticMode();
     int32_t SetStaticRenderRate(AudioRendererRate renderRate);
-    int32_t GetStaticRenderRate(AudioRendererRate &renderRate);
+    AudioRendererRate GetStaticRenderRate();
     void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 
     int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
-    int32_t SetProcessedBuffer(int8_t *processedData, size_t dataSize);
+    int32_t SetProcessedBuffer(uint8_t *processedData, size_t dataSize);
 
 private:
     int32_t SizeCheck();

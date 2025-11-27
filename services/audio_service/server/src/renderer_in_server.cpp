@@ -1081,9 +1081,10 @@ int32_t RendererInServer::StartInner()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
     if (processConfig_.rendererInfo.isStatic) {
         if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo);
+            staticBufferProcessor_ =
+                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         }
-        ret = staticBufferProcessor_->ProcessBuffer(audioServerBuffer_);
+        ret = staticBufferProcessor_->ProcessBuffer();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     }
 

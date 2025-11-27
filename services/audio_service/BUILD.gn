@@ -367,6 +367,7 @@ config("audio_service_config") {
   ]
 
   cflags = []
+  external_deps = []
 
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
@@ -378,6 +379,11 @@ config("audio_service_config") {
 
   cflags_cc = cflags
   cflags_cc += [ "-std=c++20" ]
+
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+    cflags += [ "-DSONIC_ENABLE" ]
+  }
 }
 
 audio_ohos_library("audio_process_service") {
