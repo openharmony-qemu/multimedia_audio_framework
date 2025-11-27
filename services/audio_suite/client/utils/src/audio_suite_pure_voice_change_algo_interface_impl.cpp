@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <cstdint>
 #include "audio_suite_log.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
 
@@ -32,6 +33,10 @@ namespace {
 constexpr int32_t DEFAULT_FRAME_LEN = 640;
 constexpr int32_t NUMBER_OF_PARAMETER = 2;
 constexpr int32_t NUMBER_OF_CHANNEL = 2;
+const float PCM_SAMPLE_AVERAGE_FACTOR = 0.5f;
+const float PCM_SAMPLE_SCALE_FACTOR = 1.0f / 32768.0f;
+const float PCM_SAMPLE_CLIP_MAX = 32767.0f;
+const float PCM_SAMPLE_CLIP_MIN = -32768.0f;
 }
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeCapability &nc)
@@ -96,14 +101,6 @@ void AudioSuitePureVoiceChangeAlgoInterfaceImpl::UnApply(void)
 
 void AudioSuitePureVoiceChangeAlgoInterfaceImpl::Release()
 {
-    if (inBuf_) {
-        delete[] inBuf_;
-        inBuf_ = nullptr;
-    }
-    if (outBuf_) {
-        delete[] outBuf_;
-        outBuf_ = nullptr;
-    }
     if (handle_) {
         delete[] handle_;
         handle_ = nullptr;
@@ -147,11 +144,8 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     delete memSize;
     memSize = nullptr;
 
-    inBuf_ = new float[sizeof(float) * DEFAULT_FRAME_LEN];
-    CHECK_AND_RETURN_RET_LOG(inBuf_, ERROR, "Init inBuf_ fail");
-
-    outBuf_ = new float[sizeof(float) * DEFAULT_FRAME_LEN];
-    CHECK_AND_RETURN_RET_LOG(outBuf_, ERROR, "Init outBuf_ fail");
+    inBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
+    outBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
 
     ret = vmAlgoApi_.initAlgo(handle_, scratchBuf_);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail");
@@ -168,9 +162,9 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
     return SUCCESS;
 }
 
-static std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
+static std::vector<int32_t> ParseStringToIntArray(const std::string &str, char delimiter)
 {
-    std::vector<int> result;
+    std::vector<int32_t> result;
     std::string token;
     std::istringstream iss(str);
 
@@ -186,7 +180,7 @@ static std::vector<int> ParseStringToIntArray(const std::string &str, char delim
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
     const std::string &paramType, const std::string &paramValue)
 {
-    std::vector<int> gainValue = ParseStringToIntArray(paramValue, ',');
+    std::vector<int32_t> gainValue = ParseStringToIntArray(paramValue, ',');
     CHECK_AND_RETURN_RET_LOG(
         gainValue.size() == NUMBER_OF_PARAMETER, ERROR, "Wrong number of parameters %{public}zu", gainValue.size());
     auto typePtr = pureTypeMap.find(std::to_string(gainValue[1]));
@@ -210,7 +204,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::GetParameter(const std::stri
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
     std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
 {
-    AUDIO_INFO_LOG("start apply pure algorithm");
+    AUDIO_DEBUG_LOG("start apply pure algorithm");
 
     if (audioInputs.empty() || audioOutputs.empty()) {
         AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");
@@ -222,20 +216,18 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
         return ERROR;
     }
 
-    CHECK_AND_RETURN_RET_LOG(inBuf_, ERROR, "Init inBuf_ fail");
-    CHECK_AND_RETURN_RET_LOG(outBuf_, ERROR, "Init outBuf_ fail");
-
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
 
     int32_t src_index = 0;
     for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++, src_index += NUMBER_OF_CHANNEL) {
-        inBuf_[i] = (static_cast<float>(inPcm[src_index]) + static_cast<float>(inPcm[src_index + 1])) * 0.5f / 32768.0f;
+        inBuf_[i] = (static_cast<float>(inPcm[src_index]) + static_cast<float>(inPcm[src_index + 1])) *
+                    PCM_SAMPLE_AVERAGE_FACTOR * PCM_SAMPLE_SCALE_FACTOR;
     }
 
     AudioVoiceMphData data = {
-        .dataIn = reinterpret_cast<float *>(inBuf_),
-        .dataOut = reinterpret_cast<float *>(outBuf_),
+        .dataIn = reinterpret_cast<float *>(inBuf_.data()),
+        .dataOut = reinterpret_cast<float *>(outBuf_.data()),
         .inCh = 1,
         .outCh = 1,
     };
@@ -246,8 +238,10 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
 
     int32_t outIndex = 0;
     for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++) {
-        float sample = outBuf_[i] * 32767.0f;
-        int16_t outSample = static_cast<int16_t>((sample > 32767.0f) ? 32767 : (sample < -32768.0f) ? -32768 : sample);
+        float sample = outBuf_[i] * PCM_SAMPLE_CLIP_MAX;
+        int16_t outSample = static_cast<int16_t>((sample > PCM_SAMPLE_CLIP_MAX)   ? INT16_MAX
+                                                 : (sample < PCM_SAMPLE_CLIP_MIN) ? INT16_MIN
+                                                                                  : sample);
         outPcm[outIndex++] = outSample;  // left channel
         outPcm[outIndex++] = outSample;  // right channel
     }

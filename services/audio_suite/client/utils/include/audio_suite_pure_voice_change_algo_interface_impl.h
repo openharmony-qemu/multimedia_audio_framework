@@ -77,8 +77,8 @@ private:
     void UnApply(void);
     void Release();
     VoiceMphingAlgoApi vmAlgoApi_{0};
-    float *inBuf_ = nullptr;
-    float *outBuf_ = nullptr;
+    std::vector<float> inBuf_;
+    std::vector<float> outBuf_;
     char *handle_ = nullptr;
     char *scratchBuf_ = nullptr;
     void *libHandle_{nullptr};
