@@ -38,6 +38,8 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
             return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER:
             return std::make_shared<AudioSuiteVoiceBeautifierAlgoInterfaceImpl>(nc);
+        case AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH:
+            return std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(nc);
         default:
             return nullptr;
     }
