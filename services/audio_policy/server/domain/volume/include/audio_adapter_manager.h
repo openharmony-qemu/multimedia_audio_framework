@@ -434,7 +434,8 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
     bool IsPaRoute(uint32_t routeFlag);
-    void DepressVolume(float &volume, int32_t volumeLevel, AudioStreamType streamType, DeviceType deviceType);
+    void DepressVolume(float &volume, int32_t volumeLevel,
+        AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);

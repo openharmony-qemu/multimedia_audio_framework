@@ -1807,5 +1807,10 @@ int32_t AudioVolumeManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
     }
     return audioPolicyManager_.GetMinVolumeDegree(volumeType, deviceType);
 }
+
+void AudioVolumeManager::RefreshActiveDeviceVolume()
+{
+    audioPolicyManager_.UpdateVolumeForStreams();
+}
 }
 }
