@@ -20,6 +20,7 @@
 #include "audio_suite_aiss_algo_interface_impl.h"
 #include "audio_suite_voice_morphing_algo_interface_impl.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
+#include "audio_suite_space_render_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +44,8 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
             return std::make_shared<AudioSuiteVoiceMorphingAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE:
             return std::make_shared<AudioSuitePureVoiceChangeAlgoInterfaceImpl>(nc);
+        case AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER:
+            return std::make_shared<AudioSuiteSpaceRenderAlgoInterfaceImpl>(nc);
         default:
             return nullptr;
     }

@@ -91,6 +91,7 @@ if (audio_framework_feature_audiosuite_support) {
       "node/audio_suite_pure_voice_change_node_test.cpp",
       "node/audio_suite_voice_beautifier_node_test.cpp",
       "node/audio_suite_tempo_pitch_node_test.cpp",
+      "node/audio_suite_space_render_node_test.cpp",
     ]
 
     sanitize = {

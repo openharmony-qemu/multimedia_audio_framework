@@ -83,6 +83,7 @@ audio_ohos_library("audio_suite") {
       "client/node/src/audio_suite_nr_node.cpp",
       "client/node/src/audio_suite_soundfield_node.cpp",
       "client/node/src/audio_suite_tempo_pitch_node.cpp",
+      "client/node/src/audio_suite_space_render_node.cpp",
       "client/utils/src/audio_suite_manager_thread.cpp",
       "client/utils/src/audio_suite_common.cpp",
       "client/utils/src/audio_suite_pcm_buffer.cpp",
@@ -99,6 +100,7 @@ audio_ohos_library("audio_suite") {
       "client/utils/src/audio_suite_pure_voice_change_algo_interface_impl.cpp",
       "client/node/src/audio_suite_pure_voice_change_node.cpp",
       "client/utils/src/audio_suite_tempo_pitch_algo_interface_impl.cpp",
+      "client/utils/src/audio_suite_space_render_algo_interface_impl.cpp",
       "client/config/src/audio_suite_capabilities_parser.cpp",
       "client/config/src/audio_suite_capabilities.cpp",
     ]

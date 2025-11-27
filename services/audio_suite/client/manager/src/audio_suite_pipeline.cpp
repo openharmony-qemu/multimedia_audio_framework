@@ -36,6 +36,7 @@
 #include "audio_suite_general_voice_change_node.h"
 #include "audio_suite_pure_voice_change_node.h"
 #include "audio_suite_tempo_pitch_node.h"
+#include "audio_suite_space_render_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -343,6 +344,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_TEMPO_PITCH) {
         AUDIO_INFO_LOG("Create AudioSuiteTempoPitchNode");
         node = std::make_shared<AudioSuiteTempoPitchNode>();
+    } else if (builder.nodeType == NODE_TYPE_SPACE_RENDER) {
+        AUDIO_INFO_LOG("Create AudioSuiteSpaceRenderNode");
+        node = std::make_shared<AudioSuiteSpaceRenderNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));

@@ -24,6 +24,7 @@
 #include "audio_voicemorphing_api.h"
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
+#include "audio_hms_space_render_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
