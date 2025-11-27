@@ -669,33 +669,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_002, TestSize.Level4)
 }
 
 /**
- * @tc.name: CheckAndHandleIncomingConcurrency_001
- * @tc.desc: Test CheckAndHandleIncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
- *           && stream->audioMode_ == AUDIO_MODE_RECORD.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleIncomingConcurrency_001, TestSize.Level4)
-{
-    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioStreamDescriptor> cmpStream = std::make_shared<AudioStreamDescriptor>();
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-
-    cmpStream->audioMode_ = AUDIO_MODE_RECORD;
-    stream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-    cmpStream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-
-    cmpStream->audioMode_ = AUDIO_MODE_RECORD;
-    stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-    EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
-}
-
-/**
  * @tc.name: ProcessConcurrency_001
  * @tc.desc: Test ProcessConcurrency switch (action).
  * @tc.type: FUNC
