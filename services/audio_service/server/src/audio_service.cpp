@@ -802,7 +802,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCa
     std::vector<std::shared_ptr<RendererInServer>> renderers;
 
     {
-        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        std::lock_guard<std::mutex> maplock(rendererMapMutex_);
         if (filteredRendererMap_.count(innerCapId)) {
             for (size_t i = 0; i < filteredRendererMap_[innerCapId].size(); i++) {
                 std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[innerCapId][i].lock();
@@ -855,6 +855,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
+    process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
@@ -1091,7 +1092,7 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
         }
     }
 #endif
-    UpdateSystemVolume(streamType, volume);
+    UpdateSystemVolumeForWorkgroup(streamType, volume);
     return ret;
 }
 
@@ -1637,7 +1638,7 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
     return SUCCESS;
 }
 
-float AudioService::GetSystemVolume()
+float AudioService::GetSystemVolumeForWorkgroup()
 {
     std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
     return audioWorkGroupSystemVolume_;
@@ -1649,7 +1650,7 @@ bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
         workgroupSupportStreamTypeSet_.end());
 }
 
-void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
+void AudioService::UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
     if (!IsStreamTypeFitWorkgroup(streamType)) {
@@ -1689,7 +1690,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
-                = renderer->CollectInfosForWorkgroup(GetSystemVolume());
+                = renderer->CollectInfosForWorkgroup(GetSystemVolumeForWorkgroup());
         }
     }
     // all processes in workgroup
@@ -1833,6 +1834,7 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
 
 std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
 {
+    std::lock_guard<std::mutex> lock(processListMutex_);
     for (const auto &pair : endpointList_) {
         CHECK_AND_CONTINUE(pair.second != nullptr);
         if (pair.second->GetEndpointType() == type) {

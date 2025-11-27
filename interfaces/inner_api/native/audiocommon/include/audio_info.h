@@ -78,6 +78,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
+constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
 
@@ -639,6 +640,7 @@ struct AudioRendererInfo : public Parcelable {
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     bool toneFlag = false;
+    bool keepRunning = false;
     bool isStatic = false;
 
     AudioRendererInfo() {}
@@ -677,6 +679,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
             && parcel.WriteBool(toneFlag)
+            && parcel.WriteBool(keepRunning)
             && parcel.WriteBool(isStatic);
     }
     void UnmarshallingSelf(Parcel &parcel)
@@ -705,6 +708,7 @@ struct AudioRendererInfo : public Parcelable {
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         toneFlag = parcel.ReadBool();
+        keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
     }
 
@@ -1389,6 +1393,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(rendererInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteBool(rendererInfo.keepRunning);
         parcel.WriteBool(rendererInfo.isStatic);
 
         //AudioPrivacyType
@@ -1465,6 +1470,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.isLoopback = parcel.ReadBool();
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.keepRunning = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
 
         //AudioPrivacyType

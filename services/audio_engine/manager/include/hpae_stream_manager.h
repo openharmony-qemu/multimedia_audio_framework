@@ -48,6 +48,7 @@ public:
     virtual bool IsMsgProcessing() = 0;
     virtual bool DeactivateThread() = 0;
     virtual std::string GetThreadName() = 0;
+    virtual int32_t StopManager() = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

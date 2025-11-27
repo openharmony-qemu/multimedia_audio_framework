@@ -20,6 +20,7 @@
 #include "util/id_handler.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -109,7 +110,7 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         if (info == HDI_ID_INFO_EC || info == HDI_ID_INFO_MIC_REF) {
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
         }
-        if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        if (SolePipe::IsSolePipeSource(sourceType)) {
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);

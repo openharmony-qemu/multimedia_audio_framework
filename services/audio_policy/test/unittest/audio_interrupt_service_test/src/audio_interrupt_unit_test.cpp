@@ -1264,6 +1264,39 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSessio
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptServiceAddActiveInterruptToSession_006
+* @tc.desc  : Test AddActiveInterruptToSession. About itZone.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_006, TestSize.Level1)
+{
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+    AudioInterrupt incomingInterrupt = {};
+    incomingInterrupt.pid = 1;
+
+    AudioInterrupt activeInterrupt = {};
+    activeInterrupt.pid = 2;
+    AudioFocusEntry focusEntry;
+    focusEntry.isReject = false;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+
+    focusEntry.actionOn = CURRENT;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    ret = interruptService->ActivateAudioSession(0, activeInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+    interruptService->sessionService_.MarkSystemApp(activeInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
+
+    ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceAddActiveInterruptToSession_004
 * @tc.desc  : Test AddActiveInterruptToSession. About itZone.
 */
@@ -1770,8 +1803,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     EXPECT_NE(audioInterruptService, nullptr);
     int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020191;
- 
+    int32_t formerUid_ = 20020190;
     int32_t systemAbilityId = 0;
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);
@@ -1782,10 +1814,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->ownerUid_ = ownerUid_;
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = -1;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = 20020191;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
 }
- 
+
 /**
  * @tc.name  : Test AudioInterruptService.
  * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_004
@@ -1804,64 +1846,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     auto coreService = std::make_shared<AudioCoreService>();
     audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
-    audioInterruptService->formerUid_.store(formerUid_);
-    audioInterruptService->ownerUid_ = ownerUid_;
-    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
-    AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
-    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-}
- 
-/**
- * @tc.name  : Test AudioInterruptService.
- * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_005
- * @tc.desc  : Test UpdateAudioSceneFromInterrupt.
- */
-HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_005, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    EXPECT_NE(audioInterruptService, nullptr);
-    int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020191;
- 
-    int32_t systemAbilityId = 0;
-    audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
-    EXPECT_NE(audioInterruptService->policyServer_, nullptr);
-    auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
-    audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
-    audioInterruptService->formerUid_.store(formerUid_);
-    audioInterruptService->ownerUid_ = ownerUid_;
     AudioScene audioScene = AUDIO_SCENE_CALL_START;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-}
- 
-/**
- * @tc.name  : Test AudioInterruptService.
- * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_006
- * @tc.desc  : Test UpdateAudioSceneFromInterrupt.
- */
-HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_006, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    EXPECT_NE(audioInterruptService, nullptr);
-    int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020190;
- 
-    int32_t systemAbilityId = 0;
-    audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
-    EXPECT_NE(audioInterruptService->policyServer_, nullptr);
-    auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
-    audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
+    ownerUid_ = 20020190;
+    formerUid_ = -1;
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
-    AudioScene audioScene = AUDIO_SCENE_CALL_START;
-    AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = 20020191;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
 }
 
 /**
@@ -3532,6 +3530,33 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_107, TestSize.Level1)
 
     auto ret = audioInterruptService->IsCanMixInterrupt(incomingInterrupt, activeInterrupt);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_135
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_135, TestSize.Level1)
+{
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    activeInterrupt.pid = 2;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    int32_t ret = interruptService->ActivateAudioSession(0, activeInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+    interruptService->sessionService_.MarkSystemApp(activeInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
+
+    ret = interruptService->IsCanMixInterrupt(incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(ret);
 }
 
 /**

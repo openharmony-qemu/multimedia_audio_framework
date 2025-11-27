@@ -130,7 +130,7 @@ OHAudioWorkgroup *OHAudioResourceManager::CreateWorkgroup()
 bool OHAudioResourceManager::ReleaseWorkgroup(OHAudioWorkgroup *group)
 {
     CHECK_AND_RETURN_RET_LOG(group != nullptr, false, "group is nullptr");
-    AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(group->workgroupId);
+    AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(group->GetWorkgroupId());
     delete group;
     group = nullptr;
     return true;

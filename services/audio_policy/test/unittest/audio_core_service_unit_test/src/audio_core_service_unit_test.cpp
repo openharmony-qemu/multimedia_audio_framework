@@ -618,6 +618,36 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_006
+* @tc.desc  : Test UpdateTracker - RENDERER_PREPARED.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_006, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_006 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PREPARED;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_007
+* @tc.desc  : Test UpdateTracker - RENDERER_INVALID.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_007 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_INVALID;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: ConnectServiceAdapter_001
 * @tc.desc  : Test ConnectServiceAdapter - will return success.
 */

@@ -261,6 +261,39 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_SubsequentWrite_Updat
     EXPECT_GT(offloadNode_->writePos_, 1000); // Write position increased
     EXPECT_TRUE(offloadNode_->renderFrameData_.empty()); // Data cleared
 }
+
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskExsist_StateForeground, TestSize.Level0)
+{
+    offloadNode_->setPolicyStateTask_.flag = true;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+    offloadNode_->SetPolicyState(0);
+    EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_ACTIVE_FOREGROUND);
+    EXPECT_FALSE(offloadNode_->setPolicyStateTask_.flag);
+}
+
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskExsist_StateBackground, TestSize.Level0)
+{
+    offloadNode_->setPolicyStateTask_.flag = true;
+    offloadNode_->SetPolicyState(3);
+    EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_INACTIVE_BACKGROUND);
+    EXPECT_TRUE(offloadNode_->setPolicyStateTask_.flag);
+}
+
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateForeground, TestSize.Level0)
+{
+    offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+    offloadNode_->SetPolicyState(0);
+    EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_ACTIVE_FOREGROUND);
+    EXPECT_FALSE(offloadNode_->setPolicyStateTask_.flag);
+}
+
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackground, TestSize.Level0)
+{
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+    offloadNode_->SetPolicyState(3);
+    EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_INACTIVE_BACKGROUND);
+    EXPECT_TRUE(offloadNode_->setPolicyStateTask_.flag);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

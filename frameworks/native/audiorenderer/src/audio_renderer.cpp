@@ -33,6 +33,8 @@
 #include "audio_scope_exit.h"
 #include "volume_tools.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 
@@ -406,6 +408,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
+    audioRenderer->rendererInfo_.keepRunning = rendererOptions.rendererInfo.keepRunning;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
@@ -840,31 +843,31 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_VOIP;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
@@ -986,9 +989,10 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     currentStream->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::IsAllowedStartBackgroud()
+bool AudioRendererPrivate::IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl)
 {
-    bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(appInfo_.appUid, appInfo_.appPid);
+    bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(
+        appInfo_.appUid, appInfo_.appPid, streamUsage, silentControl);
     if (ret) {
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;
@@ -1173,7 +1177,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         "volume: %{public}f, interruptMode: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
-    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
+    bool silentControl = false;
+    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackground(audioInterrupt_.streamUsage, silentControl),
+        false, "Start failed. IsAllowedStartBackground is false");
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
         false, "Start failed. Illegal state:%{public}u", state);
@@ -1187,7 +1193,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
 
     float duckVolume = audioStream_->GetDuckVolume();
-    bool isMute = audioStream_->GetMute();
+    bool isMute = audioStream_->GetMute() || silentControl;
     AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d", duckVolume, isMute);
 
     if ((GetVolumeInner() == 0 && isStillZeroStreamVolume_) || isMute) {
@@ -2184,7 +2190,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetUnderflowCount(info.underFlowCount);
 
     if (info.userSettedPreferredFrameSize.has_value()) {
-        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value());
+        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
     }
 
     audioStream->SetSilentModeAndMixWithOthers(info.silentModeAndMixWithOthers);
@@ -2304,7 +2310,7 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         info.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
         info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_DIRECT) {
-        info.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+        info.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         info.rendererFlags = AUDIO_FLAG_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_NORMAL) {
         info.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
@@ -2560,8 +2566,8 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
     bean->Add("CLIENT_UID", appInfo_.appUid);
     bean->Add("IS_PLAYBACK", 1);
     bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
-    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
-    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
+    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_OUT_LOWLATENCY);
+    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_OUT_NORMAL);
     bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -2631,7 +2637,7 @@ void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    currentStream->SetPreferredFrameSize(frameSize);
+    currentStream->SetPreferredFrameSize(frameSize, false);
 }
 
 void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
@@ -2651,17 +2657,13 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
     if (GetUnderflowCountInner() < WRITE_UNDERRUN_NUM) {
         return;
     }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    AudioPipeType pipeType = PIPE_TYPE_OUT_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+        pipeType = PIPE_TYPE_OUT_LOWLATENCY;
     } else if (streamClass == IAudioStream::PA_STREAM) {
         if (audioStream_->GetOffloadEnable()) {
-            pipeType = PIPE_TYPE_OFFLOAD;
-        } else if (audioStream_->GetSpatializationEnabled()) {
-            pipeType = PIPE_TYPE_SPATIALIZATION;
-        } else if (audioStream_->GetHighResolutionEnabled()) {
-            pipeType = PIPE_TYPE_HIGHRESOLUTION;
+            pipeType = PIPE_TYPE_OUT_OFFLOAD;
         }
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -3117,6 +3119,13 @@ RenderTarget AudioRendererPrivate::GetTarget() const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, NORMAL_PLAYBACK, "audioStream_ is nullptr");
     return currentStream->GetRenderTarget();
+}
+
+int32_t AudioRendererPrivate::GetKeepRunning(bool &keepRunning) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
+    return currentStream->GetKeepRunning(keepRunning);
 }
 
 bool AudioRendererPrivate::IsRendererFlagsSupportStatic(const int32_t rendererFlags)

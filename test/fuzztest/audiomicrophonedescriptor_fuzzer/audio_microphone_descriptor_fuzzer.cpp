@@ -25,6 +25,7 @@ namespace AudioStandard {
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 const size_t THRESHOLD = 10;
 const int32_t NUM_3 = 3;
 typedef void (*TestPtr)();
@@ -141,6 +142,8 @@ void AudioMicrophoneDescriptorAddAudioCapturerMicrophoneDescriptorFuzzTest()
     sptr<MicrophoneDescriptor> microphoneDescriptor = new MicrophoneDescriptor();
     audioMicrophoneDescriptor.connectedMicrophones_.push_back(microphoneDescriptor);
     audioMicrophoneDescriptor.AddAudioCapturerMicrophoneDescriptor(sessionId, devType);
+    delete microphoneDescriptor;
+    microphoneDescriptor = nullptr;
 }
 
 void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
@@ -151,6 +154,8 @@ void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.GetAudioCapturerMicrophoneDescriptors(sessionId);
+    delete microphoneDescriptor;
+    microphoneDescriptor = nullptr;
 }
 
 void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
@@ -168,6 +173,8 @@ void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.UpdateAudioCapturerMicrophoneDescriptor(devType);
     audioMicrophoneDescriptor.GetAvailableMicrophones();
+    delete microphoneDescriptor;
+    microphoneDescriptor = nullptr;
 }
 
 void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest()
@@ -299,13 +306,15 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
+    uint32_t len = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
     if (len > 0) {
-        g_testPtrs[code % len]();
+        g_testPtrs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
+
     return;
 }
 

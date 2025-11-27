@@ -180,9 +180,9 @@ private:
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
-    float GetSystemVolume();
+    float GetSystemVolumeForWorkgroup();
     bool IsStreamTypeFitWorkgroup(AudioStreamType streamType);
-    void UpdateSystemVolume(AudioStreamType streamType, float volume);
+    void UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
     std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
     int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);

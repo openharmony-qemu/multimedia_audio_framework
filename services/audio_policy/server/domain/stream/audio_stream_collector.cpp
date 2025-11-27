@@ -30,18 +30,12 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK
-};
 
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
-constexpr const char* RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 210000; //3.5min
-constexpr const char* RECLAIM_FILE_STRING = "1";
+constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 280000; //4.66min
+constexpr const char *RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
@@ -119,8 +113,10 @@ AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
     (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
-    audioConcurrencyService_->Init();
+#ifdef ACTIVATED_RECLAIM_MEMORY
+    activatedReclaimMemory_ = true;
+    AUDIO_INFO_LOG("activated Reclaim Memory is %{public}d", activatedReclaimMemory_);
+#endif
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -793,7 +789,8 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
-        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+        if (!activatedReclaimMemory_ &&
+            system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
             return;
         }
         AUDIO_INFO_LOG("start reclaim memory task");
@@ -1037,6 +1034,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
+    PostReclaimMemoryTask();
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
@@ -1526,12 +1524,6 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
-}
-
-ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
-    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
-{
-    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

@@ -139,6 +139,7 @@ private:
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId);
     bool ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo);
     int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
+    void InitTransBuffer();
     int32_t GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo);
     void ReSyncPosition();
     void RecordReSyncPosition();
@@ -220,7 +221,6 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, AudioSampleFormat format);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
-    void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     void SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,
@@ -310,6 +310,7 @@ private:
     std::unique_ptr<uint8_t []> dupBuffer_ = nullptr;
     FILE *dumpC2SDup_ = nullptr; // client to server inner-cap dump file
     std::string dupDumpName_ = "";
+    std::string endpointName_ = "";
 
     uint32_t fastRenderId_ = HDI_INVALID_ID;
     uint32_t fastCaptureId_ = HDI_INVALID_ID;
@@ -325,6 +326,8 @@ private:
     uint32_t dstTotalSizeInframe_ = 0;
     uint32_t dstSpanSizeInframe_ = 0;
     uint32_t dstByteSizePerFrame_ = 0;
+    size_t dstSpanSizeInByte_ = 0;
+    std::unique_ptr<uint8_t []> transBuffer_ = nullptr;
     uint32_t syncInfoSize_ = 0;
     int64_t lastWriteTime_ = 0; // ns
     std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;

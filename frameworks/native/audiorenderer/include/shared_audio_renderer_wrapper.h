@@ -492,6 +492,11 @@ public:
         return sharedAudioRenderer_->GetTarget();
     }
 
+    int32_t GetKeepRunning(bool &keepRunning) const override
+    {
+        return sharedAudioRenderer_->GetKeepRunning(keepRunning);
+    }
+
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override
     {
         return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);

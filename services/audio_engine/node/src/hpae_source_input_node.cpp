@@ -159,7 +159,9 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
     auto &historyData = historyDataMap_.at(bufferType);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
-    if (historyRemainSizeMap_.at(bufferType) < byteSize) {
+    if (historyRemainSizeMap_.at(bufferType) == 0) {
+        return;
+    } else if (historyRemainSizeMap_.at(bufferType) < byteSize) {
         historyData.insert(historyData.end(), byteSize - historyRemainSizeMap_.at(bufferType), 0);
         historyRemainSizeMap_.at(bufferType) = byteSize;
     }

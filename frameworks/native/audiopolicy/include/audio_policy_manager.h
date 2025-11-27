@@ -114,6 +114,8 @@ public:
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
 
+    int32_t SetActiveHfpDevice(const std::string& macAddress);
+
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
@@ -433,6 +435,8 @@ public:
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, const bool updateUi);
 
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
@@ -655,7 +659,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
@@ -670,6 +674,8 @@ public:
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    bool GetVirtualCall();
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
         const SourceType sourceType, bool isRunning);

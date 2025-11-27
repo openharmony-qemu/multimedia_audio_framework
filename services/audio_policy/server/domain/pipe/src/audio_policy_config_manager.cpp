@@ -23,6 +23,8 @@
 #include "audio_core_service.h"
 #include "audio_ec_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B84
 namespace OHOS {
 namespace AudioStandard {
 
@@ -656,6 +658,8 @@ std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapte
 
 bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+        desc->newDeviceDescs_.front() != nullptr, false, "Invalid device desc");
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);

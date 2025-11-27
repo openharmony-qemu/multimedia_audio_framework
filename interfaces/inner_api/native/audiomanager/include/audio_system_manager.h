@@ -1091,6 +1091,13 @@ public:
         const int32_t volume, const bool updateUi);
 
     /**
+     * @brief Set nearlink voiceStatus flag
+     *
+     * @return Returns success or not
+     */
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
+    /**
      * @brief Registers the availbale deviceChange callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1335,6 +1342,8 @@ public:
     int32_t UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t sessionId);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    bool GetVirtualCall();
 
     int32_t OnVoiceWakeupState(bool state);
 

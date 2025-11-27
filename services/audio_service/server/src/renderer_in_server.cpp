@@ -47,6 +47,8 @@
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -435,6 +437,14 @@ void RendererInServer::ReConfigDupStreamCallback()
     }
 }
 
+void RendererInServer::PauseDirectStream()
+{
+    // direct standBy need not in here
+    if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) {
+        IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_, true);
+    }
+}
+
 void RendererInServer::StandByCheck()
 {
     Trace trace(traceTag_ + " StandByCheck:standByCounter_:" + std::to_string(standByCounter_.load()));
@@ -447,11 +457,6 @@ void RendererInServer::StandByCheck()
     }
     AUDIO_INFO_LOG("sessionId:%{public}u standByCounter_:%{public}u standByEnable_:%{public}s ", streamIndex_,
         standByCounter_.load(), (standByEnable_ ? "true" : "false"));
-
-    // direct standBy need not in here
-    if (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) {
-        return;
-    }
 
     if (standByEnable_) {
         return;
@@ -470,6 +475,8 @@ void RendererInServer::StandByCheck()
     if (managerType_ == PLAYBACK) {
         stream_->Pause(true);
     }
+
+    PauseDirectStream();
 
     if (playerDfx_) {
         playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_BEGIN);
@@ -1271,7 +1278,7 @@ int32_t RendererInServer::Flush()
     int ret = stream_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush stream failed, reason: %{public}d", ret);
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
+        std::lock_guard<std::mutex> dupLock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
@@ -1281,7 +1288,7 @@ int32_t RendererInServer::Flush()
         }
     }
     if (isDualToneEnabled_) {
-        std::lock_guard<std::mutex> lock(dualToneMutex_);
+        std::lock_guard<std::mutex> dualLock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->Flush();
         }

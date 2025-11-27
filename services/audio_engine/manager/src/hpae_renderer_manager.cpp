@@ -42,6 +42,7 @@ namespace {
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
+    constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
 }
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
@@ -332,9 +333,9 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         Trace trace("HpaeRendererManager::DestroyStream id[" +
             std::to_string(sessionId) + "]");
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Release not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RELEASED);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
         DeleteInputSession(sessionId);
@@ -441,6 +442,9 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
 
 int32_t HpaeRendererManager::UpdateClusterStreamInfo(HpaeProcessorType sceneType)
 {
+    // everytime state change need update cluster stream info, so refresh timestamp here
+    lastSessionStateChangeTime_ = ClockTime::GetCurNano();
+
     uint32_t minSessionId = UINT32_MAX;
     std::shared_ptr<HpaeSinkInputNode> updateNode = nullptr;
     for (const auto &[mapSessionId, mapNodePtr] : sinkInputNodeMap_) {
@@ -520,8 +524,6 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
     if (!outputCluster_->IsProcessClusterConnected(sceneType) && !sceneClusterMap_[sceneType]->GetConnectedFlag()) {
         outputCluster_->Connect(sceneClusterMap_[sceneType]);
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
-    } else {
-        outputCluster_->UpdateStreamInfo(sceneClusterMap_[sceneType]);
     }
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
         uint32_t latency = outputCluster_->GetHdiLatency();
@@ -774,9 +776,9 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Pause");
         AUDIO_INFO_LOG("Pause sessionId %{public}u deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
         }
@@ -834,9 +836,9 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Stop");
         AUDIO_INFO_LOG("Stop sessionId %{public}u deviceName %{public}s ", sessionId, sinkInfo_.deviceName.c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Stop not find sessionId %{public}u", sessionId);
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputSession(sessionId);
         }
@@ -869,8 +871,8 @@ bool HpaeRendererManager::CheckIsStreamRunning()
 
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
-    Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
+        Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
         if (isSuspend_ == isSuspend) {
             return;
         }
@@ -885,6 +887,17 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             CheckIsStreamRunning()) {
             outputCluster_->Start();
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::StopManager()
+{
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "output cluster is nullptr");
+        outputCluster_->Stop();
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1571,6 +1584,9 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
 // if not one stream underrun, return false, refresh lastOnUnderrunTime_
 bool HpaeRendererManager::QueryOneStreamUnderrun()
 {
+    auto curTime = ClockTime::GetCurNano();
+    auto gapTime = curTime > lastSessionStateChangeTime_ ? curTime - lastSessionStateChangeTime_ : 0;
+    CHECK_AND_RETURN_RET(gapTime > STABLE_RUNNING_TIME_IN_NS, false);
     CHECK_AND_RETURN_RET(!IsRemoteDevice() && appsUid_.size() == 1 && hpaeSignalProcessThread_, false);
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {

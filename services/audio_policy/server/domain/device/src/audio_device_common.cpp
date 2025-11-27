@@ -190,7 +190,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
 
         FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
         info.caller = "GetPreferredOutputDeviceDescInner";
         descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
@@ -1262,8 +1262,9 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
+    CHECK_AND_RETURN(desc != nullptr);
     int32_t ret;
-    if (Util::IsScoSupportSource(sourceType)) {
+    if (desc->isVrSupported_ && Util::IsScoSupportSource(sourceType)) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
@@ -1272,7 +1273,7 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
                 std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchInputDevice(capturerChangeInfos);
         }
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
+        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
@@ -1393,9 +1394,9 @@ int32_t AudioDeviceCommon::MoveToRemoteInputDevice(std::vector<SourceOutput> sou
 }
 
 int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState)
+    ConnectState connectState, bool isVrSupported)
 {
-    if (handleFlag && connectState != DEACTIVE_CONNECTED) {
+    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
@@ -1836,6 +1837,11 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
+}
+
+bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
+{
+    return Bluetooth::AudioHfpManager::IsVirtualCall();
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

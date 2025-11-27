@@ -41,6 +41,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:wantagent_innerkits",
+    "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "distributed_notification_service:ans_innerkits",
     "hilog:libhilog",

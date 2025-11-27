@@ -123,6 +123,18 @@ public:
         OH_EqualizerFrequencyBandGains *frequencyBandGains);
     int32_t GetVoiceBeautifierType(OHAudioNode *node,
         OH_VoiceBeautifierType *voiceBeautifierType);
+    int32_t SetSpaceRenderPositionParams(OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position);
+    int32_t GetSpaceRenderPositionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderPositionParams* position);
+    int32_t SetSpaceRenderRotationParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams rotation);
+    int32_t GetSpaceRenderRotationParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation);
+    int32_t SetSpaceRenderExtensionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension);
+    int32_t GetSpaceRenderExtensionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams* extension);
+    int32_t SetTempoAndPitch(OHAudioNode* node, float speed, float pitch);
+    int32_t GetTempoAndPitch(OHAudioNode* node, float* speed, float* pitch);
+    int32_t SetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option);
+    int32_t GetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option);
+    int32_t SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type);
+    int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
 
 private:
     explicit OHAudioSuiteEngine() {};

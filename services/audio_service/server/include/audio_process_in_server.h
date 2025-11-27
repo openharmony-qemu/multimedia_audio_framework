@@ -95,6 +95,8 @@ public:
         uint32_t method) override;
 
     int32_t SetRebuildFlag() override;
+
+    int32_t GetServerKeepRunning(bool &keepRunning) override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     int32_t GetAudioHapticsSyncId() override;
@@ -141,7 +143,8 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
+    void SetKeepRunning(bool keepRunning) override;
+    bool GetKeepRunning() override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -158,6 +161,8 @@ public:
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
     void UpdateStreamInfo() override;
+
+    void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -220,7 +225,7 @@ private:
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-
+    bool keepRunning_ = false;
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};
     int64_t lastWriteFrame_{};
@@ -244,8 +249,9 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpFACName_;
-    FILE *dumpFAC_ = nullptr;
+    std::string logUtilsTag_ = "";
+
+    mutable int64_t volumeDataCount_ = 0;
 
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
 };

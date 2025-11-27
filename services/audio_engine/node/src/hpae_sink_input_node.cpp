@@ -152,11 +152,13 @@ void HpaeSinkInputNode::DoProcess()
         && !pullDataFlag_) {
         // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
         pullDataFlag_ = true;
+        emptyAudioBuffer_.SetBufferValid(inputAudioBuffer_.IsValid());
         outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
         return;
     } else if (GetNodeInfo().customSampleRate != 0 && pullDataCount_ > 0) {
         // for customSampleRate that is not multiples of 50, eg. 8010, 100ms data, so pull each five DoProcess()
         --pullDataCount_;
+        emptyAudioBuffer_.SetBufferValid(inputAudioBuffer_.IsValid());
         outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
         return;
     }
@@ -349,8 +351,10 @@ void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
 {
     if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
         nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
+        AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataFlag for 11025Hz", GetSessionId());
         pullDataFlag_ = true;
     } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
+        AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataCount for 100ms frameLen", GetSessionId());
         pullDataCount_ = 0;
     }
 }

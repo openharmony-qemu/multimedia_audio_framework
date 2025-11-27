@@ -40,9 +40,9 @@ OH_AudioSuite_Result RenDerFrame()
     char *totalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     char *tapTotalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     // 获取位深
-    int32_t bitsPerSample = getBitsPerSample(g_audioFormatOutput.sampleFormat);
+    int32_t bitsPerSample = GetBitsPerSample(g_audioFormatOutput.sampleFormat);
     int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate *
-        g_audioFormatOutput.channelCount / MILLISECONDS_PER_SECOND * bitsPerSample / BITS_PER_BYTE;
+        g_audioFormatOutput.channelCount * bitsPerSample / BITS_PER_BYTE / MILLISECONDS_PER_SECOND;
     bool finishedFlag = false;
     result = AudioRenderFrame(totalAudioData, tapTotalAudioData, frameSize, finishedFlag);
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, OUTPUT_TAG,
@@ -126,7 +126,8 @@ OH_AudioSuite_Result AudioRenderFrame(
 
 void SaveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize)
 {
-    std::copy(buffer, buffer + bufferSize, static_cast<char *>(totalData));
+    std::copy(static_cast<char *>(buffer), static_cast<char *>(buffer) + bufferSize,
+              static_cast<char *>(totalData) + totalSize);
     totalSize += bufferSize;
 }
 

@@ -41,7 +41,7 @@ const std::map<AudioSuiteResult, std::string> errorMessages = {
         "create source failed"},
     {AudioSuiteResult::DEMO_ERROR_TRACK_FORMAT_FAILED,
         "get track format failed"},
-    {AudioSuiteResult::DEMO_ERROR_GETAUDIOPROPERTIED_FAILED,
+    {AudioSuiteResult::DEMO_ERROR_GETAUDIOPROPERTIES_FAILED,
         "get AudioProperties failed"},
     {AudioSuiteResult::DEMO_ERROR_DEMUXER_FAILED,
         "create demuxer failed"},
@@ -49,16 +49,15 @@ const std::map<AudioSuiteResult, std::string> errorMessages = {
         "UpdateInputNode failed"},
     {AudioSuiteResult::DEMO_CREATE_NODE_ERROR,
         "Demo create node error"},
-}
+};
 
 // 获取错误码对应的错误信息
-const std::string& GetErrorMessage(AudioSuiteResult result)
+std::string GetErrorMessage(AudioSuiteResult result)
 {
     auto it = errorMessages.find(result);
     if (it != errorMessages.end()) {
         return it->second;
     } else {
-        static const std::string unknownError = "Unknown Error";
-        return unknownError;
+        return "Unknown Error";
     }
 }

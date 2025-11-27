@@ -837,6 +837,29 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
     return true;
 }
 
+static std::unordered_map<int32_t, std::pair<uint32_t, std::string>> g_solePipeSourceMap = {};
+
+void SolePipe::SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName)
+{
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
+    g_solePipeSourceMap[sourceType] = std::make_pair(routeFlag, pipeName);
+}
+
+bool SolePipe::IsSolePipeSource(int32_t sourceType)
+{
+    return g_solePipeSourceMap.find(sourceType) != g_solePipeSourceMap.end();
+}
+
+bool SolePipe::GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName)
+{
+    auto it = g_solePipeSourceMap.find(sourceType);
+    CHECK_AND_RETURN_RET_LOG(it != g_solePipeSourceMap.end(), false, "can not find sourceType:%{public}d", sourceType);
+    routeFlag = it->second.first;
+    pipeName = it->second.second;
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
+    return true;
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     // the number 2: stereo audio has 2 channels
@@ -2182,6 +2205,24 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
         int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
         CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-native", "native %{public}u failed: %{public}d", tokenIdNum, ret);
         return tokenInfo.processName;
+    }
+}
+
+uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
     }
 }
 

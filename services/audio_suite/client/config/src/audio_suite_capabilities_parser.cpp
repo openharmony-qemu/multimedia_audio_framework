@@ -34,18 +34,16 @@ bool AudioSuiteCapabilitiesParser::LoadConfiguration(
 }
 
 bool AudioSuiteCapabilitiesParser::ParseInternal(
-    std::shared_ptr<AudioXmlNode> audioSuiteCapabilitiesXmlNode,
-    std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
+    std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
 {
-    std::shared_ptr<AudioXmlNode> nodeCapabilityXmlNode = audioSuiteCapabilitiesXmlNode->GetChildrenNode();
-    nodeCapabilityXmlNode->MoveToNext();
-    std::shared_ptr<AudioXmlNode> nodeTypeXmlNode = nodeCapabilityXmlNode->GetChildrenNode();
-    for (; nodeTypeXmlNode->IsNodeValid(); nodeTypeXmlNode->MoveToNext()) {
-        if (!nodeTypeXmlNode->IsElementNode()) {
+    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+        if (!curNode->IsElementNode()) {
             continue;
         }
-        if (nodeTypeXmlNode->CompareName("nodeType")) {
-            ParserNodeType(nodeTypeXmlNode->GetCopyNode(), audioSuiteCapabilities);
+        if (curNode->CompareName("nodeType")) {
+            ParserNodeType(curNode->GetCopyNode(), audioSuiteCapabilities);
+        } else {
+            ParseInternal(curNode->GetChildrenNode(), audioSuiteCapabilities);
         }
     }
     return true;

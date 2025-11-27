@@ -1858,11 +1858,11 @@ HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test IsAllowedStartBackgroud.
-* @tc.number: Audio_Renderer_IsAllowedStartBackgroud_001
-* @tc.desc  : Test IsAllowedStartBackgroud interface, IsAllowedPlayback is false.
+* @tc.name  : Test IsAllowedStartBackground.
+* @tc.number: Audio_Renderer_IsAllowedStartBackground_001
+* @tc.desc  : Test IsAllowedStartBackground interface, IsAllowedPlayback is false.
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
     shared_ptr<AudioRendererPrivate> audioRenderer =
@@ -1872,16 +1872,17 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_001, TestSi
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
-    auto ret = audioRenderer->IsAllowedStartBackgroud();
+    bool silentControl = false;
+    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
 /**
-* @tc.name  : Test IsAllowedStartBackgroud.
-* @tc.number: Audio_Renderer_IsAllowedStartBackgroud_002
-* @tc.desc  : Test IsAllowedStartBackgroud interface, IsAllowedPlayback is false.
+* @tc.name  : Test IsAllowedStartBackground.
+* @tc.number: Audio_Renderer_IsAllowedStartBackground_002
+* @tc.desc  : Test IsAllowedStartBackground interface, IsAllowedPlayback is false.
 */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
     shared_ptr<AudioRendererPrivate> audioRenderer =
@@ -1891,7 +1892,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackgroud_002, TestSi
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    auto ret = audioRenderer->IsAllowedStartBackgroud();
+    bool silentControl = false;
+    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 

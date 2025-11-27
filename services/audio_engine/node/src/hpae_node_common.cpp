@@ -124,11 +124,11 @@ static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
 };
 
 static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
-    {"primary", PIPE_TYPE_NORMAL_OUT},
-    {"a2dp", PIPE_TYPE_NORMAL_OUT},
-    {"remote", PIPE_TYPE_NORMAL_OUT},
-    {"dp", PIPE_TYPE_NORMAL_OUT},
-    {"multichannel", PIPE_TYPE_MULTICHANNEL},
+    {"primary", PIPE_TYPE_OUT_NORMAL},
+    {"a2dp", PIPE_TYPE_OUT_NORMAL},
+    {"remote", PIPE_TYPE_OUT_NORMAL},
+    {"dp", PIPE_TYPE_OUT_NORMAL},
+    {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
 };
 
 static long StringToNum(const std::string &str)
@@ -529,11 +529,11 @@ size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
     size_t frameLen = 0;
     if (sampleRate == SAMPLE_RATE_11025) {
-        frameLen = FRAME_LEN_40MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_40MS) * sampleRate / MS_PER_SECOND;
     } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
-        frameLen = FRAME_LEN_20MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
     } else {
-        frameLen = FRAME_LEN_100MS * sampleRate / MS_PER_SECOND;
+        frameLen = static_cast<size_t>(FRAME_LEN_100MS) * sampleRate / MS_PER_SECOND;
     }
     return frameLen;
 }

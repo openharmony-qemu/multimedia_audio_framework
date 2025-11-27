@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../../config.gni")
 
 if (audio_framework_feature_audiosuite_support) {
-  module_output_path = "audio_framework/audio_framework_suite"
+  module_output_path = "audio_framework/audio_suite"
 
   config("audio_suite_unit_config") {
     visibility = [ ":*" ]
@@ -88,6 +88,7 @@ if (audio_framework_feature_audiosuite_support) {
       "node/audio_suite_soundfield_node_test.cpp",
       "node/audio_suite_nr_node_test.cpp",
       "node/audio_suite_voice_beautifier_node_test.cpp",
+      "node/audio_suite_tempo_pitch_node_test.cpp",
     ]
 
     sanitize = {
@@ -129,6 +130,7 @@ if (audio_framework_feature_audiosuite_support) {
       "utils/audio_suite_nr_algo_interface_impl_test.cpp",
       "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
       "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
+      "utils/audio_suite_tempo_pitch_algo_interface_impl_test.cpp",
     ]
 
     sanitize = {

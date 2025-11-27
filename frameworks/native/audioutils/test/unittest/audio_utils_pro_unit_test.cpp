@@ -713,5 +713,37 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
     auto ret = SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
     EXPECT_EQ(ret, true);
 }
+
+/**
+ * @tc.name  : Test SolePipe API
+ * @tc.type  : FUNC
+ * @tc.number: SolePipe_001
+ * @tc.desc  : Test SolePipe API.
+ */
+HWTEST(AudioUtilsProUnitTest, SolePipe_001, TestSize.Level1)
+{
+    int32_t sourceType = 10086;
+    uint32_t routeFlag = 20192;
+    std::string pipeName = "pipeName";
+    SolePipe::SetSolePipeSourceInfo(sourceType, routeFlag, pipeName);
+
+    int32_t testSource = 10010;
+    uint32_t testFlag = 20020;
+    std::string testPipe = "testPipe";
+
+    bool ret = SolePipe::IsSolePipeSource(testSource);
+    EXPECT_EQ(ret, false);
+    ret = SolePipe::GetSolePipeBySourceType(testSource, testFlag, testPipe);
+    EXPECT_EQ(ret, false);
+
+    testSource = 10086;
+    ret = SolePipe::IsSolePipeSource(testSource);
+    EXPECT_EQ(ret, true);
+    ret = SolePipe::GetSolePipeBySourceType(testSource, testFlag, testPipe);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(testFlag, routeFlag);
+    EXPECT_EQ(testPipe, pipeName);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

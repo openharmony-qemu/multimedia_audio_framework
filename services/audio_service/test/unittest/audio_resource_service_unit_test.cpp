@@ -229,7 +229,7 @@ HWTEST(AudioResourceServiceUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Lev
     pid_t pid = 1234;
     std::unordered_map<int32_t, bool> threads = {};
     int32_t result = audioResourceService.ImproveAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
  
 /**
@@ -259,7 +259,7 @@ HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Lev
     pid_t pid = 1234;
     std::unordered_map<int32_t, int32_t> threads = {};
     int32_t result = audioResourceService.RestoreAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 
 /**
@@ -289,7 +289,7 @@ HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_001, TestSize.Level0)
 {
     int32_t invalidPid = -1;
     int32_t workgroupId = 1;
-    EXPECT_EQ(audioResourceService.ReleaseAudioWorkgroup(invalidPid, workgroupId), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioResourceService.ReleaseAudioWorkgroup(invalidPid, workgroupId), ERR_INVALID_PARAM);
 
     int32_t pid = 123;
     int32_t nonExistentWorkgroupId = 999;

@@ -1449,30 +1449,6 @@ HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RemoveCaptureInjector API
- * @tc.type  : FUNC
- * @tc.number: RemoveCaptureInjector_003
- * @tc.desc  : Test RemoveCaptureInjector with mismatched sink port index, should return ERROR.
- */
-HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
-
-    // Set up initial state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-
-    uint32_t sinkPortIndex = 5678; // Different from stored index
-    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    
-    int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
-
-    EXPECT_EQ(result, ERROR);
-    EXPECT_TRUE(audioEndpointInner->isNeedInject_); // Should remain unchanged
-    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, 1234); // Should remain unchanged
-}
-
-/**
  * @tc.name  : Test AddRemoveCaptureInjector API sequence
  * @tc.type  : FUNC
  * @tc.number: AddRemoveCaptureInjector_001
@@ -2058,6 +2034,52 @@ HWTEST(AudioEndpointInnerUnitTest, ConvertDataFormat_001, TestSize.Level1)
     // Cleanup
     delete[] readBuf.buffer;
     delete[] rendererOrgDesc.buffer;
+}
+
+/*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_001
+ * @tc.desc  : init with 0
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 0;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, MAX_TRANS_BUFFER_SIZE);
+}
+
+/*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_002
+ * @tc.desc  : init with size more than normal
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 2; // 2 for test
+    audioEndpointInner->dstSpanSizeInframe_ = MAX_TRANS_BUFFER_SIZE;
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, MAX_TRANS_BUFFER_SIZE);
+}
+
+/*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_003
+ * @tc.desc  : init with normal size
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 4; // 4 for test
+    audioEndpointInner->dstSpanSizeInframe_ = 240; // 240 for 5ms
+    size_t expectedSize = 960; // 4 * 240
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, expectedSize);
 }
 
 /*

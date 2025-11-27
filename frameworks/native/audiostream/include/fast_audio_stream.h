@@ -96,6 +96,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
+    int32_t GetKeepRunning(bool &keepRunning) const override;
 
     void InitCallbackHandler();
     void SafeSendCallbackEvent(uint32_t eventCode, int64_t data);
@@ -117,7 +118,7 @@ public:
     int32_t GetBufQueueState(BufferQueueState &bufState) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear() override;
-    void SetPreferredFrameSize(int32_t frameSize) override;
+    void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetLowPowerVolume(float volume) override;
     float GetLowPowerVolume() override;

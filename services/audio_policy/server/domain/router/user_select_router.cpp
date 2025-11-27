@@ -87,13 +87,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
         (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) ?
         GetCallRenderDevice(streamUsage, clientUID) : GetMediaRenderDevice(streamUsage, clientUID);
 
-    if (!selectedDesc.get()) {
-        AUDIO_INFO_LOG("Have no selected connected desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (selectedDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Selected connected desc type is none, just only add default device.");
+    if (!selectedDesc.get() || selectedDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }

@@ -8,10 +8,13 @@
 #include <cstdint>
 #include <memory>
 #include "../NodeManager.h"
+#include "napi/native_api.h"
 
 extern std::shared_ptr<NodeManager> g_nodeManager;
 
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
 
 Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType);
+
+napi_value GetSupportedAudioNodeTypes(napi_env env);
 #endif //AUDIOEDITTESTAPP_EFFECTNODE_H

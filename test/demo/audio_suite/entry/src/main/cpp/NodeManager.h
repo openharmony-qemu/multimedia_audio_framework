@@ -48,9 +48,6 @@ public:
     // 连接两个节点
     OH_AudioSuite_Result connect(const std::string &fromId, const std::string &toId);
 
-    // 连接两个节点的任意端口
-    OH_AudioSuite_Result connectByPort(const std::string &fromId, const std::string &toId);
-
     // 断开两个节点的连接
     OH_AudioSuite_Result disconnect(const std::string &fromId, const std::string &toId);
 
@@ -59,7 +56,7 @@ public:
 
     // 插入节点
     OH_AudioSuite_Result insertNode(
-        const std::string &sourceNodeId, const std::string &targerNodeId, Direction direction);
+        const std::string &sourceNodeId, const std::string &targetNodeId, Direction direction);
 
     // 移动节点
     OH_AudioSuite_Result moveNode(
@@ -87,6 +84,8 @@ public:
     
     //根据不同效果类型获取节点效果参数
     std::string GetOptionsByType(const Node& node);
+
+    char *getNodeTypeName(OH_AudioNode_Type type);
 };
 
 #endif

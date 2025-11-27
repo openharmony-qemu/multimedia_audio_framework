@@ -107,6 +107,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
         config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
+        config.rendererInfo.keepRunning = rendererInfo_.keepRunning;
         config.rendererInfo.isStatic = rendererInfo_.isStatic;
         config.staticBufferInfo = staticBufferInfo_;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
@@ -147,8 +148,10 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     // avoid using FastAudioStream after free in callback.
     auto weakStream = weak_from_this();
     processClient_ = AudioProcessInClient::Create(config, weakStream);
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM,
-        "Client test creat process client fail.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_INVALID_PARAM, "Client test creat process client fail.");
+    uint32_t frameCount = 0;
+    processClient_->GetFrameCount(frameCount);
+    userSettedPreferredFrameSize_ = frameCount;
     state_ = PREPARED;
     proxyObj_ = proxyObj;
 
@@ -534,12 +537,12 @@ int32_t FastAudioStream::Enqueue(const BufferDesc &bufDesc)
     return SUCCESS;
 }
 
-void FastAudioStream::SetPreferredFrameSize(int32_t frameSize)
+void FastAudioStream::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
-    processClient_->SetPreferredFrameSize(frameSize);
+    processClient_->SetPreferredFrameSize(frameSize, isRecreate);
 }
 
 void FastAudioStream::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
@@ -1284,6 +1287,13 @@ bool FastAudioStream::IsRestoreNeeded()
 bool FastAudioStream::IsDataCallbackSet() const
 {
     return spkProcClientCb_ != nullptr || micProcClientCb_ != nullptr;
+}
+
+int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR, "processClient_ is null");
+    processClient_->GetKeepRunning(keepRunning);
+    return SUCCESS;
 }
 
 void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)

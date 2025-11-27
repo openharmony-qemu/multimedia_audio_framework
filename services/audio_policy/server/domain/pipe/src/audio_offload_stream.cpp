@@ -105,7 +105,7 @@ void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId, OffloadAda
     audioPolicyManager_.SetOffloadSessionId(sessionId, offloadAdapter);
     AudioServerProxy::GetInstance().SetOffloadModeProxy(
         sessionId, static_cast<int32_t>(currentPowerState_), false);
-    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_OFFLOAD);
+    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_OUT_OFFLOAD);
 }
 
 // must be called with offloadMutex_ lock
@@ -115,7 +115,7 @@ void AudioOffloadStream::UnsetOffloadStatusInternal(uint32_t sessionId, OffloadA
 
     AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
     audioPolicyManager_.ResetOffloadSessionId(offloadAdapter);
-    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_NORMAL_OUT);
+    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_OUT_NORMAL);
 }
 
 void AudioOffloadStream::Dump(std::string &dumpString)

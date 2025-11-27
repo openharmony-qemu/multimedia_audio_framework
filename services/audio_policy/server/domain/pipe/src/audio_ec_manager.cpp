@@ -684,6 +684,38 @@ int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pip
     return SUCCESS;
 }
 
+int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId)
+{
+    CHECK_AND_RETURN_RET_LOG((pipeInfo != nullptr && pipeInfo->streamDescMap_.count(targetSessionId) > 0), ERROR,
+        "pipe is null or can not find stream");
+    auto streamDesc = pipeInfo->streamDescMap_[targetSessionId];
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    audioConfigManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    PipeStreamPropInfo targetInfo = *streamPropInfo;
+    
+    AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
+    moduleInfo.channels = std::to_string(targetInfo.channels_);
+    moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
+    moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
+    moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+    moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
+    moduleInfo.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s"
+        "format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
+        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
+        moduleInfo.format.c_str(), moduleInfo.channelLayout.c_str(), moduleInfo.sourceType.c_str());
+
+    int32_t result = audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo);
+    if (result == SUCCESS) {
+        audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
+            pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
+            DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
+            audioActiveDevice_.GetCurrentInputDevice().networkId_);
+    }
+    return result;
+}
+
 int32_t AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId)
 {
     AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);
@@ -901,6 +933,7 @@ int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
     }
 
     normalSourceOpened_ = targetSource;
+    SetOpenedNormalSourceSessionId(sessionId);
     return SUCCESS;
 }
 }

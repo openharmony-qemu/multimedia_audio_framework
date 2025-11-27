@@ -373,7 +373,7 @@ private:
     bool isPreemptMode_ = false;
 
     std::mutex mutex_;
-    mutable std::atomic<int32_t> formerUid_ = 0;
+    mutable std::atomic<int32_t> formerUid_ = -1;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;

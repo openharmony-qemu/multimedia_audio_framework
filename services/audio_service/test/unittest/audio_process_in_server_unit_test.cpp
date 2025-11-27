@@ -903,24 +903,6 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_034, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_035
- * @tc.desc  : Test AudioProcessInServer interface.
- */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_035, TestSize.Level1)
-{
-    AudioProcessConfig configRet = InitProcessConfig();
-    AudioService *releaseCallbackRet = AudioService::GetInstance();
-    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
-    int64_t muteFrameCnt = 1;
-
-    audioProcessInServer->lastWriteMuteFrame_ = 0;
-    audioProcessInServer->AddMuteWriteFrameCnt(muteFrameCnt);
-    EXPECT_EQ(audioProcessInServer->lastWriteMuteFrame_, 1);
-}
-
-/**
- * @tc.name  : Test AudioProcessInServer API
- * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_036
  * @tc.desc  : Test AudioProcessInServer interface.
  */
@@ -1189,7 +1171,7 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
  * @tc.number: NeedUseTempBuffer_01
  * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
  */
-HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1223,7 +1205,7 @@ HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
  * @tc.number: PrepareStreamDataBuffer_01
  * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
  */
-HWTEST_F(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();

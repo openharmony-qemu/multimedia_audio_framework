@@ -36,6 +36,7 @@
 #include "audio_usb_manager.h"
 #endif
 #include "audio_zone_service.h"
+#include "audio_bluetooth_manager.h"
 #include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
@@ -505,7 +506,9 @@ bool AudioPolicyServer::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, Audi
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
     if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
-        audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        ((audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            audioPolicyManager_.IsAbsVolumeScene()) ||
+            audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK)) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 }
@@ -1878,6 +1881,8 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectOutputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (auto desc : audioDeviceDescriptors) {
@@ -1913,6 +1918,8 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectInputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectInputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
     for (auto desc : audioDeviceDescriptors) {
@@ -3836,6 +3843,15 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
+    bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+    audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -5051,15 +5067,16 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed)
+int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage,
+    bool &isAllowed, bool &silentControl)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != MEDIA_SERVICE_UID) {
         auto callerPid = IPCSkeleton::GetCallingPid();
-        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid);
+        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, streamUsage, silentControl);
         return SUCCESS;
     }
-    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid);
+    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, streamUsage, silentControl);
     return SUCCESS;
 }
 
@@ -5115,13 +5132,16 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
 
 int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 {
-    constexpr int32_t meetServiceUid = 5523; // "uid" : "meetservice"
     auto callerUid = IPCSkeleton::GetCallingUid();
-    // This function can only be used by meetservice
-    CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
-        "SetVirtualCall callerUid is error: not meetservice");
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
     return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
+}
+
+int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -5439,6 +5459,15 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
 {
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetActiveHfpDevice(const std::string& macAddress)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("not system SA calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
 }
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)

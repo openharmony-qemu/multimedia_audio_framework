@@ -144,6 +144,8 @@ public:
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
     void OnCheckActiveMusicTime(const std::string &reason);
+    void DealWithPauseAndStop(const std::string &reason);
+    std::string DoLoopCheck(const std::string &reason);
     int32_t CheckActiveMusicTime(const std::string &reason = "Default");
 
 private:

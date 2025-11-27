@@ -108,6 +108,7 @@ public:
     uint32_t GetUnderflowCount() const override;
     int32_t SetTarget(RenderTarget target) override;
     RenderTarget GetTarget() const override;
+    int32_t GetKeepRunning(bool &keepRunning) const override;
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -233,7 +234,7 @@ private:
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackgroud();
+    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
     RendererState GetStatusInner();

@@ -141,9 +141,6 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     if (node->GetState() == HPAE_SESSION_RUNNING && node->GetSessionId() == curNode_->GetSessionId()) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
         ConnectInputSession();
-        if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-            sinkOutputNode_->RenderSinkStart();
-        }
     }
 }
 
@@ -255,6 +252,9 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
     renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
+    if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
+        sinkOutputNode_->RenderSinkStart();
+    }
     return SUCCESS;
 }
 
@@ -268,9 +268,6 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
-            if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-                sinkOutputNode_->RenderSinkStart();
-            }
         }
     };
     SendRequest(request, __func__);
@@ -469,6 +466,17 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
             curNode_->GetState() == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->RenderSinkStart();
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadRendererManager::StopManager()
+{
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sink output node is nullptr");
+        sinkOutputNode_->RenderSinkStop();
     };
     SendRequest(request, __func__);
     return SUCCESS;

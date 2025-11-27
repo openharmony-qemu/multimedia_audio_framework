@@ -2780,10 +2780,10 @@ HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_001,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
 {
@@ -2791,7 +2791,7 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
     float volume = 0.5;
 
     // Act
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
     // Assert
     float expectedVolume = 0.0;
@@ -2799,33 +2799,33 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_002,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_MUSIC;
     float volume = 0.5;
 
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
     EXPECT_EQ(volume, AudioService::GetInstance()->audioWorkGroupSystemVolume_);
 }
 
 /**
- * @tc.name  : Test UpdateSystemVolume API
+ * @tc.name  : Test UpdateSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: UpdateSystemVolume_003,
- * @tc.desc  : Test UpdateSystemVolume interface.
+ * @tc.desc  : Test UpdateSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
     float volume = 0.5;
 
-    AudioService::GetInstance()->UpdateSystemVolume(streamType, volume);
+    AudioService::GetInstance()->UpdateSystemVolumeForWorkgroup(streamType, volume);
 
     EXPECT_EQ(volume, AudioService::GetInstance()->audioWorkGroupSystemVolume_);
 }
@@ -3133,25 +3133,25 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test GetSystemVolume API
+ * @tc.name  : Test GetSystemVolumeForWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: GetSystemVolume_001,
- * @tc.desc  : Test GetSystemVolume interface.
+ * @tc.desc  : Test GetSystemVolumeForWorkgroup interface.
  */
 HWTEST(AudioServiceUnitTest, GetSystemVolume_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     audioService->audioWorkGroupSystemVolume_ = 0.5;
     float volume = 0.0;
-    volume = audioService->GetSystemVolume();
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 0.5);
 
     audioService->audioWorkGroupSystemVolume_ = 1.0;
-    volume = audioService->GetSystemVolume();
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 1.0);
 
     audioService->audioWorkGroupSystemVolume_ = 0.0;
-    volume = audioService->GetSystemVolume();
+    volume = audioService->GetSystemVolumeForWorkgroup();
     EXPECT_EQ(volume, 0.0);
 }
 

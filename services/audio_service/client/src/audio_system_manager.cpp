@@ -1696,6 +1696,12 @@ int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddres
     return AudioPolicyManager::GetInstance().SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
 }
 
+int32_t AudioSystemManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    AUDIO_INFO_LOG("isSleVoiceStatus: %{public}d", isSleVoiceStatus);
+    return AudioPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
@@ -2054,6 +2060,11 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
 int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
 {
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
+
+bool AudioSystemManager::GetVirtualCall()
+{
+    return AudioPolicyManager::GetInstance().GetVirtualCall();
 }
 
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
@@ -2445,7 +2456,7 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
     Trace trace("[WorkgroupInClient] StartGroup workgroupId:" + std::to_string(workgroupId) +
         " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
-    int32_t audioDeadlineRate = MS_PER_SECOND / (deadlineTime - startTime);
+    int32_t audioDeadlineRate = static_cast<int32_t>(MS_PER_SECOND / (deadlineTime - startTime));
     CHECK_AND_RETURN_RET_LOG(audioDeadlineRate >= AUDIO_DEADLINE_PARAM_MIN &&
         audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
     RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);

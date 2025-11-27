@@ -445,7 +445,7 @@ bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
         uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
         uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
         if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
-            outputSize_ = frameLen * channels * GetSizeFromFormat(GetBitWidth());
+            outputSize_ = frameLen * channels * static_cast<size_t>(GetSizeFromFormat(GetBitWidth()));
             AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
             renderFrameData_.resize(outputSize_ + renderSize_);
         }

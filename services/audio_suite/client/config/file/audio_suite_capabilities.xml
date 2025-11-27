@@ -21,5 +21,6 @@
         <nodeType name="AUDIO_SEPARATION" soName="libaudio_aiss_intergration.z.so" soPath="/system/lib64/" general="no"/>
         <nodeType name="VOICE_BEAUTIFIER" soName="libaudio_voice_morph_bgm.z.so" soPath="/system/lib64/" general="yes"/>
         <nodeType name="ENVIRONMENT_EFFECT" soName="libimedia_sws.z.so" soPath="/system/lib64/" general="yes"/>
+        <nodeType name="TEMPO_PITCH" soName="libaudio_variable_speed.z.so,libaudio_pitch_change.z.so" soPath="/system/lib64/" general="yes"/>
     </nodeCapability>
 </audioSuiteCapabilities>
