@@ -30,7 +30,7 @@ static constexpr AudioSamplingRate VMPH_ALGO_SAMPLE_RATE = SAMPLE_RATE_16000;
 static constexpr AudioSampleFormat VMPH_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel VMPH_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VMPH_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-const std::string pureVoiceChangeMode = "AudioPureVoiceChangeOption";
+const std::string PURE_VOICE_CHANGE_MODE = "AudioPureVoiceChangeOption";
 }  // namespace
 
 AudioSuitePureVoiceChangeNode::AudioSuitePureVoiceChangeNode()
@@ -246,7 +246,7 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
 int32_t AudioSuitePureVoiceChangeNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(name == pureVoiceChangeMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(name == PURE_VOICE_CHANGE_MODE, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "algoInterfaceImpl_ is nullptr");
     
     paraName_ = name;
@@ -260,7 +260,7 @@ int32_t AudioSuitePureVoiceChangeNode::SetOptions(std::string name, std::string 
 int32_t AudioSuitePureVoiceChangeNode::GetOptions(std::string name, std::string &value)
 {
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "voicePureType is empty.");
-    CHECK_AND_RETURN_RET_LOG(name == pureVoiceChangeMode, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(name == PURE_VOICE_CHANGE_MODE, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "algoInterfaceImpl_ is nullptr");
     
     value = paraValue_;
