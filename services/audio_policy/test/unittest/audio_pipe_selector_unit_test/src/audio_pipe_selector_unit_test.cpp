@@ -1589,7 +1589,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeBasedOnVoip_001, TestSize.Level1)
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
     audioPipeSelector->SetPipeTypeBasedOnVoip(pipeType, streamDesc);
-    EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL );
+    EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL);
 }
 } // namespace AudioStandard
 } // namespace OHOS
