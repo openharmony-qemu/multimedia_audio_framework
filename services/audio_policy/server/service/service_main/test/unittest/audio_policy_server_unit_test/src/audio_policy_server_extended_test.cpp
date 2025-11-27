@@ -376,6 +376,10 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_016, TestSize.Level4)
     int32_t streamUsage = 1;
     bool silentControl = false;
     EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl), SUCCESS);
+
+    streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MAX) + 1;
+    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl),
+        ERR_NOT_SUPPORTED);
 }
 
 /**

@@ -81,9 +81,9 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     if (appState.isBack && !appState.isSystem) {
         bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
         if (!appState.hasSession) {
-            bool mediaUsage = std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
+            bool isMedia = std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
                 streamUsage) != 0;
-            if (mediaUsage) {
+            if (isMedia) {
                 HandleSessionStateChange(uid, pid, silentControl);
             } else {
                 silentControl = mute;
