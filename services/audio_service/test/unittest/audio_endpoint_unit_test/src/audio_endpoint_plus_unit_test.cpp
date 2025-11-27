@@ -85,8 +85,8 @@ public:
 
     // Audio-Haptics sync
     MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
-    MOCK_METHOD(int32_t, GetAudioHapticsSyncId, (), (override));
-    MOCK_METHOD(bool, PrepareRingBuffer, (uint64_t curRead, RingBufferWrapper& ringBuffer), (override));
+    MOCK_METHOD(bool, PrepareRingBuffer, (uint64_t curRead, RingBufferWrapper& ringBuffer,
+        int32_t &audioHapticsSyncId), (override));
     MOCK_METHOD(void, PrepareStreamDataBuffer,
         (size_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData), (override));
     MOCK_METHOD(void, DfxOperationAndCalcMuteFrame, (BufferDesc &bufferDesc), (override));
@@ -1713,7 +1713,10 @@ HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Leve
     audioEndpointInner->processList_.push_back(&processServer);
 
     std::function<void()> moveClientIndex;
-    EXPECT_CALL(processServer, PrepareRingBuffer(_, _)).WillOnce(Return(false));
+    EXPECT_CALL(processServer, PrepareRingBuffer(_, _, _)).WillOnce(Return(true));
+    audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
+
+    EXPECT_CALL(processServer, PrepareRingBuffer(_, _, _)).WillOnce(Return(false));
     EXPECT_CALL(processServer, GetStreamStatus()).WillOnce(Return(StreamStatus::STREAM_RUNNING));
     EXPECT_CALL(processServer, AddNoDataFrameSize())
         .Times(1)
