@@ -1556,11 +1556,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_004, TestSi
 }
 
 /**
- * @tc.name: SetPipeTypeBasedOnVoip_001
- * @tc.desc: Test SetPipeTypeBasedOnVoip_001
+ * @tc.name: SetPipeTypeByStreamType_001
+ * @tc.desc: Test SetPipeTypeByStreamType_001
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeBasedOnVoip_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeByStreamType_001, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     EXPECT_NE(audioPipeSelector, nullptr);
@@ -1570,25 +1570,25 @@ HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeBasedOnVoip_001, TestSize.Level1)
 
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    audioPipeSelector->SetPipeTypeBasedOnVoip(pipeType, streamDesc);
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
     EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
 
     pipeType = PIPE_TYPE_OUT_NORMAL;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    audioPipeSelector->SetPipeTypeBasedOnVoip(pipeType, streamDesc);
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
     EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
 
     pipeType = PIPE_TYPE_IN_NORMAL;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    audioPipeSelector->SetPipeTypeBasedOnVoip(pipeType, streamDesc);
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
     EXPECT_EQ(pipeType, PIPE_TYPE_IN_VOIP);
 
     pipeType = PIPE_TYPE_IN_NORMAL;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    audioPipeSelector->SetPipeTypeBasedOnVoip(pipeType, streamDesc);
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
     EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL);
 }
 } // namespace AudioStandard
