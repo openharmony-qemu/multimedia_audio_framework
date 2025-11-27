@@ -303,6 +303,8 @@ public:
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
+    virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
+        AudioStreamType streamType, int32_t volumeDegree) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -678,8 +678,16 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
 
+    bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
+        device->deviceType_ != DEVICE_TYPE_REMOTE_CAST;
+    DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
-    float volumeDb = CalculateVolumeDbByDegree(device->deviceType_, streamType, volumeDegree);
+    float volumeDb = CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree);
+    // Set voice call assistant stream to full volume
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        volumeDb = 1.0f;
+    }
+
     DepressVolume(volumeDb, volumeLevel, streamType, device->deviceType_);
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
         volumeDegree:%{public}d device:%{public}s",
@@ -2855,22 +2863,14 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     return exp(dbValue * 0.115129f);
 }
 
-float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceTypeIn,
+float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
     AudioStreamType streamType, int32_t volumeDegree)
 {
-    bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
-        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST;
-    DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : deviceTypeIn;
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
         volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree);
     } else {
         volumeDb = CalculateVolumeDbExt(volumeDegree);
-    }
-
-    // Set voice call assistant stream to full volume
-    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
-        volumeDb = 1.0f;
     }
 
     return volumeDb;
