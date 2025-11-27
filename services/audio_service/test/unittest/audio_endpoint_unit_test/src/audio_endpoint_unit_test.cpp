@@ -2037,6 +2037,52 @@ HWTEST(AudioEndpointInnerUnitTest, ConvertDataFormat_001, TestSize.Level1)
 }
 
 /*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_001
+ * @tc.desc  : init with 0
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 0;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, MAX_TRANS_BUFFER_SIZE);
+}
+
+/*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_002
+ * @tc.desc  : init with size more than normal
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 2; // 2 for test
+    audioEndpointInner->dstSpanSizeInframe_ = MAX_TRANS_BUFFER_SIZE;
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, MAX_TRANS_BUFFER_SIZE);
+}
+
+/*
+ * @tc.name  : Test InitTraceBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitTraceBuffer_003
+ * @tc.desc  : init with normal size
+ */
+HWTEST_F(AudioEndpointUnitTest, InitTraceBuffer_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->dstByteSizePerFrame_ = 4; // 4 for test
+    audioEndpointInner->dstSpanSizeInframe_ = 240; // 240 for 5ms
+    size_t expectedSize = 960; // 4 * 240
+    audioEndpointInner->InitTransBuffer();
+    EXPECT_EQ(audioEndpointInner->dstSpanSizeInByte_, expectedSize);
+}
+
+/*
  * @tc.name  : Test CheckJank API
  * @tc.type  : FUNC
  * @tc.number: CheckJank_001
