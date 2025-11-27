@@ -563,6 +563,65 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_012, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_013
+ * @tc.desc  : Test AudioEndpointInner::ProcessData()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_013, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    std::vector<AudioStreamData> srcDataList;
+    AudioStreamData audioStreamData;
+    audioStreamData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamData.streamInfo.channels = AudioChannel::STEREO;
+    audioStreamData.bufferDesc.bufLength = 1;
+    audioStreamData.bufferDesc.dataLength = 1;
+    srcDataList.push_back(audioStreamData);
+
+    PolicyHandler policyHandler;
+    audioEndpointInner->ProcessData(srcDataList, audioStreamData);
+    policyHandler.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioEndpointInner->ProcessData(srcDataList, audioStreamData);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_014
+ * @tc.desc  : Test AudioEndpointInner::ProcessData()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_014, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    audioEndpointInner->isExistLoopback_ = true;
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    std::vector<AudioStreamData> srcDataList;
+    AudioStreamData audioStreamData;
+    audioStreamData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamData.streamInfo.channels = AudioChannel::STEREO;
+    audioStreamData.bufferDesc.bufLength = 1;
+    audioStreamData.bufferDesc.dataLength = 1;
+    srcDataList.push_back(audioStreamData);
+
+    PolicyHandler policyHandler;
+    audioEndpointInner->ProcessData(srcDataList, audioStreamData);
+    policyHandler.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioEndpointInner->ProcessData(srcDataList, audioStreamData);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
  * @tc.number: AudioEndpointInner_018
  * @tc.desc  : Test AudioEndpointInner::GetAllReadyProcessData()
  */
