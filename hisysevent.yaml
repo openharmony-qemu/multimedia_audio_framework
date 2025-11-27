@@ -370,3 +370,8 @@ VOLUME_SETTING_STATISTICS:
   __BASE: {type: STATISTIC, level: MINOR, desc: volume setting statistics}
   LOUD_VOLUME_TIMES: {type: INT32, desc: loud volume times}
   SCENE_TYPE: {type: UINT8, desc: scene type}
+
+TONE_PLAYBACK_FAILED:
+  __BASE: {type: FAULT, level: CRITICAL, desc: Ringtone playback failure eventrame}
+  ERROR_CODE: {type: INT32, desc: error code}
+  ERROR_REASON: {type: STRING, desc: Detailed description of error type}
