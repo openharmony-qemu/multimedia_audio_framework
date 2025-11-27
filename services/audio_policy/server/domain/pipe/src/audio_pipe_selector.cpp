@@ -406,17 +406,6 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
     }
 }
 
-void AudioPipeSelector::CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
-    std::shared_ptr<AudioStreamDescriptor> incomingStream)
-{
-    // Normal, fast or voip-fast can not run concurrently, both stream need to be conceded
-    if (incomingStream->IsRecording() && existingStream->IsRecording()) {
-        AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u",
-            incomingStream->sessionId_, existingStream->sessionId_);
-        incomingStream->ResetToNormalRoute(false);
-    }
-}
-
 bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
     std::shared_ptr<AudioStreamDescriptor> streamDescB)
 {
