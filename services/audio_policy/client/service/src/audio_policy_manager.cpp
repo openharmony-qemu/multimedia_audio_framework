@@ -452,7 +452,7 @@ int32_t AudioPolicyManager::SetMicrophoneMutePersistent(const bool isMute, const
 bool AudioPolicyManager::GetPersistentMicMuteState()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
 
     bool mute = true;
     gsp->GetPersistentMicMuteState(mute);
@@ -462,7 +462,7 @@ bool AudioPolicyManager::GetPersistentMicMuteState()
 bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
@@ -475,7 +475,7 @@ bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 bool AudioPolicyManager::IsMicrophoneMute()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
