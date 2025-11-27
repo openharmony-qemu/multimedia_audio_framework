@@ -30,7 +30,7 @@ static constexpr AudioSamplingRate VMPH_ALGO_SAMPLE_RATE = SAMPLE_RATE_16000;
 static constexpr AudioSampleFormat VMPH_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel VMPH_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VMPH_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-const std::string PURE_VOICE_CHANGE_MODE = "AudioPureVoiceChangeOption";
+const std::string pureVoiceChangeMode = "AudioPureVoiceChangeOption";
 }  // namespace
 
 AudioSuitePureVoiceChangeNode::AudioSuitePureVoiceChangeNode()
@@ -39,18 +39,16 @@ AudioSuitePureVoiceChangeNode::AudioSuitePureVoiceChangeNode()
               {VMPH_ALGO_CHANNEL_LAYOUT, VMPH_ALGO_CHANNEL_COUNT}, VMPH_ALGO_SAMPLE_FORMAT, VMPH_ALGO_SAMPLE_RATE}),
       outPcmBuffer_(PcmBufferFormat{
           VMPH_ALGO_SAMPLE_RATE, VMPH_ALGO_CHANNEL_COUNT, VMPH_ALGO_CHANNEL_LAYOUT, VMPH_ALGO_SAMPLE_FORMAT}),
-      outTmpPcmBuffer_(
+      postProcessedPcmBuffer_(
           PcmBufferFormat{
               VMPH_ALGO_SAMPLE_RATE, VMPH_ALGO_CHANNEL_COUNT, VMPH_ALGO_CHANNEL_LAYOUT, VMPH_ALGO_SAMPLE_FORMAT},
           PCM_DATA_DURATION_40_MS),
-      tmpDataBuffer_(
+      tempPcmData_(
           PcmBufferFormat{
               VMPH_ALGO_SAMPLE_RATE, VMPH_ALGO_CHANNEL_COUNT, VMPH_ALGO_CHANNEL_LAYOUT, VMPH_ALGO_SAMPLE_FORMAT},
           PCM_DATA_DURATION_40_MS)
 
-{
-    tmpData_.push_back(tmpDataBuffer_);
-}
+{}
 
 AudioSuitePureVoiceChangeNode::~AudioSuitePureVoiceChangeNode()
 {
@@ -102,72 +100,107 @@ AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vec
         "AudioSuitePureVoiceChangeNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
 
     tmpin_[0] = inputs[0]->GetPcmData();
-    tmpout_[0] = outTmpPcmBuffer_.GetPcmData();
-
-    if (isSecondFlag) {
-        int32_t ret = memcpy_s(outPcmBuffer_.GetPcmData(),
+    tmpout_[0] = postProcessedPcmBuffer_.GetPcmData();
+    CHECK_AND_RETURN_RET_LOG(tmpout_[0] != nullptr && tmpin_[0] != nullptr, nullptr, "tmpin or tempout is nullptr");
+    int32_t ret;
+    if (isSecondRequest_) {
+        ret = memcpy_s(outPcmBuffer_.GetPcmData(),
             outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
-            outTmpPcmBuffer_.GetPcmData() + outPcmBuffer_.GetDataSize(),
+            postProcessedPcmBuffer_.GetPcmData() + outPcmBuffer_.GetDataSize(),
             outPcmBuffer_.GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
-        isSecondFlag = false;
+        isSecondRequest_ = false;
         return &outPcmBuffer_;
     }
-    isSecondFlag = true;
+    isSecondRequest_ = true;
 
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, nullptr, "algoInterfaceImpl_ is nullptr");
     Trace trace("AudioSuitePureVoiceChangeNode::SignalProcess Start");
-    int32_t ret = algoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    ret = algoInterfaceImpl_->Apply(tmpin_, tmpout_);
     trace.End();
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuitePureVoiceChangeNode SignalProcess Apply failed");
 
     ret = memcpy_s(outPcmBuffer_.GetPcmData(),
         outPcmBuffer_.GetDataSize(),  // Copy the first frame 20ms data
-        outTmpPcmBuffer_.GetPcmData(),
+        postProcessedPcmBuffer_.GetPcmData(),
         outPcmBuffer_.GetDataSize());
     CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
-
     return &outPcmBuffer_;
 }
 
 std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProcessNodePreOutputData()
 {
-    if (isSecondFlag) {
-        if (finishFlag) {
+    if (isSecondRequest_) {
+        if (isDataReadComplete_) {
             AUDIO_ERR_LOG("Data read finished.");
-            SetAudioNodeDataFinishedFlag(finishFlag);
+            SetAudioNodeDataFinishedFlag(isDataReadComplete_);
         }
-        return tmpDataPointers_;
+        return rawPcmData_;
     }
-    tmpData_[0].Reset();  // Clear the 40ms of data required by the algorithm before storing it.
+    tempPcmData_.Reset();
     std::vector<AudioSuitePcmBuffer*>& preOutputsFirst = ReadProcessNodePreOutputData(); // Need data for the first time
-    
-    int32_t ret = memcpy_s(tmpData_[0].GetPcmData(), tmpData_[0].GetDataSize(), // Copy the first frame 20ms data
-        preOutputsFirst[0]->GetPcmData(), preOutputsFirst[0]->GetDataSize());
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memcpy failed, ret is %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(preOutputsFirst.size() > 0 && preOutputsFirst[0] != nullptr,
+        rawPcmData_,
+        "Failed to read data from the previous node.");
+
+    uint32_t srcSize = preOutputsFirst[0]->GetDataSize();
+    uint32_t dstSize = tempPcmData_.GetDataSize();
+    CHECK_AND_RETURN_RET_LOG(srcSize <= dstSize, rawPcmData_, "Source buffer too large for destination");
+
+    int32_t ret = memcpy_s(tempPcmData_.GetPcmData(), dstSize,   // Copy the first frame 20ms data
+        preOutputsFirst[0]->GetPcmData(), srcSize);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, rawPcmData_, "memcpy failed, ret is %{public}d.", ret);
+
     if (preOutputsFirst[0]->GetIsFinished()) {
-        ret = memset_s(tmpData_[0].GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
-                       tmpData_[0].GetDataSize() - preOutputsFirst[0]->GetDataSize(),
+        ret = memset_s(tempPcmData_.GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
+                       tempPcmData_.GetDataSize() - preOutputsFirst[0]->GetDataSize(),
                        0,
                        preOutputsFirst[0]->GetDataSize());
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memset failed, ret is %{public}d.", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, rawPcmData_, "memset failed, ret is %{public}d.", ret);
     } else {
         std::vector<AudioSuitePcmBuffer*>& preOutputsSecond = ReadProcessNodePreOutputData();  // Need second data
         if (preOutputsSecond[0]->GetIsFinished()) {
-            SetAudioNodeDataFinishedFlag(finishFlag);
-            finishFlag = true;
+            SetAudioNodeDataFinishedFlag(isDataReadComplete_);
+            isDataReadComplete_ = true;
         }
-        ret = memcpy_s(tmpData_[0].GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
-                       tmpData_[0].GetDataSize() - preOutputsFirst[0]->GetDataSize(),
-                       preOutputsSecond[0]->GetPcmData(), preOutputsSecond[0]->GetDataSize());
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, tmpDataPointers_, "memcpy failed, ret is %{public}d.", ret);
+        ret = memcpy_s(tempPcmData_.GetPcmData() + preOutputsFirst[0]->GetDataSize(), // Copy the second frame 20ms data
+        tempPcmData_.GetDataSize() - preOutputsFirst[0]->GetDataSize(),
+        preOutputsSecond[0]->GetPcmData(), preOutputsSecond[0]->GetDataSize());
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, rawPcmData_, "memecpy failed, ret is %{public}d.", ret);
     }
-    tmpDataPointers_.clear();
-    for (AudioSuitePcmBuffer& buffer : tmpData_) {
-        tmpDataPointers_.push_back(&buffer);
+    rawPcmData_.clear();
+    rawPcmData_.push_back(&tempPcmData_);
+    return rawPcmData_;
+}
+
+AudioSuitePcmBuffer* AudioSuitePureVoiceChangeNode::splitDataInHalf(const std::vector<AudioSuitePcmBuffer *> &inputs)
+{
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuitePureVoiceChangeNode prenode inputs is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()),
+        nullptr,
+        "AudioSuitePureVoiceChangeNode prenode inputs[0] is nullptr");
+    AUDIO_DEBUG_LOG(
+        "AudioSuitePureVoiceChangeNode prenode inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
+    AudioSuitePcmBuffer* pcmTempStorage = inputs[0];
+    int32_t ret;
+    if (isSecondRequest_) {
+        ret = memcpy_s(outPcmBuffer_.GetPcmData(),
+            outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
+            pcmTempStorage->GetPcmData() + outPcmBuffer_.GetDataSize(),
+            outPcmBuffer_.GetDataSize());
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
+        isSecondRequest_ = false;
+        return &outPcmBuffer_;
     }
-    return tmpDataPointers_;
+    isSecondRequest_ = true;
+
+    ret = memcpy_s(outPcmBuffer_.GetPcmData(),
+        outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
+        pcmTempStorage->GetPcmData(),
+        outPcmBuffer_.GetDataSize());
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
+    return &outPcmBuffer_;
 }
 
 int32_t AudioSuitePureVoiceChangeNode::DoProcess()
@@ -185,6 +218,8 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
+    CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR, "ReadDoubleProcessNodePreOutputData return is empty");
+
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         tempOut = SignalProcess(preOutputs);
@@ -194,7 +229,7 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
             GetNodeType());
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
-        tempOut = preOutputs[0];
+        tempOut = splitDataInHalf(preOutputs);
         CHECK_AND_RETURN_RET_LOG(
             tempOut != nullptr, ERR_INVALID_READ, "node %{public}d get a null pcmbuffer from prenode", GetNodeType());
     } else {
@@ -211,7 +246,7 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
 int32_t AudioSuitePureVoiceChangeNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(name == PURE_VOICE_CHANGE_MODE, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(name == pureVoiceChangeMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "algoInterfaceImpl_ is nullptr");
     
     paraName_ = name;
@@ -225,7 +260,7 @@ int32_t AudioSuitePureVoiceChangeNode::SetOptions(std::string name, std::string 
 int32_t AudioSuitePureVoiceChangeNode::GetOptions(std::string name, std::string &value)
 {
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "voicePureType is empty.");
-    CHECK_AND_RETURN_RET_LOG(name == PURE_VOICE_CHANGE_MODE, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(name == pureVoiceChangeMode, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "algoInterfaceImpl_ is nullptr");
     
     value = paraValue_;

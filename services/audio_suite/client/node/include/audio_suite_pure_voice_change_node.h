@@ -42,12 +42,11 @@ private:
     std::vector<uint8_t *> tmpin_{nullptr};
     std::vector<uint8_t *> tmpout_{nullptr};
     AudioSuitePcmBuffer outPcmBuffer_;
-    AudioSuitePcmBuffer outTmpPcmBuffer_;
-    std::vector<AudioSuitePcmBuffer> tmpData_;
-    std::vector<AudioSuitePcmBuffer*> tmpDataPointers_;
-    AudioSuitePcmBuffer tmpDataBuffer_;
-    bool isSecondFlag = false;
-    bool finishFlag = false;
+    AudioSuitePcmBuffer postProcessedPcmBuffer_;
+    std::vector<AudioSuitePcmBuffer*> rawPcmData_;
+    AudioSuitePcmBuffer tempPcmData_;
+    bool isSecondRequest_ = false;
+    bool isDataReadComplete_ = false;
 };
 
 }  // namespace AudioSuite

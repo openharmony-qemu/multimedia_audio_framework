@@ -184,7 +184,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
     int32_t offset = 16;
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT; i++) {
+    int32_t requiredSize = DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT;
+    for (int32_t i = 0; i < requiredSize; i++) {
         inBuf_[i] = inPcm[i];
         inBuf_[i] <<= offset;
     }

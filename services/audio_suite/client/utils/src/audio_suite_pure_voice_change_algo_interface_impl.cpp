@@ -206,15 +206,12 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
 {
     AUDIO_DEBUG_LOG("start apply pure algorithm");
 
-    if (audioInputs.empty() || audioOutputs.empty()) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(
+        !audioInputs.empty() && !audioOutputs.empty(), ERROR, "Apply para check fail, input or output list is empty");
 
-    if (audioInputs[0] == nullptr || audioOutputs[0] == nullptr) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioInputs[0] != nullptr && audioOutputs[0] != nullptr,
+        ERROR,
+        "Apply para check fail, input or output list is empty");
 
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
