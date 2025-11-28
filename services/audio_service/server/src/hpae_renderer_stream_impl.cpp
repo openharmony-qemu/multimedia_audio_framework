@@ -53,7 +53,7 @@ static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
-static constexpr int64_t TIME_INTERVAL_NS = 500 * 1000000LL;
+static constexpr int64_t TIME_INTERVAL_NS = 200 * 1000000LL;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
