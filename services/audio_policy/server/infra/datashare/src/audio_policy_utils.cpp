@@ -50,6 +50,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
     {PRIMARY_MIC, TYPE_PRIMARY},
     {PRIMARY_AI_MIC, TYPE_PRIMARY},
+    {PRIMARY_ULTRASONIC_MIC, TYPE_PRIMARY},
     {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
     {BLUETOOTH_SPEAKER, TYPE_A2DP},
     {BLUETOOTH_MIC, TYPE_A2DP},
@@ -389,6 +390,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
             } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
                 portName = PRIMARY_UNPROCESS_MIC;
                 AUDIO_INFO_LOG("use PRIMARY_UNPROCESS_MIC for devicetype: %{public}d", deviceType);
+            } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
+                portName = PRIMARY_ULTRASONIC_MIC;
+                AUDIO_INFO_LOG("use PRIMARY_ULTRASONIC_MIC for devicetype: %{public}d", deviceType);
             } else {
                 portName = PRIMARY_MIC;
             }
@@ -850,5 +854,5 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-} // namespace AudioStandardxx
+} // namespace AudioStandard
 } // namespace OHOS
