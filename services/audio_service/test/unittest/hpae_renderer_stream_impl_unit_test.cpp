@@ -1016,7 +1016,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
  * @tc.name  : Test GetSpeedPosition.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_039
- * @tc.desc  : Test GetCurrentPosition with offload_active_background.
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
 {
@@ -1028,7 +1028,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
     std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
         std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
     EXPECT_NE(rendererStreamImpl, nullptr);
-    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_ACTIVE_BACKGROUND);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
     uint64_t framePosition = 1;
     uint64_t timestamp = 1;
     uint64_t latency = 1;
@@ -1046,7 +1046,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
  * @tc.name  : Test GetSpeedPosition.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_040
- * @tc.desc  : Test GetCurrentPosition with offload_active_background.
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
 {
@@ -1058,7 +1058,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
     std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
         std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
     EXPECT_NE(rendererStreamImpl, nullptr);
-    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_ACTIVE_BACKGROUND);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
     uint64_t framePosition = 1;
     uint64_t timestamp = 1;
     uint64_t latency = 1;
