@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.xx
+ * limitations under the License.
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioCapturerSession"
@@ -51,7 +51,7 @@ const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
     { SOURCE_TYPE_INVALID, AUDIO_INPUT_DEFAULT_TYPE},
     { SOURCE_TYPE_MIC, AUDIO_INPUT_MIC_TYPE},
     { SOURCE_TYPE_PLAYBACK_CAPTURE, AUDIO_INPUT_MIC_TYPE},
-    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_MIC_TYPE},
+    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_ULTRASONIC_TYPE },
     { SOURCE_TYPE_WAKEUP, AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
     { SOURCE_TYPE_VOICE_TRANSCRIPTION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
     { SOURCE_TYPE_VOICE_COMMUNICATION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
@@ -243,7 +243,8 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
             continue;
         }
 
-        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_UNPROCESS;
+        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_UNPROCESS |
+            AUDIO_INPUT_FLAG_ULTRASONIC;;
         if ((pipe->routeFlag_ & flagMask) != 0) {
             continue;
         }
