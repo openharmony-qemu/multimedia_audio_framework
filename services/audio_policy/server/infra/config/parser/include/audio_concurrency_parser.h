@@ -67,7 +67,8 @@ private:
         {"cellular call out", PIPE_TYPE_OUT_CELLULAR_CALL},
         {"cellular call in", PIPE_TYPE_IN_CELLULAR_CALL},
         {"primary in AI", PIPE_TYPE_IN_NORMAL_AI},
-        {"primary in unprocess", PIPE_TYPE_IN_NORMAL_UNPROCESS}
+        {"primary in unprocess", PIPE_TYPE_IN_NORMAL_UNPROCESS},
+        {"primary in ULTRASONIC", PIPE_TYPE_NORMAL_IN_ULTRASONIC}
     };
 };
 } // namespace AudioStandard
