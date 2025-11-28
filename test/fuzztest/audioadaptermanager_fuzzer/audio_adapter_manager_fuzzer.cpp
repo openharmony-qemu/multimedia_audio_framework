@@ -451,6 +451,14 @@ void AudioVolumeManagerInitializeFuzzTest()
     audioAdapterManager->SetVolumeCallbackAfterClone();
     audioAdapterManager->LoadMuteStatusMap();
 }
+
+void AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest()
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t sessionId = g_fuzzUtils.GetData<int32_t>();
+    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -479,6 +487,7 @@ std::vector<OHOS::AudioStandard::TestPtr> g_testPtrs = {
     OHOS::AudioStandard::AudioVolumeManagerNotifyAccountsChangedFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerHandleRingerModeFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest,
 };
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)

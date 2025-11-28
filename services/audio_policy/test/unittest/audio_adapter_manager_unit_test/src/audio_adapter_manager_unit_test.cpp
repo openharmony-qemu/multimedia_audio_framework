@@ -772,5 +772,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_006, TestSize.Lev
     EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
     EXPECT_TRUE(idInfo.empty());
 }
+
+/**
+ * @tc.name: Test SetOffloadVolumeForStreamVolumeChange
+ * @tc.number: SetOffloadVolumeForStreamVolumeChange_001
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return equ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolumeForStreamVolumeChange_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    int32_t sessionId = 1;
+    int32_t isMute = 1;
+    audioAdapterManager->SetStreamMute(STREAM_MUSIC, false);
+    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
+    isMute = audioAdapterManager->GetStreamMute(STREAM_MUSIC);
+    EXPECT_EQ(isMute, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

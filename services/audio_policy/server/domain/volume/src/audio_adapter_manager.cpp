@@ -3505,5 +3505,12 @@ void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
 {
     isPrimarySinkExist_ = isPrimarySinkExist;
 }
+
+void AudioAdapterManager::SetOffloadVolumeForStreamVolumeChange(int32_t sessionId)
+{
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeDb = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

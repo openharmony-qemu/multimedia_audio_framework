@@ -342,6 +342,7 @@ public:
     int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
 private:
     friend class PolicyCallbackImpl;
 
