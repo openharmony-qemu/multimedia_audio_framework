@@ -617,7 +617,8 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
 
     std::string name = "AudioPureVoiceChangeOption";
     std::string value = std::to_string(static_cast<int32_t>(option.optionGender)) + "," +
-                        std::to_string(static_cast<int32_t>(option.optionType));
+                        std::to_string(static_cast<int32_t>(option.optionType)) + "," +
+                        std::to_string(static_cast<float>(option.pitch));
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d", ret);
     return ret;

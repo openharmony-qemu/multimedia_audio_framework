@@ -133,7 +133,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
 {
     if (isSecondRequest_) {
         if (isDataReadComplete_) {
-            AUDIO_ERR_LOG("Data read finished.");
+            AUDIO_DEBUG_LOG("Data read finished.");
             SetAudioNodeDataFinishedFlag(isDataReadComplete_);
         }
         return rawPcmData_;
@@ -160,6 +160,9 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
         CHECK_AND_RETURN_RET_LOG(ret == EOK, rawPcmData_, "memset failed, ret is %{public}d.", ret);
     } else {
         std::vector<AudioSuitePcmBuffer*>& preOutputsSecond = ReadProcessNodePreOutputData();  // Need second data
+        CHECK_AND_RETURN_RET_LOG(preOutputsSecond.size() > 0 && preOutputsSecond[0] != nullptr,
+        rawPcmData_,
+        "Failed to read data from the previous node.");
         if (preOutputsSecond[0]->GetIsFinished()) {
             SetAudioNodeDataFinishedFlag(isDataReadComplete_);
             isDataReadComplete_ = true;
