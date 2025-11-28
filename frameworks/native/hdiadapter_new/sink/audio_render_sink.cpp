@@ -1204,6 +1204,8 @@ std::string AudioRenderSink::GetRouting(void) const
             return "16";
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             return "128";
+        case DEVICE_TYPE_NEARLINK:
+            return "1107296256";
         default:
             break;
     }
