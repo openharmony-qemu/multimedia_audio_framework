@@ -264,7 +264,9 @@ void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest()
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    audioAdapterManager->UpdateVolumeForLowLatency();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()]);
 }
 
 void AudioVolumeManagerUpdateSinkArgsFuzzTest()
