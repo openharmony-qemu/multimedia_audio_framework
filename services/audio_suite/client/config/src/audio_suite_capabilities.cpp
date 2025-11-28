@@ -249,8 +249,7 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
                 AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
                 return SUCCESS;
             }
-        }
-        if (!(std::filesystem::exists(nc.soPath + nc.soName))) {
+        } else if (!(std::filesystem::exists(nc.soPath + nc.soName))) {
             *isSupported = false;
             AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
             return SUCCESS;
