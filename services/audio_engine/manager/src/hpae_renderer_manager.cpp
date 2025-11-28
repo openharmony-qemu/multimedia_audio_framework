@@ -632,7 +632,10 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
     };
@@ -653,7 +656,10 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);
@@ -1591,7 +1597,8 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {
         CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
-        if (node->GetState() == HPAE_SESSION_RUNNING) {
+        if (node->GetState() == HPAE_SESSION_RUNNING && !node->IsDrain() &&
+            node->GetStreamUsage() != STREAM_SYSTEM) {
             underrunFlag = node->QueryUnderrun();
             break;
         }

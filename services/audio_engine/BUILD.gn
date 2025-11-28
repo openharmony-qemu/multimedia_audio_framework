@@ -139,6 +139,9 @@ config("audio_engine_node_config") {
   cflags += [ "-Os" ]
   cflags += [ "-DENABLE_HOOK_PCM" ]
   cflags += [ "-DENABLE_HIDUMP_DFX" ]
+  if (factory == true) {
+    cflags += [ "-DCONFIG_FACTORY_VERSION" ]
+  }
   cflags_cc = cflags
 }
 

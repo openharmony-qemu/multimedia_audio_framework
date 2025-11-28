@@ -57,7 +57,7 @@ public:
     void SetSpeed(float speed);
     float GetSpeed();
     uint64_t GetLatency();
-
+    bool IsDrain();
     bool QueryUnderrun();
 
     bool isConnected_ = false;
