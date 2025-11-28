@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRASONIC) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_ULTRASONIC;
+        }
 #ifndef LOG_TAG
 #define LOG_TAG "AudioPipeSelector"
 #endif
