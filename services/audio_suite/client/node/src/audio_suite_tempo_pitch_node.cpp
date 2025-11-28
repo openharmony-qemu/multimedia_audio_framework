@@ -25,7 +25,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 namespace {
 static constexpr size_t TEMPO_PITCH_PCM_FRAME_BYTES = 1920;      // 0.02s * 480 samples * 1 channel * 2 bytes
-static constexpr size_t RESIZE_EXPAND_BYTES = 512; // 256 frames
+static constexpr size_t RESIZE_EXPAND_BYTES = 640; // 320 frames
 }
 
 static constexpr AudioSamplingRate TEMPO_PITCH_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
