@@ -611,8 +611,6 @@ std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
 std::string ConvertToStringForChannel(const AudioChannel channel);
 
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
-bool IsInjectEnable();
-void SetInjectEnable(bool injectSwitch);
 
 } // namespace AudioStandard
 } // namespace OHOS
