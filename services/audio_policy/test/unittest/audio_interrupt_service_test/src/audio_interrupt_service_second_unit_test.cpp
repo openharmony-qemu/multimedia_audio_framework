@@ -1802,6 +1802,8 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_067, TestSize.
     EXPECT_EQ(ret, true);
     audioInterruptService->mutedGameSessionId_.insert(streamId);
     audioInterruptZone->audioFocusInfoList.clear();
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, false);
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, PAUSE});
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
     ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);

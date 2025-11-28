@@ -884,13 +884,13 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     auto isPresentPause = [incomingStreamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         return pair.first.streamId == incomingStreamId && (pair.second == PAUSE);
     };
-    if (mutedGameSessionId_.find(incomingStreamId) != mutedGameSessionId_.end()) {
-        auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresentPause);
-        if (iter != audioFocusInfoList.end()) {
-            return true;
-        }
+    if (mutedGameSessionId_.find(incomingStreamId) == mutedGameSessionId_.end()) {
+        return false;
     }
-
+    auto iterPause = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresentPause);
+    if (iterPause != audioFocusInfoList.end()) {
+        return true;
+    }
     return false;
 }
 
@@ -1057,9 +1057,7 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     if (!IsGameAvoidCallbackCase(audioInterrupt)) {
         return;
     }
-    if (mutedGameSessionId_.find(audioInterrupt.streamId) != mutedGameSessionId_.end()) {
-        mutedGameSessionId_.erase(audioInterrupt.streamId);
-    }
+    mutedGameSessionId_.erase(audioInterrupt.streamId);
     AUDIO_INFO_LOG("Reset non-interrupt control for %{public}u", audioInterrupt.streamId);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     std::string identity = IPCSkeleton::ResetCallingIdentity();
@@ -2816,6 +2814,9 @@ void AudioInterruptService::RemoveExistingFocus(
 
     for (const auto& itZone : zonesMap_) {
         bool isNeedRefresh = false;
+        if (itZone.second == nullptr) {
+            continue;
+        }
         auto audioFocusInfoList = itZone.second->audioFocusInfoList;
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
             if (iter->first.uid != appUid) {
@@ -2921,9 +2922,7 @@ void AudioInterruptService::SetNonInterruptMute(int32_t streamId, bool muteFlag)
     if (muteFlag) {
         mutedGameSessionId_.insert(streamId);
     } else {
-        if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
-            mutedGameSessionId_.erase(streamId);
-        }
+        mutedGameSessionId_.erase(streamId);
     }
     gsp->SetNonInterruptMute(streamId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);

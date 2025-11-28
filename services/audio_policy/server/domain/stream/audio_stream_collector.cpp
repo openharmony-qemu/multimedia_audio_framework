@@ -34,7 +34,7 @@ using namespace std;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 280000; //4.66min
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
 constexpr const char *RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
@@ -798,7 +798,7 @@ void AudioStreamCollector::PostReclaimMemoryTask()
             ReclaimMem();
             isActivatedMemReclaiTask_.store(false);
         };
-        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
         isActivatedMemReclaiTask_.store(true);
     }
 }
