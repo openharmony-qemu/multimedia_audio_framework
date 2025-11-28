@@ -437,7 +437,8 @@ std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sin
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
         {MCH_PRIMARY_SPEAKER, MCH_CLASS},
         {PORT_NONE, INVALID_CLASS},
-        {PRIMARY_UNPROCESS_MIC, PRIMARY_CLASS}
+        {PRIMARY_UNPROCESS_MIC, PRIMARY_CLASS},
+        {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
@@ -710,7 +711,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
-    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC) {
+    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC || deviceName == PRIMARY_ULTRASONIC_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
