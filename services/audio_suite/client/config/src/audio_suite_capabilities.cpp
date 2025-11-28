@@ -237,6 +237,19 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
     auto it = audioSuiteCapabilities_.find(nodeType);
     if (it != audioSuiteCapabilities_.end()) {
         NodeCapability &nc = it->second;
+        if (nodeType == NODE_TYPE_TEMPO_PITCH) {
+            std::istringstream iss(nc.soName);
+            std::string tempoSoName = "";
+            std::string pitchSoName = "";
+            std::getline(iss, tempoSoName, ',');
+            std::getline(iss, pitchSoName);
+            if (!(std::filesystem::exists(nc.soPath + tempoSoName)) ||
+                !(std::filesystem::exists(nc.soPath + pitchSoName))) {
+                *isSupported = false;
+                AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
+                return SUCCESS;
+            }
+        }
         if (!(std::filesystem::exists(nc.soPath + nc.soName))) {
             *isSupported = false;
             AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
