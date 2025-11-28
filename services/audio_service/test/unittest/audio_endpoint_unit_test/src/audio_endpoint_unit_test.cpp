@@ -1493,7 +1493,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
 
-    SetInjectEnable(true);
     audioEndpointInner->isNeedInject_ = false;
 
     BufferDesc readBuf = {nullptr, 1024};
@@ -1513,7 +1512,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_002, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
 
-    SetInjectEnable(true);
     audioEndpointInner->isNeedInject_ = true;
     audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_MMAP; // Not VOIP_MMAP
 
@@ -1542,8 +1540,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_003, TestSize.Level1)
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
 
-    SetInjectEnable(true);
-
     // Create test buffer
     BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
@@ -1570,8 +1566,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_004, TestSize.Level1)
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
     audioEndpointInner->fastCaptureId_ = 1;
-
-    SetInjectEnable(true);
 
     BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
@@ -1600,7 +1594,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
     audioEndpointInner->fastCaptureId_ = 1;
     audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(1);
     audioEndpointInner->limiter_->algoFrameLen_ = 1;
-    SetInjectEnable(true);
 
     BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);

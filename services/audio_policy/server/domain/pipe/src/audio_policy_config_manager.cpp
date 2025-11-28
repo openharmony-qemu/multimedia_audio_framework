@@ -738,8 +738,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
                                                       AudioStreamInfo &streamInfo)
 {
-    CHECK_AND_RETURN(IsInjectEnable());
-
     if (desc->routeFlag_ != (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
         return;
     }

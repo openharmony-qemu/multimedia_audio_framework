@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <mutex>
 #include "singleton.h"
+#include "async_action_handler.h"
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
@@ -40,6 +41,9 @@ public:
     }
 
     void DeInit();
+
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     std::unordered_map<std::string, AudioIOHandle> GetCopy();
     bool GetModuleIdByKey(std::string moduleName, AudioIOHandle& moduleId);
     void DelIOHandleInfo(std::string moduleName);
@@ -65,6 +69,8 @@ private:
     ~AudioIOHandleMap() {}
 
 private:
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
+
     std::mutex ioHandlesMutex_;
     std::unordered_map<std::string, AudioIOHandle> IOHandles_ = {};
 

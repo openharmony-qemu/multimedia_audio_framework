@@ -1611,7 +1611,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_001, TestSize.Level1)
 {
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.DeInit();
 
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -1640,7 +1640,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_001, TestSize.Level1)
 */
 HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_002, TestSize.Level1)
 {
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.DeInit();
 
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -1660,6 +1660,99 @@ HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_002, TestSize.Level1)
     EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
     EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
+}
+
+/**
+* @tc.name  : Test NeedClearPreferredMediaRenderer.
+* @tc.number: NeedClearPreferredMediaRenderer_001
+* @tc.desc  : Test NeedClearPreferredMediaRenderer preferred.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_001, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> preferred {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> updated { desc };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+
+    preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+}
+
+/**
+* @tc.name  : Test NeedClearPreferredMediaRenderer.
+* @tc.number: NeedClearPreferredMediaRenderer_002
+* @tc.desc  : Test NeedClearPreferredMediaRenderer updated.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_002, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> preferred {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> updated { desc };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+
+    updated = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    updated->networkId_ = REMOTE_NETWORK_ID;
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+}
+
+/**
+* @tc.name  : Test NeedClearPreferredMediaRenderer.
+* @tc.number: NeedClearPreferredMediaRenderer_003
+* @tc.desc  : Test NeedClearPreferredMediaRenderer fetched.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_003, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> preferred {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> updated { desc };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+
+    fetched.emplace(fetched.begin(),
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+}
+
+/**
+* @tc.name  : Test NeedClearPreferredMediaRenderer.
+* @tc.number: NeedClearPreferredMediaRenderer_004
+* @tc.desc  : Test NeedClearPreferredMediaRenderer usage.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_004, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> preferred {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE)
+    };
+    std::shared_ptr<AudioDeviceDescriptor> updated { desc };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, VOICE));
 }
 } // namespace AudioStandard
 } // namespace OHOS

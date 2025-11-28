@@ -428,7 +428,8 @@ int32_t AudioProcessInServer::StartInner()
 
 void AudioProcessInServer::RebuildCaptureInjector()
 {
-    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
+    CHECK_AND_RETURN(rebuildFlag_);
+    AUDIO_INFO_LOG("Injector::CaptureInjector need rebuild capture injector.");
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
@@ -1060,7 +1061,6 @@ int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
         return SUCCESS;
     }
 
-    AUDIO_INFO_LOG("Audio capture resample, srcRate:%{public}u, dstRate:%{public}u", srcRate, dstRate);
     int32_t ret;
     float *resampleInBuff = nullptr;
     if (srcInfo.format != SAMPLE_F32LE) {
@@ -1086,7 +1086,8 @@ int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
     float *resampleOutBuff =
         reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, outBuffLen));
     ret = resampler_->Process(resampleInBuff, resampleInBuffSize, resampleOutBuff, resampleOutBuffSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Capture data resample failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Capture data resample failed, "
+        "srcRate:%{public}u, dstRate:%{public}u", srcRate, dstRate);
 
     outBuf.buffer = reinterpret_cast<uint8_t*>(resampleOutBuff);
     outBuf.bufLength = outBuffLen;

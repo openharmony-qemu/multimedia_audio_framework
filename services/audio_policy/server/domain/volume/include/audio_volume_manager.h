@@ -40,6 +40,7 @@
 #include "bluetooth_device_manager.h"
 #endif
 
+#include "async_action_handler.h"
 #include "audio_a2dp_device.h"
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
@@ -78,6 +79,9 @@ public:
     }
     bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
     void DeInit(void);
+
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     void InitKVStore();
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
@@ -198,6 +202,7 @@ private:
         int32_t volumeLevel, int32_t zoneId, bool syncVolDegree);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
@@ -265,6 +270,7 @@ private:
     bool needForceControlVolumeType_ = false;
     AudioVolumeType forceControlVolumeType_ = STREAM_DEFAULT;
     std::shared_ptr<ForceControlVolumeTypeMonitor> forceControlVolumeTypeMonitor_;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 
 class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {

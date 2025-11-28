@@ -1699,7 +1699,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST; // Not VOIP | FAST combination
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should return early without modifying sampling rate
@@ -1719,7 +1718,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_16000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should modify streamInfo since desc's rate is not 16000.
@@ -1739,7 +1737,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should not modify since it's already 48000
@@ -1759,7 +1756,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should change from 44100 to 48000
@@ -1788,7 +1784,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
         SAMPLE_RATE_384000  // Should change to 48000
     };
 
-    SetInjectEnable(true);
     for (auto rate : testRates) {
         std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
         AudioStreamInfo streamInfo;

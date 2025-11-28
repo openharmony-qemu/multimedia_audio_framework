@@ -342,6 +342,7 @@ public:
     int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
 private:
     friend class PolicyCallbackImpl;
 
@@ -442,7 +443,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
-    void UpdateVolumeForLowLatency();
+    void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device, AudioVolumeType volumeType);
     bool IsDistributedVolumeType(AudioStreamType streamType);
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);

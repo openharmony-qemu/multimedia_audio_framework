@@ -443,10 +443,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return; // No need to update preferred device for virtual device
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
+    if (NeedClearPreferredMediaRenderer(audioStateManager_.GetPreferredMediaRenderDevice(), audioDescriptor,
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-        "UpdateConnectedDevicesWhenConnectingForOutputDevice_1",
-        ROUTER_TYPE_USER_SELECT).front()) && (usage & MEDIA) == MEDIA) {
+            "UpdateConnectedDevicesWhenConnectingForOutputDevice_1", ROUTER_TYPE_USER_SELECT), usage)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
@@ -458,6 +457,31 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
+}
+
+bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const std::shared_ptr<AudioDeviceDescriptor> &updated,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const
+{
+    CHECK_AND_RETURN_RET(preferred != nullptr, false);
+    if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(updated != nullptr, false);
+    if (updated->networkId_ != LOCAL_NETWORK_ID) {
+        return false;
+    }
+
+    if ((usage & MEDIA) != MEDIA) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(!fetched.empty(), false);
+    const auto &frontDesc = fetched.front();
+
+    CHECK_AND_RETURN_RET(frontDesc != nullptr, false);
+    return updated->IsSameDeviceDescPtr(frontDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(

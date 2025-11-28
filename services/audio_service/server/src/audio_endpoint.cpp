@@ -1316,7 +1316,9 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
-    if (!isExistLoopback_) {
+    bool isNeedVolumeCheck = !isExistLoopback_ &&
+        PolicyHandler::GetInstance().GetActiveOutPutDevice() != DEVICE_TYPE_NEARLINK;
+    if (isNeedVolumeCheck) {
         ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
             channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel);
     }
@@ -1927,7 +1929,6 @@ int32_t AudioEndpointInner::LimitMixData(float *inBuff, float *outBuff, const si
 void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
 {
     // pre proc
-    CHECK_AND_RETURN(IsInjectEnable());
     isConvertReadFormat_ = false;
     CHECK_AND_RETURN(isNeedInject_ == true);
     CHECK_AND_RETURN_LOG(endpointType_ == TYPE_VOIP_MMAP, "type error, cur only support voip inject.");

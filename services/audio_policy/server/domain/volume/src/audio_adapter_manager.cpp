@@ -1157,10 +1157,11 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
+        UpdateVolumeForLowLatency(desc, volumeType);
         AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
             volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
     }
-    UpdateVolumeForLowLatency();
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
 
 void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -3179,26 +3180,22 @@ std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(Adj
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
 }
 
-void AudioAdapterManager::UpdateVolumeForLowLatency()
+void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioVolumeType volumeType)
 {
     Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
+    CHECK_AND_RETURN_LOG(device != nullptr, "device handle null, UpdateVolumeForLowLatency failed");
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
-    auto descs = audioActiveDevice_.GetActiveOutputDevices();
-    for (auto iter = defaultVolumeTypeList_.begin(); iter != defaultVolumeTypeList_.end(); iter++) {
-        for (auto &desc : descs) {
-            if (*iter == STREAM_MUSIC && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
-                && IsAbsVolumeScene()) {
-                vol.isMute = isAbsVolumeMute_;
-            } else {
-                vol.isMute = GetStreamMuteInternal(desc, *iter);
-            }
-            vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
-            vol.volumeFloat = GetSystemVolumeInDbByDegree(*iter, desc->deviceType_, vol.isMute);
-            AudioVolumeManager::GetInstance().SetSharedVolume(*iter, desc->deviceType_, vol);
-        }
+    if (volumeType == STREAM_MUSIC && device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
+        && IsAbsVolumeScene()) {
+        vol.isMute = isAbsVolumeMute_;
+    } else {
+        vol.isMute = GetStreamMuteInternal(device, volumeType);
     }
-    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
+    vol.volumeInt = static_cast<uint32_t>(GetStreamVolumeInternal(device, volumeType));
+    vol.volumeFloat = GetSystemVolumeInDbByDegree(volumeType, device->deviceType_, vol.isMute);
+    AudioVolumeManager::GetInstance().SetSharedVolume(volumeType, device->deviceType_, vol);
 }
 
 void AudioAdapterManager::RegisterDoNotDisturbStatus()
@@ -3507,6 +3504,13 @@ void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
 void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
 {
     isPrimarySinkExist_ = isPrimarySinkExist;
+}
+
+void AudioAdapterManager::SetOffloadVolumeForStreamVolumeChange(int32_t sessionId)
+{
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeDb = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

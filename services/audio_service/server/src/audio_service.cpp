@@ -1023,18 +1023,7 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
 
-    bool reuse = false;
-    AudioStreamInfo oldStreamInfo = endpointList_[deviceKey]->GetAudioStreamInfo();
-    if (IsInjectEnable() && endpointList_[deviceKey]->GetDeviceRole() == INPUT_DEVICE &&
-        endpointFlag == AUDIO_FLAG_VOIP_FAST) {
-        /* capture voip fast support resample, so can reuse at not same sample */
-        if (IsSameAudioStreamInfoNotIncludeSample(streamInfo, oldStreamInfo)) {
-            reuse = true;
-        }
-    } else {
-        reuse = streamInfo == oldStreamInfo;
-    }
-
+    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
