@@ -248,7 +248,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_012, TestSize.Level1)
     EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_ULTRASONIC);
 }
 
-
 /**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr

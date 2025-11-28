@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioAdapterManager"
 #endif
-xx
+
 #include "audio_adapter_manager.h"
 
 
@@ -1441,6 +1441,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_UNPROCESS) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_UNPROCESS;
+        }
+         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_ULTRASONIC) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_ULTRASONIC;
         }
     }
 }
