@@ -21,7 +21,7 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_stream_enum.h"xx
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -109,6 +109,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType)
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
     } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }
