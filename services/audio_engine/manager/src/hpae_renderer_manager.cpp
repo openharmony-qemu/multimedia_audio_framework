@@ -1597,8 +1597,7 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {
         CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
-        if (node->GetState() == HPAE_SESSION_RUNNING && !node->IsDrain() &&
-            node->GetStreamUsage() != STREAM_SYSTEM) {
+        if (node->GetState() == HPAE_SESSION_RUNNING && !node->IsDrain() && node->GetStreamType() != STREAM_SYSTEM) {
             underrunFlag = node->QueryUnderrun();
             break;
         }
