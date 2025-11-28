@@ -50,7 +50,7 @@
 #include "i_hpae_soft_link.h"
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
-#include "audio_policy_async_action_handler.h"
+#include "async_action_handler.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -207,6 +207,8 @@ private:
     void DeInit();
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
@@ -621,6 +623,7 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     bool hearingAidCallFlag_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
@@ -682,7 +685,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
-class ActivateNearlinkDeviceAction : public PolicyAsyncAction {
+class ActivateNearlinkDeviceAction : public AsyncActionHandler::AsyncAction {
 public:
     ActivateNearlinkDeviceAction(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> &ringAndVoipDescMap,
