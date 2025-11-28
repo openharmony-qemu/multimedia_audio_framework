@@ -570,13 +570,13 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             isRingDualToneOnPrimarySpeaker_ = false;
             for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
                 AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first, STREAM_MUSIC);
+                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
             AudioStreamType streamType = streamCollector_.GetStreamType(sessionID);
             if (streamType == STREAM_MUSIC) {
                 AudioVolume::GetInstance()->SetStreamVolumeMute(sessionID, false);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionID, STREAM_MUSIC);
+                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionID);
             }
         }
     }
@@ -1712,7 +1712,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
                 AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->sessionId_, true);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->sessionId_, STREAM_MUSIC);
+                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->sessionId_);
             }
             shouldUpdateDeviceDueToDualTone_ = true;
         } else {
@@ -1782,13 +1782,13 @@ void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after,
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
     for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first, STREAM_MUSIC);
+        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
     AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->GetSessionId());
     if (streamType == STREAM_MUSIC) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->GetSessionId(), false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->GetSessionId(), STREAM_MUSIC);
+        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->GetSessionId());
     }
 }
 
@@ -2552,14 +2552,14 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         CHECK_AND_RETURN_LOG(!isRingDualToneOnPrimarySpeaker_, "no need to execute SetInnerStreamMute false");
         for (std::pair<uint32_t, AudioStreamType> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
             AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-            audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first, STREAM_MUSIC);
+            audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
         AudioStreamType streamType = streamCollector_.GetStreamType(streamChangeInfo.audioRendererChangeInfo.sessionId);
         if (streamType == STREAM_MUSIC) {
             AudioVolume::GetInstance()->SetStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
             audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(
-                streamChangeInfo.audioRendererChangeInfo.sessionId, STREAM_MUSIC);
+                streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
     }
 }
@@ -2708,7 +2708,7 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
                 AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(sessionId, streamType));
                 AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionId, STREAM_MUSIC);
+                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionId);
             }
         }
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);

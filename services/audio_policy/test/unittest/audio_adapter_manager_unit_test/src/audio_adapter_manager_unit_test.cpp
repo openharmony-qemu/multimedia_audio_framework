@@ -783,12 +783,11 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolumeForStreamVolumeChange_001,
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
-    AudioStreamType streamType = STREAM_MUSIC;
     int32_t sessionId = 1;
     int32_t isMute = 1;
-    audioAdapterManager->SetStreamMute(streamType, false);
-    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId, streamType);
-    isMute = audioAdapterManager->GetStreamMute(streamType);
+    audioAdapterManager->SetStreamMute(STREAM_MUSIC, false);
+    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
+    isMute = audioAdapterManager->GetStreamMute(STREAM_MUSIC);
     EXPECT_EQ(isMute, 0);
 }
 } // namespace AudioStandard

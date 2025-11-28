@@ -455,8 +455,7 @@ void AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest()
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
     int32_t sessionId = g_fuzzUtils.GetData<int32_t>();
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId, streamType);
+    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

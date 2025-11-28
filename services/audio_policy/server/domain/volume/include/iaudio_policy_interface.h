@@ -305,7 +305,7 @@ public:
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
     virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
         AudioStreamType streamType, int32_t volumeDegree) = 0;
-    virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId, AudioStreamType streamType) = 0;
+    virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
