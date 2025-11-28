@@ -65,6 +65,18 @@ enum AudioSpatialDeviceType {
     EARPHONE_TYPE_OTHERS,
 };
 
+enum AudioEarphoneProduct : int32_t {
+    EARPHONE_PRODUCT_NONE = 0,
+    EARPHONE_PRODUCT_DOVE = 1,
+    EARPHONE_PRODUCT_ROBIN = 2,
+};
+
+enum AudioTwsMode : int32_t {
+    TWS_MODE_DEFAULT = 0,
+    TWS_MODE_LISTEN = 1,
+    TWS_MODE_HITWS = 2,
+};
+
 enum FoldState : uint32_t {
     FOLD_STATE_EXPAND = 1,
     FOLD_STATE_CLOSE = 2,

@@ -633,13 +633,13 @@ bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout ch
 void HpaeManagerImpl::updateCollaborativeProductId(const std::string &productId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+    manager_->updateCollaborativeProductId(productId);
 }
 
 void HpaeManagerImpl::LoadCollaborationConfig()
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+    manager_->LoadCollaborationConfig();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

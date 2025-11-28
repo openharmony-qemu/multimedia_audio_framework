@@ -63,7 +63,7 @@ private:
     AudioTwsMode twsMode_ = TWS_MODE_DEFAULT;
     AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
     std::unordered_map<std::string, std::map<AudioTwsMode, int32_t>> collaborativeLatencyConfig_;
-}
+};
 
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -303,7 +303,8 @@ public:
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
-    void updateCollaborativeProductId(const std::string &productId)
+    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void LoadCollaborationConfig() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

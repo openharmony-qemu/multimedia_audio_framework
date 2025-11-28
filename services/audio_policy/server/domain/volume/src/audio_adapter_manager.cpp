@@ -3507,5 +3507,11 @@ void AudioAdapterManager::updateCollaborativeProductId(const std::string &produc
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
     return audioServiceAdapter_->updateCollaborativeProductId(productId);
 }
+
+void AudioAdapterManager::LoadCollaborationConfig()
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
+    return audioServiceAdapter_->LoadCollaborationConfig();
+}
 } // namespace AudioStandard
 } // namespace OHOS
