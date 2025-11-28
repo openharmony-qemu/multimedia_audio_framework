@@ -62,6 +62,7 @@ static constexpr uint32_t BLOCK_INTERRUPT_OVERTIMES_IN_MS = 3000; // 3s
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
+static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -1064,6 +1065,9 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         return SUCCESS;
     }
 
+    std::unique_lock<std::mutex> lockF(switchStreamMt_);
+    isSwitchStreamSt_ = false;
+    lockF.unlock();
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
     }
@@ -1078,6 +1082,13 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
             sharedRenderer->CheckAudioRenderer(callingFunc + "withNewThread");
             sharedRenderer->SetInSwitchingFlag(false);
         } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+        std::unique_lock<std::mutex> lock(sharedRenderer->switchStreamMt_);
+        sharedRenderer->isSwitchStreamSt_ = true;
+        sharedRenderer->switchStreamSt_.notify_all();
+    });
+    std::unique_lock<std::mutex> lock(switchStreamMt_);
+    switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
+        return isSwitchStreamSt_;
     });
     return SUCCESS;
 }
