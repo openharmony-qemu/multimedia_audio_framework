@@ -772,7 +772,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
         AUDIO_TONE_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
-    uint32_t preferredType = 6;
+    uint32_t preferredType = 9999;
     PreferredType ERR_PFTYPE = static_cast<PreferredType>(preferredType);
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
@@ -1701,7 +1701,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
 
     SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should return early without modifying sampling rate
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_44100);
 }
@@ -1721,7 +1721,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
 
     SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should modify streamInfo since desc's rate is not 16000.
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
@@ -1741,7 +1741,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
 
     SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should not modify since it's already 48000
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
@@ -1794,9 +1794,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
         AudioStreamInfo streamInfo;
         streamInfo.samplingRate = rate;
         desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
-        
+
         manager.UpdateStreamSampleInfo(desc, streamInfo);
-        
+
         // All unsupported rates should be changed to 48000
         EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
     }
