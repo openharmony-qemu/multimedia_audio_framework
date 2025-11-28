@@ -11,6 +11,8 @@ const int CONSTANT_0 = 0;
 const int CONSTANT_1 = 1;
 const int GLOBAL_RESMGR = 0xFF00;
 const char *UTILS_TAG = "[AudioEditTestApp_utils_cpp]";
+const int BITSPERSAMPLEMODE_INT = 0;
+const int BITSPERSAMPLEMODE_FLOAT = 1;
 
 // 解析 napi 字符串参数
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
@@ -39,8 +41,11 @@ void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
     } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE) {
         *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_24;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S24LE;
-    }  else {
-        *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_32;
+    }  else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE) {
+        *bitsPerSample = DEMO_BITSPERSAMPLE_32;
+        *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S32LE;
+    } else if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE) {
+        *bitsPerSample = DEMO_BITSPERSAMPLE_32;
         *streamSampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
     }
 }
@@ -127,7 +132,7 @@ OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
 }
 
 // 位深转换
-void ConvertBitsPerSample(unsigned int& bitsPerSample)
+void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode)
 {
     switch (bitsPerSample) {
         case DemoBitsPerSample::DEMO_BITSPERSAMPLE_8:
@@ -140,7 +145,11 @@ void ConvertBitsPerSample(unsigned int& bitsPerSample)
             bitsPerSample = DemoBitsPerSample::DEMO_SAMPLE_S246E;
             break;
         case DemoBitsPerSample::DEMO_BITSPERSAMPLE_32:
-            bitsPerSample = DemoBitsPerSample::DEMO_SAMPLE_F32LE;
+            if (bitsPerSampleMode == BITSPERSAMPLEMODE_INT) {
+                bitsPerSample = DemoBitsPerSample::DEMO_SAMPLE_S32LE;
+            } else {
+                bitsPerSample = DemoBitsPerSample::DEMO_SAMPLE_F32LE;
+            }
             break;
         default:
             break;

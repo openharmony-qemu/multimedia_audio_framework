@@ -506,7 +506,9 @@ bool AudioPolicyServer::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, Audi
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
     if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
-        audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        ((audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            audioPolicyManager_.IsAbsVolumeScene()) ||
+            audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK)) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 }
@@ -5130,13 +5132,16 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
 
 int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 {
-    constexpr int32_t meetServiceUid = 5523; // "uid" : "meetservice"
     auto callerUid = IPCSkeleton::GetCallingUid();
-    // This function can only be used by meetservice
-    CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
-        "SetVirtualCall callerUid is error: not meetservice");
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
     return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
+}
+
+int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

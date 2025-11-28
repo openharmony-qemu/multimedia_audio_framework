@@ -171,6 +171,7 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
         CHECK_AND_RETURN_RET_LOG(tmp == SUCCESS, ERROR, "the configuring A2DP device doesn't exist.");
     } else {
         AUDIO_INFO_LOG("Deactive A2DP device");
+        activeA2dpDevice_ = device;
     }
     if (macAddress == activeA2dpDevice_.GetDeviceAddr()) {
         return SUCCESS;
@@ -481,6 +482,9 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         int32_t ret = DisconnectScoWrapper();
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     } else {
+        if (macAddress == "") {
+            activeHfpDevice_ = device;
+        }
         return SUCCESS;
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
@@ -629,7 +633,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     auto scene = scene_.load();
-    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT, ERROR, "only support no call");
+    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || isVirtual, ERROR, "only support no call");
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         if (isVirtual) {

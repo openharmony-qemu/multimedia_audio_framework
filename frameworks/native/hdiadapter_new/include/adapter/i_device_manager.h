@@ -55,9 +55,9 @@ public:
     virtual int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value, void *reserved) { return ERR_NOT_SUPPORTED; }
     virtual void RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
-        IDeviceManagerCallback *callback) {}
+        std::shared_ptr<IDeviceManagerCallback> callback) {}
     virtual void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
-        IDeviceManagerCallback *callback) {}
+        std::shared_ptr<IDeviceManagerCallback> callback) {}
     virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
     virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
 

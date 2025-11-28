@@ -1097,7 +1097,7 @@ int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCap
 int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
-    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage & D_ALL_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty(), ERR_INVALID_PARAM, "invalid parameter: empty list");
     for (const auto &devDesc : audioDeviceDescriptors) {
@@ -1117,7 +1117,7 @@ int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
 {
-    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage & D_ALL_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty(), ERR_INVALID_PARAM, "invalid parameter: empty list");
     for (const auto &devDesc : audioDeviceDescriptors) {
@@ -1136,7 +1136,7 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
 
 int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage) const
 {
-    CHECK_AND_RETURN_RET_LOG(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES,
+    CHECK_AND_RETURN_RET_LOG(audioDevUsage & D_ALL_DEVICES,
         ERR_INVALID_PARAM, "invalid parameter: only support output device");
     auto unexcludeOutputDevices = GetExcludedDevices(audioDevUsage);
     if (unexcludeOutputDevices.empty()) {
@@ -2060,6 +2060,11 @@ int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const 
 int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
 {
     return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+}
+
+bool AudioSystemManager::GetVirtualCall()
+{
+    return AudioPolicyManager::GetInstance().GetVirtualCall();
 }
 
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(

@@ -90,7 +90,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE),
-    std::string(PRIMARY_AI_MIC)
+    std::string(PRIMARY_AI_MIC),
+    std::string(PRIMARY_UNPROCESS_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -190,7 +191,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
 
         FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
         info.caller = "GetPreferredOutputDeviceDescInner";
         descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
@@ -1837,6 +1838,11 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
+}
+
+bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
+{
+    return Bluetooth::AudioHfpManager::IsVirtualCall();
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

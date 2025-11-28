@@ -59,6 +59,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {FILE_SINK, TYPE_FILE_IO},
     {FILE_SOURCE, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
+    {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
 };
 
 int32_t AudioPolicyUtils::startDeviceId = 1;
@@ -300,9 +301,9 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
             // BTH tells us that a2dpoffload is OK
             if (audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
-                if (pipeType == PIPE_TYPE_OFFLOAD) {
+                if (pipeType == PIPE_TYPE_OUT_OFFLOAD) {
                     portName = OFFLOAD_PRIMARY_SPEAKER;
-                } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+                } else if (pipeType == PIPE_TYPE_OUT_MULTICHANNEL) {
                     portName = MCH_PRIMARY_SPEAKER;
                 } else {
                     portName = PRIMARY_SPEAKER;
@@ -318,9 +319,9 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_NEARLINK:
-            if (pipeType == PIPE_TYPE_OFFLOAD) {
+            if (pipeType == PIPE_TYPE_OUT_OFFLOAD) {
                 portName = OFFLOAD_PRIMARY_SPEAKER;
-            } else if (pipeType == PIPE_TYPE_MULTICHANNEL) {
+            } else if (pipeType == PIPE_TYPE_OUT_MULTICHANNEL) {
                 portName = MCH_PRIMARY_SPEAKER;
             } else {
                 portName = PRIMARY_SPEAKER;
@@ -385,6 +386,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
             if (routeFlag == AUDIO_INPUT_FLAG_AI) {
                 portName = PRIMARY_AI_MIC;
                 AUDIO_INFO_LOG("use PRIMARY_AI_IC for devicetype: %{public}d", deviceType);
+            } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
+                portName = PRIMARY_UNPROCESS_MIC;
+                AUDIO_INFO_LOG("use PRIMARY_UNPROCESS_MIC for devicetype: %{public}d", deviceType);
             } else {
                 portName = PRIMARY_MIC;
             }
@@ -428,7 +432,8 @@ std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sin
         {FILE_SINK, FILE_CLASS},
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
         {MCH_PRIMARY_SPEAKER, MCH_CLASS},
-        {PORT_NONE, INVALID_CLASS}
+        {PORT_NONE, INVALID_CLASS},
+        {PRIMARY_UNPROCESS_MIC, PRIMARY_CLASS}
     };
     std::string deviceClass = INVALID_CLASS;
     if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
@@ -701,7 +706,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
-    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC) {
+    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;

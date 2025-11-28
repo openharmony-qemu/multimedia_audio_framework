@@ -172,6 +172,7 @@ std::unordered_map<std::string, AudioFlag> AudioDefinitionPolicyUtils::flagStrTo
     {"AUDIO_INPUT_FLAG_VOIP_FAST", AUDIO_INPUT_FLAG_VOIP_FAST},
     {"AUDIO_INPUT_FLAG_WAKEUP", AUDIO_INPUT_FLAG_WAKEUP},
     {"AUDIO_INPUT_FLAG_AI", AUDIO_INPUT_FLAG_AI},
+    {"AUDIO_INPUT_FLAG_UNPROCESS", AUDIO_INPUT_FLAG_UNPROCESS},
 };
 
 std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {

@@ -111,6 +111,7 @@ public:
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
+    bool GetVirtualCall(pid_t uid);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

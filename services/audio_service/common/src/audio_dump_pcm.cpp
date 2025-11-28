@@ -174,6 +174,11 @@ bool AudioCacheMgrInner::DeInit()
 
 void AudioCacheMgrInner::CacheData(std::string &dumpFileName, void* srcDataPointer, size_t dataLength)
 {
+    if (srcDataPointer == nullptr || dataLength == 0 || dataLength > EACH_CHUNK_SIZE) {
+        Trace trace("AudioCacheMgrInner::CacheData::InvalidParam");
+        return;
+    }
+
     if (!isInited_.load()) {
         Trace trace("AudioCacheMgrInner::CacheData::NotInited");
         return;

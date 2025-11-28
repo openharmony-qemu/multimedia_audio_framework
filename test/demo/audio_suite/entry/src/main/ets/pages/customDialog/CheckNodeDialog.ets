@@ -455,8 +455,95 @@ struct AudioSeparationComponent {
     }
 }
 
+// 音速音调
+@Component
+struct SoundSpeedToneComponent {
+  // 音速
+  @Link soundSpeed: number;
+  // 音调
+  @Link soundTone: number;
+  onCancel?: () => void;
+  onAgree?: () => void;
+ 
+  build() {
+    Column() {
+      Row() {
+        Text(`${NodeType.SOUND_SPEED_TONE}`)
+          .margin({ bottom: $r('app.float.margin_10') })
+      }
+      .margin({ top: $r('app.float.margin_10') })
+ 
+      Column() {
+        Column() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text('音速')
+            Text(`${this.soundSpeed.toFixed(1)}x`)
+          }.padding('10px')
+          Slider({
+            value: this.soundSpeed,
+            step: 0.1,
+            style: SliderStyle.OutSet,
+            min: 0.5,
+            max: 10,
+          })
+            .selectedColor($r('app.color.index_audio_clip_card'))
+            .onChange((value: number, mode: SliderChangeMode) => {
+              this.soundSpeed = value;
+            })
+        }
+        .height(50)
+        .margin({bottom: $r('app.float.margin_10')})
+        .padding('10px')
+        .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+        .borderRadius(10)
+        Column() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text('音调')
+            Text(`+${this.soundTone.toFixed(1)}`)
+          }.padding('10px')
+          Slider({
+            value: this.soundTone,
+            step: 0.1,
+            style: SliderStyle.OutSet,
+            min: 0.1,
+            max: 5,
+          })
+            .selectedColor($r('app.color.index_audio_clip_card'))
+            .onChange((value: number, mode: SliderChangeMode) => {
+              this.soundTone = value;
+            })
+        }
+        .height(50)
+        .padding('10px')
+        .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+        .borderRadius(10)
+      }
+      .margin({right: 20})
+      .padding({left: '10%', right: '10%'})
+ 
+      Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+        Button('取消')
+          .onClick(() => {
+            if (this.onCancel) {
+              this.onCancel()
+            }
+          })
+        Button('确定')
+          .onClick(() => {
+            if (this.onAgree) {
+              this.onAgree();
+            }
+          })
+      }.margin({ top: $r('app.float.margin_10') })
+      .padding(20)
+    }
+  }
+}
+
 @CustomDialog
 struct EffectNodeDialog {
+    @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
+    @StorageLink('currentPipelineId') currentPipelineId: string = '';
     @Prop selectedNode: string = '';
     @Prop selectedEffectNode: NodeType;
     @Prop currentInputId: string = '';
@@ -476,6 +563,12 @@ struct EffectNodeDialog {
     @State selectedNoiseReduction: number = -1;
     //音源分离，默认为人声
     @State selectedAudioSeparation: AudioSeparationType = AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
+    // 音速
+    @State soundSpeed: number = 1.0;
+    // 音调
+    @State soundTone: number = 1.0;
+    // 实时播放（音源分离）
+    @Consume isSeparation: boolean = false;
     controllerTwo?: CustomDialogController;
 
     build() {
@@ -488,9 +581,15 @@ struct EffectNodeDialog {
                     },
                     onAgree: () => {
                         let equailizerId = util.generateRandomUUID(true);
-                        let result =
-                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId,
-                                this.currentInputId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId);
+                        } else {
+                            result =
+                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId,
+                                this.selectedNode);
+                        }
                         if (result !== 0) {
                             Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                             this.getUIContext().showAlertDialog({
@@ -521,8 +620,15 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result = audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId,
-                            this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -551,8 +657,15 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result = audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment,
-                            this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加环境节点失败',
@@ -582,8 +695,16 @@ struct EffectNodeDialog {
 
                         //添加效果节点到混音台---数据处理
                         const nodeId = util.generateRandomUUID(true);
-                        //预留编辑降噪功能方法
-                        let result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiAddNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        } else {
+                            //预留编辑降噪功能方法
+                            result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
+                        }
+            
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -611,9 +732,15 @@ struct EffectNodeDialog {
                         // 调用napi的底层效果节点
                         let voiceBeautifierId = util.generateRandomUUID(true);
                         Logger.error(TAG, `-----${this.selectedNode}`)
-                        let result =
-                            audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier,
-                                voiceBeautifierId, this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiStartVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
+                        } else {
+                            result =
+                                audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加美化节点失败',
@@ -642,14 +769,20 @@ struct EffectNodeDialog {
                     onAgree: () => {
                         // 调用napi的底层效果节点
                         const nodeId = util.generateRandomUUID(true);
-                        let result =
-                            audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId,
-                                this.selectedNode);
+                        let result = -1;
+                        if (this.isCurrentMulPipeline) {
+                            result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
+                            result =
+                                audioNapi.multiAddAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
+                        } else {
+                            result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
+                        }
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: `添加${AudioSeparationMap.get(this.selectedAudioSeparation)}失败`,
                                 autoCancel: true
                             });
+                            this.isSeparation = false;
                             return;
                         }
                         //添加效果节点到混音台---数据处理
@@ -661,6 +794,43 @@ struct EffectNodeDialog {
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
+                        this.controllerTwo?.close();
+                        this.isSeparation = true;
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
+                SoundSpeedToneComponent({
+                    soundSpeed: this.soundSpeed,
+                    soundTone: this.soundTone,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: () => {
+                        let soundSpeedToneId = util.generateRandomUUID(true);
+                        let result = audioNapi.setSoundSpeedTone(this.currentInputId, soundSpeedToneId, this.soundSpeed, this.soundTone, this.selectedNode);
+                        if (result !== 0) {
+                            // 音速音调效果节点设置失败
+                            this.getUIContext().showAlertDialog({
+                                message: '设置音速音调失败',
+                                confirm: {
+                                    value: '确定',
+                                    action: () => {}
+                                },
+                                cancel: () => {
+                                    Logger.info(TAG, `cancel`);
+                                }
+                            });
+                            return;
+                        }
+                        //添加效果节点到混音台---数据处理
+                        let node: Node = {
+                            id: soundSpeedToneId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            soundSpeed: this.soundSpeed,
+                            soundTone: this.soundTone,
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
                         this.controllerTwo?.close();
                     }
                 })
@@ -920,6 +1090,10 @@ struct SetNodeDialog {
     @State selectedVoiceBeautifier: VoiceBeautifierType = VoiceBeautifierType.VOICE_BEAUTIFIER_TYPE_NORMAL;
     //音源分离
     @State selectedAudioSeparation: AudioSeparationType = AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
+    // 音速
+    @State soundSpeed: number = 1.0;
+    // 音调
+    @State soundTone: number = 1.0;
     setNodeController?: CustomDialogController;
 
     aboutToAppear(): void {
@@ -947,6 +1121,12 @@ struct SetNodeDialog {
                     }
                     if (leftEffectNode?.audioSeparationType !== undefined) {
                         this.selectedAudioSeparation = leftEffectNode.audioSeparationType
+                    }
+                    if (leftEffectNode?.soundSpeed !== undefined) {
+                        this.soundSpeed = leftEffectNode.soundSpeed;
+                    }
+                    if (leftEffectNode?.soundTone !== undefined) {
+                        this.soundTone = leftEffectNode.soundTone;
                     }
                 }
             }
@@ -1126,6 +1306,37 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         }
                     })
+                }  else if (this.nodeType === NodeType.SOUND_SPEED_TONE) {
+                    SoundSpeedToneComponent({
+                        soundSpeed: this.soundSpeed,
+                        soundTone: this.soundTone,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: () => {
+                        //修改效果节点---数据处理
+                        const node = this.isLeft ? this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode) :
+                            this.mixerList.find(node => node.id === this.selectedNode);
+                        if (node) {
+                            let result =
+                                audioNapi.setSoundSpeedTone(this.currentInputId, this.selectedNode, this.soundSpeed, this.soundTone);
+                            if (result !== 0) {
+                            // 音速音调效果节点设置失败
+                            this.getUIContext().showAlertDialog({
+                                message: '修改音速音调失败',
+                                autoCancel: true
+                            });
+                            return;
+                            }
+                        } else {
+                            this.getUIContext().showAlertDialog({
+                                message: '修改音速音调失败',
+                                autoCancel: true
+                            });
+                        }
+                        this.setNodeController?.close();
+                        }
+                    })
                 }
             }
         }
@@ -1237,57 +1448,29 @@ export struct CheckNodeDialog {
     selectNodeHandle() {
         // 根据 param 过滤可选节点类型
         let filteredNodes: NodeType[] = this.nodes;
-        if (this.param === 2) {
-            // 仅显示“均衡”
-            filteredNodes = [NodeType.EQ];
-            this.getUIContext().showAlertDialog({
-                title: '添加节点',
-                message: '当前模式仅支持添加“均衡”节点',
-                autoCancel: false, // 不允许点击外部关闭
-                primaryButton: {
-                    value: '取消',
-                    action: () => {
-                        Logger.info(TAG, '取消添加均衡节点');
-                    }
-                },
-                secondaryButton: {
-                    value: '确定',
-                    style: DialogButtonStyle.HIGHLIGHT,
-                    defaultFocus: true,
-                    action: () => {
-                        Logger.info(TAG, '确认添加均衡节点');
-                        // 直接设置选中为 EQ，打开效果弹窗
-                        this.selectedEffectNode = NodeType.EQ;
-                        this.select = this.nodes.indexOf(NodeType.EQ); // 保持选中状态一致
-                        this.effectNodeDialog?.open();
-                    }
-                }
-            });
-        } else {
-            // 默认：全部显示（兼容旧逻辑）
-            filteredNodes = this.nodes;
-            this.getUIContext().showTextPickerDialog({
-                range: filteredNodes,
-                selected: this.select,
-                value: this.selectedEffectNode,
-                defaultPickerItemHeight: 40,
-                onAccept: (value: TextPickerResult) => {
-                    Logger.info(TAG, `selectNodeHandle onAccept, value: ${JSON.stringify(value)}`);
-                    // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
-                    this.select = value.index;
-                    // 点击确定后，被选到的文本数据展示到页面
-                    this.selectedEffectNode = value.value as NodeType;
+        // 默认：全部显示（兼容旧逻辑）
+        filteredNodes = this.nodes;
+        this.getUIContext().showTextPickerDialog({
+            range: filteredNodes,
+            selected: this.select,
+            value: this.selectedEffectNode,
+            defaultPickerItemHeight: 40,
+            onAccept: (value: TextPickerResult) => {
+                Logger.info(TAG, `selectNodeHandle onAccept, value: ${JSON.stringify(value)}`);
+                // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
+                this.select = value.index;
+                // 点击确定后，被选到的文本数据展示到页面
+                this.selectedEffectNode = value.value as NodeType;
 
-                    this.effectNodeDialog?.open();
-                },
-                onCancel: () => {
-                    Logger.info(TAG, 'selectNodeHandle onCancel');
-                },
-                onChange: () => {
-                    Logger.info(TAG, 'selectNodeHandle onChange');
-                }
-            })
-        }
+                this.effectNodeDialog?.open();
+            },
+            onCancel: () => {
+                Logger.info(TAG, 'selectNodeHandle onCancel');
+            },
+            onChange: () => {
+                Logger.info(TAG, 'selectNodeHandle onChange');
+            }
+        })
     }
 
     //"-"的弹窗

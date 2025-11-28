@@ -37,5 +37,6 @@ interface IAudioProcess {
     void SaveAdjustStreamVolumeInfo([in] float volume, [in] unsigned int sessionId, [in] String adjustTime,
         [in] unsigned int code);
     void SetRebuildFlag();
+    void GetServerKeepRunning([out] boolean keepRunning);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
 }

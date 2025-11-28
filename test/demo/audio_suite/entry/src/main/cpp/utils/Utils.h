@@ -63,7 +63,7 @@ OH_AudioChannelLayout SetChannelLayout(int32_t channels);
 OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample);
 
 // 位深转换
-void ConvertBitsPerSample(unsigned int& bitsPerSample);
+void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode);
 
 int32_t GetBitsPerSample(OH_Audio_SampleFormat sampleFormat);
 

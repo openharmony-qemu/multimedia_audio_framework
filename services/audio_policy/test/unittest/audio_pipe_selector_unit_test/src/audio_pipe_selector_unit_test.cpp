@@ -25,6 +25,7 @@ namespace AudioStandard {
 
 static const uint32_t TEST_SESSION_ID_BASE = 100000;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
+static const uint32_t MAX_FAST_STREAM_COUNT = 6;
 
 void AudioPipeSelectorUnitTest::SetUpTestCase(void) {}
 void AudioPipeSelectorUnitTest::TearDownTestCase(void) {}
@@ -87,7 +88,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_001, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_CALL_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_VOIP);
 }
 
 /**
@@ -101,7 +102,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_002, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_FAST;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_LOWLATENCY_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_LOWLATENCY);
 }
 
 /**
@@ -116,7 +117,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_003, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_CALL_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_VOIP);
 }
 
 /**
@@ -130,7 +131,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_004, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_DIRECT_MUSIC);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_DIRECT_NORMAL);
 }
 
 /**
@@ -145,7 +146,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_005, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_OFFLOAD);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_OFFLOAD);
 }
 
 /**
@@ -159,7 +160,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_006, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_MULTICHANNEL);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_MULTICHANNEL);
 }
 
 /**
@@ -173,7 +174,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_007, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_NORMAL_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_NORMAL);
 }
 
 /**
@@ -188,7 +189,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_008, TestSize.Level1)
     uint32_t flag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
     AudioMode audioMode = AUDIO_MODE_RECORD;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_CALL_IN);
+    EXPECT_EQ(result, PIPE_TYPE_IN_VOIP);
 }
 
 /**
@@ -202,7 +203,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_009, TestSize.Level1)
     uint32_t flag = AUDIO_INPUT_FLAG_FAST;
     AudioMode audioMode = AUDIO_MODE_RECORD;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_LOWLATENCY_IN);
+    EXPECT_EQ(result, PIPE_TYPE_IN_LOWLATENCY);
 }
 
 /**
@@ -216,7 +217,21 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_010, TestSize.Level1)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     AudioMode audioMode = AUDIO_MODE_RECORD;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_NORMAL_IN);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL);
+}
+
+/**
+ * @tc.name: GetPipeType_011
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag does not contain any specific flags.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_011, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_UNPROCESS;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_UNPROCESS);
 }
 
 /**
@@ -703,11 +718,12 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleIncomingConcurrency_001, TestS
 HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
 {
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap = {
-        {{PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_LOWLATENCY_OUT}, PLAY_BOTH},
-        {{PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_NORMAL_IN}, CONCEDE_INCOMING},
-        {{PIPE_TYPE_NORMAL_IN, PIPE_TYPE_NORMAL_IN}, CONCEDE_EXISTING}
+        {{PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_OUT_LOWLATENCY}, PLAY_BOTH},
+        {{PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_IN_NORMAL}, CONCEDE_INCOMING},
+        {{PIPE_TYPE_IN_NORMAL, PIPE_TYPE_IN_NORMAL}, CONCEDE_EXISTING}
     };
-    AudioStreamCollector::GetAudioStreamCollector().audioConcurrencyService_->concurrencyCfgMap_ = ruleMap;
+    AudioConcurrencyService &audioConcurrencyService = AudioConcurrencyService::GetInstance();
+    audioConcurrencyService.concurrencyConfigMap_ = ruleMap;
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->adapterName_ = "test_adapterName";
@@ -750,8 +766,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
 HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_001, TestSize.Level4)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_CALL_IN;
-    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    AudioPipeType existingPipe = PIPE_TYPE_IN_VOIP;
+    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
     ConcurrencyAction action = CONCEDE_INCOMING; // Initial action
 
     SetInjectEnable(true);
@@ -770,8 +786,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_001, TestSize.Level
 HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_002, TestSize.Level4)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_LOWLATENCY_OUT;
-    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    AudioPipeType existingPipe = PIPE_TYPE_OUT_LOWLATENCY;
+    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
     ConcurrencyAction originalAction = CONCEDE_EXISTING;
     ConcurrencyAction action = originalAction;
 
@@ -791,8 +807,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_002, TestSize.Level
 HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_003, TestSize.Level4)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_CALL_IN;
-    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    AudioPipeType existingPipe = PIPE_TYPE_IN_VOIP;
+    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
     ConcurrencyAction originalAction = PLAY_BOTH;
     ConcurrencyAction action = originalAction;
 
@@ -816,17 +832,17 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_004, TestSize.Level
 
     // Test case 1: Both pipes are CALL_IN, injection enabled, action should be updated to PLAY_BOTH
     ConcurrencyAction action = CONCEDE_INCOMING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_CALL_IN, PIPE_TYPE_CALL_IN, action);
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_IN_VOIP, PIPE_TYPE_IN_VOIP, action);
     EXPECT_EQ(action, PLAY_BOTH);
 
     // Test case 2: Different pipe types, action should remain unchanged
     action = CONCEDE_EXISTING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_CALL_IN, PIPE_TYPE_LOWLATENCY_OUT, action);
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_IN_VOIP, PIPE_TYPE_OUT_LOWLATENCY, action);
     EXPECT_EQ(action, CONCEDE_EXISTING);
 
     // Test case 3: Same pipe types but not CALL_IN, action should remain unchanged
     action = CONCEDE_INCOMING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_LOWLATENCY_OUT, action);
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_OUT_LOWLATENCY, action);
     EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
@@ -1433,5 +1449,161 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_005, TestSize.Level1)
     EXPECT_FALSE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
 }
 
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_001
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_002
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_002
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_003
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_003
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = (i % 2 == 0) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i % 2 == 0) {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+        }
+    }
+}
+
+/**
+ * @tc.name: CheckFastStreamOverLimitToNormal_004
+ * @tc.desc: Test CheckFastStreamOverLimitToNormal_004
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+        streamDesc->routeFlag_ = (i % 2 == 0) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_INPUT_FLAG_FAST;
+        streamDesc->sessionId_ = i;
+        streamDescs.push_back(streamDesc);
+    }
+
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+
+    for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
+        if (i < MAX_FAST_STREAM_COUNT) {
+            if (i % 2 == 0) {
+                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+            } else {
+                EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
+            }
+        } else {
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
+        }
+    }
+}
+
+/**
+ * @tc.name: SetPipeTypeByStreamType_001
+ * @tc.desc: Test SetPipeTypeByStreamType_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeByStreamType_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    EXPECT_NE(audioPipeSelector, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    AudioPipeType pipeType = PIPE_TYPE_OUT_NORMAL;
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
+
+    pipeType = PIPE_TYPE_OUT_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
+
+    pipeType = PIPE_TYPE_IN_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_IN_VOIP);
+
+    pipeType = PIPE_TYPE_IN_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -181,6 +181,13 @@ private:
     static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
+class SolePipe {
+public:
+    static void SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName);
+    static bool IsSolePipeSource(int32_t sourceType);
+    static bool GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName);
+};
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len);
@@ -562,6 +569,8 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
     HDI_CAPTURE_OFFSET_ACCESSORY = 10,
     HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION = 11,
+    HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE = 12,
+    HDI_CAPTURE_OFFSET_UNPROCESS = 13,
 };
 
 enum HdiRenderOffset : uint32_t {

@@ -95,7 +95,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
-    AudioVolumeUtils::GetInstance().LoadConfig();
+    AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
     if (!lret) {
@@ -334,15 +334,16 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, std::
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(desc, volumeType);
 }
 
-void AudioAdapterManager::SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel)
+void AudioAdapterManager::SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioVolumeType volumeType, int32_t volumeLevel)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // PC Boot Animation Volume use STREAM_SYSTEM
-    auto desc = audioActiveDevice_.GetDeviceForVolume(volumeType);
     if ((volumeType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) || (audioVolumeMap == STREAM_SYSTEM &&
-        desc->deviceType_ == DEVICE_TYPE_SPEAKER)) {
+        device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
         int32_t volumeLevel =
-            GetStreamVolumeInternal(desc, audioVolumeMap) * (GetStreamMuteInternal(desc, audioVolumeMap) ? 0 : 1);
+            GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
         int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save ringtone volume for boot success %{public}d", volumeLevel);
@@ -601,7 +602,7 @@ void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
     int32_t volumeLevel =
         volumeDataMaintainer_.LoadVolumeFromMap(desc, STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(STREAM_RING, volumeLevel);
+    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
 
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
@@ -675,11 +676,19 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     int32_t muteFactor = GetStreamMuteInternal(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(streamType, volumeLevel);
+    SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
 
+    bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
+        device->deviceType_ != DEVICE_TYPE_REMOTE_CAST;
+    DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
-    float volumeDb = CalculateVolumeDbByDegree(device->deviceType_, streamType, volumeDegree);
-    DepressVolume(volumeDb, volumeLevel, streamType, device->deviceType_);
+    float volumeDb = CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree);
+    // Set voice call assistant stream to full volume
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        volumeDb = 1.0f;
+    }
+
+    DepressVolume(volumeDb, volumeLevel, streamType, device);
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
         volumeDegree:%{public}d device:%{public}s",
         streamType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
@@ -1208,8 +1217,10 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 }
 
 void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
-    AudioStreamType streamType, DeviceType deviceType)
+    AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    DeviceType deviceType = device->deviceType_;
     if (streamType == STREAM_VOICE_CALL_ASSISTANT ||
         streamType == STREAM_ULTRASONIC) {
         return;
@@ -1231,8 +1242,9 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     bool updateLimit = volumeType == STREAM_VOICE_CALL || volumeLimit_.load() == MAX_STREAM_VOLUME;
     if (streamInCall) {
         if (updateLimit) {
+            int32_t volumeLevelForCall = GetStreamVolumeInternal(device, STREAM_VOICE_CALL);
             float newLimit = volumeType == STREAM_VOICE_CALL?
-                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, deviceType);
+                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevelForCall, deviceType);
             SetVolumeLimit(newLimit);
         }
     } else {
@@ -1424,6 +1436,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         }
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_AI) {
             idType = HDI_ID_TYPE_AI;
+        }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_UNPROCESS) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_UNPROCESS;
         }
     }
 }
@@ -2249,7 +2265,7 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     int32_t volumeLevel =
         GetStreamVolumeInternal(desc, STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(STREAM_RING, volumeLevel);
+    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -2854,22 +2870,14 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     return exp(dbValue * 0.115129f);
 }
 
-float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceTypeIn,
+float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceType,
     AudioStreamType streamType, int32_t volumeDegree)
 {
-    bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
-        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST;
-    DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : deviceTypeIn;
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
         volumeDb = CalculateVolumeDbNonlinearExt(streamType, deviceType, volumeDegree);
     } else {
         volumeDb = CalculateVolumeDbExt(volumeDegree);
-    }
-
-    // Set voice call assistant stream to full volume
-    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
-        volumeDb = 1.0f;
     }
 
     return volumeDb;

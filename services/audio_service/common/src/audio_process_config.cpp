@@ -92,8 +92,8 @@ std::string ProcessConfig::DumpInnerCapConfig(const AudioPlaybackCaptureConfig &
             break;
     }
     temp << " " << config.filterOptions.pids.size() << " pids { ";
-    for (size_t i = 0; i < config.filterOptions.pids.size(); i++) {
-        temp << config.filterOptions.pids[i] << " ";
+    for (size_t j = 0; j < config.filterOptions.pids.size(); j++) {
+        temp << config.filterOptions.pids[j] << " ";
     }
     temp << "}";
     // silentCapture will not be dumped.

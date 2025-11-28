@@ -88,7 +88,8 @@ AudioCoreService::AudioCoreService()
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
       pipeManager_(AudioPipeManager::GetPipeManager()),
-      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance()),
+      audioConcurrencyService_(AudioConcurrencyService::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -120,6 +121,8 @@ void AudioCoreService::Init()
 
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
+
+    audioConcurrencyService_.Init();
 
     isFastControlled_ = GetFastControlParam();
     // Register device status listener
@@ -682,6 +685,9 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
     } else {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (audioSceneManager_.IsHangUpScene()) {
+        audioVolumeManager_.RefreshActiveDeviceVolume();
     }
     if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
         audioVolumeManager_.IsAppRingMuted(uid)) {

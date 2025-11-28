@@ -2244,6 +2244,26 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_003, 
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleFetchOutputWhenNoRunningStream_004
+ * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
+ */
+
+HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(
+        AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+    EXPECT_EQ(ret, SUCCESS);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(
+        AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckModemScene_001
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */

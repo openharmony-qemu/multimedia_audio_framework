@@ -114,6 +114,7 @@ private:
     void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
     bool IsCaptureInvalid(void) override;
     static AudioInputType MappingAudioInputType(std::string hdiSourceType);
+    uint32_t GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const;
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

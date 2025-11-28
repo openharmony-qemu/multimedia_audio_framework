@@ -185,6 +185,8 @@ private:
     /* common interface in AudioRendererNapi */
     static bool CheckContextStatus(std::shared_ptr<AudioRendererAsyncContext> context);
     static bool CheckAudioRendererStatus(NapiAudioRenderer *napi, std::shared_ptr<AudioRendererAsyncContext> context);
+    static bool CheckAudioRendererStreamUsage(NapiAudioRenderer *napi,
+        std::shared_ptr<AudioRendererAsyncContext> context);
     static NapiAudioRenderer* GetParamWithSync(const napi_env &env, napi_callback_info info,
         size_t &argc, napi_value *args);
 

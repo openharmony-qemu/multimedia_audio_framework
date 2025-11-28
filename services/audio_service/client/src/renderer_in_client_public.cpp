@@ -117,7 +117,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
-        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OUT_OFFLOAD : PIPE_TYPE_OUT_NORMAL;
         return SUCCESS;
     }
 
@@ -906,7 +906,7 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
 }
@@ -1770,8 +1770,8 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     SetStreamTrackerState(false);
     // If pipe type is offload, need reset to normal.
     // Otherwise, unable to enter offload mode.
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    if (rendererInfo_.pipeType == PIPE_TYPE_OUT_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {

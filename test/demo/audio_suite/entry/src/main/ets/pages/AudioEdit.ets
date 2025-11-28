@@ -28,6 +28,10 @@ export struct AudioEdit {
     @State envEffectShow: boolean = false;
     @State noiseReductionShow: boolean = false;
     @State voiceBeautifierShow: boolean = false;
+    @State soundSpeedToneShow: boolean = false;
+    @State soundSpeed: number = 1.0;
+    @State soundTone: number = 1.0;
+    private soundSpeedToneId: string = '';
     balanceModeScroller: Scroller = new Scroller();
     private balanceModeList: string[] = 
         ['默认', '民谣', '中国式', '古典', '舞曲', '爵士', '流行', 'R&B', '摇滚', '自定义'];
@@ -970,6 +974,10 @@ export struct AudioEdit {
                     ListItem() {
                         this.VoiceBeautifulButton()
                     }
+
+                    ListItem() {
+                        this.SonicPitchButton()
+                    }
                     
                 }
                 .width($r(StyleConst.NINETY_PERCENT_WIDTH))
@@ -1048,6 +1056,140 @@ export struct AudioEdit {
             onDisappear: () => {
                 this.voiceBeautifierShow = false;
                 Logger.info(TAG, `BindSheet onDisappear`);
+            }
+        })
+    }
+
+    @Builder
+    SonicPitchDialog() {
+        Column() {
+            Row() {
+                Column() {
+                    Image($r('app.media.close_window'))
+                        .width(20)
+                        .height(20)
+                }
+                .width('20%')
+                .onClick(() => {
+                    this.soundSpeedToneShow = false;
+                })
+
+                Column() {
+                    Text('音速音调').fontSize(20)
+                }
+                .width('60%')
+
+                Column() {
+                    Image($r('app.media.checkmark'))
+                        .width(20)
+                        .height(20)
+                }
+                .width('20%')
+                .onClick(() => {
+                    if (this.soundSpeedToneId === '') {
+                        this.soundSpeedToneId = util.generateRandomUUID(true);
+                    }
+                    let result =
+                        audioNapi.setSoundSpeedTone(this.pitchSong, this.soundSpeedToneId, this.soundSpeed, this.soundTone);
+                    if (result !== 0) {
+                        // 音速音调效果节点设置失败
+                        this.getUIContext().showAlertDialog({
+                        message: '设置音速音调失败',
+                        confirm: {
+                            value: '确定',
+                            action: () => {
+                            }
+                        },
+                        cancel: () => {
+                            Logger.info(TAG, `cancel`);
+                        }
+                        });
+                    }
+                    this.soundSpeedToneShow = false;
+                })
+            }
+            .height('30%')
+
+            Column() {
+                Column() {
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Text('音速')
+                    Text(`${this.soundSpeed.toFixed(1)}x`)
+                }.padding('10px')
+
+                Slider({
+                    value: this.soundSpeed,
+                    step: 0.1,
+                    style: SliderStyle.OutSet,
+                    min: 0.5,
+                    max: 10,
+                })
+                    .selectedColor($r('app.color.index_audio_clip_card'))
+                    .onChange((value: number, mode: SliderChangeMode) => {
+                    this.soundSpeed = value;
+                    })
+                }
+                .height('35%')
+                .margin({ bottom: $r('app.float.margin_10') })
+                .padding('10px')
+                .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+                .borderRadius(10)
+
+                Column() {
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Text('音调')
+                    Text(`+${this.soundTone.toFixed(1)}`)
+                }.padding('10px')
+
+                Slider({
+                    value: this.soundTone,
+                    step: 0.1,
+                    style: SliderStyle.OutSet,
+                    min: 0.1,
+                    max: 5,
+                })
+                    .selectedColor($r('app.color.index_audio_clip_card'))
+                    .onChange((value: number, mode: SliderChangeMode) => {
+                        this.soundTone = value;
+                    })
+                }
+                .height('35%')
+                .padding('10px')
+                .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+                .borderRadius(10)
+            }
+            .height('70%')
+            .padding({ left: '10%', right: '10%' })
+        }
+    }
+
+    @Builder
+    SonicPitchButton() {
+        Column() {
+            Button('音速音调', { type: ButtonType.Normal, stateEffect: true })
+                .backgroundColor(0x317aff)
+                .borderRadius(8)
+                .width(80)
+        }
+        .onClick(() => {
+            this.soundSpeedToneShow = true
+        })
+        .bindSheet(this.soundSpeedToneShow, this.SonicPitchDialog(), {
+            height: '40%',
+            backgroundColor: Color.White,
+            showClose: false,
+            onWillAppear: () => {
+                Logger.info(TAG, "BindSheet onWillAppear.");
+            },
+            onAppear: () => {
+                Logger.info(TAG, "BindSheet onAppear.");
+            },
+            onWillDisappear: () => {
+                Logger.info(TAG, "BindSheet onWillDisappear.");
+            },
+            onDisappear: () => {
+                this.soundSpeedToneShow = false;
+                Logger.info(TAG, "BindSheet onDisappear.");
             }
         })
     }

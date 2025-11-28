@@ -48,6 +48,7 @@
     *IsVirtualCall*;
     *GetAudioScoDeviceMac*;
     *GetScoCategory*;
+    *connectionState_*;
   local:
     *;
 };

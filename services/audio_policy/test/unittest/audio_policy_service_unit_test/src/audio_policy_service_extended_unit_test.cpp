@@ -139,10 +139,10 @@ static const std::vector<BluetoothOffloadState>flags = {
 };
 static const std::vector<AudioPipeType>pipeTypes = {
     PIPE_TYPE_UNKNOWN,
-    PIPE_TYPE_NORMAL_OUT,
-    PIPE_TYPE_NORMAL_IN,
-    PIPE_TYPE_OFFLOAD,
-    PIPE_TYPE_MULTICHANNEL
+    PIPE_TYPE_OUT_NORMAL,
+    PIPE_TYPE_IN_NORMAL,
+    PIPE_TYPE_OUT_OFFLOAD,
+    PIPE_TYPE_OUT_MULTICHANNEL
 };
 static const std::vector<Media::MediaMonitor::PreferredType>preferredTypes = {
     Media::MediaMonitor::MEDIA_RENDER,

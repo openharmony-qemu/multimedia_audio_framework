@@ -87,6 +87,8 @@ private:
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void SetPipeTypeByStreamType(AudioPipeType &nowPipeType, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     AudioPolicyConfigManager& configManager_;
 };

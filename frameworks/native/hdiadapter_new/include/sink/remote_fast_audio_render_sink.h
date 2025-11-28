@@ -31,7 +31,8 @@ typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 
-class RemoteFastAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback {
+class RemoteFastAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteFastAudioRenderSink> {
 public:
     explicit RemoteFastAudioRenderSink(const std::string &deviceNetworkId);
     ~RemoteFastAudioRenderSink();

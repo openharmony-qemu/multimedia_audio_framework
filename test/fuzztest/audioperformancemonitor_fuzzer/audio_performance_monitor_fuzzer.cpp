@@ -75,7 +75,7 @@ void RecordSilenceStateFuzzTest()
 {
     uint32_t sessionId = GetData<uint32_t>();
     bool isSilence = GetData<uint8_t>() % NUM_2;
-    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
     AudioPipeType pipeType = static_cast<AudioPipeType>(GetData<uint8_t>() % audioPipeTypeCount);
     uint32_t uid = GetData<uint32_t>();
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, pipeType, uid);
@@ -134,7 +134,7 @@ void ReportEventFuzzTest()
     DetectEvent detectEvent = static_cast<DetectEvent>(GetData<uint8_t>() % detectEventCount);
     DetectEvent reasonCode = GetData<uint8_t>() % NUM_2 == 0 ? detectEvent : GetData<DetectEvent>();
     int32_t periodMs = GetData<int32_t>();
-    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
     AudioPipeType pipeType = static_cast<AudioPipeType>(GetData<uint8_t>() % audioPipeTypeCount);
     int32_t adapterTypeCount = static_cast<int32_t>(AdapterType::ADAPTER_TYPE_MAX) + 1;
     AdapterType adapterType = static_cast<AdapterType>(GetData<uint8_t>() % adapterTypeCount);

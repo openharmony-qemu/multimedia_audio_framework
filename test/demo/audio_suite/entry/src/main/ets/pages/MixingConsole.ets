@@ -1,8 +1,21 @@
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
  */
+ 
 import { StyleConst } from "../utils/StyleConst";
-import { Node, NodeType, ColorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
+import {
+    Node,
+    NodeType,
+    ColorMap,
+    SongInfo,
+    OutSong,
+    NavigationParams,
+    PIPELINECASCADMODE_1,
+    outputNodeSongNameMap,
+    PIPELINECASCADMODE_2,
+    PIPELINECASCADMODE_3,
+    BitsPerSampleMode
+} from "../utils/importSongs/InterfaceInfo";
 import { Logger } from '../utils/Logger';
 import audioNapi from 'libentry.so';
 import { importSingleSong } from '../utils/importSongs/ImportSongs';
@@ -37,7 +50,8 @@ export struct MixingConsole {
     // 判断是否是横屏
     @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
 
-    @State param: number = 0;
+    @State param: NavigationParams = { mode: 0, pipelineCascadMode: 0 };
+    @State paramMode: number = 0;
     @State inputList: SongInfo[] = [];
     private MAX_TRACKS: number = 5; // 最大音轨数
     @State nodeList: Map<string, SongInfo> = new Map();
@@ -61,6 +75,9 @@ export struct MixingConsole {
     // 是否播放
     @State isPlay: boolean = false;
     @State isPlayRealTime: boolean = false;
+    // 实时播放（音源分离）
+    @Provide isSeparation: boolean = false;
+    @State voiceType: string = NodeType.SEPARATION;
     // 导出样式
     @State newAudioFileName: string = '';
     @State audioFormate: string = '.wav';
@@ -72,6 +89,13 @@ export struct MixingConsole {
     @State selectedNode: string = '';
     @State nodeType: NodeType = NodeType.INPUT;
     @State finished: boolean = false;
+    // 是否管线级联
+    @State isPipelineCascad: boolean = false;
+    // 管线级联
+    @StorageLink('pipelineCascadMap') pipelineCascadMap: Map<string, OutSong> = new Map();
+    @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
+    @StorageLink('currentPipelineId') currentPipelineId: string = '';
+    @State bitsPerSampleMode: number = BitsPerSampleMode.FLOAT;
 
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
@@ -116,9 +140,11 @@ export struct MixingConsole {
                     break;
                 case 3:
                     this.bitsPerSample = 32;
+                    this.bitsPerSampleMode = BitsPerSampleMode.INT;
                     break;
                 case 4:
                     this.bitsPerSample = 32;
+                    this.bitsPerSampleMode = BitsPerSampleMode.FLOAT;
                     break;
             }
         })
@@ -153,6 +179,7 @@ export struct MixingConsole {
             sampleRate: this.sampleRate,
             channels: this.channels,
             bitsPerSample: this.bitsPerSample,
+            bitsPerSampleMode: this.bitsPerSampleMode,
             nodeList: this.nodeList,
             cancel: () => {
 
@@ -174,7 +201,7 @@ export struct MixingConsole {
             nodeList: this.nodeList,
             nodeType: this.nodeType,
             isPlayRealTime: this.isPlayRealTime,
-            param: this.param,
+            param: this.paramMode,
             cancel: () => {
 
             },
@@ -221,15 +248,80 @@ export struct MixingConsole {
                         .width('30')
                         .height('30')
                         .onClick(() => {
+                            // 在管线级联页面进行渲染
+                            if (this.param.pipelineCascadMode === PIPELINECASCADMODE_1 || this.param.pipelineCascadMode === PIPELINECASCADMODE_2) {
+                                this.pipelineCascadMap.set(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || '', {
+                                    pipelineId: this.param.pipelineId ?? '',
+                                    sampleRate: this.sampleRate,
+                                    channels: this.channels,
+                                    bitsPerSample: this.bitsPerSample,
+                                    pipelineCascadMode: this.param.pipelineCascadMode,
+                                });
+                                Logger.info(TAG, `this.pipelineCascadMap: ${this.pipelineCascadMap.size}`);
+                                this.pageInfos.pop(this.pipelineCascadMap.get(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || ''));
+                                return;
+                            }
+                            if (this.sampleRate === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入采样率'
+                                });
+                                return;
+                            }
+                            if (this.channels === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入声道'
+                                });
+                                return;
+                            }
+                            if (this.bitsPerSample === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请在设置页面输入位深'
+                                });
+                                return;
+                            }
                             taskpool.execute(saveFileBuffer).then(async (value: object) => {
-                                Logger.info(TAG, 'taskpool onClick save mixingConsole start');
+                                Logger.info(TAG,
+                                    `taskpool onClick save mixingConsole start, param.mode: ${this.param.mode}, length: ${(value as ArrayBuffer).byteLength}`);
                                 this.SaveBuffer(value as ArrayBuffer);
                                 // 将buffer的map中的 totalWriteAudioDataSize 置为 0
                                 audioNapi.resetTotalWriteAudioDataSize();
                             });
                         })
-                }.visibility(this.param === 1 ? Visibility.Visible : Visibility.None)
+                }.visibility(this.param.mode === 1 ? Visibility.Visible : Visibility.None)
                 Row() {
+                    // 人声
+                    Button($r('app.string.human_voice'), { type: ButtonType.Normal, stateEffect: true })
+                        .backgroundColor($r('app.color.index_audio_clip_card'))
+                        .fontColor(this.voiceType !== NodeType.VOICE ? $r('app.color.index_title_text_color') :
+                            $r('app.color.selected_button'))
+                        .fontSize(14)
+                        .borderRadius(10)
+                        .margin({ right: $r('app.float.margin_10') })
+                        .visibility(this.isSeparation ? Visibility.Visible : Visibility.None)
+                        .onClick(() => {
+                            if (this.isSeparation) {
+                                this.voiceType = NodeType.VOICE;
+                                audioNapi.setSeparationMode(0);
+                            }
+                        })
+                    // 伴奏
+                    Button($r('app.string.accompaniment'), { type: ButtonType.Normal, stateEffect: true })
+                        .backgroundColor($r('app.color.index_audio_clip_card'))
+                        .fontColor(this.voiceType !== NodeType.ACCOMPANIMENT ? $r('app.color.index_title_text_color') :
+                            $r('app.color.selected_button'))
+                        .fontSize(14)
+                        .borderRadius(10)
+                        .margin({ right: $r('app.float.margin_10') })
+                        .visibility(this.isSeparation ? Visibility.Visible : Visibility.None)
+                        .onClick(() => {
+                            if (this.isSeparation) {
+                                this.voiceType = NodeType.ACCOMPANIMENT;
+                                audioNapi.setSeparationMode(1);
+                            }
+                        })
                     // 录制
                     Image(this.g_isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
                         .width('30')
@@ -237,7 +329,8 @@ export struct MixingConsole {
                         .margin({right: $r('app.float.margin_5')})
                         .onClick(() => {
                             audioNapi.record();
-                            this.g_isRecord = true;
+                            this.g_isRecord = !this.g_isRecord;
+                            audioNapi.setIsRecord(this.g_isRecord);
                         })
                     // 播放
                     Image(!this.isPlay ? $r('app.media.ic_record_playing') : $r('app.media.ic_record_paused'))
@@ -247,15 +340,15 @@ export struct MixingConsole {
                         .onClick(() => {
                             if (this.nodeList.size === 0) {
                                 this.getUIContext().showAlertDialog({
-                                    message: '至少选中一个音频才可以播放',
-                                    confirm: {
-                                        value: '确定',
-                                        action: () => {
-                                        }
-                                    },
-                                    cancel: () => {
-                                        Logger.info(TAG, `cancel`);
-                                    }
+                                    title: '提示',
+                                    message: '至少选中一个音频才可以播放'
+                                });
+                                return;
+                            }
+                            if (this.isSeparation && this.voiceType === NodeType.SEPARATION) {
+                                this.getUIContext().showAlertDialog({
+                                    title: '提示',
+                                    message: '请选择左侧播放人声或伴奏'
                                 });
                                 return;
                             }
@@ -276,7 +369,7 @@ export struct MixingConsole {
                         })
                 }
                 .alignItems(VerticalAlign.Center)
-                .visibility(this.param === 2 ? Visibility.Visible : Visibility.None)
+                .visibility(this.param.mode === 2 ? Visibility.Visible : Visibility.None)
             }
             .height(this.isHorizontalScreen ? '15%' : "10%")
             .width(StyleConst.NINETY_FIVE_PERCENT_WIDTH)
@@ -321,9 +414,34 @@ export struct MixingConsole {
                                                     this.inputList[index] = value;
                                                     this.getPcmFileBuffer(this.inputList[index]);
                                                     if (this.wavBuffer.byteLength !== 0) {
-                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                        // 管线级联
+                                                        if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
+                                                            if (!this.param.pipelineId || this.param.pipelineId === '') {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: 'pipelineId是空'
+                                                                });
+                                                                return;
+                                                            }
+                                                            if (audioNapi.multiPipelineEnvPrepare(this.param.pipelineId) !== 0) {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: '创建管线失败'
+                                                                });
+                                                                return;
+                                                            }
+                                                            if (audioNapi.multiAudioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
+                                                                this.getUIContext().showAlertDialog({
+                                                                    title: '提示',
+                                                                    message: '创建input节点失败'
+                                                                });
+                                                                return;
+                                                            }
+                                                        } else {
+                                                            audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                            Logger.error(TAG, `fd: ${this.fd}`);
+                                                        }
                                                     }
-                                                    Logger.info(TAG, `fd: ${this.fd}`);
                                                     fs.closeSync(this.fd);
                                                     setTimeout(() => {
                                                         if (tmpInfo) {
@@ -407,22 +525,57 @@ export struct MixingConsole {
         }
         .onReady((context: NavDestinationContext) => {
             this.pageInfos = context.pathStack;
-            this.param = context.pathInfo.param as number;
-            Logger.info(TAG, `this param is ${this.param}`);
+            this.param = (context.pathInfo.param) as NavigationParams;
+            if (this.param.pipelineCascadMode === 0 || this.param.pipelineCascadMode === 3) {
+                this.isCurrentMulPipeline = false;
+            }
+            if (this.param.pipelineCascadMode === 1 || this.param.pipelineCascadMode === 2) {
+                this.isCurrentMulPipeline = true;
+                if (this.param.pipelineId) {
+                    this.currentPipelineId = this.param.pipelineId;
+                }
+            }
+            this.paramMode = this.param.mode;
+            Logger.info(TAG, `this.param.mode is ${this.param.mode}`);
             // 工作模式
-            if (this.param !== 0) {
+            if (this.param.mode !== 0 && this.param.pipelineCascadMode !== 1 && this.param.pipelineCascadMode !== 2) {
                 try {
-                    let result = audioNapi.audioEditNodeInit(this.param);
+                    let result = audioNapi.audioEditNodeInit(this.param.mode);
                     Logger.info(TAG, `audioEditNodeInit result: ${result}`);
                 } catch (e) {
                     Logger.error(TAG, `audioEditNodeInit error: ${JSON.stringify(e)}`);
                 }
             } else {
                 // 弹出小弹窗
-               Logger.info(TAG, `this param is invalid: ${this.param}`); 
+               Logger.info(TAG, `this.param.mode is invalid :${this.param.mode}`);
+            }
+            // 管线级联
+            if (this.param.pipelineCascadMode === PIPELINECASCADMODE_3 && this.pipelineCascadMap.size > 0) {
+                this.pipelineCascadMap.forEach((value, key) => {
+                    const inputId: string = util.generateRandomUUID(true);
+                    let inputInfo: Node = {
+                        id: inputId,
+                        type: NodeType.INPUT,
+                        color: ColorMap.get(NodeType.INPUT)
+                    };
+                    let tempInfo: SongInfo = {
+                        uri: inputId,
+                        sampleRate: value.sampleRate,
+                        channels: value.channels,
+                        bitsPerSample: value.bitsPerSample,
+                        songName: key,
+                        songType: NodeType.INPUT,
+                        nodeId: inputId,
+                        nodes: [inputInfo]
+                    };
+                    this.nodeList.set(inputId, tempInfo);
+                    this.inputList[value.pipelineCascadMode - 1] = tempInfo;
+                    let audioFormat = `${value.sampleRate} ${value.channels} ${value.bitsPerSample} ${value.bufferLength}`;
+                    audioNapi.initByPipelineCascad(inputId, this.outputNode.id, this.mixerNode.id, audioFormat, value.buffer);
+                });
             }
         })
-        .title(this.param === 1 ? $r('app.string.mixing_console_cascade') : $r('app.string.mixing_console_playing'),
+        .title(this.param.mode === 1 ? $r('app.string.mixing_console_cascade') : $r('app.string.mixing_console_playing'),
             {mainTitleModifier: this.mainTitleModifier})
         .height('100%')
         .width('100%')
@@ -463,8 +616,33 @@ export struct MixingConsole {
                         //获取音频的相关参数
                         this.getPcmFileBuffer(songInfo);
                         if(this.wavBuffer.byteLength !== 0) {
-                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
-                            Logger.info(TAG, `fd: %{public}`);
+                            // 管线级联
+                            if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
+                                if (!this.param.pipelineId || this.param.pipelineId === '') {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: 'pipelineId是空'
+                                    });
+                                    return;
+                                }
+                                if (audioNapi.multiPipelineEnvPrepare(this.param.pipelineId) !== 0) {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: '创建管线失败'
+                                    });
+                                    return;
+                                }
+                                if (audioNapi.multiAudioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: '创建input节点失败'
+                                    });
+                                    return;
+                                }
+                            } else {
+                                audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                Logger.error(TAG, `fd: ${this.fd}`);
+                            }
                             setTimeout(() => {
                                 if (songInfo) {
                                     songInfo.sampleRate = this.sampleRate;
@@ -529,9 +707,6 @@ export struct MixingConsole {
     }
 
     getPcmFileBuffer(info: SongInfo): boolean{
-        if(info.songType === 'pcm'){
-            return false;
-        }
         try {
             let path: string = new fileUri.FileUri(info.uri).path;
             Logger.info(TAG, `getPcmFileBuffer path: ${JSON.stringify(path)}`);
@@ -639,7 +814,7 @@ export struct MixingConsole {
         // fmt块大小
         dv.setUint32(16, 16, true);
         // 格式类别
-        if (this.bitsPerSample === 32) {
+        if (this.bitsPerSample === 32 && this.bitsPerSampleMode === BitsPerSampleMode.FLOAT) {
             dv.setUint16(20, 3, true);
         } else {
             dv.setUint16(20, 1, true);

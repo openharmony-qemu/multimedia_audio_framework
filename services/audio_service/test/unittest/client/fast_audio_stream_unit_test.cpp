@@ -89,6 +89,7 @@ public:
     MOCK_METHOD(void, SetAudioHapticsSyncId, (const int32_t &audioHapticsSyncId), (override));
     MOCK_METHOD(bool, IsRestoreNeeded, (), (override));
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
+    MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {

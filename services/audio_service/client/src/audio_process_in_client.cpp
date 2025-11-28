@@ -156,6 +156,8 @@ public:
 
     void SetRebuildFlag() override;
 
+    void GetKeepRunning(bool &keepRunning) override;
+
     bool IsRestoreNeeded() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -1754,6 +1756,13 @@ void AudioProcessInClientInner::SetRebuildFlag()
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetRebuildFlag processProxy_ is nullptr");
     processProxy_->SetRebuildFlag();
+}
+
+void AudioProcessInClientInner::GetKeepRunning(bool &keepRunning)
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "GetKeepRunning processProxy_ is nullptr");
+    int32_t ret = processProxy_->GetServerKeepRunning(keepRunning);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get keepRunning failed");
 }
 
 void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)

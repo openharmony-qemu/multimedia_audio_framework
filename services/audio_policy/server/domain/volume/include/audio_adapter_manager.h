@@ -341,6 +341,7 @@ public:
     float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute);
     int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
+    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
 private:
     friend class PolicyCallbackImpl;
 
@@ -396,7 +397,8 @@ private:
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
+    void SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType);
@@ -432,7 +434,8 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
     bool IsPaRoute(uint32_t routeFlag);
-    void DepressVolume(float &volume, int32_t volumeLevel, AudioStreamType streamType, DeviceType deviceType);
+    void DepressVolume(float &volume, int32_t volumeLevel,
+        AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -450,7 +453,6 @@ private:
         AudioStreamType streamType, bool mute);
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType);
-    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);
     float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
     void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device,

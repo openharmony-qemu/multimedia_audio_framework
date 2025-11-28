@@ -124,7 +124,8 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
-bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer)
+bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead,
+    RingBufferWrapper& ringBuffer, int32_t &audioHapticsSyncId)
 {
     int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
@@ -139,6 +140,9 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper
         ringBuffer.dataLength = spanSizeInByte;
     }
 
+    // If there is a sync ID in the process and it is the current first frame.
+    // then the sync ID needs to be recorded.
+    CheckAudioHapticsSyncId(audioHapticsSyncId);
     UpdateStreamInfo();
     return true;
 }
@@ -439,7 +443,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     (void)isFlush;
 
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -507,7 +511,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -553,7 +557,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
-        std::lock_guard lock(scheduleGuardsMutex_);
+        std::lock_guard lockSch(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
         scheduleGuards_[METHOD_START] = nullptr;
     }
@@ -827,8 +831,9 @@ int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::str
 
 int32_t AudioProcessInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
+    std::lock_guard<std::mutex> lock(syncIdLock_);
     AUDIO_INFO_LOG("AudioProcessInServer::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
-    audioHapticsSyncId_.store(audioHapticsSyncId);
+    audioHapticsSyncId_ = audioHapticsSyncId;
     return SUCCESS;
 }
 
@@ -936,9 +941,13 @@ StreamStatus AudioProcessInServer::GetStreamStatus()
     return streamStatus_->load();
 }
 
-int32_t AudioProcessInServer::GetAudioHapticsSyncId()
+void AudioProcessInServer::CheckAudioHapticsSyncId(int32_t &audioHapticsSyncId)
 {
-    return audioHapticsSyncId_.load();
+    std::lock_guard<std::mutex> lock(syncIdLock_);
+    if (audioHapticsSyncId_ > 0) {
+        audioHapticsSyncId = audioHapticsSyncId_;
+        audioHapticsSyncId_ = 0;
+    }
 }
 
 int64_t AudioProcessInServer::GetLastAudioDuration()
@@ -1138,6 +1147,12 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
 int32_t AudioProcessInServer::SetRebuildFlag()
 {
     rebuildFlag_ = true;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::GetServerKeepRunning(bool &keepRunning)
+{
+    keepRunning = keepRunning_;
     return SUCCESS;
 }
 

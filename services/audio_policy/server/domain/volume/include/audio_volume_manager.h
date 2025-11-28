@@ -144,8 +144,10 @@ public:
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
     void OnCheckActiveMusicTime(const std::string &reason);
+    void DealWithPauseAndStop(const std::string &reason);
+    std::string DoLoopCheck(const std::string &reason);
     int32_t CheckActiveMusicTime(const std::string &reason = "Default");
-
+    void RefreshActiveDeviceVolume();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -191,7 +193,9 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
 private:
-    int32_t SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId);
+    int32_t SetSystemVolumeLevelExternal(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
+        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;

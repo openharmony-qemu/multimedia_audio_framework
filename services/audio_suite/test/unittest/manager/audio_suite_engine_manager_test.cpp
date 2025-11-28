@@ -1151,7 +1151,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRu
     audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
     audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = destNodeId;
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
-    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 
     destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
@@ -1159,7 +1159,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRu
 
     audioSuitePipeline.reverseConnections_[destNodeId] = {};
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
-    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRenderFrameTest, TestSize.Level0)

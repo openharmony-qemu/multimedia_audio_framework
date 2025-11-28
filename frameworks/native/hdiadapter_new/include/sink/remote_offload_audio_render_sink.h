@@ -55,7 +55,8 @@ struct RemoteOffloadHdiCallback {
     std::function<void(const RenderCallbackType type)> serviceCallback_;
 };
 
-class RemoteOffloadAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback {
+class RemoteOffloadAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteOffloadAudioRenderSink> {
     friend class RemoteOffloadHdiCallbackImpl;
 public:
     explicit RemoteOffloadAudioRenderSink(const std::string &deviceNetworkId);

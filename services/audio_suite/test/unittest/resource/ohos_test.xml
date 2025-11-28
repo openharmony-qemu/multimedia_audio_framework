@@ -120,13 +120,34 @@
             <option name="shell" value="mkdir -p /data/audiosuite/vb/"/>
             <option name="push" value="48000_2_16.pcm -> /data/audiosuite/vb" src="res"/>
             <option name="push" value="vb_48000_2_S16LE_target.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="vb_input_48000_2_S16LE.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_cute_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_cyberpunk_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_female_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_male_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_mix_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_monster_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_uncle_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_synth_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_trill_sframe.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="voice_morph_output_war_sframe.pcm -> /data/audiosuite/vb" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/vb/"/>
+            <option name="shell" value="mkdir -p /data/audiosuite/pure/"/>
+            <option name="push" value="voice_morph_trad_input_stereo.pcm -> /data/audiosuite/pure/" src="res"/>
+            <option name="push" value="voice_morph_trad_stereo_male_uncle_02.pcm -> /data/audiosuite/pure/" src="res"/>
+            <option name="shell" value="restorecon -R /data/audiosuite/pure/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/tempo_pitch/"/>
             <option name="push" value="in_48000_1_s16le.pcm -> /data/audiosuite/tempo_pitch/" src="res"/>
             <option name="push" value="target_48000_1_s16le_0.8_0.8.pcm -> /data/audiosuite/tempo_pitch/" src="res"/>
             <option name="push" value="target_48000_1_s16le_1.0_0.8.pcm -> /data/audiosuite/tempo_pitch/" src="res"/>
             <option name="push" value="target_48000_1_s16le_0.8_1.0.pcm -> /data/audiosuite/tempo_pitch/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/tempo_pitch/"/>
+            <option name="shell" value="mkdir -p /data/audiosuite/sr/"/>
+            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/sr/" src="res"/>
+            <option name="push" value="base_position.pcm -> /data/audiosuite/sr/" src="res"/>
+            <option name="push" value="base_rotation.pcm -> /data/audiosuite/sr/" src="res"/>
+            <option name="push" value="base_extension.pcm -> /data/audiosuite/sr/" src="res"/>
+            <option name="shell" value="restorecon /data/audiosuite/sr/"/>
         </preparer>
     </target>
     <target name="audio_suite_utils_test">
