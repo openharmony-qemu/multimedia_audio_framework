@@ -106,14 +106,6 @@ void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
     audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
     AUDIO_INFO_LOG("SetDataShareReady, isDataShareReady: %{public}d", std::atomic_load(&isDataShareReady));
     isDataShareReady_ = isDataShareReady;
-    if (isDataShareReady) {
-        auto descs = audioConnectedDevice_.GetCopy();
-        for (auto &desc : descs) {
-            CHECK_AND_CONTINUE(desc != nullptr);
-            InitDeviceVolumeMap(desc);
-            InitDeviceMuteMap(desc);
-        }
-    }
 }
 
 void VolumeDataMaintainer::SetAppVolume(int32_t appUid, int32_t volumeLevel)
