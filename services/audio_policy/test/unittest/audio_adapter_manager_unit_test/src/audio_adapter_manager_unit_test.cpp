@@ -20,7 +20,7 @@
 
 using namespace testing::ext;
 
-namespace OHOS { 
+namespace OHOS {
 namespace AudioStandard {
 
 static AudioAdapterManager *audioAdapterManager_;
