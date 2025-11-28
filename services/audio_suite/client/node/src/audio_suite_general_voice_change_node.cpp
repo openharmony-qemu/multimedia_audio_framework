@@ -63,7 +63,7 @@ int32_t AudioSuiteGeneralVoiceChangeNode::DeInit()
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode DeInit begin");
     if (algoInterface_ != nullptr) {
         int32_t ret = algoInterface_->Deinit();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to DeInit voice beautifier algorithm");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to DeInit voice beautifier algorithm");
         algoInterface_ = nullptr;
     }
 
