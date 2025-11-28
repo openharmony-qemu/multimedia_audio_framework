@@ -692,6 +692,14 @@ static constexpr float SPEED_RATE_MIN = 0.5f;
 static constexpr float SPEED_RATE_MAX = 10.0f;
 static constexpr float PITCH_RATE_MIN = 0.1f;
 static constexpr float PITCH_RATE_MAX = 5.0f;
+static const float SPACE_RENDER_MIN_CART_POINT_DISTANCE = -5.0f;
+static const float SPACE_RENDER_MAX_CART_POINT_DISTANCE = 5.0f;
+static const float SPACE_RENDER_MIN_TIME = 2.0f;
+static const float SPACE_RENDER_MAX_TIME = 40.0f;
+static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 1;
+static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
+static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
+static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -1083,6 +1091,16 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
         "SetSpaceRenderPositionParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
 
+    CHECK_AND_RETURN_RET_LOG(
+        position.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        position.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderPositionParams positionParams;
     positionParams.x = position.x;
@@ -1127,6 +1145,23 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
         "SetSpaceRenderRotationParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
+
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.surroundTime >= SPACE_RENDER_MIN_TIME && rotation.surroundTime <= SPACE_RENDER_MAX_TIME,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
 
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderRotationParams rotationParams;
@@ -1176,6 +1211,13 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
         "SetSpaceRenderExtensionParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
+
+    CHECK_AND_RETURN_RET_LOG(
+        extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
+        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        extension.extAngle >= SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle <= SPACE_RENDER_MAX_EXPAND_ANGLE,
+        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the 1~360");
 
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderExtensionParams extensionParams;

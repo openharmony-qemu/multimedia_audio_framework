@@ -24,5 +24,6 @@
         <nodeType name="PURE_CHANGE" soName="libaudio_voice_morph.z.so" soPath="/system/lib64/" general="yes"/>
         <nodeType name="GENERAL_CHANGE" soName="libaudio_voice_morph_bgm.z.so" soPath="/system/lib64/" general="yes"/>
         <nodeType name="TEMPO_PITCH" soName="libaudio_variable_speed.z.so,libaudio_pitch_change.z.so" soPath="/system/lib64/" general="yes"/>
+        <nodeType name="SPACE_RENDER" soName="libspace_render.z.so" soPath="/system/lib64/" general="yes"/>
     </nodeCapability>
 </audioSuiteCapabilities>
