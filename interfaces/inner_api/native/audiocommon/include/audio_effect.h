@@ -725,6 +725,7 @@ enum AudioEffectChainSetParamIndex {
     LID_STATE_INDEX = 11,
     LOUDNESS_GAIN_INDEX = 12,
     ABS_VOLUME_STATE = 13,
+    EARPHONE_PRODUCT = 14,
     MAX_PARAM_INDEX,
 };
 

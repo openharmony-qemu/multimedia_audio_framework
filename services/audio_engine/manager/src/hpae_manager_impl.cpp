@@ -629,6 +629,18 @@ bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout ch
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
+
+void HpaeManagerImpl::updateCollaborativeProductId(const std::string &productId)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void HpaeManagerImpl::LoadCollaborationConfig()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

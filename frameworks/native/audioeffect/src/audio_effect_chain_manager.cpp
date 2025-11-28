@@ -94,6 +94,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     spatialDeviceType_ = EARPHONE_TYPE_OTHERS;
+    earphoneProduct_ = EARPHONE_PRODUCT_NONE;
     isInitialized_ = false;
     defaultPropertyMap_.clear();
 #ifdef SENSOR_ENABLE
@@ -400,6 +401,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
+    audioEffectChain->SetEarphoneProduct(earphoneProduct_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -2046,6 +2048,24 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
         return false;
     }
     return true;
+}
+
+void AudioEffectChainManager::UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct)
+{
+    //send earphone device type to ap
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    earphoneProduct_ = earphoneProduct;
+
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+
+        audioEffectChain->SetEarphoneProduct(earphoneProduct);
+        int32_t ret = audioEffectChain->UpdateEffectParam();
+        CHECK_AND_CONTINUE_LOG(ret == 0, "set ap earphoneProduct failed");
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

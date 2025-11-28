@@ -264,6 +264,20 @@ public:
      */
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
 
+    /**
+     * @brief update Collaborative ProductId
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual void updateCollaborativeProductId(const std::string &productId) NOT_SUPPORT_RET
+
+    /**
+     * @brief Load Collaboration Config
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual void LoadCollaborationConfig() NOT_SUPPORT_RET
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard
