@@ -18,7 +18,7 @@
 
 #include "audio_pipe_selector.h"
 #include "audio_stream_collector.h"
-#include "audio_stream_info.h"xx
+#include "audio_stream_info.h"
 #include "audio_definition_adapter_info.h"
 #include "audio_policy_utils.h"
 #include <algorithm>
@@ -400,6 +400,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             }
         } else if (flag & AUDIO_INPUT_FLAG_AI) {
             return PIPE_TYPE_IN_NORMAL_AI;
+        } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
+            return PIPE_TYPE_NORMAL_IN_ULTRASONIC;
         } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
             return PIPE_TYPE_IN_NORMAL_UNPROCESS;
         } else {
