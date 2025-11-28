@@ -1384,4 +1384,4 @@ int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
     return ret;
 }
 } // namespace AudioStandard
-} // namespace OHOS
+} // namespace OHOSxxx

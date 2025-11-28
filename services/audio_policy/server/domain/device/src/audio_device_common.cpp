@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioDeviceCommon"
 #endif
-
+xx
 #include "audio_device_common.h"
 #include "parameter.h"
 #include "parameters.h"

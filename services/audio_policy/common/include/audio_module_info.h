@@ -25,7 +25,7 @@
 #include "audio_info.h"
 #include "audio_policy_log.h"
 
-namespace OHOS {
+namespace OHOS {xx
 namespace AudioStandard {
 namespace {
 static const char* PRIMARY_CLASS = "primary";

@@ -18,7 +18,7 @@
 
 #include "audio_pipe_selector.h"
 #include "audio_stream_collector.h"
-#include "audio_stream_info.h"
+#include "audio_stream_info.h"xx
 #include "audio_definition_adapter_info.h"
 #include "audio_policy_utils.h"
 #include <algorithm>

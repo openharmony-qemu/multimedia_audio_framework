@@ -607,5 +607,19 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_008, TestSize.Level
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
 }
 
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_009
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_009, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_ULTRASONIC;
+    captureSource->attr_.hdiSourceType = "AUIDO_INPUT_ULTRASONIC_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS

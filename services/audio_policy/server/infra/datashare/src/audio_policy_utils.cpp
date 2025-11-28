@@ -850,5 +850,5 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-} // namespace AudioStandard
+} // namespace AudioStandardxx
 } // namespace OHOS

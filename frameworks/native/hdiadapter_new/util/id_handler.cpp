@@ -21,7 +21,7 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_stream_enum.h"
+#include "audio_stream_enum.h"xx
 
 namespace OHOS {
 namespace AudioStandard {

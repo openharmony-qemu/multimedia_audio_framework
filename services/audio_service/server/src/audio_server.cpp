@@ -241,6 +241,10 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->SetAudioScene(audioScene);
     }
+    std::shared_ptr<IAudioCaptureSource> ultrasonicSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
+    if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
+        ultrasonicSource->SetAudioScene(audioScene);
+    }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
@@ -293,6 +297,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     std::shared_ptr<IAudioCaptureSource> unprocessSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> ultrasonicSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
+    if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
+        ultrasonicSource->UpdateActiveDevice(type);
     }
 }
 
@@ -2497,7 +2505,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         uint32_t type = idHandler.ParseType(id);
         std::string info = idHandler.ParseInfo(id);
         if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB || info == HDI_ID_INFO_UNPROCESS;
+            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
+            info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {

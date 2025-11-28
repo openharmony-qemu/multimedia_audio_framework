@@ -927,7 +927,7 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_004, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.name  : Test ZeroVolumeCheck APIX
  * @tc.type  : FUNC
  * @tc.number: ZeroVolumeCheck_005
  * @tc.desc  : Test ZeroVolumeCheck interface
