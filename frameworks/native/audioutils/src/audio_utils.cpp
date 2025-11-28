@@ -1589,6 +1589,7 @@ LatencyMonitor& LatencyMonitor::GetInstance()
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         rendererMockTime_ = timestamp;
     } else {
@@ -1598,6 +1599,7 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         sinkDetectedTime_ = timestamp;
     } else {
@@ -1607,11 +1609,13 @@ void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timest
 
 void LatencyMonitor::UpdateDspTime(std::string timestamp)
 {
+    std::lock_guard lock(mutex_);
     dspDetectedTime_ = timestamp;
 }
 
 void LatencyMonitor::ShowTimestamp(bool isRenderer)
 {
+    std::lock_guard lock(mutex_);
     if (extraStrLen_ == 0) {
         extraStrLen_ = dspDetectedTime_.find("20");
     }
@@ -1656,6 +1660,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
+    std::lock_guard lock(mutex_);
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
     AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
