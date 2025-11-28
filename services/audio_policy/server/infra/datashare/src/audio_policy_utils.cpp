@@ -438,7 +438,6 @@ std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sin
         {MCH_PRIMARY_SPEAKER, MCH_CLASS},
         {PORT_NONE, INVALID_CLASS},
         {PRIMARY_UNPROCESS_MIC, PRIMARY_CLASS},
-        {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sinkPortStrToClassStrMap_.count(sinkPortName) > 0) {
@@ -457,6 +456,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {BLUETOOTH_MIC, A2DP_CLASS},
         {PRIMARY_AI_MIC, PRIMARY_CLASS},
         {PORT_NONE, INVALID_CLASS},
+        {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
         
     };
     std::string deviceClass = INVALID_CLASS;
