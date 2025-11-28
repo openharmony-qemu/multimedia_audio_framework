@@ -53,6 +53,7 @@ static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
+static constexpr int64_t TIME_INTERVAL_NS = 500 * 1000000LL;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
@@ -337,6 +338,15 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     int32_t ret = GetRemoteOffloadSpeedPosition(framePosition, timestamp, latency);
     CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, ret);
 
+    int64_t now = ClockTime::GetCurNano();
+    auto &positionData = speedPositionData[base];
+    if (offloadStatePolicy_.load() == OFFLOAD_INACTIVE_BACKGROUND &&
+        now - positionData.lastCallTime < TIME_INTERVAL_NS) {
+        framePosition = positionData.framePosition;
+        timestamp = positionData.timestamp;
+        latency = positionData.latency;
+        return SUCCESS;
+    }
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
 
@@ -349,12 +359,25 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     // latencyMutex_ end
+    positionData.framePosition = framePosition;
+    positionData.timestamp = timestamp;
+    positionData.latency = latency;
+    positionData.lastCallTime = now;
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
+    int64_t now = ClockTime::GetCurNano();
+    auto &positionData = currentPositionData[base];
+    if (offloadStatePolicy_.load() == OFFLOAD_INACTIVE_BACKGROUND &&
+        now - positionData.lastCallTime < TIME_INTERVAL_NS) {
+        framePosition = positionData.framePosition;
+        timestamp = positionData.timestamp;
+        latency = positionData.latency;
+        return SUCCESS;
+    }
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
@@ -368,6 +391,10 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
         framePosition, latency);
     // latencyMutex_ end
+    positionData.framePosition = framePosition;
+    positionData.timestamp = timestamp;
+    positionData.latency = latency;
+    positionData.lastCallTime = now;
     return SUCCESS;
 }
 
