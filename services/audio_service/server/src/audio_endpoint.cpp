@@ -1927,7 +1927,6 @@ int32_t AudioEndpointInner::LimitMixData(float *inBuff, float *outBuff, const si
 void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
 {
     // pre proc
-    CHECK_AND_RETURN(IsInjectEnable());
     isConvertReadFormat_ = false;
     CHECK_AND_RETURN(isNeedInject_ == true);
     CHECK_AND_RETURN_LOG(endpointType_ == TYPE_VOIP_MMAP, "type error, cur only support voip inject.");

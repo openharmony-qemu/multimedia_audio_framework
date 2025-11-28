@@ -447,16 +447,6 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     return false;
 }
 
-void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
-                                                 ConcurrencyAction &action)
-{
-    /* becasue call in indicate voip and cell, so can't modify xml */
-    CHECK_AND_RETURN(IsInjectEnable() && action != PLAY_BOTH);
-    if (existingPipe == PIPE_TYPE_IN_VOIP && commingPipe == PIPE_TYPE_IN_VOIP) {
-        action = PLAY_BOTH;
-    }
-}
-
 void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
@@ -492,9 +482,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         action,
         existingStream->GetSessionId(), existingStream->GetRoute(),
         incomingStream->GetSessionId(), incomingStream->GetRoute());
-
-    /* temporary handle */
-    UpdateProcessConcurrency(existingPipe, commingPipe, action);
 
     bool isUpdate = false;
     switch (action) {
