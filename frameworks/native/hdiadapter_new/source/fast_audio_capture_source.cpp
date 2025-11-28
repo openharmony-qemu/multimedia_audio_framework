@@ -24,7 +24,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
-x
+
 namespace OHOS {
 namespace AudioStandard {
 FastAudioCaptureSource::~FastAudioCaptureSource()
