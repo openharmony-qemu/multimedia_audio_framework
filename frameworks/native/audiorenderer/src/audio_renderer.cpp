@@ -222,7 +222,7 @@ int32_t AudioRenderer::FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFo
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
@@ -238,7 +238,7 @@ int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleF
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
