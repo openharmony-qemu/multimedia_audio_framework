@@ -253,6 +253,7 @@ enum AudioPipeType {
     PIPE_TYPE_OUT_DIRECT_NORMAL = 11,
     PIPE_TYPE_IN_NORMAL_AI = 12,
     PIPE_TYPE_IN_NORMAL_UNPROCESS = 13,
+    PIPE_TYPE_IN_NORMAL_ULTRASONIC = 14,
 };
 
 enum AudioPreloadType {
