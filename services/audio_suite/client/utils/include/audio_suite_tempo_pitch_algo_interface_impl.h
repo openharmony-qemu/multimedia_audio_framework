@@ -39,8 +39,8 @@ struct TempoAlgoApi {
 
 namespace {
 const std::string PITCH_LIB = "PITCHLIB";
-static constexpr int32_t RESIZE_EXPAND_SIZE = 256;
-static constexpr int32_t RESIZE_EXPAND_RATE = 2;
+static constexpr int32_t EXPAND_FRAME_SIZE = 256;
+static constexpr int32_t EXPAND_FRAME_RATE = 2;
 static constexpr int32_t INIT_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr int32_t TEMPO_PITCH_ALGO_FRAME_LEN = 960;      // 20ms data, 480 samples * 1 channel
 static constexpr int32_t ALGO_PARAM_LENGTH = 2;
