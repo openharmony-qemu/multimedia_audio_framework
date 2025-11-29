@@ -30,15 +30,6 @@
 #include "audio_info.h"
 #include "audio_effect_chain_manager.h"
 
-#ifdef SENSOR_ENABLE
-#include "audio_head_tracker.h"
-#endif
-
-#ifdef WINDOW_MANAGER_ENABLE
-#include "audio_effect_rotation.h"
-#endif
-#include "audio_effect_volume.h"
-
 namespace OHOS {
 namespace AudioStandard {
 
