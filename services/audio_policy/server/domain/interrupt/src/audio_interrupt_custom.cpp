@@ -29,7 +29,7 @@ static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuStat
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, {ACTIVE, INTERRUPT_HINT_NONE}}
-}
+};
 
 void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
