@@ -711,7 +711,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
-    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC || deviceName == PRIMARY_ULTRASONIC_MIC) {
+    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
+        || deviceName == PRIMARY_ULTRASONIC_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
