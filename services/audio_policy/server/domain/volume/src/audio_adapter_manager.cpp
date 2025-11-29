@@ -356,6 +356,15 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceD
 void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+
+    CHECK_AND_RETURN_LOG(isDataShareReady, "isDataShareReady is false");
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
+        volumeDataMaintainer_.InitDeviceMuteMap(desc);
+        UpdateSafeVolumeInner(desc);
+    }
 }
 
 void AudioAdapterManager::UpdateSafeVolumeByS4()
@@ -950,7 +959,7 @@ bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescr
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
-    if (device->IsSameDeviceDescPtr(ringerNoMuteDevice_) && Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && device->IsSameDeviceDescPtr(ringerNoMuteDevice_)) {
         AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
         return false;
     }
@@ -1137,17 +1146,6 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
     bool isScoActive = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_SCO, false);
     AudioVolume::GetInstance()->SetScoActive(isScoActive);
-
-    // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
-    // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
-    // skip interacting with datashare.
-    bool osAccountReady = volumeDataMaintainer_.CheckOsAccountReady();
-    if (osAccountReady) {
-        LoadVolumeMap();
-        LoadMuteStatusMap();
-    } else {
-        AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
-    }
 
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     for (auto &streamDesc : streamDescs) {
@@ -3033,7 +3031,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         isAbsVolumeMute_ = mute;
     }
 
-    volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
@@ -3097,6 +3094,14 @@ int32_t AudioAdapterManager::DoRestoreData()
     isNeedConvertSafeTime_ = true; // reset convert safe volume status
     volumeDataMaintainer_.SaveMuteTransferStatus(true); // reset mute convert status
     InitKVStore();
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
+        volumeDataMaintainer_.InitDeviceMuteMap(desc);
+        UpdateSafeVolumeInner(desc);
+    }
+    UpdateVolumeForStreams();
     return SUCCESS;
 }
 

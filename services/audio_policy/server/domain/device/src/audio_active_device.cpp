@@ -456,11 +456,10 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::string logStr = "";
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
-        CHECK_AND_CONTINUE(desc->streamStatus_ == STREAM_STATUS_STARTED);
-        logStr += "session: " + std::to_string(desc->sessionId_) +
-            ", appuid: " + std::to_string(desc->appInfo_.appUid) +
-            ", usage: " + std::to_string(desc->rendererInfo_.streamUsage) +
-            ", devices: " + desc->GetNewDevicesInfo() + "\n";
+        AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
+            "usage:%{public}d devices:%{public}s",
+            desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
+            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 
