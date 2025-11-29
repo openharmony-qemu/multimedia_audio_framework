@@ -88,17 +88,27 @@ public:
     static int32_t F32StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     // to F32 Mono
+    static int32_t S16MonoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32MonoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     // to F32 Stereo
+    static int32_t S16MonoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-    
+    static int32_t S32MonoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32MonoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
     static int32_t S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
     static int32_t S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
 private:
     static void InitToS16StereoHandlers(FormatHandlerMap& handlers);
     static void InitToS32StereoHandlers(FormatHandlerMap& handlers);
+    static void InitToF32StereoHandlers(FormatHandlerMap& handlers);
+    static void InitToS16MonoHandlers(FormatHandlerMap& handlers);
+    static void InitToF32MonoHandlers(FormatHandlerMap& handlers);
 
     static FormatHandlerMap formatHandlers;
 };

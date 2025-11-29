@@ -28,6 +28,8 @@ const size_t BUFFER_LENGTH_EIGHT = 8;
 constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER8 = 8;
+constexpr float FLOAT_SCALE_32 = 1.0f / (1 << (32 - 1));
+constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (16 - 1));
 }
 class FormatConverterUnitTest : public testing::Test {
 public:
@@ -77,34 +79,6 @@ public:
         dstDescTest.bufLength = bufLengthdst;
     }
 };
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16StereoToF32Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16StereoToF32Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {0};
-    uint8_t dstBuffer[8] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    dstDesc.bufLength = 8;
-
-    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
 
 /**
  * @tc.name  : Test FormatConverter API
@@ -1300,6 +1274,284 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS32StereoTest_001, TestSize.Level1)
     srcBufferDesc.bufLength = 1;
     dstBufferDesc.bufLength = 8;
     ret = FormatConverter::F32StereoToS32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16MonoToF32StereoTest_001
+ * @tc.desc  : Test S16MonoToF32Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S16MonoToF32StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int16_t> s16MonoData(frameCount);
+    std::vector<float> f32StereoData(frameCount * 2);
+
+    // Fill with various test values
+    s16MonoData = {10, 20};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16MonoData.data(), s16MonoData.size() * sizeof(int16_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::S16MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32StereoData[0], 10 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[1], 10 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[2], 20 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[3], 20 * FLOAT_SCALE_16);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 8;
+    ret = FormatConverter::S16MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16StereoToF32StereoTest_001
+ * @tc.desc  : Test S16StereoToF32Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S16StereoToF32StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 4;
+    std::vector<int16_t> s16StereoData(frameCount);
+    std::vector<float> f32StereoData(frameCount);
+
+    // Fill with various test values
+    s16StereoData = {10, 20, 30, 40};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16StereoData.data(), s16StereoData.size() * sizeof(int16_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::S16StereoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32StereoData[0], 10 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[1], 20 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[2], 30 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32StereoData[3], 40 * FLOAT_SCALE_16);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 8;
+    ret = FormatConverter::S16StereoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32MonoToF32StereoTest_001
+ * @tc.desc  : Test S32MonoToF32Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S32MonoToF32StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int32_t> s32MonoData(frameCount);
+    std::vector<float> f32StereoData(frameCount * 2);
+
+    // Fill with various test values
+    s32MonoData = {10, 20};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32MonoData.data(), s32MonoData.size() * sizeof(int32_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::S32MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32StereoData[0], 10 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[1], 10 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[2], 20 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[3], 20 * FLOAT_SCALE_32);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 8;
+    ret = FormatConverter::S32MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32StereoToF32StereoTest_001
+ * @tc.desc  : Test S32StereoToF32Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S32StereoToF32StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 4;
+    std::vector<int32_t> s32StereoData(frameCount);
+    std::vector<float> f32StereoData(frameCount);
+
+    // Fill with various test values
+    s32StereoData = {10, 20, 30, 40};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32StereoData.data(), s32StereoData.size() * sizeof(int32_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::S32StereoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32StereoData[0], 10 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[1], 20 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[2], 30 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32StereoData[3], 40 * FLOAT_SCALE_32);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 8;
+    ret = FormatConverter::S32StereoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32MonoToF32Stereo_001
+ * @tc.desc  : Test F32MonoToF32Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, F32MonoToF32StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<float> f32MonoData(frameCount);
+    std::vector<float> f32StereoData(frameCount * 2);
+
+    // Fill with various test values
+    f32MonoData = {0.6f, 0.5f, 0.9f};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::F32MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32StereoData[0], 0.6f);
+    EXPECT_FLOAT_EQ(f32StereoData[1], 0.6f);
+    EXPECT_FLOAT_EQ(f32StereoData[2], 0.5f);
+    EXPECT_FLOAT_EQ(f32StereoData[3], 0.5f);
+    EXPECT_FLOAT_EQ(f32StereoData[4], 0.9f);
+    EXPECT_FLOAT_EQ(f32StereoData[5], 0.9f);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 8;
+    ret = FormatConverter::F32MonoToF32Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16MonoToF32MonoTest_001
+ * @tc.desc  : Test S16MonoToF32Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S16MonoToF32MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<int16_t> s16MonoData(frameCount);
+    std::vector<float> f32MonoData(frameCount);
+
+    // Fill with various test values
+    s16MonoData = {10, 15, 20};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16MonoData.data(), s16MonoData.size() * sizeof(int16_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::S16MonoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32MonoData[0], 10 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32MonoData[1], 15 * FLOAT_SCALE_16);
+    EXPECT_FLOAT_EQ(f32MonoData[2], 20 * FLOAT_SCALE_16);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 4;
+    ret = FormatConverter::S16MonoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32StereoToF32MonoTest_001
+ * @tc.desc  : Test S32StereoToF32Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S32StereoToF32MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int32_t> s32StereoData(frameCount * 2);
+    std::vector<float> f32MonoData(frameCount);
+
+    // Fill with various test values
+    s32StereoData = {10, 20, 30, 40};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32StereoData.data(), s32StereoData.size() * sizeof(int32_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));
+    auto ret = FormatConverter::S32StereoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32MonoData[0], (10 + 20) / 2 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32MonoData[1], (30 + 40) / 2 * FLOAT_SCALE_32);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 4;
+    ret = FormatConverter::S32StereoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32MonoToF32MonoTest_001
+ * @tc.desc  : Test S32MonoToF32Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S32MonoToF32MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<int32_t> s32MonoData(frameCount);
+    std::vector<float> f32MonoData(frameCount);
+
+    // Fill with various test values
+    s32MonoData = {10, 15, 20};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32MonoData.data(), s32MonoData.size() * sizeof(int32_t));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));
+    auto ret = FormatConverter::S32MonoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32MonoData[0], 10 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32MonoData[1], 15 * FLOAT_SCALE_32);
+    EXPECT_FLOAT_EQ(f32MonoData[2], 20 * FLOAT_SCALE_32);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 4;
+    ret = FormatConverter::S32MonoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32StereoToF32MonoTest_001
+ * @tc.desc  : Test F32StereoToF32Mono
+ */
+HWTEST_F(FormatConverterUnitTest, F32StereoToF32MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<float> f32StereoData(frameCount * 2);
+    std::vector<float> f32MonoData(frameCount);
+
+    // Fill with various test values
+    f32StereoData = {
+        0.25f, 0.75f,   // → 0.5f
+        0.1f, 0.9f,     // → 0.5f
+        -0.3f, 0.3f,    // → 0.0f
+    };
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));;
+    BufferDesc dstBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));
+
+    auto ret = FormatConverter::F32StereoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    EXPECT_FLOAT_EQ(f32MonoData[0], 0.5f);
+    EXPECT_FLOAT_EQ(f32MonoData[1], 0.5f);
+    EXPECT_FLOAT_EQ(f32MonoData[2], 0.0f);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 4;
+    ret = FormatConverter::F32StereoToF32Mono(srcBufferDesc, dstBufferDesc);
     EXPECT_EQ(ret, -1);
 }
 }  // namespace OHOS::AudioStandard
