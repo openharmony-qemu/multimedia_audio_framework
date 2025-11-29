@@ -17,7 +17,7 @@
 #define AUDIO_COLLABORATION_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_collaboration_manager_unit_test.h"
+#include "audio_collaboration_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
