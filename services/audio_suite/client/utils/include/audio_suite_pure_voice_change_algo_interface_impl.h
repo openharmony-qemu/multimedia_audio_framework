@@ -36,7 +36,7 @@ namespace AudioSuite {
 using FunVoiceMphGetSize = int (*)(AudioVoiceMphMemSize *memSize);
 using FunVoiceMphInit = int (*)(char *handle, char *scratchBuf);
 using FunVoiceMphApply = int (*)(char *handle, char *scratchBuf, AudioVoiceMphData *data);
-using FunVoiceMphSetPara = int (*)(char *handle, SpeakerSex gender, AudioVoiceMphTradType type);
+using FunVoiceMphSetPara = int (*)(char *handle, SpeakerSex gender, AudioVoiceMphTradType type, float pitch);
 
 static const std::unordered_map<std::string, AudioVoiceMphTradType> pureTypeMap = {
     {"1", AUDIO_VOICE_MPH_TRAD_CARTOON},

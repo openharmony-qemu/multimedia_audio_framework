@@ -154,6 +154,7 @@ enum AudioPureVoiceChangeType {
 typedef struct AudioPureVoiceChangeOption {
     AudioPureVoiceChangeGenderOption optionGender;
     AudioPureVoiceChangeType optionType;
+    float pitch;
 } AudioPureVoiceChangeOption;
 
 enum AudioGeneralVoiceChangeType {

@@ -63,8 +63,8 @@ int32_t AudioSuiteGeneralVoiceChangeNode::DeInit()
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode DeInit begin");
     if (algoInterface_ != nullptr) {
         int32_t ret = algoInterface_->Deinit();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to DeInit voice beautifier algorithm");
         algoInterface_ = nullptr;
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to DeInit voice beautifier algorithm");
     }
 
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode DeInit end");
@@ -87,7 +87,7 @@ int32_t AudioSuiteGeneralVoiceChangeNode::SetOptions(std::string name, std::stri
 
 int32_t AudioSuiteGeneralVoiceChangeNode::GetOptions(std::string name, std::string &value)
 {
-    CHECK_AND_RETURN_RET_LOG(name == setVoiceChangeMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(name == setVoiceChangeMode, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "paraValue_ is empty");
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
     value = paraValue_;
@@ -106,6 +106,7 @@ AudioSuitePcmBuffer *AudioSuiteGeneralVoiceChangeNode::SignalProcess(const std::
 
     tmpin_[0] = inputs[0]->GetPcmData();
     tmpout_[0] = pcmBufferOutput_.GetPcmData();
+    CHECK_AND_RETURN_RET_LOG(tmpout_[0] != nullptr && tmpin_[0] != nullptr, nullptr, "tmpin or tempout is nullptr");
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterfaceImpl_ is nullptr");
     int32_t ret = algoInterface_->Apply(tmpin_, tmpout_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess Apply failed");

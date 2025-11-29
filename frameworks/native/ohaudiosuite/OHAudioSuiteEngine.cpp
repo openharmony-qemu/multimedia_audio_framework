@@ -1303,6 +1303,7 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(OHAudioNode* node, OH_Audio
     AudioPureVoiceChangeOption optionParams;
     optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(option.optionGender);
     optionParams.optionType = static_cast<AudioPureVoiceChangeType>(option.optionType);
+    optionParams.pitch = static_cast<float>(option.pitch);
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d.", ret);
     return ret;

@@ -31,12 +31,14 @@ namespace AudioStandard {
 namespace AudioSuite {
 namespace {
 constexpr int32_t DEFAULT_FRAME_LEN = 640;
-constexpr int32_t NUMBER_OF_PARAMETER = 2;
+constexpr int32_t NUMBER_OF_PARAMETER = 3;
 constexpr int32_t NUMBER_OF_CHANNEL = 2;
 const float PCM_SAMPLE_AVERAGE_FACTOR = 0.5f;
 const float PCM_SAMPLE_SCALE_FACTOR = 1.0f / 32768.0f;
 const float PCM_SAMPLE_CLIP_MAX = 32767.0f;
 const float PCM_SAMPLE_CLIP_MIN = -32768.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
 }
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeCapability &nc)
@@ -162,15 +164,15 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
     return SUCCESS;
 }
 
-static std::vector<int32_t> ParseStringToIntArray(const std::string &str, char delimiter)
+static std::vector<float> ParseStringToIntArray(const std::string &str, char delimiter)
 {
-    std::vector<int32_t> result;
+    std::vector<float> result;
     std::string token;
     std::istringstream iss(str);
 
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
-            result.push_back(std::stoi(token));
+            result.push_back(std::stof(token));
         }
     }
 
@@ -180,17 +182,28 @@ static std::vector<int32_t> ParseStringToIntArray(const std::string &str, char d
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
     const std::string &paramType, const std::string &paramValue)
 {
-    std::vector<int32_t> gainValue = ParseStringToIntArray(paramValue, ',');
+    std::vector<float> gainValue = ParseStringToIntArray(paramValue, ',');
     CHECK_AND_RETURN_RET_LOG(
         gainValue.size() == NUMBER_OF_PARAMETER, ERROR, "Wrong number of parameters %{public}zu", gainValue.size());
-    auto typePtr = pureTypeMap.find(std::to_string(gainValue[1]));
-    CHECK_AND_RETURN_RET_LOG(typePtr != pureTypeMap.end(), ERROR, "Unknow type %{public}d", gainValue[1]);
-    auto typeSexPtr = pureSexTypeMap.find(std::to_string(gainValue[0]));
-    CHECK_AND_RETURN_RET_LOG(typeSexPtr != pureSexTypeMap.end(), ERROR, "Unknow Sex type %{public}d", gainValue[0]);
-
+    auto typePtr = pureTypeMap.find(std::to_string(static_cast<int32_t>(gainValue[1])));
+    CHECK_AND_RETURN_RET_LOG(
+        typePtr != pureTypeMap.end(), ERROR, "Unknow type %{public}d", static_cast<int32_t>(gainValue[1]));
+ 
+    auto typeSexPtr = pureSexTypeMap.find(std::to_string(static_cast<int32_t>(gainValue[0])));
+    CHECK_AND_RETURN_RET_LOG(
+        typeSexPtr != pureSexTypeMap.end(), ERROR, "Unknow Sex type %{public}d", static_cast<int32_t>(gainValue[0]));
+ 
+    float pitch = static_cast<float>(gainValue[2]);
+ 
+    CHECK_AND_RETURN_RET_LOG(
+        (pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) || pitch == 0.0f,
+        ERROR,
+        "Unknow Pitch value %{public}f",
+        pitch);
+ 
     SpeakerSex valueSex = typeSexPtr->second;
     AudioVoiceMphTradType voiceType = typePtr->second;
-    int32_t ret = vmAlgoApi_.setPara(handle_, valueSex, voiceType);
+    int32_t ret = vmAlgoApi_.setPara(handle_, valueSex, voiceType, pitch);
 
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
     return SUCCESS;
@@ -206,15 +219,12 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
 {
     AUDIO_DEBUG_LOG("start apply pure algorithm");
 
-    if (audioInputs.empty() || audioOutputs.empty()) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(
+        !audioInputs.empty() && !audioOutputs.empty(), ERROR, "Apply para check fail, input or output list is empty");
 
-    if (audioInputs[0] == nullptr || audioOutputs[0] == nullptr) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioInputs[0] != nullptr && audioOutputs[0] != nullptr,
+        ERROR,
+        "Apply para check fail, input or output list is empty");
 
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
