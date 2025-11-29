@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_COLLABORATION_MANAGER_H
-#define AUDIO_COLLABORATION_MANAGER_H
-
 #include <cstdio>
 #include <cstdint>
 #include <cassert>
@@ -66,4 +63,3 @@ private:
 
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif
