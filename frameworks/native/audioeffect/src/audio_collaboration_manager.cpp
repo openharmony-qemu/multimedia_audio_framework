@@ -37,8 +37,8 @@ static std::map<std::string, AudioTwsMode> twsModeMap = {
 };
 
 static std::map<std::string, AudioEarphoneProduct> productIdToEarphoneMap = {
-    {"DEVICE_DEVO", EARPHONE_PRODUCT_DEVO},
-    {"DEVICE_ROBIN", EARPHONE_PRODUCT_ROBIN},
+    {"00014B", EARPHONE_PRODUCT_DEVO},
+    {"000167", EARPHONE_PRODUCT_ROBIN},
 };
 
 enum XML_ERROR {
@@ -71,6 +71,8 @@ void AudioCollaborationManager::updateCollaborativeProductId(const std::string &
     productId_ = tmProductId;
     if (productIdToEarphoneMap.find(productId_) != productIdToEarphoneMap.end()) {
         earphoneProduct_ = productIdToEarphoneMap[productId_];
+    } else {
+        AUDIO_INFO_LOG("productId no found in productIdToEarphoneMap");
     }
     updateLatencyInner();
     AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct_);
@@ -81,6 +83,7 @@ void AudioCollaborationManager::updateCollaborativeProductId(const std::string &
 void AudioCollaborationManager::LoadCollaborationConfig()
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
+    AUDIO_INFO_LOG("begin loadCollaborationConfig");
     collaborativeLatencyConfig_.clear();
     std::shared_ptr<AudioXmlNode> firstNode = AudioXmlNode::Create();
     firstNode->Config(AUDIO_COLLABORATION_CONFIG_FILE, nullptr, XML_PARSE_ERROR | XML_PARSE_NOWARNING);
@@ -135,6 +138,13 @@ void AudioCollaborationManager::LoadCollaborationConfig()
 
         firstNode->MoveToNext();
     }
+
+    for (auto iter1 : collaborativeLatencyConfig_) {
+        for (auto iter2 : iter1.second) {
+            AUDIO_INFO_LOG("productId: %{public}s, twsMode: %{public}d, latencyMs: %{public}d",
+                iter1.first.c_str(), iter2.first, iter2.second);
+        }
+    }
 }
 
 void AudioCollaborationManager::updateLatencyInner()
@@ -155,20 +165,6 @@ void AudioCollaborationManager::updateLatencyInner()
     AUDIO_INFO_LOG("productId: %{public}s, twsMode: %{public}d, latencyMs: %{public}d",
         productId_.c_str(), twsMode_, latencyMs_);
 }
-
-int32_t AudioCollaborationManager::GetCollaborationLatency()
-{
-    std::lock_guard<std::mutex> lock(collaborationMutex_);
-    return GetCollaborationLatencyInner();
-}
-
-int32_t AudioCollaborationManager::GetCollaborationLatencyInner()
-{
-    AUDIO_INFO_LOG("productId: %{public}s, twsMode: %{public}d, latencyMs: %{public}d",
-        productId_.c_str(), twsMode_, latencyMs_);
-    return latencyMs_;
-}
-
 
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -3504,14 +3504,14 @@ void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
 
 void AudioAdapterManager::updateCollaborativeProductId(const std::string &productId)
 {
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
-    return audioServiceAdapter_->updateCollaborativeProductId(productId);
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
+    audioServiceAdapter_->updateCollaborativeProductId(productId);
 }
 
 void AudioAdapterManager::LoadCollaborationConfig()
 {
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
-    return audioServiceAdapter_->LoadCollaborationConfig();
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
+    audioServiceAdapter_->LoadCollaborationConfig();
 }
 } // namespace AudioStandard
 } // namespace OHOS

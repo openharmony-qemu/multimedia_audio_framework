@@ -4056,5 +4056,29 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateCurrSceneTypeAndStreamUsageForDsp_
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test UpdateEarphoneProduct API
+* @tc.number : UpdateEarphoneProduct_004
+* @tc.desc   : Test UpdateEarphoneProduct interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateEarphoneProduct_001, TestSize.Level1)
+{
+    std::string scene = "SCENE_MUSIC";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"1", nullptr});
+    AudioEarphoneProduct earphoneProduct = EARPHONE_PRODUCT_DOVE;
+    AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
+    EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
+    earphoneProduct = EARPHONE_PRODUCT_ROBIN;
+    AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
+    EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

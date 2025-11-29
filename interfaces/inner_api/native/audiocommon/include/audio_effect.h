@@ -75,6 +75,7 @@ enum AudioTwsMode : int32_t {
     TWS_MODE_DEFAULT = 0,
     TWS_MODE_LISTEN = 1,
     TWS_MODE_HITWS = 2,
+    TWS_MODE_OTHERS = 3,
 };
 
 enum FoldState : uint32_t {

@@ -492,15 +492,17 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     // Processing data for nearlink time delays
     uint32_t nearlinkLatency = GetNearlinkLatency();
     latency += nearlinkLatency * sampleSpec->rate / AUDIO_MS_PER_S;
+    uint32_t limiterLatency = GetLimiterLatency();
+    latency += limiterLatency * sampleSpec->rate / AUDIO_MS_PER_S;
 
     int64_t stamp = 0;
     stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
     timestamp = stamp >= 0 ? stamp : 0;
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
-        ", base %{public}d, timestamp %{public}" PRIu64
-        ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-        framePosition, readIndex, base, timestamp, algorithmLatency, a2dpOffloadLatency, nearlinkLatency);
+        ", base %{public}d, timestamp %{public}" PRIu64 ", effect latency: %{public}u ms, a2dp offload latency:"
+        " %{public}u ms, nearlink latency: %{public}u ms, limiter latency: %{public}u ms", framePosition, readIndex,
+        base, timestamp, algorithmLatency, a2dpOffloadLatency, nearlinkLatency, limiterLatency);
     return SUCCESS;
 }
 

@@ -184,7 +184,7 @@ void AudioCollaborativeService::updateCollaborativeProductId(const std::string &
 void AudioCollaborativeService::LoadCollaborationConfig()
 {
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    audioPolicyManager_.LoadCollaborationConfig(productId);
+    audioPolicyManager_.LoadCollaborationConfig();
 }
 } // AudioStandard
 } // OHOS

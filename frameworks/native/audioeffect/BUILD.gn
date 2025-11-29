@@ -77,6 +77,8 @@ audio_ohos_library("audio_effect") {
     "src/audio_head_tracker.cpp",
     "src/chain_pool_impl.cpp",
     "src/thread_handler_impl.cpp",
+    "src/audio_collaboration_manager.cpp",
+    
   ]
 
   deps = [
@@ -85,6 +87,8 @@ audio_ohos_library("audio_effect") {
     "../../../services/audio_service:audio_common",
     "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
+    "../audioutils:audio_xml_utils",
+
   ]
 
   external_deps = [

@@ -52,11 +52,9 @@ public:
     static AudioEffectChainManager *GetInstance();
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
-    int32_t GetCollaborationLatency();
 
 private:
     void updateLatencyInner();
-    int32_t GetCollaborationLatencyInner();
     std::mutex collaborationMutex_;
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";
