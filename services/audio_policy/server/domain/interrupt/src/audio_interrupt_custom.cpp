@@ -25,10 +25,10 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const std::map<std::pir<SourceType, SourceType>, std::pir<AudioFocuState, InterruptHint>> UlTRASONIC_FOCUS_MSP = {
+static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_FOCUS_MAP = {
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
-    {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, {ACTIVE, INTERRUPT_HINT_NONE}},
+    {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, {ACTIVE, INTERRUPT_HINT_NONE}}
 }
 
 void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
@@ -46,12 +46,12 @@ void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingI
         return;
     }
 
-    std::pair<SourceType, SourceType> UltraSonicFocus = {activeSourceType, incomingSourceType};
-    if (UlTRASONIC_FOCUS_MSP.count(UltraSonicFocus) > 0) {
-        AUDIO_LOG_INFO("incomingSourceType %{public}d activeSourceType %{public}d set custom incomingState is %{public}d",
-            incomingSourceType, activeSourceType, UlTRASONIC_FOCUS_MSP.at(UltraSonicFocus).first);
-        incomingState = UlTRASONIC_FOCUS_MSP.at(UltraSonicFocus).first;
-        interruptEvent.hintType = UlTRASONIC_FOCUS_MSP.at(UltraSonicFocus).second;
+    std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
+    if (ULTRASONIC_FOCUS_MAP.count(ultraSonicFocus) > 0) {
+        AUDIO_INFO_LOG("incomingSourceType %{public}d activeSourceType %{public}d set custom incomingState is %{public}d",
+            incomingSourceType, activeSourceType, ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).first);
+        incomingState = ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).first;
+        interruptEvent.hintType = ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).second;
     }
 }
 
