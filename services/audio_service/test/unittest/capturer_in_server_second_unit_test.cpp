@@ -896,5 +896,173 @@ HWTEST_F(CapturerInServerSecondUnitTest, ResolveBufferBaseAndGetServerSpanSize_0
  
     EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_001
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 12);
+}
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_002
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 6);
+}
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_003
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 4);
+}
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_004
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 3);
+}
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_005
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_005, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 3);
+}
+
+/**
+ * @tc.name  : Test UpdateBufferTimeStamp.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateBufferTimeStamp_006
+ * @tc.desc  : Test UpdateBufferTimeStamp interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_006, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    processConfig.streamInfo.channels = static_cast<AudioChannel>(1);
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->curProcessPos_ = 0;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+
+    capturerInServer_->UpdateBufferTimeStamp(12);
+    EXPECT_EQ(capturerInServer_->lastPosInc_, 6);
+}
 } // namespace AudioStandard
 } // namespace OHOS
