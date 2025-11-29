@@ -40,7 +40,7 @@ class AudioCollaborationManager {
 public:
     AudioCollaborationManager();
     ~AudioCollaborationManager();
-    static AudioEffectChainManager *GetInstance();
+    static AudioCollaborationManager *GetInstance();
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
 
