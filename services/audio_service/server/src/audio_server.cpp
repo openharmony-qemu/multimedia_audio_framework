@@ -299,7 +299,8 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->UpdateActiveDevice(type);
     }
-    std::shared_ptr<IAudioCaptureSource> ultrasonicSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
+    std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
         ultrasonicSource->UpdateActiveDevice(type);
     }
