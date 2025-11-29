@@ -66,3 +66,4 @@ private:
 
 }  // namespace AudioStandard
 }  // namespace OHOS
+#endif
