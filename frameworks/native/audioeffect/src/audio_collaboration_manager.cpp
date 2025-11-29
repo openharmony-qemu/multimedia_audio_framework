@@ -14,7 +14,7 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "AudioEffectChainManager"
+#define LOG_TAG "AudioCollaborationManager "
 #endif
 
 #include "audio_collaboration_manager.h"
@@ -66,9 +66,9 @@ void AudioCollaborationManager::updateCollaborativeProductId(const std::string &
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto pos = productId.find('_');
-    std::string tmProductId = (pos == std::string::npos) ? productId : productId.substr(0, pos);
-    CHECK_AND_RETURN_LOG(productId_ != tmProductTd, "same productId, return.");
-    productId_ = tmProductId;
+    std::string temProductId = (pos == std::string::npos) ? productId : productId.substr(0, pos);
+    CHECK_AND_RETURN_LOG(productId_ != temProductTd, "same productId, return.");
+    productId_ = temProductId;
     if (productIdToEarphoneMap.find(productId_) != productIdToEarphoneMap.end()) {
         earphoneProduct_ = productIdToEarphoneMap[productId_];
     } else {
