@@ -104,6 +104,9 @@ AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vec
     CHECK_AND_RETURN_RET_LOG(tmpout_[0] != nullptr && tmpin_[0] != nullptr, nullptr, "tmpin or tempout is nullptr");
     int32_t ret;
     if (isSecondRequest_) {
+        CHECK_AND_RETURN_RET_LOG(outPcmBuffer_.GetDataSize() < postProcessedPcmBuffer_.GetDataSize(),
+            nullptr,
+            "Offset exceeds source buffer size");
         ret = memcpy_s(outPcmBuffer_.GetPcmData(),
             outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
             postProcessedPcmBuffer_.GetPcmData() + outPcmBuffer_.GetDataSize(),
@@ -188,6 +191,8 @@ AudioSuitePcmBuffer* AudioSuitePureVoiceChangeNode::splitDataInHalf(const std::v
     AudioSuitePcmBuffer* pcmTempStorage = inputs[0];
     int32_t ret;
     if (isSecondRequest_) {
+        CHECK_AND_RETURN_RET_LOG(
+            outPcmBuffer_.GetDataSize() < pcmTempStorage->GetDataSize(), nullptr, "Offset exceeds source buffer size");
         ret = memcpy_s(outPcmBuffer_.GetPcmData(),
             outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
             pcmTempStorage->GetPcmData() + outPcmBuffer_.GetDataSize(),
