@@ -392,7 +392,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_015_ext03, TestSize.Le
     audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
     ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
 
-    std::string deviceName = PRIMARY_ULRASONIC_MIC;
+    std::string deviceName = PRIMARY_ULTRASONIC_MIC;
     DeviceType ret = audioPolicyUtilsTest_->GetDeviceType(deviceName);
     EXPECT_EQ(ret, DEVICE_TYPE_MIC);
 }
