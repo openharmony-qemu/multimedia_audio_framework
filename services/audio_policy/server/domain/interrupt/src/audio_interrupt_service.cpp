@@ -2054,7 +2054,7 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     }
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "ProcessActiveStreamFocus fail");
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
-    if (activeInterrupt != audioFocusInfoList.end()) {
+    if (activeInterrupt != audioFocusInfoList.end() && interruptCustom_ != nullptr) {
         interruptCustom_->ProcessActiveStreamCustomFocus(incomingInterrupt, activeInterrupt->first,
             incomingState, interruptEvent);
     }
