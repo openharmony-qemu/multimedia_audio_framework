@@ -1316,7 +1316,9 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
-    if (!isExistLoopback_) {
+    bool isNeedVolumeCheck = !isExistLoopback_ &&
+        PolicyHandler::GetInstance().GetActiveOutPutDevice() != DEVICE_TYPE_NEARLINK;
+    if (isNeedVolumeCheck) {
         ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
             channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel);
     }
@@ -1327,7 +1329,6 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     std::function<void()> &moveClientsIndex)
 {
     isExistLoopback_ = false;
-    audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
@@ -1338,11 +1339,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
         }
-        // If there is a sync ID in the process and it is the current first frame.
-        // then the sync ID needs to be recorded.
-        if (processList_[i]->GetAudioHapticsSyncId() > 0 && curRead == 0) {
-            audioHapticsSyncId_ = processList_[i]->GetAudioHapticsSyncId();
-        }
+
         std::function<void()> moveClientIndexFunc;
         GetAllReadyProcessDataSub(i, audioDataList, curRead, moveClientIndexFunc);
         moveClientIndexVector.push_back(moveClientIndexFunc);
@@ -1428,7 +1425,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     auto processServer = processList_[i];
     CHECK_AND_RETURN_LOG(processServer, "processServer is nullptr!");
     RingBufferWrapper ringBuffer;
-    if (!processServer->PrepareRingBuffer(curRead, ringBuffer)) {
+    if (!processServer->PrepareRingBuffer(curRead, ringBuffer, audioHapticsSyncId_)) {
         if (processServer->GetStreamStatus() == STREAM_RUNNING) {
             processServer->AddNoDataFrameSize();
         }
@@ -1932,7 +1929,6 @@ int32_t AudioEndpointInner::LimitMixData(float *inBuff, float *outBuff, const si
 void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
 {
     // pre proc
-    CHECK_AND_RETURN(IsInjectEnable());
     isConvertReadFormat_ = false;
     CHECK_AND_RETURN(isNeedInject_ == true);
     CHECK_AND_RETURN_LOG(endpointType_ == TYPE_VOIP_MMAP, "type error, cur only support voip inject.");

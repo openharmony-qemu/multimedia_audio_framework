@@ -74,6 +74,34 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
+int32_t LoadSrCapability(NodeCapability &nc)
+{
+    AUDIO_INFO_LOG("loadSrCapability start.");
+    std::string algoSoPath = nc.soPath + nc.soName;
+    void *libHandle = dlopen(algoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(libHandle != nullptr,
+        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        algoSoPath.c_str(), dlerror());
+
+    using FunSpaceRenderGetSpeces = SpaceRenderSpeces (*)();
+    FunSpaceRenderGetSpeces getSpecsFunc =
+        reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle, "SpaceRenderGetSpeces"));
+    if (getSpecsFunc == nullptr) {
+        dlclose(libHandle);
+        libHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            algoSoPath.c_str(), "SpaceRenderGetSpeces");
+        return ERROR;
+    }
+    SpaceRenderSpeces specs = getSpecsFunc();
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    dlclose(libHandle);
+    libHandle = nullptr;
+    AUDIO_INFO_LOG("loadCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("loadCapability start.");
@@ -119,6 +147,28 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     dlclose(libHandle);
     libHandle = nullptr;
     AUDIO_INFO_LOG("LoadAissCapability end.");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
+{
+    AudioVoiceMorhpingSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadGeneralCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    return SUCCESS;
+}
+ 
+int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
+{
+    AudioVoiceMphTradSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMphTradGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadPureCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
     return SUCCESS;
 }
 
@@ -242,9 +292,18 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
             case NODE_TYPE_NOISE_REDUCTION:
                 CHECK_AND_RETURN_RET_LOG(LoadAinrCapability(nc) == SUCCESS, ERROR, "LoadAinrCapability failed.");
                 break;
+            case NODE_TYPE_GENERAL_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadGeneralCapability(nc) == SUCCESS, ERROR, "LoadGeneralCapability failed.");
+                break;
+            case NODE_TYPE_PURE_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadPureCapability(nc) == SUCCESS, ERROR, "LoadPureCapability failed.");
+                break;
             case NODE_TYPE_TEMPO_PITCH:
                 CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(nc) == SUCCESS, ERROR,
                     "LoadTempoPitchCapability failed.");
+                break;
+            case NODE_TYPE_SPACE_RENDER:
+                CHECK_AND_RETURN_RET_LOG(LoadSrCapability(nc) == SUCCESS, ERROR, "LoadSrCapability failed.");
                 break;
             default:
                 AUDIO_ERR_LOG("no such nodeType: %{public}d configured.", nodeType);

@@ -772,7 +772,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
         AUDIO_TONE_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
-    uint32_t preferredType = 6;
+    uint32_t preferredType = 9999;
     PreferredType ERR_PFTYPE = static_cast<PreferredType>(preferredType);
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
@@ -1699,9 +1699,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST; // Not VOIP | FAST combination
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should return early without modifying sampling rate
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_44100);
 }
@@ -1719,9 +1718,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_16000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should modify streamInfo since desc's rate is not 16000.
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
@@ -1739,9 +1737,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should not modify since it's already 48000
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
@@ -1759,7 +1756,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should change from 44100 to 48000
@@ -1788,15 +1784,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
         SAMPLE_RATE_384000  // Should change to 48000
     };
 
-    SetInjectEnable(true);
     for (auto rate : testRates) {
         std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
         AudioStreamInfo streamInfo;
         streamInfo.samplingRate = rate;
         desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
-        
+
         manager.UpdateStreamSampleInfo(desc, streamInfo);
-        
+
         // All unsupported rates should be changed to 48000
         EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
     }
@@ -2177,7 +2172,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetOutputDevice_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor>speaker = std::make_shared<AudioDeviceDescriptor>();
     speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
     speaker->deviceId_ = 2;
-    
+
     deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
 
     server->audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, speaker);

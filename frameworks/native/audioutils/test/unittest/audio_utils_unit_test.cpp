@@ -2836,7 +2836,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 {
     bool isRenderer = false;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);
@@ -2851,7 +2851,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 {
     bool isRenderer = true;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.ShowTimestamp(isRenderer);
 }
@@ -2865,7 +2865,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_004, TestSize.Level1)
 {
     bool isRenderer = true;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);

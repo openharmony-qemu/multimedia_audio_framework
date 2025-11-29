@@ -114,13 +114,14 @@ void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<Audio
 void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage & MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
             mediaExcludedDevices_.insert(desc);
         }
-    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+    }
+    if (audioDevUsage & CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
@@ -132,7 +133,7 @@ void AudioStateManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage & MEDIA_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
@@ -141,7 +142,8 @@ void AudioStateManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
                 mediaExcludedDevices_.erase(it);
             }
         }
-    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+    }
+    if (audioDevUsage & CALL_OUTPUT_DEVICES) {
         lock_guard<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : audioDeviceDescriptors) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "Invalid device descriptor");
@@ -280,12 +282,12 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
 vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(AudioDeviceUsage usage)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> devices;
-    if (usage == MEDIA_OUTPUT_DEVICES) {
+    if (usage & ALL_MEDIA_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
         for (const auto &desc : mediaExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
-    } else if (usage == CALL_OUTPUT_DEVICES) {
+    } else if (usage & ALL_CALL_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
@@ -298,12 +300,10 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
 bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
-    CHECK_AND_RETURN_RET(audioDevUsage == MEDIA_OUTPUT_DEVICES || audioDevUsage == CALL_OUTPUT_DEVICES, false);
-
-    if (audioDevUsage == MEDIA_OUTPUT_DEVICES) {
+    if (audioDevUsage & ALL_MEDIA_DEVICES) {
         shared_lock<shared_mutex> lock(mediaExcludedDevicesMutex_);
         return mediaExcludedDevices_.contains(audioDeviceDescriptor);
-    } else if (audioDevUsage == CALL_OUTPUT_DEVICES) {
+    } else if (audioDevUsage & ALL_CALL_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
         return callExcludedDevices_.contains(audioDeviceDescriptor);
     }

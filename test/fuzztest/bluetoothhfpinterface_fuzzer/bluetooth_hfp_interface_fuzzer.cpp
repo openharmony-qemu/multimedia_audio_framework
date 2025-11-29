@@ -18,6 +18,7 @@
 #include "audio_info.h"
 #include "audio_engine_log.h"
 #include "../fuzz_utils.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -82,11 +83,17 @@ vector<TestFuncs> g_testFuncs = {
 };
 
 } // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    OHOS::OnStop();
     return 0;
 }

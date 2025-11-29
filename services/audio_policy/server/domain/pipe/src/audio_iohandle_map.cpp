@@ -22,13 +22,12 @@
 #include "audio_policy_manager_factory.h"
 
 #include "audio_server_proxy.h"
-#include "audio_policy_async_action_handler.h"
 #include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class WaitActiveDeviceAction : public PolicyAsyncAction {
+class WaitActiveDeviceAction : public AsyncActionHandler::AsyncAction {
 public:
     WaitActiveDeviceAction(int32_t muteDuration, const std::string &portName)
         : muteDuration_(muteDuration), portName_(portName)
@@ -44,7 +43,7 @@ private:
     const std::string portName_;
 };
 
-class UnmutePortAction : public PolicyAsyncAction {
+class UnmutePortAction : public AsyncActionHandler::AsyncAction {
 public:
     UnmutePortAction(int32_t muteDuration, const std::string &portName)
         : muteDuration_(muteDuration), portName_(portName)
@@ -83,6 +82,11 @@ void AudioIOHandleMap::DeInit()
 {
     std::lock_guard<std::mutex> ioHandleLock(ioHandlesMutex_);
     IOHandles_.clear();
+}
+
+void AudioIOHandleMap::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
+{
+    asyncHandler_ = handler;
 }
 
 std::unordered_map<std::string, AudioIOHandle> AudioIOHandleMap::GetCopy()
@@ -249,9 +253,11 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
 
     std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(duration, portName);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 
     if (isSleepEnabled) {
         usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
@@ -296,10 +302,12 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const s
 
     std::shared_ptr<UnmutePortAction> action = std::make_shared<UnmutePortAction>(muteDuration, portName);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
+    AsyncActionHandler::AsyncActionDesc desc;
     desc.delayTimeMs = muteDuration / US_PER_MS;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 }
 
 void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &portName)

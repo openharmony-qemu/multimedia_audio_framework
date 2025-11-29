@@ -301,8 +301,14 @@ public:
     virtual float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute) = 0;
     virtual int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
+    virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
+    virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
+    virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
+        AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
     virtual void updateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
+
 };
 } // namespace AudioStandard
 } // namespace OHOS

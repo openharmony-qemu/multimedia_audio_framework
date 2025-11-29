@@ -435,7 +435,14 @@ public:
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
+
+    LatencyMonitor(const LatencyMonitor&) = delete;
+    LatencyMonitor& operator=(const LatencyMonitor&) = delete;
+    LatencyMonitor(LatencyMonitor&&) = delete;
+    LatencyMonitor& operator=(LatencyMonitor&&) = delete;
 private:
+    LatencyMonitor() = default;
+
     std::string rendererMockTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
@@ -445,6 +452,8 @@ private:
     std::string dspAfterSmartPa_ = "";
     std::string dspMockTime_ = "";
     size_t extraStrLen_ = 0;
+
+    std::mutex mutex_;
 };
 
 class AudioDump {
@@ -570,6 +579,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_ACCESSORY = 10,
     HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION = 11,
     HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE = 12,
+    HDI_CAPTURE_OFFSET_UNPROCESS = 13,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -610,8 +620,6 @@ std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
 std::string ConvertToStringForChannel(const AudioChannel channel);
 
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
-bool IsInjectEnable();
-void SetInjectEnable(bool injectSwitch);
 
 } // namespace AudioStandard
 } // namespace OHOS

@@ -573,7 +573,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage, bool &isAllowed,
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn, bool &isAllowed,
         bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
@@ -891,6 +891,7 @@ private:
     std::shared_ptr<AudioInterruptService> interruptService_;
     AudioSessionService &sessionService_;
     AudioInjectorPolicy &audioInjectorPolicy_;
+    AudioIOHandleMap &audioIOHandleMap_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 

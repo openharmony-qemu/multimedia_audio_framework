@@ -264,7 +264,9 @@ void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest()
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    audioAdapterManager->UpdateVolumeForLowLatency();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    audioAdapterManager->UpdateVolumeForLowLatency(desc, g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()]);
 }
 
 void AudioVolumeManagerUpdateSinkArgsFuzzTest()
@@ -449,6 +451,14 @@ void AudioVolumeManagerInitializeFuzzTest()
     audioAdapterManager->SetVolumeCallbackAfterClone();
     audioAdapterManager->LoadMuteStatusMap();
 }
+
+void AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest()
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t sessionId = g_fuzzUtils.GetData<int32_t>();
+    audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -477,6 +487,7 @@ std::vector<OHOS::AudioStandard::TestPtr> g_testPtrs = {
     OHOS::AudioStandard::AudioVolumeManagerNotifyAccountsChangedFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerHandleRingerModeFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest,
 };
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)

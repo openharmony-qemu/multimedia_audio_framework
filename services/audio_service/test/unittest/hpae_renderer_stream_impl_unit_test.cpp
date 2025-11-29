@@ -1011,5 +1011,65 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
 }
+
+/**
+ * @tc.name  : Test GetSpeedPosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_039
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
+    uint64_t framePosition = 1;
+    uint64_t timestamp = 1;
+    uint64_t latency = 1;
+    EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition, timestamp, latency, 0), SUCCESS);
+    uint64_t framePosition2 = 2;
+    uint64_t timestamp2 = 2;
+    uint64_t latency2 = 2;
+    EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
+    EXPECT_EQ(framePosition, framePosition2);
+    EXPECT_EQ(timestamp, timestamp2);
+    EXPECT_EQ(latency, latency2);
+}
+
+/**
+ * @tc.name  : Test GetSpeedPosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_040
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
+    uint64_t framePosition = 1;
+    uint64_t timestamp = 1;
+    uint64_t latency = 1;
+    EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition, timestamp, latency, 0), SUCCESS);
+    uint64_t framePosition2 = 2;
+    uint64_t timestamp2 = 2;
+    uint64_t latency2 = 2;
+    EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
+    EXPECT_EQ(framePosition, framePosition2);
+    EXPECT_EQ(timestamp, timestamp2);
+    EXPECT_EQ(latency, latency2);
+}
 }
 }

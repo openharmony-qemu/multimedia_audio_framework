@@ -35,9 +35,12 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo nodeInfo)
     nodeInfo.frameLen = nodeInfo.samplingRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
     SetNodeInfo(nodeInfo);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
+#ifndef CONFIG_FACTORY_VERSION
+    // FACTORY_VERSION cancel limiter
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("mixerNode SetupAudioLimiter failed!");
     }
+#endif
     hpaeSinkOutputNode_->Connect(mixerNode_);
     frameLenMs_ = hpaeSinkOutputNode_->GetFrameLen() * MILLISECOND_PER_SECOND / hpaeSinkOutputNode_->GetSampleRate();
     AUDIO_INFO_LOG("frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);

@@ -44,7 +44,7 @@ int32_t AudioSessionManager::ActivateAudioSession(const AudioSessionStrategy &st
     }
 
     RegisterAudioPolicyServerDiedCb();
-    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE,
+    restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE,
         static_cast<int32_t>(strategy.concurrencyMode));
     return ret;
 }
@@ -55,7 +55,7 @@ int32_t AudioSessionManager::DeactivateAudioSession()
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioSession();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, ret:%{public}d", ret);
 
-    restoreParame_.OnAudioSessionDeactive();
+    restoreParams_.OnAudioSessionDeactive();
     return ret;
 }
 
@@ -105,7 +105,7 @@ int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioS
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetAudioSessionScene failed, result:%{public}d", result);
 
     RegisterAudioPolicyServerDiedCb();
-    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE,
+    restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE,
         static_cast<int32_t>(audioSessionScene));
     return result;
 }
@@ -278,17 +278,17 @@ void AudioSessionManager::RegisterAudioPolicyServerDiedCb()
 
 void AudioSessionManager::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
 {
-    restoreParame_.OnAudioSessionDeactive();
+    restoreParams_.OnAudioSessionDeactive();
 }
 
 void AudioSessionManager::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
 {
-    restoreParame_.OnAudioSessionStateChanged(stateChangedEvent.stateChangeHint);
+    restoreParams_.OnAudioSessionStateChanged(stateChangedEvent.stateChangeHint);
 }
 
 bool AudioSessionManager::Restore()
 {
-    AUDIO_INFO_LOG("start restore audio session manager parame.");
+    AUDIO_INFO_LOG("start restore audio session manager params.");
 
     // restore devicetype
     {
@@ -301,8 +301,8 @@ bool AudioSessionManager::Restore()
     }
 
     // restore active and setscene
-    bool restoreResult = restoreParame_.RestoreParame();
-    AUDIO_INFO_LOG("end restore audio session manager parame.");
+    bool restoreResult = restoreParams_.RestoreParams();
+    AUDIO_INFO_LOG("end restore audio session manager params.");
 
     return restoreResult;
 }
@@ -340,13 +340,13 @@ void AudioSessionManagerStateCallback::OnAudioSessionStateChanged(
     sessionManager->OnAudioSessionStateChanged(stateChangedEvent);
 }
 
-void AudioSessionRestoreParame::OnAudioSessionDeactive()
+void AudioSessionRestoreParams::OnAudioSessionDeactive()
 {
     std::lock_guard<std::mutex> lock(actionsMutex_);
     actions_.clear();
 }
 
-void AudioSessionRestoreParame::OnAudioSessionStateChanged(AudioSessionStateChangeHint stateChangeHint)
+void AudioSessionRestoreParams::OnAudioSessionStateChanged(AudioSessionStateChangeHint stateChangeHint)
 {
     if ((stateChangeHint == AudioSessionStateChangeHint::STOP) ||
         (stateChangeHint == AudioSessionStateChangeHint::TIME_OUT_STOP) ||
@@ -356,7 +356,7 @@ void AudioSessionRestoreParame::OnAudioSessionStateChanged(AudioSessionStateChan
     }
 }
 
-void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, const int32_t value)
+void AudioSessionRestoreParams::RecordAudioSessionOpt(const OperationType type, const int32_t value)
 {
     std::lock_guard<std::mutex> lock(actionsMutex_);
     if (actions_.empty()) {
@@ -378,10 +378,10 @@ void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, 
     actions_.push_back(std::move(action));
 
     // The previous active operation needs to be deleted and the set scene operation needs to be deduplicated.
-    if (type == AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE) {
+    if (type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE) {
         for (auto it = actions_.begin(); it != std::prev(actions_.end());) {
             CHECK_AND_CONTINUE(*it != nullptr);
-            if ((*it)->type == AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE) {
+            if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE) {
                 it = actions_.erase(it);
             } else {
                 ++it;
@@ -404,27 +404,27 @@ void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, 
     }
 }
 
-bool AudioSessionRestoreParame::RestoreParame()
+bool AudioSessionRestoreParams::RestoreParams()
 {
     int32_t ret;
     std::lock_guard<std::mutex> lock(actionsMutex_);
     for (auto it = actions_.begin(); it != actions_.end(); ++it) {
         CHECK_AND_CONTINUE(*it != nullptr);
 
-        AUDIO_INFO_LOG("AudioSessionManager RestoreParame type = %{public}d, value = %{public}d.",
+        AUDIO_INFO_LOG("AudioSessionManager RestoreParams type = %{public}d, value = %{public}d.",
             (*it)->type, (*it)->optValue);
 
-        if ((*it)->type == AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE) {
+        if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE) {
             AudioSessionStrategy strategy;
             strategy.concurrencyMode = static_cast<AudioConcurrencyMode>((*it)->optValue);
             ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore Activate parame failed, ret:%{public}d", ret);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore Activate params failed, ret:%{public}d", ret);
         }
 
-        if ((*it)->type == AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE) {
+        if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE) {
             AudioSessionScene audioSessionScene = static_cast<AudioSessionScene>((*it)->optValue);
             ret = AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore DeviceType parame failed, ret:%{public}d", ret);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore DeviceType params failed, ret:%{public}d", ret);
         }
     }
 

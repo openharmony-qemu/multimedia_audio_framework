@@ -169,8 +169,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 #endif
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
       sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
-      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
-
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance()),
+      audioIOHandleMap_(AudioIOHandleMap::GetInstance())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -269,6 +269,13 @@ void AudioPolicyServer::Init()
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
+
+    // Init single async handler for different managers
+    auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_APAsyncActionHandler");
+    coreService_->SetAsyncActionHandler(asyncHandler);
+    interruptService_->SetAsyncActionHandler(asyncHandler);
+    audioVolumeManager_.SetAsyncActionHandler(asyncHandler);
+    audioIOHandleMap_.SetAsyncActionHandler(asyncHandler);
 }
 
 void AudioPolicyServer::OnStart()
@@ -5067,9 +5074,13 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage,
+int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn,
     bool &isAllowed, bool &silentControl)
 {
+    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
+    if (streamUsage < STREAM_USAGE_INVALID || streamUsage > STREAM_USAGE_MAX) {
+        return ERR_NOT_SUPPORTED;
+    }
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != MEDIA_SERVICE_UID) {
         auto callerPid = IPCSkeleton::GetCallingPid();

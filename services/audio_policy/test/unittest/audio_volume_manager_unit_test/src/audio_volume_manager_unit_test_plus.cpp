@@ -366,7 +366,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_117, TestSize.Level1)
     EXPECT_FALSE(streamUsages.empty());
 }
 
-
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioVolumeManager_118
@@ -379,6 +378,74 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_118, TestSize.Level1)
 
     EXPECT_NO_THROW(audioVolumeManager->SetTimer(-1, nullptr));
     EXPECT_NO_THROW(audioVolumeManager->SetTimer(1, nullptr));
+}
+
+/**
+ * @tc.name  : AudioVolumeManager_DoLoopCheck_001
+ * @tc.number: DoLoopCheck_001
+ * @tc.desc  : Test DoLoopCheck() with async handler
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, DoLoopCheck_001, TestSize.Level4)
+{
+    auto testVolumeManager = std::make_shared<AudioVolumeManager>();
+    auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_TestHandler");
+    testVolumeManager->SetAsyncActionHandler(asyncHandler);
+
+    std::string testReason = "Default";
+    std::string outReason = testVolumeManager->DoLoopCheck(testReason);
+    EXPECT_EQ("Default", outReason);
+
+    testVolumeManager->DeInit();
+}
+
+/**
+ * @tc.name  : AudioVolumeManager_DoLoopCheck_002
+ * @tc.number: DoLoopCheck_002
+ * @tc.desc  : Test DoLoopCheck() without async handler
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, DoLoopCheck_002, TestSize.Level4)
+{
+    auto testVolumeManager = std::make_shared<AudioVolumeManager>();
+
+    std::string testReason = "Default";
+    std::string outReason = testVolumeManager->DoLoopCheck(testReason);
+    EXPECT_EQ("Default", outReason);
+
+    testVolumeManager->DeInit();
+}
+
+/**
+ * @tc.name  : AudioVolumeManager_OnCheckActiveMusicTime_001
+ * @tc.number: OnCheckActiveMusicTime_001
+ * @tc.desc  : Test OnCheckActiveMusicTime() with async handler
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, OnCheckActiveMusicTime_001, TestSize.Level4)
+{
+    auto testVolumeManager = std::make_shared<AudioVolumeManager>();
+    auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_TestHandler");
+    testVolumeManager->SetAsyncActionHandler(asyncHandler);
+
+    std::string testReason = "Default";
+    testVolumeManager->OnCheckActiveMusicTime(testReason);
+    EXPECT_EQ(SAFE_UNKNOWN, testVolumeManager->safeStatus_);
+
+    testVolumeManager->DeInit();
+}
+
+/**
+ * @tc.name  : AudioVolumeManager_OnCheckActiveMusicTime_002
+ * @tc.number: OnCheckActiveMusicTime_002
+ * @tc.desc  : Test OnCheckActiveMusicTime() without async handler
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, OnCheckActiveMusicTime_002, TestSize.Level4)
+{
+    auto testVolumeManager = std::make_shared<AudioVolumeManager>();
+
+    std::string testReason = "Default";
+    testVolumeManager->OnCheckActiveMusicTime(testReason);
+    EXPECT_EQ(SAFE_UNKNOWN, testVolumeManager->safeStatus_);
+
+    testVolumeManager->DeInit();
 }
 } // namespace AudioStandard
 } // namespace OHOS
