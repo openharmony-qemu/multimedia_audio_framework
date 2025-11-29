@@ -435,7 +435,14 @@ public:
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
+
+    LatencyMonitor(const LatencyMonitor&) = delete;
+    LatencyMonitor& operator=(const LatencyMonitor&) = delete;
+    LatencyMonitor(LatencyMonitor&&) = delete;
+    LatencyMonitor& operator=(LatencyMonitor&&) = delete;
 private:
+    LatencyMonitor() = default;
+
     std::string rendererMockTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
@@ -445,6 +452,8 @@ private:
     std::string dspAfterSmartPa_ = "";
     std::string dspMockTime_ = "";
     size_t extraStrLen_ = 0;
+
+    std::mutex mutex_;
 };
 
 class AudioDump {

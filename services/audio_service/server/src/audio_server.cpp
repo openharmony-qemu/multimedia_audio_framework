@@ -2645,6 +2645,9 @@ int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &vo
 
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)
 {
+    static bool isEnabled = AudioLatencyMeasurement::CheckIfEnabled();
+    CHECK_AND_RETURN_RET(isEnabled, SUCCESS);
+
     std::string stringTimestamp = timestamp;
     if (isRenderer) {
         LatencyMonitor::GetInstance().UpdateClientTime(true, stringTimestamp);
