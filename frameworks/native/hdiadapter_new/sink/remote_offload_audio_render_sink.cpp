@@ -772,12 +772,26 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MI
     return SUCCESS;
 }
 
+// does not involve multithreading operation
 int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
+    Trace trace("RemoteOffloadAudioRenderSink:UpdateAppsUid");
 #ifdef FEATURE_POWER_MANAGER
     CHECK_AND_RETURN_RET_LOG(runningLock_, ERR_INVALID_HANDLE, "running lock is nullptr");
     runningLock_->UpdateAppsUid(appsUid.cbegin(), appsUid.cend());
 #endif
+    std::unordered_set<int32_t> lastAppsUid = appsUid_;
+    std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
+    appsUid_ = std::move(appsUidSet);
+    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
+        appInfoNeedReset_ = true;
+        CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "audioRender_ is null");
+        std::string appInfoStr = GenerateAppsUidStr(appsUid_);
+        int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
+        appInfoNeedReset_ = false;
+    }
     return SUCCESS;
 }
 

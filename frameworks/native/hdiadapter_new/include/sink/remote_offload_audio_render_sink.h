@@ -224,6 +224,8 @@ private:
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
     std::shared_ptr<std::thread> flushThread_;
+    bool appInfoNeedReset_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard
