@@ -164,8 +164,8 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
     } else {
         std::vector<AudioSuitePcmBuffer*>& preOutputsSecond = ReadProcessNodePreOutputData();  // Need second data
         CHECK_AND_RETURN_RET_LOG(preOutputsSecond.size() > 0 && preOutputsSecond[0] != nullptr,
-        rawPcmData_,
-        "Failed to read data from the previous node.");
+                                 rawPcmData_,
+                                 "Failed to read data from the previous node.");
         if (preOutputsSecond[0]->GetIsFinished()) {
             SetAudioNodeDataFinishedFlag(isDataReadComplete_);
             isDataReadComplete_ = true;

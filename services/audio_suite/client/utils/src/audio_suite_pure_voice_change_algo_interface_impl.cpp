@@ -199,7 +199,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
         (pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) || pitch == 0.0f,
         ERROR,
         "Unknow Pitch value %{public}f",
-        gainValue[2]);
+        pitch);
  
     SpeakerSex valueSex = typeSexPtr->second;
     AudioVoiceMphTradType voiceType = typePtr->second;
