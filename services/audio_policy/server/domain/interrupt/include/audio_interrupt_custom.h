@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#idndef ST_AUDIO_INTERRUPT_CUSTOM_H
+#ifndef ST_AUDIO_INTERRUPT_CUSTOM_H
 #define ST_AUDIO_INTERRUPT_CUSTOM_H
 
 #include "audio_interrupt_info.h"
