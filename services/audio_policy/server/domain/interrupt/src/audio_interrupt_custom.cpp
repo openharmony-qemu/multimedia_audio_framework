@@ -49,7 +49,7 @@ void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingI
 
     std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
     if (ULTRASONIC_MAP.count(ultraSonicFocus) > 0) {
-        AUDIO_INFO_LOG("incomingSourceType %{public}d activeSourceType %{public}d set custom incomingState is %{public}d",
+        AUDIO_INFO_LOG("incomingSourceType %{public}d activeSourceType %{public}d set incomingState is %{public}d",
             incomingSourceType, activeSourceType, ULTRASONIC_MAP.at(ultraSonicFocus).first);
         incomingState = ULTRASONIC_MAP.at(ultraSonicFocus).first;
         interruptEvent.hintType = ULTRASONIC_MAP.at(ultraSonicFocus).second;
