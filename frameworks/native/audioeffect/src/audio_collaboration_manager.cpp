@@ -37,7 +37,7 @@ static std::map<std::string, AudioTwsMode> twsModeMap = {
 };
 
 static std::map<std::string, AudioEarphoneProduct> productIdToEarphoneMap = {
-    {"00014B", EARPHONE_PRODUCT_DEVO},
+    {"00014B", EARPHONE_PRODUCT_DOVE},
     {"000167", EARPHONE_PRODUCT_ROBIN},
 };
 
