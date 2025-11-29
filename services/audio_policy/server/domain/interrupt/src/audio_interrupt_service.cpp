@@ -176,6 +176,7 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     sessionService_.SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+    interruptCustom_ = std::make_unique<AudioInterruptCustom>();
 }
 
 void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
@@ -2053,6 +2054,10 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     }
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "ProcessActiveStreamFocus fail");
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
+    if (activeInterrupt != audioFocusInfoList.end()) {
+        interruptCustom_->ProcessActiveStreamCustomFocus(incomingInterrupt, activeInterrupt->first,
+            incomingState, interruptEvent);
+    }
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
     if (IsGameAvoidCallbackCase(incomingInterrupt) && incomingState == PAUSE) {

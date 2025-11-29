@@ -36,6 +36,7 @@
 #include "audio_info.h"
 #include "istandard_audio_service.h"
 #include "async_action_handler.h"
+#include "audio_interrupt_custom.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -388,6 +389,8 @@ private:
 
     std::mutex audioServerProxyMutex_;
     std::unordered_set<uint32_t> mutedGameSessionId_;
+
+    std::unique_ptr<AudioInterruptCustom> interruptCustom_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
