@@ -67,7 +67,7 @@ void AudioCollaborationManager::updateCollaborativeProductId(const std::string &
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto pos = productId.find('_');
     std::string temProductId = (pos == std::string::npos) ? productId : productId.substr(0, pos);
-    CHECK_AND_RETURN_LOG(productId_ != temProductTd, "same productId, return.");
+    CHECK_AND_RETURN_LOG(productId_ != temProductId, "same productId, return.");
     productId_ = temProductId;
     if (productIdToEarphoneMap.find(productId_) != productIdToEarphoneMap.end()) {
         earphoneProduct_ = productIdToEarphoneMap[productId_];
