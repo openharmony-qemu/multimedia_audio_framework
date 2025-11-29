@@ -207,7 +207,6 @@ void VolumeDataMaintainer::WriteVolumeDbAccessExceptionEvent(int32_t errorCase, 
     bean->Add("ERROR_CASE", errorCase);
     bean->Add("ERROR_MSG", errorMsg);
     bean->Add("ERROR_DESCRIPTION", "Dateabase access failed");
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 bool VolumeDataMaintainer::GetMuteAffected(int32_t &affected)
