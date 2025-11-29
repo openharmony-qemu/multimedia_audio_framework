@@ -477,7 +477,7 @@ int32_t AudioGeneralManager::ForceSelectDevice(DeviceType devType, const std::st
     return AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, filter);
 }
 
-int32_t AudioGeneralManager::SetActiveHfpDevice(const std::string& macAddress)
+int32_t AudioGeneralManager::SetActiveHfpDevice(const std::string &macAddress)
 {
     return AudioPolicyManager::GetInstance().SetActiveHfpDevice(macAddress);
 }

@@ -2041,6 +2041,15 @@ void AudioPolicyServerPermStateChangeCallbackFuzzTest()
     callback->PermStateChangeCallback(result);
 }
 
+void AudioPolicyServerSetActiveHfpDeviceFuzzTest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+
+    std::string macAddress = "test_mac";
+    audioPolicyServer->SetActiveHfpDevice(macAddress);
+}
+
 void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest()
 {
     Security::AccessToken::PermStateChangeScope scopeInfo;
@@ -2237,6 +2246,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerVolumeOnChangeFuzzTest,
     AudioPolicyServerInterruptOnChangeFuzzTest,
     AudioPolicyServerStateOnChangeFuzzTest,
+    AudioPolicyServerSetActiveHfpDeviceFuzzTest,
     AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest,
 };
 
