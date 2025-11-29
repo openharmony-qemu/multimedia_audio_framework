@@ -20,6 +20,7 @@
 #include "audio_interrupt_custom.h"
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "audio_common_log.h"
 #include "audio_source_type.h"
 
 namespace OHOS {
