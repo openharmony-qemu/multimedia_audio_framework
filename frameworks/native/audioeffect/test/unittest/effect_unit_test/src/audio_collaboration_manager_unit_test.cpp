@@ -57,12 +57,12 @@ HWTEST(AudioCollaborationManagerUnitTest, updateCollaborativeProductId_001, Test
 {
     std::string productId = "11_123456";
 
-    AudioCollaborationManagerUnitTest::GetInstance()->updateCollaborativeProductId(productId);
-    EXPECT_EQ(AudioCollaborationManagerUnitTest::GetInstance()->productId_, "11");
+    AudioCollaborationManager::GetInstance()->updateCollaborativeProductId(productId);
+    EXPECT_EQ(AudioCollaborationManager::GetInstance()->productId_, "11");
 
     productId = "00014B_07_4113";
-    AudioCollaborationManagerUnitTest::GetInstance()->updateCollaborativeProductId(productId);
-    EXPECT_EQ(AudioCollaborationManagerUnitTest::GetInstance()->productId_, "00014B");
+    AudioCollaborationManager::GetInstance()->updateCollaborativeProductId(productId);
+    EXPECT_EQ(AudioCollaborationManager::GetInstance()->productId_, "00014B");
 }
 
 /**
@@ -72,20 +72,20 @@ HWTEST(AudioCollaborationManagerUnitTest, updateCollaborativeProductId_001, Test
 */
 HWTEST(AudioCollaborationManagerUnitTest, updateLatencyInner_001, TestSize.Level1)
 {
-    AudioCollaborationManagerUnitTest::GetInstance()->LoadCollaborationConfig();
+    AudioCollaborationManager::GetInstance()->LoadCollaborationConfig();
 
 
-    AudioCollaborationManagerUnitTest::GetInstance()->productId_ = "00014B0";
-    AudioCollaborationManagerUnitTest::GetInstance()->updateLatencyInner();
-    EXPECT_EQ(AudioCollaborationManagerUnitTest::GetInstance()->latencyMs_, DEFAULT_LATENCY_TEST);
+    AudioCollaborationManager::GetInstance()->productId_ = "00014B0";
+    AudioCollaborationManager::GetInstance()->updateLatencyInner();
+    EXPECT_EQ(AudioCollaborationManager::GetInstance()->latencyMs_, DEFAULT_LATENCY_TEST);
 
-    AudioCollaborationManagerUnitTest::GetInstance()->twsMode_ = TWS_MODE_OTHERS;
-    AudioCollaborationManagerUnitTest::GetInstance()->updateLatencyInner();
-    EXPECT_EQ(AudioCollaborationManagerUnitTest::GetInstance()->latencyMs_, DEFAULT_LATENCY_TEST);
+    AudioCollaborationManager::GetInstance()->twsMode_ = TWS_MODE_OTHERS;
+    AudioCollaborationManager::GetInstance()->updateLatencyInner();
+    EXPECT_EQ(AudioCollaborationManager::GetInstance()->latencyMs_, DEFAULT_LATENCY_TEST);
 
-    AudioCollaborationManagerUnitTest::GetInstance()->productId_ = "00014B";
-    AudioCollaborationManagerUnitTest::GetInstance()->twsMode_ = TWS_MODE_DEFAULT;
-    AudioCollaborationManagerUnitTest::GetInstance()->updateLatencyInner();
+    AudioCollaborationManager::GetInstance()->productId_ = "00014B";
+    AudioCollaborationManager::GetInstance()->twsMode_ = TWS_MODE_DEFAULT;
+    AudioCollaborationManager::GetInstance()->updateLatencyInner();
 }
 
 } // namespace AudioStandard
