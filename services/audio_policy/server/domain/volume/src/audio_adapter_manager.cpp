@@ -678,8 +678,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
 
-    bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
-        device->deviceType_ != DEVICE_TYPE_REMOTE_CAST;
+    bool useSpeaker = Util::IsDualToneStreamType(streamType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
     float volumeDb = CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree);
@@ -692,7 +691,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
         volumeDegree:%{public}d device:%{public}s",
         streamType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
-    SetSystemVolumeToEffect(streamType);
+    SetSystemVolumeToEffect(device, streamType);
     SetAudioVolume(device, streamType, volumeDb);
     return SUCCESS;
 }
@@ -703,16 +702,17 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     return SetVolumeDb(desc, streamType);
 }
 
-int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType)
+int32_t AudioAdapterManager::SetSystemVolumeToEffect(std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel failed audio adapter null");
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
     // audio volume
-    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    int32_t volumeLevelTemp = GetSystemVolumeForEffect(desc->deviceType_, streamType);
-    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, desc->deviceType_, volumeLevelTemp);
+    int32_t volumeLevelTemp = GetSystemVolumeForEffect(device->deviceType_, streamType);
+    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp);
     AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, device:%{public}s",
-        streamType, volumeDbTemp, desc->GetName().c_str());
+        streamType, volumeDbTemp, device->GetName().c_str());
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
 }
 
@@ -1228,10 +1228,9 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     }
 
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    auto dev = audioActiveDevice_.GetDeviceForVolume(volumeType);
     auto devForCall = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
-    CHECK_AND_RETURN_LOG(dev != nullptr && devForCall != nullptr, "device is null");
-    if (dev->networkId_ != devForCall->networkId_) {
+    CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
+    if (device->networkId_ != devForCall->networkId_) {
         AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
         return;
     }
@@ -2889,8 +2888,8 @@ float AudioAdapterManager::CalculateVolumeDbNonlinearExt(AudioStreamType streamT
 {
     float dbValue = 0.0f;
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
-    int32_t volumeLevelMin = GetMinVolumeLevel(volumeType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType, deviceType);
+    int32_t volumeLevelMin = GetMinVolumeLevel(volumeType, deviceType);
     CHECK_AND_RETURN_RET_LOG(volumeLevelMax >= MIN_VOLUME_LEVEL && volumeLevelMin >= MIN_VOLUME_LEVEL,
         dbValue, "invalid level range:[%{public}d, %{public}d]", volumeLevelMin, volumeLevelMax);
 
