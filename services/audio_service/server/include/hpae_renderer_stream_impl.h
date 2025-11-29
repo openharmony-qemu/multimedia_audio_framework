@@ -24,6 +24,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct PositionData {
+    uint64_t framePosition = 0;
+    uint64_t timestamp = 0;
+    uint64_t latency = 0;
+    int64_t lastCallTime = 0;
+};
+
 class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
                                public IStreamStatusCallback,
                                public IStreamCallback,
@@ -141,6 +148,9 @@ private:
 
     std::atomic<size_t> mutePaddingFrames_ = 0;
     bool noWaitDataFlag_ = true;
+
+    std::unordered_map<int32_t, PositionData> currentPositionData;
+    std::unordered_map<int32_t, PositionData> speedPositionData;
 };
 } // namespace AudioStandard
 } // namespace OHOS
