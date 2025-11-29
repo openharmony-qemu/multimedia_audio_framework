@@ -160,5 +160,31 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_006, Te
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_007
+ * @tc.desc   : Test remote offload sink update app uid
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_007, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    int32_t ret = sink_->LockOffloadRunningLock();
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<int32_t> appsUid = { 20000001, 20000002, 20000003 };
+    ret = sink_->UpdateAppsUid(appsUid);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+
+    ret = sink_->UpdateAppsUid(appsUid);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+
+    appsUid.clear();
+    ret = sink_->UpdateAppsUid(appsUid);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+
+    ret = sink_->UnLockOffloadRunningLock();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

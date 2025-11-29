@@ -622,6 +622,8 @@ std::string ConvertToStringForChannel(const AudioChannel channel);
 
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
 
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
