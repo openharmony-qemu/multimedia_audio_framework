@@ -241,7 +241,8 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (unprocessSource != nullptr && unprocessSource->IsInited()) {
         unprocessSource->SetAudioScene(audioScene);
     }
-    std::shared_ptr<IAudioCaptureSource> ultrasonicSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
+    std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
         ultrasonicSource->SetAudioScene(audioScene);
     }
