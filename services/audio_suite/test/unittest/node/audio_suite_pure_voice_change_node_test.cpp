@@ -114,7 +114,7 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(1).WillRepeatedly(::testing::Return(inputNodeOutputPort));
 
-    std::string optionValue =std::to_string(static_cast<int32_t>(sexType)) + "," +
+    std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," +
                         std::to_string(static_cast<int32_t>(changeType)) + "," +
                         std::to_string(static_cast<float>(pitch));
     int32_t ret = node->SetOptions("AudioPureVoiceChangeOption", optionValue);
@@ -216,16 +216,6 @@ static bool RunPureVoiceChangeTest(
                 break;
             }
         }
-
-        outPcmbuffer = pure.SignalProcess(inputs);
-        data = outPcmbuffer->GetPcmData();
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(data), outPcmbuffer->GetDataSize());
-            if (outFile.fail()) {
-                break;
-            }
-        }
-
     }
     ret = pure.GetOptions(name, value);
     file.close();
@@ -279,16 +269,6 @@ static bool RunSplitDataInHalfTest(
                 break;
             }
         }
-
-        outPcmbuffer = pure.splitDataInHalf(inputs);
-        data = outPcmbuffer->GetPcmData();
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(data), outPcmbuffer->GetDataSize());
-            if (outFile.fail()) {
-                break;
-            }
-        }
-
     }
     ret = pure.GetOptions(name, value);
     file.close();
