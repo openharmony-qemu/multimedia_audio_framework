@@ -221,7 +221,6 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
-    CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR, "ReadDoubleProcessNodePreOutputData return is empty");
 
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
