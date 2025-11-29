@@ -78,7 +78,6 @@ audio_ohos_library("audio_effect") {
     "src/chain_pool_impl.cpp",
     "src/thread_handler_impl.cpp",
     "src/audio_collaboration_manager.cpp",
-    
   ]
 
   deps = [
@@ -88,7 +87,6 @@ audio_ohos_library("audio_effect") {
     "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
     "../audioutils:audio_xml_utils",
-
   ]
 
   external_deps = [

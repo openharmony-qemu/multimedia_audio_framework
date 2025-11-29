@@ -85,6 +85,18 @@ void AudioCollaborationManager::LoadCollaborationConfig()
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     AUDIO_INFO_LOG("begin loadCollaborationConfig");
     collaborativeLatencyConfig_.clear();
+    LoadCollaborationConfigInner();
+
+    for (auto iter1 : collaborativeLatencyConfig_) {
+        for (auto iter2 : iter1.second) {
+            AUDIO_INFO_LOG("productId: %{public}s, twsMode: %{public}d, latencyMs: %{public}d",
+                iter1.first.c_str(), iter2.first, iter2.second);
+        }
+    }
+}
+
+void AudioCollaborationManager::LoadCollaborationConfigInner()
+{
     std::shared_ptr<AudioXmlNode> firstNode = AudioXmlNode::Create();
     firstNode->Config(AUDIO_COLLABORATION_CONFIG_FILE, nullptr, XML_PARSE_ERROR | XML_PARSE_NOWARNING);
     if (!firstNode->IsNodeValid()) {
@@ -137,13 +149,6 @@ void AudioCollaborationManager::LoadCollaborationConfig()
         }
 
         firstNode->MoveToNext();
-    }
-
-    for (auto iter1 : collaborativeLatencyConfig_) {
-        for (auto iter2 : iter1.second) {
-            AUDIO_INFO_LOG("productId: %{public}s, twsMode: %{public}d, latencyMs: %{public}d",
-                iter1.first.c_str(), iter2.first, iter2.second);
-        }
     }
 }
 

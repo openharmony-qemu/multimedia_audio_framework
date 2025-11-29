@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_EFFECT_CHAIN_MANAGER_H
-#define AUDIO_EFFECT_CHAIN_MANAGER_H
+#ifndef AUDIO_COLLABORATION_MANAGER_H
+#define AUDIO_COLLABORATION_MANAGER_H
 
 #include <cstdio>
 #include <cstdint>
@@ -55,6 +55,7 @@ public:
 
 private:
     void updateLatencyInner();
+    void LoadCollaborationConfigInner();
     std::mutex collaborationMutex_;
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";
