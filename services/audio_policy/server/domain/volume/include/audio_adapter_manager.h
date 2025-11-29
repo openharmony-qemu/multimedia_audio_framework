@@ -343,6 +343,8 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
+    void updateCollaborativeProductId(const std::string &productId);
+    void LoadCollaborationConfig();
 private:
     friend class PolicyCallbackImpl;
 

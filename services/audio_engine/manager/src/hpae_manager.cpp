@@ -2760,6 +2760,24 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
     }
     return sessionIds;
 }
+
+void HpaeManager::updateCollaborativeProductId(const std::string &productId)
+{
+    auto request = [productId]() {
+        HpaePolicyManager::GetInstance().updateCollaborativeProductId(productId);
+    };
+
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::LoadCollaborationConfig()
+{
+    auto request = []() {
+        HpaePolicyManager::GetInstance().LoadCollaborationConfig();
+    };
+
+    SendRequest(request, __func__);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

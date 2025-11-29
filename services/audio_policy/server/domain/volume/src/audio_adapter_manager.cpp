@@ -3516,5 +3516,18 @@ void AudioAdapterManager::SetOffloadVolumeForStreamVolumeChange(int32_t sessionI
     float volumeDb = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
     SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
 }
+
+void AudioAdapterManager::updateCollaborativeProductId(const std::string &productId)
+{
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
+    audioServiceAdapter_->updateCollaborativeProductId(productId);
+}
+
+void AudioAdapterManager::LoadCollaborationConfig()
+{
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
+    audioServiceAdapter_->LoadCollaborationConfig();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

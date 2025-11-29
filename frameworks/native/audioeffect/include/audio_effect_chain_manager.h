@@ -159,6 +159,7 @@ public:
     int32_t DeleteStreamVolume(const std::string StringSessionID);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -258,6 +259,7 @@ private:
     bool absVolumeState_ = true;
     int32_t currDspStreamUsage_ = -2;
     AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
+    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

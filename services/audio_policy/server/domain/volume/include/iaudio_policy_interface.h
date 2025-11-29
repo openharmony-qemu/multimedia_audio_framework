@@ -306,6 +306,8 @@ public:
     virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
         AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
+    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void LoadCollaborationConfig() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

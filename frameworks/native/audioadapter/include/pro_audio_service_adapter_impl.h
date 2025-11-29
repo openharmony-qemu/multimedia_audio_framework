@@ -86,6 +86,8 @@ public:
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
+    void updateCollaborativeProductId(const std::string &productId) override;
+    void LoadCollaborationConfig() override;
 
 private:
     std::mutex lock_;

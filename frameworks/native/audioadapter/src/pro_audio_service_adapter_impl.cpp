@@ -607,6 +607,18 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
     CHECK_AND_RETURN_LOG(stopWaiting, "TimeOut");
     AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
 }
+
+void ProAudioServiceAdapterImpl::updateCollaborativeProductId(const std::string &productId)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().updateCollaborativeProductId(productId);
+}
+
+void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().LoadCollaborationConfig();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

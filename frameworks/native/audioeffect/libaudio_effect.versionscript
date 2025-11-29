@@ -98,6 +98,8 @@
     *DeleteStreamVolume*;
     *ExistAudioEffectChainArm*;
     *IsChannelLayoutSupportedForDspEffect*;
+    *updateCollaborativeProductId*;
+    *LoadCollaborationConfig*;
   local:
     *;
 };
