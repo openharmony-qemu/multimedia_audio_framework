@@ -5472,7 +5472,7 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetActiveHfpDevice(const std::string& macAddress)
+int32_t AudioPolicyServer::SetActiveHfpDevice(const std::string &macAddress)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("not system SA calling!");
