@@ -26,14 +26,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_FOCUS_MAP = {
+static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_MAP = {
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, {ACTIVE, INTERRUPT_HINT_NONE}}
 };
 
-void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
-        AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
+void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
     SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
     SourceType activeSourceType = activeInterrupt.audioFocusType.sourceType;
@@ -48,16 +48,16 @@ void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingI
     }
 
     std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
-    if (ULTRASONIC_FOCUS_MAP.count(ultraSonicFocus) > 0) {
+    if (ULTRASONIC_MAP.count(ultraSonicFocus) > 0) {
         AUDIO_INFO_LOG("incomingSourceType %{public}d activeSourceType %{public}d set custom incomingState is %{public}d",
-            incomingSourceType, activeSourceType, ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).first);
-        incomingState = ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).first;
-        interruptEvent.hintType = ULTRASONIC_FOCUS_MAP.at(ultraSonicFocus).second;
+            incomingSourceType, activeSourceType, ULTRASONIC_MAP.at(ultraSonicFocus).first);
+        incomingState = ULTRASONIC_MAP.at(ultraSonicFocus).first;
+        interruptEvent.hintType = ULTRASONIC_MAP.at(ultraSonicFocus).second;
     }
 }
 
-void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
-        AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
+void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
 }
