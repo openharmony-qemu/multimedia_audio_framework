@@ -124,7 +124,6 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
         node->GetOutputPort();
     size_t frameSizeInput = buffer->GetDataSize();
     CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
-    // Read input file
     std::vector<uint8_t> inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
     CHECK_AND_RETURN_RET(inputfileBuffer.empty() == false, ERROR);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out | std::ios::app);
@@ -147,7 +146,6 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
         CHECK_AND_RETURN_RET(result.size() == 1, ERROR);
         outFile.write(reinterpret_cast<const char *>(result[0]->GetPcmData()), frameSizeInput);
     }
-
     outFile.close();
     node->DisConnect(mockInputNode_);
     CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 0, ERROR);
