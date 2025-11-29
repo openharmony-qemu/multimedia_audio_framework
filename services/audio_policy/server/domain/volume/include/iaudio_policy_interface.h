@@ -308,7 +308,6 @@ public:
     virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
     virtual void updateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
-
 };
 } // namespace AudioStandard
 } // namespace OHOS
