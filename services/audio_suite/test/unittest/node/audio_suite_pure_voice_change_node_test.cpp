@@ -120,8 +120,7 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     node->Connect(mockInputNode_);
     CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 1, ERROR);
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
-        node->GetOutputPort();
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort = node->GetOutputPort();
     size_t frameSizeInput = buffer->GetDataSize();
     CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
     std::vector<uint8_t> inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
