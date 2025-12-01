@@ -716,5 +716,10 @@ void AudioEffectChain::SetEarphoneProduct(AudioEarphoneProduct earphoneProduct)
 {
     earphoneProduct_ = earphoneProduct;
 }
+
+bool AudioEffectChain::IsEffectChainFading()
+{
+    return fadingCounts_ != 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

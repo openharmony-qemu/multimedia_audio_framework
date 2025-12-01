@@ -58,6 +58,12 @@ public:
     int32_t SetHeadTrackingEnabled(const bool enable);
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    void HandleAdaptiveSpatialRenderingEnabledChange(const bool &enabled);
+    void HandleAdaptiveSpatialRenderingEnabledChange(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     void HandleSpatializationEnabledChange(const bool &enabled);
     void HandleSpatializationEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -76,7 +82,7 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-    void UpdateCurrentDevice(const std::string macAddress);
+    void UpdateCurrentDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
@@ -124,6 +130,7 @@ private:
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
+    bool adaptiveSpatialRenderingEnabledReal_ = false;
     AudioSpatializationState spatializationStateFlag_ = {};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;

@@ -37,6 +37,7 @@ enum HpaeMsgCode {
     CONNECT_CO_BUFFER_NODE,
     DISCONNECT_CO_BUFFER_NODE,
     INIT_SOURCE_RESULT,
+    UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO,
 };
 
 enum NodeOperation { UNDERFLOW, FADED, DRAINED };
@@ -136,6 +137,7 @@ struct HpaeDfxNodeInfo {
     std::string deviceName;
     std::string nodeName;
     SourceType sourceType;
+    AudioEncodingType encoding;
 };
 
 class INodeCallback {

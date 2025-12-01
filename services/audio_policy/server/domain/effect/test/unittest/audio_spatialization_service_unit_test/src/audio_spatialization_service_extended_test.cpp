@@ -91,6 +91,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_002, Tes
         SPATIALIZATION_SERVICE_OK);
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
+        SPATIALIZATION_SERVICE_OK);
 }
 
 /**
@@ -110,6 +112,8 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
     sSpatializationService_->currentDeviceAddress_ = selectedAudioDevice->macAddress_;
     bool enable = true;
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
+        SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
 }
 
@@ -180,9 +184,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_006, Tes
 */
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_007, TestSize.Level4)
 {
-    std::string macAddress = TEST_MAC_ADDRESS;
+    auto selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    selectedAudioDevice->macAddress_ = TEST_MAC_ADDRESS;
     sSpatializationService_->currSpatialDeviceType_ = EARPHONE_TYPE_OTHERS;
-    sSpatializationService_->UpdateCurrentDevice(macAddress);
+    sSpatializationService_->UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(sSpatializationService_->currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 }
 

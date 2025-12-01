@@ -76,6 +76,19 @@ int32_t AudioSpatializationManager::SetSpatializationEnabled(
     return AudioPolicyManager::GetInstance().SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioSpatializationManager::SetAdaptiveSpatialRenderingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    return AudioPolicyManager::GetInstance().SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
+}
+
+bool AudioSpatializationManager::IsAdaptiveSpatialRenderingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
+    return AudioPolicyManager::GetInstance().IsAdaptiveSpatialRenderingEnabled(selectedAudioDevice->macAddress_);
+}
+
 bool AudioSpatializationManager::IsHeadTrackingEnabled()
 {
     return AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
@@ -120,6 +133,13 @@ int32_t AudioSpatializationManager::RegisterHeadTrackingEnabledEventListener(
     return AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(callback);
 }
 
+int32_t AudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledEventListener(
+    const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
+    return AudioPolicyManager::GetInstance().RegisterAdaptiveSpatialRenderingEnabledEventListener(callback);
+}
+
 int32_t AudioSpatializationManager::UnregisterSpatializationEnabledEventListener()
 {
     return AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener();
@@ -133,6 +153,11 @@ int32_t AudioSpatializationManager::UnregisterSpatializationEnabledForCurrentDev
 int32_t AudioSpatializationManager::UnregisterHeadTrackingEnabledEventListener()
 {
     return AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
+}
+
+int32_t AudioSpatializationManager::UnregisterAdaptiveSpatialRenderingEnabledEventListener()
+{
+    return AudioPolicyManager::GetInstance().UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 }
 
 bool AudioSpatializationManager::IsSpatializationSupported()

@@ -29,8 +29,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const uint32_t FIRST_SESSIONID = 100000;
-constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 }
 
 PolicyHandler& PolicyHandler::GetInstance()
@@ -142,19 +140,6 @@ void PolicyHandler::SetActiveOutputDevice(DeviceType deviceType)
     deviceType_ = deviceType;
 }
 
-std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 100000
-
-uint32_t PolicyHandler::GenerateSessionId(int32_t uid)
-{
-    uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("uid:%{public}d sessionId:%{public}d", uid, sessionId);
-    if (g_sessionId > MAX_VALID_SESSIONID) {
-        AUDIO_WARNING_LOG("sessionId is too large, reset it!");
-        g_sessionId = FIRST_SESSIONID;
-    }
-    return sessionId;
-}
-
 DeviceType PolicyHandler::GetActiveOutPutDevice()
 {
     return deviceType_;
@@ -179,12 +164,6 @@ bool PolicyHandler::IsAbsVolumeSupported()
         "abs volume scene failed not configed");
 
     return *sharedAbsVolumeScene_;
-}
-
-int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
-    return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
 
 int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)

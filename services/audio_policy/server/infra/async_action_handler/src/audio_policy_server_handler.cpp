@@ -655,6 +655,21 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForCurrentDeviceEve
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->adaptiveSpatialRenderingEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE event failed");
+    AUDIO_INFO_LOG("Send ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE event");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeEvent(const bool &enabled)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1691,6 +1706,25 @@ void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFw
     }
 }
 
+void AudioPolicyServerHandler::HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    AUDIO_INFO_LOG("AudioPolicyServerHandler::HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> adaptiveSpatialRenderingEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(adaptiveSpatialRenderingEnabledChangeCb != nullptr,
+            "adaptiveSpatialRenderingEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE]);
+        adaptiveSpatialRenderingEnabledChangeCb->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+            eventContextObj->descriptor, eventContextObj->adaptiveSpatialRenderingEnabled);
+    }
+}
+
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
@@ -1857,6 +1891,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
+            break;
+        case EventAudioServerCmd::ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
             break;
         default:
             break;

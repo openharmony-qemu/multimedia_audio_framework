@@ -3157,27 +3157,6 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
 }
 
-int32_t AudioPolicyServer::GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType)
-{
-    std::string bundleName = "";
-    AudioRendererInfo newRendererInfo = rendererInfo;
-    bool isFastControlled = audioPolicyService_.getFastControlParam();
-    if (isFastControlled && rendererInfo.rendererFlags == AUDIO_FLAG_MMAP) {
-        bundleName = AudioBundleManager::GetBundleName();
-        AUDIO_INFO_LOG("bundleName %{public}s", bundleName.c_str());
-        streamType = eventEntry_->GetPreferredOutputStreamType(newRendererInfo, bundleName);
-    }
-    streamType = eventEntry_->GetPreferredOutputStreamType(newRendererInfo, "");
-    return SUCCESS;
-}
-
-int32_t AudioPolicyServer::GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType)
-{
-    AudioCapturerInfo newCapturerInfo = capturerInfo;
-    streamType = eventEntry_->GetPreferredInputStreamType(newCapturerInfo);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
@@ -4248,6 +4227,30 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const std::shared_ptr<AudioDev
         return ERR_PERMISSION_DENIED;
     }
     return audioSpatializationService_.SetHeadTrackingEnabled(selectedAudioDevice, enable);
+}
+
+int32_t AudioPolicyServer::IsAdaptiveSpatialRenderingEnabled(const std::string &address, bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsAdaptiveSpatialRenderingEnabled(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetAdaptiveSpatialRenderingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
