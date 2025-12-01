@@ -16,6 +16,8 @@
 #ifndef AUDIO_SUITE_COMMON_H
 #define AUDIO_SUITE_COMMON_H
 
+#include <dlfcn.h>
+#include <stdlib.h>
 #include "audio_suite_log.h"
 #include "audio_stream_info.h"
 
@@ -83,6 +85,14 @@ public:
         return sampleSize;
     }
 };
+
+
+class AudioSuiteLibraryManager {
+    public:
+        bool IsValidPath(const char *path);
+        void* LoadLibrary(std::string& libraryPath);
+};
+
 }
 }
 }
