@@ -129,7 +129,7 @@ int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &valu
     auto [ptr, ec] = std::from_chars(tempValue.data(), tempValue.data() + tempValue.size(), valueInt);
 
     if (ec == std::errc()) {
-        paraValue = static_cast<iMedia_Surround_PARA>(value1);
+        paraValue = static_cast<iMedia_Surround_PARA>(valueInt);
     } else {
         AUDIO_ERR_LOG("Invalid SoundField para: %{public}s", tempValue.c_str());
     }
