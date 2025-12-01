@@ -92,7 +92,15 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
     paraValue_ = value;
 
     // convert from SoundFieldType to iMedia_Surround_PARA
-    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(std::stoi(value)));
+    int valueInt = 0;
+    auto result = std::from_chars(value.data(), value.data() + value.size(), valueInt);
+
+    if (result.ec != std::errc()) {
+        AUDIO_ERR_LOG("Failed to convert string %{public}s to int", value.c_str());
+        return ERROR;
+    }
+
+    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
     if (it != soundFieldParaMap.end()) {
         int32_t ret = algoInterface_->SetParameter(name, std::to_string(static_cast<int32_t>(it->second)));
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOptions fail");
@@ -116,7 +124,17 @@ int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &valu
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetOptions fail");
 
     // convert from iMedia_Surround_PARA to SoundFieldType
-    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(std::stoi(tempValue));
+    iMedia_Surround_PARA paraValue = IMEDIA_SWS_SOUROUND_BROAD;
+
+    int value1 = 0;
+    auto [ptr, ec] = std::from_chars(tempValue.data(), tempValue.data() + tempValue.size(), value1);
+
+    if (ec == std::errc()) {
+        paraValue = static_cast<iMedia_Surround_PARA>(value1);
+    } else {
+        AUDIO_ERR_LOG("Invalid SoundField para: %{public}s", tempValue.c_str());
+    }
+
     for (const auto& pair : soundFieldParaMap) {
         if (pair.second == paraValue) {
             value = std::to_string(static_cast<int32_t>(pair.first));
