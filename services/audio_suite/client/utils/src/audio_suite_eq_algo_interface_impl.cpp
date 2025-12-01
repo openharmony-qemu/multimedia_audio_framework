@@ -34,6 +34,12 @@ namespace AudioSuite {
 AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc)
 {
     nodeCapability = nc;
+    frameLen_ = 0;
+    inputSamples_ = 0;
+    algoApi_ = {0};
+    stData_ = {0};
+    para_ = {0};
+    stSize_ = {0};
 }
 
 AudioSuiteEqAlgoInterfaceImpl::~AudioSuiteEqAlgoInterfaceImpl()
@@ -63,7 +69,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         return ERROR;
     }
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
         return ERROR;
@@ -125,7 +131,13 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
 
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
-            result.push_back(std::stoi(token));
+            int value = 0;
+            auto [ptr, ec] = std::from_chars(token.data(), token.data() + token.size(), value);
+            if (ec == std::errc()) {
+                result.push_back(value);
+            } else {
+                AUDIO_ERR_LOG("Invalid Eq para: %{public}s", str.c_str());
+            }
         }
     }
 
@@ -192,7 +204,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
 
     int32_t result = -1;
     size_t start = 0;
-    size_t i = 0;
+
     IMEDIA_INT16 *bufIn = reinterpret_cast<IMEDIA_INT16 *>(pcmInBuf[0]);
     IMEDIA_INT16 *pcmOut = reinterpret_cast<IMEDIA_INT16 *>(pcmOutBuf[0]);
     if (libHandle_ == nullptr) {
@@ -201,7 +213,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
 
     while (inputSamples_ >= start + frameLen_) {
         frameLen_ = frameLen_ < inputSamples_ - start ? frameLen_ : inputSamples_ - start;
-        for (i = 0; i < frameLen_; i++) {
+        for (size_t i = 0; i < frameLen_; i++) {
             dataIn_[i] = static_cast<uint32_t>(bufIn[start + i]);
             dataIn_[i] <<= TWO_BYTES_WIDTH;
         }
@@ -212,7 +224,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
             return result;
         }
 
-        for (i = 0; i < frameLen_; i++) {
+        for (size_t i = 0; i < frameLen_; i++) {
             pcmOut[start + i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
         }
         start = start + frameLen_ < inputSamples_ ? start + frameLen_ : inputSamples_;
