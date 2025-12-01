@@ -63,7 +63,7 @@ private:
         CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, ERROR, "dlopen algo: %{private}s so fail", algoSoPath.c_str());
         using GetFunc = T (*)();
         GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
-        if(getSpecsFunc == nullptr){
+        if (getSpecsFunc == nullptr) {
             dlclose(libHandle);
             AUDIO_ERR_LOG("dlsym failed");
             return ERROR;
