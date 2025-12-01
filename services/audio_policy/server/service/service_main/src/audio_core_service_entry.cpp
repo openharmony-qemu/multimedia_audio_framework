@@ -662,5 +662,13 @@ int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->CaptureConcurrentCheck(sessionId);
 }
+
+void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
+    coreService_->HandleDeviceConfigChanged(selectedAudioDevice);
+}
 }
 }

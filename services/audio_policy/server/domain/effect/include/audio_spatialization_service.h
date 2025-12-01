@@ -65,6 +65,7 @@ public:
     void HandleHeadTrackingEnabledChange(const bool &enabled);
     void HandleHeadTrackingEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
+    void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     AudioSpatializationState GetSpatializationState(
         const StreamUsage streamUsage = StreamUsage::STREAM_USAGE_UNKNOWN);
     bool IsSpatializationSupported();

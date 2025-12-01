@@ -85,6 +85,7 @@ public:
         VOLUME_DEGREE_EVENT,
         AUDIO_DEVICE_INFO_UPDATE,
         COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        DEVICE_CONFIG_CHANGED,
     };
     /* event data */
     class EventContextObj {
@@ -219,6 +220,7 @@ public:
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
     void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    bool SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -277,6 +279,7 @@ private:
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
     void HandleCollaborationEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);

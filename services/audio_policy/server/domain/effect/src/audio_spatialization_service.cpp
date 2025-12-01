@@ -183,6 +183,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     HandleSpatializationEnabledChange(selectedAudioDevice, enable);
     if (address == currentDeviceAddress_) {
         HandleSpatializationEnabledChangeForCurrentDevice(enable);
+        HandleDeviceConfigChanged(selectedAudioDevice);
     }
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
@@ -293,6 +294,15 @@ void AudioSpatializationService::HandleHeadTrackingEnabledChange(
     AUDIO_INFO_LOG("device Head tracking enabled callback is triggered: state is %{public}d", enabled);
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendHeadTrackingEnabledChangeForAnyDeviceEvent(selectedAudioDevice, enabled);
+    }
+}
+
+void AudioSpatializationService::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    AUDIO_INFO_LOG("handle device config changed callback is triggered");
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendDeviceConfigChangedEvent(selectedAudioDevice);
     }
 }
 

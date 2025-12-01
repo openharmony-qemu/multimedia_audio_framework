@@ -1730,5 +1730,14 @@ void AudioCoreService::OnCheckActiveMusicTime(const std::string &reason)
 {
     AudioVolumeManager::GetInstance().OnCheckActiveMusicTime(reason);
 }
+
+void AudioCoreService::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    std::shared_ptr<AudioDeviceDescriptor> device = selectedAudioDevice;
+    if (audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, device->macAddress_)) {
+        FetchOutputDeviceAndRoute("HandleDeviceConfigChanged");
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
