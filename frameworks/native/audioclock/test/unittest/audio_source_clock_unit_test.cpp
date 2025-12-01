@@ -94,7 +94,7 @@ HWTEST_F(AudioSourceClockUnitTest, Init_001, TestSize.Level1)
 {
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_U8;
     srcClock_->Init(MOCK_SAMPLE_RATE, format, MOCK_CHANNEL);
-    EXPECT_EQ(srcClock_->sizePerPos_, 2);
+    EXPECT_EQ(srcClock_->sizePerPos_, 3);
 }
 
 /**
