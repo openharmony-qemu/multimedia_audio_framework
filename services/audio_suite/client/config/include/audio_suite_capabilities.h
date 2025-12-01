@@ -25,6 +25,7 @@
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
 #include "audio_hms_space_render_api.h"
+#include "audio_suite_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,19 +53,22 @@ private:
     AudioSuiteCapabilities();
     ~AudioSuiteCapabilities() = default;
 
+    AudioSuiteLibraryManager algoLibrary_;
+
     template <typename T>
     int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
     {
         AUDIO_INFO_LOG("loadCapability start.");
-        void *libHandle = dlopen(algoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-        CHECK_AND_RETURN_RET_LOG(libHandle != nullptr,
-            ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-            algoSoPath.c_str(), dlerror());
+        void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
+        CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, ERROR, "dlopen algo: %{private}s so fail", algoSoPath.c_str());
         using GetFunc = T (*)();
         GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
-        CHECK_AND_RETURN_RET_LOG(getSpecsFunc != nullptr,
-            ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
-            algoSoPath.c_str(), functionName.c_str());
+        if(getSpecsFunc == nullptr){
+            dlclose(libHandle);
+            AUDIO_ERR_LOG("dlsym failed");
+            return ERROR;
+        }
+
         specs = getSpecsFunc();
         dlclose(libHandle);
         libHandle = nullptr;
