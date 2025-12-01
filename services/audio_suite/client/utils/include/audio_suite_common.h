@@ -86,7 +86,6 @@ public:
     }
 };
 
-
 class AudioSuiteLibraryManager {
     public:
         bool IsValidPath(const char *path);
