@@ -99,6 +99,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    bool IsBypassSpatializationForStereo() override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);

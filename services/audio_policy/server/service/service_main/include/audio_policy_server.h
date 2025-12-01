@@ -452,6 +452,12 @@ public:
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
+    int32_t IsAdaptiveSpatialRenderingEnabled(
+        const std::string &address, bool &ret) override;
+
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+
     int32_t GetSpatializationState(int32_t streamUsage, AudioSpatializationState &state) override;
 
     int32_t IsSpatializationSupported(bool &ret) override;

@@ -273,6 +273,8 @@ private:
     std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
     std::vector<uint32_t> GetAllRenderSession(const std::string &name);
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
+    void UpdateBypassSpatializationForStereo();
+    void HandleBypassSpatializationForStereo();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -310,6 +312,9 @@ private:
 
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkVirtualOutputNode>> sinkVirtualOutputNodeMap_;
     std::mutex sinkVirtualOutputNodeMapMutex_;
+
+    bool bypassSpatializationForStereo_ = false;
+    bool adaptiveSpatialRenderingEnabled_ = false;
 };
 
 }  // namespace HPAE

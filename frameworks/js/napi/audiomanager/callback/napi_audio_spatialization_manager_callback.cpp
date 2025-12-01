@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 bool NapiAudioSpatializationEnabledChangeCallback::onSpatializationEnabledChangeFlag_;
 bool NapiAudioHeadTrackingEnabledChangeCallback::onHeadTrackingEnabledChangeFlag_;
+bool NapiAdaptiveSpatialRenderingEnabledChangeCallback::onAdaptiveSpatialRenderingEnabledChangeFlag_;
 using namespace std;
 NapiAudioSpatializationEnabledChangeCallback::NapiAudioSpatializationEnabledChangeCallback(napi_env env)
     : env_(env)
@@ -640,6 +641,181 @@ void NapiAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnabled
 
     napi_acquire_threadsafe_function(amHeadTrkTsfn_);
     napi_call_threadsafe_function(amHeadTrkTsfn_, event, napi_tsfn_blocking);
+}
+
+
+NapiAdaptiveSpatialRenderingEnabledChangeCallback::NapiAdaptiveSpatialRenderingEnabledChangeCallback(
+    napi_env env) : env_(env)
+{
+    AUDIO_DEBUG_LOG("NapiAdaptiveSpatialRenderingEnabledChangeCallback: instance create");
+}
+
+NapiAdaptiveSpatialRenderingEnabledChangeCallback::~NapiAdaptiveSpatialRenderingEnabledChangeCallback()
+{
+    if (regAmAdaptiveSpatialRenderingTsfn_) {
+        napi_release_threadsafe_function(amAdaptiveSpatialRenderingTsfn_, napi_tsfn_abort);
+    }
+    AUDIO_DEBUG_LOG("NapiAdaptiveSpatialRenderingEnabledChangeCallback: instance destroy");
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SaveAdaptiveSpatialRenderingEnabledChangeCallbackReference(
+    napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callback = nullptr;
+    const int32_t refCount = ARGS_ONE;
+    for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
+        it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+    }
+
+    napi_status status = napi_create_reference(env_, args, refCount, &callback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+        "NapiAdaptiveSpatialRenderingEnabledChangeCallback: creating reference for callback fail");
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr,
+        "NapiAdaptiveSpatialRenderingEnabledChangeCallback: creating callback failed");
+
+    adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.push_back(cb);
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::CreateAdaptiveSpatialRenderingTsfn(napi_env env)
+{
+    regAmAdaptiveSpatialRenderingTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioAdaptiveSpatialRenderingEnabled";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        AdaptiveSpatialRenderingEnabledTsfnFinalize, nullptr, SafeJsCallbackAdaptiveSpatialRenderingEnabledWork,
+        &amAdaptiveSpatialRenderingTsfn_);
+}
+
+bool NapiAdaptiveSpatialRenderingEnabledChangeCallback::GetAdaptiveSpatialRenderingTsfnFlag()
+{
+    return regAmAdaptiveSpatialRenderingTsfn_;
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::RemoveAdaptiveSpatialRenderingEnabledChangeCallbackReference(
+    napi_env env, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
+        it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemoveAdaptiveSpatialRenderingEnabledChangeCallback: find js callback, delete it");
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+            adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemoveAdaptiveSpatialRenderingEnabledChangeCallbackReference: js callback no find");
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::RemoveAllAdaptiveSpatialRenderingEnabledChangeCallbackReference(
+    )
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
+        it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        napi_delete_reference(env_, (*it)->cb_);
+        (*it)->cb_ = nullptr;
+    }
+    adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.clear();
+    AUDIO_INFO_LOG("RemoveAllAdaptiveSpatialRenderingEnabledChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t NapiAdaptiveSpatialRenderingEnabledChangeCallback::GetAdaptiveSpatialRenderingEnabledChangeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.size();
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+{
+    AUDIO_INFO_LOG("OnAdaptiveSpatialRenderingEnabledChange by the specified device entered");
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
+        it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); it++) {
+        std::unique_ptr<AudioAdaptiveSpatialRenderingEnabledJsCallback> cb =
+            std::make_unique<AudioAdaptiveSpatialRenderingEnabledJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+        cb->callback = (*it);
+        cb->deviceDescriptor = deviceDescriptor;
+        cb->enabled = enabled;
+        onAdaptiveSpatialRenderingEnabledChangeFlag_ = false;
+        OnJsCallbackAdaptiveSpatialRenderingEnabled(cb);
+    }
+
+    return;
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SafeJsCallbackAdaptiveSpatialRenderingEnabledWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioAdaptiveSpatialRenderingEnabledJsCallback *event =
+        reinterpret_cast<AudioAdaptiveSpatialRenderingEnabledJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackAdaptiveSpatialRenderingEnabled: no memory");
+    std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledJsCallback> safeContext(
+        static_cast<AudioAdaptiveSpatialRenderingEnabledJsCallback*>(data),
+        [](AudioAdaptiveSpatialRenderingEnabledJsCallback *ptr) {
+            delete ptr;
+    });
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackAdaptiveSpatialRenderingEnabledWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+
+        if (onAdaptiveSpatialRenderingEnabledChangeFlag_) {
+            NapiParamUtils::SetValueBoolean(env, event->enabled, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        } else {
+            AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
+            audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
+            audioSpatialEnabledStateForDevice.enabled = event->enabled;
+            NapiParamUtils::SetAudioSpatialEnabledStateForDevice(env,
+                audioSpatialEnabledStateForDevice, args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        }
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call adaptive spatial rendering enabled callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::AdaptiveSpatialRenderingEnabledTsfnFinalize(
+    napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("AdaptiveSpatialRenderingEnabledTsfnFinalize: safe thread resource release.");
+}
+
+void NapiAdaptiveSpatialRenderingEnabledChangeCallback::OnJsCallbackAdaptiveSpatialRenderingEnabled(
+    std::unique_ptr<AudioAdaptiveSpatialRenderingEnabledJsCallback> &jsCb)
+{
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackAdaptiveSpatialRenderingEnabled: jsCb.get() is null");
+        return;
+    }
+
+    AudioAdaptiveSpatialRenderingEnabledJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+
+    napi_acquire_threadsafe_function(amAdaptiveSpatialRenderingTsfn_);
+    napi_call_threadsafe_function(amAdaptiveSpatialRenderingTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -85,6 +85,7 @@ public:
         VOLUME_DEGREE_EVENT,
         AUDIO_DEVICE_INFO_UPDATE,
         COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -104,6 +105,7 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
+        bool adaptiveSpatialRenderingEnabled;
         AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -219,6 +221,8 @@ public:
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
     void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    bool SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -266,6 +270,7 @@ private:
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 

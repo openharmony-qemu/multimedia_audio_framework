@@ -121,15 +121,19 @@ void UpdateCurrentDeviceFuzzTest()
 {
     AudioSpatializationService service;
      // Update with a new device
+    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     std::string newMacAddress = "00:11:22:33:44:55";
-    service.UpdateCurrentDevice(newMacAddress);
+    selectedAudioDevice->macAddress_ = newMacAddress;
+    service.UpdateCurrentDevice(selectedAudioDevice);
     // Update with the same device (no change expected)
-    service.UpdateCurrentDevice(newMacAddress);
+    service.UpdateCurrentDevice(selectedAudioDevice);
     // Update with an empty address (should not change the current device)
     std::string originalAddress = service.GetCurrentDeviceAddress();
-    service.UpdateCurrentDevice("");
+    selectedAudioDevice->macAddress_ = "";
+    service.UpdateCurrentDevice(selectedAudioDevice);
     // Update with a new device that has spatial capabilities
     std::string spatialDeviceAddress = "AA:BB:CC:DD:EE:FF";
+    selectedAudioDevice->macAddress_ = spatialDeviceAddress;
     int32_t audioSpatialDeviceTypeCount = static_cast<int32_t>(AudioSpatialDeviceType::EARPHONE_TYPE_OTHERS) + 1;
     AudioSpatialDeviceType audioSpatialDeviceType =
         static_cast<AudioSpatialDeviceType>(GetData<int32_t>() % audioSpatialDeviceTypeCount);
@@ -139,10 +143,11 @@ void UpdateCurrentDeviceFuzzTest()
         GetData<uint32_t>() % NUM_2,     // isHeadTrackingSupported
         audioSpatialDeviceType           // spatialDeviceType
     };
-    service.UpdateCurrentDevice(spatialDeviceAddress);
+    service.UpdateCurrentDevice(selectedAudioDevice);
     // Update with a device that doesn't have spatial capabilities
     std::string nonSpatialDeviceAddress = "11:22:33:44:55:66";
-    service.UpdateCurrentDevice(nonSpatialDeviceAddress);
+    selectedAudioDevice->macAddress_ = nonSpatialDeviceAddress;
+    service.UpdateCurrentDevice(selectedAudioDevice);
 }
 
 void RemoveOldestDeviceFuzzTest()

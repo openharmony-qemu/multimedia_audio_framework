@@ -468,6 +468,11 @@ public:
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
+
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
@@ -479,6 +484,9 @@ public:
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
+    int32_t RegisterAdaptiveSpatialRenderingEnabledEventListener(
+        const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
+
     int32_t UnregisterSpatializationEnabledEventListener();
 
     int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
@@ -486,6 +494,8 @@ public:
     int32_t UnregisterHeadTrackingEnabledEventListener();
 
     int32_t UnregisterNnStateEventListener();
+
+    int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 

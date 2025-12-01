@@ -303,5 +303,7 @@ interface IAudioPolicy {
     void RestoreDistributedDeviceInfo();
     void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
     void GetVirtualCall([out] boolean isVirtualCall);
+    void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
+    void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
 }
 
