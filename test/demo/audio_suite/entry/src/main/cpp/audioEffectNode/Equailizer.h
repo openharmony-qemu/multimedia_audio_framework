@@ -2,8 +2,8 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
-#ifndef AUDIOEDITTESTAPP_EQUAILIZER_H
-#define AUDIOEDITTESTAPP_EQUAILIZER_H
+#ifndef AUDIOEDITTESTAPP_EQUALIZER_H
+#define AUDIOEDITTESTAPP_EQUALIZER_H
 
 #include <string>
 #include "napi/native_api.h"
@@ -24,21 +24,21 @@ enum {
 };
 
 struct EqBandGainsParams {
-    std::string equailizerId;
+    std::string equalizerId;
     std::string inputId;
     std::string selectedNodeId;
 };
 
-OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equailizerMode);
+OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equalizerMode);
 
-napi_status GetEqModeParameters(napi_env env, napi_value *argv, unsigned int &equailizerMode,
-    std::string &equailizerId, std::string &inputId);
+napi_status GetEqModeParameters(napi_env env, napi_callback_info info, unsigned int &equalizerMode,
+    std::string &equalizerId, std::string &inputId);
 
-napi_status GetEqBandGainsParameters(napi_env env, napi_value *argv,
+napi_status GetEqBandGainsParameters(napi_env env, napi_callback_info info,
     OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params);
 
-Node GetOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId);
+Node GetOrCreateEqualizerNodeByMode(std::string& equalizerId, std::string& inputId);
 
-Node GetOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId);
+Node GetOrCreateEqualizerNodeByGains(std::string& equalizerId, std::string& inputId, std::string& selectedNodeId);
 
-#endif //AUDIOEDITTESTAPP_EQUAILIZER_H
+#endif // AUDIOEDITTESTAPP_EQUALIZER_H

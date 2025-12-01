@@ -6,14 +6,28 @@
 #include "CompareFile.h"
 #include "hilog/log.h"
 
-static const int GLOBAL_RESMGR = 0xFF00;
+static const int GLOBAL_RESMGR = 0xFF00; // domain parameter for hilog
 static const char *TAG = "[AudioEditTestApp_CompareFile_cpp]";
 
 // 比较文件长度
 bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2)
 {
+    if (!file1.is_open() || !file2.is_open())
+    {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---file open status error, file1:%{public}d, file2:%{public}d",
+            file1.is_open(), file2.is_open());
+        return false;
+    }
     file1.seekg(0, std::ios::end);
     file2.seekg(0, std::ios::end);
+    if (!file1.good() || !file2.good())
+    {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---file status error, file1.good():%{public}d, file2.good():%{public}d",
+            file1.good(), file2.good());
+        return false;
+    }
 
     if (file1.tellg() != file2.tellg()) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---file length is not equal");

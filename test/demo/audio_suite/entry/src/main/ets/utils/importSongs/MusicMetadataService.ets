@@ -41,9 +41,22 @@ export class MusicMetadataService {
             } catch (e) {
                 Logger.error(TAG, `createAVMetadataExtractor Failed`);
             } finally {
-                // 释放资源（promise 模式）
-                avMetadataExtractor?.release();
-                fs.closeSync(avMetadataExtractor?.fdSrc?.fd)
+                //First check whether avMetadataExtractor exists, then access fdSrc.
+                if (avMetadataExtractor) {
+                    // destroy allocations
+                    avMetadataExtractor.release();
+                    // Safely close file descriptor: Attempt to close it only if fdSrc exists.
+                    const fd = avMetadataExtractor.fdSrc?.fd;
+                    if (fd !== undefined && fd !== null) {
+                        try {
+                            fs.closeSync(fd);
+                        } catch (closeErr) {
+                            Logger.warn(TAG, `Failed to close file descriptor ${fd}: ${closeErr.message}`);
+                        }
+                    }
+                } else {
+                    Logger.warn(TAG, 'avMetadataExtractor is null, cannot release or close fd.');
+                }
             }
             return { pixelMap: pixelMap, metadata: metadata };
         } else {

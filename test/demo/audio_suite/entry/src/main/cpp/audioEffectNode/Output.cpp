@@ -71,6 +71,24 @@ OH_AudioSuite_Result StartPipelineAndCheckState()
     return result;
 }
 
+void DeleteOHAudioDataArray(OH_AudioDataArray* ohAudioDataArray)
+{
+    if (ohAudioDataArray != nullptr) {
+        if (ohAudioDataArray->audioDataArray != nullptr) {
+            for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
+                if (ohAudioDataArray->arraySize > i && ohAudioDataArray->audioDataArray[i] != nullptr) {
+                    free(ohAudioDataArray->audioDataArray[i]);
+                    ohAudioDataArray->audioDataArray[i] = nullptr;
+                }
+            }
+            free(ohAudioDataArray->audioDataArray);
+            ohAudioDataArray->audioDataArray = nullptr;
+        }
+        delete ohAudioDataArray;
+        ohAudioDataArray = nullptr;
+    }
+}
+
 OH_AudioSuite_Result AudioRenderFrame(
     char *totalAudioData, char *tapTotalAudioData, int32_t frameSize, bool &finishedFlag)
 {
@@ -116,7 +134,7 @@ OH_AudioSuite_Result AudioRenderFrame(
             break;
         }
     } while (!finishedFlag);
-    delete ohAudioDataArray;
+    DeleteOHAudioDataArray(ohAudioDataArray);
     AudioRenderContext context = {
         totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize
     };

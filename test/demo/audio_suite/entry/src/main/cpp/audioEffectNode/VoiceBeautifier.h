@@ -18,10 +18,14 @@ struct StartVBParameters {
     std::string selectNodeId; // 可选参数，为空表示不指定节点
 };
  
-int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId, std::string selectNodeId);
+static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
+    OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR, OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
+    OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD, OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO};
+
+int AddVBEffectNode(std::string& inputId, int mode, std::string& voiceBeautifierId, std::string& selectNodeId);
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId);
  
-napi_status getResetVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
+napi_status getResetVBParameters(napi_env env, napi_callback_info info, std::string &inputId, int &mode,
                                  std::string &voiceBeautifierId);
 #endif // AUDIOEDITTESTAPP_VOICEBEAUTIFIER_H

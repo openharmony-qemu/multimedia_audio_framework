@@ -207,10 +207,10 @@ napi_value ReturnResult(napi_env env, AudioSuiteResult result)
     return sum;
 }
 
-void FreeBuffer(void *buffer)
+void FreeBuffer(char** buffer)
 {
-    if (buffer != nullptr) {
-        free(buffer);
-        buffer = nullptr;
+    if (buffer != nullptr && *buffer != nullptr) {
+        free(*buffer);
+        *buffer = nullptr;
     }
 }

@@ -12,7 +12,7 @@ struct AudioRenderContext {
     char *totalAudioData;
     char *tapTotalAudioData;
     int32_t frameSize;
-    bool &finishedFlag;
+    bool finishedFlag;
     int32_t resultTotalSize;
     int32_t tapResultTotalSize;
 };

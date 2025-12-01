@@ -26,7 +26,7 @@ const TAG: string = 'AudioEditTestApp_CheckNodeDialog';
 
 // 均衡
 @Component
-struct EquailizerComponent {
+struct EqualizerComponent {
     // 均衡频带
     @Link balanceBandGains: number[];
     onCancel?: () => void;
@@ -574,20 +574,20 @@ struct EffectNodeDialog {
     build() {
         Column() {
             if (this.selectedEffectNode === NodeType.EQ) {
-                EquailizerComponent({
+                EqualizerComponent({
                     balanceBandGains: this.balanceBandGains,
                     onCancel: () => {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        let equailizerId = util.generateRandomUUID(true);
+                        let equalizerId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId);
+                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId);
                         } else {
                             result =
-                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId,
+                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId,
                                 this.selectedNode);
                         }
                         if (result !== 0) {
@@ -601,7 +601,7 @@ struct EffectNodeDialog {
 
                         //添加效果节点到混音台---数据处理
                         let node: Node = {
-                            id: equailizerId,
+                            id: equalizerId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
                             balanceBandGains: this.balanceBandGains
@@ -707,7 +707,7 @@ struct EffectNodeDialog {
             
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
-                                message: '添加声场节点失败',
+                                message: '添加降噪节点失败',
                                 autoCancel: true
                             });
                             return;
@@ -901,9 +901,9 @@ struct NodeDetailDialog {
     private bitsPerSample = -1;
 
     aboutToAppear(): void {
-        let mixerNode: Node | undefined = this.mixerList.find(node => node.id === this.selectedNode) || undefined;
+        let mixerNode: Node | undefined = this.mixerList.find(node => node.id === this.selectedNode);
         let leftNode: SongInfo | undefined =
-            this.inputList.find(node => node?.nodeId === this.selectedNode) || undefined;
+            this.inputList.find(node => node?.nodeId === this.selectedNode);
         if (this.isLeft) {
             //当前是输入节点
             if (leftNode) {
@@ -922,9 +922,12 @@ struct NodeDetailDialog {
                 //在这里添加getOption的逻辑,入参仅为nodeId
                 if (leftEffectNode) {
                     let type = audioNapi.getOptions(leftEffectNode.id)
-                    Logger.warn(TAG, `type is ${parseInt(type)}---}`)
                     if (leftEffectNode?.type === NodeType.EQ) {
-                        this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                        try {
+                            this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                        } catch (err) {
+                            this.balanceBandGains = [];
+                        }
                     } else if (leftEffectNode?.type === NodeType.FIELD) {
                         this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
                     } else if (leftEffectNode?.type === NodeType.ENV) {
@@ -940,7 +943,11 @@ struct NodeDetailDialog {
             //右侧初始化赋值
             let type = audioNapi.getOptions(mixerNode?.id)
             if (mixerNode?.type === NodeType.EQ) {
-                this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                try {
+                    this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                } catch (err) {
+                    this.balanceBandGains = [];
+                }
             } else if (mixerNode?.type === NodeType.FIELD) {
                 this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
             } else if (mixerNode?.type === NodeType.ENV) {
@@ -1155,7 +1162,7 @@ struct SetNodeDialog {
         Column() {
             Row() {
                 if (this.nodeType === NodeType.EQ) {
-                    EquailizerComponent({
+                    EqualizerComponent({
                         balanceBandGains: this.balanceBandGains,
                         onCancel: () => {
                             this.setNodeController?.close();
@@ -1505,11 +1512,11 @@ export struct CheckNodeDialog {
                                     });
                                     return;
                                 }
-                                //如果点击输入节点的-号，则把inputList和nodeList都要处理
+                                //如果点击输入节点的-号,则把inputList和nodeList都要处理
                                 this.nodeList.delete(this.selectedNode);
                                 const index = this.inputList.findIndex(item => item?.nodeId === this.selectedNode);
                                 if (index !== -1) {
-                                    this.inputList[index] = undefined;
+                                    this.inputList[index] = null;
                                 }
                             } else {
                                 const inputId = this.findInputId();
