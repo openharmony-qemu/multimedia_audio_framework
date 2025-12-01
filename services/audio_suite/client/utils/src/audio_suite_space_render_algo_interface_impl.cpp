@@ -121,7 +121,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_POSITIONS_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Position parameter format.");
+        ERR_INVALID_PARAM, "Invalid Position parameter format.");
  
     spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
@@ -138,7 +138,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetRotationParameter(const std::stri
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_ROTATION_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Rotation parameter format.");
+        ERR_INVALID_PARAM, "Invalid Rotation parameter format.");
  
     spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
@@ -159,7 +159,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetExtensionParameter(const std::str
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_EXTENSION_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Extension parameter format.");
+        ERR_INVALID_PARAM, "Invalid Extension parameter format.");
  
     spaceRenderParam_.expandRadius = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.expandAngle = std::stoi(tokens[PARAMS_NUM_ONE]);
@@ -185,7 +185,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
         ret = SetExtensionParameter(paramValue);
     } else {
         AUDIO_ERR_LOG("Invalid space render mod format");
-        return SPACE_RENDER_INV_MODE_PARAM;
+        return ERR_INVALID_PARAM;
     }
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter.");
@@ -204,7 +204,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_STATIC,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not Position.");
+        ERR_INVALID_PARAM, "Mode is not Position.");
  
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
@@ -216,7 +216,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &pa
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_ROTATION,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not rotation.");
+        ERR_INVALID_PARAM, "Mode is not rotation.");
  
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
@@ -230,7 +230,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &pa
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetExtensionParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_EXPAND,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not extension.");
+        ERR_INVALID_PARAM, "Mode is not extension.");
  
     paramValue = std::to_string(spaceRenderParam_.expandRadius) + "," +
         std::to_string(spaceRenderParam_.expandAngle);
@@ -249,7 +249,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::GetParameter(const std::string &
         ret = GetExtensionParameter(paramValue);
     } else {
         AUDIO_ERR_LOG("Invalid space render mod format");
-        return SPACE_RENDER_INV_MODE_PARAM;
+        return ERR_INVALID_PARAM;
     }
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Space render mode is not support.");
