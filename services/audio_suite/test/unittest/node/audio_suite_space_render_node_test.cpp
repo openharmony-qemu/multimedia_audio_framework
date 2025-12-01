@@ -83,16 +83,17 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
     uint32_t dataSize = buffer.GetDataSize();
 
     std::vector<AudioSuitePcmBuffer *> inputs;
-    while (true) {
+    bool exitLoop = false;
+    while (!exitLoop) {
         file1.read(reinterpret_cast<char *>(buffer.GetPcmData()), dataSize);
         if (file1.eof()) {
-            break;
+            exitLoop = true;
+        } else {
+            inputs = {&buffer};
+            outProcessedFile.write(reinterpret_cast<const char *>((spacerender.SignalProcess(inputs))->GetPcmData()),
+                dataSize);
+            inputs.clear();
         }
-
-    std::vector<AudioSuitePcmBuffer *> inputs = {&buffer};
-        outProcessedFile.write(reinterpret_cast<const char *>((spacerender.SignalProcess(inputs))->GetPcmData()),
-            dataSize);
-        inputs.clear();
     }
     file1.close();
     outProcessedFile.close();
