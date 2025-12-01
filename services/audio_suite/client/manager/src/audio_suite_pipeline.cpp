@@ -856,7 +856,7 @@ int32_t AudioSuitePipeline::RenderFrame(
 }
 
 int32_t AudioSuitePipeline::MultiRenderFrame(
-    uint8_t **audioDataArray, int arraySize,
+    uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
     AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter");

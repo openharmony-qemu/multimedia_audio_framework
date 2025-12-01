@@ -182,7 +182,7 @@ enum PipelineWorkMode {
 
 typedef struct AudioDataArray {
     void **audioDataArray;
-    int arraySize;
+    int32_t arraySize;
     int32_t requestFrameSize;
 } AudioDataArray;
 
