@@ -499,11 +499,13 @@ int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &i
     return SUCCESS;
 }
 
-int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel,
+    std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1, ERR_OPERATION_FAILED, "zone device error");
+    volDeviceDesc = devices[0];
     int32_t mimRet = GetMinVolumeLevel(streamType, devices[0]);
     int32_t maxRet = GetMaxVolumeLevel(streamType, devices[0]);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
@@ -528,11 +530,13 @@ int32_t AudioAdapterManager::SetZoneVolumeDegreeToMap(int32_t zoneId,
     return SUCCESS;
 }
 
-int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+    std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc)
 {
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+    volDeviceDesc = desc;
     AUDIO_INFO_LOG("streamType: %{public}d, device: %{public}s, volumeLevel:%{public}d",
         streamType, desc->GetName().c_str(), volumeLevel);
     if (desc->volumeBehavior_.isVolumeControlDisabled) {

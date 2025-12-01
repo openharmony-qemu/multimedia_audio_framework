@@ -90,6 +90,11 @@ public:
         volumeBehavior.databaseVolumeName = "";
         return SUCCESS;
     }
+
+    ErrCode OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {

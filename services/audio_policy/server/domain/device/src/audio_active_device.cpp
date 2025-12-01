@@ -631,6 +631,20 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
     return tmp.front();
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
+    for (auto desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr && GetRealUid(desc) == appUid);
+        tmp.push_back(desc->newDeviceDescs_.front());
+    }
+    CHECK_AND_RETURN_RET_LOG(!tmp.empty(), nullptr, "no uid %{public}d in active", appUid);
+    SortDevicesByPriority(tmp);
+    return tmp.front();
+}
+
 int32_t AudioActiveDevice::GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, -1, "Stream desc is nullptr");

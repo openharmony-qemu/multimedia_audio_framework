@@ -23,6 +23,7 @@
 #include "iaudio_policy_client.h"
 #include "audio_policy_client_holder.h"
 #include "audio_policy_manager_listener.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -825,6 +826,38 @@ void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
     }
 }
 
+void AudioPolicyServerHandler::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioClientInfoMgrCallback_ = callback;
+}
+
+bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
+{
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
+    return ret;
+}
+
+bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent)
+{
+    CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
+
+    int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
+    bool isByVolumeType = IsForceGetDevByVolumeType(uid);
+    auto deviceDesc = isByVolumeType ? AudioActiveDevice::GetInstance().GetDeviceForVolume(volumeEvent.volumeType) :
+        AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, true);
+    bool ret = volumeEvent.deviceType == deviceDesc->deviceType_ && volumeEvent.networkId == deviceDesc->networkId_;
+    AUDIO_INFO_LOG("uid: %{public}d, [%{public}d, %{public}s] is target device [%{public}d, %{public}s]: %{public}s",
+        uid, deviceDesc->deviceType_, GetEncryptStr(deviceDesc->networkId_).c_str(), volumeEvent.deviceType,
+        GetEncryptStr(volumeEvent.networkId).c_str(), ret ? "true" : "false");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -849,6 +882,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             " volume : %{public}d, updateUi : %{public}d ", it->first,
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+        CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {

@@ -426,6 +426,7 @@ struct VolumeEvent : public Parcelable {
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
 
@@ -442,7 +443,8 @@ struct VolumeEvent : public Parcelable {
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
-            && parcel.WriteBool(notifyRssWhenAccountsChange);
+            && parcel.WriteBool(notifyRssWhenAccountsChange)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceType));
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -454,6 +456,7 @@ struct VolumeEvent : public Parcelable {
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
+        deviceType = static_cast<DeviceType>(parcel.ReadInt32());
     }
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)

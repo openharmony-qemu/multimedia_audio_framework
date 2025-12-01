@@ -73,6 +73,13 @@ struct VolumeUpdateOption {
     bool syncDegree = true;
 };
 
+struct VolInfoForUpdateMute {
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    bool mute;
+    int32_t zoneId = 0;
+};
+
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
                           public AudioStreamRemovedCallback {
@@ -632,11 +639,11 @@ public:
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0);
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0);
-    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-        bool mute, const bool& isUpdateUi = false, int32_t zoneId = 0);
+    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
