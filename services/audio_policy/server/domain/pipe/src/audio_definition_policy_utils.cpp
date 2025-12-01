@@ -174,6 +174,7 @@ std::unordered_map<std::string, AudioFlag> AudioDefinitionPolicyUtils::flagStrTo
     {"AUDIO_INPUT_FLAG_AI", AUDIO_INPUT_FLAG_AI},
     {"AUDIO_INPUT_FLAG_UNPROCESS", AUDIO_INPUT_FLAG_UNPROCESS},
     {"AUDIO_INPUT_FLAG_ULTRASONIC", AUDIO_INPUT_FLAG_ULTRASONIC},
+    {"AUDIO_INPUT_FLAG_VOICE_RECOGNITION", AUDIO_INPUT_FLAG_VOICE_RECOGNITION},
 };
 
 std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {

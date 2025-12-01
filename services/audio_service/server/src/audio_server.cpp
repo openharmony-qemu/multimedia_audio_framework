@@ -246,6 +246,11 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
         ultrasonicSource->SetAudioScene(audioScene);
     }
+    std::shared_ptr<IAudioCaptureSource> voiceRecognitionSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
+    if (voiceRecognitionSource != nullptr && voiceRecognitionSource->IsInited()) {
+        voiceRecognitionSource->SetAudioScene(audioScene);
+    }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
@@ -303,6 +308,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
         GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
         ultrasonicSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> voiceRecognitionSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
+    if (voiceRecognitionSource != nullptr && voiceRecognitionSource->IsInited()) {
+        voiceRecognitionSource->UpdateActiveDevice(type);
     }
 }
 
@@ -2508,7 +2518,8 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         std::string info = idHandler.ParseInfo(id);
         if (type == HDI_ID_TYPE_PRIMARY) {
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
-            info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC;
+            info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
+            info == HDI_ID_INFO_VOICE_RECOGNITION;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {
