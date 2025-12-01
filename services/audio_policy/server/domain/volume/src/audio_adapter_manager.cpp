@@ -202,6 +202,7 @@ void AudioAdapterManager::InitKVStoreInternal()
 
 void AudioAdapterManager::HandleKvData(bool isFirstBoot)
 {
+    AUDIO_INFO_LOG("firstBoot %{public}d", isFirstBoot);
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
@@ -358,6 +359,9 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
 
     CHECK_AND_RETURN_LOG(isDataShareReady, "isDataShareReady is false");
+    char firstboot[3] = {0};
+    GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
+    HandleKvData(atoi(firstboot) == 1);
     auto descs = audioConnectedDevice_.GetCopy();
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -365,6 +369,7 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
         volumeDataMaintainer_.InitDeviceMuteMap(desc);
         UpdateSafeVolumeInner(desc);
     }
+    UpdateVolumeForStreams();
 }
 
 void AudioAdapterManager::UpdateSafeVolumeByS4()
@@ -2238,8 +2243,25 @@ void AudioAdapterManager::UpdateSafeVolume()
 
 void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
-    LoadVolumeMap();
-    UpdateSafeVolume();
+    if (!isFirstBoot) {
+        LoadVolumeMap();
+        UpdateSafeVolume();
+        return;
+    }
+    bool resetFirstFlag = false;
+    AUDIO_INFO_LOG("InitVolumeMap: Write defalut stream volumes to database");
+    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+        for (auto &streamType : defaultVolumeTypeList_) {
+            CHECK_AND_CONTINUE(volumeDataMaintainer_.CheckVolumeState(desc, streamType) != SUCCESS);
+            int32_t volumeLevel = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(desc, streamType);
+            auto ret = volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+            resetFirstFlag = (ret == SUCCESS) ? resetFirstFlag : true;
+        }
+    }
+    CHECK_AND_RETURN(resetFirstFlag);
+    AUDIO_INFO_LOG("reset first boot init settingsdata");
+    SetFirstBoot(true);
 }
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
@@ -2344,19 +2366,14 @@ void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+    bool muteSate = false;
     if (streamType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) {
-        bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+        muteSate = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
         AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
-            muteStateForStreamRing);
-        // set stream mute status to mem.
-        if (desc->deviceType_ == deviceType) {
-            SetStreamMuteInternal(desc, streamType, muteStateForStreamRing);
-        }
-        SaveMuteToDbAsync(desc, streamType, muteStateForStreamRing);
+            muteSate);
     }
-    int32_t volumeLevel = volumeDataMaintainer_.LoadVolumeFromDb(desc, streamType);
-    SaveSystemVolumeForSwitchDevice(desc, streamType, volumeLevel);
-    SetVolumeDbForDeviceInPipe(desc, streamType);
+    CHECK_AND_RETURN(volumeDataMaintainer_.CheckMuteState(desc, streamType) != SUCCESS);
+    volumeDataMaintainer_.SaveMuteToDb(desc, streamType, muteSate);
 }
 
 void AudioAdapterManager::SetVolumeCallbackAfterClone()
