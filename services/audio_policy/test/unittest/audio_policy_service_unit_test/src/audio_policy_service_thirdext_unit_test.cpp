@@ -94,6 +94,30 @@ static void GetPermission()
     }
 }
 
+static bool IsSelectResultCorrect(std::shared_ptr<PipeStreamPropInfo> streamPropInfo,
+    const StreamPropTestInfo &testInfo)
+{
+    return streamPropInfo->sampleRate_ == testInfo.sampleRate_ &&
+        streamPropInfo->channels_ == testInfo.channels_ &&
+        streamPropInfo->format_ == testInfo.format_ &&
+        streamPropInfo->channelLayout_ == testInfo.channelLayout_;
+}
+
+static std::shared_ptr<AdapterPipeInfo> CreateAdapterPipeInfo(const std::vector<StreamPropTestInfo> &testInfos)
+{
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+
+    for (auto &testInfo : testInfos) {
+        std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        pipeStreamPropInfo->format_ = testInfo.format_;
+        pipeStreamPropInfo->sampleRate_ = testInfo.sampleRate_;
+        pipeStreamPropInfo->channelLayout_ = testInfo.channelLayout_;
+        pipeStreamPropInfo->channels_ = testInfo.channels_;
+        info->dynamicStreamPropInfos_.push_back(pipeStreamPropInfo);
+    }
+    return info;
+}
+
 /**
 * @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_001
@@ -1894,6 +1918,66 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_002,
     AudioStreamInfo temp_0(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
     defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, temp_0);
     EXPECT_EQ(channelLayoutVec[1], defaultStreamProp->channelLayout_);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetDynamicStreamPropInfoFromPipe_003
+* @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_003, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+
+    std::vector<StreamPropTestInfo> propVec = {
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+        {AudioSampleFormat::SAMPLE_S16LE, 96000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_5POINT1POINT4, AudioChannel::CHANNEL_10},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+        {AudioSampleFormat::SAMPLE_S24LE, 48000, AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+    };
+    auto info = CreateAdapterPipeInfo(propVec);
+    EXPECT_NE(info, nullptr);
+
+    std::vector<GetDynamicInfoTestData> testData = {
+        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
+        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
+        {SAMPLE_S24LE, SAMPLE_RATE_192000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
+        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1, CHANNEL_8},
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1, CHANNEL_8},
+        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_7POINT1, CHANNEL_8},
+        {SAMPLE_S24LE, SAMPLE_RATE_192000, CH_LAYOUT_7POINT1, CHANNEL_8},
+        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
+        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
+        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
+    };
+
+    std::shared_ptr<PipeStreamPropInfo> streamProp = std::make_shared<PipeStreamPropInfo>();
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[0].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[1].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[2].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[3].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[4].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[5].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[6].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[7].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[8].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[9].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[5]), true);
+    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[10].streamInfo_);
+    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
 }
 
 /**
