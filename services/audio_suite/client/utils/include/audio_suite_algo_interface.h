@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include "audio_suite_capabilities.h"
+#include "audio_suite_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
