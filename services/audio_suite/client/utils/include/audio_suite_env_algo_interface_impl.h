@@ -70,6 +70,7 @@ private:
     iMedia_SWS_MEM_SIZE stSize_;
     size_t frameLen_;
     size_t inputSamples_;
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite
