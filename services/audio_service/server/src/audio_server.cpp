@@ -221,7 +221,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
 
 static void SetAudioSceneForAllSource(AudioScene audioScene)
 {
-    std::vector<std::pair<HDIIdType, HDIIdInfo>> sourceConfigs = {
+    std::vector<std::pair<HdiIdType, std::string>> sourceConfigs = {
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB},
         {HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY},
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT},
