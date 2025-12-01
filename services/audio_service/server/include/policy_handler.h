@@ -53,6 +53,8 @@ public:
 
     bool IsAbsVolumeSupported();
 
+    bool IsSleAbsVolumeSupported();
+
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
     bool GetHighResolutionExist();
@@ -85,6 +87,7 @@ private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
+    volatile bool *sharedSleAbsVolumeScene_ = nullptr;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     bool isHighResolutionExist_ = false;
 };

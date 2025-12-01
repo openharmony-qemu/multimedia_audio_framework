@@ -3420,9 +3420,9 @@ void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType
 int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
 {
     if (audioScene == AUDIO_SCENE_DEFAULT) {
-        audioPolicyManager_.SetSleVoiceStatusFlag(false);
+        audioVolumeManager_.SetSleVoiceStatusFlag(false);
     } else {
-        audioPolicyManager_.SetSleVoiceStatusFlag(true);
+        audioVolumeManager_.SetSleVoiceStatusFlag(true);
     }
     return SUCCESS;
 }

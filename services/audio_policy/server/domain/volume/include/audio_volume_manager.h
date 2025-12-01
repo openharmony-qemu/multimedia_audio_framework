@@ -88,6 +88,7 @@ public:
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
+    void SetSharedSleAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
@@ -102,6 +103,7 @@ public:
     int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume);
+    int32_t SetSleVoiceStatusFlag(const bool isSleVoiceStatus);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
@@ -206,6 +208,7 @@ private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
+    volatile bool *sharedSleAbsVolumeScene_ = nullptr;
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;
@@ -224,6 +227,7 @@ private:
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
     std::mutex safeVolumeMutex_;
+    std::mutex setSharedSleAbsVolumeSceneMutex_;
 
     bool userSelect_ = false;
     bool safeVolumeExit_ = false;

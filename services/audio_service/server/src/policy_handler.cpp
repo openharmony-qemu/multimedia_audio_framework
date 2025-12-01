@@ -47,6 +47,7 @@ PolicyHandler::~PolicyHandler()
 {
     volumeVector_ = nullptr;
     sharedAbsVolumeScene_ = nullptr;
+    sharedSleAbsVolumeScene_ = nullptr;
     policyVolumeMap_ = nullptr;
     iPolicyProvider_ = nullptr;
     AUDIO_INFO_LOG("~PolicyHandler()");
@@ -76,6 +77,12 @@ void PolicyHandler::Dump(std::string &dumpString)
         return;
     }
     AppendFormat(dumpString, "  sharedAbsVolumeScene: %s \n", (*sharedAbsVolumeScene_ ? "true" : "false"));
+    if (sharedSleAbsVolumeScene_ == nullptr) {
+        dumpString += "sharedSleAbsVolumeScene_ is null...\n";
+        AUDIO_INFO_LOG("sharedSleAbsVolumeScene_ is null");
+        return;
+    }
+    AppendFormat(dumpString, "  sharedSleAbsVolumeScene: %s \n", (*sharedSleAbsVolumeScene_ ? "true" : "false"));
 }
 
 bool PolicyHandler::ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider)
@@ -108,12 +115,14 @@ bool PolicyHandler::InitVolumeMap()
     iPolicyProvider_->InitSharedVolume(policyVolumeMap_);
     CHECK_AND_RETURN_RET_LOG((policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr), false,
         "InitSharedVolume failed.");
-    size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
+    size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool) + sizeof(bool);
     CHECK_AND_RETURN_RET_LOG(policyVolumeMap_->GetSize() == mapSize, false,
         "InitSharedVolume get error size:%{public}zu, target:%{public}zu", policyVolumeMap_->GetSize(), mapSize);
     volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
     sharedAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
         IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+    sharedSleAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
+        IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
     AUDIO_INFO_LOG("InitSharedVolume success.");
     return true;
 }
@@ -164,6 +173,14 @@ bool PolicyHandler::IsAbsVolumeSupported()
         "abs volume scene failed not configed");
 
     return *sharedAbsVolumeScene_;
+}
+
+bool PolicyHandler::IsSleAbsVolumeSupported()
+{
+    CHECK_AND_RETURN_RET_LOG((iPolicyProvider_ != nullptr && sharedSleAbsVolumeScene_ != nullptr), false,
+        "sle abs volume scene failed not configed");
+
+    return *sharedSleAbsVolumeScene_;
 }
 
 int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)

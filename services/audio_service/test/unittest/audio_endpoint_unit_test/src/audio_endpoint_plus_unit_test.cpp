@@ -1689,7 +1689,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsNearlinkAbsVolSupportStream_001, TestSize.
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-    EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_MUSIC));
+    EXPECT_FALSE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_MUSIC));
 
     EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_VOICE_CALL));
 }

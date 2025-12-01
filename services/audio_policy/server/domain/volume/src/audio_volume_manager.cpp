@@ -105,7 +105,7 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
 {
     audioPolicyServerHandler_ = audioPolicyServerHandler;
     if (policyVolumeMap_ == nullptr) {
-        size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
+        size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool) + sizeof(bool);
         AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
         policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "PolicyVolumeMap");
         CHECK_AND_RETURN_RET_LOG(policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr,
@@ -113,6 +113,8 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
         volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
         sharedAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
             IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+        sharedSleAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
+            IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
     }
     if (forceControlVolumeTypeMonitor_ == nullptr) {
         forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
@@ -123,6 +125,7 @@ void AudioVolumeManager::DeInit(void)
 {
     volumeVector_ = nullptr;
     sharedAbsVolumeScene_ = nullptr;
+    sharedSleAbsVolumeScene_ = nullptr;
     policyVolumeMap_ = nullptr;
     safeVolumeExit_ = true;
     forceControlVolumeTypeMonitor_ = nullptr;
@@ -203,6 +206,7 @@ int32_t AudioVolumeManager::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
         volumeVector_[i].volumeInt = static_cast<uint32_t>(currentVolumeLevel);
     }
     SetSharedAbsVolumeScene(false);
+    SetSharedSleAbsVolumeScene(true);
     buffer = policyVolumeMap_;
 
     return SUCCESS;
@@ -212,6 +216,12 @@ void AudioVolumeManager::SetSharedAbsVolumeScene(const bool support)
 {
     CHECK_AND_RETURN_LOG(sharedAbsVolumeScene_ != nullptr, "sharedAbsVolumeScene is nullptr");
     *sharedAbsVolumeScene_ = support;
+}
+
+void AudioVolumeManager::SetSharedSleAbsVolumeScene(const bool support)
+{
+    CHECK_AND_RETURN_LOG(sharedSleAbsVolumeScene_ != nullptr, "sharedSleAbsVolumeScene is nullptr");
+    *sharedSleAbsVolumeScene_ = support;
 }
 
 int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
@@ -1321,6 +1331,14 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     std::thread setAbsSceneThrd(&AudioVolumeManager::SetAbsVolumeSceneAsync, this, macAddress, support, volume);
     setAbsSceneThrd.detach();
 
+    return SUCCESS;
+}
+
+int32_t AudioVolumeManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    std::lock_guard<std::mutex> lock(setSharedSleAbsVolumeSceneMutex_);
+    SetSharedSleAbsVolumeScene(!isSleVoiceStatus);
+    audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
     return SUCCESS;
 }
 

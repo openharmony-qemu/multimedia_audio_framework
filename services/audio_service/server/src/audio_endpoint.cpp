@@ -1415,7 +1415,7 @@ bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, Au
     bool isNearlink = deviceType == DEVICE_TYPE_NEARLINK;
     bool isMusicStream = volumeType == STREAM_MUSIC;
     bool isVoiceCallStream = volumeType == STREAM_VOICE_CALL;
-    return isNearlink && (isMusicStream || isVoiceCallStream);
+    return isNearlink && ((isMusicStream && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || isVoiceCallStream);
 }
 
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,

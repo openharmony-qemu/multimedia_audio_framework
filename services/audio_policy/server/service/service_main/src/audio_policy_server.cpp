@@ -3851,8 +3851,7 @@ int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
     bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
-    audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
-    return SUCCESS;
+    return audioVolumeManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
