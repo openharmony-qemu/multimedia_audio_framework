@@ -59,6 +59,8 @@ static float UnifyFloatValue(float value)
 AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc)
 {
     nodeCapability = nc;
+    inAudioBuffer_.frameLength = 0;
+    outAudioBuffer_.frameLength = 0;
 }
 
 int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
@@ -69,7 +71,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("Check file path failed");
         return ERROR;
     }
-    soHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    soHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (!soHandle_) {
         AUDIO_ERR_LOG("Error loading audio aiss so: %s", dlerror());
         return ERROR;
