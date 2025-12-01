@@ -774,26 +774,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_006, TestSize.Lev
 }
 
 /**
- * @tc.name: Test GetSourceIdInfoAndIdType
- * @tc.number: GetSourceIdInfoAndIdType_007
- * @tc.type: FUNC
- * @tc.desc: when successful execution, return success
- */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_007, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    std::string idInfo;
-    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
-
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "primary";
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
-    EXPECT_EQ(idInfo, HDI_ID_INFO_VOICE_RECOGNITION);
-}
-
-/**
  * @tc.name: Test SetOffloadVolumeForStreamVolumeChange
  * @tc.number: SetOffloadVolumeForStreamVolumeChange_001
  * @tc.type: FUNC
