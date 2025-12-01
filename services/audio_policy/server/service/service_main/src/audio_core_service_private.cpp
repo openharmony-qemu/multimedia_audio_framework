@@ -2711,7 +2711,8 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
     bool isRingOrAlarmStream = Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage);
     DeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     if (streamDesc->streamStatus_ == STREAM_STATUS_NEW &&
-        streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
+        streamDesc->newDeviceDescs_.size() > 1 &&
+        (streamCollector_.IsMediaPlaying() || streamCollector_.IsStreamRunning(STREAM_USAGE_ALARM)) &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
         if (AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
             streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
