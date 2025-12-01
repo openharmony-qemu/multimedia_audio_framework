@@ -16,6 +16,7 @@
 #ifndef AUDIO_SUITE_SOUNDFIELD_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_SOUNDFIELD_ALGO_INTERFACE_IMPL_H
 
+#include <charconv>
 #include "imedia_api.h"
 #include "audio_suite_algo_interface.h"
 
@@ -64,6 +65,7 @@ private:
     iMedia_SWS_DATA stData_{0};
     std::array<IMEDIA_INT32, SOUNDFIELD_ALGO_FRAME_LEN> dataIn_;
     std::array<IMEDIA_INT32, SOUNDFIELD_ALGO_FRAME_LEN> dataOut_;
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite
