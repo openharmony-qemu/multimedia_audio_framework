@@ -168,6 +168,12 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
         DECLARE_NAPI_FUNCTION("getSpatializationSceneType", GetSpatializationSceneType),
         DECLARE_NAPI_FUNCTION("setSpatializationSceneType", SetSpatializationSceneType),
         DECLARE_NAPI_FUNCTION("isSpatializationEnabledForCurrentDevice", IsSpatializationEnabledForCurrentDevice),
+        DECLARE_NAPI_FUNCTION("isAdaptiveSpatialRenderingEnabled", IsAdaptiveSpatialRenderingEnabled),
+        DECLARE_NAPI_FUNCTION("setAdaptiveSpatialRenderingEnabled", SetAdaptiveSpatialRenderingEnabled),
+        DECLARE_NAPI_FUNCTION("onAdaptiveSpatialRenderingEnabledChangeForAnyDevice",
+            OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice),
+        DECLARE_NAPI_FUNCTION("offAdaptiveSpatialRenderingEnabledChangeForAnyDevice",
+            OffAdaptiveSpatialRenderingEnabledChangeForAnyDevice),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
     };
@@ -434,6 +440,121 @@ napi_value NapiAudioSpatializationManager::updateHeadTrackingEnabled(napi_env en
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetHeadTrackingEnabled", executor, complete);
+}
+
+napi_value NapiAudioSpatializationManager::IsAdaptiveSpatialRenderingEnabled(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("in");
+    napi_value result = nullptr;
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    bool isAdaptiveSpatialRenderingEnabled = false;
+    const size_t requireArgc = ARGS_ONE;
+    size_t argc = PARAM1;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
+        "napiAudioSpatializationManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
+        "audioSpatializationMngr_ is nullptr");
+
+    if (argc == requireArgc) {
+        bool argTransFlag = true;
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, args[PARAM0], &valueType);
+        CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
+
+        std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+        NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
+        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+            NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
+            "invalid parameter");
+
+        isAdaptiveSpatialRenderingEnabled = napiAudioSpatializationManager->audioSpatializationMngr_
+            ->IsAdaptiveSpatialRenderingEnabled(selectedAudioDevice);
+    } else {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    NapiParamUtils::SetValueBoolean(env, isAdaptiveSpatialRenderingEnabled, result);
+    return result;
+}
+
+napi_value NapiAudioSpatializationManager::SetAdaptiveSpatialRenderingEnabled(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    size_t requireArgc = ARGS_TWO;
+    auto context = std::make_shared<AudioSpatializationManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetAdaptiveSpatialRenderingEnabled failed : no memory");
+        NapiAudioError::ThrowError(env, "SetAdaptiveSpatialRenderingEnabled failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context, &requireArgc](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc == requireArgc, "mandatory parameters are left unspecified",
+            NAPI_ERR_INPUT_INVALID);
+        bool argTransFlag = true;
+        context->status = NapiParamUtils::GetAudioDeviceDescriptor(env, context->deviceDescriptor, argTransFlag,
+            argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The param of deviceDescriptor must be interface AudioDeviceDescriptor",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env,
+            context->adaptiveSpatialRenderingEnable, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "incorrect parameter types: The type of enable must be boolean",
+            NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    return updateAdaptiveSpatialRenderingEnabled(env, requireArgc, context);
+}
+
+napi_value NapiAudioSpatializationManager::updateAdaptiveSpatialRenderingEnabled(napi_env env, const std::size_t argc,
+    std::shared_ptr<AudioSpatializationManagerAsyncContext> &context)
+{
+    auto executor = [context, argc]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSpatializationManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioSpatializationManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioSpatializationManagerStatus(napiAudioSpatializationManager, context),
+            "audio spatialization manager state is error.");
+        if (argc == ARGS_TWO) {
+            bool isSpatializationSupported = napiAudioSpatializationManager->
+                audioSpatializationMngr_->IsSpatializationSupportedForDevice(context->deviceDescriptor);
+            context->intValue = isSpatializationSupported ? napiAudioSpatializationManager->audioSpatializationMngr_->
+                SetAdaptiveSpatialRenderingEnabled(context->deviceDescriptor, context->adaptiveSpatialRenderingEnable) :
+                ERR_DEVICE_NOT_SUPPORTED;
+        } else {
+            context->SignError(NAPI_ERR_INPUT_INVALID);
+        }
+
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        } else if (context->intValue == ERR_DEVICE_NOT_SUPPORTED) {
+            context->SignError(NAPI_ERR_UNAVAILABLE_ON_DEVICE);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetAdaptiveSpatialRenderingEnabled", executor, complete);
 }
 
 napi_value NapiAudioSpatializationManager::IsSpatializationSupported(napi_env env, napi_callback_info info)
@@ -763,6 +884,34 @@ void NapiAudioSpatializationManager::RegisterHeadTrackingEnabledChangeCallback(n
     AUDIO_INFO_LOG("Register head tracking enabled callback is successful");
 }
 
+void NapiAudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledChangeCallback(napi_env env,
+    napi_value *args, NapiAudioSpatializationManager *napiAudioSpatializationManager)
+{
+    if (!napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_) {
+        napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_ =
+            std::make_shared<NapiAdaptiveSpatialRenderingEnabledChangeCallback>(env);
+        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->
+            adaptiveSpatialRenderingEnabledChangeCallbackNapi_ != nullptr,
+            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
+
+        int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
+            RegisterAdaptiveSpatialRenderingEnabledEventListener(
+            napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
+            "NapiAudioSpatializationManager: Registering of Adaptive Spatial Rendering Enabled Change Callback Failed");
+    }
+
+    std::shared_ptr<NapiAdaptiveSpatialRenderingEnabledChangeCallback> cb =
+        std::static_pointer_cast<NapiAdaptiveSpatialRenderingEnabledChangeCallback>
+        (napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_);
+    cb->SaveAdaptiveSpatialRenderingEnabledChangeCallbackReference(args[PARAM0]);
+    if (!cb->GetAdaptiveSpatialRenderingTsfnFlag()) {
+        cb->CreateAdaptiveSpatialRenderingTsfn(env);
+    }
+
+    AUDIO_INFO_LOG("Register adaptive spatial rendering enabled callback is successful");
+}
+
 napi_value NapiAudioSpatializationManager::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
@@ -900,6 +1049,29 @@ void NapiAudioSpatializationManager::UnregisterHeadTrackingEnabledChangeCallback
     }
 }
 
+void NapiAudioSpatializationManager::UnregisterAdaptiveSpatialRenderingEnabledChangeCallback(napi_env env,
+    napi_value callback, NapiAudioSpatializationManager *napiAudioSpatializationManager)
+{
+    if (napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_ != nullptr) {
+        std::shared_ptr<NapiAdaptiveSpatialRenderingEnabledChangeCallback> cb =
+            std::static_pointer_cast<NapiAdaptiveSpatialRenderingEnabledChangeCallback>(
+            napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_);
+        if (callback != nullptr) {
+            cb->RemoveAdaptiveSpatialRenderingEnabledChangeCallbackReference(env, callback);
+        }
+        if (callback == nullptr || cb->GetAdaptiveSpatialRenderingEnabledChangeCbListSize() == 0) {
+            int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
+                UnregisterAdaptiveSpatialRenderingEnabledEventListener();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterAdaptiveSpatialRenderingEnabledEventListener Failed");
+            napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_.reset();
+            napiAudioSpatializationManager->adaptiveSpatialRenderingEnabledChangeCallbackNapi_ = nullptr;
+            cb->RemoveAllAdaptiveSpatialRenderingEnabledChangeCallbackReference();
+        }
+    } else {
+        AUDIO_ERR_LOG("UnregisterCallback: AdaptiveSpatialRenderingEnabledChangeCallbackNapi_ is null");
+    }
+}
+
 napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_ONE;
@@ -961,6 +1133,88 @@ napi_value NapiAudioSpatializationManager::IsSpatializationEnabledForCurrentDevi
         ->IsSpatializationEnabledForCurrentDevice();
     NapiParamUtils::SetValueBoolean(env, IsSpatializationEnabledForCurrentDevice, result);
     return result;
+}
+
+napi_value NapiAudioSpatializationManager::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+    napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice");
+    const size_t requireArgc = ARGS_ONE;
+    size_t argc = ARGS_TWO;
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    napi_value args[requireArgc + 1] = {nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok || argc < requireArgc) {
+        AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 1 parameters");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
+    }
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("On type mismatch for parameter 1");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+        return undefinedResult;
+    }
+    NapiAudioSpatializationManager *napiAudioSpatializationManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
+    if ((status != napi_ok) || (napiAudioSpatializationManager == nullptr) ||
+        (napiAudioSpatializationManager->audioSpatializationMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("NapiAudioSpatializationManager::Failed to retrieve audio spatialization manager napi instance.");
+        return undefinedResult;
+    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    RegisterAdaptiveSpatialRenderingEnabledChangeCallback(env, args, napiAudioSpatializationManager);
+    return undefinedResult;
+}
+
+napi_value NapiAudioSpatializationManager::OffAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+    napi_env env, napi_callback_info info)
+{
+    const size_t requireArgc = ARGS_ZERO;
+    size_t argc = PARAM1;
+
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    napi_value args[requireArgc + 1] = {nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Off fail to napi_get_cb_info");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
+        return undefinedResult;
+    }
+
+    napi_valuetype argsType = napi_undefined;
+    if (argc > requireArgc &&
+        (napi_typeof(env, args[PARAM0], &argsType) != napi_ok || argsType != napi_function)) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+        return undefinedResult;
+    }
+
+    if (argc == requireArgc) {
+        args[PARAM0] = nullptr;
+    }
+
+    NapiAudioSpatializationManager *napiAudioSpatializationManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiAudioSpatializationManager != nullptr, undefinedResult,
+        "Failed to retrieve napi instance.");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, undefinedResult,
+        "spatialization instance null.");
+
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    UnregisterAdaptiveSpatialRenderingEnabledChangeCallback(env, args[PARAM0], napiAudioSpatializationManager);
+    return undefinedResult;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -374,7 +374,11 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         return false;
     }
     auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
-        streamDesc->newDeviceDescs_[0]->macAddress_);
+        streamDesc->newDeviceDescs_[0]->macAddress_)  &&
+        !(AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
+            streamDesc->newDeviceDescs_[0]->macAddress_) &&
+        streamDesc->streamInfo_.channels <= STEREO &&
+        streamDesc->streamInfo_.encoding != ENCODING_AUDIOVIVID);
     CHECK_AND_RETURN_RET_LOG(ret == false, false, "Spatialization enabled");
     return true;
 }

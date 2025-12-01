@@ -81,6 +81,7 @@ public:
     void updateDumpName();
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
     void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();

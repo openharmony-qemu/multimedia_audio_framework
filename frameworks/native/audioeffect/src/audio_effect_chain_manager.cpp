@@ -397,7 +397,8 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetExtraSceneType(extraSceneType_);
     audioEffectChain->SetSpatialDeviceType(spatialDeviceType_);
     audioEffectChain->SetSpatializationSceneType(spatializationSceneType_);
-    audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
+    bool enabled = IsSpatializationEnabledForChains();
+    audioEffectChain->SetSpatializationEnabled(enabled);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
@@ -1061,7 +1062,8 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         }
 
         if (btOffloadEnabled_ == false) {
-            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+            bool enabled = IsSpatializationEnabledForChains();
+            audioEffectChain->SetSpatializationEnabledForFading(enabled);
         } else {
             audioEffectChain->SetSpatializationEnabledForFading(false);
         }
@@ -1337,9 +1339,10 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
 void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
 {
     spatializationEnabled_ = spatializationState.spatializationEnabled;
+    bool effectEnabled = IsSpatializationEnabledForChains();
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-    if (spatializationEnabled_) {
+    if (effectEnabled) {
         if (((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) &&
             (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
@@ -1817,6 +1820,19 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
     return SUCCESS;
 }
 
+void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    CHECK_AND_RETURN_LOG(bypassSpatializationForStereo_ != bypass,
+        "no need to update bypassSpatializationForStereo_ %{public}d", bypassSpatializationForStereo_);
+    AUDIO_INFO_LOG("AudioEffectChainManager::SetBypassSpatializationForStereo %{public}d", bypass);
+    bypassSpatializationForStereo_ = bypass;
+    CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
+    AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
+    UpdateSpatializationEnabled(spatializationState);
+}
+
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,
     uint64_t &channelLayout)
 {
@@ -2066,6 +2082,20 @@ void AudioEffectChainManager::UpdateEarphoneProduct(AudioEarphoneProduct earphon
         int32_t ret = audioEffectChain->UpdateEffectParam();
         CHECK_AND_CONTINUE_LOG(ret == 0, "set ap earphoneProduct failed");
     }
+}
+
+bool AudioEffectChainManager::IsSpatializationEnabledForChains()
+{
+    return spatializationEnabled_ && (!bypassSpatializationForStereo_ || !IsDeviceTypeSupportingSpatialization());
+}
+
+bool AudioEffectChainManager::IsEffectChainFading(const std::string &sceneType)
+{
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, false);
+    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    return audioEffectChain->IsEffectChainFading();
 }
 } // namespace AudioStandard
 } // namespace OHOS

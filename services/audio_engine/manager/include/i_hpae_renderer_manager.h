@@ -112,6 +112,10 @@ public:
     virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual std::string GetDeviceHDFDumpInfo() = 0;
     virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
+    virtual bool IsBypassSpatializationForStereo()
+    {
+        return true;
+    }
 
 private:
 #ifdef ENABLE_HIDUMP_DFX

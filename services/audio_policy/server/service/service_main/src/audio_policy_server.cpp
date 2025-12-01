@@ -4229,6 +4229,30 @@ int32_t AudioPolicyServer::SetHeadTrackingEnabled(const std::shared_ptr<AudioDev
     return audioSpatializationService_.SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioPolicyServer::IsAdaptiveSpatialRenderingEnabled(const std::string &address, bool &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.IsAdaptiveSpatialRenderingEnabled(address);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetAdaptiveSpatialRenderingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioSpatializationService_.SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
+}
+
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     AudioSpatializationState &state)
 {

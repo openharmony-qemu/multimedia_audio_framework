@@ -83,6 +83,7 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
+    void SetBypassSpatializationForStereo(bool bypass);
 private:
     HpaePolicyManager();
 };

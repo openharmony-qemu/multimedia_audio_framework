@@ -1363,5 +1363,29 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleFormatUnsupportedErrorEvent_001, 
     audioPolicyServerHandler_->HandleFormatUnsupportedErrorEvent(event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
+
+
+/**
+ * @tc.name  : HandleAdaptiveSpatialRenderingEnabledChangeEvent_001
+ * @tc.number: HandleAdaptiveSpatialRenderingEnabledChangeEvent_001
+ * @tc.desc  : Test HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleAdaptiveSpatialRenderingEnabledChangeEvent_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    int32_t ret =
+        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, true);
+    audioPolicyServerHandler_->HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

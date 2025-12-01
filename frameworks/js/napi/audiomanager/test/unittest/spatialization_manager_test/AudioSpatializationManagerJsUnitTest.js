@@ -975,4 +975,203 @@ describe("AudioSpatializationManagerJsTest", function () {
       return;
     }
   });
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001
+   * @tc.desc:setAdaptiveSpatialRenderingEnabled enable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001", 0, async function (done) {
+    deviceDescriptor.deviceType = 1;
+    try {
+      await audioSpatializationManager.setAdaptiveSpatialRenderingEnabled(deviceDescriptor, true);
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001 SUCCESS.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001 ERROR: ${err.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_002
+   * @tc.desc:setAdaptiveSpatialRenderingEnabled disable success - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_002", 0, async function (done) {
+    deviceDescriptor.deviceType = 1;
+    try {
+      await audioSpatializationManager.setAdaptiveSpatialRenderingEnabled(deviceDescriptor, false);
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_002 SUCCESS.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_002 ERROR: ${err.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_003
+   * @tc.desc:setAdaptiveSpatialRenderingEnabled no parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_003", 0, async function (done) {
+    try {
+      await audioSpatializationManager.setAdaptiveSpatialRenderingEnabled();
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_003 parameter check ERROR.`);
+      expect().assertFail();
+      done();
+    } catch (err) {
+      if (err.code != ERROR_INPUT_INVALID) {
+        console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_003 ERROR: ${err.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_003 check no parameter PASS`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_004
+   * @tc.desc:setAdaptiveSpatialRenderingEnabled check number parameter - promise
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_004", 0, async function (done) {
+    try {
+      await audioSpatializationManager.setAdaptiveSpatialRenderingEnabled(deviceDescriptor, numberParameter);
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_004 parameter check ERROR.`);
+      expect().assertFail();
+      done();
+    } catch (err) {
+      if (err.code != ERROR_INPUT_INVALID) {
+        console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_004 ERROR: ${err.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_SET_ADAPTIVE_SPATIAL_RENDERING_ENABLED_004 check number parameter PASS`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_IS_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001
+   * @tc.desc:isAdaptiveSpatialRenderingEnabled success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_IS_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001", 0, async function (done) {
+    try {
+      let isEnabled = audioSpatializationManager.isAdaptiveSpatialRenderingEnabled(deviceDescriptor);
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_IS_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001 SUCCESS: ${isEnabled}.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_IS_ADAPTIVE_SPATIAL_RENDERING_ENABLED_001 ERROR: ${err}`);
+      expect(false).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001
+   * @tc.desc:onAdaptiveSpatialRenderingEnabledChangeForAnyDevice success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001", 0, async function (done) {
+    try {
+      audioSpatializationManager.onAdaptiveSpatialRenderingEnabledChangeForAnyDevice((data) => {
+      });
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001 SUCCESS.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001 ERROR: ${err.message}`);
+      expect().assertFail();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002
+   * @tc.desc:onAdaptiveSpatialRenderingEnabledChangeForAnyDevice check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002", 0, async function (done) {
+    try {
+      audioSpatializationManager.onAdaptiveSpatialRenderingEnabledChangeForAnyDevice(numberParameter, (data) => {
+      });
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 number parameter failed.`);
+      expect().assertFail();
+      done();
+    } catch (err) {
+      if (err.code != ERROR_INPUT_INVALID) {
+        console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 check number parameter \
+          ERROR: ${err.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_ON_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 PASS: ${err.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001
+   * @tc.desc:offAdaptiveSpatialRenderingEnabledChangeForAnyDevice success
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001", 0, async function (done) {
+    try {
+      audioSpatializationManager.offAdaptiveSpatialRenderingEnabledChangeForAnyDevice((data) => {
+      });
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001 SUCCESS.`);
+      expect(true).assertTrue();
+      done();
+    } catch (err) {
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_001 ERROR: ${err.message}`);
+      expect().assertFail();
+      done();
+    }
+  })
+
+  /*
+   * @tc.name:SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002
+   * @tc.desc:offAdaptiveSpatialRenderingEnabledChangeForAnyDevice check number parameter
+   * @tc.type: FUNC
+   * @tc.require: I7V04L
+   */
+  it("SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002", 0, async function (done) {
+    try {
+      audioSpatializationManager.offAdaptiveSpatialRenderingEnabledChangeForAnyDevice(numberParameter, (data) => {
+      });
+      console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 number parameter failed.`);
+      expect().assertFail();
+      done();
+    } catch (err) {
+      if (err.code != ERROR_INPUT_INVALID) {
+        console.error(`SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 check number parameter \
+          ERROR: ${err.message}`);
+        expect().assertFail();
+        done();
+      }
+      console.info(`SUB_AUDIO_SPATIALIZATION_MANAGER_OFF_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_002 PASS: ${err.message}`);
+      expect(true).assertTrue();
+      done();
+    }
+  })
 })

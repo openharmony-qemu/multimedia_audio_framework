@@ -847,12 +847,20 @@ struct AudioEffectLibEntry {
 struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+    bool adaptiveSpatialRenderingEnabled = false;
 
     AudioSpatializationState() = default;
     AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
     {
         this->spatializationEnabled = spatializationEnabled;
         this->headTrackingEnabled = headTrackingEnabled;
+    }
+
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled, bool adaptiveSpatialRenderingEnabled)
+    {
+        this->spatializationEnabled = spatializationEnabled;
+        this->headTrackingEnabled = headTrackingEnabled;
+        this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
     }
 
     bool Marshalling(Parcel &parcel) const override

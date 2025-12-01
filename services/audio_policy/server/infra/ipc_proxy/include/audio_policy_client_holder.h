@@ -70,6 +70,8 @@ public:
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);
     void OnVolumeDegreeEvent(const VolumeEvent &volumeEvent);
     void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled);
+    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
 
 public:
     bool hasBTPermission_ = true;
