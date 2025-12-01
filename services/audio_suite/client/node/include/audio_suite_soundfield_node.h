@@ -16,6 +16,7 @@
 #ifndef AUDIO_SUITE_SOUNDFIELD_NODE_H
 #define AUDIO_SUITE_SOUNDFIELD_NODE_H
 
+#include <charconv>
 #include "audio_suite_algo_interface.h"
 #include "audio_suite_process_node.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"
