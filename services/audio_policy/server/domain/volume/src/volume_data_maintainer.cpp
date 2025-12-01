@@ -1156,5 +1156,29 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromDb(std::shared_ptr<AudioDevice
     return volumeDegree;
 }
 
+int32_t VolumeDataMaintainer::CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    std::string volumeKey = GetVolumeKey(device, streamType);
+    CHECK_AND_RETURN_RET_LOG(volumeKey != "", ERROR, "volumeKey is empty");
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t volumeState = 0;
+    return audioSettingProvider.GetIntValue(volumeKey, volumeState, "system");
+}
+
+int32_t VolumeDataMaintainer::CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    std::string muteKey = GetMuteKey(device, streamType);
+    CHECK_AND_RETURN_RET_LOG(muteKey != "", ERROR, "muteKey is empty");
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool muteState = false;
+    return audioSettingProvider.GetBoolValue(muteKey, muteState, "system");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
