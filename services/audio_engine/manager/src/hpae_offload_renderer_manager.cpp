@@ -213,8 +213,10 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
  
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
+    converterForOutput_->SetDownmixNormalization(false);
     loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
+    converterForLoudness_->SetDownmixNormalization(false);
     AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
         "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
         outputNodeInfo.sessionId,
