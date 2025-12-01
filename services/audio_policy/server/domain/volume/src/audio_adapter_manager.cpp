@@ -2195,7 +2195,6 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
         case DEVICE_TYPE_USB_ARM_HEADSET:
             UpdateUsbSafeVolume(device);
             break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             if (GetStreamVolumeInternal(device, STREAM_MUSIC) <= safeVolume_) {
                 AUDIO_INFO_LOG("1st connect bt device volume is safe");
