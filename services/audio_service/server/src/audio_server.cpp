@@ -221,35 +221,22 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
 
 static void SetAudioSceneForAllSource(AudioScene audioScene)
 {
-    std::shared_ptr<IAudioCaptureSource> usbSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    if (usbSource != nullptr && usbSource->IsInited()) {
-        usbSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> accSource = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
-    if (accSource != nullptr && accSource->IsInited()) {
-        accSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> primarySource = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
-    if (primarySource != nullptr && primarySource->IsInited()) {
-        primarySource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI);
-    if (aiSource != nullptr && aiSource->IsInited()) {
-        aiSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> unprocessSource = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
-    if (unprocessSource != nullptr && unprocessSource->IsInited()) {
-        unprocessSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> ultrasonicSource =
-        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
-    if (ultrasonicSource != nullptr && ultrasonicSource->IsInited()) {
-        ultrasonicSource->SetAudioScene(audioScene);
-    }
-    std::shared_ptr<IAudioCaptureSource> voiceRecognitionSource =
-        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
-    if (voiceRecognitionSource != nullptr && voiceRecognitionSource->IsInited()) {
-        voiceRecognitionSource->SetAudioScene(audioScene);
+    std::vector<std::pair<HDIIdType, HDIIdInfo>> sourceConfigs = {
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB},
+        {HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT},
+        {HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC},
+        {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
+        {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
+    };
+    
+    for (const auto& config : sourceConfigs) {
+        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(config.first, config.second);
+        if (source != nullptr && source->IsInited()) {
+            source->SetAudioScene(audioScene);
+        }
     }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
@@ -261,10 +248,6 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
         fastVoipSource->SetAudioScene(audioScene);
     }
 #endif
-    std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
-    if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
-        a2dpInSource->SetAudioScene(audioScene);
-    }
 }
 
 static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
