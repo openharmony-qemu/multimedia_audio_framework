@@ -67,6 +67,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
+        return ERROR;
     }
 
     if (LoadAlgorithmFunction() != SUCCESS) {
