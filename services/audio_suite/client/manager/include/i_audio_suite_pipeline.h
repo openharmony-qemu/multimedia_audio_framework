@@ -47,7 +47,7 @@ public:
     virtual int32_t RenderFrame(
         uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t MultiRenderFrame(
-        uint8_t **audioDataArray, int arraySize,
+        uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) = 0;
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
