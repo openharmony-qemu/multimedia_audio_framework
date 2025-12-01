@@ -99,7 +99,6 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
         AUDIO_ERR_LOG("Failed to convert string %{public}s to int", value.c_str());
         return ERROR;
     }
-
     auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
     if (it != soundFieldParaMap.end()) {
         int32_t ret = algoInterface_->SetParameter(name, std::to_string(static_cast<int32_t>(it->second)));
