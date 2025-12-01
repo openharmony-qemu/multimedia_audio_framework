@@ -93,6 +93,8 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
     if (hasScoState && activeScoDevice != nullptr && activeScoDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d", activeScoDevice->deviceType_);
         descs.push_back(activeScoDevice);
+    } else {
+        return descs;
     }
     bool needDefaultDevice = false;
     switch (streamUsage) {
