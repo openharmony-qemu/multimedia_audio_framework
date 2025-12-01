@@ -40,6 +40,7 @@ constexpr uint32_t PARAMS_NUM_ONE = 1;
 constexpr uint32_t PARAMS_NUM_TWO = 2;
 constexpr uint32_t PARAMS_NUM_THREE = 3;
 constexpr uint32_t PARAMS_NUM_FOUR = 4;
+constexpr uint32_t PARAMS_NUM_FOUR = 4;
 
 const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";

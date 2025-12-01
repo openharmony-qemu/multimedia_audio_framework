@@ -60,7 +60,6 @@ std::string g_baseExtensionFilename = "/data/audiosuite/sr/base_extension.pcm";
  
 class AudioSuiteSpaceRenderTest : public testing::Test {
 public:
-    void SetUp();
     void TearDown();
  
     int32_t DoprocessTest(std::string inputFile, std::string outputFile, std::string name, std::string value);
