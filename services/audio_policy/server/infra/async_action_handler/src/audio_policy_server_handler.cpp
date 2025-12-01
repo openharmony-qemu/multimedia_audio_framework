@@ -616,6 +616,19 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &e
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DEVICE_CONFIG_CHANGED,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send DEVICE_CONFIG_CHANGED event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
 {
@@ -1644,6 +1657,15 @@ void AudioPolicyServerHandler::HandleAudioSceneChange(const AppExecFwk::InnerEve
     }
 }
 
+void AudioPolicyServerHandler::HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    CHECK_AND_RETURN_LOG(eventContextObj->descriptor != nullptr, "EventContextObj get nullptr");
+    AudioCoreService::GetCoreService()->GetEventEntry()->HandleDeviceConfigChanged(eventContextObj->descriptor);
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -1811,6 +1833,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
     switch (eventId) {
         case EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
             HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::DEVICE_CONFIG_CHANGED:
+            HandleDeviceConfigChangedEvent(event);
             break;
         default:
             break;
