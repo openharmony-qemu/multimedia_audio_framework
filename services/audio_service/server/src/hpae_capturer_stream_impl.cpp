@@ -45,10 +45,6 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 HpaeCapturerStreamImpl::~HpaeCapturerStreamImpl()
 {
     AUDIO_INFO_LOG("~HpaeCapturerStreamImpl [%{public}u]", streamIndex_);
-    if (capturerServerDumpFile_) {
-        fclose(capturerServerDumpFile_);
-        capturerServerDumpFile_ = nullptr;
-    }
     paCapturerMap_.Erase(this);
 }
 

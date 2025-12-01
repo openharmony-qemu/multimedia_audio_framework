@@ -1245,23 +1245,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsAbsVolumeScene_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetPreferredOutputStreamType.
- * @tc.number: GetPreferredOutputStreamType_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, GetPreferredOutputStreamType_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioRendererInfo rendererInfo;
-    std::string bundleName;
-
-    int32_t ret = server->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
  * @tc.name  : Test SetNormalVoipFlag.
  * @tc.number: SetNormalVoipFlag_001
  * @tc.desc  : Test AudioPolicyService interfaces.

@@ -109,8 +109,6 @@ interface IAudioPolicy {
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-    void GetPreferredOutputStreamType([in] AudioRendererInfo rendererInfo, [out] int streamType);
-    void GetPreferredInputStreamType([in] AudioCapturerInfo capturerInfo, [out] int streamType);
     void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId, [out] String networkId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId);
     void RegisterTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);

@@ -314,10 +314,6 @@ public:
 
     int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
-
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
-
     int32_t CreateRendererClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId);
 
