@@ -118,7 +118,15 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
         algoRunBuf_ != nullptr && algoScratchBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
 
     // set SoundField mode
-    iMedia_Surround_PARA surroundType = static_cast<iMedia_Surround_PARA>(std::stoi(paramValue));
+    iMedia_Surround_PARA surroundType = IMEDIA_SWS_SOUROUND_BROAD;
+    int value = 0;
+    auto [ptr, ec] = std::from_chars(paramValue.data(), paramValue.data() + paramValue.size(), value);
+ 
+    if (ec == std::errc()) {
+        surroundType = static_cast<iMedia_Surround_PARA>(value);
+    } else {
+        AUDIO_ERR_LOG("Invalid SoundField para: %{public}s", paramValue.c_str());
+    }
     int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, surroundType);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "set parameter fail, ret: %{public}d", ret);
 
