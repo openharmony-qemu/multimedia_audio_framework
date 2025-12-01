@@ -106,7 +106,7 @@ public:
     int32_t CreateNode(
         OHAudioSuitePipeline *audioSuitePipeline, OHAudioSuiteNodeBuilder *builder, OH_AudioNode **audioNode);
     int32_t DestroyNode(OHAudioNode *node);
-    int32_t GetNodeBypassStatus(OHAudioNode *audioNode, bool *bypass);
+    int32_t GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus);
     int32_t BypassEffectNode(OHAudioNode *node, bool bypass);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
