@@ -1233,9 +1233,10 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         streamType == STREAM_ULTRASONIC) {
         return;
     }
-
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    auto devForCall = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
+    AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
+
+    auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
     CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
     if (device->networkId_ != devForCall->networkId_) {
         AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
@@ -1246,12 +1247,12 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     AudioScene curScene = sceneManager.GetAudioScene(true);
 
     bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
-    bool updateLimit = volumeType == STREAM_VOICE_CALL || volumeLimit_.load() == MAX_STREAM_VOLUME;
+    bool updateLimit = volumeType == voiceCallType || volumeLimit_.load() == MAX_STREAM_VOLUME;
     if (streamInCall) {
         if (updateLimit) {
-            int32_t volumeLevelForCall = GetStreamVolumeInternal(device, STREAM_VOICE_CALL);
-            float newLimit = volumeType == STREAM_VOICE_CALL?
-                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevelForCall, deviceType);
+            int32_t volumeLevelForCall = GetStreamVolumeInternal(device, voiceCallType);
+            float newLimit = volumeType == voiceCallType?
+                volume : GetSystemVolumeInDb(voiceCallType, volumeLevelForCall, deviceType);
             SetVolumeLimit(newLimit);
         }
     } else {
