@@ -118,6 +118,7 @@ private:
 
 private:
     std::mutex lock_;
+    AudioSuiteCapabilities audioSuiteCapabilities_;
     std::shared_ptr<IAudioSuiteEngine> suiteEngine_ = nullptr;
 
     std::unordered_map<uint32_t, std::unique_ptr<std::mutex>> pipelineLockMap_;
