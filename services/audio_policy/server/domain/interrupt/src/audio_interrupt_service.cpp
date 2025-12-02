@@ -39,6 +39,32 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class UpdateAudioSceneFromInterruptAction : public AsyncActionHandler::AsyncAction {
+public:
+    UpdateAudioSceneFromInterruptAction(std::shared_ptr<AudioInterruptService> interruptService,
+        const AudioScene audioScene, AudioInterruptChangeType changeType, int32_t zoneId)
+        : interruptService_(interruptService), audioScene_(audioScene), changeType_(changeType),
+          zoneId_(zoneId)
+    {}
+
+    UpdateAudioSceneFromInterruptAction(std::shared_ptr<AudioInterruptService> interruptService,
+        const AudioScene audioScene, AudioInterruptChangeType changeType)
+        : UpdateAudioSceneFromInterruptAction(interruptService, audioScene, changeType, 0)
+    {}
+
+    void Exec() override
+    {
+        CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService is nullptr");
+        interruptService_->UpdateAudioSceneFromInterrupt(audioScene_, changeType_, zoneId_);
+    }
+
+private:
+    std::shared_ptr<AudioInterruptService> interruptService_;
+    const AudioScene audioScene_;
+    AudioInterruptChangeType changeType_;
+    int32_t zoneId_;
+};
+
 constexpr uint32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
@@ -150,6 +176,12 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
 
     sessionService_.SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+    interruptCustom_ = std::make_unique<AudioInterruptCustom>();
+}
+
+void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
+{
+    asyncHandler_ = handler;
 }
 
 const sptr<IStandardAudioService> AudioInterruptService::GetAudioServerProxy()
@@ -289,8 +321,7 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     }
 
     return SUCCESS;
@@ -908,8 +939,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1066,8 +1096,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     }
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, false);
 
@@ -1203,8 +1232,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1216,8 +1244,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1230,8 +1257,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1244,8 +1270,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1814,7 +1839,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
         return;
     }
@@ -2029,6 +2054,10 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     }
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "ProcessActiveStreamFocus fail");
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
+    if (activeInterrupt != audioFocusInfoList.end() && interruptCustom_ != nullptr) {
+        interruptCustom_->ProcessActiveStreamCustomFocus(incomingInterrupt, activeInterrupt->first,
+            incomingState, interruptEvent);
+    }
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
     if (IsGameAvoidCallbackCase(incomingInterrupt) && incomingState == PAUSE) {
@@ -2712,7 +2741,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         SendActiveVolumeTypeChangeEvent(zoneId);
     }
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    PostUpdateAudioSceneFromInterruptAction(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
 }
 
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
@@ -2931,10 +2960,14 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
             policyServer_->UpdateDefaultOutputDeviceWhenStarting(streamId);
             break;
         case INTERRUPT_HINT_PAUSE:
-        case INTERRUPT_HINT_STOP:
+        case INTERRUPT_HINT_STOP: {
             SetNonInterruptMute(streamId, muteFlag);
-            policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
+            std::thread stopThread([this, streamId] {
+                policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
+            });
+            stopThread.detach();
             break;
+        }
         default:
             return false;
     }
@@ -3091,6 +3124,19 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     }
     updateFuncMono(DEFAULT_VOLUME_KEY);
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
+}
+
+void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
+    AudioInterruptChangeType changeType, int32_t zoneId)
+{
+    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
+        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(), audioScene, changeType, zoneId);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

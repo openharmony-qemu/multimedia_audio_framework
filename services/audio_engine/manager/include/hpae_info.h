@@ -100,6 +100,7 @@ struct HpaeStreamInfo {
     std::string deviceName;
     bool isMoveAble = true;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioEncodingType encoding = AudioEncodingType::ENCODING_INVALID;
 };
 
 struct HpaeSinkInfo {
@@ -172,6 +173,7 @@ struct HpaeSourceInfo {
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
+    format = format > SAMPLE_F32LE ? -1 : format;
     return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
 }
 

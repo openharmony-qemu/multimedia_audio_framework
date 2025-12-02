@@ -260,13 +260,14 @@ int32_t OutputPort<T>::PullOutputDataForDoubleFrame()
 template <class T>
 std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool needConvert)
 {
+    CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, std::vector<T>(), "audionode is nullptr.");
     if (outFormat.sampleRate == SAMPLE_RATE_11025) {
         int32_t ret = PullOutputDataForDoubleFrame();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, std::vector<T>(), "Get double frame data fail.");
     } else {
-        CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, std::vector<T>(), "audionode is nullptr.");
         audioNode_->DoProcess();
     }
+
     CHECK_AND_RETURN_RET_LOG(!outputData_.empty(), std::vector<T>(), "outputData is empty.");
     CHECK_AND_RETURN_RET_LOG(outputData_.size() == convert_.size(), std::vector<T>(), "input data num err.");
 

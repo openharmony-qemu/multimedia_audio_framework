@@ -379,7 +379,6 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
         return;
     }
     SetBufferSize();
-    RunningLock(true);
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()

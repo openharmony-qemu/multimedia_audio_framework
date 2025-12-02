@@ -90,6 +90,11 @@ public:
         volumeBehavior.databaseVolumeName = "";
         return SUCCESS;
     }
+
+    ErrCode OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {
@@ -1886,18 +1891,15 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
 
     bool updateScene = false;
 
-    InterruptEventInternal interruptEvent;
-    auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
-    EXPECT_EQ(true, ret);
     ClientTypeManager::GetInstance()->clientTypeMap_[uid] = CLIENT_TYPE_GAME;
 
     audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, true);
-    ret = audioInterruptService->ActivateAudioInterruptInternal(DEFAULT_ZONE_ID,
+    auto ret = audioInterruptService->ActivateAudioInterruptInternal(DEFAULT_ZONE_ID,
         audioInterrupt, false, updateScene);
     EXPECT_EQ(ret, ERR_FOCUS_DENIED);
     audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, false);
     ret = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
-    EXPECT_EQ(ret, ERR_FOCUS_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 } // namespace AudioStandard

@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioSuiteCapabilities"
 #endif
 
+#include <filesystem>
 #include <audio_suite_capabilities.h>
 
 namespace OHOS {
@@ -73,6 +74,34 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
+int32_t LoadSrCapability(NodeCapability &nc)
+{
+    AUDIO_INFO_LOG("loadSrCapability start.");
+    std::string algoSoPath = nc.soPath + nc.soName;
+    void *libHandle = dlopen(algoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(libHandle != nullptr,
+        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        algoSoPath.c_str(), dlerror());
+
+    using FunSpaceRenderGetSpeces = SpaceRenderSpeces (*)();
+    FunSpaceRenderGetSpeces getSpecsFunc =
+        reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle, "SpaceRenderGetSpeces"));
+    if (getSpecsFunc == nullptr) {
+        dlclose(libHandle);
+        libHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            algoSoPath.c_str(), "SpaceRenderGetSpeces");
+        return ERROR;
+    }
+    SpaceRenderSpeces specs = getSpecsFunc();
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    dlclose(libHandle);
+    libHandle = nullptr;
+    AUDIO_INFO_LOG("loadCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("loadCapability start.");
@@ -121,6 +150,82 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
+int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
+{
+    AudioVoiceMorhpingSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadGeneralCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    return SUCCESS;
+}
+ 
+int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
+{
+    AudioVoiceMphTradSpec specs;
+    CHECK_AND_RETURN_RET_LOG(
+        LoadCapability("AudioVoiceMphTradGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
+        ERROR, "LoadPureCapability failed.");
+    nc.supportedOnThisDevice = specs.currentDeviceSupport;
+    nc.isSupportRealtime = specs.realTimeSupport;
+    return SUCCESS;
+}
+
+int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
+{
+    AUDIO_INFO_LOG("LoadTempoPitchCapability start.");
+    std::istringstream iss(nc.soName);
+    std::string tempoSoName = "";
+    std::string pitchSoName = "";
+    std::getline(iss, tempoSoName, ',');
+    std::getline(iss, pitchSoName);
+    CHECK_AND_RETURN_RET_LOG(!tempoSoName.empty() && !pitchSoName.empty(), ERROR,
+        "LoadTempoPitchCapability parse so name fail");
+    // tempo
+    std::string tempoSoPath = nc.soPath + tempoSoName;
+    void *tempoSoHandle = dlopen(tempoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(tempoSoHandle != nullptr, ERROR,
+        "dlopen algo: %{private}s so fail, error: %{public}s", tempoSoPath.c_str(), dlerror());
+    using GET_SPEC_FUNC = AudioPVSpec(*)(void);
+    GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
+    if (pvGetSpecFunc == nullptr) {
+        dlclose(tempoSoHandle);
+        tempoSoHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            tempoSoPath.c_str(), "PVGetSpec");
+        return ERROR;
+    }
+    AudioPVSpec spec = pvGetSpecFunc();
+    nc.supportedOnThisDevice = spec.currentDeviceSupport;
+    nc.isSupportRealtime = spec.realTimeSupport;
+    dlclose(tempoSoHandle);
+    tempoSoHandle = nullptr;
+    // pitch
+    std::string pitchSoPath = nc.soPath + pitchSoName;
+    void *pitchSoHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr,
+        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        pitchSoPath.c_str(), dlerror());
+    AudioEffectLibrary *audioEffectLibHandle =
+        static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
+    if (audioEffectLibHandle == nullptr) {
+        dlclose(pitchSoHandle);
+        pitchSoHandle = nullptr;
+        AUDIO_ERR_LOG("dlsym algo: %{private}s so fail, function name: %{public}s",
+            pitchSoName.c_str(), PITCH_LIBRARY_INFO_SYM_AS_STR.c_str());
+        return ERROR;
+    }
+    struct AlgoSupportConfig supportConfig = {};
+    audioEffectLibHandle->supportEffect(&supportConfig);
+    nc.supportedOnThisDevice &= supportConfig.isSupport;
+    nc.isSupportRealtime &= supportConfig.isRealTime;
+    dlclose(pitchSoHandle);
+    pitchSoHandle = nullptr;
+    AUDIO_INFO_LOG("LoadTempoPitchCapability end.");
+    return SUCCESS;
+}
+
 int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported)
 {
     CHECK_AND_RETURN_RET_LOG(isSupported != nullptr,
@@ -132,6 +237,23 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
     auto it = audioSuiteCapabilities_.find(nodeType);
     if (it != audioSuiteCapabilities_.end()) {
         NodeCapability &nc = it->second;
+        if (nodeType == NODE_TYPE_TEMPO_PITCH) {
+            std::istringstream iss(nc.soName);
+            std::string tempoSoName = "";
+            std::string pitchSoName = "";
+            std::getline(iss, tempoSoName, ',');
+            std::getline(iss, pitchSoName);
+            if (!(std::filesystem::exists(nc.soPath + tempoSoName)) ||
+                !(std::filesystem::exists(nc.soPath + pitchSoName))) {
+                *isSupported = false;
+                AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
+                return SUCCESS;
+            }
+        } else if (!(std::filesystem::exists(nc.soPath + nc.soName))) {
+            *isSupported = false;
+            AUDIO_INFO_LOG("nodeType: %{public}d is not supported on this device, so does not exist.", nodeType);
+            return SUCCESS;
+        }
         if (nc.general == "yes") {
             AUDIO_INFO_LOG("nodeType: %{public}d is general on all device.", nodeType);
             *isSupported = true;
@@ -144,7 +266,7 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
                 return SUCCESS;
             } else {
                 AUDIO_ERR_LOG("GetNodeCapability failed for node type: %{public}d.", nodeType);
-                return ERR_INVALID_PARAM;
+                return ERROR;
             }
         }
     } else {
@@ -181,6 +303,19 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
                 break;
             case NODE_TYPE_NOISE_REDUCTION:
                 CHECK_AND_RETURN_RET_LOG(LoadAinrCapability(nc) == SUCCESS, ERROR, "LoadAinrCapability failed.");
+                break;
+            case NODE_TYPE_GENERAL_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadGeneralCapability(nc) == SUCCESS, ERROR, "LoadGeneralCapability failed.");
+                break;
+            case NODE_TYPE_PURE_VOICE_CHANGE:
+                CHECK_AND_RETURN_RET_LOG(LoadPureCapability(nc) == SUCCESS, ERROR, "LoadPureCapability failed.");
+                break;
+            case NODE_TYPE_TEMPO_PITCH:
+                CHECK_AND_RETURN_RET_LOG(LoadTempoPitchCapability(nc) == SUCCESS, ERROR,
+                    "LoadTempoPitchCapability failed.");
+                break;
+            case NODE_TYPE_SPACE_RENDER:
+                CHECK_AND_RETURN_RET_LOG(LoadSrCapability(nc) == SUCCESS, ERROR, "LoadSrCapability failed.");
                 break;
             default:
                 AUDIO_ERR_LOG("no such nodeType: %{public}d configured.", nodeType);

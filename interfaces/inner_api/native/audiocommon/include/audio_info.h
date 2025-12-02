@@ -77,6 +77,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
+constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
 
@@ -353,6 +354,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -413,6 +415,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -425,6 +428,7 @@ struct VolumeEvent : public Parcelable {
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
 
@@ -441,7 +445,8 @@ struct VolumeEvent : public Parcelable {
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
-            && parcel.WriteBool(notifyRssWhenAccountsChange);
+            && parcel.WriteBool(notifyRssWhenAccountsChange)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceType));
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -453,6 +458,7 @@ struct VolumeEvent : public Parcelable {
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
+        deviceType = static_cast<DeviceType>(parcel.ReadInt32());
     }
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
@@ -638,6 +644,7 @@ struct AudioRendererInfo : public Parcelable {
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     bool toneFlag = false;
+    bool keepRunning = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -674,7 +681,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
-            && parcel.WriteBool(toneFlag);
+            && parcel.WriteBool(toneFlag)
+            && parcel.WriteBool(keepRunning);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -702,6 +710,7 @@ struct AudioRendererInfo : public Parcelable {
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         toneFlag = parcel.ReadBool();
+        keepRunning = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1249,6 +1258,7 @@ struct AudioRegisterTrackerInfo {
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
     uint32_t appTokenId;
+    AudioStreamInfo streamInfo;
 };
 
 enum StateChangeCmdType {
@@ -1348,6 +1358,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(rendererInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteBool(rendererInfo.keepRunning);
 
         //AudioPrivacyType
         parcel.WriteInt32(privacyType);
@@ -1418,6 +1429,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.isLoopback = parcel.ReadBool();
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.keepRunning = parcel.ReadBool();
 
         //AudioPrivacyType
         config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());

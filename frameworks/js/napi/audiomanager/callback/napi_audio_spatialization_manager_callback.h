@@ -33,6 +33,8 @@ const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME
 const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
 const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "headTrackingEnabledChangeForAnyDevice";
+const std::string ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+    "adaptiveSpatialRenderingEnabledChangeForAnyDevice";
 class NapiAudioSpatializationEnabledChangeCallback : public AudioSpatializationEnabledChangeCallback {
 public:
     explicit NapiAudioSpatializationEnabledChangeCallback(napi_env env);
@@ -136,6 +138,44 @@ private:
     static bool onHeadTrackingEnabledChangeFlag_;
     bool regAmHeadTrkTsfn_ = false;
     napi_threadsafe_function amHeadTrkTsfn_ = nullptr;
+};
+
+class NapiAdaptiveSpatialRenderingEnabledChangeCallback :
+    public AudioAdaptiveSpatialRenderingEnabledChangeCallback {
+public:
+    explicit NapiAdaptiveSpatialRenderingEnabledChangeCallback(napi_env env);
+    virtual ~NapiAdaptiveSpatialRenderingEnabledChangeCallback();
+    void SaveAdaptiveSpatialRenderingEnabledChangeCallbackReference(napi_value args);
+    void RemoveAdaptiveSpatialRenderingEnabledChangeCallbackReference(
+        napi_env env, napi_value args);
+    void RemoveAllAdaptiveSpatialRenderingEnabledChangeCallbackReference();
+    int32_t GetAdaptiveSpatialRenderingEnabledChangeCbListSize();
+    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override;
+    void CreateAdaptiveSpatialRenderingTsfn(napi_env env);
+    bool GetAdaptiveSpatialRenderingTsfnFlag();
+
+private:
+    struct AudioAdaptiveSpatialRenderingEnabledJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+        std::string callbackName = "unknown";
+        bool enabled;
+    };
+
+    void OnJsCallbackAdaptiveSpatialRenderingEnabled(
+        std::unique_ptr<AudioAdaptiveSpatialRenderingEnabledJsCallback> &jsCb);
+    static void SafeJsCallbackAdaptiveSpatialRenderingEnabledWork(
+        napi_env env, napi_value js_cb, void *context, void *data);
+    static void AdaptiveSpatialRenderingEnabledTsfnFinalize(
+        napi_env env, void *data, void *hint);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_;
+    static bool onAdaptiveSpatialRenderingEnabledChangeFlag_;
+    bool regAmAdaptiveSpatialRenderingTsfn_ = false;
+    napi_threadsafe_function amAdaptiveSpatialRenderingTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

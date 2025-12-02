@@ -34,7 +34,8 @@ typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 
-class RemoteAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback {
+class RemoteAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteAudioRenderSink> {
 public:
     struct RenderWrapper {
         uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -162,6 +163,8 @@ private:
     // for dmsdp type and usage info
     std::unordered_map<SplitStreamType, AudioStreamType> streamTypeMap_;
     std::unordered_map<SplitStreamType, StreamUsage> streamUsageMap_;
+    bool appInfoNeedReset_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

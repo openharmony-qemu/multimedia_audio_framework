@@ -90,7 +90,9 @@ static const std::vector<std::string> SourceNames = {
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE),
-    std::string(PRIMARY_AI_MIC)
+    std::string(PRIMARY_AI_MIC),
+    std::string(PRIMARY_UNPROCESS_MIC),
+    std::string(PRIMARY_ULTRASONIC_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -144,7 +146,9 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
         AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
-    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice =
+            std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(selectedAudioDevice);
 }
 
 void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -190,7 +194,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
 
         FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
         info.caller = "GetPreferredOutputDeviceDescInner";
         descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
@@ -442,10 +446,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return; // No need to update preferred device for virtual device
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
+    if (NeedClearPreferredMediaRenderer(audioStateManager_.GetPreferredMediaRenderDevice(), audioDescriptor,
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-        "UpdateConnectedDevicesWhenConnectingForOutputDevice_1",
-        ROUTER_TYPE_USER_SELECT).front()) && (usage & MEDIA) == MEDIA) {
+            "UpdateConnectedDevicesWhenConnectingForOutputDevice_1", ROUTER_TYPE_USER_SELECT), usage)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
@@ -457,6 +460,31 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
+}
+
+bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const std::shared_ptr<AudioDeviceDescriptor> &updated,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const
+{
+    CHECK_AND_RETURN_RET(preferred != nullptr, false);
+    if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(updated != nullptr, false);
+    if (updated->networkId_ != LOCAL_NETWORK_ID) {
+        return false;
+    }
+
+    if ((usage & MEDIA) != MEDIA) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(!fetched.empty(), false);
+    const auto &frontDesc = fetched.front();
+
+    CHECK_AND_RETURN_RET(frontDesc != nullptr, false);
+    return updated->IsSameDeviceDescPtr(frontDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
@@ -1837,6 +1865,11 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
+}
+
+bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
+{
+    return Bluetooth::AudioHfpManager::IsVirtualCall();
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

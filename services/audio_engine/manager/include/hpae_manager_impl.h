@@ -58,6 +58,7 @@ public:
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
+    int32_t StopAudioPort(const std::string &audioPortName) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t GetAllSinks() override;
@@ -150,6 +151,8 @@ public:
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
+    void updateCollaborativeProductId(const std::string &productId) override;
+    void LoadCollaborationConfig() override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

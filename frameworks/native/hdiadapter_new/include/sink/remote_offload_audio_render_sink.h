@@ -55,7 +55,8 @@ struct RemoteOffloadHdiCallback {
     std::function<void(const RenderCallbackType type)> serviceCallback_;
 };
 
-class RemoteOffloadAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback {
+class RemoteOffloadAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
+    public std::enable_shared_from_this<RemoteOffloadAudioRenderSink> {
     friend class RemoteOffloadHdiCallbackImpl;
 public:
     explicit RemoteOffloadAudioRenderSink(const std::string &deviceNetworkId);
@@ -223,6 +224,8 @@ private:
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
     std::shared_ptr<std::thread> flushThread_;
+    bool appInfoNeedReset_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

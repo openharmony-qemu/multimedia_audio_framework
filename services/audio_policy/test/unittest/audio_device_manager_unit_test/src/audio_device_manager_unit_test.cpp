@@ -209,5 +209,41 @@ HWTEST_F(AudioDeviceManagerUnitTest, MakePairedDeviceDescriptor_002, TestSize.Le
     EXPECT_EQ(outDesc->pairDeviceDescriptor_ != nullptr, false);
     AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(outDesc);
 }
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: UpdateExistDeviceDescriptor.
+* @tc.desc  : Test UpdateExistDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_011, TestSize.Level4)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceManager &adm = AudioDeviceManager::GetAudioDeviceManager();
+    adm.AddConnectedDevices(desc1);
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+
+    desc1->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc2->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc2->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc2->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc2->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc2->deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    desc2->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+    desc1->deviceType_ = DEVICE_TYPE_REMOTE_DAUDIO;
+    desc2->deviceType_ = DEVICE_TYPE_REMOTE_DAUDIO;
+    EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -42,6 +42,7 @@ namespace {
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
+    constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
 }
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
@@ -441,6 +442,9 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
 
 int32_t HpaeRendererManager::UpdateClusterStreamInfo(HpaeProcessorType sceneType)
 {
+    // everytime state change need update cluster stream info, so refresh timestamp here
+    lastSessionStateChangeTime_ = ClockTime::GetCurNano();
+
     uint32_t minSessionId = UINT32_MAX;
     std::shared_ptr<HpaeSinkInputNode> updateNode = nullptr;
     for (const auto &[mapSessionId, mapNodePtr] : sinkInputNodeMap_) {
@@ -628,9 +632,13 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -649,11 +657,15 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);
         }
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -780,6 +792,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
         }
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -840,6 +853,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
         }
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -867,8 +881,8 @@ bool HpaeRendererManager::CheckIsStreamRunning()
 
 int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
 {
-    Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
+        Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
         if (isSuspend_ == isSuspend) {
             return;
         }
@@ -883,6 +897,17 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             CheckIsStreamRunning()) {
             outputCluster_->Start();
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::StopManager()
+{
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, "output cluster is nullptr");
+        outputCluster_->Stop();
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1569,11 +1594,14 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
 // if not one stream underrun, return false, refresh lastOnUnderrunTime_
 bool HpaeRendererManager::QueryOneStreamUnderrun()
 {
+    auto curTime = ClockTime::GetCurNano();
+    auto gapTime = curTime > lastSessionStateChangeTime_ ? curTime - lastSessionStateChangeTime_ : 0;
+    CHECK_AND_RETURN_RET(gapTime > STABLE_RUNNING_TIME_IN_NS, false);
     CHECK_AND_RETURN_RET(!IsRemoteDevice() && appsUid_.size() == 1 && hpaeSignalProcessThread_, false);
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {
         CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
-        if (node->GetState() == HPAE_SESSION_RUNNING) {
+        if (node->GetState() == HPAE_SESSION_RUNNING && !node->IsDrain()) {
             underrunFlag = node->QueryUnderrun();
             break;
         }
@@ -1605,6 +1633,22 @@ void HpaeRendererManager::DeleteNodesByTraversal(uint32_t sessionId)
     if (it == sceneClusterMap_.end()) {
         AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in any sceneCluster", sessionId);
     }
+}
+
+bool HpaeRendererManager::IsBypassSpatializationForStereo()
+{
+    bool bypass = true;
+    for (auto it = sinkInputNodeMap_.begin(); it != sinkInputNodeMap_.end(); ++it) {
+        HpaeProcessorType sceneType = it->second->GetSceneType();
+        AudioChannel channels = it->second->GetNodeInfo().channels;
+        AudioEncodingType encoding = it->second->GetNodeInfo().encoding;
+        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&
+            (sceneType == HPAE_SCENE_MUSIC || sceneType == HPAE_SCENE_MOVIE || sceneType == HPAE_SCENE_SPEECH) &&
+            (channels > STEREO || encoding == ENCODING_AUDIOVIVID));
+        bypass = false;
+        break;
+    }
+    return bypass;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

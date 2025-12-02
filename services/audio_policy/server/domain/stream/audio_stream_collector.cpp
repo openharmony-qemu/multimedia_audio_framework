@@ -113,8 +113,6 @@ AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
     (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
-    audioConcurrencyService_->Init();
 #ifdef ACTIVATED_RECLAIM_MEMORY
     activatedReclaimMemory_ = true;
     AUDIO_INFO_LOG("activated Reclaim Memory is %{public}d", activatedReclaimMemory_);
@@ -152,6 +150,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
+    rendererChangeInfo->streamInfo = streamChangeInfo.audioRendererChangeInfo.streamInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -450,6 +449,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
             rendererChangeInfo->backMute = (*it)->backMute;
+            rendererChangeInfo->streamInfo = (*it)->streamInfo;
             if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
@@ -1036,6 +1036,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
+    PostReclaimMemoryTask();
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
@@ -1525,12 +1526,6 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
-}
-
-ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
-    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
-{
-    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

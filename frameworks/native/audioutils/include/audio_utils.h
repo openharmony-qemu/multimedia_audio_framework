@@ -181,6 +181,13 @@ private:
     static bool RemoveAllRecordBySessionId(uint32_t sessionId);
 };
 
+class SolePipe {
+public:
+    static void SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName);
+    static bool IsSolePipeSource(int32_t sourceType);
+    static bool GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName);
+};
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM16Bit(int16_t *data, uint64_t len);
 void AdjustStereoToMonoForPCM24Bit(uint8_t *data, uint64_t len);
@@ -428,7 +435,14 @@ public:
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
+
+    LatencyMonitor(const LatencyMonitor&) = delete;
+    LatencyMonitor& operator=(const LatencyMonitor&) = delete;
+    LatencyMonitor(LatencyMonitor&&) = delete;
+    LatencyMonitor& operator=(LatencyMonitor&&) = delete;
 private:
+    LatencyMonitor() = default;
+
     std::string rendererMockTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
@@ -438,6 +452,8 @@ private:
     std::string dspAfterSmartPa_ = "";
     std::string dspMockTime_ = "";
     size_t extraStrLen_ = 0;
+
+    std::mutex mutex_;
 };
 
 class AudioDump {
@@ -562,6 +578,9 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
     HDI_CAPTURE_OFFSET_ACCESSORY = 10,
     HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION = 11,
+    HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE = 12,
+    HDI_CAPTURE_OFFSET_UNPROCESS = 13,
+    HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -596,13 +615,14 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
 
 std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
 
+uint32_t PcmFormatToBits(AudioSampleFormat format);
 std::string ConvertToStringForFormat(const AudioSampleFormat format);
 std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
 std::string ConvertToStringForChannel(const AudioChannel channel);
 
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
-bool IsInjectEnable();
-void SetInjectEnable(bool injectSwitch);
+
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 
 } // namespace AudioStandard
 } // namespace OHOS

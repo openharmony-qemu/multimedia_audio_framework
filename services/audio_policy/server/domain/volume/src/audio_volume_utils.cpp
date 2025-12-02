@@ -33,6 +33,12 @@ AudioVolumeUtils& AudioVolumeUtils::GetInstance()
     return utils;
 }
 
+void AudioVolumeUtils::Init()
+{
+    std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
+    LoadConfig();
+}
+
 bool AudioVolumeUtils::LoadConfig()
 {
     std::unique_ptr<AudioVolumeParser> parser = std::make_unique<AudioVolumeParser>();
@@ -72,6 +78,7 @@ int32_t AudioVolumeUtils::GetDefaultVolumeLevel(const std::shared_ptr<AudioDevic
 void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
+    std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
     if (streamVolumeInfos_.empty()) {
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
@@ -151,6 +158,7 @@ int32_t AudioVolumeUtils::GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDes
 void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
+    std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
     if (streamVolumeInfos_.empty()) {
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
@@ -193,7 +201,8 @@ int32_t AudioVolumeUtils::GetMinVolumeLevel(const std::shared_ptr<AudioDeviceDes
 void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
-        if (streamVolumeInfos_.empty()) {
+    std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
+    if (streamVolumeInfos_.empty()) {
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }

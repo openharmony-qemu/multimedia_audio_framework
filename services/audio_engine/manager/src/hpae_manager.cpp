@@ -42,6 +42,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
+static const std::string SPEAKER_SINK_NAME = "Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -112,6 +113,7 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
     RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
     RegisterHandler(INIT_SOURCE_RESULT, &HpaeManager::HandleInitSourceResult);
+    RegisterHandler(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO, &HpaeManager::HandleBypassSpatializationForStereo);
 }
 
 HpaeManager::~HpaeManager()
@@ -146,6 +148,26 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
             AUDIO_WARNING_LOG("can not find suspend sink: %{public}s", audioPortName.c_str());
             return;
         }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
+{
+    auto request = [this, audioPortName]() {
+        AUDIO_INFO_LOG("HpaeManager::stop audio port: %{public}s", audioPortName.c_str());
+        auto renderManager = GetRendererManagerByName(audioPortName);
+        if (renderManager != nullptr) {
+            renderManager->StopManager();
+            return;
+        }
+        auto captureManager = GetCapturerManagerByName(audioPortName);
+        if (captureManager != nullptr) {
+            captureManager->StopManager();
+            return;
+        }
+        AUDIO_WARNING_LOG("can not find audio port: %{public}s", audioPortName.c_str());
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2162,8 +2184,8 @@ void HpaeManager::InitAudioEffectChainManager(const std::vector<EffectChain> &ef
 
 void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
-    auto request = [this, device, sinkName]() {
-        HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
+    HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
+    auto request = [this, sinkName]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
         CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
         rendererManager->RefreshProcessClusterByDevice();
@@ -2173,8 +2195,10 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 
 int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    auto request = [spatializationState]() {
+    auto request = [this, spatializationState]() {
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
+        adaptiveSpatialRenderingEnabled_ = spatializationState.adaptiveSpatialRenderingEnabled;
+        UpdateBypassSpatializationForStereo();
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2739,6 +2763,48 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
         }
     }
     return sessionIds;
+}
+
+void HpaeManager::updateCollaborativeProductId(const std::string &productId)
+{
+    auto request = [productId]() {
+        HpaePolicyManager::GetInstance().updateCollaborativeProductId(productId);
+    };
+
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::LoadCollaborationConfig()
+{
+    auto request = []() {
+        HpaePolicyManager::GetInstance().LoadCollaborationConfig();
+    };
+
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::UpdateBypassSpatializationForStereo()
+{
+    bool bypass = adaptiveSpatialRenderingEnabled_;
+    for (auto it = rendererManagerMap_.begin(); it != rendererManagerMap_.end(); ++it) {
+        CHECK_AND_CONTINUE(it->first == BT_SINK_NAME || it->first == SPEAKER_SINK_NAME);
+        bypass = bypass && it->second->IsBypassSpatializationForStereo();
+        CHECK_AND_CONTINUE(!bypass);
+        break;
+    }
+
+    CHECK_AND_RETURN(bypassSpatializationForStereo_ != bypass);
+    bypassSpatializationForStereo_ = bypass;
+    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass);
+}
+
+void HpaeManager::HandleBypassSpatializationForStereo()
+{
+    auto request = [this]() {
+        UpdateBypassSpatializationForStereo();
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

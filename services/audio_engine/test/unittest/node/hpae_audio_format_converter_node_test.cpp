@@ -279,4 +279,46 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_004, Te
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
+
+/*
+ * @tc.name  : Test UpdateTmpOutPcmBufferInfo API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateTmpOutPcmBufferInfoTest_005.
+ * @tc.desc  : Test UpdateTmpOutPcmBufferInfo, when need tmpOutput Buffer, rate and channel change, frameLen is 0
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_005, TestSize.Level0)
+{
+    HpaeNodeInfo preNodeInfo;
+    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
+    HpaeNodeInfo outputNodeInfo;
+    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    outputNodeInfo.channels = STEREO;
+
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate);
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen);
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
+
+    // downmix, and then resample
+    PcmBufferInfo pcmBufferInfo(CHANNEL_6, 0, SAMPLE_RATE_48010);
+    HpaePcmBuffer input(pcmBufferInfo);
+    converterNode->CheckAndUpdateInfo(&input);
+    // tmpOutBuf_ used for downmix output, changed
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), input.GetSampleRate()); // downmix, sampleRate unchange
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), DEFAULT_FRAMELEN_48010); // downmix, frameLen unchange
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels); // downmix, channel change
+
+    // resample, and then upmix
+    PcmBufferInfo pcmBufferInfo1(MONO, 0, SAMPLE_RATE_48010);
+    HpaePcmBuffer input1(pcmBufferInfo1);
+    converterNode->CheckAndUpdateInfo(&input1);
+    // tmpOutBuf_ used for resample output, changed
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
+}
+
 }

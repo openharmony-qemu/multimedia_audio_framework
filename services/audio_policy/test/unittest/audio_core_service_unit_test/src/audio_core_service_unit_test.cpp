@@ -1360,50 +1360,6 @@ HWTEST_F(AudioCoreServiceUnitTest, GetExcludedDevicesTest_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: GetPreferredOutputStreamType_001
-* @tc.desc  : Test interface GetPreferredOutputStreamType - will return SUCCESS.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputStreamType_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioRendererInfo rendererInfo;
-    int32_t ret = 0;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    server->coreService_->isFastControlled_ = true;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: GetPreferredInputStreamType_001
-* @tc.desc  : Test interface GetPreferredInputStreamType - will return SUCCESS.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputStreamType_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioCapturerInfo capturerInfo;
-    int32_t ret = 0;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
-    server->coreService_->isFastControlled_ = true;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
-    capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: EventEntry_GetVolumeGroupInfos_001
  * @tc.desc  : Test GetVolumeGroupInfos interface. Volume group info size will bigger than 0.

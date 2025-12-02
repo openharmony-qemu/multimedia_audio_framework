@@ -627,8 +627,8 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_
     if (!readQueue_.empty()) {
         index = readQueue_.front();
         readQueue_.pop();
-        isFirstFrame_ = false;
         *audioBuffer = sinkBuffer_[index];
+        isFirstFrame_ = false;
     }
     if (readQueue_.empty() && isDrain_) {
         drainSync_.notify_all();

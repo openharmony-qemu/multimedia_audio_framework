@@ -42,7 +42,7 @@ OH_AudioSuite_Result RenDerFrame()
     // 获取位深
     int32_t bitsPerSample = GetBitsPerSample(g_audioFormatOutput.sampleFormat);
     int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate *
-        g_audioFormatOutput.channelCount / MILLISECONDS_PER_SECOND * bitsPerSample / BITS_PER_BYTE;
+        g_audioFormatOutput.channelCount * bitsPerSample / BITS_PER_BYTE / MILLISECONDS_PER_SECOND;
     bool finishedFlag = false;
     result = AudioRenderFrame(totalAudioData, tapTotalAudioData, frameSize, finishedFlag);
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, OUTPUT_TAG,

@@ -143,6 +143,15 @@ int32_t ProAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bo
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::StopAudioPort(const std::string &audioPortName)
+{
+    Trace trace("StopAudioPort");
+    lock_guard<mutex> lock(lock_);
+    AUDIO_INFO_LOG("StopAudioPort [%{public}s]", audioPortName.c_str());
+    IHpaeManager::GetHpaeManager().StopAudioPort(audioPortName);
+    return SUCCESS;
+}
+
 bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     AUDIO_INFO_LOG("[%{public}s] : [%{public}d] isSync [%{public}d]", sinkName.c_str(), isMute, isSync);
@@ -597,6 +606,18 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
     });
     CHECK_AND_RETURN_LOG(stopWaiting, "TimeOut");
     AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
+}
+
+void ProAudioServiceAdapterImpl::updateCollaborativeProductId(const std::string &productId)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().updateCollaborativeProductId(productId);
+}
+
+void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().LoadCollaborationConfig();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

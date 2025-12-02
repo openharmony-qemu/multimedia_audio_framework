@@ -28,7 +28,7 @@ namespace AudioStandard {
 
 static const uint32_t THREADS_NUM = 3;
 std::mutex g_getDataMutex;
-std::mutex g_destroyMutex;
+std::mutex g_nodeBuilderMutex;
 
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
@@ -149,21 +149,20 @@ void AudioSuiteEngineMultiRenderFrameFuzzTest()
 
 void AudioSuiteEngineNodeBuilderCreateFuzzTest()
 {
+    std::lock_guard<std::mutex> lock(g_nodeBuilderMutex);
     OH_AudioSuiteNodeBuilder_Create(&builder);
 }
 
 void AudioSuiteEngineNodeBuilderDestroyFuzzTest()
 {
-    if (!g_destroyMutex.try_lock()) {
-        return;
-    }
+    std::lock_guard<std::mutex> lock(g_nodeBuilderMutex);
     OH_AudioSuiteNodeBuilder_Destroy(builder);
     builder = nullptr;
-    g_destroyMutex.unlock();
 }
 
 void AudioSuiteEngineNodeBuilderSetFormatFuzzTest()
 {
+    std::lock_guard<std::mutex> lock(g_nodeBuilderMutex);
     OH_AudioFormat audioFormat;
     audioFormat.samplingRate = GetData<OH_Audio_SampleRate>();
     audioFormat.channelLayout = GetData<OH_AudioChannelLayout>();
@@ -175,6 +174,7 @@ void AudioSuiteEngineNodeBuilderSetFormatFuzzTest()
 
 void AudioSuiteEngineNodeBuilderSetRequestDataCallbackFuzzTest()
 {
+    std::lock_guard<std::mutex> lock(g_nodeBuilderMutex);
     uint8_t userData[MAX_FRAME_SIZE] = {0};
     uint32_t userDataSize = GetData<uint32_t>() % MAX_USER_DATA_SIZE;
     for (int i = 0; i < userDataSize; i++) {
@@ -185,6 +185,7 @@ void AudioSuiteEngineNodeBuilderSetRequestDataCallbackFuzzTest()
 
 void AudioSuiteEngineCreateNodeFuzzTest()
 {
+    std::lock_guard<std::mutex> lock(g_nodeBuilderMutex);
     uint32_t pipelineIndex = GetData<uint32_t>() % MAX_PIPELINE_NUM;
     uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
     OH_AudioSuiteEngine_CreateNode(audioSuitePipeline[pipelineIndex], builder, &audioNode[nodeIndex]);

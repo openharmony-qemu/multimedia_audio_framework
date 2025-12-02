@@ -41,13 +41,9 @@ private:
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
-        ConcurrencyAction &action);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
-    void CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
-        std::shared_ptr<AudioStreamDescriptor> incomingStream);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -87,6 +83,8 @@ private:
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void SetPipeTypeByStreamType(AudioPipeType &nowPipeType, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     AudioPolicyConfigManager& configManager_;
 };

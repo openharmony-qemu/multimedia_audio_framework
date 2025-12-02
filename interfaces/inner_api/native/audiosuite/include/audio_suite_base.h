@@ -154,6 +154,7 @@ enum AudioPureVoiceChangeType {
 typedef struct AudioPureVoiceChangeOption {
     AudioPureVoiceChangeGenderOption optionGender;
     AudioPureVoiceChangeType optionType;
+    float pitch;
 } AudioPureVoiceChangeOption;
 
 enum AudioGeneralVoiceChangeType {
@@ -181,7 +182,7 @@ enum PipelineWorkMode {
 
 typedef struct AudioDataArray {
     void **audioDataArray;
-    int arraySize;
+    int32_t arraySize;
     int32_t requestFrameSize;
 } AudioDataArray;
 

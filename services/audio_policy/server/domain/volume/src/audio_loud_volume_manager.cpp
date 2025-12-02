@@ -211,6 +211,7 @@ void LoudVolumeManager::LoudVolumeMonitor()
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::VOLUME_SETTING_STATISTICS,
         Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("SCENE_TYPE", LOUD_VOLUME_SCENE);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 #endif

@@ -36,6 +36,7 @@ using namespace std;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 const size_t THRESHOLD = 10;
 static int32_t NUM_2 = 2;
 
@@ -74,7 +75,7 @@ void RecordSilenceStateFuzzTest()
 {
     uint32_t sessionId = GetData<uint32_t>();
     bool isSilence = GetData<uint8_t>() % NUM_2;
-    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
     AudioPipeType pipeType = static_cast<AudioPipeType>(GetData<uint8_t>() % audioPipeTypeCount);
     uint32_t uid = GetData<uint32_t>();
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, pipeType, uid);
@@ -133,7 +134,7 @@ void ReportEventFuzzTest()
     DetectEvent detectEvent = static_cast<DetectEvent>(GetData<uint8_t>() % detectEventCount);
     DetectEvent reasonCode = GetData<uint8_t>() % NUM_2 == 0 ? detectEvent : GetData<DetectEvent>();
     int32_t periodMs = GetData<int32_t>();
-    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    int32_t audioPipeTypeCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
     AudioPipeType pipeType = static_cast<AudioPipeType>(GetData<uint8_t>() % audioPipeTypeCount);
     int32_t adapterTypeCount = static_cast<int32_t>(AdapterType::ADAPTER_TYPE_MAX) + 1;
     AdapterType adapterType = static_cast<AdapterType>(GetData<uint8_t>() % adapterTypeCount);
@@ -181,13 +182,14 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return;
 }

@@ -53,6 +53,7 @@ public:
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
+    int32_t StopManager() override;
     void Process() override;
     void HandleMsg() override;
     int32_t Init(bool isReload = false) override;
@@ -98,6 +99,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    bool IsBypassSpatializationForStereo() override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -173,6 +175,7 @@ private:
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
+    int64_t lastSessionStateChangeTime_ = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

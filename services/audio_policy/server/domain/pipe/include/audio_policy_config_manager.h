@@ -122,8 +122,12 @@ private:
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
         const AudioStreamInfo &streamInfo);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
-    std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(
-        std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate);
+    std::list<std::shared_ptr<PipeStreamPropInfo>> SelectStreamPropInfo(
+        std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos,
+        const std::function<bool(std::shared_ptr<PipeStreamPropInfo>)> &limitFunc);
+    void SortStreamPropInfosBySampleRate(std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos);
+    std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(const AudioSampleFormat &format,
+        uint32_t sampleRate, std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
         const AudioStreamInfo &streamInfo);
     AudioSampleFormat ParseFormat(const std::string format);

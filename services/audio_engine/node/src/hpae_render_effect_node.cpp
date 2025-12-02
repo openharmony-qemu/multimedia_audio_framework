@@ -137,7 +137,9 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
     Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len);
 
-    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled() ||
+        (!AudioEffectChainManager::GetInstance()->IsSpatializationEnabledForChains() &&
+        !AudioEffectChainManager::GetInstance()->IsEffectChainFading(sceneType_))) {
         return inputs[0];
     }
     if (IsByPassEffectZeroVolume(inputs[0])) {
@@ -416,7 +418,11 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+    bool isSpatializationEnabled =
+        AudioEffectChainManager::GetInstance()->IsSpatializationEnabledForChains() ||
+        AudioEffectChainManager::GetInstance()->IsEffectChainFading(sceneType_);
+    basicFormat.rate = isSpatializationEnabled ?
+        static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE) : basicFormat.rate;
     uint64_t channelLayout = 0;
     int32_t ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
         basicFormat.audioChannelInfo.numChannels, channelLayout);

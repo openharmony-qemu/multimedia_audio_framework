@@ -222,7 +222,7 @@ int32_t AudioRenderer::FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFo
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
@@ -238,7 +238,7 @@ int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleF
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
@@ -395,6 +395,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
+    audioRenderer->rendererInfo_.keepRunning = rendererOptions.rendererInfo.keepRunning;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
@@ -577,43 +578,6 @@ AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
     return rendererInfo_.privacyType;
 }
 
-IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
-{
-    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
-        return IAudioStream::PA_STREAM;
-    }
-    if (rendererInfo_.originalFlag == AUDIO_FLAG_MMAP &&
-        !IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
-        AUDIO_WARNING_LOG("Unsupported stream params, will create normal stream");
-        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    }
-
-    int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
-    AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-        isFastRenderer_ = true;
-        return IAudioStream::FAST_STREAM;
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST) {
-        // It is not possible to directly create a fast VoIP stream
-        isFastVoipSupported_ = true;
-    } else if (flag == AUDIO_FLAG_VOIP_DIRECT) {
-        isDirectVoipSupported_ = IsDirectVoipParams(audioStreamParams);
-        rendererInfo_.originalFlag = isDirectVoipSupported_ ? AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
-        // The VoIP direct mode can only be used for RENDER_MODE_CALLBACK
-        rendererInfo_.rendererFlags = (isDirectVoipSupported_ && audioRenderMode_ == RENDER_MODE_CALLBACK) ?
-            AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Preferred renderer flag is VOIP_DIRECT. Actual flag: %{public}d", rendererInfo_.rendererFlags);
-        return IAudioStream::PA_STREAM;
-    }
-
-    AUDIO_INFO_LOG("Preferred renderer flag: AUDIO_FLAG_NORMAL");
-    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    return IAudioStream::PA_STREAM;
-}
-
 bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
 {
     // VoIP derect only supports 16K and 48K sampling rate.
@@ -657,7 +621,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
 #ifdef SUPPORT_LOW_LATENCY
-    IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
+    IAudioStream::StreamClass streamClass;
 #else
     if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
         rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
@@ -761,31 +725,31 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-            rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_VOIP;
         } else {
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
-            rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
@@ -2117,7 +2081,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetUnderflowCount(info.underFlowCount);
 
     if (info.userSettedPreferredFrameSize.has_value()) {
-        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value());
+        audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
     }
 
     audioStream->SetSilentModeAndMixWithOthers(info.silentModeAndMixWithOthers);
@@ -2233,7 +2197,7 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         info.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
         info.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_DIRECT) {
-        info.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+        info.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
         info.rendererFlags = AUDIO_FLAG_DIRECT;
     } else if (rendererInfo_.rendererFlags == AUDIO_FLAG_NORMAL) {
         info.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
@@ -2428,8 +2392,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
         HandleAudioInterruptWhenServerDied();
-        int32_t ret = InitOutputDeviceChangeCallback();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "InitOutputDeviceChangeCallback Failed ret:%{public}d", ret);
+        InitOutputDeviceChangeCallback();
     }
     InitAudioRouteCallback();
     isSwitching_ = false;
@@ -2489,8 +2452,8 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
     bean->Add("CLIENT_UID", appInfo_.appUid);
     bean->Add("IS_PLAYBACK", 1);
     bean->Add("STREAM_TYPE", rendererInfo_.streamUsage);
-    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_LOWLATENCY_OUT);
-    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_NORMAL_OUT);
+    bean->Add("PIPE_TYPE_BEFORE_CHANGE", PIPE_TYPE_OUT_LOWLATENCY);
+    bean->Add("PIPE_TYPE_AFTER_CHANGE", PIPE_TYPE_OUT_NORMAL);
     bean->Add("REASON", Media::MediaMonitor::DEVICE_CHANGE_FROM_FAST);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -2560,7 +2523,7 @@ void AudioRendererPrivate::SetPreferredFrameSize(int32_t frameSize)
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    currentStream->SetPreferredFrameSize(frameSize);
+    currentStream->SetPreferredFrameSize(frameSize, false);
 }
 
 void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
@@ -2580,17 +2543,13 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
     if (GetUnderflowCountInner() < WRITE_UNDERRUN_NUM) {
         return;
     }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
+    AudioPipeType pipeType = PIPE_TYPE_OUT_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+        pipeType = PIPE_TYPE_OUT_LOWLATENCY;
     } else if (streamClass == IAudioStream::PA_STREAM) {
         if (audioStream_->GetOffloadEnable()) {
-            pipeType = PIPE_TYPE_OFFLOAD;
-        } else if (audioStream_->GetSpatializationEnabled()) {
-            pipeType = PIPE_TYPE_SPATIALIZATION;
-        } else if (audioStream_->GetHighResolutionEnabled()) {
-            pipeType = PIPE_TYPE_HIGHRESOLUTION;
+            pipeType = PIPE_TYPE_OUT_OFFLOAD;
         }
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -3046,6 +3005,13 @@ RenderTarget AudioRendererPrivate::GetTarget() const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, NORMAL_PLAYBACK, "audioStream_ is nullptr");
     return currentStream->GetRenderTarget();
+}
+
+int32_t AudioRendererPrivate::GetKeepRunning(bool &keepRunning) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
+    return currentStream->GetKeepRunning(keepRunning);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

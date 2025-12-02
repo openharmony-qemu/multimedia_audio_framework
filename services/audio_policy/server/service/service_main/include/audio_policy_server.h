@@ -73,6 +73,13 @@ struct VolumeUpdateOption {
     bool syncDegree = true;
 };
 
+struct VolInfoForUpdateMute {
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    bool mute;
+    int32_t zoneId = 0;
+};
+
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
                           public AudioStreamRemovedCallback {
@@ -171,7 +178,7 @@ public:
     int32_t ForceSelectDevice(int32_t devType, const std::string &macAddress,
         const sptr<AudioRendererFilter> &filter) override;
 
-    int32_t DisconnectSco() override;
+    int32_t SetActiveHfpDevice(const std::string &macAddress) override;
 
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
@@ -312,10 +319,6 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    int32_t GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType) override;
-
-    int32_t GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType) override;
-
     int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
 
@@ -449,6 +452,12 @@ public:
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
 
+    int32_t IsAdaptiveSpatialRenderingEnabled(
+        const std::string &address, bool &ret) override;
+
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable) override;
+
     int32_t GetSpatializationState(int32_t streamUsage, AudioSpatializationState &state) override;
 
     int32_t IsSpatializationSupported(bool &ret) override;
@@ -573,7 +582,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage, bool &isAllowed,
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn, bool &isAllowed,
         bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
@@ -587,6 +596,8 @@ public:
     int32_t NotifyProcessBackgroundState(int32_t uid, int32_t pid) override;
 
     int32_t SetVirtualCall(bool isVirtual) override;
+
+    int32_t GetVirtualCall(bool &isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, bool isConnected) override;
 
@@ -630,11 +641,11 @@ public:
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0);
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0);
-    void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-        bool mute, const bool& isUpdateUi = false, int32_t zoneId = 0);
+    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
@@ -889,6 +900,7 @@ private:
     std::shared_ptr<AudioInterruptService> interruptService_;
     AudioSessionService &sessionService_;
     AudioInjectorPolicy &audioInjectorPolicy_;
+    AudioIOHandleMap &audioIOHandleMap_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 

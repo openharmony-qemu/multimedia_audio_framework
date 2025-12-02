@@ -134,7 +134,7 @@ public:
     bool DrainAudioStream(bool stopFlag = false) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
-    void SetPreferredFrameSize(int32_t frameSize) override;
+    void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) override;
 
     // Recording related APIs
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
@@ -299,6 +299,8 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     void RecordDropPosition(size_t dataLength);
+
+    void GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

@@ -34,6 +34,7 @@ public:
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid);
     void OnBackgroundMute(const int32_t uid);
     bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType);
+    bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName);
 
 public:
     bool hasBTPermission_ = true;

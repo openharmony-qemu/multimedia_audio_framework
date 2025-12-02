@@ -314,6 +314,11 @@ void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo
     streamInfo.sourceOutputNode->SetState(capturerState);
 }
 
+int32_t HpaeVirtualCapturerManager::StopManager()
+{
+    return SUCCESS;
+}
+
 int32_t HpaeVirtualCapturerManager::AddCaptureInjector(
     const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
 {

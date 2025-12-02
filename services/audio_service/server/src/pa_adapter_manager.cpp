@@ -192,7 +192,7 @@ int32_t PaAdapterManager::StopRender(uint32_t streamIndex)
     return rendererStreamMap_[streamIndex]->Stop();
 }
 
-int32_t PaAdapterManager::PauseRender(uint32_t streamIndex)
+int32_t PaAdapterManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     AUDIO_DEBUG_LOG("Enter PauseRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -227,7 +227,7 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to init pa context");
     uint32_t sessionId = 0;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+        sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId = processConfig.originalSessionId;
     }

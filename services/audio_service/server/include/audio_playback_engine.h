@@ -31,7 +31,7 @@ public:
     virtual int32_t Init(const AudioDeviceDescriptor &type, bool isVoip) override;
     virtual int32_t Start() override;
     virtual int32_t Stop() override;
-    virtual int32_t Pause() override;
+    virtual int32_t Pause(bool isStandby = false) override;
     virtual int32_t Flush() override;
     virtual uint64_t GetLatency() noexcept override;
 

@@ -89,8 +89,12 @@ static OH_AudioSuite_Result ConvertError(int32_t err)
         return AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
         return AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS;
+    } else if (err == OHOS::AudioStandard::ERR_MEMORY_ALLOC_FAILED) {
+        return AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED;
     } else if (err == (int32_t)AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING) {
         return AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING;
+    } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_TIMEOUT) {
+        return AUDIOSUITE_ERROR_TIMEOUT;
     }
     return AUDIOSUITE_ERROR_SYSTEM;
 }
@@ -684,6 +688,18 @@ using namespace OHOS::AudioStandard::AudioSuite;
 
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MIN = -10;
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MAX = 10;
+static constexpr float SPEED_RATE_MIN = 0.5f;
+static constexpr float SPEED_RATE_MAX = 10.0f;
+static constexpr float PITCH_RATE_MIN = 0.1f;
+static constexpr float PITCH_RATE_MAX = 5.0f;
+static const float SPACE_RENDER_MIN_CART_POINT_DISTANCE = -5.0f;
+static const float SPACE_RENDER_MAX_CART_POINT_DISTANCE = 5.0f;
+static const float SPACE_RENDER_MIN_TIME = 2.0f;
+static const float SPACE_RENDER_MAX_TIME = 40.0f;
+static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 1;
+static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
+static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
+static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -1075,6 +1091,16 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
         "SetSpaceRenderPositionParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
 
+    CHECK_AND_RETURN_RET_LOG(
+        position.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        position.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderPositionParams positionParams;
     positionParams.x = position.x;
@@ -1119,6 +1145,23 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
         "SetSpaceRenderRotationParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
+
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.surroundTime >= SPACE_RENDER_MIN_TIME && rotation.surroundTime <= SPACE_RENDER_MAX_TIME,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
+        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
+        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
 
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderRotationParams rotationParams;
@@ -1169,6 +1212,13 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
         "SetSpaceRenderExtensionParams failed, node type = %{public}d must be space render type.",
         static_cast<int32_t>(node->GetNodeType()));
 
+    CHECK_AND_RETURN_RET_LOG(
+        extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
+        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
+    CHECK_AND_RETURN_RET_LOG(
+        extension.extAngle >= SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle <= SPACE_RENDER_MAX_EXPAND_ANGLE,
+        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the 1~360");
+
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderExtensionParams extensionParams;
     extensionParams.extAngle = extension.extAngle;
@@ -1209,6 +1259,10 @@ int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, flo
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_TEMPO_PITCH, ERR_NOT_SUPPORTED,
         "SetTempoAndPitch failed, node type = %{public}d must be tempo and pitch type.",
         static_cast<int32_t>(node->GetNodeType()));
+    CHECK_AND_RETURN_RET_LOG(speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX,
+        ERR_INVALID_PARAM, "SetTempoAndPitch failed, speed must be in the 0.5~10.0");
+    CHECK_AND_RETURN_RET_LOG(pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX,
+        ERR_INVALID_PARAM, "SetTempoAndPitch failed, pitch must be in the 0.1~5.0");
 
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
@@ -1249,6 +1303,7 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(OHAudioNode* node, OH_Audio
     AudioPureVoiceChangeOption optionParams;
     optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(option.optionGender);
     optionParams.optionType = static_cast<AudioPureVoiceChangeType>(option.optionType);
+    optionParams.pitch = static_cast<float>(option.pitch);
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d.", ret);
     return ret;

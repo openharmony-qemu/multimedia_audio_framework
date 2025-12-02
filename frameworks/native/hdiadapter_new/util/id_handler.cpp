@@ -20,6 +20,8 @@
 #include "util/id_handler.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,6 +97,24 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     return HDI_INVALID_ID;
 }
 
+uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType)
+{
+    uint32_t routeFlag = 0;
+    std::string pipeName = "";
+
+    bool ret = SolePipe::GetSolePipeBySourceType(sourceType, routeFlag, pipeName);
+    CHECK_AND_RETURN_RET(ret, GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
+
+    if (routeFlag == AUDIO_INPUT_FLAG_AI) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
+    }
+    return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+}
+
 uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
     const std::string &info)
 {
@@ -109,8 +129,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         if (info == HDI_ID_INFO_EC || info == HDI_ID_INFO_MIC_REF) {
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
         }
-        if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-            return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
+        if (SolePipe::IsSolePipeSource(sourceType)) {
+            return GetIdForSolePipeSource(sourceType);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "va") {

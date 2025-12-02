@@ -277,23 +277,6 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
     return currentStream->GetFrameCount(frameCount);
 }
 
-IAudioStream::StreamClass AudioCapturerPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
-{
-    int32_t flag = AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_);
-    AUDIO_INFO_LOG("Preferred capturer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(capturerInfo_.originalFlag, audioStreamParams)) {
-        capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-        return IAudioStream::FAST_STREAM;
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST) {
-        // It is not possible to directly create a fast VoIP stream
-        isFastVoipSupported_ = true;
-    }
-
-    capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-    return IAudioStream::PA_STREAM;
-}
-
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
@@ -303,7 +286,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         lockShared = std::shared_lock<std::shared_mutex>(capturerMutex_);
     }
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
-    IAudioStream::StreamClass streamClass = SetCaptureInfo(audioStreamParams);
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
@@ -317,7 +299,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
+    IAudioStream::StreamClass streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
@@ -354,13 +336,9 @@ IAudioStream::StreamClass AudioCapturerPrivate::SetCaptureInfo(AudioStreamParams
 {
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-#ifdef SUPPORT_LOW_LATENCY
-        streamClass = GetPreferredStreamClass(audioStreamParams);
-#else
         capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
         streamClass = IAudioStream::PA_STREAM;
-#endif
     }
     return streamClass;
 }
@@ -391,16 +369,16 @@ IAudioStream::StreamClass AudioCapturerPrivate::DecideStreamClassAndUpdateCaptur
         if (flag & AUDIO_INPUT_FLAG_VOIP) {
             capturerInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
-            capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+            capturerInfo_.pipeType = PIPE_TYPE_IN_VOIP;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
             capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-            capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+            capturerInfo_.pipeType = PIPE_TYPE_IN_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else {
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-        capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+        capturerInfo_.pipeType = PIPE_TYPE_IN_NORMAL;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, capturerFlags: %{public}d, pipeType: %{public}d",
         flag, ret, capturerInfo_.capturerFlags, capturerInfo_.pipeType);
@@ -1379,10 +1357,10 @@ void AudioCapturerPrivate::WriteOverflowEvent() const
     if (GetOverflowCountInner() < WRITE_OVERFLOW_NUM) {
         return;
     }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
+    AudioPipeType pipeType = PIPE_TYPE_IN_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_LOWLATENCY_IN;
+        pipeType = PIPE_TYPE_IN_LOWLATENCY;
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PERFORMANCE_UNDER_OVERRUN_STATS,
@@ -1484,9 +1462,16 @@ uint32_t AudioCapturerPrivate::GetOverflowCount() const
     return currentStream->GetOverflowCount();
 }
 
+void AudioCapturerPrivate::ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream)
+{
+    CHECK_AND_RETURN(info.userSettedPreferredFrameSize.has_value());
+    // audioStream is checked in SetSwitchInfo
+    audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
+}
+
 int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStream, ERROR, "stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream != nullptr, ERROR, "stream is nullptr");
 
     audioStream->SetStreamTrackerState(false);
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
@@ -1495,6 +1480,8 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
     audioStream->SetCaptureMode(info.captureMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
+
+    ReconfigBufferSize(info, audioStream);
 
     // set callback
     if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {

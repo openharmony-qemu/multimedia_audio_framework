@@ -29,18 +29,40 @@ export interface Node {
     environmentType?: EnvironmentType;
     voiceBeautifierType?: VoiceBeautifierType;
     audioSeparationType?: AudioSeparationType;
+    soundSpeed?: number;
+    soundTone?: number;
+}
+
+export interface  OutSong {
+  pipelineId: string,
+  channels?: number;
+  sampleRate?: number;
+  bitsPerSample?: number;
+  pipelineCascadMode: number;
+  buffer?: ArrayBuffer,
+  bufferLength?: number,
+  isRenderer?: boolean,
+  isRendererFinished?: boolean,
+}
+
+// 定义接口
+export interface NavigationParams {
+  mode: number;
+  pipelineCascadMode: number;
+  pipelineId?: string;
 }
 
 export enum BackColor {
-    FIELD_COLOR = '#ffee0b80',
-    SEPARATION_COLOR = '#ffae05f6',
-    NR_COLOR = '#ff0b71ee',
-    EQ_COLOR = '#ffeea20b',
-    VB_COLOR = '#ff0f740b',
-    MIXER_COLOR = '#ff0d27cf',
-    INPUT_COLOR = '#ff1eac35',
-    OUTPUT_COLOR = '#ff20c61a',
-    ENV_COLOR = '#ffe2ad79'
+    FIELD_COLOR = '#9869E0',
+    SEPARATION_COLOR = '#9869E0',
+    NR_COLOR = '#9869E0',
+    EQ_COLOR = '#9869E0',
+    VB_COLOR = '#9869E0',
+    MIXER_COLOR = '#9869E0',
+    INPUT_COLOR = '#9869E0',
+    OUTPUT_COLOR = '#9869E0',
+    ENV_COLOR = '#9869E0',
+    SOUND_SPEED_TONE = '#9869E0'
 }
 
 export enum NodeType {
@@ -54,7 +76,8 @@ export enum NodeType {
     'INPUT' = '输入',
     'OUTPUT' = '输出',
     'MIXER' = '混音',
-    'VB' = '美化'
+    'VB' = '美化',
+    'SOUND_SPEED_TONE' = '音速音调'
 }
 
 export const ColorMap = new Map<NodeType, BackColor>([
@@ -68,7 +91,8 @@ export const ColorMap = new Map<NodeType, BackColor>([
     [NodeType.INPUT, BackColor.INPUT_COLOR],
     [NodeType.OUTPUT, BackColor.OUTPUT_COLOR],
     [NodeType.ENV, BackColor.ENV_COLOR],
-    [NodeType.SEPARATION, BackColor.SEPARATION_COLOR]
+    [NodeType.SEPARATION, BackColor.SEPARATION_COLOR],
+    [NodeType.SOUND_SPEED_TONE, BackColor.SOUND_SPEED_TONE]
 ])
 
 export enum SoundFiledType {
@@ -211,5 +235,30 @@ export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [203, NodeType.FIELD],
   [204, NodeType.SEPARATION],
   [205, NodeType.VB],
-  [206, NodeType.ENV]
+  [206, NodeType.ENV],
+  [211, NodeType.SOUND_SPEED_TONE]
 ]);
+
+export const OFFLINEPIPELINE = 1;
+ 
+export const REALTIMEPIPELINE = 2;
+ 
+export const PIPELINECASCADMODE_0 = 0;
+ 
+export const PIPELINECASCADMODE_1 = 1;
+ 
+export const PIPELINECASCADMODE_2 = 2;
+ 
+export const PIPELINECASCADMODE_3 = 3;
+ 
+export const outputNodeSongNameMap = new Map<number, string>([
+  [PIPELINECASCADMODE_1, 'OUTPUT 1'],
+  [PIPELINECASCADMODE_2, 'OUTPUT 2'],
+  [PIPELINECASCADMODE_3, 'OUTPUT 3'],
+]);
+
+// 位深类型
+export enum BitsPerSampleMode {
+  INT = 0,
+  FLOAT = 1,
+}

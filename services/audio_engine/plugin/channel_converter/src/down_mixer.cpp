@@ -129,6 +129,7 @@ int32_t DownMixer::SetupDownMixTable()
     // no need for normalization, can return directly
     CHECK_AND_RETURN_RET_LOG(normalizing_, ret, "downmix normalization is disabled");
     // normalizing_ is true do normalization then return
+    AUDIO_INFO_LOG("downmix normalization is enabled!");
     NormalizeDMixTable();
     return ret;
 }
@@ -136,6 +137,7 @@ int32_t DownMixer::SetupDownMixTable()
 void DownMixer::SetNormalization(bool normalizing)
 {
     CHECK_AND_RETURN_LOG(normalizing != normalizing_, "no need to update downmix normalizing state");
+    AUDIO_INFO_LOG("normalization state is set to %{public}d", normalizing);
     normalizing_ = normalizing;
     SetupDownMixTable();
 }

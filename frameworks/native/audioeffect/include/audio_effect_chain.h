@@ -80,6 +80,8 @@ public:
     void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
     void updateDumpName();
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
+    void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -88,6 +90,7 @@ private:
     int32_t UpdateMultichannelIoBufferConfigInner();
     int32_t UpdateEffectParamInner();
     void CrossFadeProcess(float *bufOut, uint32_t frameLen);
+    void BuildEffectParamData(int32_t *data);
 
     std::mutex reloadMutex_;
     std::string sceneType_ = "";
@@ -121,6 +124,7 @@ private:
     uint64_t currchannelLayoutNoCheck_ = CH_LAYOUT_STEREO;
     std::vector<float> effectBuffer_;
     bool absVolumeState_ = true;
+    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -53,6 +53,14 @@ private:
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
+
+    enum HandleRendererDataType {
+        NONE_ACTION = 0,
+        CONVERT_TO_F32_ACTION = 0x1,
+        RESAMPLE_ACTION = 0x10,
+        CONVERT_TO_SERVER_ACTION = 0x100,
+    };
+
     static sptr<AudioProcessInServer> Create(const AudioProcessConfig &processConfig,
         ProcessReleaseCallback *releaseCallback);
     virtual ~AudioProcessInServer();
@@ -94,9 +102,11 @@ public:
         uint32_t method) override;
 
     int32_t SetRebuildFlag() override;
+
+    int32_t GetServerKeepRunning(bool &keepRunning) override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
-    int32_t GetAudioHapticsSyncId() override;
+    void CheckAudioHapticsSyncId(int32_t &audioHapticsSyncId);
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -129,7 +139,8 @@ public:
     BufferDesc &GetConvertedBuffer() override;
 
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
-    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer,
+        int32_t &audioHapticsSyncId) override;
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
@@ -140,6 +151,8 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
+    void SetKeepRunning(bool keepRunning) override;
+    bool GetKeepRunning() override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -167,6 +180,14 @@ private:
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    void InitRendererStream(uint32_t spanTime,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void InitCapturerStream(uint32_t spanSizeInByte,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void RendererResample(BufferDesc &buffer);
+    void RendererConvertF32(BufferDesc &buffer);
+    void RendererConvertServer(BufferDesc &buffer);
+
     bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
@@ -212,16 +233,24 @@ private:
     std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
-    BufferDesc convertedBuffer_ = {};
-    bool needConvert_ = false;
     AudioStreamInfo serverStreamInfo_;
-    FormatKey formatKey_;
+    BufferDesc resampleBuffer_ = {};
+    BufferDesc f32Buffer_ = {};
+    BufferDesc convertedBuffer_ = {};
+    std::unique_ptr<uint8_t []> resampleBufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> f32BufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> convertedBufferNew_ = nullptr;
+
+    FormatKey dataToServerKey_;
+    FormatKey clientToResampleKey_;
+    int32_t handleRendererDataType_ = NONE_ACTION;
+    
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-
+    bool keepRunning_ = false;
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};
     int64_t lastWriteFrame_{};
@@ -235,7 +264,8 @@ private:
     std::mutex scheduleGuardsMutex_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
-    std::atomic<int32_t> audioHapticsSyncId_ = 0;
+    std::mutex syncIdLock_;
+    int32_t audioHapticsSyncId_ = 0;
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
 

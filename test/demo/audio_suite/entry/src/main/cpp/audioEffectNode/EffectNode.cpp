@@ -69,11 +69,15 @@ Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType)
 napi_value GetSupportedAudioNodeTypes(napi_env env)
 {
     const int minNodeType = 201;
-    const int maxNodeType = 206;
+    const int mixerNodeType = 207;
+    const int maxNodeType = 211;
  
     std::vector<OH_AudioNode_Type> supportedTypes;
  
     for (int value = minNodeType; value <= maxNodeType; ++value) {
+        if (value == mixerNodeType) {
+            continue;
+        }
         OH_AudioNode_Type nodeType = static_cast<OH_AudioNode_Type>(value);
         bool isSupported = false;
         OH_AudioSuite_Result result = OH_AudioSuiteEngine_IsNodeTypeSupported(nodeType, &isSupported);

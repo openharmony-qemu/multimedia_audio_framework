@@ -88,7 +88,8 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
@@ -106,7 +107,8 @@ public:
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
-    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType);
 
@@ -341,6 +343,10 @@ public:
     float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute);
     int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
+    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
+    void updateCollaborativeProductId(const std::string &productId);
+    void LoadCollaborationConfig();
 private:
     friend class PolicyCallbackImpl;
 
@@ -396,10 +402,11 @@ private:
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
+    void SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
-    int32_t SetSystemVolumeToEffect(AudioStreamType streamType);
+    int32_t SetSystemVolumeToEffect(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetAppVolumeDb(int32_t appUid);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
@@ -432,14 +439,15 @@ private:
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
     bool IsPaRoute(uint32_t routeFlag);
-    void DepressVolume(float &volume, int32_t volumeLevel, AudioStreamType streamType, DeviceType deviceType);
+    void DepressVolume(float &volume, int32_t volumeLevel,
+        AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
-    void UpdateVolumeForLowLatency();
+    void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device, AudioVolumeType volumeType);
     bool IsDistributedVolumeType(AudioStreamType streamType);
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -450,7 +458,6 @@ private:
         AudioStreamType streamType, bool mute);
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType);
-    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);
     float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
     void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -462,6 +469,7 @@ private:
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetPrimarySinkExist(bool isPrimarySinkExist);
+    int32_t StopAudioPort(std::string oldSinkName);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

@@ -213,6 +213,18 @@ StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
     return STREAM_USAGE_INVALID;
 }
 
+StreamUsage AudioSessionService::GetAudioSessionStreamUsageForDevice(const int32_t callerPid,
+    const uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        return session->second->GetAudioSessionStreamUsageForDevice(streamId);
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
 bool AudioSessionService::IsAudioSessionFocusMode(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -600,6 +612,7 @@ bool AudioSessionService::IsSystemAppWithMixStrategy(const AudioInterrupt &audio
                session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_CALL &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE &&
                audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION;
     }
 

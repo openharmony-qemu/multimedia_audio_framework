@@ -452,7 +452,7 @@ int32_t AudioPolicyManager::SetMicrophoneMutePersistent(const bool isMute, const
 bool AudioPolicyManager::GetPersistentMicMuteState()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
 
     bool mute = true;
     gsp->GetPersistentMicMuteState(mute);
@@ -462,7 +462,7 @@ bool AudioPolicyManager::GetPersistentMicMuteState()
 bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
@@ -475,7 +475,7 @@ bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 bool AudioPolicyManager::IsMicrophoneMute()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
@@ -1511,24 +1511,6 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return ret;
 }
 
-int32_t AudioPolicyManager::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    int32_t streamType = AUDIO_FLAG_INVALID;
-    gsp->GetPreferredOutputStreamType(rendererInfo, streamType);
-    return streamType;
-}
-
-int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    int32_t streamType = AUDIO_FLAG_INVALID;
-    gsp->GetPreferredInputStreamType(capturerInfo, streamType);
-    return streamType;
-}
-
 int32_t AudioPolicyManager::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
@@ -1889,6 +1871,23 @@ int32_t AudioPolicyManager::SetSpatializationEnabled(
     return gsp->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioPolicyManager::SetAdaptiveSpatialRenderingEnabled(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
+}
+
+bool AudioPolicyManager::IsAdaptiveSpatialRenderingEnabled(const std::string address)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->IsAdaptiveSpatialRenderingEnabled(address, ret);
+    return ret;
+}
+
 bool AudioPolicyManager::IsHeadTrackingEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2026,6 +2025,34 @@ int32_t AudioPolicyManager::RegisterNnStateEventListener(const std::shared_ptr<A
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::RegisterAdaptiveSpatialRenderingEnabledEventListener(
+    const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddAdaptiveSpatialRenderingEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetAdaptiveSpatialRenderingEnabledChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::UnregisterSpatializationEnabledEventListener()
 {
     AUDIO_DEBUG_LOG("Start to unregister");
@@ -2078,6 +2105,21 @@ int32_t AudioPolicyManager::UnregisterNnStateEventListener()
     if (audioPolicyClientStubCB_->GetNnStateChangeCallbackSize() == 0) {
         callbackChangeInfos_[CALLBACK_NN_STATE_CHANGE].isEnable = false;
         SetClientCallbacksEnable(CALLBACK_NN_STATE_CHANGE, false);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterAdaptiveSpatialRenderingEnabledEventListener()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveAdaptiveSpatialRenderingEnabledChangeCallback();
+        if (audioPolicyClientStubCB_->GetAdaptiveSpatialRenderingEnabledChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, false);
+        }
     }
     return SUCCESS;
 }
@@ -2902,6 +2944,15 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetVirtualCall(isVirtual);
+}
+
+bool AudioPolicyManager::GetVirtualCall()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    bool isVirtualCall = true;
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, isVirtualCall, "audio policy manager proxy is NULL.");
+    gsp->GetVirtualCall(isVirtualCall);
+    return isVirtualCall;
 }
 
 int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(

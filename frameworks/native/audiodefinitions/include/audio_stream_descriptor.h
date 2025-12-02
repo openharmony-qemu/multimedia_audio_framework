@@ -62,6 +62,7 @@ public:
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
+    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor);
     virtual ~AudioStreamDescriptor() = default;
 
     // Need to delete later

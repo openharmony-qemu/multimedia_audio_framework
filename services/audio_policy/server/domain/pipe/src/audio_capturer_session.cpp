@@ -51,7 +51,7 @@ const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
     { SOURCE_TYPE_INVALID, AUDIO_INPUT_DEFAULT_TYPE},
     { SOURCE_TYPE_MIC, AUDIO_INPUT_MIC_TYPE},
     { SOURCE_TYPE_PLAYBACK_CAPTURE, AUDIO_INPUT_MIC_TYPE},
-    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_MIC_TYPE},
+    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_ULTRASONIC_TYPE },
     { SOURCE_TYPE_WAKEUP, AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
     { SOURCE_TYPE_VOICE_TRANSCRIPTION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
     { SOURCE_TYPE_VOICE_COMMUNICATION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
@@ -243,7 +243,8 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
             continue;
         }
 
-        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST;
+        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_UNPROCESS |
+            AUDIO_INPUT_FLAG_ULTRASONIC;
         if ((pipe->routeFlag_ & flagMask) != 0) {
             continue;
         }
@@ -371,7 +372,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
-    if ((sessionWithNormalSourceType_.count(sessionId) == 0) && sessionWithSpecialSourceType_.count(sessionId) == 0) {
+    if (sessionWithInputPipeRouteFlag_.count(sessionId) != 0) {
         return ReloadCapturerSessionForInputPipe(sessionId, operation);
     }
     uint32_t targetSessionId = sessionId;
@@ -423,7 +424,8 @@ int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t session
     if (operation != SESSION_OPERATION_RELEASE) {
         pipeInfo = AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionId);
     } else {
-        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_AI);
+        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag("primary",
+            sessionWithInputPipeRouteFlag_[sessionId]);
     }
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "pipe is null");
 
@@ -496,7 +498,8 @@ uint32_t AudioCapturerSession::GetMaxPriorityForInputPipe(const std::shared_ptr<
     for (const auto &stream : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE(stream != nullptr && stream->sessionId_ != sessionId);
         auto strategyIt = sourceStrategyMap->find(stream->capturerInfo_.sourceType);
-        CHECK_AND_CONTINUE(strategyIt != sourceStrategyMap->end());
+        CHECK_AND_CONTINUE(strategyIt != sourceStrategyMap->end() &&
+            stream->audioFlag_ == strategyIt->second.audioFlag);
         
         if ((stream->streamStatus_ == STREAM_STATUS_STARTED) &&
             (strategyIt->second.priority >= maxRunningPriority)) {
@@ -529,6 +532,23 @@ bool AudioCapturerSession::IsVirtualAudioRecognitionSession(uint32_t sessionId)
     return isVARecognitionSession;
 }
 
+bool AudioCapturerSession::IsPipeInSourceStrategyMap(std::shared_ptr<AudioPipeInfo> pipeInfo, uint64_t sessionId)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    for (auto tmpStreamDesc : pipeInfo->streamDescriptors_) {
+        CHECK_AND_CONTINUE(tmpStreamDesc->sessionId_ == sessionId);
+        streamDesc = tmpStreamDesc;
+    }
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc id nullptr");
+
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET_LOG(sourceStrategyMap != nullptr, false, "sourceStrategyMap id nullptr");
+
+    auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
+    CHECK_AND_RETURN_RET(strategyIt != sourceStrategyMap->end(), false);
+    return true;
+}
+
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
     AudioStreamInfo streamInfo)
 {
@@ -545,7 +565,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo =
         AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionID);
-    if (pipeInfo != nullptr && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
+    if (pipeInfo != nullptr && IsPipeInSourceStrategyMap(pipeInfo, sessionID)) {
         AUDIO_WARNING_LOG("pipe:%{public}s routeFlag:%{public}u need not add",
             pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
         sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;

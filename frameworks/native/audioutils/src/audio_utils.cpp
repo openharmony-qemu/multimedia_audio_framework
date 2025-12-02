@@ -837,6 +837,29 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
     return true;
 }
 
+static std::unordered_map<int32_t, std::pair<uint32_t, std::string>> g_solePipeSourceMap = {};
+
+void SolePipe::SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName)
+{
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
+    g_solePipeSourceMap[sourceType] = std::make_pair(routeFlag, pipeName);
+}
+
+bool SolePipe::IsSolePipeSource(int32_t sourceType)
+{
+    return g_solePipeSourceMap.find(sourceType) != g_solePipeSourceMap.end();
+}
+
+bool SolePipe::GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName)
+{
+    auto it = g_solePipeSourceMap.find(sourceType);
+    CHECK_AND_RETURN_RET_LOG(it != g_solePipeSourceMap.end(), false, "can not find sourceType:%{public}d", sourceType);
+    routeFlag = it->second.first;
+    pipeName = it->second.second;
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
+    return true;
+}
+
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
 {
     // the number 2: stereo audio has 2 channels
@@ -1566,6 +1589,7 @@ LatencyMonitor& LatencyMonitor::GetInstance()
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         rendererMockTime_ = timestamp;
     } else {
@@ -1575,6 +1599,7 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         sinkDetectedTime_ = timestamp;
     } else {
@@ -1584,11 +1609,13 @@ void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timest
 
 void LatencyMonitor::UpdateDspTime(std::string timestamp)
 {
+    std::lock_guard lock(mutex_);
     dspDetectedTime_ = timestamp;
 }
 
 void LatencyMonitor::ShowTimestamp(bool isRenderer)
 {
+    std::lock_guard lock(mutex_);
     if (extraStrLen_ == 0) {
         extraStrLen_ = dspDetectedTime_.find("20");
     }
@@ -1633,6 +1660,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
+    std::lock_guard lock(mutex_);
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
     AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
@@ -2185,6 +2213,24 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     }
 }
 
+uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
+    }
+}
+
 static std::unordered_map<AudioSampleFormat, std::string> g_formatToStringMap = {
     {SAMPLE_U8, "s8"},
     {SAMPLE_S16LE, "s16le"},
@@ -2218,15 +2264,19 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-bool g_injectSwitch = system::GetBoolParameter("persist.multimedia.audio.inject", false);
-bool IsInjectEnable()
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid)
 {
-    return g_injectSwitch;
-}
-
-void SetInjectEnable(bool injectSwitch)
-{
-    g_injectSwitch = injectSwitch;
+    std::ostringstream uidStream;
+    uidStream << "AppInfo=";
+    bool first = true;
+    for (const auto &uid : appsUid) {
+        if (!first) {
+            uidStream << ";";
+        }
+        uidStream << "0," << uid;
+        first = false;
+    }
+    return uidStream.str();
 }
 
 } // namespace AudioStandard

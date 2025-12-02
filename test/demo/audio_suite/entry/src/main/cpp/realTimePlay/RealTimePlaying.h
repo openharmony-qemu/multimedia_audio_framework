@@ -7,6 +7,7 @@
 
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
+#include <cstdint>
 
 extern OH_AudioRenderer *audioRenderer;
 
@@ -28,9 +29,15 @@ extern char *g_playTotalAudioData;
 // 实时播放需要保存的音频总大小
 extern int32_t g_playResultTotalSize;
 
+extern OH_AudioDataArray* g_play_ohAudioDataArray;
+ 
+extern uint32_t g_separationMode;
+
 OH_AudioSuite_Result ProcessPipeline();
 
 OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize);
+
+OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize);
 
 OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
     void *userData, void *audioData, int32_t audioDataSize);

@@ -254,6 +254,14 @@ void IsBackGroundAppFuzzTest()
     audioSession->IsBackGroundApp();
 }
 
+void GetAudioSessionStreamUsageForDeviceFuzzTest()
+{
+    auto audioSession = CreateAudioSession();
+    CHECK_AND_RETURN(audioSession != nullptr);
+    uint32_t streamId = g_fuzzUtils.GetData<uint32_t>();
+    audioSession->GetAudioSessionStreamUsageForDevice(streamId);
+}
+
 vector<TestFuncs> g_testFuncs = {
     SetAudioSessionSceneFuzzTest,
     GetStreamsFuzzTest,
@@ -280,6 +288,7 @@ vector<TestFuncs> g_testFuncs = {
     IsSessionOutputDeviceChangedFuzzTest,
     GetSessionStreamUsageFuzzTest,
     IsBackGroundAppFuzzTest,
+    GetAudioSessionStreamUsageForDeviceFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

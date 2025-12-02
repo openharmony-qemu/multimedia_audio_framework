@@ -1343,6 +1343,8 @@ public:
 
     int32_t SetVirtualCall(const bool isVirtual);
 
+    bool GetVirtualCall();
+
     int32_t OnVoiceWakeupState(bool state);
 
     uint16_t GetDmDeviceType() const;

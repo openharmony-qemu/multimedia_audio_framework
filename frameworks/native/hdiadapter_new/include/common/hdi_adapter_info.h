@@ -58,6 +58,8 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_ACCESSORY "accessory"
 #define HDI_ID_INFO_DP_MULTICHANNEL "dp_multichannel"
 #define HDI_ID_INFO_VA "va"
+#define HDI_ID_INFO_UNPROCESS "unprocess"
+#define HDI_ID_INFO_ULTRASONIC "ultrasonic"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

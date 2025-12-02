@@ -106,6 +106,8 @@ public:
             (const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnCollaborationEnabledChangeForCurrentDevice,
             (const bool enabled), (override));
+    MOCK_METHOD(ErrCode, OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice,
+            (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
 };
 
 } // namespace AudioStandard

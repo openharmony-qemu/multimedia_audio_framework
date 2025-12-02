@@ -526,6 +526,19 @@ OH_AudioStream_Result OH_AudioRenderer_GetFastStatus(OH_AudioRenderer* renderer,
  * @param status Current fast status.
  * @since 20
  */
+
+/**
+ * @brief Gets keep running flag for AudioRenderer.
+ * @param renderer AudioRenderer created by OH_AudioStreamBuilder_GenerateRenderer().
+ * @param keepRunning Pointer to get keep running flag. If AudioRenderer is not working in fast status,
+ *     the result will also be false.
+ * @return {@link #AUDIOSTREAM_SUCCESS} if the execution is successful.
+ *     {@link #AUDIOSTREAM_ERROR_INVALID_PARAM} the param of renderer or keepRunning is nullptr.
+ *     {@link #AUDIOSTREAM_ERROR_SYSTEM} System internal error, like audio service error.
+ * @since 23
+*/
+OH_AudioStream_Result OH_AudioRenderer_GetKeepRunning(OH_AudioRenderer* renderer, bool* keepRunning);
+
 typedef void (*OH_AudioRenderer_OnFastStatusChange)(
     OH_AudioRenderer* renderer,
     void* userData,

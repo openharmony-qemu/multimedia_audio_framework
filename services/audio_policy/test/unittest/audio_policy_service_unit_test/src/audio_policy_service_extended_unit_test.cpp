@@ -139,10 +139,10 @@ static const std::vector<BluetoothOffloadState>flags = {
 };
 static const std::vector<AudioPipeType>pipeTypes = {
     PIPE_TYPE_UNKNOWN,
-    PIPE_TYPE_NORMAL_OUT,
-    PIPE_TYPE_NORMAL_IN,
-    PIPE_TYPE_OFFLOAD,
-    PIPE_TYPE_MULTICHANNEL
+    PIPE_TYPE_OUT_NORMAL,
+    PIPE_TYPE_IN_NORMAL,
+    PIPE_TYPE_OUT_OFFLOAD,
+    PIPE_TYPE_OUT_MULTICHANNEL
 };
 static const std::vector<Media::MediaMonitor::PreferredType>preferredTypes = {
     Media::MediaMonitor::MEDIA_RENDER,
@@ -702,44 +702,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateCapturerInfoWhenNoPermission_
     int32_t ret = server->audioPolicyService_.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, hasBTPermission,
         hasSystemPermission);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioPolicyService.
- * @tc.number: GetPreferredOutputStreamType_002
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetPreferredOutputStreamType_002, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server) ;
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = STREAM_USAGE_MAX ;
-    std::string bundleName ;
-
-    int32_t ret = server->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
- * @tc.name  : Test AudioPolicyService.
- * @tc.number: GetPreferredOutputStreamType_004
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetPreferredOutputStreamType_004, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server) ;
-
-    AudioRendererInfo rendererInfo;
-    rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-    std::string bundleName ;
-    auto& sceneManager = AudioSceneManager::GetInstance();
-    sceneManager.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL, 1, 1);
-
-    int32_t ret = server->audioPolicyService_.GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 }
 
 /**

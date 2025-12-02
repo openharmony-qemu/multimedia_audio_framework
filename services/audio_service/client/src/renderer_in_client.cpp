@@ -139,6 +139,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
         registerTrackerInfo.channelCount = curStreamParams_.channels;
+        registerTrackerInfo.streamInfo = clientConfig_.streamInfo;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
@@ -166,9 +167,9 @@ void RendererInClientInner::InitDirectPipeType()
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_CALL_OUT : PIPE_TYPE_DIRECT_MUSIC;
-        } else if (originType == PIPE_TYPE_DIRECT_MUSIC) {
-            rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+                PIPE_TYPE_OUT_VOIP : PIPE_TYPE_OUT_DIRECT_NORMAL;
+        } else if (originType == PIPE_TYPE_OUT_DIRECT_NORMAL) {
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
         }
     }
 }

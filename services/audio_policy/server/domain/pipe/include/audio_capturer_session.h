@@ -125,6 +125,7 @@ private:
         uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
     uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t sessionId,
         AudioStreamDescriptor &maxRunningDesc, AudioStreamDescriptor &maxRemainingDesc);
+    bool IsPipeInSourceStrategyMap(std::shared_ptr<AudioPipeInfo> pipeInfo, uint64_t sessionId);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;

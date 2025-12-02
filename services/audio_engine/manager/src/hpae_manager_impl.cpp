@@ -197,6 +197,13 @@ int32_t HpaeManagerImpl::SuspendAudioDevice(std::string &audioPortName, bool isS
     return manager_->SuspendAudioDevice(audioPortName, isSuspend);
 }
 
+int32_t HpaeManagerImpl::StopAudioPort(const std::string &audioPortName)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE,
+        "manager is nullptr");
+    return manager_->StopAudioPort(audioPortName);
+}
+
 bool HpaeManagerImpl::SetSinkMute(const std::string &sinkName, bool isMute, bool isSync)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false,
@@ -621,6 +628,18 @@ bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout ch
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void HpaeManagerImpl::updateCollaborativeProductId(const std::string &productId)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->updateCollaborativeProductId(productId);
+}
+
+void HpaeManagerImpl::LoadCollaborationConfig()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->LoadCollaborationConfig();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

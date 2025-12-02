@@ -813,12 +813,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_035, TestSize.Level1)
     int32_t zoneId = 10;
     int32_t volumeLevel = 1;
     AudioStreamType streamType = STREAM_MUSIC;
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     zoneId = 0;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 }
 
 /**
@@ -834,11 +835,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_036, TestSize.Level1)
     int32_t zoneId = 0;
     int32_t volumeLevel = 1;
     AudioStreamType streamType = STREAM_MUSIC;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 
     streamType = STREAM_VOICE_CALL_ASSISTANT;
-    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 }
 
 /**
@@ -854,8 +856,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_037, TestSize.Level1)
     int32_t zoneId = 0;
     int32_t volumeLevel = 1;
     AudioStreamType streamType = STREAM_VOICE_CALL_ASSISTANT;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
 }
 
 /**
@@ -1410,9 +1413,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_VolumeLimit_001, TestSiz
 
     auto &manager = static_cast<AudioAdapterManager &>(audioVolumeManager->audioPolicyManager_);
     float oldLimit = manager.volumeLimit_.load();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
-    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
     audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
     audioVolumeManager->CheckReduceOtherActiveVolume(streamType, volumeLevel);

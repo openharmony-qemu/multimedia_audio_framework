@@ -91,6 +91,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume();
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(int32_t appUid);
+    std::shared_ptr<AudioDeviceDescriptor> GetActiveDeviceForVolume(int32_t appUid);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetActiveOutputDevices();
 
 private:

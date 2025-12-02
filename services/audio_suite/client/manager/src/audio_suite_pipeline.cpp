@@ -33,6 +33,10 @@
 #include "audio_suite_soundfield_node.h"
 #include "audio_suite_mixer_node.h"
 #include "audio_suite_voice_beautifier_node.h"
+#include "audio_suite_general_voice_change_node.h"
+#include "audio_suite_pure_voice_change_node.h"
+#include "audio_suite_tempo_pitch_node.h"
+#include "audio_suite_space_render_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +48,7 @@ std::mutex AudioSuitePipeline::allocateIdLock;
 uint32_t AudioSuitePipeline::allocateId = 0;
 
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
-    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_AUDIO_MIXER + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
+    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_TEMPO_PITCH + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
     std::lock_guard<std::mutex> lock(allocateIdLock);
     id_ = ++allocateId;
@@ -312,6 +316,12 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_ENVIRONMENT_EFFECT) {
         AUDIO_INFO_LOG("Create AudioSuiteEnvNode");
         node = std::make_shared<AudioSuiteEnvNode>();
+    } else if (builder.nodeType == NODE_TYPE_GENERAL_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuiteGeneralVoiceChangeNode");
+        node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    } else if (builder.nodeType == NODE_TYPE_PURE_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuitePureVoiceChangeNode");
+        node = std::make_shared<AudioSuitePureVoiceChangeNode>();
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
@@ -331,6 +341,12 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
+    } else if (builder.nodeType == NODE_TYPE_TEMPO_PITCH) {
+        AUDIO_INFO_LOG("Create AudioSuiteTempoPitchNode");
+        node = std::make_shared<AudioSuiteTempoPitchNode>();
+    } else if (builder.nodeType == NODE_TYPE_SPACE_RENDER) {
+        AUDIO_INFO_LOG("Create AudioSuiteSpaceRenderNode");
+        node = std::make_shared<AudioSuiteSpaceRenderNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
@@ -660,7 +676,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId same destNodeId.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -680,7 +696,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -727,7 +743,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     if (reverseConnections_.find(destNodeId) == reverseConnections_.end()) {
@@ -735,7 +751,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (reverseConnections_[destNodeId].size() <= 1) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     return destNode->DisConnect(srcNode);
@@ -840,7 +856,7 @@ int32_t AudioSuitePipeline::RenderFrame(
 }
 
 int32_t AudioSuitePipeline::MultiRenderFrame(
-    uint8_t **audioDataArray, int arraySize,
+    uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
     AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter");
@@ -879,6 +895,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
     auto request = [this, nodeId, name, value]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
+            TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
 
@@ -887,8 +904,10 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
+            TriggerCallback(SET_OPTIONS, ret);
             return;
         }
+        TriggerCallback(SET_OPTIONS, SUCCESS);
     };
 
     SendRequest(request, __func__);

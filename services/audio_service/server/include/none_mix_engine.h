@@ -28,7 +28,7 @@ public:
     int32_t Init(const AudioDeviceDescriptor &type, bool isVoip) override;
     int32_t Start() override;
     int32_t Stop() override;
-    int32_t Pause() override;
+    int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
 
     int32_t AddRenderer(const std::shared_ptr<IRendererStream> &stream) override;
@@ -65,7 +65,6 @@ private:
     bool isStart_;
     bool isInit_;
     AudioDeviceDescriptor device_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
-    std::atomic<uint32_t> failedCount_;
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;
     uint64_t latency_;

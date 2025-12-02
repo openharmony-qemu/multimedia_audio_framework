@@ -149,6 +149,15 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
 
     /**
+     * @brief stop the current audio port
+     *
+     * @param audioPortName Name of the default audio sink/source to be stop
+     * @return Returns {@link SUCCESS} if stop is success; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    virtual int32_t StopAudioPort(const std::string &audioPortName) = 0;
+    
+    /**
      * @brief mute the device or unmute
      *
      * @param sinkName Name of the audio sink
@@ -254,6 +263,20 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+
+    /**
+     * @brief update Collaborative ProductId
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+
+    /**
+     * @brief Load Collaboration Config
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual void LoadCollaborationConfig() = 0;
 
     virtual ~AudioServiceAdapter();
 };

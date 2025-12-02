@@ -109,12 +109,12 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
 
-    int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress);
+    int32_t SelectPrivateDevice(DeviceType devType, const std::string &macAddress);
 
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
 
-    int32_t DisconnectSco();
+    int32_t SetActiveHfpDevice(const std::string &macAddress);
 
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
@@ -314,10 +314,6 @@ public:
 
     int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo);
-
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
-
     int32_t CreateRendererClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId);
 
@@ -472,6 +468,11 @@ public:
     int32_t SetHeadTrackingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
+
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
     int32_t RegisterSpatializationEnabledEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
 
@@ -483,6 +484,9 @@ public:
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
+    int32_t RegisterAdaptiveSpatialRenderingEnabledEventListener(
+        const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
+
     int32_t UnregisterSpatializationEnabledEventListener();
 
     int32_t UnregisterSpatializationEnabledForCurrentDeviceEventListener();
@@ -490,6 +494,8 @@ public:
     int32_t UnregisterHeadTrackingEnabledEventListener();
 
     int32_t UnregisterNnStateEventListener();
+
+    int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
@@ -674,6 +680,8 @@ public:
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
     int32_t SetVirtualCall(const bool isVirtual);
+
+    bool GetVirtualCall();
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
         const SourceType sourceType, bool isRunning);
