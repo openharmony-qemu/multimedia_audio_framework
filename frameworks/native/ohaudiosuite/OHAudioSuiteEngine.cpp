@@ -491,8 +491,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type n
     using namespace OHOS::AudioStandard::AudioSuite;
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "isSupported is nullptr.");
-    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::getInstance();
-    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(static_cast<AudioNodeType>(nodeType), isSupported);
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(
+        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "isNodeTypeSupported suiteEngine is nullptr");
+    int32_t error = suiteEngine->IsNodeTypeSupported(nodeType, isSupported);
     AUDIO_INFO_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
     return ConvertError(error);
 }
@@ -1448,6 +1451,16 @@ int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
 
     *voiceBeautifierType = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
+    return ret;
+}
+
+int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
+{
+    CHECK_AND_RETURN_RET_LOG(
+        isSupported != nullptr, ERR_INVALID_PARAM, "IsNodeTypeSupported function failed, isSupported is nullptr.");
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().IsNodeTypeSupported(
+        static_cast<AudioNodeType>(nodeType), isSupported);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "IsNodeTypeSupported function failed, ret = %{public}d.", ret);
     return ret;
 }
 
