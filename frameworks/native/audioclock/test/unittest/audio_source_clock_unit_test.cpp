@@ -31,13 +31,6 @@ constexpr uint32_t MOCK_SAMPLE_RATE = 48'000;
 constexpr AudioSampleFormat MOCK_FORMAT = AudioSampleFormat::SAMPLE_S16LE;
 constexpr uint32_t MOCK_CHANNEL = 2;
 
-enum AudioByteSize : int32_t {
-    BYTE_SIZE_SAMPLE_U8 = 1,
-    BYTE_SIZE_SAMPLE_S16 = 2,
-    BYTE_SIZE_SAMPLE_S24 = 3,
-    BYTE_SIZE_SAMPLE_S32 = 4,
-};
-
 class AudioSourceClockUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
