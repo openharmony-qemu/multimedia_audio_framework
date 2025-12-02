@@ -40,6 +40,10 @@ constexpr uint32_t PARAMS_NUM_ONE = 1;
 constexpr uint32_t PARAMS_NUM_TWO = 2;
 constexpr uint32_t PARAMS_NUM_THREE = 3;
 constexpr uint32_t PARAMS_NUM_FOUR = 4;
+constexpr uint32_t INPUT_TIME = 20;
+constexpr uint32_t INPUT_RATE = 48000;
+constexpr uint32_t INPUT_CHANNEL = 2;
+constexpr uint32_t INPUT_DATA_LENGTH = INPUT_TIME * INPUT_RATE * INPUT_CHANNEL / 1000;
 
 const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
@@ -117,7 +121,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_POSITIONS_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Position parameter format.");
+        ERR_INVALID_PARAM, "Invalid Position parameter format.");
  
     spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
@@ -134,7 +138,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetRotationParameter(const std::stri
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_ROTATION_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Rotation parameter format.");
+        ERR_INVALID_PARAM, "Invalid Rotation parameter format.");
  
     spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
@@ -155,7 +159,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetExtensionParameter(const std::str
     std::vector<std::string> tokens = SplitString(paramValue, ',');
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_EXTENSION_PARAMS_NUM,
-        SPACE_RENDER_INV_MODE_PARAM, "Invalid Extension parameter format.");
+        ERR_INVALID_PARAM, "Invalid Extension parameter format.");
  
     spaceRenderParam_.expandRadius = std::stof(tokens[PARAMS_NUM_ZERO]);
     spaceRenderParam_.expandAngle = std::stoi(tokens[PARAMS_NUM_ONE]);
@@ -181,7 +185,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
         ret = SetExtensionParameter(paramValue);
     } else {
         AUDIO_ERR_LOG("Invalid space render mod format");
-        return SPACE_RENDER_INV_MODE_PARAM;
+        return ERR_INVALID_PARAM;
     }
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter.");
@@ -200,37 +204,37 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_STATIC,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not Position.");
+        ERR_INVALID_PARAM, "Mode is not Position.");
  
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]);
- 
+
     return SUCCESS;
 }
 
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_ROTATION,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not rotation.");
+        ERR_INVALID_PARAM, "Mode is not rotation.");
  
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]) + "," +
         std::to_string(spaceRenderParam_.rotationTime) + "," +
         std::to_string(spaceRenderParam_.rotationDirection);
- 
+
     return SUCCESS;
 }
 
 int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetExtensionParameter(std::string &paramValue)
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_EXPAND,
-        SPACE_RENDER_INV_MODE_PARAM, "Mode is not extension.");
+        ERR_INVALID_PARAM, "Mode is not extension.");
  
     paramValue = std::to_string(spaceRenderParam_.expandRadius) + "," +
         std::to_string(spaceRenderParam_.expandAngle);
- 
+
     return SUCCESS;
 }
 
@@ -245,10 +249,12 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::GetParameter(const std::string &
         ret = GetExtensionParameter(paramValue);
     } else {
         AUDIO_ERR_LOG("Invalid space render mod format");
-        return SPACE_RENDER_INV_MODE_PARAM;
+        return ERR_INVALID_PARAM;
     }
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Space render mode is not support.");
+
+    AUDIO_INFO_LOG("SpaceRender get %{public}s : %{public}s", paramType.c_str(), paramValue.c_str());
  
     return SUCCESS;
 }
@@ -260,15 +266,10 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pc
     CHECK_AND_RETURN_RET_LOG(pcmInBuf[0] != nullptr, ERROR, "pcmInBuf[0] is empty");
     CHECK_AND_RETURN_RET_LOG(!pcmOutBuf.empty(), ERROR, "pcmOutBuf is empty");
     CHECK_AND_RETURN_RET_LOG(pcmOutBuf[0] != nullptr, ERROR, "pcmOutBuf[0] is empty");
- 
-    applySpeces_ = algoApi_.getSpeces();
-    
-    const int frameLen = applySpeces_.frameLenSpecs;
-    const int channels = applySpeces_.channelCountSpecs;
- 
+
     const short *bufIn = reinterpret_cast<const short *>(pcmInBuf[0]);
     short *pcmOut = reinterpret_cast<short *>(pcmOutBuf[0]);
-    int32_t ret = algoApi_.applyAlgo(spaceRenderHandle_.data(), bufIn, frameLen * channels, pcmOut);
+    int32_t ret = algoApi_.applyAlgo(spaceRenderHandle_.data(), bufIn, INPUT_DATA_LENGTH, pcmOut);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render apply failed %{public}d ", ret);
  
     return SUCCESS;

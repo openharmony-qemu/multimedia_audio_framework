@@ -124,6 +124,8 @@ public:
     static std::string NanoTimeToString(int64_t nanoTime);
 
     static void GetAllTimeStamp(std::vector<uint64_t> &timestamps);
+
+    static bool CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval);
 };
 
 /**

@@ -80,7 +80,7 @@ function getNodeTypeFromString(originStr: string): NodeType {
 
 function getNumberArrayFromString(originStr: string): number[] {
   let ret: number[] = [];
-  originStr.replace("[", "").replace("]", "").split(" ").forEach((num) => {
+  originStr.replace("[", "").replace("]", "").split(/\s+/).forEach((num) => {
     ret.push(parseInt(num));
   })
   return ret;
@@ -110,8 +110,11 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
   }
   sceneInfo.sceneName = Object(jsonObjectStr)["scene_name"];
   sceneInfo.description = Object(jsonObjectStr)["description"];
-  sceneInfo.inputFiles = []
-  sceneInfo.mixerInfo = []
+  sceneInfo.inputFiles = [];
+  sceneInfo.mixerInfo = [];
+  if ((Object(jsonObjectStr)["input_files"] == undefined) || !Array.isArray(Object(jsonObjectStr)["input_files"])) {
+    return sceneInfo;
+  }
   let inputLen: number = (Object(jsonObjectStr)["input_files"])["length"];
   let mixerLen: number = (Object(jsonObjectStr)["mixer_info"])["length"];
   for (let i = 0; i < inputLen; i++) {
@@ -157,7 +160,7 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
     }
     sceneInfo.inputFiles.push(inputFile)
   }
-  if (!Array.isArray(Object(jsonObjectStr)["expected_output"]["md5Value"])) {
+  if (Object(jsonObjectStr)["expected_output"] != undefined &&!Array.isArray(Object(jsonObjectStr)["expected_output"]["md5Value"])) {
     expectedOutput.md5Value.push((Object(jsonObjectStr)["expected_output"])["md5Value"]);
   } else {
     expectedOutput.md5Value = (Object(jsonObjectStr)["expected_output"])["md5Value"];
@@ -208,6 +211,9 @@ function getMD5OfFile(filePath: string): string {
 }
 
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
+  if (outputFileMd5.length != expectedFileMd5.length) {
+    return false;
+  }
   let ret = true;
   outputFileMd5.forEach((outputMd5: string) => {
     if (expectedFileMd5.find((expected: string) => expected === outputMd5) == undefined) {
@@ -283,6 +289,9 @@ export struct AutoTest {
         jsonFileInfo.summary = Object(obj)["summary"];
         this.selectOptionList.push({ value: jsonFileInfo.summary });
         jsonSummaryToJsonFileInfoMap.set(jsonFileInfo.summary, jsonFileInfo);
+        if (Object(obj)["scenes"] == undefined || !Array.isArray(Object(obj)["scenes"])) {
+          return;
+        }
         const caseNum: number = Object(obj)["scenes"]["length"];
         if (caseNum > 0) {
           for (let i = 0; i < caseNum; i++) {
@@ -291,6 +300,7 @@ export struct AutoTest {
             jsonFileInfo.sceneInfos.push(sceneInfo.sceneInfoId);
           }
         }
+        fs.closeSync(file.fd);
       } catch (e) {
         Logger.error(TAG, `Open file:${jsonFilePath} Failed, error info:${e}`)
       }
@@ -772,7 +782,7 @@ export struct AutoTest {
       }
       const start = new Date().getTime();
       const singleReport: ExecuteReport = {
-        sceneInfoId: jsonFileInfo.sceneInfos[0],
+        sceneInfoId: sceneInfoId,
         sceneName: sceneInfo.sceneName,
         startTime: getDateStringWithTimeStamp(start, 0),
         startTimeStamp: start,
@@ -892,9 +902,11 @@ export struct AutoTest {
                 status = audioNapi.setEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
               }
               if (status != SUCCESS) {
+                Logger.error(TAG, `Add EQ Effect node error: ${status}`);
                 Logger.error(TAG, `EQ Effect error number is ${status}`);
                 return FAILED;
               } else {
+                Logger.info(TAG, `Add EQ Effect node successful!!!`);
                 Logger.info(TAG, `EQ Effect node successful!!!`);
               }
               break;
@@ -1009,7 +1021,7 @@ export struct AutoTest {
         [`${outputPath}/${newFileName1}`];
       outputFilePath.forEach((path: string, index: number) => {
         let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${outputFilePath}`);
+        Logger.info(TAG, `SaveBuffer filePath : ${path}`);
         if (audioFormate === '.wav') {
           // 处理wav
           let wavBuffer =
@@ -1032,7 +1044,6 @@ export struct AutoTest {
       }
       let expectedFileMd5: string[] | undefined =
         sceneInfoIdToSceneInfoMap.get(sceneInfoId)?.expectedOutput.md5Value;
-
 
       let outputFileMd5: string[] = [];
       try {
@@ -1092,7 +1103,7 @@ export struct AutoTest {
     let file = fs.openSync(csvFileSavePath,
       fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
     let writeLen = fs.writeSync(file.fd, csvTextWithBom);
-    fs.closeSync(file);
+    fs.closeSync(file.fd);
     Logger.info(TAG, `Save CSV file suncess writeLen : ${writeLen}`);
   }
 
@@ -1103,7 +1114,7 @@ export struct AutoTest {
     const summaryArray = Array.from(jsonSummaryToJsonFileInfoMap.keys());
     const promises = summaryArray.map(async (summary: string) => {
       let csvFileInfoText = await this.getCsvTextOfSingeCase(summary);
-      csvText += `执行用例: ${summary},,,,,,,\n` + csvReportHeaderText + csvFileInfoText + ",,,,,,,\n";
+      csvText += `执行用例: ${summary},,,,,,,\n${csvReportHeaderText}${csvFileInfoText},,,,,,,\n`;
       return Promise.resolve();
     })
     await Promise.all(promises);

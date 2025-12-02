@@ -37,16 +37,19 @@ void CallStringArrayCallback(const std::vector<std::string>& strings)
     }
     // 创建一个新的副本
     std::vector<std::string> *stringsCopy = new std::vector<std::string>(strings);
-    napi_call_threadsafe_function(tsfnStringArray, stringsCopy, napi_tsfn_blocking);
+    if (napi_call_threadsafe_function(tsfnStringArray, stringsCopy, napi_tsfn_blocking) != napi_ok) {
+        delete stringsCopy;
+        stringsCopy = nullptr;
+    }
 }
 
 void CallBoolThread(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    int result = *(bool *)data;
+    int result = *(int *)data;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,
-        "audioEditTest CallBoolThread result: %{public}d", result);
+                 "audioEditTest CallBoolThread result: %{public}d", result);
     napi_value resultValue;
-    napi_get_boolean(env, result, &resultValue);
+    napi_get_boolean(env, result != 0, &resultValue);
     napi_call_function(env, NULL, js_callback, 1, &resultValue, NULL);
     free(data);
 }
@@ -65,5 +68,8 @@ void CallBooleanCallback(int result)
     }
     *data = result;
 
-    napi_call_threadsafe_function(tsfnBoolean, data, napi_tsfn_blocking);
+    if (napi_call_threadsafe_function(tsfnBoolean, data, napi_tsfn_blocking) != napi_ok) {
+        free(data);
+        data = nullptr;
+    }
 }

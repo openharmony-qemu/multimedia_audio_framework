@@ -73,7 +73,7 @@ struct AudioParamsByCascad {
     int32_t pcmBufferSize;
 };
 
-napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params);
+napi_status ParseArguments(napi_env env, napi_callback_info info, AudioParams &params);
 
 void ResetAllIsResetTotalWriteAudioDataSize();
 

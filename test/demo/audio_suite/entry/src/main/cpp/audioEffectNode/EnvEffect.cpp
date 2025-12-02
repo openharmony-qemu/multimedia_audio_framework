@@ -14,7 +14,7 @@
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include "audioEffectNode/Equailizer.h"
+#include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
@@ -51,6 +51,7 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "createEnvNodeAndSetType ERROR!");
         napi_create_int64(env, result, &ret);
+        delete[] argv;
         return ret;
     }
 
@@ -59,6 +60,7 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
         if (insertRes == static_cast<int>(AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR)) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
+            delete[] argv;
             return ret;
         }
     } else {
@@ -66,12 +68,14 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "startEnvEffect insertNode ERROR!");
             napi_create_int64(env, result, &ret);
+            delete[] argv;
             return ret;
         }
     }
 
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "startEnvEffect: operation success");
+    delete[] argv;
     return ret;
 }
 
@@ -100,10 +104,12 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
             "audioEditTest---resetEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
         napi_create_int64(env, result, &ret);
+        delete[] argv;
         return ret;
     }
     if (bypass) {
         napi_create_int64(env, result, &ret);
+        delete[] argv;
         return ret;
     }
     result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
@@ -111,11 +117,13 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
                      "OH_AudioSuiteEngine_SetEnvironmentType ERROR---%{public}d", result);
         napi_create_int64(env, result, &ret);
+        delete[] argv;
         return ret;
     }
     
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "resetEnvEffect: operation success");
+    delete[] argv;
     return ret;
 }
 

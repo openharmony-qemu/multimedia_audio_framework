@@ -14,7 +14,7 @@
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include "audioEffectNode/Equailizer.h"
+#include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
@@ -42,9 +42,10 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid:%{public}s, inputId:%{public}s,"
                  "selectedNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectedNodeId.c_str());
     napi_value ret = nullptr;
+    napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
     Node node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
     if (node.physicalNode == nullptr) {
-        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
+        delete[] argv;
         return ret;
     }
     if (selectedNodeId.empty()) {
@@ -59,11 +60,14 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
         if (result != AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG,
                          "audioEditTest addAudioSeparation insertNode ERROR %{public}u", result);
+            delete[] argv;
+            return ret;
         }
     }
     g_multiRenderFrameFlag = true;
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: operation success");
+    delete[] argv;
     return ret;
 }
 
@@ -86,5 +90,6 @@ napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
     }
     napi_create_int64(env, result, &napiValue);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "deleteAudioSeparation: operation success");
+    delete[] argv;
     return napiValue;
 }

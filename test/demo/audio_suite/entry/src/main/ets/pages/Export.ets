@@ -214,18 +214,24 @@ export struct Export {
               .onClick(async () => {
                 audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, 1);
                 this.isExported = true;
-                taskpool.execute(saveFileBuffer).then(async (value: object) => {
-                  Logger.info(TAG, 'taskpool onClick start');
+                try {
+                  const value = await taskpool.execute(saveFileBuffer);
+                  Logger.info(TAG, 'taskpool execute success, saving buffer...');
                   this.SaveBuffer(value as ArrayBuffer);
                   this.pageInfos.pop(this.channels);
                   this.isExported = false;
                   let tapValue: ArrayBuffer = audioNapi.getAudioOfTap();
-                  if (tapValue.byteLength == 0) {
-                    Logger.error(TAG, 'tapValue is blank');
+                  if (tapValue.byteLength === 0) {
+                    Logger.error(TAG, 'tapValue is blank, skipping save');
                     return;
                   }
+                  Logger.info(TAG, 'Saving tap buffer...');
                   this.SaveTapBuffer(tapValue);
-                });
+                  Logger.info(TAG, 'Export completed successfully.');
+                } catch (error) {
+                  Logger.error(TAG, `Export failed: ${error.message || error}`);
+                  this.isExported = false;
+                }
                 Logger.info(TAG, 'onClick end');
               })
 

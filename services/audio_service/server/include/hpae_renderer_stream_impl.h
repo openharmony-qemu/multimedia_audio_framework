@@ -23,6 +23,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum HpaeRendererStreamTimestampTag {
+    GET_REMOTE_OFFLOAD_SPEED_POSITION,
+    GET_CURRENT_POSITION,
+    GET_LATENCY,
+    ON_DEVICE_CLASS_CHANGE,
+    TIMESTAMP_TAG_NUM,
+};
 
 struct PositionData {
     uint64_t framePosition = 0;
@@ -134,6 +141,7 @@ private:
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
+    std::atomic<int64_t> lastLogTimestampArr_[TIMESTAMP_TAG_NUM];
 
     std::string deviceClass_;
     std::string deviceNetId_;
