@@ -306,11 +306,11 @@ public:
     /**
      * @brief Sets buffer LoopTimes.
      *
-     * @param bufferLoopTimes Indicates The cache will be played in a loop for the specified number of times.
-     * Setting it to -1 indicates continuous looping.
+     * @param bufferLoopTimes Indicates The cache will be played in a loop for the extra specified number of times
+     * after played once. Setting it to -1 indicates continuous looping.
      * @since 22
      */
-    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) = 0;
 
     /**
      * @brief Sets audio privacy type.

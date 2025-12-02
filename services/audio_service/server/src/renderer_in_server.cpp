@@ -1085,6 +1085,7 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
+    // staticBuffer speed process
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
     if (processConfig_.rendererInfo.isStatic) {
         if (staticBufferProcessor_ == nullptr) {

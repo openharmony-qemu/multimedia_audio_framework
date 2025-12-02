@@ -76,6 +76,7 @@ static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; //1s
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -460,18 +461,24 @@ bool RendererInClientInner::IsRestoreNeeded()
 void RendererInClientInner::WaitForBufferNeedOperate()
 {
     Trace trace("WaitForBufferNeedOperate");
+    if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+            Trace trace2(traceTag_ + "call start to exit stand-by");
+            CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+            int32_t ret = ipcStream->Start();
+            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+        }
+    }
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
-        rendererInfo_.isStatic ? -1 : static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        (rendererInfo_.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : static_cast<int64_t>(timeout)) *
+        AUDIO_US_PER_SECOND,
         [this] () {
             if (state_ != RUNNING) {
                 return true;
             }
 
             if (IsRestoreNeeded()) {
-                if (rendererInfo_.isStatic && sendStaticRecreateFunc_ != nullptr) {
-                    sendStaticRecreateFunc_();
-                }
                 return true;
             }
 
@@ -484,19 +491,6 @@ void RendererInClientInner::WaitForBufferNeedOperate()
 
 void RendererInClientInner::CallClientHandle()
 {
-    if (rendererInfo_.isStatic) {
-        Trace trace("RendererInClientInner::CheckIfNeedSendStaticCallback");
-        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
-        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
-            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
-        }
-        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
-            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
-        }
-    }
-
     // call client write
     std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
     {
@@ -544,6 +538,8 @@ bool RendererInClientInner::WriteCallbackFunc()
     }
 
     WaitForBufferNeedOperate();
+
+    CheckOperations();
 
     if (state_ != RUNNING) {
         return true;
@@ -1104,6 +1100,25 @@ bool RendererInClientInner::CheckStaticAndOperate()
         return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
     } else {
         return CheckBufferNeedWrite();
+    }
+}
+
+void RendererInClientInner::CheckOperations()
+{
+    if (rendererInfo_.isStatic) {
+        Trace trace("RendererInClientInner::ProcessStaticOperations");
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
     }
 }
 

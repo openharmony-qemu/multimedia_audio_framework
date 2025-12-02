@@ -384,13 +384,13 @@ config("audio_service_config") {
     cflags += [ "-DDAUDIO_ENABLE" ]
   }
 
-  cflags_cc = cflags
-  cflags_cc += [ "-std=c++20" ]
-
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
     cflags += [ "-DSONIC_ENABLE" ]
   }
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 }
 
 audio_ohos_library("audio_process_service") {
@@ -527,6 +527,10 @@ audio_ohos_library("audio_process_service") {
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
@@ -651,6 +655,10 @@ audio_ohos_library("audio_service") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
   }
 
   cflags = [ "-Os" ]

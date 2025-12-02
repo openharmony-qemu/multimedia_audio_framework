@@ -64,6 +64,11 @@ enum StreamStatus : uint32_t {
     STREAM_INVALID
 };
 
+enum BufferPosition : uint32_t {
+    BUFFER_IN_CLIENT = 0,
+    BUFFER_IN_SERVER
+};
+
 /**
  * totalSizeInFrame = spanCount * spanSizeInFrame
  *
@@ -101,14 +106,17 @@ struct BasicBufferInfo {
     RestoreInfo restoreInfo;
 
     // only for static renderer
+    std::atomic<bool> isStatic_;
+    std::atomic<AudioRendererRate> staticRenderRate_;
+    std::atomic<int64_t> clientLastProcessTime_;
+
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
     std::atomic<bool> needSendLoopEndCallback;
-    std::atomic<bool> isStatic_;
+
     std::atomic<int64_t> preSetTotalLoopTimes_;
     std::atomic<int64_t> totalLoopTimes_;
     std::atomic<int64_t> currentLoopTimes_;
     std::atomic<size_t> curStaticDataPos_;
-    std::atomic<AudioRendererRate> staticRenderRate_;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -269,6 +277,7 @@ public:
 
     int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
     int32_t SetProcessedBuffer(uint8_t *processedData, size_t dataSize);
+    bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 
 private:
     int32_t SizeCheck();

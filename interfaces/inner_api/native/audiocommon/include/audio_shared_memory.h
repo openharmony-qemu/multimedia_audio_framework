@@ -32,7 +32,7 @@ public:
     virtual int GetFd() = 0;
     virtual std::string GetName() = 0;
 
-    static std::shared_ptr<AudioSharedMemory> CreateFormLocal(size_t size, const std::string &name);
+    static std::shared_ptr<AudioSharedMemory> CreateFromLocal(size_t size, const std::string &name);
     static std::shared_ptr<AudioSharedMemory> CreateFromRemote(int fd, size_t size, const std::string &name);
 
     bool Marshalling(Parcel &parcel) const override;

@@ -60,6 +60,7 @@ static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 }
 
 class ProcessCbImpl;
@@ -179,6 +180,8 @@ private:
     bool InitAudioBuffer();
 
     void CallClientHandleCurrent();
+    void CheckOperations();
+
     int32_t ReadFromProcessClient() const;
     int32_t RecordReSyncServicePos();
     int32_t RecordFinishHandleCurrent(uint64_t &curReadPos, int64_t &clientReadCost);
@@ -1331,20 +1334,6 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
 // client should call GetBufferDesc and Enqueue in OnHandleData
 void AudioProcessInClientInner::CallClientHandleCurrent()
 {
-    if (processConfig_.rendererInfo.isStatic) {
-        Trace trace("AudioProcessInClient::HandleSendStaticBufferCallback");
-        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
-        while (audioBuffer_->IsNeedSendBufferEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
-            audioBuffer_->DecreaseBufferEndCallbackSendTimes();
-        }
-        if (audioBuffer_->IsNeedSendLoopEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
-            audioBuffer_->SetIsNeedSendLoopEndCallback(false);
-        }
-        return;
-    }
-
     Trace trace("AudioProcessInClient::CallClientHandleCurrent");
     std::shared_ptr<AudioDataCallback> cb = audioDataCallback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "audio data callback is null.");
@@ -1365,6 +1354,28 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     int64_t limit = isVoipMmap_ ? VOIP_MILLISECOND_DURATION : MAX_WRITE_COST_DURATION_NANO;
     if (stamp + ONE_MILLISECOND_DURATION > limit) {
         AUDIO_WARNING_LOG("Client handle cb too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
+    }
+}
+
+void AudioProcessInClientInner::CheckOperations()
+{
+    if (processConfig_.rendererInfo.isStatic) {
+        Trace trace("AudioProcessInClient::HandleStaticOperation");
+
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        while (audioBuffer_->IsNeedSendBufferEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            audioBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (audioBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            audioBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
+        return;
     }
 }
 
@@ -1639,17 +1650,19 @@ bool AudioProcessInClientInner::IsRestoreNeeded()
 
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
 {
+    if (processConfig_.rendererInfo.isStatic && audioBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        ExitStandByIfNeed();
+    }
+
     FutexCode ret = audioBuffer_->WaitFor(
-        processConfig_.rendererInfo.isStatic ? -1 : FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND,
+        (processConfig_.rendererInfo.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : FAST_WRITE_CACHE_TIMEOUT_IN_MS) *
+        AUDIO_US_PER_SECOND,
         [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
             return true;
         }
 
         if (IsRestoreNeeded()) {
-            if (processConfig_.rendererInfo.isStatic && sendStaticRecreateFunc_ != nullptr) {
-                sendStaticRecreateFunc_();
-            }
             return true;
         }
 
@@ -1699,6 +1712,8 @@ bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
     if (status != StreamStatus::STREAM_RUNNING && status != StreamStatus::STREAM_STAND_BY) {
         return true;
     }
+
+    CheckOperations();
     // call client write
     CallClientHandleCurrent();
     // client write done, check if time out

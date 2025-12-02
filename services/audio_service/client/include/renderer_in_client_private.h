@@ -307,6 +307,8 @@ private:
     void GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info);
 
     bool CheckStaticAndOperate();
+
+    void CheckOperations();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

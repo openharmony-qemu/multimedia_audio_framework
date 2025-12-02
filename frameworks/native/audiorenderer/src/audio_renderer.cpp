@@ -336,9 +336,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
     /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
-    rendererInfo_.isOffloadAllowed = (rendererOptions.rendererInfo.isOffloadAllowed ? 
-        GetFinalOffloadAllowed(rendererOptions.rendererInfo.isOffloadAllowed) : false);
-
+    rendererInfo_.isOffloadAllowed = GetFinalOffloadAllowed(rendererOptions.rendererInfo.isOffloadAllowed);
     rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
     rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
@@ -348,8 +346,14 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
-    strategy_ = rendererOptions.strategy;
-    originalStrategy_ = rendererOptions.strategy;
+
+    if (rendererInfo_.isStatic && rendererOptions.strategy.concurrencyMode == AudioConcurrencyMode::INVALID) {
+        strategy_.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+        originalStrategy_.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    } else {
+        strategy_ = rendererOptions.strategy;
+        originalStrategy_ = rendererOptions.strategy;
+    }
 }
 
 bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
@@ -421,7 +425,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     return audioRenderer;
 }
 
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer( const AudioRendererOptions &rendererOptions,
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer(const AudioRendererOptions &rendererOptions,
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
     const AppInfo &appInfo)
 {
@@ -649,9 +653,12 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 int32_t AudioRendererPrivate::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERR_NOT_SUPPORTED, "Can only be set in staticAudioRenderer!");
+    CHECK_AND_RETURN_RET_LOG(bufferLoopTimes >= -1 && bufferLoopTimes < INT64_MAX,
+        ERR_NOT_SUPPORTED, "set invalid bufferLoopTimes %{public}l !", bufferLoopTimes);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_INVALID_OPERATION, "audioStream_ is nullptr");
-    return currentStream->SetLoopTimes(bufferLoopTimes);
+    AUDIO_INFO_LOG("SetLoopTimes %{publid}ld", bufferLoopTimes);
+    return currentStream->SetLoopTimes(bufferLoopTimes == -1 ? -1 : bufferLoopTimes + 1);
 }
 
 AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()

@@ -1095,7 +1095,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !rendererInfo_.isStatic) {
         lock.lock();
         DrainAudioStreamInner(true);
     }

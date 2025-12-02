@@ -587,7 +587,9 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
-        audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
+        if (!streamDesc->rendererInfo_.isStatic) {
+            audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
+        }
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);

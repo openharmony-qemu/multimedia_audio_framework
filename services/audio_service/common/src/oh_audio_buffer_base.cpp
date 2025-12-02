@@ -38,6 +38,7 @@ namespace {
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
     static const size_t MAX_STATIC_BUFFER_SIZE = 1 * 1024 * 1024; // 1M
+    static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
 }
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -174,11 +175,11 @@ int AudioSharedMemoryImpl::GetFd()
     return fd_;
 }
 
-std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name)
+std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromLocal(size_t size, const std::string &name)
 {
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(size, name);
     CHECK_AND_RETURN_RET_LOG(sharedMemory->Init() == SUCCESS,
-        nullptr, "CreateFormLocal failed");
+        nullptr, "CreateFromLocal failed");
     return sharedMemory;
 }
 
@@ -264,13 +265,13 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
         bufferHolder_ == AUDIO_APP_SHARED)) {
         statusInfoMem_ = AudioSharedMemory::CreateFromRemote(infoFd, statusInfoSize, STATUS_INFO_BUFFER);
     } else {
-        statusInfoMem_ = AudioSharedMemory::CreateFormLocal(statusInfoSize, STATUS_INFO_BUFFER);
+        statusInfoMem_ = AudioSharedMemory::CreateFromLocal(statusInfoSize, STATUS_INFO_BUFFER);
     }
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, ERR_OPERATION_FAILED, "BasicBufferInfo mmap failed.");
 
     // init for dataBuffer
     if (dataFd == INVALID_FD && bufferHolder_ == AUDIO_SERVER_SHARED) {
-        dataMem_ = AudioSharedMemory::CreateFormLocal(totalSizeInByte_, "server_client_buffer");
+        dataMem_ = AudioSharedMemory::CreateFromLocal(totalSizeInByte_, "server_client_buffer");
     } else {
         std::string memoryDesc = (bufferHolder_ == AUDIO_SERVER_ONLY ? "server_hdi_buffer" : "server_client_buffer");
         if (bufferHolder_ == AUDIO_APP_SHARED) {
@@ -1031,6 +1032,7 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->currentLoopTimes_.store(0);
     basicBufferInfo_->curStaticDataPos_.store(0);
     basicBufferInfo_->staticRenderRate_.store(RENDER_RATE_NORMAL);
+    basicBufferInfo_->clientLastProcessTime_.store(ClockTime::GetCurNano());
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1153,9 +1155,12 @@ int32_t OHAudioBufferBase::GetDataFromStaticBuffer(int8_t *inputData, size_t req
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
     if (basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_ ||
+        CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER) ||
         basicBufferInfo_->streamStatus.load() != STREAM_RUNNING) {
         memset_s(inputData, requestDataLen, 0, requestDataLen);
-        AUDIO_WARNING_LOG("reach totalLoopTimes or stream is not running, no need copyData!");
+        AUDIO_WARNING_LOG("GetDataFromStaticBuffer fail, isReachLoopTimes %{public}d, isStatusRunning %{public}d",
+            basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_,
+            basicBufferInfo_->streamStatus.load() != STREAM_RUNNING);
         return ERR_OPERATION_FAILED;
     }
 
@@ -1230,8 +1235,6 @@ int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
 AudioRendererRate OHAudioBufferBase::GetStaticRenderRate()
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), RENDER_RATE_NORMAL, "Not in static mode");
-    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, RENDER_RATE_NORMAL,
-        "Stream is RUNNING, cannot set renderRate!");
     return basicBufferInfo_->staticRenderRate_.load();
 }
 
@@ -1241,6 +1244,31 @@ int32_t OHAudioBufferBase::SetProcessedBuffer(uint8_t *processedData, size_t dat
     processedStaticBuffer_ = processedData;
     processedStaticBufferSize_ = dataSize;
     return SUCCESS;
+}
+
+// In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen, 
+// clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
+bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    Trace trace("CheckFrozenAndSetLastProcessTime" + std::to_string(bufferPosition));
+    int64_t curTimestamp = ClockTime::GetCurNano();
+
+    bool ret = false;
+    if (curTimestamp - basicBufferInfo_->clientLastProcessTime_.load() >
+        STATIC_CLIENT_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND) {
+        if (bufferPosition == BUFFER_IN_CLIENT) {
+            ret = GetStreamStatus()->load() == STREAM_STAND_BY;
+        } else {
+            // buffer_in_server only need to check when stream is running.
+            ret = GetStreamStatus()->load() == STREAM_RUNNING;
+        }
+    }
+
+    if (bufferPosition == BUFFER_IN_CLIENT) {
+        basicBufferInfo_->clientLastProcessTime_.store(curTimestamp);
+    }
+    return ret;
 }
 
 } // namespace AudioStandard

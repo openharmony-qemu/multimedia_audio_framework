@@ -815,7 +815,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
         CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
-            ERR_ILLEGAL_STATE, "CreateFormLocal in server failed.");
+            ERR_ILLEGAL_STATE, "CreateFromLocal in server failed.");
         AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
             totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
 

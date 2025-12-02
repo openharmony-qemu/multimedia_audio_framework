@@ -1173,7 +1173,8 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
 bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame, size_t index)
 {
     if (processBufferList_[index]->GetStaticMode()) {
-        return processBufferList_[index]->GetCurrentLoopTimes() == processBufferList_[index]->GetTotalLoopTimes();
+        return (processBufferList_[index]->GetCurrentLoopTimes() == processBufferList_[index]->GetTotalLoopTimes()) ||
+            processBufferList_[index]->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER);
     }
 
     if (readableDataFrame < 0) {
