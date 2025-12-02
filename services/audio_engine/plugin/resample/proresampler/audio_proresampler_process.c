@@ -767,7 +767,7 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
 
     for (i = 0; i < outSample; i++) {
         if (state->gainCorrection) {
-            indexPhase = (int)(subfilterNum * scalerPhase);
+            indexPhase = (uint32_t)(subfilterNum * scalerPhase);
         } else {
             indexPhase = subfilterNum;
         }
@@ -812,7 +812,7 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
     }
     for (i = 0; i < outSample; i++) {
         if (state->gainCorrection) {
-            indexPhase = (int)(subfilterNum * scalerPhase);
+            indexPhase = (uint32_t)(subfilterNum * scalerPhase);
         } else {
             indexPhase = subfilterNum;
         }
@@ -859,7 +859,7 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     for (i = 0; i < outSample; i++) {
     float scalerPhase = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
         if (state->gainCorrection) {
-            indexPhase = (int)(subfilterNum * scalerPhase);
+            indexPhase = (uint32_t)(subfilterNum * scalerPhase);
         } else {
             indexPhase = subfilterNum;
         }
@@ -1308,7 +1308,7 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
     if (state->interpolateFactor < state->decimateFactor) { // downsampling
         state->cutoff = (float)state->interpolateFactor / state->decimateFactor;
         // updating filter length for downsampling
-        float filterLength = state->filterLength * state->decimateFactor / state->interpolateFactor;
+        uint32_t filterLength = state->filterLength * state->decimateFactor / state->interpolateFactor;
         if (filterLength < MAX_DWNSMPLE_FILT_LEN) {
             state->filterLength = filterLength;
         } else {
