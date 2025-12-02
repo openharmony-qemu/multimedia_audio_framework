@@ -86,7 +86,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         Deinit();
         return ERROR;
     }
-    
+
     stSize_.iStrSize = 0;
     stSize_.iScracthSize = 0;
     int32_t result = algoApi_.getSize(&stSize_);
