@@ -263,9 +263,9 @@ std::string GetEqualizerOptions(const Node &node)
         return "0";
     }
     std::ostringstream oss;
-    int EQUALENCE_BANDS_COUNT = 10;
+    int equalenceBandsCount = 10;
     oss << "[";
-    for (int i = 0; i < EQUALENCE_BANDS_COUNT; ++i) { // The equalizer has 10 frequency bands.
+    for (int i = 0; i < equalenceBandsCount; ++i) { // The equalizer has 10 frequency bands.
         if (i > 0)
             oss << ",";
         oss << type.gains[i];

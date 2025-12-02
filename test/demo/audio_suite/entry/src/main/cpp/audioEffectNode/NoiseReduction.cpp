@@ -94,8 +94,7 @@ napi_value deleteNoiseReduction(napi_env env, napi_callback_info info)
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "uuid==%{public}s", uuidStr.c_str());
 
-    OH_AudioSuite_Result result;
-    result = g_nodeManager->removeNode(uuidStr);
+    OH_AudioSuite_Result result = g_nodeManager->removeNode(uuidStr);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, NR_TAG, "removeNode ERROR:%{public}d", result);
     }

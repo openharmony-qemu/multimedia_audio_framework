@@ -176,8 +176,6 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         } else {
             OneMulRenDerFrame(audioDataSize, &writeSize);
         }
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "g_isRecord: %{public}s", g_isRecord ? "true" : "false");
         // 每次保存一次获取的buffer值
         if (audioDataSize != 0 && g_isRecord == true) {
             int32_t copySize = std::min(audioDataSize, writeSize);

@@ -185,8 +185,6 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
     size_t &secondBufferSize = threadPipelineManager->secondBufferSize;
     OH_AudioFormat threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
     bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,"audioEditTest RenDerFrame start, "
-                 "pipeline:%{public}p", threadPipeline);
 
     OH_AudioSuite_Result result = StartPipelineAndCheckState();
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -413,7 +411,6 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
         *finished = true;
         return 0;
     }
-    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "multiWriteDataCallBack start");
     
     // 处理音频数据   此处如果是nullptr，是demo获取音频数据的问题，非底层接口问题
     MultiUserData *curMultiUserData = static_cast<MultiUserData *>(userData);
@@ -809,8 +806,8 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     if (inputNode.id.empty()) {
         MultiCreateInputNode(env, params.inputId, napiValue, result);
     } else {
-        UpdateInputNodeParams params;
-        MultiUpdateInputNode(result, params);
+        UpdateInputNodeParams updateInputNodeParams;
+        MultiUpdateInputNode(result, updateInputNodeParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
@@ -840,7 +837,7 @@ int MultiAddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effec
     if (mixerNodes.size() > 0) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest AddEffectNodeToNodeManager has mixerNodes");
-        Node node = threadNodeManager->GetNodeById(inputNodeId);
+        node = threadNodeManager->GetNodeById(inputNodeId);
         if (node.nextNodeId.empty()) {
             return -ERROR_CODE_3;
         }

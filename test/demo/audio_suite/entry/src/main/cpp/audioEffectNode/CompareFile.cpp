@@ -12,8 +12,7 @@ static const char *TAG = "[AudioEditTestApp_CompareFile_cpp]";
 // 比较文件长度
 bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2)
 {
-    if (!file1.is_open() || !file2.is_open())
-    {
+    if (!file1.is_open() || !file2.is_open()) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---file open status error, file1:%{public}d, file2:%{public}d",
             file1.is_open(), file2.is_open());
@@ -21,8 +20,7 @@ bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2)
     }
     file1.seekg(0, std::ios::end);
     file2.seekg(0, std::ios::end);
-    if (!file1.good() || !file2.good())
-    {
+    if (!file1.good() || !file2.good()) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---file status error, file1.good():%{public}d, file2.good():%{public}d",
             file1.good(), file2.good());

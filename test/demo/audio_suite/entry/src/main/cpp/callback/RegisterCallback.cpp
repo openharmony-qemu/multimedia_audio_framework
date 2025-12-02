@@ -43,7 +43,8 @@ void CallStringArrayCallback(const std::vector<std::string>& strings)
     }
 }
 
-void CallBoolThread(napi_env env, napi_value js_callback, void *context, void *data) {
+void CallBoolThread(napi_env env, napi_value js_callback, void *context, void *data)
+{
     int result = *(int *)data;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,
                  "audioEditTest CallBoolThread result: %{public}d", result);

@@ -73,20 +73,24 @@ OH_AudioSuite_Result StartPipelineAndCheckState()
 
 void DeleteOHAudioDataArray(OH_AudioDataArray* ohAudioDataArray)
 {
-    if (ohAudioDataArray != nullptr) {
-        if (ohAudioDataArray->audioDataArray != nullptr) {
-            for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
-                if (ohAudioDataArray->arraySize > i && ohAudioDataArray->audioDataArray[i] != nullptr) {
-                    free(ohAudioDataArray->audioDataArray[i]);
-                    ohAudioDataArray->audioDataArray[i] = nullptr;
-                }
-            }
-            free(ohAudioDataArray->audioDataArray);
-            ohAudioDataArray->audioDataArray = nullptr;
-        }
+    if (ohAudioDataArray == nullptr) {
+        return;
+    }
+    if (hAudioDataArray->audioDataArray == nullptr) {
         delete ohAudioDataArray;
         ohAudioDataArray = nullptr;
+        return;
     }
+    for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
+        if (ohAudioDataArray->arraySize > i && ohAudioDataArray->audioDataArray[i] != nullptr) {
+            free(ohAudioDataArray->audioDataArray[i]);
+            ohAudioDataArray->audioDataArray[i] = nullptr;
+        }
+    }
+    free(ohAudioDataArray->audioDataArray);
+    ohAudioDataArray->audioDataArray = nullptr;
+    delete ohAudioDataArray;
+    ohAudioDataArray = nullptr;
 }
 
 OH_AudioSuite_Result AudioRenderFrame(

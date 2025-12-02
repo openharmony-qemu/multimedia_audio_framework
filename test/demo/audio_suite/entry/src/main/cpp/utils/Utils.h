@@ -11,13 +11,13 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
 
-static const char* STR_0 = "0";
-static const char* STR_1 = "1";
-static const char* STR_2 = "2";
-static const char* STR_3 = "3";
-static const char* STR_4 = "4";
-static const char* STR_5 = "5";
-static const char* STR_6 = "6";
+extern const char* STR_0 = "0";
+extern const char* STR_1 = "1";
+extern const char* STR_2 = "2";
+extern const char* STR_3 = "3";
+extern const char* STR_4 = "4";
+extern const char* STR_5 = "5";
+extern const char* STR_6 = "6";
 
 enum {
     ARG_0 = 0,

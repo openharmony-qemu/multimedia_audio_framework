@@ -18,7 +18,7 @@ struct StartVBParameters {
     std::string selectNodeId; // 可选参数，为空表示不指定节点
 };
  
-static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
+constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
     OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR, OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
     OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD, OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO};
 

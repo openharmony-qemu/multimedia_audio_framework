@@ -6,6 +6,14 @@
 #include "audioSuiteError/AudioSuiteError.h"
 #include <hilog/log.h>
 
+const char* STR_0 = "0";
+const char* STR_1 = "1";
+const char* STR_2 = "2";
+const char* STR_3 = "3";
+const char* STR_4 = "4";
+const char* STR_5 = "5";
+const char* STR_6 = "6";
+
 const int CONSTANT_0 = 0;
 
 const int CONSTANT_1 = 1;
