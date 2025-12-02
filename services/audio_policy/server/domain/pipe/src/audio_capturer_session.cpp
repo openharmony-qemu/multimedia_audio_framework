@@ -828,6 +828,7 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
     SetInputDeviceTypeForReload(inputDevice);
     AUDIO_INFO_LOG("start reload session: %{public}u for device change", targetSession.second);
     audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetSession.second]);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetSession.second);
 }
 
 void AudioCapturerSession::SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice)
@@ -878,6 +879,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
             "target sessionId:%{public}u not found", targetSession.second);
         AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSession.second);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetSession.second]);
+        audioEcManager_.SetOpenedNormalSourceSessionId(targetSession.second);
     }
 }
 
@@ -917,6 +919,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
             "target sessionId: %{public}u not found", targetSession.second);
         AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSession.second);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetSession.second]);
+        audioEcManager_.SetOpenedNormalSourceSessionId(targetSession.second);
     }
 }
 
