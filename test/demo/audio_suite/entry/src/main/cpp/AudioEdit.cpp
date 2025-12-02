@@ -38,6 +38,7 @@
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/AissEffect.h"
 #include "audioEffectNode/SoundSpeedTone.h"
+#include "audioEffectNode/VoiceChange.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "audioSuiteError/AudioSuiteError.h"

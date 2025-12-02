@@ -9,6 +9,13 @@
 #include "callback/RegisterCallback.h"
 #include <./utils/Utils.h>
 
+struct InputAudioParams {
+    std::string inputId;
+    std::string outputId;
+    std::string mixerId;
+    std::string fileName;
+};
+
 napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info);
 napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info);
 napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info);
