@@ -11,6 +11,7 @@
 #include "napi/native_api.h"
 
 extern std::shared_ptr<NodeManager> g_nodeManager;
+extern std::shared_ptr<NodeManager> g_singlePipelineNodeManager;
 
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
 

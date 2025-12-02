@@ -11,6 +11,7 @@ const int GLOBAL_RESMGR = 0xFF00;
 const char *EFFECT_NODE_TAG = "[AudioEditTestApp_EffectNode_cpp]";
 
 std::shared_ptr<NodeManager> g_nodeManager = nullptr;
+std::shared_ptr<NodeManager> g_singlePipelineNodeManager = nullptr;
 
 // 创建效果节点后调用该方法将效果节点加入到nodeManager中
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId)
