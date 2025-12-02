@@ -55,8 +55,13 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 
     bool loadAlgoApiFail = vmAlgoApi_.getSize == nullptr || vmAlgoApi_.init == nullptr ||
                            vmAlgoApi_.setParam == nullptr || vmAlgoApi_.apply == nullptr;
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
 
-    return loadAlgoApiFail ? ERROR : SUCCESS;
+    return SUCCESS;
 }
 
 int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
