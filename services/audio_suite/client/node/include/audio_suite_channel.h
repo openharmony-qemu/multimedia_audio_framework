@@ -296,6 +296,7 @@ int32_t OutputPort<T>::resetResampleCfg()
 {
     CHECK_AND_RETURN_RET_LOG(!convert_.empty(), ERROR, "convert_ is empty.");
     for (auto &tmpConvert : convert_) {
+        CHECK_AND_RETURN_RET_LOG(tmpConvert != nullptr, std::vector<T>(), "tmpConvert is nullptr.");
         tmpConvert->Reset();
     }
     return SUCCESS;
