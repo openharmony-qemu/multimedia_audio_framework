@@ -136,7 +136,7 @@ public:
     int32_t SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type);
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
-    
+
 private:
     explicit OHAudioSuiteEngine() {};
     OHAudioSuiteEngine(const OHAudioSuiteEngine&) = delete;
