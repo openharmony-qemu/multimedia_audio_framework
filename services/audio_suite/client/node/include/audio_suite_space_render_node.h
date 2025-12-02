@@ -29,7 +29,6 @@ public:
 
     int32_t Init() override;
     int32_t DeInit() override;
-    int32_t DoProcess() override;
     int32_t SetOptions(std::string name, std::string value) override;
     int32_t GetOptions(std::string name, std::string &value) override;
 
@@ -37,23 +36,10 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    std::vector<AudioSuitePcmBuffer*>& ReadDoubleProcessNodePreOutputData();
-    AudioSuitePcmBuffer *BypassSignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs);
-
-    std::vector<AudioSuitePcmBuffer*> emptyVector_;
-    AudioSuitePcmBuffer *emptyPcmBuffer_ = nullptr;
-
-    std::vector<AudioSuitePcmBuffer*> tmpDataPointers_;
-
-    std::vector<AudioSuitePcmBuffer> readDataVector_;
-    AudioSuitePcmBuffer doubleDataBuffer_;
-    AudioSuitePcmBuffer outTmpPcmBuffer_;
     AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
 
     bool isInit_ = false;
-    bool isSecondEnterFlag_ = false;
-    bool finishFlag_ = false;
 };
 
 }  // namespace AudioSuite
