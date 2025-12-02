@@ -60,7 +60,7 @@ public:
     UpdateInputNodeParams() {}
     UpdateInputNodeParams(std::string inputId, unsigned int channels, unsigned int sampleRate,
         unsigned int bitsPerSample) : inputId(inputId), channels(channels), sampleRate(sampleRate),
-        bitsPerSample(bitsPerSample){}
+        bitsPerSample(bitsPerSample) {}
 };
 
 struct AudioParamsByCascad {

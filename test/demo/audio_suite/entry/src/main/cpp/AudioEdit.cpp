@@ -954,7 +954,7 @@ const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
     {"multiDeleteSong", nullptr, MultiDeleteSong,
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"destroyMultiPipeline", nullptr, DestroyMultiPipeline,
-         nullptr, nullptr, nullptr, napi_default, nullptr},
+        nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiAudioRendererInit", nullptr, MultiAudioRendererInit,
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiAudioRendererStart", nullptr, MultiAudioRendererStart,

@@ -58,6 +58,9 @@ const int AUDIOSUITE_ERROR_SYSTEM_CODE = 3;
 const int ERROR_CODE_3 = 3;
 const double HUNDRED_NUM = 100;
 const int VALID_FILE_LENGTH = -1;
+const int SAMPLINGRATE_MULTI = 20;
+const int CHANNELCOUNT_MULTI = 1000;
+const int BITSPERSAMPLE_MULTI = 8;
 const char *MULTI_PIPELINE_TAG = "[AudioEditTestApp_multiPipelineEdit_cpp]";
 
 // 多线程共享锁
@@ -392,7 +395,7 @@ napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info)
     std::lock_guard<std::mutex> lock(g_threadLock);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest multiPipelinePrepare start");
     napi_value napiValue;
-    OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;;
+    OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
 
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
@@ -928,7 +931,7 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     if (inputNode.id.empty()) {
         MultiCreateInputNode(env, params.inputId, napiValue, result);
     } else {
-        UpdateInputNodeParams *updateParams = 
+        UpdateInputNodeParams *updateParams =
             new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
         MultiUpdateInputNode(result, *updateParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
@@ -1094,7 +1097,7 @@ napi_value MultiGetSecondOutputAudio(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-OH_AudioSuite_Result MultiProcessPipeline(OH_AudioSuitePipeline *audioSuitePipeline )
+OH_AudioSuite_Result MultiProcessPipeline(OH_AudioSuitePipeline *audioSuitePipeline)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest ProcessPipeline start");
     // 获取管线状态
@@ -1126,6 +1129,12 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
     bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
     char *playAudioBuffer = threadPipelineManager->playAudioBuffer;
     MultiProcessPipeline(audioSuitePipeline);
+    if (audioDataSize <= CONSTANT_0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+            "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d",
+            static_cast<int>(audioDataSize));
+        return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
+    }
     char *audioData = (char *)malloc(audioDataSize);
     if (audioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "GetRenderFrameOutput malloc failed");
@@ -1142,21 +1151,22 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
                      "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
     }
     playAudioBuffer = (char *)malloc(*writeSize);
-    memcpy(static_cast<char *>(playAudioBuffer), audioData, *writeSize);
+    std::copy(audioData, audioData + *writeSize, playAudioBuffer);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize: %{public}d, g_play_finishedFlag: %{public}s",
                  *writeSize, (finishedFlag ? "true" : "false"));
+    free(audioData);
+    audioData = nullptr;
     return result;
 }
 
-OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer *renderer, void *userData, void *audioData, int32_t audioDataSize)
+OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
+    void *userData, void *audioData, int32_t audioDataSize)
 {
     if (renderer == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData renderer is nullptr");
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
     if (audioData == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData audioData is nullptr");
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
     bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
@@ -1168,14 +1178,18 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
     int32_t writeSize = 0;
     if (!finishedFlag) {
         MultiOneRenDerFrame(audioDataSize, &writeSize);
-        OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "g_isRecord: %{public}s", recordFlag ? "true" : "false");
+        OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "g_isRecord: %{public}s",
+            recordFlag ? "true" : "false");
         if (audioDataSize != 0 && recordFlag == true) {
-            memcpy(static_cast<char *>(firstAudioBuffer) + firstBufferSize, playAudioBuffer, writeSize);
+            int32_t copySize = std::min(audioDataSize, writeSize);
+            std::copy(playAudioBuffer, playAudioBuffer + copySize,
+                static_cast<char *>(firstAudioBuffer) + firstBufferSize);
             firstBufferSize += writeSize;
         }
     }
-    if (firstAudioBuffer != nullptr) {
-        memcpy(static_cast<char *>(audioData), firstAudioBuffer, audioDataSize);
+    int32_t copySize = std::min(audioDataSize, writeSize);
+    if (firstAudioBuffer != nullptr && copySize > 0) {
+        std::copy(firstAudioBuffer, firstAudioBuffer + copySize, static_cast<char *>(audioData));
     }
     if (finishedFlag) {
         // 停止播放
@@ -1183,17 +1197,17 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
         // 停止管线
         OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
         ResetAllIsResetTotalWriteAudioDataSize();
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData firstBufferSize is %{public}zu",
-                     firstBufferSize);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData" +
+            " firstBufferSize is %{public}zu", firstBufferSize);
         CallBooleanCallback(finishedFlag);
         finishedFlag = false;
-        if (g_totalBuff != NULL) {
+        if (g_totalBuff != nullptr) {
             free(g_totalBuff);
-            g_totalBuff = NULL;
+            g_totalBuff = nullptr;
         }
     }
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData g_play_resultTotalSize: %{public}zu, writeSize: %{public}d",
-                 firstBufferSize, writeSize);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData " +
+        "g_play_resultTotalSize: %{public}zu, writeSize: %{public}d", firstBufferSize, writeSize);
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 
@@ -1202,7 +1216,7 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     OH_AudioStream_Type type = OH_AudioStream_Type::AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStreamBuilder *rendererBuilder = nullptr;
     OH_AudioRenderer *&audioRenderer = threadPipelineManager->audioRenderer;
-    int32_t g_play_dataSize = 0;
+    int32_t playDataSize = 0;
     OH_AudioStreamBuilder_Create(&rendererBuilder, type);
     int32_t bitsPerSample = 0;
     OH_AudioStream_SampleFormat streamSampleFormat;
@@ -1214,11 +1228,12 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     OH_AudioStreamBuilder_SetSampleFormat(rendererBuilder, streamSampleFormat);
     OH_AudioStreamBuilder_SetEncodingType(rendererBuilder, AUDIOSTREAM_ENCODING_TYPE_RAW);
     OH_AudioStreamBuilder_SetRendererInfo(rendererBuilder, AUDIOSTREAM_USAGE_MUSIC);
-    g_play_dataSize = 20 * g_audioFormatOutput.samplingRate * g_audioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
+    playDataSize = SAMPLINGRATE_MULTI * g_audioFormatOutput.samplingRate *
+        g_audioFormatOutput.channelCount * bitsPerSample / BITSPERSAMPLE_MULTI / CHANNELCOUNT_MULTI;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest playAudioRendererOnWriteData  g_play_dataSize: %{public}d, samplingRate: %{public}d, "
+                 "audioEditTest playAudioRendererOnWriteData  playDataSize: %{public}d, samplingRate: %{public}d, "
                  "channelCount: %{public}d, bitsPerSample: %{public}d",
-                 g_play_dataSize, g_audioFormatOutput.samplingRate, g_audioFormatOutput.channelCount, bitsPerSample);
+                 playDataSize, g_audioFormatOutput.samplingRate, g_audioFormatOutput.channelCount, bitsPerSample);
     OH_AudioStreamBuilder_SetFrameSizeInCallback(rendererBuilder, g_play_dataSize);
     
     OH_AudioRenderer_OnWriteDataCallback rendererCallbacks = MultiPlayAudioRendererOnWriteData;
@@ -1228,7 +1243,8 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
-napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info) {
+napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioRendererStart start");
     OH_AudioSuitePipeline *audioSuitePipeline = threadPipelineManager->audioSuitePipeline;
     OH_AudioRenderer *&audioRenderer = threadPipelineManager->audioRenderer;
@@ -1250,21 +1266,22 @@ napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
                  "audioEditTest RealTimeSaveFileBuffer g_play_resultTotalSize  is %{public}d", playAudioBufferSize);
     napi_status status = napi_create_arraybuffer(env, playAudioBufferSize, &arrayBufferData, &napiValue);
     if (status != napi_ok || arrayBufferData == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest napi_create_arraybuffer status: %{public}d",
-                     static_cast<int>(status));
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest napi_create_arraybuffer " +
+            "status: %{public}d", static_cast<int>(status));
         playAudioBufferSize = 0;
         if (playAudioBuffer != nullptr) {
             free(playAudioBuffer);
-            playAudioBuffer = (char *)malloc(1024 * 1024 * 100);
+            playAudioBuffer = nullptr;
         }
         // 创建 ArrayBuffer 失败， 返回一个大小为 0 的 ArrayBuffer
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        memcpy(arrayBufferData, playAudioBuffer, playAudioBufferSize);
+        std::copy(playAudioBuffer, playAudioBuffer + playAudioBufferSize,
+            static_cast<char *>(arrayBufferData));
         if (playAudioBuffer != nullptr) {
             free(playAudioBuffer);
-            playAudioBuffer = (char *)malloc(1024 * 1024 * 100);
+            playAudioBuffer = nullptr;
         }
         playAudioBufferSize = 0;
         return napiValue;
@@ -1288,7 +1305,7 @@ napi_value GetAutoTestProcess(napi_env env, napi_callback_info info)
     napi_set_property(env, jsMap, keyVal, valVal);
     }
     if (endFlag) {
-       OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "process is ended");
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "process is ended");
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "ready to return process");
     return jsMap;

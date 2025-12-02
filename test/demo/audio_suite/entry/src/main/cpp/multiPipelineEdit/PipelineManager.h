@@ -50,10 +50,10 @@ public:
     std::shared_ptr<NodeManager> nodeManager;
     OH_AudioFormat audioFormatInput;
     OH_AudioFormat audioFormatOutput;
-    char* firstAudioBuffer = NULL;
-    char* secondAudioBuffer = NULL;
-    char* playAudioBuffer = NULL;
-    char* inputBuffer = NULL;
+    char* firstAudioBuffer = nullptr;
+    char* secondAudioBuffer = nullptr;
+    char* playAudioBuffer = nullptr;
+    char* inputBuffer = nullptr;
     OH_AudioRenderer *audioRenderer = nullptr;
     bool multiRenderFrameFlag = false;
     size_t firstBufferSize = 0;
@@ -66,7 +66,8 @@ public:
     std::map<std::string, FILE*> writeDataFileMap;
     std::map<std::string, std::shared_ptr<MultiUserData>> userDataMap;
 public:
-    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager);
+    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine,
+        std::shared_ptr<NodeManager> nodeManager);
     ~PipelineManager();
 };
 
