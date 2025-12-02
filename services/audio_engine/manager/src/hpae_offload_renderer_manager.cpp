@@ -108,8 +108,8 @@ void HpaeOffloadRendererManager::SetCurrentNode()
     // pick one node from sinkInputNodeMap_ and set to curNode_
     for (auto [_, node]: sinkInputNodeMap_) {
         curNode_ = node;
-        if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            CreateOffloadNodes();
+        CreateOffloadNodes();
+        if (curNode_->GetState() == HPAE_SESSION_RUNNING) { 
             ConnectInputSession();
             break;
         }
