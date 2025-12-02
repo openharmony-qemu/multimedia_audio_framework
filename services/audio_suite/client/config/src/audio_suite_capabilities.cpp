@@ -74,7 +74,7 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t LoadSrCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("loadSrCapability start.");
     std::string algoSoPath = nc.soPath + nc.soName;
