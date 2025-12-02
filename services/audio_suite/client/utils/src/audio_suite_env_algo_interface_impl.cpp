@@ -60,16 +60,18 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail", soPath.c_str());
 
     algoApi_.getSize = reinterpret_cast<FuniMedia_Env_GetSize>(dlsym(libHandle_, "iMedia_Env_GetSize"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.getSize != nullptr, ERROR, "Failed to get symbol iMedia_Env_GetSize");
     algoApi_.initAlgo = reinterpret_cast<FuniMedia_Env_Init>(dlsym(libHandle_, "iMedia_Env_Init"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.initAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Env_Init");
     algoApi_.applyAlgo = reinterpret_cast<FuniMedia_Env_Apply>(dlsym(libHandle_, "iMedia_Env_Apply"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Env_Apply");
     algoApi_.setPara = reinterpret_cast<FuniMedia_Env_SetParams>(dlsym(libHandle_, "iMedia_Env_SetParams"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.setPara != nullptr, ERROR, "Failed to get symbol iMedia_Env_SetParams");
     algoApi_.getPara = reinterpret_cast<FuniMedia_Env_GetParams>(dlsym(libHandle_, "iMedia_Env_GetParams"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.getPara != nullptr, ERROR, "Failed to get symbol iMedia_Env_GetParams");
-
+    bool loadAlgoApiFail = algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr ||
+                           algoApi_.applyAlgo == nullptr || algoApi_.setPara == nullptr || algoApi_.getPara == nullptr;
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
+    
     int32_t ret = algoApi_.getSize(&stSize_);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_Env_GetSize ERROR: %{public}d", ret);
 
