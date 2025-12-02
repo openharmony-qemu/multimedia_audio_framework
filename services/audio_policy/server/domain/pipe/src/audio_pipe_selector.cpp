@@ -371,17 +371,15 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
 {
     if (flag & AUDIO_INPUT_FLAG_AI) {
         return PIPE_TYPE_IN_NORMAL_AI;
-    }
-    if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
+    } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
         return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
-    }
-    if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
+    } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
         return PIPE_TYPE_IN_NORMAL_UNPROCESS;
-    }
-    if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
+    } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
+    } else {
+        return PIPE_TYPE_IN_NORMAL;
     }
-    return PIPE_TYPE_IN_NORMAL;
 }
 
 AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
