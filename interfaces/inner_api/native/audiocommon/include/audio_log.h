@@ -179,4 +179,14 @@
             continue;                                     \
         }                                                 \
     } else void (0)
+
+#define AUDIO_LIMIT_INFO_LOG(cond, fmt, ...)              \
+    do {                                                  \
+        if (cond) {                                       \
+            AUDIO_INFO_LOG(fmt, ##__VA_ARGS__);           \
+        } else {                                          \
+            AUDIO_DEBUG_LOG(fmt, ##__VA_ARGS__);          \
+        }                                                 \
+    } while (0)
+
 #endif // OHOS_AUDIO_LOG_H
