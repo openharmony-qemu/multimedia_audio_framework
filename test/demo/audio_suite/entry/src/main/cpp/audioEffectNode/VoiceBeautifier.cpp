@@ -9,7 +9,7 @@
 #include "ohaudio/native_audio_suite_engine.h"
 #include "NodeManager.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include "audioEffectNode/Equailizer.h"
+#include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
@@ -20,14 +20,8 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *VB_NODE_TAG = "[AudioEditTestApp_VoiceBeautifierNode_cpp]";
 
-int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId, std::string selectNodeId)
+int AddVBEffectNode(std::string& inputId, int mode, std::string& voiceBeautifierId, std::string& selectNodeId)
 {
-    static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO
-    };
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
     Node node = CreateNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
     bool bypass = mode == 0;
@@ -64,12 +58,6 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId)
 {
-    static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD,
-        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO
-    };
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
     Node node = g_nodeManager->GetNodeById(voiceBeautifierId);
@@ -94,14 +82,18 @@ int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifie
     return result;
 }
  
-napi_status getResetVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
+napi_status getResetVBParameters(napi_env env, napi_callback_info info, std::string &inputId, int &mode,
                                  std::string &voiceBeautifierId)
 {
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
     status = napi_get_value_int32(env, argv[ARG_1], &mode);
     status = ParseNapiString(env, argv[ARG_2], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, VB_NODE_TAG,
                  "audioEditTest resetVBEffect inputId: %{public}s, mode: %{public}d, voiceBeautifierId: %{public}s",
                  inputId.c_str(), mode, voiceBeautifierId.c_str());
+    delete[] argv;
     return status;
 }

@@ -9,8 +9,8 @@
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
 #include "./callback/RegisterCallback.h"
-#include "../audioEffectNode/Input.h"
-#include "audioEffectNode/Output.h"
+#include "../audioSuiteError/AudioSuiteError.h"
+#include "../audioEffectNode/Output.h"
 #include "../utils/Utils.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
@@ -74,6 +74,12 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
     }
     char *audioData = (char *)malloc(audioDataSize);
+    if (audioData == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+            "audioEditTest OneRenDerFrame malloc audioData failed, audioDataSize: %{public}d",
+            audioDataSize);
+        return static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData,
                                         audioDataSize, writeSize, &g_playFinishedFlag);
@@ -88,16 +94,31 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
     }
     // 每次保存一次获取的buffer值
     g_playAudioData = (char *)malloc(*writeSize);
+    if (g_playAudioData == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+            "audioEditTest OneRenDerFrame malloc g_playAudioData failed, writeSize: %{public}d",
+            *writeSize);
+        free(audioData);
+        audioData = nullptr;
+        return static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
     std::copy(audioData, audioData + *writeSize, static_cast<char *>(g_playAudioData));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
         *writeSize, (g_playFinishedFlag ? "true" : "false"));
+    free(audioData);
+    audioData = nullptr;
     return result;
 }
 
 OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
 {
     g_playOhAudioDataArray->audioDataArray = (void**)malloc(ARG_2 * sizeof(void*));
+    if (g_playOhAudioDataArray->audioDataArray == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+                     "OH_AudioSuiteEngine_MultiRenderFrame g_playOhAudioDataArray is nullptr");
+        return static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
     for (int i = ARG_0; i < ARG_2; i++) {
         if (audioDataSize <= ARG_0) {
             return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
@@ -155,19 +176,21 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         } else {
             OneMulRenDerFrame(audioDataSize, &writeSize);
         }
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "g_isRecord: %{public}s", g_isRecord ? "true" : "false");
         // 每次保存一次获取的buffer值
         if (audioDataSize != 0 && g_isRecord == true) {
-            std::copy(g_playAudioData, g_playAudioData + writeSize,
+            int32_t copySize = std::min(audioDataSize, writeSize);
+            std::copy(g_playAudioData, g_playAudioData + copySize,
                 static_cast<char *>(g_playTotalAudioData) + g_playResultTotalSize);
-            g_playResultTotalSize += writeSize;
+            g_playResultTotalSize += copySize;
         }
     }
     // 播放音频数据
-    if (g_playAudioData != nullptr) {
-        std::copy(g_playAudioData, g_playAudioData + audioDataSize, static_cast<char *>(audioData));
+    int32_t copySize = std::min(audioDataSize, writeSize);
+    if (g_playAudioData != nullptr && copySize > 0) {
+        std::copy(g_playAudioData, g_playAudioData + copySize, static_cast<char *>(audioData));
     }
+    free(g_playAudioData);
+    g_playAudioData = nullptr;
     if (g_playFinishedFlag) {
         // 停止播放
         OH_AudioRenderer_Stop(audioRenderer);

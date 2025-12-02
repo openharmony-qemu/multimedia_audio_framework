@@ -18,7 +18,7 @@ public:
     size_t totalWriteAudioDataSize;
      // 音频是否从头开始写入
     bool isResetTotalWriteAudioDataSize;
-public:
+
     MultiUserData();
     MultiUserData(std::string pipelineId, std::string inputId);
     ~MultiUserData();

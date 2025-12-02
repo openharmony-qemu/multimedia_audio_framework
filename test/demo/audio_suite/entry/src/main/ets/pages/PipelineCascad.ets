@@ -56,7 +56,12 @@ export struct PipelineCascad {
       // 设置屏幕横屏
       windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION_LANDSCAPE);
     });
-    this.initAllPipeline();
+    if (!this.initAllPipeline()) {
+      this.getUIContext().showAlertDialog({
+        title: '提示',
+        message: '初始化管线失败'
+      });
+    }
   }
 
   aboutToDisappear(): void {

@@ -31,7 +31,7 @@
 #include "audioEffectNode/Output.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/ParseNapiParam.h"
-#include "audioEffectNode/Equailizer.h"
+#include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/SoundField.h"
 #include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
@@ -52,7 +52,6 @@
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
-void *g_aissTapAudioData = (char *)malloc(1024 * 1024 * 100);
 
 const int MAX_PLAY_RESULT_BUFFER_SIZE = 1024 * 1024 * 1024;
 
@@ -89,7 +88,7 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioEditNodeInit start");
     size_t argc = 1;
-    napi_value argv[1] = {nullptr};
+    napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 解析工作模式
 
@@ -99,7 +98,16 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
         static_cast<int>(result));
     // 根据入参判断当前的workmode
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[0], &mode);
+    napi_status status = napi_get_value_uint32(env, argv[0], &mode);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest OH_AudioEditEngine_CreatePipeline"
+            "napi_get_value_uint32 error: %{public}d", status);
+        result = OH_AudioSuiteEngine_Destroy(g_audioSuiteEngine);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d", static_cast<int>(result));
+        delete[] argv;
+        return nullptr;
+    }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---AudioEditNodeInit--workMode==%{public}d",
         mode);
     OH_AudioSuite_PipelineWorkMode workMode;
@@ -110,6 +118,10 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
     } else {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest OH_AudioEditEngine_CreatePipeline workMode error: %{public}d", workMode);
+        result = OH_AudioSuiteEngine_Destroy(g_audioSuiteEngine);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d", static_cast<int>(result));
+        delete[] argv;
         return nullptr;
     }
     // 创建管线
@@ -123,6 +135,7 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 
     napi_value napiValue;
     napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
     return napiValue;
 }
 
@@ -190,6 +203,7 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &g_audioFormatOutput);
     napi_value napiValue;
     napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
     return napiValue;
 }
 
@@ -208,11 +222,12 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     status = napi_get_arraybuffer_info(env, argv[ARG_4], &pcmBuffer, &pcmBufferSize);
     g_totalSize = params.pcmBufferSize;
     if (g_totalBuff != nullptr) {
+        free(g_totalBuff);
         g_totalBuff = nullptr;
     }
     g_totalBuff = (char *)malloc(g_totalSize);
     
-    if (status != 0) {
+    if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
     std::copy(static_cast<char *>(pcmBuffer), static_cast<char *>(pcmBuffer) + g_totalSize, g_totalBuff);
@@ -239,11 +254,8 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
 static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioInAndOutInit start");
-    size_t argc = 5;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     AudioParams params;
-    napi_status status = ParseArguments(env, argv, params);
+    napi_status status = ParseArguments(env, info, params);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
@@ -292,30 +304,37 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
 
 OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
 {
-    OH_AudioSuite_Result result;
+    OH_AudioSuite_Result result = OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
     Node nextNode;
     if (size > INPUTNODES_SIZE2) {
         while (node.type != OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER) {
             nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
             result = g_nodeManager->removeNode(node.id);
-            return result;
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
             node = nextNode;
         }
     } else if (size == INPUTNODES_SIZE2) {
         while (node.type != OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT) {
             nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
             result = g_nodeManager->removeNode(node.id);
-            return result;
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
             node = nextNode;
         }
     } else {
         while (!node.id.empty()) {
             nextNode = g_nodeManager->GetNodeById(node.nextNodeId);
             result = g_nodeManager->removeNode(node.id);
-            return result;
+            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+                return result;
+            }
             node = nextNode;
         }
     }
+    return OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
 }
 
 // 删除音频
@@ -343,17 +362,20 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
     Node nextNode;
     if (node.id.empty()) {
         napi_create_int64(env, static_cast<int>(result), &napiValue);
+        delete[] argv;
         return napiValue;
     }
     
     if (inputNodes.size() <= 0) {
         napi_create_int64(env, static_cast<int>(-1), &napiValue);
+        delete[] argv;
         return napiValue;
     } else {
         result = DeleteNodeOfSong(node, inputNodes.size());
     }
 
     napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
     return napiValue;
 }
 
@@ -377,41 +399,39 @@ static napi_value DeleteNode(napi_env env, napi_callback_info info)
     result = g_nodeManager->removeNode(nodeId);
 
     napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
     return napiValue;
 }
 
 // 设置均衡器模式方法
-static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
+static napi_value SetEqualizerMode(napi_env env, napi_callback_info info)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode start");
-    size_t argc = 3;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    unsigned int equailizerMode = -1;
-    std::string equailizerId;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerMode start");
+    unsigned int equalizerMode = -1;
+    std::string equalizerId;
     std::string inputId;
-    napi_status status = GetEqModeParameters(env, argv, equailizerMode, equailizerId, inputId);
+    napi_status status = GetEqModeParameters(env, info, equalizerMode, equalizerId, inputId);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
 
     // 创建均衡器效果节点
-    Node eqNode = GetOrCreateEqualizerNodeByMode(equailizerId, inputId);
+    Node eqNode = GetOrCreateEqualizerNodeByMode(equalizerId, inputId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
-    bool bypass = equailizerMode == 0;
+    bool bypass = equalizerMode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(eqNode.physicalNode, bypass);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest---SetEquailizerMode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+            "audioEditTest---SetEqualizerMode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     if (bypass) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     result =
-        OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equailizerMode));
+        OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equalizerMode));
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
@@ -419,17 +439,14 @@ static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
 static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerFrequencyBandGains start");
-    size_t argc = 4;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     OH_EqualizerFrequencyBandGains frequencyBandGains;
     EqBandGainsParams params;
-    napi_status status = GetEqBandGainsParameters(env, argv, frequencyBandGains, params);
+    napi_status status = GetEqBandGainsParameters(env, info, frequencyBandGains, params);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
     // 创建均衡器效果节点
-    Node eqNode = GetOrCreateEqualizerNodeByGains(params.equailizerId, params.inputId, params.selectedNodeId);
+    Node eqNode = GetOrCreateEqualizerNodeByGains(params.equalizerId, params.inputId, params.selectedNodeId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
@@ -454,7 +471,7 @@ static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
     // 创建音速音调节点
     Node soundSpeedToneNode = GetOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
     if (!soundSpeedToneNode.physicalNode) {
-        return ReturnResult(env, static_cast<AudioSuiteResult>(0));
+        return ReturnResult(env, AudioSuiteResult::DEMO_CREATE_NODE_ERROR);
     }
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetTempoAndPitch(soundSpeedToneNode.physicalNode, params.soundSpeed, params.soundTone);
@@ -495,7 +512,7 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---IN");
     size_t argc = 4;
-    napi_value argv[4] = {nullptr, nullptr, nullptr, nullptr};
+    napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // inputId
     std::string inputId;
@@ -520,20 +537,18 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     int result = AddVBEffectNode(inputId, mode, voiceBeautifierId, selectNodeId);
 
     napi_create_int64(env, result, &ret);
+    delete[] argv;
     return ret;
 }
 static napi_value resetVBEffect(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---resetVBEffect---IN");
-    size_t argc = 3;
-    napi_value argv[3] = {nullptr, nullptr, nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     int mode = -1;
     std::string inputId;
     std::string voiceBeautifierId;
     //解析参数
-    napi_status status = getResetVBParameters(env, argv, inputId, mode, voiceBeautifierId);
+    napi_status status = getResetVBParameters(env, info, inputId, mode, voiceBeautifierId);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
@@ -546,7 +561,7 @@ static napi_value resetVBEffect(napi_env env, napi_callback_info info)
 static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info, FieldEffectParams& params)
 {
     size_t argc = 4;
-    napi_value argv[4] = {nullptr, nullptr, nullptr, nullptr};
+    napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
     napi_get_value_uint32(env, argv[ARG_1], &params.mode);
@@ -559,6 +574,7 @@ static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info,
         params.mode,
         params.fieldEffectId.c_str(),
         params.selectedNodeId.c_str());
+    delete[] argv;
     return status;
 }
 
@@ -611,28 +627,31 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
     return ret;
 }
 
+static napi_status ParseResetFieldEffectParams(napi_env env, napi_callback_info info,
+    std::string& inputId, unsigned int& mode, std::string& fieldEffectId)
+{
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect inputId is %{public}s",
+        inputId.c_str());
+    napi_get_value_uint32(env, argv[ARG_1], &mode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect mode is %{public}zd", mode);
+    status = ParseNapiString(env, argv[ARG_2], fieldEffectId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest fieldEffectId is %{public}s",
+        fieldEffectId.c_str());
+    delete[] argv;
+    return status;
+}
+
 static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect start");
-    size_t argc = 3;
-    napi_value argv[3] = {nullptr, nullptr, nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-
     std::string inputId;
-    napi_status status = ParseNapiString(env, argv[ARG_1], inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect inputId is %{public}s",
-        inputId.c_str());
-
-    // 获取二参
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[ARG_2], &mode);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect mode is %{public}zd", mode);
-
-    // 获取三参
     std::string fieldEffectId;
-    status = ParseNapiString(env, argv[ARG_3], fieldEffectId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest fieldEffectId is %{public}s",
-        fieldEffectId.c_str());
+    napi_status status = ParseResetFieldEffectParams(env, info, inputId, mode, fieldEffectId);
 
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
 
@@ -872,6 +891,7 @@ static napi_value getOptions(napi_env env, napi_callback_info info)
     std::string type = g_nodeManager->GetOptionsByType(node);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions type is %{public}s", type.c_str());
     napi_create_string_utf8(env, type.c_str(), NAPI_AUTO_LENGTH, &napiValue);
+    delete[] argv;
     return napiValue;
 }
 
@@ -889,7 +909,11 @@ static napi_value SetIsRecord(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
  
     bool isRecord;
-    napi_get_value_bool(env, argv[ARG_0], &isRecord);
+    napi_status status = napi_get_value_bool(env, argv[ARG_0], &isRecord);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        return nullptr;
+    }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "SetIsRecord isRecord: %{public}s", isRecord ? "true" : "false");
     if (isRecord) {
@@ -900,7 +924,7 @@ static napi_value SetIsRecord(napi_env env, napi_callback_info info)
  
 static napi_value SetSeparationMode(napi_env env, napi_callback_info info)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetIsRecord start");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetSeparationMode start");
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -965,7 +989,7 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"initByPipelineCascad", nullptr, InitByPipelineCascad, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioEditDestory", nullptr, AudioEditDestory, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setFormat", nullptr, SetFormat, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"setEquailizerMode", nullptr, SetEquailizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
             napi_default, nullptr},
         {"saveFileBuffer", nullptr, SaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},

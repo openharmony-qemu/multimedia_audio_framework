@@ -35,7 +35,7 @@ export struct AudioEdit {
     balanceModeScroller: Scroller = new Scroller();
     private balanceModeList: string[] = 
         ['默认', '民谣', '中国式', '古典', '舞曲', '爵士', '流行', 'R&B', '摇滚', '自定义'];
-    @State equailizerMode: number = 0;
+    @State equalizerMode: number = 0;
     @State balanceBandGains: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     @State fileSize: number = 0;
     @State errorString: string = '';
@@ -59,7 +59,7 @@ export struct AudioEdit {
     @State mixerId: string = util.generateRandomUUID(true);
     @StorageLink('publicBuffer') pubBuffer: ArrayBuffer = new ArrayBuffer(0);
     @State openGridState: boolean = false;
-    private equailizerId: string = '';
+    private equalizerId: string = '';
     
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
@@ -68,7 +68,7 @@ export struct AudioEdit {
             let result = audioNapi.audioEditNodeInit(1);
             Logger.info(TAG, `audioEditNodeInit result: ${result}`);
         }catch (e) {
-            Logger.info(TAG, `audioEditNodeInit error: ${JSON.stringify(e)}`);
+            Logger.error(TAG, `audioEditNodeInit error: ${JSON.stringify(e)}`);
         }
     }
 
@@ -79,7 +79,7 @@ export struct AudioEdit {
             let result = audioNapi.audioEditDestory();
             Logger.info(TAG, `audioEditDestory result: ${result}`);
         }catch (e) {
-            Logger.info(TAG, `audioEditDestory error: ${JSON.stringify(e)}`);
+            Logger.error(TAG, `audioEditDestory error: ${JSON.stringify(e)}`);
         }
     }
 
@@ -157,7 +157,8 @@ export struct AudioEdit {
                         name: 'export', onPop: (popInfo: PopInfo) => {
                             Logger.info(TAG, `loop deleteSong result and inputId`);
                             let flag = false;
-                            this.songWaveList.forEach((songInfo, inputId) => {
+                            const keysToDelete = Array.from(this.songWaveList.keys());
+                            keysToDelete.forEach((inputId) => {
                                 let res = audioNapi.deleteSong(inputId);
                                 Logger.info(TAG, `loop deleteSong result and inputId is ${res}, ${inputId}`);
                                 if (res === 0) {
@@ -219,7 +220,8 @@ export struct AudioEdit {
                             });
                             return;
                         }
-                        if (this.aissOptionMap.get(this.pitchSong) != -1) {
+                        if (this.aissOptionMap.get(this.pitchSong) != -1 ||
+                            this.aissOptionMap.get(this.pitchSong) != undefined) {
                             let oldId: string | undefined = this.aissUriToIdMap.get(this.pitchSong);
                             if (oldId == undefined) {
                                 let uuid: string = util.generateRandomUUID(true);
@@ -335,7 +337,7 @@ export struct AudioEdit {
                 .width('20%')
                 .onClick(() => {
                     let fieldEffectId = this.fieldEffectIdMap.get(this.pitchSong);
-                    if(fieldEffectId === '') {
+                    if(fieldEffectId === '' || fieldEffectId === undefined) {
                         let fieldId = util.generateRandomUUID(true);
                         //新增节点
                         if (this.fieldEffectNumMap.get(this.pitchSong) === SoundFiledType.SOUND_FIELD_CLOSE) {
@@ -345,7 +347,7 @@ export struct AudioEdit {
                         this.fieldEffectIdMap.set(this.pitchSong, fieldId);
 
                         let result = audioNapi.startFieldEffect(this.pitchSong, this.fieldEffectNumMap.get(this.pitchSong), fieldId);
-                        if(result !== 0) {
+                        if (result !== 0) {
                             // 效果节点设置失败
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -761,6 +763,7 @@ export struct AudioEdit {
                                     message: '删除降噪节点失败\n请单击弹窗外任意处关闭弹窗',
                                     autoCancel: true
                                 });
+                                return;
                             }
                             this.deleteEffectLabel(NodeType.NR);
                             this.noiseReductionUriToIdMap.set(this.pitchSong, undefined);
@@ -800,17 +803,17 @@ export struct AudioEdit {
                         });
                     }
                     this.forceRenderByEffectBtn();
-                    if (this.equailizerId === '') {
-                        this.equailizerId = util.generateRandomUUID(true);
+                    if (this.equalizerId === '') {
+                        this.equalizerId = util.generateRandomUUID(true);
                     }
 
-                    if (this.equailizerMode !== 10) {
+                    if (this.equalizerMode !== 10) {
                         // 判断效果节点是否设置成功
-                        let result = audioNapi.setEquailizerMode(this.equailizerMode, this.equailizerId, this.pitchSong);
-                        if (this.equailizerMode === 1){
+                        let result = audioNapi.setEqualizerMode(this.equalizerMode, this.equalizerId, this.pitchSong);
+                        if (this.equalizerMode === 1){
                             this.deleteEffectLabel(NodeType.EQ);
                         }
-                        Logger.info(TAG, `setEquailizerMode result: ${result}, equailizerMode: ${this.equailizerMode}`);
+                        Logger.info(TAG, `setEqualizerMode result: ${result}, equalizerMode: ${this.equalizerMode}`);
                         if (result !== 0) {
                             // 效果节点设置失败
                             this.getUIContext().showAlertDialog({
@@ -829,12 +832,12 @@ export struct AudioEdit {
                         }
                         this.playList.set('resultPcmBuffer', {
                             uri: 'resultPcmBuffer',
-                            nodeId: this.equailizerId
+                            nodeId: this.equalizerId
                         });
                     } else {
                         // 均衡器模式为自定义类型
                         let result =
-                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.equailizerId, this.pitchSong);
+                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.equalizerId, this.pitchSong);
                         Logger.info(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                         if (result !== 0) {
                             // 效果节点设置失败
@@ -854,7 +857,7 @@ export struct AudioEdit {
                         }
                         this.playList.set('resultPcmBuffer', {
                             uri: 'resultPcmBuffer',
-                            nodeId: this.equailizerId
+                            nodeId: this.equalizerId
                         });
                     }
                     this.forceRenderByEffectBtn();
@@ -870,11 +873,11 @@ export struct AudioEdit {
                             .borderRadius('20%')
                             .borderWidth('1vp')
                             .borderColor($r('app.color.index_audio_clip_card'))
-                            .backgroundColor(this.equailizerMode === (index + 1) ? $r('app.color.index_audio_clip_card') :
+                            .backgroundColor(this.equalizerMode === (index + 1) ? $r('app.color.index_audio_clip_card') :
                                 Color.Gray)
                             .onClick(() => {
                                 Logger.info(TAG, `index + 1 is ${index + 1}`);
-                                this.equailizerMode = index + 1;
+                                this.equalizerMode = index + 1;
                             })
                     })
                 }
@@ -887,11 +890,11 @@ export struct AudioEdit {
                             .borderRadius('20%')
                             .borderWidth('1vp')
                             .borderColor($r('app.color.index_audio_clip_card'))
-                            .backgroundColor(this.equailizerMode === (index + 6) ? $r('app.color.index_audio_clip_card') :
+                            .backgroundColor(this.equalizerMode === (index + 6) ? $r('app.color.index_audio_clip_card') :
                                 Color.Gray)
                             .onClick(() => {
                                 Logger.info(TAG, `index + 1 is ${index + 6}`);
-                                this.equailizerMode = index + 6;
+                                this.equalizerMode = index + 6;
                             })
                     })
                 }
@@ -917,8 +920,8 @@ export struct AudioEdit {
                             .onChange((value: number, mode: SliderChangeMode) => {
                                 this.balanceBandGains[index] = value;
                                 // 均衡器模式为自定义模式
-                                this.equailizerMode = 10;
-                                this.balanceModeScroller.scrollToIndex(this.equailizerMode, true);
+                                this.equalizerMode = 10;
+                                this.balanceModeScroller.scrollToIndex(this.equalizerMode, true);
                             })
                     }.width('5%').height('200vp')
                 })
@@ -1213,7 +1216,8 @@ export struct AudioEdit {
                 } else {
                     this.getUIContext().showAlertDialog({
                         title: '提示',
-                        message: '删除音频失败'
+                        message: '删除音频失败',
+                        autoCancel: true
                     });
                 }
             })
@@ -1456,6 +1460,7 @@ export struct AudioEdit {
                         title: '提示',
                         message: `error: ${result}`
                     });
+                    return;
                 }
                 audioNapi.audioRendererInit();
             }catch(e) {

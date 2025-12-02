@@ -116,18 +116,28 @@ export struct SongBox {
         .backgroundColor(Color.Red)
         .fontColor(Color.White)
         .onClick(() => {
+          const songInfo = this.playList.get(info.uri);
+          if (songInfo && songInfo.fd) {
+            try {
+              fs.closeSync(songInfo.fd);
+              Logger.info(TAG, `File fd: ${songInfo.fd} closed successfully`);
+            } catch (e) {
+              Logger.error(TAG, `Failed to close file fd: ${songInfo.fd}, error: ${JSON.stringify(e)}`);
+            }
+          }
           this.playList.delete(info.uri);
         })
     }
   }
 
   getPcmFileBuffer(uri: string, songType?: string): boolean {
+    let file: fs.File;
     try {
       let path: string = new fileUri.FileUri(uri).path;
       Logger.info(TAG, `getPcmFileBuffer path: ${JSON.stringify(path)}`);
-      let file = fs.openSync(path, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
+      file = fs.openSync(path, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
       let fsStat = fs.statSync(path);
-      Logger.info(TAG, `failSize : ${fsStat.size}`);
+      Logger.info(TAG, `fileSize : ${fsStat.size}`);
       let buffer = new ArrayBuffer(fsStat.size);
       let readOption: ReadOptions = {
         offset: 0, // 期望读取文件的位置。可选，默认从当前位置开始读
@@ -150,4 +160,3 @@ export struct SongBox {
     }
   }
 }
-
