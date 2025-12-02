@@ -84,7 +84,7 @@ export async function importSingleSong(nodeList: Map<string, SongInfo>,
         Logger.warn(TAG, `File ${tempMap.size} ***************`);
         newMap = tempMap;
     } catch (error) {
-        Logger.error(TAG, `DocumentViewPicker failed with err: JSON.stringify(error)`);
+        Logger.error(TAG, `DocumentViewPicker failed with err: ${JSON.stringify(error)}`);
     }
 
     return newMap;
