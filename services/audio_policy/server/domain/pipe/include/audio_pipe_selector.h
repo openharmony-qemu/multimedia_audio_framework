@@ -50,6 +50,7 @@ private:
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     AudioStreamAction JudgeStreamAction(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
     void SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    AudioPipeType GetInputNormalPipeType(uint32_t flag);
     AudioPipeType GetPipeType(uint32_t flag, AudioMode audioMode);
     void HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);

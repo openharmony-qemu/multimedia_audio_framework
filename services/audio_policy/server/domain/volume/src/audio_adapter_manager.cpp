@@ -1453,6 +1453,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_ULTRASONIC;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_VOICE_RECOGNITION;
+        }
     }
 }
 

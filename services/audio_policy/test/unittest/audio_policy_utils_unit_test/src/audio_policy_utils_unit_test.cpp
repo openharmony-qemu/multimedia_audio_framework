@@ -398,6 +398,23 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_015_ext03, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test GetDeviceType API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_016_ext03
+ * @tc.desc  : Test GetDeviceType
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016_ext03, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string deviceName = PRIMARY_VOICE_RECOGNITION_MIC;
+    DeviceType ret = audioPolicyUtilsTest_->GetDeviceType(deviceName);
+    EXPECT_EQ(ret, DEVICE_TYPE_MIC);
+}
+
+/**
  * @tc.name  : Test UnexcludeOutputDevices API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_016

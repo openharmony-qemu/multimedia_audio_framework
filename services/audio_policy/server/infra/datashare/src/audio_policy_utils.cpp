@@ -61,6 +61,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {FILE_SOURCE, TYPE_FILE_IO},
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
+    {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
 };
 
 int32_t AudioPolicyUtils::startDeviceId = 1;
@@ -393,6 +394,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
             } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
                 portName = PRIMARY_ULTRASONIC_MIC;
                 AUDIO_INFO_LOG("use PRIMARY_ULTRASONIC_MIC for devicetype: %{public}d", deviceType);
+            } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
+                portName = PRIMARY_VOICE_RECOGNITION_MIC;
+                AUDIO_INFO_LOG("use PRIMARY_VOICE_RECOGNITION_MIC for devicetype: %{public}d", deviceType);
             } else {
                 portName = PRIMARY_MIC;
             }
@@ -457,7 +461,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PRIMARY_AI_MIC, PRIMARY_CLASS},
         {PORT_NONE, INVALID_CLASS},
         {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
-        
+        {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -712,7 +716,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
-        || deviceName == PRIMARY_ULTRASONIC_MIC) {
+        || deviceName == PRIMARY_ULTRASONIC_MIC ||
+        deviceName == PRIMARY_VOICE_RECOGNITION_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
