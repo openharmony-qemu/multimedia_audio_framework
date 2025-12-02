@@ -72,6 +72,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     algoApi_.initAlgo = reinterpret_cast<FunSpaceRenderInit>(dlsym(libHandle_, "SpaceRenderInit"));
     algoApi_.applyAlgo = reinterpret_cast<FunSpaceRenderApply>(dlsym(libHandle_, "SpaceRenderApply"));
     algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));
+    
     bool loadAlgoApiFail = algoApi_.getSpeces == nullptr || algoApi_.getSize || algoApi_.getLateSamples ||
                       algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr || algoApi_.releaseAlgo == nullptr;
     if (loadAlgoApiFail) {
