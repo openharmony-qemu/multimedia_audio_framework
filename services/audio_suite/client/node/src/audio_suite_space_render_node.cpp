@@ -88,6 +88,7 @@ AudioSuitePcmBuffer *AudioSuiteSpaceRenderNode::SignalProcess(const std::vector<
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteSpaceRenderNode SignalProcess inputs is empty");
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr,
         "AudioSuiteSpaceRenderNode SignalProcess inputs[0] is nullptr");
+    CHECK_AND_RETURN_RET_LOG(outPcmBuffer_.GetPcmData() != nullptr, nullptr, "outPcmBuffer_ GetPcmData is nullptr");
 
     std::vector<uint8_t *> dataInPcm = {inputs[0]->GetPcmData()};
     std::vector<uint8_t *> dataOutPcm = {outPcmBuffer_.GetPcmData()};
