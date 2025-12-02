@@ -81,6 +81,7 @@ private:
     int32_t LoadAinrCapability(NodeCapability &nc);
     int32_t LoadSfCapability(NodeCapability &nc);
     int32_t LoadEnvCapability(NodeCapability &nc);
+    int32_t LoadSrCapability(NodeCapability &nc);
     int32_t LoadAissCapability(NodeCapability &nc);
     int32_t LoadGeneralCapability(NodeCapability &nc);
     int32_t LoadPureCapability(NodeCapability &nc);
