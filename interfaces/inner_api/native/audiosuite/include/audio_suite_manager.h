@@ -84,6 +84,7 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool *isSupported) = 0;
 };
 
 }  // namespace AudioSuite
