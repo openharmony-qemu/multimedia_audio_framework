@@ -5,7 +5,7 @@
 import {
     Node,
     NodeType,
-    colorMap,
+    ColorMap,
     SongInfo,
     SoundFiledType,
     EnvironmentType,
@@ -15,7 +15,7 @@ import {
     VoiceBeautifierMap,
     AudioSeparationType,
     AudioSeparationMap,
-    numberToNodeTypeMap,
+    NumberToNodeTypeMap,
     GeneralVoiceChangeType,
     PureVoiceChangeGenderOption,
     PureVoiceChangeType,
@@ -944,7 +944,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: equailizerId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             balanceBandGains: this.balanceBandGains
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -978,7 +978,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             soundFiledType: this.selectedSoundFiled
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1012,7 +1012,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             environmentType: this.selectedEnvironment
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1046,7 +1046,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode)
+                            color: ColorMap.get(this.selectedEffectNode)
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
@@ -1081,7 +1081,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: voiceBeautifierId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             voiceBeautifierType: this.selectedVoiceBeautifier
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1116,7 +1116,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             audioSeparationType: this.selectedAudioSeparation
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1153,7 +1153,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: soundSpeedToneId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             soundSpeed: this.soundSpeed,
                             soundTone: this.soundTone,
                         }
@@ -1180,7 +1180,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             environmentType: this.selectedEnvironment
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1208,7 +1208,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             environmentType: this.selectedEnvironment
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -1798,7 +1798,7 @@ export struct CheckNodeDialog {
         //获取当前设配支持的效果节点列表
         let nodeType: number[] = audioNapi.getEffectNodeList();
         this.nodes = nodeType
-            .map(num => numberToNodeTypeMap.get(num)) // 将数字转换为 NodeType
+            .map(num => NumberToNodeTypeMap.get(num)) // 将数字转换为 NodeType
             .filter(type => type !== undefined) as NodeType[]; // 过滤掉 undefined 值
     }
 

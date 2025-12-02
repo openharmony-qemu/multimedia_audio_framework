@@ -9,7 +9,7 @@ import buffer from '@ohos.buffer';
 import { common } from '@kit.AbilityKit';
 import { fileUri, ListFileOptions, picker } from '@kit.CoreFileKit';
 import fs from '@ohos.file.fs';
-import {NodeType, colorMap, inputStringToNodeTypeMap} from '../utils/importSongs/InterfaceInfo'
+import {NodeType, ColorMap, InputStringToNodeTypeMap} from '../utils/importSongs/InterfaceInfo'
 import { SceneInfo, OutputFile, InputFile, ExpectedOutput, ExecuteReport,
   NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo } from '../utils/autoTest/Interface'
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -71,7 +71,7 @@ async function initAutoTestDir() {
 }
 
 function getNodeTypeFromString(originStr: string): NodeType {
-  let ret = inputStringToNodeTypeMap.get(originStr);
+  let ret = InputStringToNodeTypeMap.get(originStr);
   if (ret === undefined) {
     ret = NodeType.VALID;
   }
@@ -566,7 +566,7 @@ export struct AutoTest {
           .wordBreak(WordBreak.BREAK_WORD)
           .lineBreakStrategy(LineBreakStrategy.BALANCED)
       }
-      .backgroundColor(colorMap.get(getNodeTypeFromString(nodeInfo.type)))
+      .backgroundColor(ColorMap.get(getNodeTypeFromString(nodeInfo.type)))
       .borderRadius(10)
       .width(40)
       .height(20)
