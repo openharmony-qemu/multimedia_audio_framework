@@ -217,6 +217,7 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
         return false;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", relativePath.c_str());
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
     libEntry_->audioEffectLibHandle = audioEffectLibHandle;
 
     return true;
@@ -260,7 +261,8 @@ bool LibLoader::Init()
     uint32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry is null");
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
+    CHECK_AND_RETURN_RET_LOG(handle_, false, "handle_ is null");
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
@@ -292,7 +294,8 @@ bool LibLoader::FlushAlgo()
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry is null");
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
+    CHECK_AND_RETURN_RET_LOG(handle_, false, "handle_ is null");
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
         libEntry_->libraryName.c_str());
