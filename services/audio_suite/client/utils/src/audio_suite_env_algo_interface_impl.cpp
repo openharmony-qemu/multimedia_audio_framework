@@ -71,7 +71,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
         Deinit();
         return ERROR;
     }
-    
+
     int32_t ret = algoApi_.getSize(&stSize_);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_Env_GetSize ERROR: %{public}d", ret);
 
