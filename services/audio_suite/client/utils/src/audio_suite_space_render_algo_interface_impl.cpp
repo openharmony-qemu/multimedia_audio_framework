@@ -209,7 +209,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &pa
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]);
- 
+
     return SUCCESS;
 }
 
@@ -223,7 +223,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &pa
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]) + "," +
         std::to_string(spaceRenderParam_.rotationTime) + "," +
         std::to_string(spaceRenderParam_.rotationDirection);
- 
+
     return SUCCESS;
 }
 
@@ -234,7 +234,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetExtensionParameter(std::string &p
  
     paramValue = std::to_string(spaceRenderParam_.expandRadius) + "," +
         std::to_string(spaceRenderParam_.expandAngle);
- 
+
     return SUCCESS;
 }
 
@@ -253,6 +253,8 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::GetParameter(const std::string &
     }
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Space render mode is not support.");
+
+    AUDIO_INFO_LOG("SpaceRender get %{public}s : %{public}s", paramType.c_str(), paramValue.c_str());
  
     return SUCCESS;
 }
