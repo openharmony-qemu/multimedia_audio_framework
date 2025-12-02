@@ -66,6 +66,7 @@ export enum BackColor {
 }
 
 export enum NodeType {
+    'VALID' = '无效',
     'EQ' = '均衡',
     'FIELD' = '声场',
     'ENV' = '环境',
@@ -77,8 +78,27 @@ export enum NodeType {
     'OUTPUT' = '输出',
     'MIXER' = '混音',
     'VB' = '美化',
+    'GENERAL_VOICE_CHANGE' = '通用变声',
+    'PURE_VOICE_CHANGE' = '传统变声',
+    'SPACE_RENDER' = '空间渲染',
     'SOUND_SPEED_TONE' = '音速音调'
 }
+
+export const inputStringToNodeTypeMap:Map<string, NodeType> = new Map([
+    ["INPUT", NodeType.INPUT],
+    ["OUTPUT", NodeType.OUTPUT],
+    ["SEPARATION", NodeType.SEPARATION],
+    ["NR", NodeType.NR],
+    ["VB", NodeType.VB],
+    ["MIXER", NodeType.MIXER],
+    ["ENV", NodeType.ENV],
+    ["EQ", NodeType.EQ],
+    ["FIELD", NodeType.FIELD],
+    ["SOUND_SPEED_TONE", NodeType.SOUND_SPEED_TONE],
+    ["SPACE_RENDER", NodeType.SPACE_RENDER],
+    ["GENERAL_VOICE_CHANGE", NodeType.GENERAL_VOICE_CHANGE],
+    ["PURE_VOICE_CHANGE", NodeType.PURE_VOICE_CHANGE],
+]);
 
 export const ColorMap = new Map<NodeType, BackColor>([
     [NodeType.EQ, BackColor.EQ_COLOR],
@@ -92,30 +112,69 @@ export const ColorMap = new Map<NodeType, BackColor>([
     [NodeType.OUTPUT, BackColor.OUTPUT_COLOR],
     [NodeType.ENV, BackColor.ENV_COLOR],
     [NodeType.SEPARATION, BackColor.SEPARATION_COLOR],
-    [NodeType.SOUND_SPEED_TONE, BackColor.SOUND_SPEED_TONE]
+    [NodeType.SOUND_SPEED_TONE, BackColor.SOUND_SPEED_TONE],
+    [NodeType.SPACE_RENDER, BackColor.SPACE_RENDER_COLOR],
+    [NodeType.GENERAL_VOICE_CHANGE, BackColor.GENERAL_VOICE_CHANGE],
+    [NodeType.PURE_VOICE_CHANGE, BackColor.PURE_VOICE_CHANGE]
 ])
 
 export enum SoundFiledType {
     /**
      * 无
      */
-    SOUND_FIELD_CLOSE = 1,
+    SOUND_FIELD_CLOSE = 0,
     /**
      * 前置
      */
-    SOUND_FIELD_FRONT_FACING = 2,
+    SOUND_FIELD_FRONT_FACING = 1,
     /**
      * 宏大
      */
-    SOUND_FIELD_GRAND = 3,
+    SOUND_FIELD_GRAND = 2,
     /**
      * 聆听
      */
-    SOUND_FIELD_NEAR = 4,
+    SOUND_FIELD_NEAR = 3,
     /**
      * 宽广
      */
-    SOUND_FIELD_WIDE = 5,
+    SOUND_FIELD_WIDE = 4,
+}
+
+export enum GeneralVoiceChangeType {
+    GENERAL_VOICE_CHANGE_TYPE_CLOSE = 0,
+    GENERAL_VOICE_CHANGE_TYPE_CUTE = 1,
+    GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK = 2,
+    GENERAL_VOICE_CHANGE_TYPE_FEMALE = 3,
+    GENERAL_VOICE_CHANGE_TYPE_MALE = 4,
+    GENERAL_VOICE_CHANGE_TYPE_MIX = 5,
+    GENERAL_VOICE_CHANGE_TYPE_MONSTER = 6,
+    GENERAL_VOICE_CHANGE_TYPE_SEASONED = 7,
+    GENERAL_VOICE_CHANGE_TYPE_SYNTH = 8,
+    GENERAL_VOICE_CHANGE_TYPE_TRILL = 9,
+    GENERAL_VOICE_CHANGE_TYPE_WAR = 10,
+}
+export  enum PureVoiceChangeGenderOption{
+    PURE_VOICE_CHANGE_CLOSE = 0,
+    PURE_VOICE_CHANGE_FEMALE = 1,
+    PURE_VOICE_CHANGE_MALE = 2,
+}
+
+
+export  enum PureVoiceChangeVocalPartOption{
+    PURE_VOICE_CHANGE_VOCAL_PART_CLOSE = 0,
+    PURE_VOICE_CHANGE_VOCAL_PART_MIDDLE = 1,
+}
+
+export  enum PureVoiceChangeType{
+    PURE_VOICE_CHANGE_TYPE_CLOSE = 0,
+    PURE_VOICE_CHANGE_TYPE_CARTOON = 1,
+    PURE_VOICE_CHANGE_TYPE_CUTE = 2,
+    PURE_VOICE_CHANGE_TYPE_FEMALE = 3,
+    PURE_VOICE_CHANGE_TYPE_MALE = 4,
+    PURE_VOICE_CHANGE_TYPE_MONSTER = 5,
+    PURE_VOICE_CHANGE_TYPE_ROBOTS = 6,
+    PURE_VOICE_CHANGE_TYPE_SEASONED = 7,
 }
 
 export const SoundFiledMap = new Map<SoundFiledType | undefined, string>([
@@ -132,31 +191,31 @@ export enum EnvironmentType {
      * 
      * @since 22
      */
-    ENVIRONMENT_TYPE_CLOSE = 1,
+    ENVIRONMENT_TYPE_CLOSE = 0,
     /**
      * Broadcast environment effect type.
      * 
      * @since 22
      */
-    ENVIRONMENT_TYPE_BROADCAST = 2,
+    ENVIRONMENT_TYPE_BROADCAST = 1,
     /**
      * Earpiece environment effect type.
      * 
      * @since 22
      */
-    ENVIRONMENT_TYPE_EARPIECE = 3,
+    ENVIRONMENT_TYPE_EARPIECE = 2,
     /**
      * Earpiece environment effect type.
      * 
      * @since 22
      */
-    ENVIRONMENT_TYPE_UNDERWATER = 4,
+    ENVIRONMENT_TYPE_UNDERWATER = 3,
     /**
      * Gramophone environment effect type.
      * 
      * @since 22
      */
-    ENVIRONMENT_TYPE_GRAMOPHONE = 5,
+    ENVIRONMENT_TYPE_GRAMOPHONE = 4,
 }
 
 export const EnvironmentMap = new Map<EnvironmentType | undefined, string>([
@@ -173,7 +232,7 @@ export enum VoiceBeautifierType {
      * 
      * @since 22
      */
-    VOICE_BEAUTIFIER_TYPE_NORMAL,
+    VOICE_BEAUTIFIER_TYPE_NORMAL = 0,
     /**
      * Clear voice beautifier type.
      * 
@@ -229,13 +288,16 @@ export const AudioSeparationMap = new Map<AudioSeparationType | undefined, strin
 ])
 
 // 定义映射表：数字 -> NodeType
-export const NumberToNodeTypeMap = new Map<number, NodeType>([
+export const numberToNodeTypeMap = new Map<number, NodeType>([
   [201, NodeType.EQ],
   [202, NodeType.NR],
   [203, NodeType.FIELD],
   [204, NodeType.SEPARATION],
   [205, NodeType.VB],
   [206, NodeType.ENV],
+  [208, NodeType.SPACE_RENDER],
+  [209, NodeType.PURE_VOICE_CHANGE],
+  [210, NodeType.GENERAL_VOICE_CHANGE],
   [211, NodeType.SOUND_SPEED_TONE]
 ]);
 

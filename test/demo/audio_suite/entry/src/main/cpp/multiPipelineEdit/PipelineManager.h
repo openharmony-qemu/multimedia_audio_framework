@@ -5,6 +5,9 @@
 #define PIPELINEMANAGER_H
 #include "NodeManager.h"
 #include <map>
+#include <ohaudio/native_audiostream_base.h>
+#include <queue>
+#include <thread>
 
 class MultiUserData {
 public:
@@ -18,33 +21,52 @@ public:
     size_t totalWriteAudioDataSize;
      // 音频是否从头开始写入
     bool isResetTotalWriteAudioDataSize;
-public:
+    
     MultiUserData();
     MultiUserData(std::string pipelineId, std::string inputId);
     ~MultiUserData();
 };
 
+class RenderFrameAsyncParam {
+public:
+    OH_AudioSuitePipeline* audioSuitePipeline;
+    OH_AudioDataArray* ohAudioDataArray;
+    char** firstAudioBuffer;
+    void* audioData;
+    int32_t requestFrameSize;
+    int32_t responseSize;
+    bool finishedFlag;
+    char* firAudioData;
+    size_t* firstBufferSize;
+    void* secAudioData;
+    char** secondAudioBuffer;
+    size_t* secondBufferSize;
+};
+
 class PipelineManager {
 public:
     std::string pipelineId;
-    OH_AudioSuitePipeline *audioSuitePipeline;
+    OH_AudioSuitePipeline* audioSuitePipeline;
     std::shared_ptr<NodeManager> nodeManager;
     OH_AudioFormat audioFormatInput;
     OH_AudioFormat audioFormatOutput;
-    char *firstAudioBuffer = nullptr;
-    char *secondAudioBuffer = nullptr;
-    char *inputBuffer = nullptr;
+    char* firstAudioBuffer = NULL;
+    char* secondAudioBuffer = NULL;
+    char* playAudioBuffer = NULL;
+    char* inputBuffer = NULL;
+    OH_AudioRenderer *audioRenderer = nullptr;
     bool multiRenderFrameFlag = false;
     size_t firstBufferSize = 0;
     size_t secondBufferSize = 0;
+    size_t playAudioBufferSize = 0;
     size_t totalInputDataSize = 0;
     bool renderFrameFinishFlag = false;
+    bool recordFlag = false;
     float inputDataProgress = 0.f;
-    std::map<std::string, std::vector<uint8_t>> writeDataBufferMap;
+    std::map<std::string, FILE*> writeDataFileMap;
     std::map<std::string, std::shared_ptr<MultiUserData>> userDataMap;
 public:
-    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine,
-        std::shared_ptr<NodeManager> nodeManager);
+    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager);
     ~PipelineManager();
 };
 

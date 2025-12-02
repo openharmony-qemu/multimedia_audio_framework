@@ -56,7 +56,7 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
 
     if (selectedNodeId.empty()) {
         int insertRes = AddEffectNodeToNodeManager(inputId, effectNodeId);
-        if (insertRes == NODE_MANAGER_OPERATION_ERROR) {
+        if (insertRes == static_cast<int>(AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR)) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;

@@ -40,3 +40,7 @@ export const getEffectNodeList: () => Array<number>;
 export const setSoundSpeedTone: (pitchSong: string, soundSpeedToneId: string, soundSpeed: number, soundTone: number, selectedNodeId?: string) => number;
 export const setIsRecord: (isRecord: boolean) => void;
 export const setSeparationMode: (separationMode: number) => number;
+export const startGeneralVoiceChange: (inputId: string, mode: number, effectId: string, selectedNodeId?: string) => number;
+export const resetGeneralVoiceChange: (inputId: string, mode: number, effectId: string) => number;
+export const startPureVoiceChange: (inputId: string, effectId: string, gender: number, vocalPart: number, optionType: number, selectedNodeId?: string) => number;
+export const resetPureVoiceChange: (inputId: string, effectId: string, gender: number, vocalPart: number, optionType: number) => number;
