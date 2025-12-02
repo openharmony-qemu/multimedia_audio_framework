@@ -71,7 +71,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
         Deinit();
         return ERROR;
     }
-    
+
     AudioEffectDescriptor descriptor = {
         .libraryName = "audio_pitch_change",
         .effectName = "audio_pitch_change"
