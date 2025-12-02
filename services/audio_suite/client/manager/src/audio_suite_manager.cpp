@@ -51,18 +51,6 @@ enum NodeErrorCase : uint32_t {
     CONNECT_NODE_ERROR = 2,
     DISCONNECT_NODE_ERROR = 3,
 };
-static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
-    {NODE_TYPE_EMPTY, "NODE_TYPE_EMPTY"},
-    {NODE_TYPE_INPUT, "NODE_TYPE_INPUT"},
-    {NODE_TYPE_OUTPUT, "NODE_TYPE_OUTPUT"},
-    {NODE_TYPE_EQUALIZER, "NODE_TYPE_EQUALIZER"},
-    {NODE_TYPE_NOISE_REDUCTION, "NODE_TYPE_NOISE_REDUCTION"},
-    {NODE_TYPE_SOUND_FIELD, "NODE_TYPE_SOUND_FIELD"},
-    {NODE_TYPE_AUDIO_SEPARATION, "NODE_TYPE_AUDIO_SEPARATION"},
-    {NODE_TYPE_VOICE_BEAUTIFIER, "NODE_TYPE_VOICE_BEAUTIFIER"},
-    {NODE_TYPE_ENVIRONMENT_EFFECT, "NODE_TYPE_ENVIRONMENT_EFFECT"},
-    {NODE_TYPE_AUDIO_MIXER, "NODE_TYPE_AUDIO_MIXER"}
-};
 }
 
 IAudioSuiteManager& IAudioSuiteManager::GetAudioSuiteManager()
@@ -1148,6 +1136,7 @@ void AudioSuiteManager::WriteSuiteEngineUtilizationStatsEvent(AudioNodeType node
     }
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("AUDIO_NODE_TYPE", nodeTypeStr);
+    bean->Add("AUDIO_NODE_COUNT", static_cast<int32_t>(1));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

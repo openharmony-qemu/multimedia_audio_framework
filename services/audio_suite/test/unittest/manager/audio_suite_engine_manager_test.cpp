@@ -1310,4 +1310,63 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckPipelineNodeTes
     EXPECT_FALSE(result);
 }
 
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckRenderFrameTimeTest_001, TestSize.Level0)
+{
+    AudioSuitePipeline pl(PIPELINE_REALTIME_MODE);
+    pl.Init();
+    EXPECT_EQ(pl.IsInit(), true);
+
+    int32_t frameDurationMS = 20;  // 20 ms frame duraion
+    // DurationBase is for compare use, frameduration * rtfBase(1.0 for pipeline)
+    uint64_t processDurationBase = frameDurationMS * MILLISECONDS_TO_MICROSECONDS;
+    uint64_t testDurationNormal = 1;  // 1 microsecond
+    uint64_t testDurationBase = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_BASE];
+    uint64_t testDuration110Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_110BASE];
+    uint64_t testDuration120Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_120BASE];
+    uint64_t testDurationOver120Base = testDuration120Base + 1;
+    // expected OvertimeCounters
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayEmpty = {0, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayBase = {1, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArray110Base = {1, 1, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayOver120Base = {1, 1, 1};
+
+    std::array<PipelineWorkMode, 2> workModeArray = {PIPELINE_REALTIME_MODE, PIPELINE_EDIT_MODE};
+    for (PipelineWorkMode testWorkMode : workModeArray) {
+        pl.pipelineWorkMode_ = testWorkMode;
+
+        // rtf equal baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationBase);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayBase);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // rtf equal 110% baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration110Base);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArray110Base);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // rtf over 120% baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationOver120Base);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayOver120Base);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // check multiple times
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationNormal);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationNormal);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationBase);
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration110Base);
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration120Base);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationOver120Base);
+        pl.CheckRenderFrameTime(0, 1);  // invalid data duration, ignore.
+        EXPECT_EQ(pl.renderFrameTotalCount_, 6);
+        std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayMultiple = {4, 3, 2};
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayMultiple);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+        EXPECT_EQ(pl.renderFrameTotalCount_, 0);
+    }
+}
+
 }  // namespace

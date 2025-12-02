@@ -27,6 +27,7 @@
 #include "audio_suite_msg_channel.h"
 #include "audio_suite_output_node.h"
 #include "i_audio_suite_pipeline.h"
+#include "audio_suite_perf.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +107,10 @@ private:
     void ClearNodeConnections(uint32_t srcNodeId, uint32_t destNodeId);
     bool IsDirectConnected(uint32_t srcNodeId, uint32_t destNodeId);
     bool IsConnected(uint32_t srcNodeId, uint32_t destNodeId);
+    // for dfx
+    int32_t GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat);
+    void CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS);
+    void CheckRenderFrameOverTimeCount();
 
 private:
     static std::mutex allocateIdLock;
@@ -128,6 +133,10 @@ private:
     // for queue and thread
     std::unique_ptr<AudioSuiteManagerThread> pipelineThread_ = nullptr;
     HpaeNoLockQueue pipelineNoLockQueue_;
+
+    // for dfx
+    int32_t renderFrameTotalCount_ = 0;
+    std::array<int32_t, RTF_OVERTIME_LEVELS> renderFrameOvertimeCounters_{};
 };
 
 }  // namespace AudioSuite
