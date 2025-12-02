@@ -103,6 +103,11 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
     void CheckUpdateState(char *frame, size_t replyBytes);
     bool IsNonblockingSource(const std::string &adapterName);
+    int32_t ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc) const;
+    void SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc, const AudioCaptureFrameInfo &frameInfo);
+    int32_t ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
     int32_t NonblockingStart(void);
     int32_t NonblockingStop(void);
     int32_t NonblockingCaptureFrameWithEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
