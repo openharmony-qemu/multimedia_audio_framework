@@ -128,7 +128,7 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("LoadAissCapability start.");
     std::string algoSoPath = nc.soPath + nc.soName;
-    void *libHandle = dlopen(algoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
     CHECK_AND_RETURN_RET_LOG(
         libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
     AudioEffectLibrary *audioEffectLibHandle =
