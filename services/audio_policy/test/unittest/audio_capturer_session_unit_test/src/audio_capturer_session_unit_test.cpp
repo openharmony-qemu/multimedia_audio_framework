@@ -1517,5 +1517,32 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_068, TestSize.Level1)
     auto ret = audioCapturerSession->ReloadCaptureSessionSoftLink();
     EXPECT_EQ(ret, ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_069
+ * @tc.desc  : Test IsSourceTypeValidForEc and IsSessionIdValidForEc.
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_069, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    bool ret = audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_MIC);
+    EXPECT_EQ(ret, true);
+    ret = audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(ret, true);
+    ret = audioCapturerSession->IsSourceTypeValidForEc(SOURCE_TYPE_INVALID);
+    EXPECT_EQ(ret, false);
+    SessionInfo sessionInfoMic;
+    sessionInfoMic.sourceType = SourceType::SOURCE_TYPE_MIC;
+    audioCapturerSession->sessionWithNormalSourceType_[10086] = sessionInfoMic;
+    ret = audioCapturerSession->IsSessionIdValidForEc(10086);
+    EXPECT_EQ(ret, true);
+    audioCapturerSession->sessionWithNormalSourceType_.erase(10086);
+    ret = audioCapturerSession->IsSessionIdValidForEc(10086);
+    EXPECT_EQ(ret, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
