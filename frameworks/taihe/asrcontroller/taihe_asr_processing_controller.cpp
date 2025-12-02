@@ -295,24 +295,25 @@ bool AsrProcessingControllerImpl::IsWhispering()
     return setSuc;
 }
 
-AsrProcessingController CreateAsrProcessingController(weak::AudioCapturer audioCapturer)
+AsrProcessingControllerOrNull CreateAsrProcessingController(weak::AudioCapturer audioCapturer)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return make_holder<AsrProcessingControllerImpl, AsrProcessingController>(nullptr);
+        return AsrProcessingControllerOrNull::make_type_null();
     }
     bool isCapturerValid = CheckCapturerValid(audioCapturer);
     if (!isCapturerValid) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "Operation not allowed. ");
-        return make_holder<AsrProcessingControllerImpl, AsrProcessingController>(nullptr);
+        return AsrProcessingControllerOrNull::make_type_null();
     }
     shared_ptr<AsrProcessingControllerImpl> asrControllerImpl = make_shared<AsrProcessingControllerImpl>();
     if (asrControllerImpl == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "asrControllerImpl is nullptr");
-        return make_holder<AsrProcessingControllerImpl, AsrProcessingController>(nullptr);
+        return AsrProcessingControllerOrNull::make_type_null();
     }
     asrControllerImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
-    return make_holder<AsrProcessingControllerImpl, AsrProcessingController>(asrControllerImpl);
+    return AsrProcessingControllerOrNull::make_type_asrProcessingController(make_holder<AsrProcessingControllerImpl,
+        AsrProcessingController>(asrControllerImpl));
 }
 } // namespace ANI::Audio
 

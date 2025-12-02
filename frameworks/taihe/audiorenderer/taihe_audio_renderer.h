@@ -38,7 +38,7 @@ public:
 
     static void CreateRendererFailed();
     static std::shared_ptr<AudioRendererImpl> CreateAudioRendererNativeObject();
-    static AudioRenderer CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
+    static AudioRendererOrNull CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
 
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     std::shared_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer_;

@@ -42,7 +42,7 @@ public:
     bool SetAsrVoiceMuteMode(::ohos::multimedia::audio::AsrVoiceMuteMode mode, bool enable);
     bool IsWhispering();
 
-    friend AsrProcessingController CreateAsrProcessingController(weak::AudioCapturer audioCapturer);
+    friend AsrProcessingControllerOrNull CreateAsrProcessingController(weak::AudioCapturer audioCapturer);
 
 private:
     OHOS::AudioStandard::AudioSystemManager *audioMngr_;
