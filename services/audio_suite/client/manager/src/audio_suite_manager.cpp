@@ -931,6 +931,23 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     return multiRenderFrameResultMap_[pipelineId];
 }
 
+int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *isSupported)
+{
+    AUDIO_INFO_LOG("isNodeTypeSupported enter.");
+    if (nodeType == NODE_TYPE_AUDIO_MIXER) {
+        AUDIO_INFO_LOG("MixerNode is supported on all device.");
+        *isSupported = true;
+        return SUCCESS;
+    }
+    int32_t ret = audioSuiteCapabilities_.IsNodeTypeSupported(nodeType, isSupported);
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("nodeType: %{public}d is supported  on this device.", nodeType);
+    } else {
+        AUDIO_ERR_LOG("Wrong effect nodeType: %{public}d.", nodeType);
+    }
+    return SUCCESS;
+}
+
 void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
 {
     if (result != SUCCESS &&
