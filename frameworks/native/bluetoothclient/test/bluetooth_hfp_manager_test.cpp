@@ -25,7 +25,6 @@
 namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
-
 using namespace testing::ext;
 using namespace testing;
 
