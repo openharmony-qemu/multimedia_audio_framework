@@ -369,7 +369,13 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
 AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
 {
-    if (flag & AUDIO_INPUT_FLAG_AI) {
+    if (flag & AUDIO_INPUT_FLAG_FAST) {
+        if (flag & AUDIO_INPUT_FLAG_VOIP) {
+            return PIPE_TYPE_IN_VOIP;
+        } else {
+            return PIPE_TYPE_IN_LOWLATENCY;
+        }
+    } else if (flag & AUDIO_INPUT_FLAG_AI) {
         return PIPE_TYPE_IN_NORMAL_AI;
     } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
         return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
@@ -407,15 +413,7 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_NORMAL;
         }
     } else {
-        if (flag & AUDIO_INPUT_FLAG_FAST) {
-            if (flag & AUDIO_INPUT_FLAG_VOIP) {
-                return PIPE_TYPE_IN_VOIP;
-            } else {
-                return PIPE_TYPE_IN_LOWLATENCY;
-            }
-        } else {
-            return GetInputNormalPipeType(flag);
-        }
+        return GetInputNormalPipeType(flag);
     }
 }
 
