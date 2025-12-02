@@ -38,7 +38,6 @@ config("audio_suite_public_config") {
   cflags_cc = [
     "-Wall",
     "-Werror",
-    "-std=c++17",
   ]
 
   ldflags = [ "-Wl" ]
