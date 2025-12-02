@@ -69,7 +69,11 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Init()
     bool loadAlgoApiFail =
         algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr ||
         algoApi_.setPara == nullptr || algoApi_.getPara == nullptr;
-    CHECK_AND_RETURN_RET_LOG(!loadAlgoApiFail, ERROR, "load SoundField algorithm function fail");
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
 
     // allocate memory for SoundField algorithm
     int32_t ret = algoApi_.getSize(&stSize_);
