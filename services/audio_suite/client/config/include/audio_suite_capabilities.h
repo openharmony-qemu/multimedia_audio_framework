@@ -36,6 +36,9 @@ const std::string PITCH_LIBRARY_INFO_SYM_AS_STR = "PITCHLIB";
 
 class AudioSuiteCapabilities {
 public:
+    AudioSuiteCapabilities();
+    ~AudioSuiteCapabilities() = default;
+
     AudioSuiteCapabilities(const AudioSuiteCapabilities&) = delete;
     AudioSuiteCapabilities& operator=(const AudioSuiteCapabilities&) = delete;
 
@@ -49,9 +52,6 @@ public:
     int32_t GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability);
 
 private:
-
-    AudioSuiteCapabilities();
-    ~AudioSuiteCapabilities() = default;
 
     AudioSuiteLibraryManager algoLibrary_;
 
