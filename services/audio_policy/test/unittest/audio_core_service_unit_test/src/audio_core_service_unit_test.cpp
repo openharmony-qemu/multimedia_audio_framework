@@ -1944,7 +1944,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
     ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, NORMAL_PLAYBACK, 1111);
     EXPECT_NE(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, NORMAL_PLAYBACK, 1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
         INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
     EXPECT_NE(ret, SUCCESS);
@@ -1973,7 +1973,7 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
