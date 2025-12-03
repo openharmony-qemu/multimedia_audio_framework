@@ -59,6 +59,79 @@ void AudioPolicyServiceFourthUnitTest::TearDown(void)
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::TearDown start-end");
 }
 
+GetDynamicInfoTestData::GetDynamicInfoTestData(AudioStreamInfo streamInfo, AudioSampleFormat format,
+    uint32_t sampleRate, AudioChannelLayout channelLayout, AudioChannel channels)
+    : streamInfo_(streamInfo)
+{
+    streamPropInfo_ = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo_->format_ = format;
+    streamPropInfo_->sampleRate_ = sampleRate;
+    streamPropInfo_->channelLayout_ = channelLayout;
+    streamPropInfo_->channels_ = channels;
+}
+
+bool GetDynamicInfoTestData::Check(std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (streamPropInfo == nullptr) {
+        return false;
+    }
+    return streamPropInfo->sampleRate_ == streamPropInfo_->sampleRate_ &&
+        streamPropInfo->channels_ == streamPropInfo_->channels_ &&
+        streamPropInfo->format_ == streamPropInfo_->format_ &&
+        streamPropInfo->channelLayout_ == streamPropInfo_->channelLayout_;
+}
+
+static std::vector<GetDynamicInfoTestData> testData = {
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+};
+
 static void GetPermission()
 {
     if (!g_hasPermissioned) {
@@ -1941,43 +2014,37 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_003,
     auto info = CreateAdapterPipeInfo(propVec);
     EXPECT_NE(info, nullptr);
 
-    std::vector<GetDynamicInfoTestData> testData = {
-        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
-        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
-        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
-        {SAMPLE_S24LE, SAMPLE_RATE_192000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10},
-        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1, CHANNEL_8},
-        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1, CHANNEL_8},
-        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_7POINT1, CHANNEL_8},
-        {SAMPLE_S24LE, SAMPLE_RATE_192000, CH_LAYOUT_7POINT1, CHANNEL_8},
-        {SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
-        {SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
-        {SAMPLE_S16LE, SAMPLE_RATE_192000, CH_LAYOUT_UNKNOWN, CHANNEL_8},
-    };
+    for (auto &data : testData) {
+        auto streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, data.streamInfo_);
+        EXPECT_EQ(data.Check(streamProp), true);
+    }
+}
 
-    std::shared_ptr<PipeStreamPropInfo> streamProp = std::make_shared<PipeStreamPropInfo>();
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[0].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[1].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[2].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[3].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[3]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[4].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[5].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[6].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[7].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[8].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[0]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[9].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[5]), true);
-    streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, testData[10].streamInfo_);
-    EXPECT_EQ(IsSelectResultCorrect(streamProp, propVec[1]), true);
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetStreamPropInfoFromPipe_001
+* @tc.desc  : Test GetStreamPropInfoFromPipe
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfoFromPipe_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    uint32_t sampleRate = 48000;
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S16LE;
+    AudioChannel channels = AudioChannel::STEREO;
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
+
+    auto streamProp = manager.GetStreamPropInfoFromPipe(info, streamInfo);
+    EXPECT_TRUE(streamProp == nullptr);
+
+    std::vector<StreamPropTestInfo> propVec = {
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO}
+    };
+    info = CreateAdapterPipeInfo(propVec);
+    streamProp = manager.GetStreamPropInfoFromPipe(info, streamInfo);
+    EXPECT_TRUE(streamProp->channelLayout_ == CH_LAYOUT_STEREO);
 }
 
 /**
