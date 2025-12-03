@@ -200,7 +200,7 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
     OH_AudioFormat threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
     bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
 
-    OH_AudioSuite_Result result = StartPipelineAndCheckState();
+    OH_AudioSuite_Result result = StartPipelineAndCheckState(threadPipeline);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "StartPipeline ERROR:%{public}d", result);
         return result;
@@ -1054,6 +1054,13 @@ napi_value MultiSaveFileBuffer(napi_env env, napi_callback_info info)
                  "audioEditTest SaveFileBuffer start buffer: %{public}p,"
                  "pipeline: %{public}p, thread_id:%{public}lu, threadBufferSize:%{public}zu",
                  threadBuffer, threadPipeline, thisId, threadBufferSize);
+    if (g_startMultiProcess) {
+        for (std::string id: initedPipelineIdArray) {
+            multiPipelineProcessMap[id] = 0;
+        }
+        g_startMultiProcess = false;
+    }
+    multiPipelineProcessMap[threadPipelineManager->pipelineId] = 0;
     MultiPipelineRenderFrame();
     napi_value napiValue = nullptr;
     void *arrayBufferData = nullptr;
