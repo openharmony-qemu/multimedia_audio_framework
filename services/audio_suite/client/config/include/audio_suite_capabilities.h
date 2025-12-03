@@ -36,13 +36,10 @@ const std::string PITCH_LIBRARY_INFO_SYM_AS_STR = "PITCHLIB";
 
 class AudioSuiteCapabilities {
 public:
-    AudioSuiteCapabilities();
-    ~AudioSuiteCapabilities() = default;
-
     AudioSuiteCapabilities(const AudioSuiteCapabilities&) = delete;
     AudioSuiteCapabilities& operator=(const AudioSuiteCapabilities&) = delete;
 
-    static AudioSuiteCapabilities& getInstance()
+    static AudioSuiteCapabilities& GetInstance()
     {
         static AudioSuiteCapabilities instance;
         return instance;
@@ -52,9 +49,11 @@ public:
     int32_t GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability);
 
 private:
-
     AudioSuiteLibraryManager algoLibrary_;
 
+    AudioSuiteCapabilities();
+    ~AudioSuiteCapabilities() = default;
+    
     template <typename T>
     int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
     {
