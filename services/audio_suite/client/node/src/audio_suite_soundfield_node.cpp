@@ -92,7 +92,7 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
     paraValue_ = value;
 
     // convert from SoundFieldType to iMedia_Surround_PARA
-    int valueInt = 0;
+    int32_t valueInt = 0;
     auto result = std::from_chars(value.data(), value.data() + value.size(), valueInt);
     if (result.ec != std::errc()) {
         AUDIO_ERR_LOG("Failed to convert string %{public}s to int", value.c_str());
@@ -125,7 +125,7 @@ int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &valu
     // convert from iMedia_Surround_PARA to SoundFieldType
     iMedia_Surround_PARA paraValue = IMEDIA_SWS_SOUROUND_BROAD;
 
-    int valueInt = 0;
+    int32_t valueInt = 0;
     auto [ptr, ec] = std::from_chars(tempValue.data(), tempValue.data() + tempValue.size(), valueInt);
 
     if (ec == std::errc()) {
