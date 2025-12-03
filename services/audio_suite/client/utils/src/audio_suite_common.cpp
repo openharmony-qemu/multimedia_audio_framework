@@ -114,7 +114,7 @@ bool AudioSuiteLibraryManager::IsValidPath(const char *path)
 {
     CHECK_AND_RETURN_RET_LOG(path, false, "Path is null");
     CHECK_AND_RETURN_RET_LOG(
-        strncmp(path, PREFIX, strlen(PREFIX)) != 0, false, "Path is invalid");
+        strncmp(path, PREFIX, strlen(PREFIX)) == 0, false, "Path is invalid");
     return true;
 }
 
