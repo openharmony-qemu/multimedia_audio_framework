@@ -91,6 +91,7 @@ public:
         AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
     int32_t GetVoiceBeautifierType(uint32_t nodeId,
         VoiceBeautifierType &voiceBeautifierType) override;
+    int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool *isSupported) override;
 
     // callback Member functions
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override;

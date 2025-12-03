@@ -52,6 +52,7 @@ private:
     std::unique_ptr<signed char[]> algoHandle_{nullptr};
     AudioAinrStruSysConfig algoDefaultConfig_{0};
     void *libHandle_{nullptr};
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

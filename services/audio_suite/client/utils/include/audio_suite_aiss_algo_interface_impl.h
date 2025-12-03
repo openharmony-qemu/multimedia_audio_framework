@@ -66,6 +66,8 @@ private:
     AudioBuffer inAudioBuffer_;
 
     AudioBuffer outAudioBuffer_;
+
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 } // namespace AudioSuite

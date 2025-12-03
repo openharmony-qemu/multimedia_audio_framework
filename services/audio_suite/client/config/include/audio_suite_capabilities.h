@@ -25,6 +25,7 @@
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
 #include "audio_hms_space_render_api.h"
+#include "audio_suite_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,7 +39,7 @@ public:
     AudioSuiteCapabilities(const AudioSuiteCapabilities&) = delete;
     AudioSuiteCapabilities& operator=(const AudioSuiteCapabilities&) = delete;
 
-    static AudioSuiteCapabilities& getInstance()
+    static AudioSuiteCapabilities& GetInstance()
     {
         static AudioSuiteCapabilities instance;
         return instance;
@@ -48,6 +49,7 @@ public:
     int32_t GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability);
 
 private:
+    AudioSuiteLibraryManager algoLibrary_;
 
     AudioSuiteCapabilities();
     ~AudioSuiteCapabilities() = default;
@@ -56,15 +58,17 @@ private:
     int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
     {
         AUDIO_INFO_LOG("loadCapability start.");
-        void *libHandle = dlopen(algoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-        CHECK_AND_RETURN_RET_LOG(libHandle != nullptr,
-            ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-            algoSoPath.c_str(), dlerror());
+        void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
+        CHECK_AND_RETURN_RET_LOG(
+            libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
         using GetFunc = T (*)();
         GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
-        CHECK_AND_RETURN_RET_LOG(getSpecsFunc != nullptr,
-            ERROR, "dlsym algo: %{private}s so fail, function name: %{public}s",
-            algoSoPath.c_str(), functionName.c_str());
+        if (getSpecsFunc == nullptr) {
+            dlclose(libHandle);
+            AUDIO_ERR_LOG("dlsym failed");
+            return ERROR;
+        }
+
         specs = getSpecsFunc();
         dlclose(libHandle);
         libHandle = nullptr;
@@ -77,6 +81,7 @@ private:
     int32_t LoadAinrCapability(NodeCapability &nc);
     int32_t LoadSfCapability(NodeCapability &nc);
     int32_t LoadEnvCapability(NodeCapability &nc);
+    int32_t LoadSrCapability(NodeCapability &nc);
     int32_t LoadAissCapability(NodeCapability &nc);
     int32_t LoadGeneralCapability(NodeCapability &nc);
     int32_t LoadPureCapability(NodeCapability &nc);

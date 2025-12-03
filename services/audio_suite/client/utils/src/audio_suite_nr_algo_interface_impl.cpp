@@ -50,9 +50,8 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
 
     // load algorithm so
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-        soPath.c_str(), dlerror());
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     // load functions in ainr algorithm so
     algoApi_.getVersion = reinterpret_cast<FunAudioAinrGetVersion>(dlsym(libHandle_, "AudioAinrGetVersion"));

@@ -23,6 +23,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; // Maximum allocation capacity.
+static const char *const PREFIX = "/system/lib64/";
 
 int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
 {
@@ -107,6 +108,35 @@ uint32_t AudioSuiteRingBuffer::GetRestSpace() const
 uint32_t AudioSuiteRingBuffer::GetSize() const
 {
     return size_;
+}
+
+bool AudioSuiteLibraryManager::IsValidPath(const char *path)
+{
+    CHECK_AND_RETURN_RET_LOG(path, false, "Path is null");
+    CHECK_AND_RETURN_RET_LOG(
+        strncmp(path, PREFIX, strlen(PREFIX)) == 0, false, "Path is invalid");
+    return true;
+}
+
+void* AudioSuiteLibraryManager::LoadLibrary(std::string& libraryPath)
+{
+    char buffer[PATH_MAX] = {0};
+    char *canonicalPath = realpath(libraryPath.c_str(), buffer);
+    if (canonicalPath == nullptr) {
+        return nullptr;
+    }
+    if (IsValidPath(canonicalPath) == false) {
+        return nullptr;
+    }
+    
+    libraryPath = buffer;
+    void *handle = dlopen(libraryPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(handle != nullptr,
+        nullptr,
+        "Failed to load library: %{private}s. Error: %{public}s",
+        libraryPath.c_str(),
+        dlerror());
+    return handle;
 }
 
 }

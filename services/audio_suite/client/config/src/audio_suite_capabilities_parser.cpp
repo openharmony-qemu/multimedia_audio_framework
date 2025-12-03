@@ -36,7 +36,7 @@ bool AudioSuiteCapabilitiesParser::LoadConfiguration(
 bool AudioSuiteCapabilitiesParser::ParseInternal(
     std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
 {
-    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+    for (; curNode && curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (!curNode->IsElementNode()) {
             continue;
         }

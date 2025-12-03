@@ -18,6 +18,7 @@
 #endif
 #include <unordered_map>
 #include "audio_suite_soundfield_node.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -92,7 +93,10 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
     paraValue_ = value;
 
     // convert from SoundFieldType to iMedia_Surround_PARA
-    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(std::stoi(value)));
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(value, valueInt), ERROR, "convert invalid string");
+
+    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
     if (it != soundFieldParaMap.end()) {
         int32_t ret = algoInterface_->SetParameter(name, std::to_string(static_cast<int32_t>(it->second)));
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOptions fail");
@@ -116,7 +120,10 @@ int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &valu
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetOptions fail");
 
     // convert from iMedia_Surround_PARA to SoundFieldType
-    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(std::stoi(tempValue));
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tempValue, valueInt), ERROR, "convert invalid string");
+    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(valueInt);
+
     for (const auto& pair : soundFieldParaMap) {
         if (pair.second == paraValue) {
             value = std::to_string(static_cast<int32_t>(pair.first));
