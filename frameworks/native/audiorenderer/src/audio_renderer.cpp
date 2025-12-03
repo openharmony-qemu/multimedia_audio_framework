@@ -63,6 +63,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
+static constexpr int32_t AUDIO_VIVID_CHANNELS_LOW_LIMIT = 2;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -682,6 +683,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
+    UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     streamClass = DecideStreamClassAndUpdateRendererInfo(flag);
 
@@ -2294,6 +2296,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+    UpdateAudioStreamParamsByStreamDescriptor(switchInfo.params, streamDesc);
 
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
@@ -2319,6 +2322,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId, networkId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+        UpdateAudioStreamParamsByStreamDescriptor(switchInfo.params, streamDesc);
 
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
@@ -2990,6 +2994,7 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
         audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
+    UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Re-create normal stream failed.");
@@ -3024,5 +3029,19 @@ int32_t AudioRendererPrivate::GetKeepRunning(bool &keepRunning) const
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
     return currentStream->GetKeepRunning(keepRunning);
 }
+
+void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN_LOG(!streamDesc->newDeviceDescs_.empty(), "no exist device");
+    CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front() != nullptr, "device is null");
+    if (streamDesc->streamInfo_.channels <= AUDIO_VIVID_CHANNELS_LOW_LIMIT) {
+        return;
+    }
+    audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
+    audioStreamParams.remoteChannelLayout = streamDesc->streamInfo_.channelLayout;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

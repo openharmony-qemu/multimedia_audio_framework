@@ -3157,7 +3157,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
 }
 
-int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,

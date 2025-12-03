@@ -319,7 +319,7 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
 
     int32_t CreateCapturerClient(

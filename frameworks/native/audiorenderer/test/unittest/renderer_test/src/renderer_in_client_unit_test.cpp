@@ -1613,6 +1613,28 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_001
+ * @tc.desc  : Test RendererInClientInner::SetAudioStreamInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    AudioStreamParams info {
+        .samplingRate = AudioSamplingRate::SAMPLE_RATE_8000,
+        .encoding = AudioEncodingType::ENCODING_AUDIOVIVID,
+        .format = AudioSampleFormat::SAMPLE_U8,
+        .channels = AudioChannel::STEREO,
+    };
+    int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+    info.isRemoteSpatialChannel = true;
+    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
  * @tc.number: GetFastStatus_001
  * @tc.desc  : Test RendererInClientInner::GetFastStatus
  */
