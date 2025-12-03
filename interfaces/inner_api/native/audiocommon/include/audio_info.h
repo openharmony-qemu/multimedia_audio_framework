@@ -426,6 +426,7 @@ struct VolumeEvent : public Parcelable {
     int32_t volume;
     int32_t volumeDegree = -1;
     bool updateUi;
+    int32_t previousVolume = -1;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
     DeviceType deviceType = DEVICE_TYPE_NONE;
@@ -477,6 +478,7 @@ struct StreamVolumeEvent : public Parcelable {
     int32_t volume = -1;
     bool updateUi = false;
     int32_t volumeGroupId = -1;
+    int32_t previousVolume = -1;
     std::string networkId = "";
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const override
@@ -486,7 +488,8 @@ struct StreamVolumeEvent : public Parcelable {
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteInt32(previousVolume);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -496,6 +499,7 @@ struct StreamVolumeEvent : public Parcelable {
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        previousVolume = parcel.ReadInt32();
     }
 
     static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
