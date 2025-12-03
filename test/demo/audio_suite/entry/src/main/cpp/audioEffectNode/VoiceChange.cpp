@@ -49,7 +49,7 @@ OH_AudioSuite_GeneralVoiceChangeType getVoiceChangeTypeByMode(int mode)
     return type;
 }
 
-OH_AudioSuite_PureVoiceChangeOption getPureVoiceChangeOptionByMode(int gender, int vocalPart, int optionType)
+OH_AudioSuite_PureVoiceChangeOption getPureVoiceChangeOptionByMode(int gender, float pitch, int optionType)
 {
     OH_AudioSuite_PureVoiceChangeOption option;
     switch (optionType) {
@@ -84,6 +84,7 @@ OH_AudioSuite_PureVoiceChangeOption getPureVoiceChangeOptionByMode(int gender, i
             option.optionGender = PURE_VOICE_CHANGE_MALE;
             break;
     }
+    option.pitch = pitch;
     return option;
 }
 

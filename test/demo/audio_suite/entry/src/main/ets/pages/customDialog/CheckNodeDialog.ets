@@ -711,6 +711,8 @@ struct PureVoiceChangeComponent {
     private scrollerIndex: Scroller = new Scroller();
     @Link pureVoiceGender: PureVoiceChangeGenderOption;
     @Link pureVoiceChangeType: PureVoiceChangeType;
+    @Link soundTone: number;
+    @State needSoundTone: boolean = false;
     onCancel?: () => void;
     onAgree?: () => void;
 
@@ -856,6 +858,39 @@ struct PureVoiceChangeComponent {
                             }.width(80)
                         }
                     }.rowsTemplate('1fr 1fr').height('80%')
+                    Column() {
+                        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                        Text('音调')
+                        Checkbox({ name: 'pureSoundTone', group: 'pureSoundTone' })
+                            .select(false)
+                            .selectedColor('app.color.index_audio_clip_card')
+                            .shape(CheckBoxShape.CIRCLE)
+                            .onChange((value: boolean) => {
+                            this.needSoundTone = value;
+                            if (!value) {
+                                this.soundTone = 0;
+                            }
+                            })
+                        Text(`+${this.soundTone.toFixed(1)}`)
+                        }.padding('10px')
+                        if (this.needSoundTone) {
+                        Slider({
+                            value: this.soundTone,
+                            step: 0.1,
+                            style: SliderStyle.OutSet,
+                            min: 0.3,
+                            max: 3,
+                        })
+                            .selectedColor($r('app.color.index_audio_clip_card'))
+                            .onChange((value: number) => {
+                            this.soundTone = value;
+                            })
+                        }
+                    }
+                    .height(50)
+                    .padding('10px')
+                    .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+                    .borderRadius(10)
                 }
                 .margin({ right: 20 })
                 .padding({ left: '10%', right: '10%' })
@@ -912,6 +947,7 @@ struct EffectNodeDialog {
     @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
     @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
     @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     controllerTwo?: CustomDialogController;
 
     build() {
@@ -1192,12 +1228,13 @@ struct EffectNodeDialog {
                 PureVoiceChangeComponent({
                     pureVoiceGender : this.pureVoiceGender,
                     pureVoiceChangeType : this.pureVoiceChangeType,
+                    soundTone : this.pureVoiceSoundTone,
                     onCancel: () => {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
                         const nodeId = util.generateRandomUUID(true);
-                        let result = audioNapi.startPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, 0, this.pureVoiceChangeType, this.selectedNode);
+                        let result = audioNapi.startPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加传统变声节点失败',
@@ -1486,6 +1523,7 @@ struct SetNodeDialog {
     @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
     @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
     @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     setNodeController?: CustomDialogController;
 
     aboutToAppear(): void {
@@ -1752,12 +1790,13 @@ struct SetNodeDialog {
                     PureVoiceChangeComponent({
                         pureVoiceGender : this.pureVoiceGender,
                         pureVoiceChangeType : this.pureVoiceChangeType,
+                        soundTone : this.pureVoiceSoundTone,
                         onCancel: () => {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
                             const nodeId = util.generateRandomUUID(true);
-                            let result = audioNapi.resetPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, 0, this.pureVoiceChangeType);
+                            let result = audioNapi.resetPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType);
                             if (result !== 0) {
                                 this.getUIContext().showAlertDialog({
                                     message: '设置传统变声节点失败',
