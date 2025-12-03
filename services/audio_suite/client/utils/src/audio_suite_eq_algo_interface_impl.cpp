@@ -133,7 +133,7 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
 
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
-            int value = 0;
+            int32_t value = 0;
             auto [ptr, ec] = std::from_chars(token.data(), token.data() + token.size(), value);
             if (ec == std::errc()) {
                 result.push_back(value);
