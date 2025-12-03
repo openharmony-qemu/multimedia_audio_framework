@@ -155,6 +155,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain,
 
     std::vector<int> gainsL = ParseStringToIntArray(sEQLGain, ':');
     std::vector<int> gainsR = ParseStringToIntArray(sEQRGain, ':');
+    CHECK_AND_RETURN_RET(!gainsL.empty() && !gainsR.empty(), ERROR);
     AUDIO_INFO_LOG("Set EQLGain to %{public}s, EQRGain to %{public}s", sEQLGain.c_str(), sEQRGain.c_str());
 
     size_t i = 0;
