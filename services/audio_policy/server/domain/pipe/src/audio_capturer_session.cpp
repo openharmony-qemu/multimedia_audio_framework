@@ -800,7 +800,7 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
         return;
     }
     std::pair<SourceType, uint32_t> targetSession = GetTargetSessionForEc();
-    CHECK_AND_RETURN_RET_LOG(IsSourceTypeValidForEc(targetSession.first),
+    CHECK_AND_RETURN_LOG(IsSourceTypeValidForEc(targetSession.first),
         "reload ignore for source not voip or mic");
 
     if (targetSession.first == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -823,7 +823,7 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
     }
 
     // reload for device change, used session is not changed
-    CHECK_AND_RETURN_RET_LOG(IsSessionIdValidForEc(targetSession.second),
+    CHECK_AND_RETURN_LOG(IsSessionIdValidForEc(targetSession.second),
         "target session: %{public}u not found", targetSession.second);
     SetInputDeviceTypeForReload(inputDevice);
     AUDIO_INFO_LOG("start reload session: %{public}u for device change", targetSession.second);
@@ -865,7 +865,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
         return;
     }
     std::pair<SourceType, uint32_t> targetSession = GetTargetSessionForEc();
-    CHECK_AND_RETURN_RET_LOG(IsSourceTypeValidForEc(targetSession.first),
+    CHECK_AND_RETURN_LOG(IsSourceTypeValidForEc(targetSession.first),
         "reload ignore for source not voip or mic");
 
     std::string oldRecordProp = GetEnhancePropByNameV3(oldPropertyArray, "record");
@@ -875,7 +875,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEffectPropertyArrayV
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
-        CHECK_AND_RETURN_RET_LOG(IsSessionIdValidForEc(targetSession.second),
+        CHECK_AND_RETURN_LOG(IsSessionIdValidForEc(targetSession.second),
             "target sessionId:%{public}u not found", targetSession.second);
         AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSession.second);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetSession.second]);
@@ -905,7 +905,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
         return;
     }
     std::pair<SourceType, uint32_t> targetSession = GetTargetSessionForEc();
-    CHECK_AND_RETURN_RET_LOG(IsSourceTypeValidForEc(targetSession.first),
+    CHECK_AND_RETURN_LOG(IsSourceTypeValidForEc(targetSession.first),
         "reload ignore for source not voip or mic");
 
     std::string oldRecordProp = GetEnhancePropByName(oldPropertyArray, "record");
@@ -915,7 +915,7 @@ void AudioCapturerSession::ReloadSourceForEffect(const AudioEnhancePropertyArray
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     if ((!newVoipUpProp.empty() && ((oldVoipUpProp == "PNR") ^ (newVoipUpProp == "PNR"))) ||
         (!newRecordProp.empty() && oldRecordProp != newRecordProp)) {
-        CHECK_AND_RETURN_RET_LOG(IsSessionIdValidForEc(targetSession.second),
+        CHECK_AND_RETURN_LOG(IsSessionIdValidForEc(targetSession.second),
             "target sessionId: %{public}u not found", targetSession.second);
         AUDIO_INFO_LOG("start reload sessionId: %{public}u for effect change", targetSession.second);
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetSession.second]);
