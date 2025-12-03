@@ -23,7 +23,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; // Maximum allocation capacity.
-static const char *const PREFIX = "/system/lib/";
+static const char *const PREFIX = "/system/lib64/";
 
 int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
 {
