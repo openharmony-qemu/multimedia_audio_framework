@@ -64,13 +64,8 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 
     bool loadAlgoApiFail = vmAlgoApi_.getSize == nullptr || vmAlgoApi_.initAlgo == nullptr ||
                            vmAlgoApi_.setPara == nullptr || vmAlgoApi_.applyAlgo == nullptr;
-    if (loadAlgoApiFail) {
-        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
-        Deinit();
-        return ERROR;
-    }
 
-    return SUCCESS;
+    return loadAlgoApiFail ? ERROR : SUCCESS;
 }
 
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
