@@ -21,8 +21,9 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
-#include "securec.h"
 #include <iostream>
+#include "securec.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_env_algo_interface_impl.h"
@@ -99,13 +100,10 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Deinit()
 
 int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
 {
-    int32_t modeInt;
-    auto result = std::from_chars(modStr.data(), modStr.data() + modStr.size(), modeInt);
-    if (result.ec == std::errc::invalid_argument) {
-        AUDIO_ERR_LOG("Invalid EnvMode %{public}s", modStr.c_str());
-        return ERROR;
-    }
- 
+    int32_t modeInt = 0;
+    CHECK_AND_RETURN_RET_LOG(modStr.empty() == false, ERROR, "modStr is empty");
+    CHECK_AND_RETURN_RET_LOG(StringConverter(modStr, modeInt), ERROR, "convert invalid string");
+
     switch (modeInt) {
         case AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE:
             AUDIO_INFO_LOG("EnvMode is Close");
