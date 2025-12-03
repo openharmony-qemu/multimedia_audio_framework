@@ -55,13 +55,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 
     bool loadAlgoApiFail = vmAlgoApi_.getSize == nullptr || vmAlgoApi_.init == nullptr ||
                            vmAlgoApi_.setParam == nullptr || vmAlgoApi_.apply == nullptr;
-    if (loadAlgoApiFail) {
-        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
-        Deinit();
-        return ERROR;
-    }
 
-    return SUCCESS;
+    return loadAlgoApiFail ? ERROR : SUCCESS;
 }
 
 int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
@@ -69,9 +64,9 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
     AUDIO_INFO_LOG("start load vm algo so");
 
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = algoLibrary_.LoadLibrary(soPath);
-    if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
+    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);	
+    if (libHandle_ == nullptr) {	
+        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());
         return ERROR;
     }
 
