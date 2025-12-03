@@ -64,8 +64,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
     AUDIO_INFO_LOG("start load vm algo so");
 
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);	
-    if (libHandle_ == nullptr) {	
+    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());
         return ERROR;
     }
