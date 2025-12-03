@@ -60,7 +60,7 @@ private:
     {
         AUDIO_INFO_LOG("loadCapability start.");
         void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-        CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, ERROR, "dlopen algo: %{private}s so fail", algoSoPath.c_str());
+        CHECK_AND_RETURN_RET_LOG(libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
         using GetFunc = T (*)();
         GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
         if (getSpecsFunc == nullptr) {
