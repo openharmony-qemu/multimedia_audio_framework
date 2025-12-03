@@ -939,11 +939,14 @@ int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *is
         *isSupported = true;
         return SUCCESS;
     }
-    int32_t ret = audioSuiteCapabilities_.IsNodeTypeSupported(nodeType, isSupported);
+
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    int32_t ret = audioSuiteCapabilities.IsNodeTypeSupported(nodeType, isSupported);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("nodeType: %{public}d is supported  on this device.", nodeType);
     } else {
         AUDIO_ERR_LOG("Wrong effect nodeType: %{public}d.", nodeType);
+        *isSupported = false;
     }
     return SUCCESS;
 }
