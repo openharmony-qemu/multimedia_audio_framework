@@ -37,7 +37,6 @@ namespace {
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
-    static const size_t MAX_STATIC_BUFFER_SIZE = 1 * 1024 * 1024; // 1M
     static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
 }
 class AudioSharedMemoryImpl : public AudioSharedMemory {
@@ -1047,60 +1046,6 @@ void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
     WakeFutexIfNeed(wakeVal);
 }
 
-int32_t OHAudioBufferBase::PreSetLoopTimes(int64_t times)
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    basicBufferInfo_->preSetTotalLoopTimes_.store(times);
-    return SUCCESS;
-}
-
-int32_t OHAudioBufferBase::RefreshLoopTimes()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    basicBufferInfo_->totalLoopTimes_.store(basicBufferInfo_->preSetTotalLoopTimes_);
-    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}ld", basicBufferInfo_->totalLoopTimes_.load());
-    return SUCCESS;
-}
-
-int32_t OHAudioBufferBase::ResetLoopStatus()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    basicBufferInfo_->currentLoopTimes_.store(0);
-    basicBufferInfo_->curStaticDataPos_.store(0);
-    basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
-    basicBufferInfo_->needSendLoopEndCallback.store(false);
-    return SUCCESS;
-}
-
-
-uint64_t OHAudioBufferBase::GetTotalLoopTimes()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    return basicBufferInfo_->totalLoopTimes_;
-}
-
-uint64_t OHAudioBufferBase::GetCurrentLoopTimes()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    return basicBufferInfo_->currentLoopTimes_;
-}
-
-int32_t OHAudioBufferBase::IncreaseCurrentLoopTimes()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    if (basicBufferInfo_->currentLoopTimes_ > LLONG_MAX - 1) {
-        AUDIO_ERR_LOG("bufferEndCallbackSendTimes increase will overflow");
-        return ERROR_INVALID_PARAM;
-    }
-    basicBufferInfo_->currentLoopTimes_.fetch_add(1);
-    if (basicBufferInfo_->totalLoopTimes_ == -1) {
-        return SUCCESS;
-    }
-    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->currentLoopTimes_ <= basicBufferInfo_->totalLoopTimes_, ERROR,
-        "CurrentLoopTimes Reach %{public}ld", basicBufferInfo_->totalLoopTimes_.load());
-    return SUCCESS;
-}
-
 void OHAudioBufferBase::SetStaticMode(bool state)
 {
     CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is null");
@@ -1133,6 +1078,12 @@ void OHAudioBufferBase::DecreaseBufferEndCallbackSendTimes()
     basicBufferInfo_->bufferEndCallbackSendTimes.fetch_sub(1);
 }
 
+void OHAudioBufferBase::ResetBufferEndCallbackSendTimes()
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
+}
+
 bool OHAudioBufferBase::IsNeedSendBufferEndCallback()
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
@@ -1151,100 +1102,23 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
     basicBufferInfo_->needSendLoopEndCallback.store(value);
 }
 
-int32_t OHAudioBufferBase::GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen)
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERR_ILLEGAL_STATE, "Not in static mode");
-    if (basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_ ||
-        CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER) ||
-        basicBufferInfo_->streamStatus.load() != STREAM_RUNNING) {
-        memset_s(inputData, requestDataLen, 0, requestDataLen);
-        AUDIO_WARNING_LOG("GetDataFromStaticBuffer fail, isReachLoopTimes %{public}d, isStatusRunning %{public}d",
-            basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_,
-            basicBufferInfo_->streamStatus.load() != STREAM_RUNNING);
-        return ERR_OPERATION_FAILED;
-    }
 
-    size_t offset = 0;
-    size_t remainSize = requestDataLen;
-    size_t curStaticDataPos = basicBufferInfo_->curStaticDataPos_;
-    while (remainSize > 0) {
-        Trace loopTrace("CopyDataFromSharedBuffer " + std::to_string(remainSize));
-        size_t copySize =
-            std::min({remainSize, processedStaticBufferSize_, processedStaticBufferSize_ - curStaticDataPos});
-        CHECK_AND_RETURN_RET_LOG(curStaticDataPos + copySize <= processedStaticBufferSize_, ERROR_INVALID_PARAM,
-            "copySize exeeds totalSizeInByte");
-        int32_t ret = memcpy_s(inputData + offset, copySize, processedStaticBuffer_ + curStaticDataPos, copySize);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "memcpy to inputData failed!");
-        curStaticDataPos += copySize;
-        remainSize -= copySize;
-        offset += copySize;
 
-        if (curStaticDataPos == processedStaticBufferSize_) {
-            // buffer copy finished once
-            IncreaseCurrentLoopTimes();
-            IncreaseBufferEndCallbackSendTimes();
-            curStaticDataPos = 0;
-            if (basicBufferInfo_->currentLoopTimes_ == basicBufferInfo_->totalLoopTimes_) {
-                SetIsNeedSendLoopEndCallback(true);
-                memset_s(inputData + offset, remainSize, 0, remainSize);
-                offset += remainSize;
-                remainSize = 0;
-            }
-            WakeFutex();
-        }
-    }
-    basicBufferInfo_->curStaticDataPos_.store(curStaticDataPos);
+// int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
+// {
+//     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+//     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
+//         "Stream is RUNNING, cannot set renderRate!");
+//     basicBufferInfo_->staticRenderRate_.store(renderRate);
+//     return SUCCESS;
+// }
 
-    if (offset != requestDataLen || remainSize != 0) {
-        AUDIO_ERR_LOG("GetDataFromStaticBuffer failed");
-        memset_s(inputData, requestDataLen, 0, requestDataLen);
-        return ERR_OPERATION_FAILED;
-    }
-    return SUCCESS;
-}
+// AudioRendererRate OHAudioBufferBase::GetStaticRenderRate()
+// {
+//     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), RENDER_RATE_NORMAL, "Not in static mode");
+//     return basicBufferInfo_->staticRenderRate_.load();
+// }
 
-void OHAudioBufferBase::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
-{
-    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
-    CHECK_AND_RETURN_LOG(staticBufferInfo.curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE,
-        "SetStaticBufferInfo invalid param");
-    basicBufferInfo_->totalLoopTimes_.store(staticBufferInfo.totalLoopTimes_);
-    basicBufferInfo_->currentLoopTimes_.store(staticBufferInfo.currentLoopTimes_);
-    basicBufferInfo_->curStaticDataPos_.store(staticBufferInfo.curStaticDataPos_);
-}
-
-int32_t OHAudioBufferBase::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
-    staticBufferInfo.totalLoopTimes_ =  basicBufferInfo_->totalLoopTimes_.load();
-    staticBufferInfo.currentLoopTimes_ = basicBufferInfo_->currentLoopTimes_.load();
-    staticBufferInfo.curStaticDataPos_ = basicBufferInfo_->curStaticDataPos_.load();
-    staticBufferInfo.sharedMemory_ = dataMem_;
-    return SUCCESS;
-}
-
-int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
-    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
-        "Stream is RUNNING, cannot set renderRate!");
-    basicBufferInfo_->staticRenderRate_.store(renderRate);
-    return SUCCESS;
-}
-
-AudioRendererRate OHAudioBufferBase::GetStaticRenderRate()
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), RENDER_RATE_NORMAL, "Not in static mode");
-    return basicBufferInfo_->staticRenderRate_.load();
-}
-
-int32_t OHAudioBufferBase::SetProcessedBuffer(uint8_t *processedData, size_t dataSize)
-{
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
-    processedStaticBuffer_ = processedData;
-    processedStaticBufferSize_ = dataSize;
-    return SUCCESS;
-}
 
 // In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen, 
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.

@@ -309,6 +309,10 @@ private:
     bool CheckStaticAndOperate();
 
     void CheckOperations();
+
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

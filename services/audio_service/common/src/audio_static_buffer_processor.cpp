@@ -39,13 +39,12 @@ AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInf
     }
 }
 
-int32_t AudioStaticBufferProcessor::ProcessBuffer()
+int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
 {
-    float speed = ConvertAudioRenderRateToSpeed(sharedBuffer_->GetStaticRenderRate());
+    float speed = ConvertAudioRenderRateToSpeed(renderRate);
 
     if (isEqual(speed, SPEED_NORMAL)) {
         curSpeed_ = speed;
-        sharedBuffer_->SetProcessedBuffer(sharedBuffer_->GetDataBase(), sharedBuffer_->GetDataSize());
         return SUCCESS;
     }
 
@@ -67,8 +66,23 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer()
 
     speedBufferSize_ = static_cast<size_t>(outBufferSize);
     curSpeed_ = speed;
-    sharedBuffer_->SetProcessedBuffer(speedBuffer_.get(), speedBufferSize_);
     return SUCCESS;
 }
+
+int32_t AudioStaticBufferProcessor::GetProcessedBuffer(uint8_t *bufferBase, size_t &bufferSize)
+{
+    if (speedBuffer_ != nullptr && speedBufferSize_ != 0) {
+        AUDIO_INFO_LOG("Use %{public}f speed processed buffer!", curSpeed_);
+        bufferBase = speedBuffer_.get();
+        bufferSize = speedBufferSize_;
+    } else {
+        AUDIO_INFO_LOG("Use original buffer!");
+        CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "sharedBuffer is nullptr!");
+        bufferBase = sharedBuffer_->GetDataBase();
+        bufferSize = sharedBuffer_->GetDataSize();
+    }
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

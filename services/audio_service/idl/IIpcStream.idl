@@ -67,4 +67,7 @@ interface IIpcStream {
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetTarget([in] int target, [out] int ret); //SetRenderTarget
     void SetRebuildFlag();
+    void PreSetLoopTimes([in] long bufferLoopTimes);
+    void SetStaticBufferInfo([in] StaticBufferInfo staticBufferInfo);
+    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
 }

@@ -148,6 +148,15 @@ int32_t RendererInServer::ConfigServerBuffer()
             AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+
+        staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(audioServerBuffer_);
+        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
+            ERR_OPERATION_FAILED, "staticBufferProvider_ is nullptr!");
+
+        staticBufferProcessor_ =
+            AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
+        CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
+            ERR_OPERATION_FAILED, "staticBufferProcessor_ is nullptr!");
     } else {
         // create OHAudioBuffer in server
         audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
@@ -852,7 +861,7 @@ int32_t RendererInServer::WriteDataInStaticMode(int8_t *inputData, size_t reques
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
     Trace trace1(traceTag_ + " WriteDataInStaticMode requestDataInFrame:" + std::to_string(requestDataInFrame));
 
-    int32_t ret = audioServerBuffer_->GetDataFromStaticBuffer(inputData, requestDataLen);
+    int32_t ret = staticBufferProvider_->GetDataFromStaticBuffer(inputData, requestDataLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetWritableStaticData failed!");
     return SUCCESS;
 }
@@ -1085,16 +1094,7 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
-    // staticBuffer speed process
-    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
-    if (processConfig_.rendererInfo.isStatic) {
-        if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ =
-                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
-        }
-        ret = staticBufferProcessor_->ProcessBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
-    }
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(), ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -1390,6 +1390,11 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, false, "BufferProvider_ is nullptr!");
+        staticBufferProvider_->ResetLoopStatus();
+    }
+
     if (IsMovieOffloadStream()) {
         SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
     } else {
@@ -1546,6 +1551,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 
 int32_t RendererInServer::SetRate(int32_t rate)
 {
+    audioRenderRate_ = static_cast<AudioRendererRate>(rate);
     return stream_->SetRate(rate);
 }
 
@@ -2728,6 +2734,45 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     WriteMuteDataSysEvent(bufferDesc);
 
     OnWriteDataFinish();
+    return SUCCESS;
+}
+
+void RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
+}
+
+void RendererInServer::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    staticBufferProvider_->SetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t RendererInServer::ProcessAndSetStaticBuffer()
+{
+    if (!processConfig_.rendererInfo.isStatic) {
+        return SUCCESS;
+    }
+    
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr, ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
+    int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
+
+    uint8_t *bufferBase = nullptr;
+    size_t bufferSize = 0;
+    ret = staticBufferProcessor_->GetProcessedBuffer(bufferBase, bufferSize);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
+    staticBufferProvider_->SetProcessedBuffer(bufferBase, bufferSize);
+
+    staticBufferProvider_->RefreshLoopTimes();
     return SUCCESS;
 }
 } // namespace AudioStandard

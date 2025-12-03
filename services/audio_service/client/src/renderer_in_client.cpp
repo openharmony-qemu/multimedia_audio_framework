@@ -249,7 +249,6 @@ int32_t RendererInClientInner::InitSharedBuffer()
         clientSpanSizeInByte_);
     if (rendererInfo_.isStatic) {
         clientBuffer_->SetStaticMode(true);
-        clientBuffer_->SetStaticBufferInfo(staticBufferInfo_);
     }
 
     return SUCCESS;
@@ -1059,12 +1058,6 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     return SUCCESS;
 }
 
-void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "not support!");
-    staticBufferInfo_ = staticBufferInfo;
-}
-
 int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
@@ -1088,10 +1081,10 @@ int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_ILLEGAL_STATE, "clientBuffer is nullptr!");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
     staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
-    return clientBuffer_->PreSetLoopTimes(bufferLoopTimes);
+    return ipcStream_->PreSetLoopTimes(bufferLoopTimes);
 }
 
 bool RendererInClientInner::CheckStaticAndOperate()
@@ -1114,12 +1107,29 @@ void RendererInClientInner::CheckOperations()
         while (clientBuffer_->IsNeedSendBufferEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
             clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+            staticBufferInfo_.currentLoopTimes_ += 1;
         }
         if (clientBuffer_->IsNeedSendLoopEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
             clientBuffer_->SetIsNeedSendLoopEndCallback(false);
         }
     }
+}
+
+void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    return ipcStream_->SetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    return ipcStream_->GetStaticBufferInfo(staticBufferInfo);
 }
 
 } // namespace AudioStandard

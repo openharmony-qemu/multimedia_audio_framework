@@ -576,13 +576,35 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
-// int32_t IpcStreamInServer::SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer)
-// {
-//     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK, ERR_OPERATION_FAILED,
-//         "invalid mode: %{public}d", static_cast<int32_t>(mode_));
-//     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "rendererInServer is nullptr!");
-//     return rendererInServer_->SetSharedBuffer(buffer);
-// }
+void IpcStreamInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    rendererInServer_->PreSetLoopTimes(bufferLoopTimes);
+}
+
+void IpcStreamInServer::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    rendererInServer_->SetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS

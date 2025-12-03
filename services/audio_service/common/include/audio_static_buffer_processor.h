@@ -31,9 +31,11 @@ class AudioStaticBufferProcessor
 public:
     static std::shared_ptr<AudioStaticBufferProcessor> CreateInstance(AudioStreamInfo streamInfo,
         std::shared_ptr<OHAudioBufferBase> sharedBuffer);
-    int32_t ProcessBuffer();
-
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+
+    int32_t ProcessBuffer(AudioRendererRate renderRate);
+    int32_t GetProcessedBuffer(uint8_t *bufferBase, size_t &bufferSize);
+
 private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
     std::unique_ptr<uint8_t[]> speedBuffer_ = nullptr;

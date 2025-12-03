@@ -107,6 +107,8 @@ public:
     }
 
     virtual void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) = 0;
+
+    virtual int32_t SetStaticRenderRate(AudioRendererRate renderRate) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

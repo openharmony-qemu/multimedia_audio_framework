@@ -556,10 +556,6 @@ int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
         AUDIO_INFO_LOG("Set same rate");
         return SUCCESS;
     }
-    if (rendererInfo_.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
-        clientBuffer_->SetStaticRenderRate(renderRate);
-    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     rendererRate_ = renderRate;
     return ipcStream_->SetRate(renderRate);
@@ -993,10 +989,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
     }
-    if (rendererInfo_.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
-        clientBuffer_->RefreshLoopTimes();
-    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
@@ -1120,11 +1112,6 @@ bool RendererInClientInner::StopAudioStream()
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);
         return false;
-    }
-
-    if (rendererInfo_.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
-        clientBuffer_->ResetLoopStatus();
     }
 
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
@@ -1499,7 +1486,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.target = renderTarget_;
 
     if (rendererInfo_.isStatic) {
-        clientBuffer_->GetStaticBufferInfo(info.staticBufferInfo);
+        GetStaticBufferInfo(info.staticBufferInfo);
     }
     info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);

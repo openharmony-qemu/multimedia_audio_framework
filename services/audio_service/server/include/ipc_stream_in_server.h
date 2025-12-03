@@ -138,7 +138,9 @@ public:
 
     int32_t SetRebuildFlag() override;
 
-    int32_t SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer); // for static renderer only
+    void PreSetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo); // for static renderer only
+    void GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo); // for static renderer only
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

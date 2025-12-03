@@ -28,6 +28,7 @@
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
 #include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -160,8 +161,10 @@ public:
     void RemoveIdForInjector();
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 
-    int32_t SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer);
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
+    void PreSetLoopTimes(int64_t bufferLoopTimes);
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -220,6 +223,8 @@ private:
 
     int32_t WriteData(int8_t *inputData, size_t requestDataLen);
     void PauseDirectStream();
+
+    int32_t ProcessAndSetStaticBuffer();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -324,7 +329,9 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -351,7 +351,7 @@ public:
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
-    virtual void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

@@ -30,6 +30,7 @@
 #include "audio_proresampler.h"
 #include "format_converter.h"
 #include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -163,6 +164,11 @@ public:
     void UpdateStreamInfo() override;
 
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
+
+    void PreSetLoopTimes(int64_t bufferLoopTimes) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+    int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -188,6 +194,7 @@ private:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
+    void ProcessAndSetStaticBuffer();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -253,7 +260,9 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
 
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -133,8 +133,8 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper
     if (processConfig_.rendererInfo.isStatic) {
         processTmpBuffer_.resize(0);
         processTmpBuffer_.resize(spanSizeInByte);
-        int32_t ret = processBuffer_->GetDataFromStaticBuffer(reinterpret_cast<int8_t*>(processTmpBuffer_.data()),
-            spanSizeInByte);
+        int32_t ret = staticBufferProvider_->GetDataFromStaticBuffer(
+            reinterpret_cast<int8_t*>(processTmpBuffer_.data()), spanSizeInByte);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "getStaticBuffer failed ret: %{public}d", ret);
     } else {
         int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
@@ -409,15 +409,7 @@ int32_t AudioProcessInServer::StartInner()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
-    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
-    if (processConfig_.rendererInfo.isStatic) {
-        if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ =
-                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
-        }
-        int32_t ret = staticBufferProcessor_->ProcessBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
-    }
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(), ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -510,14 +502,12 @@ int32_t AudioProcessInServer::Resume()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
     }
 
-    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is nullptr!");
     if (processConfig_.rendererInfo.isStatic) {
-        if (staticBufferProcessor_ == nullptr) {
-            staticBufferProcessor_ =
-                AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
+        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
+        if (staticBufferProvider_->NeedRefreshLoopTimes()) {
+            staticBufferProvider_->RefreshLoopTimes();
+            staticBufferProvider_->ResetLoopStatus();
         }
-        int32_t ret = staticBufferProcessor_->ProcessBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     }
 
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
@@ -550,6 +540,11 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     }
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
+    }
+
+    if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr");
+        staticBufferProvider_->ResetLoopStatus();
     }
 
     lastStopTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -809,6 +804,13 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
             AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "SetStaticClientBuffer failed!");
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+
+        staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(processBuffer_);
+        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+
+        staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
+        CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
+            ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
     } else {
         // create OHAudioBuffer in server.
         processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
@@ -1247,5 +1249,52 @@ void AudioProcessInServer::DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc)
     VolumeTools::CalcMuteFrame(bufferDesc, GetStreamInfo(), logUtilsTag_, volumeDataCount_, lastWriteMuteFrame_);
     AddMuteFrameSize(volumeDataCount_);
 }
+
+void AudioProcessInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
+}
+
+void AudioProcessInServer::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    staticBufferProvider_->SetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t AudioProcessInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+    staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t AudioProcessInServer::SetStaticRenderRate(AudioRendererRate renderRate)
+{
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
+    CHECK_AND_RETURN_RET_LOG(processBuffer_->GetStaticMode(), ERR_INCORRECT_MODE, "not in static Mode");
+    audioRenderRate_ = renderRate;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::ProcessAndSetStaticBuffer()
+{
+    if (!processConfig_.rendererInfo.isStatic) {
+        return SUCCESS;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr, ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
+    int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
+    uint8_t *bufferBase = nullptr;
+    size_t bufferSize = 0;
+    ret = staticBufferProcessor_->GetProcessedBuffer(bufferBase, bufferSize);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
+    staticBufferProvider_->SetProcessedBuffer(bufferBase, bufferSize);
+
+    staticBufferProvider_->RefreshLoopTimes();
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -112,11 +112,6 @@ struct BasicBufferInfo {
 
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
     std::atomic<bool> needSendLoopEndCallback;
-
-    std::atomic<int64_t> preSetTotalLoopTimes_;
-    std::atomic<int64_t> totalLoopTimes_;
-    std::atomic<int64_t> currentLoopTimes_;
-    std::atomic<size_t> curStaticDataPos_;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -258,25 +253,17 @@ public:
     // for sharedbuffer in static mode
     void IncreaseBufferEndCallbackSendTimes();
     void DecreaseBufferEndCallbackSendTimes();
-    bool IsNeedSendBufferEndCallback();
-    bool IsNeedSendLoopEndCallback();
+    void ResetBufferEndCallbackSendTimes();
     void SetIsNeedSendLoopEndCallback(bool value);
 
-    int32_t PreSetLoopTimes(int64_t times);
-    int32_t RefreshLoopTimes();
-    int32_t ResetLoopStatus();
-    uint64_t GetTotalLoopTimes();
-    uint64_t GetCurrentLoopTimes();
-    int32_t IncreaseCurrentLoopTimes();
+    bool IsNeedSendBufferEndCallback();
+    bool IsNeedSendLoopEndCallback();
+
     void SetStaticMode(bool state);
     bool GetStaticMode();
     int32_t SetStaticRenderRate(AudioRendererRate renderRate);
     AudioRendererRate GetStaticRenderRate();
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 
-    int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
-    int32_t SetProcessedBuffer(uint8_t *processedData, size_t dataSize);
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 
 private:

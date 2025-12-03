@@ -1296,9 +1296,11 @@ int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
     return SUCCESS;
 }
 
-void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
 {
-    staticBufferInfo_ = staticBufferInfo;
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    return processClient_->SetStaticBufferInfo(staticBufferInfo);
 }
 
 int32_t FastAudioStream::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
