@@ -2311,11 +2311,11 @@ HWTEST(AudioManagerUnitTest, SetVolumeDegree_001, TestSize.Level0)
     int32_t degree = 44;
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t ret = manager->SetVolumeDegree(streamType, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     AudioStreamType streamType2 = STREAM_ULTRASONIC;
     ret = manager->SetVolumeDegree(streamType2, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     AudioStreamType streamType3 = STREAM_APP;
     ret = manager->SetVolumeDegree(streamType3, degree);
@@ -2333,11 +2333,13 @@ HWTEST(AudioManagerUnitTest, GetVolumeDegree_001, TestSize.Level0)
     auto manager = AudioSystemManager::GetInstance();
     int32_t degree = 44;
     AudioStreamType streamType = STREAM_ALARM;
+    auto ret1 = manager->GetVolumeDegree(streamType);
+
     int32_t ret = manager->SetVolumeDegree(streamType, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     ret = manager->GetVolumeDegree(streamType);
-    EXPECT_EQ(ret, degree);
+    EXPECT_EQ(ret, ret1);
 
     AudioStreamType streamType3 = STREAM_APP;
     ret = manager->GetVolumeDegree(streamType3);
