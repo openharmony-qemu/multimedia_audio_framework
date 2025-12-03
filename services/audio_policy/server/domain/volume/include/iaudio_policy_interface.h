@@ -65,7 +65,8 @@ public:
 
     virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc) = 0;
 
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
 
@@ -85,7 +86,8 @@ public:
 
     virtual int32_t GetVolumeAdjustZoneId() = 0;
 
-    virtual int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel) = 0;
+    virtual int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc) = 0;
 
     virtual int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType) = 0;
 
@@ -303,6 +305,11 @@ public:
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
     virtual int32_t StopAudioPort(std::string oldSinkName) = 0;
+    virtual float CalculateVolumeDbByDegree(DeviceType deviceType,
+        AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
+    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void LoadCollaborationConfig() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

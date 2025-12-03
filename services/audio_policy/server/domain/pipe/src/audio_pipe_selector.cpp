@@ -400,20 +400,13 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             }
         } else if (flag & AUDIO_INPUT_FLAG_AI) {
             return PIPE_TYPE_IN_NORMAL_AI;
+        } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
+            return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
+        } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
+            return PIPE_TYPE_IN_NORMAL_UNPROCESS;
         } else {
             return PIPE_TYPE_IN_NORMAL;
         }
-    }
-}
-
-void AudioPipeSelector::CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
-    std::shared_ptr<AudioStreamDescriptor> incomingStream)
-{
-    // Normal, fast or voip-fast can not run concurrently, both stream need to be conceded
-    if (incomingStream->IsRecording() && existingStream->IsRecording()) {
-        AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u",
-            incomingStream->sessionId_, existingStream->sessionId_);
-        incomingStream->ResetToNormalRoute(false);
     }
 }
 
@@ -445,13 +438,16 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     return false;
 }
 
-void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
-                                                 ConcurrencyAction &action)
+void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    /* becasue call in indicate voip and cell, so can't modify xml */
-    CHECK_AND_RETURN(IsInjectEnable() && action != PLAY_BOTH);
-    if (existingPipe == PIPE_TYPE_IN_VOIP && commingPipe == PIPE_TYPE_IN_VOIP) {
-        action = PLAY_BOTH;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+        nowPipeType = PIPE_TYPE_OUT_VOIP;
+    }
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        nowPipeType = PIPE_TYPE_IN_VOIP;
     }
 }
 
@@ -463,6 +459,8 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         existingStream->routeFlag_, existingStream->audioMode_);
     AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
         incomingStream->routeFlag_, incomingStream->audioMode_);
+    SetPipeTypeByStreamType(existingPipe, existingStream);
+    SetPipeTypeByStreamType(commingPipe, incomingStream);
     ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
@@ -476,9 +474,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         existingStream->GetSessionId(), existingStream->GetRoute(),
         incomingStream->GetSessionId(), incomingStream->GetRoute());
 
-    /* temporary handle */
-    UpdateProcessConcurrency(existingPipe, commingPipe, action);
-
     bool isUpdate = false;
     switch (action) {
         case PLAY_BOTH:
@@ -488,8 +483,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             SetOriginalFlagForcedNormalIfNeed(incomingStream);
             break;
         case CONCEDE_EXISTING:
-            // If action is concede existing, maybe also need to concede incoming
-            CheckAndHandleIncomingConcurrency(existingStream, incomingStream);
             isUpdate = true;
             if (existingStream->IsUseMoveToConcedeType()) {
                 existingStream->SetAction(AUDIO_STREAM_ACTION_MOVE);

@@ -2836,7 +2836,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 {
     bool isRenderer = false;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);
@@ -2851,7 +2851,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_002, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 {
     bool isRenderer = true;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.ShowTimestamp(isRenderer);
 }
@@ -2865,7 +2865,7 @@ HWTEST(AudioUtilsUnitTest, ShowTimestamp_003, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, ShowTimestamp_004, TestSize.Level1)
 {
     bool isRenderer = true;
-    LatencyMonitor latencyMonitor = LatencyMonitor::GetInstance();
+    LatencyMonitor &latencyMonitor = LatencyMonitor::GetInstance();
     latencyMonitor.extraStrLen_ = 1;
     latencyMonitor.UpdateDspTime("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     latencyMonitor.ShowTimestamp(isRenderer);
@@ -3488,6 +3488,20 @@ HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 {
     auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
     EXPECT_GE(ret.size(), 0);
+}
+
+/**
+* @tc.name  : Test GenerateAppsUidStr  API
+* @tc.type  : FUNC
+* @tc.number: GenerateAppsUidStr_001
+* @tc.desc  : Test GenerateAppsUidStr API
+*/
+HWTEST(AudioUtilsUnitTest, GenerateAppsUidStr_001, TestSize.Level1)
+{
+    std::unordered_set<int32_t> appsUid = { 20000001, 20000002 };
+    std::string ret = "";
+    ret = GenerateAppsUidStr(appsUid);
+    EXPECT_NE(ret, "");
 }
 } // namespace AudioStandard
 } // namespace OHOS

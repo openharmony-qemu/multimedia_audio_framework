@@ -43,6 +43,24 @@ class MultiInitPipelineSonMsg {
   mixerId: string = "";
 }
 
+function getMD5OfFile(filePath: string): string {
+  // 获取文件内容
+  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
+  let fsStat = fs.statSync(filePath);
+  let buf = new ArrayBuffer(fsStat.size);
+  fs.readSync(file.fd, buf);
+  fs.closeSync(file);
+
+  let mdAlgName = 'MD5';
+  let md = cryptoFramework.createMd(mdAlgName);
+  md.updateSync({ data: new Uint8Array(buf) });
+  let mdResult = md.digestSync();
+  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
+  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
+  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
+  return md5Str;
+}
+
 function getNodeTypeFromString(originStr: string): NodeType {
   let ret: NodeType = NodeType.VALID;
   switch (originStr) {
@@ -79,7 +97,7 @@ function getNodeTypeFromString(originStr: string): NodeType {
 
 function getNumberArrayFromString(originStr: string): number[] {
   let ret: number[] = [];
-  originStr.replace("[", "").replace("]", "").split(" ").forEach((num) => {
+  originStr.replace("[", "").replace("]", "").split(/\s+/).forEach((num) => {
     ret.push(parseInt(num));
   })
   return ret;
@@ -109,8 +127,11 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
   }
   sceneInfo.sceneName = Object(jsonObjectStr)["scene_name"];
   sceneInfo.description = Object(jsonObjectStr)["description"];
-  sceneInfo.inputFiles = []
-  sceneInfo.mixerInfo = []
+  sceneInfo.inputFiles = [];
+  sceneInfo.mixerInfo = [];
+  if ((Object(jsonObjectStr)["input_files"] == undefined) || !Array.isArray(Object(jsonObjectStr)["input_files"])) {
+    return sceneInfo;
+  }
   let inputLen: number = (Object(jsonObjectStr)["input_files"])["length"];
   let mixerLen: number = (Object(jsonObjectStr)["mixer_info"])["length"];
   for (let i = 0; i < inputLen; i++) {
@@ -153,7 +174,7 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
     }
     sceneInfo.inputFiles.push(inputFile)
   }
-  if (!Array.isArray(Object(jsonObjectStr)["expected_output"]["md5Value"])) {
+  if (Object(jsonObjectStr)["expected_output"] != undefined &&!Array.isArray(Object(jsonObjectStr)["expected_output"]["md5Value"])) {
     expectedOutput.md5Value.push((Object(jsonObjectStr)["expected_output"])["md5Value"]);
   } else {
     expectedOutput.md5Value = (Object(jsonObjectStr)["expected_output"])["md5Value"];
@@ -199,25 +220,10 @@ function getDateStringWithTimeStamp(timestamp: number, mode: number = 0): string
     `${year}-${month}-${day} ${hour}-${min}-${sec}`;
 }
 
-function getMD5OfFile(filePath: string): string {
-  // 获取文件内容
-  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let buf = new ArrayBuffer(40960);
-  fs.readSync(file.fd, buf);
-  fs.closeSync(file);
-
-  let mdAlgName = 'MD5'; // 摘要算法名。
-  let md = cryptoFramework.createMd(mdAlgName);
-  // 数据量较少时，可以只做一次update，将数据全部传入，接口未对入参长度做限制。
-  md.updateSync({ data: new Uint8Array(buf) });
-  let mdResult = md.digestSync();
-  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
-  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
-  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
-  return md5Str;
-}
-
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
+  if (outputFileMd5.length != expectedFileMd5.length) {
+    return false;
+  }
   let ret = true;
   outputFileMd5.forEach((outputMd5: string) => {
     if (expectedFileMd5.find((expected: string) => expected === outputMd5) == undefined) {
@@ -231,8 +237,6 @@ function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): bo
 async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToSceneInfoMap: Map<string, SceneInfo>, pipelineIdToPipelineInfoMap:Map<string, PipelineInfo>): Promise<number> {
   const TAG: string = 'AudioEditTestApp_AudioEdit';
   const inputDir = `/storage/Users/currentUser/Download/src.main.audiodemo/input_files`;
-  const SUCCESS: number = 0;
-  const FAILED: number = 1;
   Logger.info(TAG, `initMultiPipelineTask start`);
 
   for (const sceneInfoId of jsonFileInfo.sceneInfos) {
@@ -240,39 +244,42 @@ async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToSceneInf
     const pipelineId = sceneInfo?.pipelineId;
     if (sceneInfo == undefined || pipelineId == undefined) {
       Logger.error(TAG, `initAllInputNode get null sceneInfo`);
-      return FAILED;
+      return 1;
     }
     const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
     if (pipelineInfo == undefined) {
       Logger.error(TAG, `initAllInputNode get null pipelineInfo`);
-      return FAILED;
+      return 1;
     }
     let status = audioNapi.multiPipelineEnvPrepare(pipelineId);
-    if (status != SUCCESS) {
+    if (status != 0) {
       Logger.error(TAG, `multiPipelineEnvPrepare ERROR while initAllInputNode`);
-      return FAILED;
+      return 1;
     }
     for (const inputFile of sceneInfo.inputFiles) {
-    // 获取文件内容
-    let inputPath = `${inputDir}/${inputFile.path}`;
-    let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
-    let fsStat = fs.statSync(inputPath);
-    let buffer = new ArrayBuffer(fsStat.size);
-    fs.readSync(file.fd, buffer);
-    Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-    let inputNodeStatus =
-      audioNapi.multiAudioInAndOutInit(inputFile.inputId, pipelineInfo.outputId, pipelineInfo.mixerId, file.fd,
-        buffer.byteLength);
-    fs.closeSync(file.fd);
-    if (inputNodeStatus != SUCCESS) {
-      Logger.error(TAG, `input node init ERROR, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-      return FAILED;
+      // 获取文件内容
+      let inputPath = `${inputDir}/${inputFile.path}`;
+      let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
+      let fsStat = fs.statSync(inputPath);
+      let buffer = new ArrayBuffer(fsStat.size);
+      try {
+        fs.readSync(file.fd, buffer);
+        Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
+        let inputNodeStatus =
+          audioNapi.multiAudioInAndOutInit(inputFile.inputId, pipelineInfo.outputId, pipelineInfo.mixerId, file.fd,
+            buffer.byteLength);
+        if (inputNodeStatus != 0) {
+          Logger.error(TAG, `input node init ERROR, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
+          return 1;
+        }
+      } finally {
+        fs.closeSync(file.fd);
+      }
+      Logger.info(TAG, `input node init done, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
     }
-    Logger.info(TAG, `input node init done, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-    }
-  Logger.info(TAG, `all input node had inited , pipelineId:${pipelineId}`);
+    Logger.info(TAG, `all input node had inited , pipelineId:${pipelineId}`);
   }
-  return SUCCESS;
+  return 0;
 }
 
 @Concurrent
@@ -323,44 +330,17 @@ async function multiInitInput(inputId: string, outputId: string, mixerId: string
   let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
   let fsStat = fs.statSync(inputPath);
   let buffer = new ArrayBuffer(fsStat.size);
-  fs.readSync(file.fd, buffer);
-
-  Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-
-  const wavView = new Uint8Array(buffer);
-  let wavHeaderBuffer = wavView.slice(0, 44).buffer;
-  const dataView = new DataView(wavHeaderBuffer);
-  // 获取通道数, 通道数位于22字节
-  const channels: number = dataView.getUint16(22, true);
-  // 获取采样率, 采样率位于第 24 到28 字节
-  const sampleRate: number = dataView.getUint32(24, true);
-  // 获取位深，位深位于 34字节
-  const bitsPerSample: number = dataView.getUint16(34, true);
-  // 获取音频的长度
-  const fmtSize = dataView.getUint32(16, true); // fmt chunk size
-  let offset = 20 + fmtSize;
-  let pcmLength = 0;
-  while (offset <= buffer.byteLength) {
-    const chunkId = dataView.getUint32(offset, true);
-    offset += 4;
-    const chunkSize = dataView.getUint32(offset, true);
-    offset += 4;
-    // 'data' 在 ASCII 小端字节
-    if (chunkId === 0x61746164) {
-      // 找到了 data 块，返回其大小
-      pcmLength = chunkSize;
-      break;
+  let ret = 1;
+  try {
+    fs.readSync(file.fd, buffer);
+    Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
+    if (multiPipelineFlag) {
+      audioNapi.multiPipelineEnvPrepare(pipelineId);
     }
-    offset += chunkSize;
+    ret = audioNapi.multiAudioInAndOutInit(inputId, outputId, mixerId, file.fd, buffer.byteLength);
+  } finally {
+    fs.closeSync(file.fd);
   }
-  Logger.info(TAG, `pcmLength: ${pcmLength}`);
-  Logger.info(TAG,
-    `audioEffectNodeTestSuccess01 sampleRate: ${sampleRate}, bitsPerSample: ${bitsPerSample}, channels: ${channels}`);
-  if (multiPipelineFlag) {
-    audioNapi.multiPipelineEnvPrepare(pipelineId);
-  }
-  let ret = audioNapi.multiAudioInAndOutInit(inputId, outputId, mixerId, file.fd, buffer.byteLength);
-  fs.closeSync(file.fd);
   Logger.info(TAG, ` AutoTest multiInitInput end, inputId:${inputId}, pipelineId:${pipelineId}`);
   return ret;
 }
@@ -378,7 +358,7 @@ async function multiInitEffect(inputId: string | undefined, nodeType: NodeType, 
   switch (nodeType) {
     case NodeType.NR:
       let NRId: string = util.generateRandomUUID(true);
-      let ret: number = audioNapi.multiAddNoiseReduction(NRId, inputId);
+      let ret = audioNapi.multiAddNoiseReduction(NRId, inputId);
       if (ret != 0) {
         Logger.error(TAG, `addNoiseReduction error number is ${ret}`);
       } else {
@@ -430,9 +410,9 @@ async function multiInitEffect(inputId: string | undefined, nodeType: NodeType, 
         ret = audioNapi.multiSetEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
       }
       if (ret != 0) {
-        Logger.error(TAG, `startVBEffect error number is ${ret}`);
+        Logger.error(TAG, `Add EQ Effect node error: ${ret}`);
       } else {
-        Logger.info(TAG, `startVBEffect node successful!!!`);
+        Logger.info(TAG, `Add EQ Effect node successful!!!`);
       }
       break;
   }
@@ -514,6 +494,9 @@ export struct AutoTest {
         jsonFileInfo.summary = Object(obj)["summary"];
         this.selectOptionList.push({ value: jsonFileInfo.summary });
         jsonSummaryToJsonFileInfoMap.set(jsonFileInfo.summary, jsonFileInfo);
+        if (Object(obj)["scenes"] == undefined || !Array.isArray(Object(obj)["scenes"])) {
+          return;
+        }
         const caseNum: number = Object(obj)["scenes"]["length"];
         if (caseNum > 0) {
           for (let i = 0; i < caseNum; i++) {
@@ -522,6 +505,7 @@ export struct AutoTest {
             jsonFileInfo.sceneInfos.push(sceneInfo.sceneInfoId);
           }
         }
+        fs.closeSync(file.fd);
       } catch (e) {
         Logger.error(TAG, `Open file:${jsonFilePath} Failed, error info:${e}`)
       }
@@ -944,6 +928,8 @@ export struct AutoTest {
           await this.saveSingleCaseExecuteReport(fileSummary);
         }
         this.destroyPipeline();
+      }).catch((err:BusinessError) => {
+        Logger.error(TAG, `scenePromises error:${err}`);
       })
     }
     return 0;
@@ -1003,7 +989,7 @@ export struct AutoTest {
       }
       const start = new Date().getTime();
       const singleReport: ExecuteReport = {
-        sceneInfoId: jsonFileInfo.sceneInfos[0],
+        sceneInfoId: sceneInfoId,
         sceneName: sceneInfo.sceneName,
         startTime: getDateStringWithTimeStamp(start),
         startTimeStamp: start,
@@ -1186,10 +1172,10 @@ export struct AutoTest {
                 status = audioNapi.multiSetEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
               }
               if (status != SUCCESS) {
-                Logger.error(TAG, `startVBEffect error number is ${status}`);
+                Logger.error(TAG, `Add EQ Effect node error: ${status}`);
                 return FAILED;
               } else {
-                Logger.info(TAG, `startVBEffect node successful!!!`);
+                Logger.info(TAG, `Add EQ Effect node successful!!!`);
               }
               break;
           }
@@ -1236,7 +1222,7 @@ export struct AutoTest {
         [`${outputPath}/${newFileName1}`];
       outputFilePath.forEach((path: string, index: number) => {
         let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${outputFilePath}`);
+        Logger.info(TAG, `SaveBuffer filePath : ${path}`);
         if (audioFormate === '.wav') {
           // 处理wav
           let wavBuffer =
@@ -1259,7 +1245,6 @@ export struct AutoTest {
       }
       let expectedFileMd5: string[] | undefined =
         sceneInfoIdToSceneInfoMap.get(sceneInfoId)?.expectedOutput.md5Value;
-
 
       let outputFileMd5: string[] = [];
       try {
@@ -1346,7 +1331,7 @@ export struct AutoTest {
     let file = fs.openSync(csvFileSavePath,
       fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
     let writeLen = fs.writeSync(file.fd, csvTextWithBom);
-    fs.closeSync(file);
+    fs.closeSync(file.fd);
     Logger.info(TAG, `Save CSV file suncess writeLen : ${writeLen}`);
   }
 
@@ -1357,7 +1342,7 @@ export struct AutoTest {
     const summaryArray = Array.from(jsonSummaryToJsonFileInfoMap.keys());
     const promises = summaryArray.map(async (summary: string) => {
       let csvFileInfoText = await this.getCsvTextOfSingeCase(summary);
-      csvText += `执行用例: ${summary},,,,,,,\n` + csvReportHeaderText + csvFileInfoText + ",,,,,,,\n";
+      csvText += `执行用例: ${summary},,,,,,,\n${csvReportHeaderText}${csvFileInfoText},,,,,,,\n`;
       return Promise.resolve();
     })
     await Promise.all(promises);

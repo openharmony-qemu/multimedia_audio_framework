@@ -21,7 +21,7 @@
 #include <multimedia/player_framework/native_avcodec_base.h>
 #include <multimedia/player_framework/native_avformat.h>
 #include <multimedia/player_framework/native_avbuffer.h>
-#include <./utils/Utils.h>
+
 // 对外napi接口
 napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info);
 napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info);
@@ -45,7 +45,7 @@ OH_AudioSuite_Result MultiPipelineRenderFrame();
 int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioData, int32_t audioDataSize,
     bool *finished);
 OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder,
-    std::string inputId, OH_AudioNode_Type type);
+    std::string &inputId, OH_AudioNode_Type type);
 void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &napiValue,
     OH_AudioSuite_Result &result);
 void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);

@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_service.h"
+#include "audio_stream_common.h"
 
 #include <thread>
 
@@ -846,6 +847,8 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
+    // if reuse endpoint should keep samplerate same
+    audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
@@ -956,9 +959,7 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
             deviceInfo.a2dpOffloadFlag_);
-        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        if (AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType)) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
                 streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
@@ -1023,18 +1024,11 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
 
-    bool reuse = false;
-    AudioStreamInfo oldStreamInfo = endpointList_[deviceKey]->GetAudioStreamInfo();
-    if (IsInjectEnable() && endpointList_[deviceKey]->GetDeviceRole() == INPUT_DEVICE &&
-        endpointFlag == AUDIO_FLAG_VOIP_FAST) {
-        /* capture voip fast support resample, so can reuse at not same sample */
-        if (IsSameAudioStreamInfoNotIncludeSample(streamInfo, oldStreamInfo)) {
-            reuse = true;
-        }
-    } else {
-        reuse = streamInfo == oldStreamInfo;
+    if (endpointList_[deviceKey]->GetDeviceRole() == OUTPUT_DEVICE) {
+        return ReuseEndpointType::REUSE_ENDPOINT;
     }
-
+    
+    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 

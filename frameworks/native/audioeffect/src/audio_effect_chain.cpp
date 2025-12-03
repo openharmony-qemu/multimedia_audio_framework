@@ -190,6 +190,30 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
+    BuildEffectParamData(data);
+    AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
+        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
+        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d"
+        "earphoneProduct: %{public}d",
+        data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
+        data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
+        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT]);
+    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
+    int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
+        sceneType_.c_str(), effectMode_.c_str());
+
+    cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
+    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret);
+
+    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
+    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    return SUCCESS;
+}
+
+void AudioEffectChain::BuildEffectParamData(int32_t *data)
+{
     data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
     data[SCENE_TYPE_INDEX] = static_cast<int32_t>(currSceneType_);
     data[EFFECT_MODE_INDEX] = GetKeyFromValue(GetAudioSupportedSceneModes(), effectMode_);
@@ -212,24 +236,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     data[FOLD_STATE_INDEX] = static_cast<int32_t>(foldState_);
     data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     data[ABS_VOLUME_STATE] = static_cast<int32_t>(absVolumeState_);
-    AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
-        "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
-        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState = %{public}d",
-        data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
-        data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
-        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE]);
-    cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
-    int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
-        sceneType_.c_str(), effectMode_.c_str());
-
-    cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
-    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret);
-
-    ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
-    ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
-    return SUCCESS;
+    data[EARPHONE_PRODUCT] = static_cast<int32_t>(earphoneProduct_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
@@ -703,6 +710,16 @@ void AudioEffectChain::CrossFadeProcess(float *bufOut, uint32_t frameLen)
 void AudioEffectChain::SetAbsVolumeStateToEffectChain(const bool absVolumeState)
 {
     absVolumeState_ = absVolumeState;
+}
+
+void AudioEffectChain::SetEarphoneProduct(AudioEarphoneProduct earphoneProduct)
+{
+    earphoneProduct_ = earphoneProduct;
+}
+
+bool AudioEffectChain::IsEffectChainFading()
+{
+    return fadingCounts_ != 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS

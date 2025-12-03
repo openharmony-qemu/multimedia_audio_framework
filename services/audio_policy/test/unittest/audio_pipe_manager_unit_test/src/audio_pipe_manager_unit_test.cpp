@@ -379,6 +379,48 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsSpecialPipe_005
+ * @tc.desc: Test IsSpecialPipe when none of the conditions are met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_005, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_AI;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsSpecialPipe_006
+ * @tc.desc: Test IsSpecialPipe when none of the conditions are met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_006, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_UNPROCESS;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsSpecialPipe_007
+ * @tc.desc: Test IsSpecialPipe when none of the conditions are met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_007, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_ULTRASONIC;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: GetPipeinfoByNameAndFlag_001
  * @tc.desc: Test GetPipeinfoByNameAndFlag when adapterName does not match.
  * @tc.type: FUNC

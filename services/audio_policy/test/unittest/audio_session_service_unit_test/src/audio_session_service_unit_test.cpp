@@ -193,6 +193,24 @@ HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage_001, TestSize.L
 }
 
 /**
+* @tc.name  : Test GetAudioSessionStreamUsageForDevice
+* @tc.number: GetAudioSessionStreamUsageForDevice_001
+* @tc.desc  : Test GetAudioSessionStreamUsageForDevice
+*/
+HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsageForDevice_001, TestSize.Level1)
+{
+    int32_t callerPid = 10001;
+    uint32_t streamId = 100;
+    StreamUsage usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    EXPECT_EQ(STREAM_USAGE_INVALID, usage);
+    callerPid = 10002;
+    int ret = audioSessionService_.SetAudioSessionScene(callerPid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    EXPECT_EQ(STREAM_USAGE_MEDIA, usage);
+}
+
+/**
 * @tc.name  : Test AudioSessionService.
 * @tc.number: AudioSessionServiceUnitTest_010.
 * @tc.desc  : Test ActivateAudioSession.

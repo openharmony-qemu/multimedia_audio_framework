@@ -35,6 +35,8 @@
 #include "audio_interrupt_zone.h"
 #include "audio_info.h"
 #include "istandard_audio_service.h"
+#include "async_action_handler.h"
+#include "audio_interrupt_custom.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +68,7 @@ public:
     void Init(sptr<AudioPolicyServer> server);
     void AddDumpInfo(std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> &audioInterruptZonesMapDump);
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
 
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
@@ -359,6 +362,7 @@ private:
     AudioSessionService &sessionService_;
     friend class AudioInterruptZoneManager;
     AudioInterruptZoneManager zoneManager_;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusCfgMap_ = {};
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
@@ -385,6 +389,8 @@ private:
 
     std::mutex audioServerProxyMutex_;
     std::unordered_set<uint32_t> mutedGameSessionId_;
+
+    std::unique_ptr<AudioInterruptCustom> interruptCustom_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

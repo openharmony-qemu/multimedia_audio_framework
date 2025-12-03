@@ -53,6 +53,7 @@ public:
 
     bool IsVoiceCallRelatedScene();
     bool IsInPhoneCallScene();
+    bool IsHangUpScene();
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

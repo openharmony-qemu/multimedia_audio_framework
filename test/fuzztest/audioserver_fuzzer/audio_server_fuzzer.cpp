@@ -1931,7 +1931,7 @@ void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
 {
     DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    
+
     auto callbackId = provider.ConsumeIntegral<int32_t>();
     auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
 

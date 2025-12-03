@@ -85,6 +85,11 @@ public:
     {
         return 0;
     }
+
+    ErrCode OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override
+    {
+        return 0;
+    }
 };
 
 void AudioPolicyManagerListenerUnitTest::SetUpTestCase(void) {}

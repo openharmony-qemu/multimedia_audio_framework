@@ -6,23 +6,16 @@
 
 OH_SoundFieldType getSoundFieldTypeByNum(int mode)
 {
-    OH_SoundFieldType type;
     switch (mode) {
         case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
-            type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
-            break;
+            return OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
         case OH_SoundFieldType::SOUND_FIELD_GRAND:
-            type = OH_SoundFieldType::SOUND_FIELD_GRAND;
-            break;
+            return OH_SoundFieldType::SOUND_FIELD_GRAND;
         case OH_SoundFieldType::SOUND_FIELD_NEAR:
-            type = OH_SoundFieldType::SOUND_FIELD_NEAR;
-            break;
+            return OH_SoundFieldType::SOUND_FIELD_NEAR;
         case OH_SoundFieldType::SOUND_FIELD_WIDE:
-            type = OH_SoundFieldType::SOUND_FIELD_WIDE;
-            break;
+            return OH_SoundFieldType::SOUND_FIELD_WIDE;
         default:
-            type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
-            break;
+            return OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
     }
-    return type;
 }

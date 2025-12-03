@@ -632,9 +632,13 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -653,11 +657,15 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+#ifndef CONFIG_FACTORY_VERSION
+        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
+#endif
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);
         }
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -784,6 +792,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
         }
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -844,6 +853,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
         }
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1591,7 +1601,7 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     auto underrunFlag = false;
     for (const auto &[id, node] : sinkInputNodeMap_) {
         CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
-        if (node->GetState() == HPAE_SESSION_RUNNING) {
+        if (node->GetState() == HPAE_SESSION_RUNNING && !node->IsDrain()) {
             underrunFlag = node->QueryUnderrun();
             break;
         }
@@ -1623,6 +1633,22 @@ void HpaeRendererManager::DeleteNodesByTraversal(uint32_t sessionId)
     if (it == sceneClusterMap_.end()) {
         AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in any sceneCluster", sessionId);
     }
+}
+
+bool HpaeRendererManager::IsBypassSpatializationForStereo()
+{
+    bool bypass = true;
+    for (auto it = sinkInputNodeMap_.begin(); it != sinkInputNodeMap_.end(); ++it) {
+        HpaeProcessorType sceneType = it->second->GetSceneType();
+        AudioChannel channels = it->second->GetNodeInfo().channels;
+        AudioEncodingType encoding = it->second->GetNodeInfo().encoding;
+        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&
+            (sceneType == HPAE_SCENE_MUSIC || sceneType == HPAE_SCENE_MOVIE || sceneType == HPAE_SCENE_SPEECH) &&
+            (channels > STEREO || encoding == ENCODING_AUDIOVIVID));
+        bypass = false;
+        break;
+    }
+    return bypass;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

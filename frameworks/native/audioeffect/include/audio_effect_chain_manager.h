@@ -159,6 +159,10 @@ public:
     int32_t DeleteStreamVolume(const std::string StringSessionID);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    void SetBypassSpatializationForStereo(bool bypass);
+    bool IsSpatializationEnabledForChains();
+    bool IsEffectChainFading(const std::string &sceneType);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -245,7 +249,7 @@ private:
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
-    bool btOffloadSupported_ = false;
+    bool btOffloadSupported_ = true;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
     int32_t defaultEffectChainCount_ = 0;
@@ -258,6 +262,8 @@ private:
     bool absVolumeState_ = true;
     int32_t currDspStreamUsage_ = -2;
     AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
+    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    bool bypassSpatializationForStereo_ = false;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -1229,7 +1229,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_047, TestSize.Leve
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
 
     AppState &appStateRef = audioBackgroundManagerTest_->appStatesMap_[pid];
-    appStateRef.isSystem = true;
+    appStateRef.isSystem = false;
     int32_t streamUsage = BACKGROUND_MUTE_STREAM_USAGE[0];
     bool silentControl = false;
     int32_t result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, streamUsage, silentControl);

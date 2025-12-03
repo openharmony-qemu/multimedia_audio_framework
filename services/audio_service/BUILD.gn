@@ -451,9 +451,10 @@ audio_ohos_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   include_dirs = [
-      "../../services/audio_engine/plugin/channel_converter/include",
-      "../audio_engine/plugin/resample/include",
-      "../audio_engine/simd",
+    "../../services/audio_engine/plugin/channel_converter/include",
+    "../../frameworks/native/audiodefinitions/include",
+    "../audio_engine/plugin/resample/include",
+    "../audio_engine/simd",
   ]
 
   deps = [
@@ -461,6 +462,7 @@ audio_ohos_library("audio_process_service") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",

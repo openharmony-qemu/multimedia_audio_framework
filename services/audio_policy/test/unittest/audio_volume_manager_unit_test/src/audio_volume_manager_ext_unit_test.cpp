@@ -137,7 +137,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SetSystemVolumeLevel_001, TestSize.Level
     int32_t volumeLevel = 0;
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_RING);
 
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
 

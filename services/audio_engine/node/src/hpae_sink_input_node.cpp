@@ -359,6 +359,10 @@ void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
     }
 }
 
+bool HpaeSinkInputNode::IsDrain()
+{
+    return isDrain_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

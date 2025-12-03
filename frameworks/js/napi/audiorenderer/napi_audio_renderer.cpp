@@ -307,6 +307,23 @@ bool NapiAudioRenderer::CheckAudioRendererStatus(NapiAudioRenderer *napi,
     return true;
 }
 
+bool NapiAudioRenderer::CheckAudioRendererStreamUsage(NapiAudioRenderer *napi,
+    std::shared_ptr<AudioRendererAsyncContext> context)
+{
+    CHECK_AND_RETURN_RET_LOG(napi != nullptr, false, "napi object is nullptr.");
+    AudioRendererInfo rendererInfo = {};
+    napi->audioRenderer_->GetRendererInfo(rendererInfo);
+    if (rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        rendererInfo.streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
+        rendererInfo.streamUsage != STREAM_USAGE_VOICE_MESSAGE) {
+        context->SignError(NAPI_ERR_ILLEGAL_STATE,
+            "StreamUsage: " + std::to_string(static_cast<int32_t>(rendererInfo.streamUsage)) +
+            " does not support using SetDefaultOutputDevice.");
+        return false;
+    }
+    return true;
+}
+
 NapiAudioRenderer* NapiAudioRenderer::GetParamWithSync(const napi_env &env, napi_callback_info info,
     size_t &argc, napi_value *args)
 {
@@ -1906,6 +1923,8 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStreamUsage(napiAudioRenderer, context),
+            "streamUsage not support for this renderer.");
         DeviceType deviceType = static_cast<DeviceType>(context->deviceType);
         context->intValue = napiAudioRenderer->audioRenderer_->SetDefaultOutputDevice(deviceType);
         if (context->intValue != SUCCESS) {

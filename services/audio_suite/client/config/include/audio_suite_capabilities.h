@@ -24,6 +24,7 @@
 #include "audio_voicemorphing_api.h"
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
+#include "audio_hms_space_render_api.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -77,6 +78,8 @@ private:
     int32_t LoadSfCapability(NodeCapability &nc);
     int32_t LoadEnvCapability(NodeCapability &nc);
     int32_t LoadAissCapability(NodeCapability &nc);
+    int32_t LoadGeneralCapability(NodeCapability &nc);
+    int32_t LoadPureCapability(NodeCapability &nc);
     int32_t LoadTempoPitchCapability(NodeCapability &nc);
     std::unordered_map<AudioNodeType, NodeCapability> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;

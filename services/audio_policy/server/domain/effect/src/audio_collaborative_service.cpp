@@ -54,6 +54,7 @@ void AudioCollaborativeService::Init(const std::vector<EffectChain> &effectChain
     }
     RecoverCollaborativeState();
     UpdateCollaborativeStateReal();
+    LoadCollaborationConfig();
 }
 
 bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
@@ -172,6 +173,18 @@ void AudioCollaborativeService::RecoverCollaborativeState()
 AudioCollaborativeService::~AudioCollaborativeService()
 {
     AUDIO_ERR_LOG("~AudioCollaborativeService");
+}
+
+void AudioCollaborativeService::updateCollaborativeProductId(const std::string &productId)
+{
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    audioPolicyManager_.updateCollaborativeProductId(productId);
+}
+
+void AudioCollaborativeService::LoadCollaborationConfig()
+{
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    audioPolicyManager_.LoadCollaborationConfig();
 }
 } // AudioStandard
 } // OHOS

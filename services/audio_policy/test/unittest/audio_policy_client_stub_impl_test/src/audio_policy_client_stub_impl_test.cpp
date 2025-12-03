@@ -1752,5 +1752,25 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_084, TestSize.Le
     EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
 }
+
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_085
+* @tc.desc  : Test onAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_085, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback>();
+    int32_t result = audioPolicyClient->AddAdaptiveSpatialRenderingEnabledChangeCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyClient->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

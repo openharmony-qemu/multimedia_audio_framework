@@ -60,6 +60,7 @@ private:
     IdHandler &operator=(IdHandler &&) = delete;
 
     uint32_t CreateInfoId(void);
+    uint32_t GetIdForSolePipeSource(SourceType sourceType);
 
 private:
     static constexpr uint32_t HDI_ID_BASE_OFFSET = 12;

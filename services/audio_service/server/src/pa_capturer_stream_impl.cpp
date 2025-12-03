@@ -48,10 +48,6 @@ PaCapturerStreamImpl::PaCapturerStreamImpl(pa_stream *paStream, AudioProcessConf
 PaCapturerStreamImpl::~PaCapturerStreamImpl()
 {
     AUDIO_DEBUG_LOG("~PaCapturerStreamImpl");
-    if (capturerServerDumpFile_) {
-        fclose(capturerServerDumpFile_);
-        capturerServerDumpFile_ = nullptr;
-    }
     paCapturerMap_.Erase(this);
 
     PaLockGuard lock(mainloop_);
@@ -112,10 +108,6 @@ int32_t PaCapturerStreamImpl::InitParams()
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
     AUDIO_INFO_LOG("byteSizePerFrame_ %{public}zu, spanSizeInFrame_ %{public}zu, minBufferSize_ %{public}zu",
         byteSizePerFrame_, spanSizeInFrame_, minBufferSize_);
-
-#ifdef DUMP_CAPTURER_STREAM_IMPL
-    capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
-#endif
     return SUCCESS;
 }
 
@@ -341,9 +333,6 @@ BufferDesc PaCapturerStreamImpl::DequeueBuffer(size_t length)
     pa_stream_peek(paStream_, &tempBuffer, &bufferDesc.bufLength);
     bufferDesc.buffer = static_cast<uint8_t *>(const_cast<void* >(tempBuffer));
     totalBytesRead_ += bufferDesc.bufLength;
-    if (capturerServerDumpFile_ != nullptr) {
-        fwrite(reinterpret_cast<void *>(bufferDesc.buffer), 1, bufferDesc.bufLength, capturerServerDumpFile_);
-    }
     return bufferDesc;
 }
 

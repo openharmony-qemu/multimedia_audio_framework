@@ -31,7 +31,6 @@ export default function localUnitTest() {
       let b = 'b';
       // Defines a variety of assertion methods, which are used to declare expected boolean conditions.
       expect(a).assertContain(b);
-      expect(a).assertEqual(a);
     });
   });
 }

@@ -222,7 +222,7 @@ int32_t AudioRenderer::FadeInAudioBuffer(const BufferDesc &buffer, AudioSampleFo
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
@@ -238,7 +238,7 @@ int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleF
         ERR_INVALID_PARAM, "Invalid buffer or length");
     BufferDesc tempBuffer = buffer;
     if (tempBuffer.bufLength > tempBuffer.dataLength) {
-        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength : %{public}zu", tempBuffer.bufLength,
+        AUDIO_INFO_LOG("less buffer case: bufLength: %{public}zu, dataLength: %{public}zu", tempBuffer.bufLength,
             tempBuffer.dataLength);
         tempBuffer.bufLength = tempBuffer.dataLength;
     }
@@ -666,43 +666,6 @@ AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
     return rendererInfo_.privacyType;
 }
 
-IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
-{
-    if (rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL) {
-        return IAudioStream::PA_STREAM;
-    }
-    if (rendererInfo_.originalFlag == AUDIO_FLAG_MMAP &&
-        !IAudioStream::IsStreamSupported(rendererInfo_.originalFlag, audioStreamParams)) {
-        AUDIO_WARNING_LOG("Unsupported stream params, will create normal stream");
-        rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    }
-
-    int32_t flag = AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo_);
-    AUDIO_INFO_LOG("Preferred renderer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP) {
-        rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-        isFastRenderer_ = true;
-        return IAudioStream::FAST_STREAM;
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST) {
-        // It is not possible to directly create a fast VoIP stream
-        isFastVoipSupported_ = true;
-    } else if (flag == AUDIO_FLAG_VOIP_DIRECT) {
-        isDirectVoipSupported_ = IsDirectVoipParams(audioStreamParams);
-        rendererInfo_.originalFlag = isDirectVoipSupported_ ? AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
-        // The VoIP direct mode can only be used for RENDER_MODE_CALLBACK
-        rendererInfo_.rendererFlags = (isDirectVoipSupported_ && audioRenderMode_ == RENDER_MODE_CALLBACK) ?
-            AUDIO_FLAG_VOIP_DIRECT : AUDIO_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Preferred renderer flag is VOIP_DIRECT. Actual flag: %{public}d", rendererInfo_.rendererFlags);
-        return IAudioStream::PA_STREAM;
-    }
-
-    AUDIO_INFO_LOG("Preferred renderer flag: AUDIO_FLAG_NORMAL");
-    rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    return IAudioStream::PA_STREAM;
-}
-
 bool AudioRendererPrivate::IsDirectVoipParams(const AudioStreamParams &audioStreamParams)
 {
     // VoIP derect only supports 16K and 48K sampling rate.
@@ -746,7 +709,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererInfo_.contentType, rendererInfo_.streamUsage);
 #ifdef SUPPORT_LOW_LATENCY
-    IAudioStream::StreamClass streamClass = GetPreferredStreamClass(audioStreamParams);
+    IAudioStream::StreamClass streamClass;
 #else
     if (rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD) {
         rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
@@ -2512,8 +2475,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
         HandleAudioInterruptWhenServerDied();
-        int32_t ret = InitOutputDeviceChangeCallback();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "InitOutputDeviceChangeCallback Failed ret:%{public}d", ret);
+        InitOutputDeviceChangeCallback();
     }
     InitAudioRouteCallback();
     isSwitching_ = false;

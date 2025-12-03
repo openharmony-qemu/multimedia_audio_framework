@@ -40,6 +40,7 @@
 #include "bluetooth_device_manager.h"
 #endif
 
+#include "async_action_handler.h"
 #include "audio_a2dp_device.h"
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
@@ -78,17 +79,21 @@ public:
     }
     bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
     void DeInit(void);
+
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     void InitKVStore();
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
+    void SetSharedSleAbsVolumeScene(const bool support);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0,
-        bool syncVolDegree = true);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0, bool syncVolDegree = true);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
@@ -98,6 +103,7 @@ public:
     int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume);
+    int32_t SetSleVoiceStatusFlag(const bool isSleVoiceStatus);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
@@ -147,7 +153,7 @@ public:
     void DealWithPauseAndStop(const std::string &reason);
     std::string DoLoopCheck(const std::string &reason);
     int32_t CheckActiveMusicTime(const std::string &reason = "Default");
-
+    void RefreshActiveDeviceVolume();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -193,12 +199,16 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
 private:
-    int32_t SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId);
+    int32_t SetSystemVolumeLevelExternal(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
+        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
+    volatile bool *sharedSleAbsVolumeScene_ = nullptr;
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;
@@ -217,6 +227,7 @@ private:
     std::unique_ptr<std::thread> safeVolumeDialogThrd_ = nullptr;
     std::atomic<bool> isSafeVolumeDialogShowing_ = false;
     std::mutex safeVolumeMutex_;
+    std::mutex setSharedSleAbsVolumeSceneMutex_;
 
     bool userSelect_ = false;
     bool safeVolumeExit_ = false;
@@ -263,6 +274,7 @@ private:
     bool needForceControlVolumeType_ = false;
     AudioVolumeType forceControlVolumeType_ = STREAM_DEFAULT;
     std::shared_ptr<ForceControlVolumeTypeMonitor> forceControlVolumeTypeMonitor_;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 
 class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {

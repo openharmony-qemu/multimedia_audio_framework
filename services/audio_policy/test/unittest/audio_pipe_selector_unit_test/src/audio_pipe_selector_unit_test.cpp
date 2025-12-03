@@ -221,6 +221,34 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_010, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_011
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag does not contain any specific flags.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_011, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_UNPROCESS;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_UNPROCESS);
+}
+
+/**
+ * @tc.name: GetPipeType_012
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_RECORD and flag does not contain any specific flags.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_012, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_ULTRASONIC;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_ULTRASONIC);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.
@@ -669,33 +697,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_002, TestSize.Level4)
 }
 
 /**
- * @tc.name: CheckAndHandleIncomingConcurrency_001
- * @tc.desc: Test CheckAndHandleIncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
- *           && stream->audioMode_ == AUDIO_MODE_RECORD.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleIncomingConcurrency_001, TestSize.Level4)
-{
-    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioStreamDescriptor> cmpStream = std::make_shared<AudioStreamDescriptor>();
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-
-    cmpStream->audioMode_ = AUDIO_MODE_RECORD;
-    stream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-    cmpStream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-
-    cmpStream->audioMode_ = AUDIO_MODE_RECORD;
-    stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
-    EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
-}
-
-/**
  * @tc.name: ProcessConcurrency_001
  * @tc.desc: Test ProcessConcurrency switch (action).
  * @tc.type: FUNC
@@ -741,95 +742,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
     stream->audioMode_ = AUDIO_MODE_RECORD;
     ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_TRUE(ret);
-}
-
-/**
- * @tc.name: UpdateProcessConcurrency_001
- * @tc.desc: Test UpdateProcessConcurrency with CALL_IN pipes and PLAY_BOTH action modification.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_001, TestSize.Level4)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_IN_VOIP;
-    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
-    ConcurrencyAction action = CONCEDE_INCOMING; // Initial action
-
-    SetInjectEnable(true);
-    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
-
-    // Verify that action is updated to PLAY_BOTH when both pipes are CALL_IN and injection is enabled
-    EXPECT_EQ(action, PLAY_BOTH);
-}
-
-/**
- * @tc.name: UpdateProcessConcurrency_002
- * @tc.desc: Test UpdateProcessConcurrency with different pipe types and no action modification.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_002, TestSize.Level4)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_OUT_LOWLATENCY;
-    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
-    ConcurrencyAction originalAction = CONCEDE_EXISTING;
-    ConcurrencyAction action = originalAction;
-
-    SetInjectEnable(true);
-    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
-
-    // Verify that action remains unchanged when pipe types are different
-    EXPECT_EQ(action, originalAction);
-}
-
-/**
- * @tc.name: UpdateProcessConcurrency_003
- * @tc.desc: Test UpdateProcessConcurrency with action already set to PLAY_BOTH and no modification.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_003, TestSize.Level4)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioPipeType existingPipe = PIPE_TYPE_IN_VOIP;
-    AudioPipeType commingPipe = PIPE_TYPE_IN_VOIP;
-    ConcurrencyAction originalAction = PLAY_BOTH;
-    ConcurrencyAction action = originalAction;
-
-    SetInjectEnable(true);
-    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
-
-    // Verify that action remains PLAY_BOTH when it's already set
-    EXPECT_EQ(action, originalAction);
-}
-
-/**
- * @tc.name: UpdateProcessConcurrency_004
- * @tc.desc: Test UpdateProcessConcurrency with various CALL_IN scenarios and action modification.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_004, TestSize.Level4)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    SetInjectEnable(true);
-
-    // Test case 1: Both pipes are CALL_IN, injection enabled, action should be updated to PLAY_BOTH
-    ConcurrencyAction action = CONCEDE_INCOMING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_IN_VOIP, PIPE_TYPE_IN_VOIP, action);
-    EXPECT_EQ(action, PLAY_BOTH);
-
-    // Test case 2: Different pipe types, action should remain unchanged
-    action = CONCEDE_EXISTING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_IN_VOIP, PIPE_TYPE_OUT_LOWLATENCY, action);
-    EXPECT_EQ(action, CONCEDE_EXISTING);
-
-    // Test case 3: Same pipe types but not CALL_IN, action should remain unchanged
-    action = CONCEDE_INCOMING;
-    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_OUT_LOWLATENCY, action);
-    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
 /**
@@ -1553,6 +1465,43 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_004, TestSi
             EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
         }
     }
+}
+
+/**
+ * @tc.name: SetPipeTypeByStreamType_001
+ * @tc.desc: Test SetPipeTypeByStreamType_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeByStreamType_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    EXPECT_NE(audioPipeSelector, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    AudioPipeType pipeType = PIPE_TYPE_OUT_NORMAL;
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
+
+    pipeType = PIPE_TYPE_OUT_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_OUT_VOIP);
+
+    pipeType = PIPE_TYPE_IN_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_IN_VOIP);
+
+    pipeType = PIPE_TYPE_IN_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
+    EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL);
 }
 } // namespace AudioStandard
 } // namespace OHOS

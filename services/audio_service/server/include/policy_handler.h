@@ -45,8 +45,6 @@ public:
 
     void SetActiveOutputDevice(DeviceType deviceType);
 
-    uint32_t GenerateSessionId(int32_t uid);
-
     DeviceType GetActiveOutPutDevice();
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
@@ -55,7 +53,7 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+    bool IsSleAbsVolumeSupported();
 
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
@@ -89,6 +87,7 @@ private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
+    volatile bool *sharedSleAbsVolumeScene_ = nullptr;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
     bool isHighResolutionExist_ = false;
 };

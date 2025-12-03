@@ -15,6 +15,18 @@ import("//build/test.gni")
 import("../../../../../config.gni")
 module_output_path = "audio_framework/audio_framework_route/audio_utils"
 
+group("unit_test_group") {
+  testonly = true
+
+  deps = [
+    ":async_action_handler_test",
+    ":audio_speed_unit_test",
+    ":audio_utils_plus_unit_test",
+    ":audio_utils_pro_unit_test",
+    ":audio_utils_unit_test",
+  ]
+}
+
 ohos_unittest("audio_utils_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -150,4 +162,32 @@ ohos_unittest("audio_speed_unit_test") {
   sources = [ "audio_speed_unit_test.cpp" ]
 
   deps = [ "../../../audioutils:audio_utils" ]
+}
+
+ohos_unittest("async_action_handler_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sources = [ "async_action_handler_test.cpp" ]
+
+  deps = [ "../../../audioutils:audio_utils" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest",
+  ]
 }

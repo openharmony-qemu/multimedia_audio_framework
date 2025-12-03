@@ -65,6 +65,19 @@ enum AudioSpatialDeviceType {
     EARPHONE_TYPE_OTHERS,
 };
 
+enum AudioEarphoneProduct : int32_t {
+    EARPHONE_PRODUCT_NONE = 0,
+    EARPHONE_PRODUCT_DOVE = 1,
+    EARPHONE_PRODUCT_ROBIN = 2,
+};
+
+enum AudioTwsMode : int32_t {
+    TWS_MODE_DEFAULT = 0,
+    TWS_MODE_LISTEN = 1,
+    TWS_MODE_HITWS = 2,
+    TWS_MODE_OTHERS = 3,
+};
+
 enum FoldState : uint32_t {
     FOLD_STATE_EXPAND = 1,
     FOLD_STATE_CLOSE = 2,
@@ -725,6 +738,7 @@ enum AudioEffectChainSetParamIndex {
     LID_STATE_INDEX = 11,
     LOUDNESS_GAIN_INDEX = 12,
     ABS_VOLUME_STATE = 13,
+    EARPHONE_PRODUCT = 14,
     MAX_PARAM_INDEX,
 };
 
@@ -833,12 +847,20 @@ struct AudioEffectLibEntry {
 struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+    bool adaptiveSpatialRenderingEnabled = false;
 
     AudioSpatializationState() = default;
     AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
     {
         this->spatializationEnabled = spatializationEnabled;
         this->headTrackingEnabled = headTrackingEnabled;
+    }
+
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled, bool adaptiveSpatialRenderingEnabled)
+    {
+        this->spatializationEnabled = spatializationEnabled;
+        this->headTrackingEnabled = headTrackingEnabled;
+        this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
     }
 
     bool Marshalling(Parcel &parcel) const override

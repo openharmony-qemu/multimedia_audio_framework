@@ -149,6 +149,12 @@ class ConcreteAudioSessionCurrentDeviceChangedCallback : public AudioSessionCurr
 class ConcreteStreamVolumeChangeCallback : public StreamVolumeChangeCallback {
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override {};
 };
+
+class ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback :
+    public AudioAdaptiveSpatialRenderingEnabledChangeCallback {
+    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override {}
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H

@@ -81,6 +81,9 @@ public:
     void AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume);
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    void updateCollaborativeProductId(const std::string &productId);
+    void LoadCollaborationConfig();
+    void SetBypassSpatializationForStereo(bool bypass);
 private:
     HpaePolicyManager();
 };

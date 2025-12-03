@@ -58,6 +58,7 @@ static const char* USB_MIC = "Usb_arm_mic";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
 static const char* PRIMARY_AI_MIC = "Built_in_ai";
+static const char* PRIMARY_ULTRASONIC_MIC = "Built_in_ultrasonic";
 static const char* FILE_SINK = "file_sink";
 static const char* FILE_SOURCE = "file_source";
 static const char* PIPE_SINK = "fifo_output";
@@ -72,6 +73,7 @@ static const char* PRIMARY_MMAP = "mmap";
 static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
+static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 }
 
 enum NodeName {

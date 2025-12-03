@@ -6,6 +6,8 @@
 
 // 错误信息映射表
 const std::map<AudioSuiteResult, std::string> errorMessages = {
+    {AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR,
+        "node manager operation error"},
     {AudioSuiteResult::AUDIOSUITE_SUCCESS,
         "successful"},
     {AudioSuiteResult::AUDIOSUITE_ERROR_INVALID_PARAM,

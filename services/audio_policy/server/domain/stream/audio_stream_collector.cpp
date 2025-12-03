@@ -150,6 +150,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
+    rendererChangeInfo->streamInfo = streamChangeInfo.audioRendererChangeInfo.streamInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -448,6 +449,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
             rendererChangeInfo->backMute = (*it)->backMute;
+            rendererChangeInfo->streamInfo = (*it)->streamInfo;
             if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;

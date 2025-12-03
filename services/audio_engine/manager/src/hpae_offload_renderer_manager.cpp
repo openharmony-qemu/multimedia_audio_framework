@@ -213,8 +213,10 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
  
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
+    converterForOutput_->SetDownmixNormalization(false);
     loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
+    converterForLoudness_->SetDownmixNormalization(false);
     AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
         "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
         outputNodeInfo.sessionId,
@@ -269,6 +271,7 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
         }
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -301,6 +304,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
                 sinkOutputNode_->StopStream();
             }
         }
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -357,6 +361,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
                 sinkOutputNode_->StopStream();
             }
         }
+        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -905,6 +910,22 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
         basicFormat.rate = SAMPLE_RATE_48000;
     }
     return SUCCESS;
+}
+
+bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
+{
+    bool bypass = true;
+    for (auto it = sinkInputNodeMap_.begin(); it != sinkInputNodeMap_.end(); ++it) {
+        HpaeProcessorType sceneType = it->second->GetSceneType();
+        AudioChannel channels = it->second->GetNodeInfo().channels;
+        AudioEncodingType encoding = it->second->GetNodeInfo().encoding;
+        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&
+            (sceneType == HPAE_SCENE_MUSIC || sceneType == HPAE_SCENE_MOVIE || sceneType == HPAE_SCENE_SPEECH) &&
+            (channels > STEREO || encoding == ENCODING_AUDIOVIVID));
+        bypass = false;
+        break;
+    }
+    return bypass;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

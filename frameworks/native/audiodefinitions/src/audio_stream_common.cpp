@@ -26,6 +26,11 @@ bool AudioStreamCommon::IsVoipMmap(StreamUsage streamUsage, SourceType sourceTyp
     return streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         sourceType == SOURCE_TYPE_VOICE_COMMUNICATION;
 }
+
+bool AudioStreamCommon::CompareFormatAndChannel(const AudioStreamInfo &infoA, const AudioStreamInfo &infoB)
+{
+    return infoA.format == infoB.format && infoA.channels == infoB.channels;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_COMMON_CPP

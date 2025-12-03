@@ -71,6 +71,7 @@ public:
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
+    StreamUsage GetAudioSessionStreamUsageForDevice(const uint32_t streamId);
     bool IsBackGroundApp(void);
     void MarkSystemApp(void);
     bool IsSystemApp(void) const;

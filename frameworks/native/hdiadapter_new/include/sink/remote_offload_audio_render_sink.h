@@ -35,6 +35,17 @@ typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAu
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCallbackType RemoteAudioCallbackType;
 
+enum RemoteOffloadTimestampTag {
+    GET_HDI_LATENCY,
+    GET_LATENCY,
+    GET_HDI_PRESENTATION_POSITION,
+    ESTIMATE_RENDER_POSITION,
+    GET_RENDER_POSITION_INNER,
+    CALC_HDI_POSITION,
+    ADD_HDI_LATENCY,
+    TIMESTAMP_TAG_NUM,
+};
+
 class RemoteOffloadAudioRenderSink;
 
 class RemoteOffloadHdiCallbackImpl final : public RemoteIAudioCallback {
@@ -157,6 +168,7 @@ private:
     static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr size_t OFFLOAD_DFX_SPLIT = 2;
+    static constexpr int64_t LOG_TIME_INTERVAL_NS = 1000000000;
 #ifdef FEATURE_POWER_MANAGER
     static constexpr const char *RUNNING_LOCK_NAME = "AudioRemoteOffloadBackgroundPlay";
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
@@ -193,6 +205,7 @@ private:
     // for dfx log
     std::string logUtilsTag_ = "RemoteOffloadSink";
     mutable int64_t volumeDataCount_ = 0;
+    std::atomic<int64_t> lastLogTimestampArr_[TIMESTAMP_TAG_NUM];
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
     bool runningLocked_ = false;
@@ -224,6 +237,8 @@ private:
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
     std::shared_ptr<std::thread> flushThread_;
+    bool appInfoNeedReset_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

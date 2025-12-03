@@ -50,7 +50,7 @@
 #include "i_hpae_soft_link.h"
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
-#include "audio_policy_async_action_handler.h"
+#include "async_action_handler.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -178,9 +178,7 @@ public:
             const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
         int32_t FetchInputDeviceAndRoute(std::string caller,
             const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-        int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
         int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
-        int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
@@ -192,6 +190,7 @@ public:
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
+        void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -207,6 +206,8 @@ private:
     void DeInit();
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
@@ -309,9 +310,7 @@ private:
     int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
     int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
     void RestoreDistributedDeviceInfo();
@@ -354,6 +353,7 @@ private:
     void ActivateNearlinkDeviceAsync(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
+    void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -585,6 +585,8 @@ private:
     // for remote
     void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
+    bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -619,6 +621,7 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     bool hearingAidCallFlag_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
@@ -680,7 +683,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
-class ActivateNearlinkDeviceAction : public PolicyAsyncAction {
+class ActivateNearlinkDeviceAction : public AsyncActionHandler::AsyncAction {
 public:
     ActivateNearlinkDeviceAction(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> &ringAndVoipDescMap,

@@ -141,6 +141,7 @@ void ChannelConverter::SetDownmixNormalization(bool normalizing)
     CHECK_AND_RETURN_LOG(inChannelInfo_.numChannels > outChannelInfo_.numChannels,
         "channelConverter is at upmix state, no need to set normalization for upmix");
     downMixer_.SetNormalization(downmixNormalizing_);
+    downMixer_.GetDownMixTable(mixTable_);
 }
  
 int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteSize, float* out, uint32_t outByteSize)

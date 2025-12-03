@@ -380,6 +380,14 @@ void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
     }
 }
 
+bool ClockTime::CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval)
+{
+    int64_t curTimestamp = GetCurNano();
+    CHECK_AND_RETURN_RET(lastRecordTimestamp.load() + timeInterval < curTimestamp, false);
+    lastRecordTimestamp.store(curTimestamp);
+    return true;
+}
+
 void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER
@@ -1589,6 +1597,7 @@ LatencyMonitor& LatencyMonitor::GetInstance()
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         rendererMockTime_ = timestamp;
     } else {
@@ -1598,6 +1607,7 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         sinkDetectedTime_ = timestamp;
     } else {
@@ -1607,11 +1617,13 @@ void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timest
 
 void LatencyMonitor::UpdateDspTime(std::string timestamp)
 {
+    std::lock_guard lock(mutex_);
     dspDetectedTime_ = timestamp;
 }
 
 void LatencyMonitor::ShowTimestamp(bool isRenderer)
 {
+    std::lock_guard lock(mutex_);
     if (extraStrLen_ == 0) {
         extraStrLen_ = dspDetectedTime_.find("20");
     }
@@ -1656,6 +1668,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
+    std::lock_guard lock(mutex_);
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
     AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
@@ -2259,15 +2272,19 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-bool g_injectSwitch = system::GetBoolParameter("persist.multimedia.audio.inject", false);
-bool IsInjectEnable()
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid)
 {
-    return g_injectSwitch;
-}
-
-void SetInjectEnable(bool injectSwitch)
-{
-    g_injectSwitch = injectSwitch;
+    std::ostringstream uidStream;
+    uidStream << "AppInfo=";
+    bool first = true;
+    for (const auto &uid : appsUid) {
+        if (!first) {
+            uidStream << ";";
+        }
+        uidStream << "0," << uid;
+        first = false;
+    }
+    return uidStream.str();
 }
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)

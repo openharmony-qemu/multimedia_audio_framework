@@ -355,6 +355,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -415,6 +416,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -427,6 +429,7 @@ struct VolumeEvent : public Parcelable {
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
 
@@ -443,7 +446,8 @@ struct VolumeEvent : public Parcelable {
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
-            && parcel.WriteBool(notifyRssWhenAccountsChange);
+            && parcel.WriteBool(notifyRssWhenAccountsChange)
+            && parcel.WriteInt32(static_cast<int32_t>(deviceType));
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -455,6 +459,7 @@ struct VolumeEvent : public Parcelable {
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
+        deviceType = static_cast<DeviceType>(parcel.ReadInt32());
     }
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
@@ -1258,6 +1263,7 @@ struct AudioRegisterTrackerInfo {
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
     uint32_t appTokenId;
+    AudioStreamInfo streamInfo;
 };
 
 enum StateChangeCmdType {

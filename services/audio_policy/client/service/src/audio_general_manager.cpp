@@ -466,7 +466,7 @@ int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
-int32_t AudioGeneralManager::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
+int32_t AudioGeneralManager::SelectPrivateDevice(DeviceType devType, const std::string &macAddress)
 {
     return AudioPolicyManager::GetInstance().SelectPrivateDevice(devType, macAddress);
 }
@@ -477,7 +477,7 @@ int32_t AudioGeneralManager::ForceSelectDevice(DeviceType devType, const std::st
     return AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, filter);
 }
 
-int32_t AudioGeneralManager::SetActiveHfpDevice(const std::string& macAddress)
+int32_t AudioGeneralManager::SetActiveHfpDevice(const std::string &macAddress)
 {
     return AudioPolicyManager::GetInstance().SetActiveHfpDevice(macAddress);
 }

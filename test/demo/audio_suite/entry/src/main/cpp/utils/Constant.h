@@ -30,5 +30,4 @@ typedef enum {
     UINT_1000 = 1000,
 } UINT;
 
-const int NODE_MANAGER_OPERATION_ERROR = -1;
 #endif //AUDIOEDITTESTAPP_CONSTANT_H

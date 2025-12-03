@@ -25,6 +25,7 @@
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
+#include "audio_stream_num.h"
 
 using namespace testing::ext;
 
@@ -87,6 +88,65 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_002, TestSize.Level1)
 
     uint32_t hearingAidId = idHandler.GetRenderIdByDeviceClass("hearing_aid");
     EXPECT_EQ(hearingAidId, id);
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_003
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_003, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_AI, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_004
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_004, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_UNPROCESS, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_005
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_005, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_NORMAL, pipeName);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
+}
+
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_006
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_006, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    std::string pipeName = "test";
+
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_VOICE_CALL);
+    EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
 }
 
 /**

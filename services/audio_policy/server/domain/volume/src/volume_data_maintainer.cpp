@@ -106,14 +106,6 @@ void VolumeDataMaintainer::SetDataShareReady(std::atomic<bool> isDataShareReady)
     audioSettingProvider.SetDataShareReady(std::atomic_load(&isDataShareReady));
     AUDIO_INFO_LOG("SetDataShareReady, isDataShareReady: %{public}d", std::atomic_load(&isDataShareReady));
     isDataShareReady_ = isDataShareReady;
-    if (isDataShareReady) {
-        auto descs = audioConnectedDevice_.GetCopy();
-        for (auto &desc : descs) {
-            CHECK_AND_CONTINUE(desc != nullptr);
-            InitDeviceVolumeMap(desc);
-            InitDeviceMuteMap(desc);
-        }
-    }
 }
 
 void VolumeDataMaintainer::SetAppVolume(int32_t appUid, int32_t volumeLevel)
@@ -215,7 +207,6 @@ void VolumeDataMaintainer::WriteVolumeDbAccessExceptionEvent(int32_t errorCase, 
     bean->Add("ERROR_CASE", errorCase);
     bean->Add("ERROR_MSG", errorMsg);
     bean->Add("ERROR_DESCRIPTION", "Dateabase access failed");
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 bool VolumeDataMaintainer::GetMuteAffected(int32_t &affected)
@@ -1163,6 +1154,30 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromDb(std::shared_ptr<AudioDevice
         AUDIO_DEBUG_LOG("Get volumeDegree From DataBase, volumeDegree:%{public}d", volumeDegree);
     }
     return volumeDegree;
+}
+
+int32_t VolumeDataMaintainer::CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    std::string volumeKey = GetVolumeKey(device, streamType);
+    CHECK_AND_RETURN_RET_LOG(volumeKey != "", ERROR, "volumeKey is empty");
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t volumeState = 0;
+    return audioSettingProvider.GetIntValue(volumeKey, volumeState, "system");
+}
+
+int32_t VolumeDataMaintainer::CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    std::string muteKey = GetMuteKey(device, streamType);
+    CHECK_AND_RETURN_RET_LOG(muteKey != "", ERROR, "muteKey is empty");
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool muteState = false;
+    return audioSettingProvider.GetBoolValue(muteKey, muteState, "system");
 }
 
 } // namespace AudioStandard

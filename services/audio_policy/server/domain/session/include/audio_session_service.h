@@ -56,6 +56,7 @@ public:
 
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
     StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
+    StreamUsage GetAudioSessionStreamUsageForDevice(const int32_t callerPid, const uint32_t streamId);
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);

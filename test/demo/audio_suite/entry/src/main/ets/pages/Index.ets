@@ -31,14 +31,25 @@ struct Index {
 
   aboutToAppear(): void {
     this.setSystemBarProperties();
-    // 监听屏幕横竖屏切换
-    display.on('change', () => {
-      this.isHorizontalScreen =
-        (display.getDefaultDisplaySync().orientation === display.Orientation.PORTRAIT ||
-          display.getDefaultDisplaySync().orientation === display.Orientation.PORTRAIT_INVERTED) ?
-          false : true;
-    })
+    // Listen to screen orientation switch
+    display.on('change', this.onDisplayChange);
   }
+
+  aboutToDisappear(): void {
+    Logger.info(TAG, 'aboutToDisappear');
+    // Destroy screen listeners
+    display.off('change', this.onDisplayChange);
+  }
+
+  // Listener function
+  private onDisplayChange = (): void => {
+    const defaultDisplay = display.getDefaultDisplaySync();
+    this.isHorizontalScreen =
+      (defaultDisplay.orientation === display.Orientation.PORTRAIT ||
+        defaultDisplay.orientation === display.Orientation.PORTRAIT_INVERTED)
+        ? false
+        : true;
+  };
 
   // 设置状态栏的背景色
   setSystemBarProperties() {

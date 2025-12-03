@@ -6,6 +6,7 @@
 #include <hilog/log.h>
 #include <stack>
 #include <sstream>
+#include "./utils/Utils.h"
 
 static const int GLOBAL_RESMGR = 0xFF00;
 static const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -132,7 +133,7 @@ OH_AudioSuite_Result NodeManager::moveNode(
         LOG_INFO,
         GLOBAL_RESMGR,
         TAG,
-        "NodeManagerTset moveNode targetNode:%{pubilc}d",
+        "NodeManagerTset moveNode targetNode:%{public}d",
         static_cast<int>(targetNode.type));
     if (sourceNode.preNodeIds.empty()) {
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
@@ -262,8 +263,9 @@ std::string GetEqualizerOptions(const Node &node)
         return "0";
     }
     std::ostringstream oss;
+    int equalenceBandsCount = 10;
     oss << "[";
-    for (int i = 0; i < 10; ++i) { // 均衡器有10个频段
+    for (int i = 0; i < equalenceBandsCount; ++i) { // The equalizer has 10 frequency bands.
         if (i > 0)
             oss << ",";
         oss << type.gains[i];
@@ -278,19 +280,19 @@ std::string GetVoiceBeautifierOptions(const Node &node)
     OH_VoiceBeautifierType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return "0";
+        return STR_0;
     }
     switch (type) {
         case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
-            return "1";
+            return STR_1;
         case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
-            return "2";
+            return STR_2;
         case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
-            return "3";
+            return STR_3;
         case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
-            return "4";
+            return STR_4;
         default:
-            return "0";
+            return STR_0;
     }
 }
 
@@ -300,19 +302,19 @@ std::string GetSoundFieldOptions(const Node &node)
     OH_SoundFieldType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSoundFieldType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return "0";
+        return STR_0;
     }
     switch (type) {
         case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
-            return "1";
+            return STR_1;
         case OH_SoundFieldType::SOUND_FIELD_GRAND:
-            return "2";
+            return STR_2;
         case OH_SoundFieldType::SOUND_FIELD_NEAR:
-            return "3";
+            return STR_3;
         case OH_SoundFieldType::SOUND_FIELD_WIDE:
-            return "4";
+            return STR_4;
         default:
-            return "0";
+            return STR_0;
     }
 }
 
@@ -322,19 +324,19 @@ std::string GetEnvironmentEffectOptions(const Node &node)
     OH_EnvironmentType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEnvironmentType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return "0";
+        return STR_0;
     }
     switch (type) {
         case OH_EnvironmentType::ENVIRONMENT_TYPE_BROADCAST:
-            return "1";
+            return STR_1;
         case OH_EnvironmentType::ENVIRONMENT_TYPE_EARPIECE:
-            return "2";
+            return STR_2;
         case OH_EnvironmentType::ENVIRONMENT_TYPE_UNDERWATER:
-            return "3";
+            return STR_3;
         case OH_EnvironmentType::ENVIRONMENT_TYPE_GRAMOPHONE:
-            return "4";
+            return STR_4;
         default:
-            return "0";
+            return STR_0;
     }
 }
 
@@ -468,7 +470,8 @@ void NodeManager::GetPipeLineDetail()
             static_cast<int>(outputNodes.size()));
         return;
     }
-    std::string pipelineDetails = "outputNode ";
+    std::ostringstream pipelineDetails;
+    pipelineDetails << "outputNode ";
     std::stack<Node> nodeStack;
     nodeStack.push(outputNodes[0]);
 
@@ -480,19 +483,19 @@ void NodeManager::GetPipeLineDetail()
             continue;
         }
 
-        pipelineDetails += "[";
+        pipelineDetails << "[";
         for (auto it = currentNode.preNodeIds.rbegin(); it != currentNode.preNodeIds.rend(); ++it) {
             Node childNode = GetNodeById(*it);
             char *nodeType = getNodeTypeName(childNode.type);
-            pipelineDetails += nodeType;
+            pipelineDetails << nodeType;
             nodeStack.push(childNode);
         }
-        pipelineDetails += "] ";
+        pipelineDetails << "] ";
     }
     OH_LOG_Print(LOG_APP,
         LOG_INFO,
         GLOBAL_RESMGR,
         TAG,
         "NodeManagerTest GetPipeLineDetail: %{public}s",
-        pipelineDetails.c_str());
+        pipelineDetails.str().c_str());
 }

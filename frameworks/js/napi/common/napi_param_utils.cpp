@@ -1065,6 +1065,9 @@ napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
             napi_value deviceInfo = nullptr;
             SetValueDeviceInfo(env, changeInfo->outputDeviceInfo, deviceInfo);
             napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", deviceInfo);
+            napi_value streamInfo = nullptr;
+            SetStreamInfo(env, changeInfo->streamInfo, streamInfo);
+            napi_set_named_property(env, jsChangeInfoObj, "streamInfo", streamInfo);
             napi_set_element(env, result, position, jsChangeInfoObj);
             position++;
         }

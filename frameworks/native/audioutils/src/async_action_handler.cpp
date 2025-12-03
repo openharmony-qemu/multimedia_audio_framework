@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyAsyncActionHandler"
+#define LOG_TAG "AsyncActionHandler"
 #endif
 
-#include "audio_policy_async_action_handler.h"
-#include "audio_policy_log.h"
+#include "async_action_handler.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,21 +26,21 @@ enum {
     DEFAULT_EVENT_ID = 0,
 };
 
-AudioPolicyAsyncActionHandler::AudioPolicyAsyncActionHandler() : AppExecFwk::EventHandler(
-    AppExecFwk::EventRunner::Create("OS_APAsyncActionHandler", AppExecFwk::ThreadMode::FFRT))
+AsyncActionHandler::AsyncActionHandler(std::string name) : AppExecFwk::EventHandler(
+    AppExecFwk::EventRunner::Create(name, AppExecFwk::ThreadMode::FFRT))
 {
     AUDIO_DEBUG_LOG("ctor");
 }
 
-AudioPolicyAsyncActionHandler::~AudioPolicyAsyncActionHandler()
+AsyncActionHandler::~AsyncActionHandler()
 {
     AUDIO_WARNING_LOG("dtor should not happen");
 };
 
-bool AudioPolicyAsyncActionHandler::PostAsyncAction(const AsyncActionDesc &desc)
+bool AsyncActionHandler::PostAsyncAction(const AsyncActionDesc &desc)
 {
     bool ret = false;
-    AUDIO_INFO_LOG("priority type = %{public}u", desc.priority);
+    AUDIO_DEBUG_LOG("priority type = %{public}u", desc.priority);
     switch (desc.priority) {
         case ActionPriority::IMMEDIATE: {
             std::lock_guard<std::mutex> lock(actionMutex_);
@@ -68,12 +68,14 @@ bool AudioPolicyAsyncActionHandler::PostAsyncAction(const AsyncActionDesc &desc)
     return ret;
 }
 
-void AudioPolicyAsyncActionHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
+void AsyncActionHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
 
     uint32_t eventId = event->GetInnerEventId();
-    std::shared_ptr<PolicyAsyncAction> action = event->GetSharedObject<PolicyAsyncAction>();
+    AUDIO_DEBUG_LOG("process event %{public}u", eventId);
+
+    std::shared_ptr<AsyncAction> action = event->GetSharedObject<AsyncAction>();
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     action->Exec();
 }
