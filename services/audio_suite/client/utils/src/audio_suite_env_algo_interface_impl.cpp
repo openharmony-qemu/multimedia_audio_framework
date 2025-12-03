@@ -99,24 +99,37 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Deinit()
 
 int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
 {
-    if (modStr == "0") {
-        AUDIO_INFO_LOG("EnvMode is Close");
-        para = IMEDIA_SWS_ENV_BROADCAST;
-    } else if (modStr == "1") {
-        AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
-        para = IMEDIA_SWS_ENV_BROADCAST;
-    } else if (modStr == "2") {
-        AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
-        para = IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
-    } else if (modStr == "3") {
-        AUDIO_INFO_LOG("Set EnvMode to UNDER_WATER");
-        para = IMEDIA_SWS_ENV_UNDER_WATER;
-    } else if (modStr == "4") {
-        AUDIO_INFO_LOG("Set EnvMode to PHONOGRAPH");
-        para = IMEDIA_SWS_ENV_PHONOGRAPH;
-    } else {
-        AUDIO_ERR_LOG("Unknow EnvMode %{public}s", modStr.c_str());
+    int32_t modeInt;
+    auto result = std::from_chars(modStr.data(), modStr.data() + modStr.size(), modeInt);
+    if (result.ec == std::errc::invalid_argument) {
+        AUDIO_ERR_LOG("Invalid EnvMode %{public}s", modStr.c_str());
         return ERROR;
+    }
+ 
+    switch (modeInt) {
+        case AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE:
+            AUDIO_INFO_LOG("EnvMode is Close");
+            para = IMEDIA_SWS_ENV_BROADCAST;
+            break;
+        case AUDIO_SUITE_ENVIRONMENT_TYPE_BROADCAST:
+            AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
+            para = IMEDIA_SWS_ENV_BROADCAST;
+            break;
+        case AUDIO_SUITE_ENVIRONMENT_TYPE_EARPIECE:
+            AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
+            para = IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
+            break;
+        case AUDIO_SUITE_ENVIRONMENT_TYPE_UNDERWATER:
+            AUDIO_INFO_LOG("Set EnvMode to UNDER_WATER");
+            para = IMEDIA_SWS_ENV_UNDER_WATER;
+            break;
+        case AUDIO_SUITE_ENVIRONMENT_TYPE_GRAMOPHONE:
+            AUDIO_INFO_LOG("Set EnvMode to PHONOGRAPH");
+            para = IMEDIA_SWS_ENV_PHONOGRAPH;
+            break;
+        default:
+            AUDIO_ERR_LOG("Unknown EnvMode %{public}d", modeInt);
+            return ERROR;
     }
     return SUCCESS;
 }
