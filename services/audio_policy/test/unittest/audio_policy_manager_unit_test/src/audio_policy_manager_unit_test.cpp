@@ -845,7 +845,7 @@ HWTEST(AudioPolicyManager, RegisterCollaborationEnabledForCurrentDeviceEventList
     audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
     int32_t ret = audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
     EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->
-        GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), SUCCESS);
+        GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() > 0, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
