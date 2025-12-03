@@ -76,7 +76,7 @@ void DeleteOHAudioDataArray(OH_AudioDataArray* ohAudioDataArray)
     if (ohAudioDataArray == nullptr) {
         return;
     }
-    if (hAudioDataArray->audioDataArray == nullptr) {
+    if (ohAudioDataArray->audioDataArray == nullptr) {
         delete ohAudioDataArray;
         ohAudioDataArray = nullptr;
         return;

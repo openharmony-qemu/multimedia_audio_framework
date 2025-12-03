@@ -228,8 +228,5 @@ void FreeBuffer(char **buffer)
     if (buffer != nullptr && *buffer != nullptr) {
         free(*buffer);
         *buffer = nullptr;
-    if (buffer != nullptr && *buffer != nullptr) {
-        free(*buffer);
-        *buffer = nullptr;
     }
 }

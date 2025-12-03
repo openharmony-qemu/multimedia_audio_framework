@@ -897,7 +897,7 @@ export struct AutoTest {
               const eqMode = effect.mode;
               Logger.info(TAG, `multiStartVBEffect mode=${eqMode}`);
               if (effect.gains == undefined || effect.gains.length == 0) {
-                status = audioNapi.setEquailizerMode(eqMode, EQId, inputId);
+                status = audioNapi.setEqualizerMode(eqMode, EQId, inputId);
               } else {
                 status = audioNapi.setEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
               }

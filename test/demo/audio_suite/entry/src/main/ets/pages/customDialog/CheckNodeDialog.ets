@@ -929,7 +929,7 @@ struct EffectNodeDialog {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
                         }
                         result =
-                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId,
+                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId,
                             this.selectedNode);
                         if (result !== 0) {
                             Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
