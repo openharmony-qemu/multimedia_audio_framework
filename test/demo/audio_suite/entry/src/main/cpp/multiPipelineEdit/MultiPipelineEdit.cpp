@@ -1197,8 +1197,8 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
         // 停止管线
         OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
         ResetAllIsResetTotalWriteAudioDataSize();
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest playAudioRendererOnWriteData" +
-            " firstBufferSize is %{public}zu", firstBufferSize);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest " +
+            "playAudioRendererOnWriteData firstBufferSize is %{public}zu", firstBufferSize);
         CallBooleanCallback(finishedFlag);
         finishedFlag = false;
         if (g_totalBuff != nullptr) {
