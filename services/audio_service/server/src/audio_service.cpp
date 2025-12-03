@@ -186,6 +186,17 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
+
+void AudioService::SetEndpointMuteForSwitchDevice(bool isMmap, bool mute)
+{
+    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
+    // mmap sink can't mute, must mut endpoint
+    CHECK_AND_RETURN(isMmap);
+    for (auto item : endpointList_) {
+        CHECK_AND_CONTINUE(item.second != nullptr);
+        item.second->SetMuteForSwitchDevice(mute);
+    }
+}
 #endif
 
 void AudioService::DisableLoopback()

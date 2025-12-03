@@ -84,6 +84,7 @@
     *HpaeCapturerStreamImpl*;
     *GetPrivacyType*;
     *GetEndPointByType*;
+    *SetEndpointMuteForSwitchDevice*;
   local:
     *;
 };
