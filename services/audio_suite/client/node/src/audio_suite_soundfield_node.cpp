@@ -94,7 +94,6 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
 
     // convert from SoundFieldType to iMedia_Surround_PARA
     int32_t valueInt = 0;
-    int32_t valueInt = 0;
     CHECK_AND_RETURN_RET_LOG(StringConverter(value, valueInt), ERROR, "convert invalid string");
 
     auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
@@ -122,15 +121,9 @@ int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &valu
 
     // convert from iMedia_Surround_PARA to SoundFieldType
     iMedia_Surround_PARA paraValue = IMEDIA_SWS_SOUROUND_BROAD;
-
+ 
     int32_t valueInt = 0;
-    auto [ptr, ec] = std::from_chars(tempValue.data(), tempValue.data() + tempValue.size(), valueInt);
-
-    if (ec == std::errc()) {
-        paraValue = static_cast<iMedia_Surround_PARA>(valueInt);
-    } else {
-        AUDIO_ERR_LOG("Invalid SoundField para: %{public}s", tempValue.c_str());
-    }
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tempValue, valueInt), ERROR, "convert invalid string");
 
     for (const auto& pair : soundFieldParaMap) {
         if (pair.second == paraValue) {
