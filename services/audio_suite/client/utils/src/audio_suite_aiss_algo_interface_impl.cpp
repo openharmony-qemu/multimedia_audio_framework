@@ -73,7 +73,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
     }
     soHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (!soHandle_) {
-        AUDIO_ERR_LOG("Error loading audio aiss so: %s", dlerror());
+        AUDIO_ERR_LOG("LoadLibrary failed with path: %{private}s", soPath.c_str());
         return ERROR;
     }
     audioEffectLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(soHandle_, AISS_LIB.c_str()));
