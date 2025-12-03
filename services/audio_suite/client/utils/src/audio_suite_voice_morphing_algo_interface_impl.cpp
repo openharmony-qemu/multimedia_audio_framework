@@ -65,10 +65,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
 
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
-    if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("LoadLibrary failed with path: %{private}s", soPath.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
         AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
