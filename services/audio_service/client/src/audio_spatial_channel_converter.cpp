@@ -217,7 +217,6 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
         return false;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", relativePath.c_str());
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
     libEntry_->audioEffectLibHandle = audioEffectLibHandle;
 
     return true;
