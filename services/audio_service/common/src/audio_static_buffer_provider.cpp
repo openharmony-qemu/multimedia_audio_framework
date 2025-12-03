@@ -120,6 +120,7 @@ void AudioStaticBufferProvider::PreSetLoopTimes(int64_t times)
 void AudioStaticBufferProvider::RefreshLoopTimes()
 {
     totalLoopTimes_ = preSetTotalLoopTimes_;
+    needRefreshLoopTimes_ = false;
     AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}ld", totalLoopTimes_);
 }
 

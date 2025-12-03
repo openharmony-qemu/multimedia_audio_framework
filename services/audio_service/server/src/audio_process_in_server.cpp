@@ -131,9 +131,6 @@ AudioProcessInServer::~AudioProcessInServer()
 bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead,
     RingBufferWrapper& ringBuffer, int32_t &audioHapticsSyncId)
 {
-    int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
-    CHECK_AND_RETURN_RET(ret == SUCCESS && ringBuffer.dataLength > 0, false);
-
     auto byteSizePerFrame = GetByteSizePerFrame();
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame != 0, false, "byteSizePerFrame is 0");
     size_t spanSizeInByte = GetSpanSizeInFrame() * byteSizePerFrame;
@@ -147,10 +144,9 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead,
         processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     } else {
         int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
-            "getBuffer failed ret: %{public}d lenth: %{public}zu",
-            ret, ringBuffer.dataLength);
+        CHECK_AND_RETURN_RET(ret == SUCCESS && ringBuffer.dataLength > 0, false);
     }
+
     if (ringBuffer.dataLength > spanSizeInByte) {
         ringBuffer.dataLength = spanSizeInByte;
     }

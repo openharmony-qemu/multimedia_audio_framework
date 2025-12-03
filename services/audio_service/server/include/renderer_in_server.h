@@ -165,7 +165,7 @@ public:
     int32_t PreSetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 public:
-const AudioProcessConfig processConfig_;
+    const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;
@@ -224,6 +224,7 @@ private:
     void PauseDirectStream();
 
     int32_t ProcessAndSetStaticBuffer();
+    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

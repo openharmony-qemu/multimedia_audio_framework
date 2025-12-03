@@ -2714,9 +2714,7 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
-    int32_t ret = processConfig_.rendererInfo.isStatic ?
-        WriteDataInStaticMode(inputData, requestDataLen) : WriteData(inputData, requestDataLen);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    CHECK_AND_RETURN_RET(SelectModeAndWriteData(inputData, requestDataLen) == SUCCESS, ret);
 
     BufferDesc bufferDesc = {
         .buffer = reinterpret_cast<uint8_t*>(inputData),
@@ -2768,6 +2766,15 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
 
     staticBufferProvider_->RefreshLoopTimes();
     return SUCCESS;
+}
+
+int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    if (processConfig_.rendererInfo.isStatic) {
+        return WriteDataInStaticMode(inputData, requestDataLen);
+    } else {
+        return WriteData(inputData, requestDataLen);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

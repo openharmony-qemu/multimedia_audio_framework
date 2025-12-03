@@ -1173,7 +1173,6 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     } else {
         isStillZeroStreamVolume_ = false;
     }
-    Trace trace1("WJJ activate interrupt time comsume test");
     {
         std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
         if (audioStream_->GetSilentModeAndMixWithOthers()) {
@@ -1182,7 +1181,6 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
     }
-    trace1.End();
 
     if (IsNoStreamRenderer()) {
         // no stream renderer only need to activate audio interrupt

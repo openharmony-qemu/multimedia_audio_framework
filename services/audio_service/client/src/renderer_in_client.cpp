@@ -1084,7 +1084,6 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
-    staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
     ipcStream_->PreSetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
@@ -1107,9 +1106,9 @@ void RendererInClientInner::CheckOperations()
         }
         std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
         while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+            Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
             audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
             clientBuffer_->DecreaseBufferEndCallbackSendTimes();
-            staticBufferInfo_.currentLoopTimes_ += 1;
         }
         if (clientBuffer_->IsNeedSendLoopEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);

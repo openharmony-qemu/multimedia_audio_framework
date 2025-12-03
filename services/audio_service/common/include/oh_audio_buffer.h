@@ -107,7 +107,6 @@ struct BasicBufferInfo {
 
     // only for static renderer
     std::atomic<bool> isStatic_;
-    std::atomic<AudioRendererRate> staticRenderRate_;
     std::atomic<int64_t> clientLastProcessTime_;
 
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
@@ -302,9 +301,6 @@ private:
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
-
-    uint8_t *processedStaticBuffer_ = nullptr;
-    size_t processedStaticBufferSize_ = 0;
 };
 
 class OHAudioBuffer : public Parcelable {
