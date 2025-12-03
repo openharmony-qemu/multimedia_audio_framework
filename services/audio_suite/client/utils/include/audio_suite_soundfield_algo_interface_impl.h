@@ -19,6 +19,7 @@
 #include <charconv>
 #include "imedia_api.h"
 #include "audio_suite_algo_interface.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
