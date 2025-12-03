@@ -49,11 +49,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
     tempoAlgoApi_.apply = reinterpret_cast<TEMPO_APPLY_FUNC>(dlsym(tempoSoHandle_, "PVChangeSpeed"));
     bool loadAlgoApiFail = tempoAlgoApi_.create == nullptr || tempoAlgoApi_.destroy == nullptr ||
                            tempoAlgoApi_.setParam == nullptr || tempoAlgoApi_.apply == nullptr;
-    if (loadAlgoApiFail) {
-        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
-        Deinit();
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(!loadAlgoApiFail, ERROR, "load tempo algorithm function fail");
     tempoAlgoHandle_ = tempoAlgoApi_.create(INIT_ALGO_SAMPLE_RATE);
     CHECK_AND_RETURN_RET_LOG(tempoAlgoHandle_, ERROR, "create algoHandle fail");
     return SUCCESS;
@@ -66,11 +62,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
     CHECK_AND_RETURN_RET_LOG(pitchSoHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
         pitchSoPath.c_str(), dlerror());
     pitchLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle_, PITCH_LIB.c_str()));
-    if (pitchLibHandle_ == bullptr) {
-        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
-        Deinit();
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(pitchLibHandle_ != nullptr, ERROR, "load pitch lib symbol fail");
 
     AudioEffectDescriptor descriptor = {
         .libraryName = "audio_pitch_change",
