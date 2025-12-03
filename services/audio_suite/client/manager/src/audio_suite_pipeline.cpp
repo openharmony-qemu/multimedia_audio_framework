@@ -278,7 +278,7 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
     }
 
     bool isSupported;
-    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::getInstance();
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
     int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
     CHECK_AND_RETURN_RET_LOG((error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
         "node type: %{public}d is not supported.", builder.nodeType);
