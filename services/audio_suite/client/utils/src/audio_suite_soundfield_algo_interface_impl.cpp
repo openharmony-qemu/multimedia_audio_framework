@@ -123,7 +123,7 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
 
     // set SoundField mode
     iMedia_Surround_PARA surroundType = IMEDIA_SWS_SOUROUND_BROAD;
-    int value = 0;
+    int32_t value = 0;
     auto [ptr, ec] = std::from_chars(paramValue.data(), paramValue.data() + paramValue.size(), value);
  
     if (ec == std::errc()) {
