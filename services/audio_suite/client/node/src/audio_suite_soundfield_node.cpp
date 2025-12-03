@@ -18,6 +18,7 @@
 #endif
 #include <unordered_map>
 #include "audio_suite_soundfield_node.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -93,11 +94,8 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
 
     // convert from SoundFieldType to iMedia_Surround_PARA
     int32_t valueInt = 0;
-    auto result = std::from_chars(value.data(), value.data() + value.size(), valueInt);
-    if (result.ec != std::errc()) {
-        AUDIO_ERR_LOG("Failed to convert string %{public}s to int", value.c_str());
-        return ERROR;
-    }
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(value, valueInt), ERROR, "convert invalid string");
 
     auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
     if (it != soundFieldParaMap.end()) {
