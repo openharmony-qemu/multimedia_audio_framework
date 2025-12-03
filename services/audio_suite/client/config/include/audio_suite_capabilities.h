@@ -53,7 +53,7 @@ private:
 
     AudioSuiteCapabilities();
     ~AudioSuiteCapabilities() = default;
-    
+
     template <typename T>
     int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
     {
