@@ -945,15 +945,15 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     AUDIO_INFO_LOG("spatialization scene type is set to be %{public}d", spatializationSceneType);
     spatializationSceneType_ = spatializationSceneType;
 
-    if (!spatializationEnabled_ || !IsDeviceTypeSupportingSpatialization()) {
-        return SUCCESS;
-    }
-
     effectHdiInput_[0] = HDI_SPATIALIZATION_SCENE_TYPE;
     effectHdiInput_[1] = static_cast<int32_t>(spatializationSceneType_);
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi spatialization scene type failed");
+    }
+
+    if (!spatializationEnabled_ || !IsDeviceTypeSupportingSpatialization()) {
+        return SUCCESS;
     }
 
     SetSpatializationSceneTypeToChains();
