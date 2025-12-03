@@ -30,9 +30,9 @@ public:
 
     AudioStaticBufferProvider(std::shared_ptr<OHAudioBufferBase> sharedBuffer);
     int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+    void SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-    void SetProcessedBuffer(uint8_t *bufferBase, size_t bufferSize);
+    void SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize);
 
     void PreSetLoopTimes(int64_t times);
     void RefreshLoopTimes();

@@ -464,7 +464,7 @@ void RendererInClientInner::WaitForBufferNeedOperate()
         if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
             Trace trace2(traceTag_ + "call start to exit stand-by");
             CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-            int32_t ret = ipcStream->Start();
+            int32_t ret = ipcStream_->Start();
             AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
         }
     }
@@ -1084,7 +1084,8 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
     staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
-    return ipcStream_->PreSetLoopTimes(bufferLoopTimes);
+    ipcStream_->PreSetLoopTimes(bufferLoopTimes);
+    return SUCCESS;
 }
 
 bool RendererInClientInner::CheckStaticAndOperate()
@@ -1118,10 +1119,8 @@ void RendererInClientInner::CheckOperations()
 
 void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
-    return ipcStream_->SetStaticBufferInfo(staticBufferInfo);
+    CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
+    staticBufferInfo_ = staticBufferInfo;
 }
 
 int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)

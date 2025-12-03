@@ -161,15 +161,13 @@ public:
 
     bool IsRestoreNeeded() override;
 
-    void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
-
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
 
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 
-    void SetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo_) override;
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
 
     int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
     static const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -307,7 +305,6 @@ private:
     // for static audio renderer
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
-    StaticBufferInfo staticBufferInfo_{};
     std::mutex staticBufferMutex_;
 };
 
@@ -1351,7 +1348,6 @@ void AudioProcessInClientInner::CheckOperations()
         while (audioBuffer_->IsNeedSendBufferEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
             audioBuffer_->DecreaseBufferEndCallbackSendTimes();
-            staticBufferInfo_.currentLoopTimes_ += 1;
         }
         if (audioBuffer_->IsNeedSendLoopEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
@@ -1841,12 +1837,12 @@ int32_t AudioProcessInClientInner::SetStaticTriggerRecreateCallback(std::functio
     return SUCCESS;
 }
 
-void AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
-    CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
-    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetLoopTimes processProxy_ is nullptr");
-    staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "SetLoopTimes processProxy_ is nullptr");
     processProxy_->PreSetLoopTimes(bufferLoopTimes);
+    return SUCCESS;
 }
 
 bool AudioProcessInClientInner::CheckStaticAndOperate()
@@ -1862,26 +1858,20 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
     return false;
 }
 
-void AudioProcessInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
-{
-    CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
-    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetStaticRenderRate processProxy_ is nullptr");
-    processProxy_->SetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetStaticRenderRate processProxy_ is nullptr");
-    processProxy_->GetStaticBufferInfo(staticBufferInfo);
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
+        ERR_NULL_POINTER, "SetStaticRenderRate processProxy_ is nullptr");
+    return processProxy_->GetStaticBufferInfo(staticBufferInfo);
 }
 
 int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderRate)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetStaticRenderRate processProxy_ is nullptr");
-    processProxy_->SetStaticRenderRate(renderRate);
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
+        ERR_NULL_POINTER, "SetStaticRenderRate processProxy_ is nullptr");
+    return processProxy_->SetStaticRenderRate(renderRate);
 }
 
 } // namespace AudioStandard

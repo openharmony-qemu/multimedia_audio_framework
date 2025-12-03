@@ -69,16 +69,16 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
     return SUCCESS;
 }
 
-int32_t AudioStaticBufferProcessor::GetProcessedBuffer(uint8_t *bufferBase, size_t &bufferSize)
+int32_t AudioStaticBufferProcessor::GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize)
 {
     if (speedBuffer_ != nullptr && speedBufferSize_ != 0) {
         AUDIO_INFO_LOG("Use %{public}f speed processed buffer!", curSpeed_);
-        bufferBase = speedBuffer_.get();
+        *bufferBase = speedBuffer_.get();
         bufferSize = speedBufferSize_;
     } else {
         AUDIO_INFO_LOG("Use original buffer!");
         CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "sharedBuffer is nullptr!");
-        bufferBase = sharedBuffer_->GetDataBase();
+        *bufferBase = sharedBuffer_->GetDataBase();
         bufferSize = sharedBuffer_->GetDataSize();
     }
     return SUCCESS;

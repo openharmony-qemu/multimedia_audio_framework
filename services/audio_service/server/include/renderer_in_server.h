@@ -162,11 +162,10 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
-    void PreSetLoopTimes(int64_t bufferLoopTimes);
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 public:
-    const AudioProcessConfig processConfig_;
+const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
     bool IsHighResolution() const noexcept;

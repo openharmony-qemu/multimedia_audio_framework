@@ -228,7 +228,7 @@ private:
     void AddProcessStreamToList(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
     void CheckAudioHapticsSync(uint64_t curWritePos);
-    bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame, size_t index);
+    bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame);
 
     int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);

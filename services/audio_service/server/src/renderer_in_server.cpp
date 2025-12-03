@@ -140,9 +140,6 @@ int32_t RendererInServer::ConfigServerBuffer()
         spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, bufferTotalSizeInFrame_);
 
     if (processConfig_.rendererInfo.isStatic) {
-        int32_t ret = OHAudioBufferBase::CheckSharedMemoryValidation(processConfig_.staticBufferInfo.sharedMemory_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CheckSharedMemoryValidation fail!");
-
         uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame_;
         audioServerBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame_,
             AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
@@ -152,6 +149,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProvider_ is nullptr!");
+        staticBufferProvider_->SetStaticBufferInfo(processConfig_.staticBufferInfo);
 
         staticBufferProcessor_ =
             AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
@@ -1094,7 +1092,8 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(), ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS,
+        ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -1390,7 +1389,7 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
-    if (rendererInfo_.isStatic) {
+    if (processConfig_.rendererInfo.isStatic) {
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, false, "BufferProvider_ is nullptr!");
         staticBufferProvider_->ResetLoopStatus();
     }
@@ -2737,16 +2736,11 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     return SUCCESS;
 }
 
-void RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+int32_t RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
     staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
-}
-
-void RendererInServer::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    staticBufferProvider_->SetStaticBufferInfo(staticBufferInfo);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
@@ -2760,7 +2754,7 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     if (!processConfig_.rendererInfo.isStatic) {
         return SUCCESS;
     }
-    
+
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr!");
     CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr, ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
@@ -2768,9 +2762,9 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
 
     uint8_t *bufferBase = nullptr;
     size_t bufferSize = 0;
-    ret = staticBufferProcessor_->GetProcessedBuffer(bufferBase, bufferSize);
+    ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
-    staticBufferProvider_->SetProcessedBuffer(bufferBase, bufferSize);
+    staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
 
     staticBufferProvider_->RefreshLoopTimes();
     return SUCCESS;

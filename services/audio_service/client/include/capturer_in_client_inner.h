@@ -220,7 +220,7 @@ public:
     int32_t SetRebuildFlag() override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
-    void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 

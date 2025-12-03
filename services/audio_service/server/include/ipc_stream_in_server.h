@@ -138,9 +138,8 @@ public:
 
     int32_t SetRebuildFlag() override;
 
-    void PreSetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo); // for static renderer only
-    void GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo); // for static renderer only
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

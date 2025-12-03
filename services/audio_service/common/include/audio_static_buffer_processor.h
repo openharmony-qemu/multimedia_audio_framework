@@ -34,7 +34,7 @@ public:
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
 
     int32_t ProcessBuffer(AudioRendererRate renderRate);
-    int32_t GetProcessedBuffer(uint8_t *bufferBase, size_t &bufferSize);
+    int32_t GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize);
 
 private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;

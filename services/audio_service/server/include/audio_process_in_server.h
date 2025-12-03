@@ -165,10 +165,9 @@ public:
 
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 
-    void PreSetLoopTimes(int64_t bufferLoopTimes) override;
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-    int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticRenderRate(uint32_t renderRate) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -194,7 +193,7 @@ private:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
-    void ProcessAndSetStaticBuffer();
+    int32_t ProcessAndSetStaticBuffer();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;

@@ -29,8 +29,7 @@ namespace {
 std::shared_ptr<AudioStaticBufferProvider> AudioStaticBufferProvider::CreateInstance(
     std::shared_ptr<OHAudioBufferBase> sharedBuffer)
 {
-    CHECK_AND_RETURN_RET_LOG(sharedBuffer != nullptr, nullptr, "Not in static mode");
-    CHECK_AND_RETURN_RET_LOG(sharedBuffer->GetStaticMode(), nullptr, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(sharedBuffer != nullptr, nullptr, "sharedBuffer is nullptr");
     return std::make_shared<AudioStaticBufferProvider>(sharedBuffer);
 }
 
@@ -86,14 +85,13 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
     return SUCCESS;
 }
 
-int32_t AudioStaticBufferProvider::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE,
-        ERR_INVALID_PARAM, "SetStaticBufferInfo invalid param");
+    CHECK_AND_RETURN_RET_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
+    preSetTotalLoopTimes_ = staticBufferInfo.preSetTotalLoopTimes_;
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
     curStaticDataPos_ = staticBufferInfo.curStaticDataPos_;
-    return SUCCESS
 }
 
 int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
@@ -103,13 +101,13 @@ int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticB
     staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
     staticBufferInfo.curStaticDataPos_ = curStaticDataPos_;
     staticBufferInfo.preSetTotalLoopTimes_ = preSetTotalLoopTimes_;
-    staticBufferInfo.sharedMemory_ = sharedBuffer_->GetDataBase();
+    staticBufferInfo.sharedMemory_ = sharedBuffer_->GetSharedMem();
     return SUCCESS;
 }
 
-void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t *bufferBase, size_t bufferSize)
+void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
-    processedBuffer_ = bufferBase;
+    processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }
 

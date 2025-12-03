@@ -1170,13 +1170,8 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     return SUCCESS;
 }
 
-bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame, size_t index)
+bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame)
 {
-    if (processBufferList_[index]->GetStaticMode()) {
-        return (processBufferList_[index]->GetCurrentLoopTimes() == processBufferList_[index]->GetTotalLoopTimes()) ||
-            processBufferList_[index]->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER);
-    }
-
     if (readableDataFrame < 0) {
         return false;
     }
@@ -1219,9 +1214,13 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 needCheckStandby = true;
                 continue;
             }
+            // StaticMode do not refresh Time here, skip;
+            if (processBufferList_[i]->GetStaticMode()) {
+                continue;
+            }
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
             uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
-            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame, i)) {
+            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {
                 isAllReady = false;
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_LOWLATENCY,
                     processList_[i]->GetAppInfo().appUid);

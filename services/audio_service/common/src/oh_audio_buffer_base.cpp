@@ -212,6 +212,13 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
     CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
     size_t size = static_cast<size_t>(sizeTmp);
 
+    off_t actualSize = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    if (actualSize < (off_t)size || size == 0) {
+        AUDIO_ERR_LOG("CreateFromRemote failed: actualSize is not equal to declareSize");
+        return nullptr;
+    }
+
     std::string name = msgParcel.ReadString();
 
     auto memory = new(std::nothrow) AudioSharedMemoryImpl(fd, size, name);
@@ -341,25 +348,6 @@ std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::CreateFromRemote(uint32_t 
         return nullptr;
     }
     return buffer;
-}
-
-int32_t OHAudioBufferBase::CheckSharedMemoryValidation(std::shared_ptr<AudioSharedMemory> sharedMemory)
-{
-    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetBase() != nullptr,
-        ERR_NULL_POINTER, "sharedMemory is nullptr!");
-
-    int fd = sharedMemory->GetFd();
-    if (fd < 0 || fcntl(fd, F_GETFD) == -1) {
-        AUDIO_ERR_LOG("ValidateFileDescriptor: invalid fd %d", fd);
-        return ERR_INVALID_PARAM;
-    }
-    off_t actualSize = lseek(fd, 0, SEEK_END);
-    lseek(fd, 0, SEEK_SET);
-    if (actualSize < (off_t)sharedMemory->GetSize() || sharedMemory->GetSize() == 0) {
-        AUDIO_ERR_LOG("actualSize is not equal to declareSize");
-        return ERR_INVALID_PARAM;
-    }
-    return SUCCESS;
 }
 
 bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
@@ -1026,11 +1014,6 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
     basicBufferInfo_->needSendLoopEndCallback.store(false);
     basicBufferInfo_->isStatic_.store(false);
-    basicBufferInfo_->preSetTotalLoopTimes_.store(0);
-    basicBufferInfo_->totalLoopTimes_.store(0);
-    basicBufferInfo_->currentLoopTimes_.store(0);
-    basicBufferInfo_->curStaticDataPos_.store(0);
-    basicBufferInfo_->staticRenderRate_.store(RENDER_RATE_NORMAL);
     basicBufferInfo_->clientLastProcessTime_.store(ClockTime::GetCurNano());
 }
 
@@ -1056,6 +1039,11 @@ bool OHAudioBufferBase::GetStaticMode()
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "basicBufferInfo_ is null");
     return basicBufferInfo_->isStatic_.load();
+}
+
+std::shared_ptr<AudioSharedMemory> OHAudioBufferBase::GetSharedMem()
+{
+    return dataMem_;
 }
 
 void OHAudioBufferBase::IncreaseBufferEndCallbackSendTimes()
@@ -1101,24 +1089,6 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
     CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
     basicBufferInfo_->needSendLoopEndCallback.store(value);
 }
-
-
-
-// int32_t OHAudioBufferBase::SetStaticRenderRate(AudioRendererRate renderRate)
-// {
-//     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
-//     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_->streamStatus.load() != STREAM_RUNNING, ERROR_ILLEGAL_STATE,
-//         "Stream is RUNNING, cannot set renderRate!");
-//     basicBufferInfo_->staticRenderRate_.store(renderRate);
-//     return SUCCESS;
-// }
-
-// AudioRendererRate OHAudioBufferBase::GetStaticRenderRate()
-// {
-//     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), RENDER_RATE_NORMAL, "Not in static mode");
-//     return basicBufferInfo_->staticRenderRate_.load();
-// }
-
 
 // In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen, 
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.

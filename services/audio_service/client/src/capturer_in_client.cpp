@@ -1907,7 +1907,7 @@ int32_t CapturerInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
     return ERR_INCORRECT_MODE;
 }
 
-void CapturerInClientInner::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+void CapturerInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
 {
     AUDIO_WARNING_LOG("not supported in capturer");
 }

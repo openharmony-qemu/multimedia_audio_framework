@@ -161,7 +161,6 @@ public:
         uint32_t byteSizePerFrame);
     static std::shared_ptr<OHAudioBufferBase> CreateFromRemote(uint32_t totalSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
-    static int32_t CheckSharedMemoryValidation(std::shared_ptr<AudioSharedMemory> sharedMemory);
 
     // idl
     bool Marshalling(Parcel &parcel) const override;
@@ -261,8 +260,7 @@ public:
 
     void SetStaticMode(bool state);
     bool GetStaticMode();
-    int32_t SetStaticRenderRate(AudioRendererRate renderRate);
-    AudioRendererRate GetStaticRenderRate();
+    std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 
