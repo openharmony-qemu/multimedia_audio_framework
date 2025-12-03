@@ -79,7 +79,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderApply");
     algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));
     CHECK_AND_RETURN_RET_LOG(algoApi_.releaseAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderRelease");
-
+ 
     isSpaceRenderAlgoInit_ = true;
     return SUCCESS;
 }
