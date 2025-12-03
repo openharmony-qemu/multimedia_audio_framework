@@ -181,9 +181,9 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
         "LoadTempoPitchCapability parse so name fail");
     // tempo
     std::string tempoSoPath = nc.soPath + tempoSoName;
-    void *tempoSoHandle = algoLibrary_.LoadLibrary(tempoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        tempoSoHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
+   void *tempoSoHandle = dlopen(tempoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(tempoSoHandle != nullptr, ERROR,
+        "dlopen algo: %{private}s so fail, error: %{public}s", tempoSoPath.c_str(), dlerror());
     using GET_SPEC_FUNC = AudioPVSpec(*)(void);
     GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
     if (pvGetSpecFunc == nullptr) {
@@ -202,10 +202,8 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     std::string pitchSoPath = nc.soPath + pitchSoName;
     void *pitchSoHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr,
-        ERROR,
-        "LoadLibrary failed with path: %{private}s, error: %{public}s",
-        pitchSoPath.c_str(),
-        dlerror());
+        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        pitchSoPath.c_str(), dlerror());
     AudioEffectLibrary *audioEffectLibHandle =
         static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
     if (audioEffectLibHandle == nullptr) {
