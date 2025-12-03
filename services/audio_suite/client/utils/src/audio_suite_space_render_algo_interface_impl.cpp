@@ -65,21 +65,20 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail", soPath.c_str());
  
-    algoApi_.getSpeces = reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle_, "SpaceRenderGetSpeces"));
-    algoApi_.getSize = reinterpret_cast<FunSpaceRenderGetSize>(dlsym(libHandle_, "SpaceRenderGetSize"));
-    algoApi_.getLateSamples = reinterpret_cast<FunSpaceRenderGetLateSamples>(dlsym(libHandle_,
-        "SpaceRenderGetLateSamples"));
-    algoApi_.initAlgo = reinterpret_cast<FunSpaceRenderInit>(dlsym(libHandle_, "SpaceRenderInit"));
-    algoApi_.applyAlgo = reinterpret_cast<FunSpaceRenderApply>(dlsym(libHandle_, "SpaceRenderApply"));
-    algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));
-    
-    bool loadAlgoApiFail = algoApi_.getSpeces == nullptr || algoApi_.getSize || algoApi_.getLateSamples ||
-                      algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr || algoApi_.releaseAlgo == nullptr;
-    if (loadAlgoApiFail) {
-        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
-        Deinit();
-        return ERROR;
-    }
+    algoApi_.getSpeces = reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle_, "SpaceRenderGetSpeces"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.getSpeces != nullptr, ERROR, "Failed to get symbol SpaceRenderGetSpeces");
+    algoApi_.getSize = reinterpret_cast<FunSpaceRenderGetSize>(dlsym(libHandle_, "SpaceRenderGetSize"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.getSize != nullptr, ERROR, "Failed to get symbol SpaceRenderGetSize");
+    algoApi_.getLateSamples = reinterpret_cast<FunSpaceRenderGetLateSamples>(dlsym(libHandle_,	
+        "SpaceRenderGetLateSamples"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.getLateSamples != nullptr, ERROR,
+        "Failed to get symbol SpaceRenderGetLateSamples");
+    algoApi_.initAlgo = reinterpret_cast<FunSpaceRenderInit>(dlsym(libHandle_, "SpaceRenderInit"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.initAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderInit");
+    algoApi_.applyAlgo = reinterpret_cast<FunSpaceRenderApply>(dlsym(libHandle_, "SpaceRenderApply"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderApply");
+    algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));	
+    CHECK_AND_RETURN_RET_LOG(algoApi_.releaseAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderRelease");
     isSpaceRenderAlgoInit_ = true;
     return SUCCESS;
 }
