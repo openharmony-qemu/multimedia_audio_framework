@@ -21,8 +21,9 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
-#include "securec.h"
 #include <iostream>
+#include "securec.h"
+#include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_eq_algo_interface_impl.h"
