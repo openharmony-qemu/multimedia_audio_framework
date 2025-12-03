@@ -135,12 +135,12 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
             int32_t value = 0;
-            auto [ptr, ec] = std::from_chars(token.data(), token.data() + token.size(), value);
-            if (ec == std::errc()) {
-                result.push_back(value);
-            } else {
-                AUDIO_ERR_LOG("Invalid Eq para: %{public}s", str.c_str());
-            }
+            CHECK_AND_RETURN_RET_LOG(
+                StringConverter(token, value), std::vector<int>(), "convert invalid string: %{public}s", str.c_str());
+            result.push_back(value);
+        } else {
+            AUDIO_ERR_LOG("Invalid Eq para: %{public}s", str.c_str());
+            return std::vector<int>();
         }
     }
 
