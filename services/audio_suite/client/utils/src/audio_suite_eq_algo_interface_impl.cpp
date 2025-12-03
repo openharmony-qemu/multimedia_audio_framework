@@ -71,7 +71,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
+        AUDIO_ERR_LOG("LoadLibrary failed with path: %{private}s", soPath.c_str());
         return ERROR;
     }
     algoApi_.getSize = reinterpret_cast<FuniMedia_Eq_GetSize>(dlsym(libHandle_, "iMedia_Eq_GetSize"));
