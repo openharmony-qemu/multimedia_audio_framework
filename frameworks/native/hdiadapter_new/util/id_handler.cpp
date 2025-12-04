@@ -55,6 +55,9 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
 
     if (deviceClass == "primary") {
+#ifdef MULTI_BUS_ENABLE
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, info);
+#endif
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);

@@ -134,6 +134,7 @@ struct AudioModuleInfo {
     std::string fileName;
     std::string networkId;
     std::string macAddress;
+    std::string busAddress;
     std::string deviceType;
     std::string sceneName;
     std::string sourceType;

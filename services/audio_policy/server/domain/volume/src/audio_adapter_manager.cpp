@@ -1853,6 +1853,9 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
+    if (!audioModuleInfo.busAddress.empty()) {
+        return audioModuleInfo.busAddress;
+    }
     if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload") {
         return audioModuleInfo.networkId;
     }
@@ -1910,6 +1913,9 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
 {
     IAudioSinkAttr attr;
     attr.adapterName = audioModuleInfo.adapterName.c_str();
+    if (!audioModuleInfo.busAddress.empty()) {
+        attr.address = audioModuleInfo.busAddress;
+    }
     if (!audioModuleInfo.OpenMicSpeaker.empty()) {
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
