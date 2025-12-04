@@ -11,7 +11,9 @@ typedef enum {
     NAPI_ARGV_INDEX_2 = 2,
     NAPI_ARGV_INDEX_3 = 3,
     NAPI_ARGV_INDEX_4 = 4,
-    NAPI_ARGV_INDEX_5 = 5
+    NAPI_ARGV_INDEX_5 = 5,
+    NAPI_ARGV_INDEX_6 = 6,
+    NAPI_ARGV_INDEX_7 = 7
 } NAPI_ARGV_INDEX;
 
 typedef enum {

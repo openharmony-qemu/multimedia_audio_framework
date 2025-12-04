@@ -671,6 +671,8 @@ export struct MixingConsole {
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .borderRadius(5)
+                    .maxLines(isLeft ? 1 : 2)
+                    .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
             }
         } else if (type) {
             Text(type)

@@ -36,6 +36,7 @@
 #include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
+#include "audioEffectNode/SpaceRender.h"
 #include "audioEffectNode/AissEffect.h"
 #include "audioEffectNode/SoundSpeedTone.h"
 #include "audioEffectNode/VoiceChange.h"
@@ -1016,6 +1017,15 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"setSoundSpeedTone", nullptr, SetSoundSpeedTone, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setIsRecord", nullptr, SetIsRecord, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"startFixedPositionEffect", nullptr, startFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"startDynamicRenderEffect", nullptr, startDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"startExpandEffect", nullptr, startExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"resetFixedPositionEffect", nullptr, resetFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"resetDynamicRenderEffect", nullptr, resetDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"resetExpandEffect", nullptr, resetExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getFixedPositionParams", nullptr, getFixedPositionParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getDynamicRenderParams", nullptr, getDynamicRenderParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getExpandParams", nullptr, getExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
