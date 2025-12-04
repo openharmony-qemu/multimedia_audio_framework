@@ -1511,8 +1511,8 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return ret;
 }
 
-int32_t AudioPolicyManager::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+int32_t AudioPolicyManager::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");

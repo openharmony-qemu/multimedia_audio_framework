@@ -517,7 +517,8 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
         return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
             VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, volDeviceDesc);
     }
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    auto device = audioActiveDevice_.GetDeviceForVolume(streamType);
+    DeviceType curOutputDeviceType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_SPEAKER;
     curOutputDeviceType_ = curOutputDeviceType;
     int32_t ret = SetSystemVolumeLevelExternal(streamType, volumeLevel);
     if (ret == SUCCESS) {

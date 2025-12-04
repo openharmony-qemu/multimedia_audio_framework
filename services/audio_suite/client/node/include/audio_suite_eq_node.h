@@ -39,8 +39,8 @@ protected:
 private:
     AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
-    std::vector<uint8_t *> tmpin_{nullptr};
-    std::vector<uint8_t *> tmpout_{nullptr};
+    std::vector<uint8_t *> tmpIn_{nullptr};
+    std::vector<uint8_t *> tmpOut_{nullptr};
     bool isEqNodeInit_ = false;
 };
 

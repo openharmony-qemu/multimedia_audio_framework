@@ -213,7 +213,7 @@ int32_t AudioZoneClient::OnInterruptEvent(int32_t zoneId,
     int32_t reason)
 {
     int32_t size = static_cast<int32_t>(ipcInterrupts.size());
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
         "invalid interrupt size: %{public}d", size);
     OnInterruptEvent(zoneId, "", ipcInterrupts, reason);
     return SUCCESS;

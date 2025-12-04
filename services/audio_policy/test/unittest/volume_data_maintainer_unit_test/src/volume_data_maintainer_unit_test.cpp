@@ -135,10 +135,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
 
     device->volumeBehavior_.databaseVolumeName = "Test";
+    volumeDataMaintainer->SetDataShareReady(true);
     EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
 
     device->deviceType_ = DEVICE_TYPE_NONE;
-    EXPECT_NE(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
+    EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
 }
 
 /**

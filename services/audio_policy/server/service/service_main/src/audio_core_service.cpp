@@ -1704,6 +1704,7 @@ void AudioCoreService::OnCheckActiveMusicTime(const std::string &reason)
 void AudioCoreService::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice)
 {
+    CHECK_AND_RETURN_LOG(selectedAudioDevice != nullptr, "selectedAudioDevice is nullptr");
     std::shared_ptr<AudioDeviceDescriptor> device = selectedAudioDevice;
     if (audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, device->macAddress_)) {
         FetchOutputDeviceAndRoute("HandleDeviceConfigChanged");

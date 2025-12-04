@@ -62,6 +62,8 @@ static constexpr uint32_t BLOCK_INTERRUPT_OVERTIMES_IN_MS = 3000; // 3s
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
+static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
+static constexpr int32_t AUDIO_VIVID_CHANNELS_LOW_LIMIT = 2;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -769,6 +771,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
+    UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     streamClass = DecideStreamClassAndUpdateRendererInfo(flag);
 
@@ -1114,6 +1117,9 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         return SUCCESS;
     }
 
+    std::unique_lock<std::mutex> lockF(switchStreamMt_);
+    isSwitchStreamSt_ = false;
+    lockF.unlock();
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
     }
@@ -1128,6 +1134,13 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
             sharedRenderer->CheckAudioRenderer(callingFunc + "withNewThread");
             sharedRenderer->SetInSwitchingFlag(false);
         } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
+        std::unique_lock<std::mutex> lock(sharedRenderer->switchStreamMt_);
+        sharedRenderer->isSwitchStreamSt_ = true;
+        sharedRenderer->switchStreamSt_.notify_all();
+    });
+    std::unique_lock<std::mutex> lock(switchStreamMt_);
+    switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
+        return isSwitchStreamSt_;
     });
     return SUCCESS;
 }
@@ -2364,6 +2377,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+    UpdateAudioStreamParamsByStreamDescriptor(switchInfo.params, streamDesc);
 
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
@@ -2389,6 +2403,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId, networkId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+        UpdateAudioStreamParamsByStreamDescriptor(switchInfo.params, streamDesc);
 
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
@@ -3060,6 +3075,7 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
         audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
+    UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Re-create normal stream failed.");
@@ -3113,5 +3129,19 @@ int32_t AudioRendererPrivate::SetStaticBufferCallback(std::shared_ptr<StaticBuff
     audioStream_->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate");});
     return audioStream_->SetStaticBufferEventCallback(callback);
 }
+
+void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
+    const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN_LOG(!streamDesc->newDeviceDescs_.empty(), "no exist device");
+    CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front() != nullptr, "device is null");
+    if (streamDesc->streamInfo_.channels <= AUDIO_VIVID_CHANNELS_LOW_LIMIT) {
+        return;
+    }
+    audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
+    audioStreamParams.remoteChannelLayout = streamDesc->streamInfo_.channelLayout;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

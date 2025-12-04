@@ -97,6 +97,16 @@ DeviceRole AudioEndpoint::GetDeviceRole()
     return deviceInfo_.deviceRole_;
 }
 
+void AudioEndpoint::SetMuteForSwitchDevice(bool mute)
+{
+    if (mute == switchDevicesMute_) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("endpoint mute flag: %{public}d", mute);
+    switchDevicesMute_ = mute;
+}
+
 AudioStreamInfo &AudioEndpoint::GetAudioStreamInfo()
 {
     return dstStreamInfo_;
@@ -1439,12 +1449,11 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     SetupMoveCallback(i, curRead, ringBuffer, moveClientIndex);
     
     VolumeResult volResult = CalculateVolume(i);
+    bool mute = volResult.muteFlag  || switchDevicesMute_;
+    Trace traceVol("VolumeProcess " + std::to_string(volResult.volumeStart) + " sessionid:" +
+        std::to_string(processServer->GetAudioSessionId()) + (mute ? " muted" : " unmuted"));
     
-    Trace traceVol("VolumeProcess " + std::to_string(volResult.volumeStart) +
-    " sessionid:" + std::to_string(processServer->GetAudioSessionId()) +
-    (volResult.muteFlag ? " muted" : " unmuted"));
-    
-    if (volResult.muteFlag) {
+    if (mute) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
     

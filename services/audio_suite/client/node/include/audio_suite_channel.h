@@ -39,7 +39,7 @@ public:
         uint32_t sourceSepara = 2;
         convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
         tmpData_.resize(1);
-        if (audioNode_->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
+        if (audioNode_ && audioNode_->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
             convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
             tmpData_.resize(sourceSepara);
         }
@@ -281,6 +281,7 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
             outData.push_back(data);
         } else {
             AudioSuitePcmBuffer *convertData = convert_[idx]->Process(data, outFormat);
+            CHECK_AND_RETURN_RET_LOG(convertData != nullptr, std::vector<T>(), "convertData is nullptr.");
             convertData->SetIsFinished(data->GetIsFinished());
             outData.push_back(convertData);
         }
@@ -295,6 +296,7 @@ int32_t OutputPort<T>::resetResampleCfg()
 {
     CHECK_AND_RETURN_RET_LOG(!convert_.empty(), ERROR, "convert_ is empty.");
     for (auto &tmpConvert : convert_) {
+        CHECK_AND_RETURN_RET_LOG(tmpConvert != nullptr, ERROR, "tmpConvert is nullptr.");
         tmpConvert->Reset();
     }
     return SUCCESS;

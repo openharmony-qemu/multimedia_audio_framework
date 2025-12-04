@@ -39,6 +39,7 @@ struct AudioNodeInfo {
     bool bypassStatus = false;
     AudioFormat audioFormat;
     PcmBufferFormat inPcmFormat;
+    PipelineWorkMode workMode = PIPELINE_EDIT_MODE;
 };
 
 class AudioNode;
@@ -176,6 +177,12 @@ public:
         return audioNodeInfo_.nodeType;
     }
 
+    virtual std::string GetNodeTypeString()
+    {
+        auto it = NODETYPE_TOSTRING_MAP.find(audioNodeInfo_.nodeType);
+        return it != NODETYPE_TOSTRING_MAP.end() ? it->second : "NODE_TYPE_UNKNOWN";
+    }
+
     virtual int32_t SetBypassEffectNode(bool bypass)
     {
         audioNodeInfo_.bypassStatus = bypass;
@@ -205,6 +212,16 @@ public:
     virtual std::string GetVoiceBeautifierType()
     {
         return "";
+    }
+
+    virtual void SetAudioNodeWorkMode(PipelineWorkMode workMode)
+    {
+        audioNodeInfo_.workMode = workMode;
+    }
+
+    virtual PipelineWorkMode GetAudioNodeWorkMode()
+    {
+        return audioNodeInfo_.workMode;
     }
 
 private:

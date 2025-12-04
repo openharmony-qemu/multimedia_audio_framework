@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioSuiteCapabilitiesParser"
 #endif
 
+#include "audio_utils.h"
 #include "audio_suite_capabilities_parser.h"
 
 namespace OHOS {
@@ -36,7 +37,7 @@ bool AudioSuiteCapabilitiesParser::LoadConfiguration(
 bool AudioSuiteCapabilitiesParser::ParseInternal(
     std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
 {
-    for (; curNode->IsNodeValid(); curNode->MoveToNext()) {
+    for (; curNode && curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (!curNode->IsElementNode()) {
             continue;
         }
@@ -53,16 +54,33 @@ void AudioSuiteCapabilitiesParser::ParserNodeType(
     std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
 {
     std::string name;
+    std::string realtimeFactorStr;
     NodeCapability nodeCapability;
 
     curNode->GetProp("name", name);
     curNode->GetProp("soName", nodeCapability.soName);
     curNode->GetProp("soPath", nodeCapability.soPath);
     curNode->GetProp("general", nodeCapability.general);
+    curNode->GetProp("realtimeFactor", realtimeFactorStr);
+
+    // convert to float
+    nodeCapability.realtimeFactor = GetRealtimeFactor(realtimeFactorStr);
+    AUDIO_INFO_LOG(
+        "Get node capability, name:%{public}s, realtimeFactor:%{public}f", name.c_str(), nodeCapability.realtimeFactor);
+
     auto it = NODE_TYPE_MAP.find(name);
     CHECK_AND_RETURN_LOG(
         it != NODE_TYPE_MAP.end(), "parse node cabability error, unexpected type name: %{public}s.", name.c_str());
     audioSuiteCapabilities[it->second] = nodeCapability;
+}
+
+float AudioSuiteCapabilitiesParser::GetRealtimeFactor(std::string valueStr)
+{
+    float value = 1.0f;  // default value when get config from XML failed.
+
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), value,
+        "convert string to float value error, invalid valueStr =%{public}s", valueStr.c_str());
+    return value;
 }
 
 }  // namespace AudioSuite

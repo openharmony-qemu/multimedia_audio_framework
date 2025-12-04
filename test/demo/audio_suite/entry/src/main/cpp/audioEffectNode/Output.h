@@ -7,6 +7,7 @@
 
 #include <string>
 #include "ohaudio/native_audio_suite_base.h"
+#include "./Input.h"
 
 struct AudioRenderContext {
     char *totalAudioData;
@@ -29,7 +30,7 @@ extern int32_t g_tapDataTotalSize;
 
 OH_AudioSuite_Result RenDerFrame();
 
-OH_AudioSuite_Result StartPipelineAndCheckState();
+OH_AudioSuite_Result StartPipelineAndCheckState(OH_AudioSuitePipeline *audioSuitePipeline = g_audioSuitePipeline);
 
 OH_AudioSuite_Result AudioRenderFrame(char *totalAudioData, char *tapTotalAudioData,
     int32_t frameSize, bool &finishedFlag);

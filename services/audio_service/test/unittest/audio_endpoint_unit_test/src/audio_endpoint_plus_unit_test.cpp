@@ -1750,6 +1750,22 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
 }
 
 /*
+ * @tc.name  : Test SetMuteForSwitchDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteForSwitchDevice_001
+ * @tc.desc  : check SetMuteForSwitchDevice result
+ */
+HWTEST_F(AudioEndpointUnitTest, SetMuteForSwitchDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->SetMuteForSwitchDevice(false);
+    EXPECT_EQ(audioEndpointInner->SetMuteForSwitchDevice, false);
+    
+    audioEndpointInner->SetMuteForSwitchDevice(true);
+    EXPECT_EQ(audioEndpointInner->SetMuteForSwitchDevice, true);
+}
+
+/*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: GetAllReadyProcessDataSub_001
@@ -1775,6 +1791,14 @@ HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Leve
     EXPECT_CALL(processServer, PrepareRingBuffer(_, _, _)).WillOnce(Return(true));
     audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
 
+    EXPECT_CALL(processServer, PrepareRingBuffer(_, _, _)).WillOnce(Return(false));
+    EXPECT_CALL(processServer, GetStreamStatus()).WillOnce(Return(StreamStatus::STREAM_RUNNING));
+    EXPECT_CALL(processServer, AddNoDataFrameSize())
+        .Times(1)
+        .WillOnce(Return());
+    audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
+
+    audioEndpointInner->SetMuteForSwitchDevice(true);
     EXPECT_CALL(processServer, PrepareRingBuffer(_, _, _)).WillOnce(Return(false));
     EXPECT_CALL(processServer, GetStreamStatus()).WillOnce(Return(StreamStatus::STREAM_RUNNING));
     EXPECT_CALL(processServer, AddNoDataFrameSize())

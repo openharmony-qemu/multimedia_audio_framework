@@ -255,6 +255,8 @@ private:
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -301,6 +303,9 @@ private:
     int32_t audioHapticsSyncId_ = 0;
     bool releaseFlag_ = false;
     std::condition_variable taskLoopCv_;
+    std::condition_variable switchStreamSt_;
+    std::mutex switchStreamMt_;
+    bool isSwitchStreamSt_ = false;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
 };

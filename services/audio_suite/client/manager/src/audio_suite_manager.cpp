@@ -51,18 +51,6 @@ enum NodeErrorCase : uint32_t {
     CONNECT_NODE_ERROR = 2,
     DISCONNECT_NODE_ERROR = 3,
 };
-static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
-    {NODE_TYPE_EMPTY, "NODE_TYPE_EMPTY"},
-    {NODE_TYPE_INPUT, "NODE_TYPE_INPUT"},
-    {NODE_TYPE_OUTPUT, "NODE_TYPE_OUTPUT"},
-    {NODE_TYPE_EQUALIZER, "NODE_TYPE_EQUALIZER"},
-    {NODE_TYPE_NOISE_REDUCTION, "NODE_TYPE_NOISE_REDUCTION"},
-    {NODE_TYPE_SOUND_FIELD, "NODE_TYPE_SOUND_FIELD"},
-    {NODE_TYPE_AUDIO_SEPARATION, "NODE_TYPE_AUDIO_SEPARATION"},
-    {NODE_TYPE_VOICE_BEAUTIFIER, "NODE_TYPE_VOICE_BEAUTIFIER"},
-    {NODE_TYPE_ENVIRONMENT_EFFECT, "NODE_TYPE_ENVIRONMENT_EFFECT"},
-    {NODE_TYPE_AUDIO_MIXER, "NODE_TYPE_AUDIO_MIXER"}
-};
 }
 
 IAudioSuiteManager& IAudioSuiteManager::GetAudioSuiteManager()
@@ -881,8 +869,8 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     int32_t ret = suiteEngine_->RenderFrame(pipelineId, audioData, frameSize, writeLen, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
 
-    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
-    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
         [this, pipelineId] { return isFinishRenderFrameMap_[pipelineId]; });
@@ -917,8 +905,8 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
         pipelineId, audioDataArray, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
 
-    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
-    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
         [this, pipelineId] { return isFinishMultiRenderFrameMap_[pipelineId]; });
@@ -929,6 +917,26 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     }
     AUDIO_INFO_LOG("MultiRenderFrame leave");
     return multiRenderFrameResultMap_[pipelineId];
+}
+
+int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *isSupported)
+{
+    AUDIO_INFO_LOG("isNodeTypeSupported enter.");
+    if (nodeType == NODE_TYPE_AUDIO_MIXER) {
+        AUDIO_INFO_LOG("MixerNode is supported on all device.");
+        *isSupported = true;
+        return SUCCESS;
+    }
+
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    int32_t ret = audioSuiteCapabilities.IsNodeTypeSupported(nodeType, isSupported);
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("nodeType: %{public}d is supported  on this device.", nodeType);
+    } else {
+        AUDIO_ERR_LOG("Wrong effect nodeType: %{public}d.", nodeType);
+        *isSupported = false;
+    }
+    return SUCCESS;
 }
 
 void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
@@ -1093,8 +1101,8 @@ void AudioSuiteManager::OnRenderFrame(int32_t result, uint32_t pipelineId)
         errorDescription << "engine RenderFrame failed, ret = " << result;
         WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
     }
-    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
-    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     AUDIO_INFO_LOG("OnRenderFrame callback");
     isFinishRenderFrameMap_[pipelineId] = true;
@@ -1111,8 +1119,8 @@ void AudioSuiteManager::OnMultiRenderFrame(int32_t result, uint32_t pipelineId)
         errorDescription << "engine MultiRenderFrame failed, ret = " << result;
         WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
     }
-    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
-    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
     AUDIO_INFO_LOG("OnMultiRenderFrame callback");
     isFinishMultiRenderFrameMap_[pipelineId] = true;
@@ -1148,6 +1156,7 @@ void AudioSuiteManager::WriteSuiteEngineUtilizationStatsEvent(AudioNodeType node
     }
     bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
     bean->Add("AUDIO_NODE_TYPE", nodeTypeStr);
+    bean->Add("AUDIO_NODE_COUNT", static_cast<int32_t>(1));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

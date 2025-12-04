@@ -244,7 +244,7 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
         }
 
         uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_UNPROCESS |
-            AUDIO_INPUT_FLAG_ULTRASONIC;
+            AUDIO_INPUT_FLAG_ULTRASONIC | AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
         if ((pipe->routeFlag_ & flagMask) != 0) {
             continue;
         }

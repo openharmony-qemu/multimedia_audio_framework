@@ -245,5 +245,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_011, TestSize.Le
     desc2->deviceType_ = DEVICE_TYPE_REMOTE_DAUDIO;
     EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
 }
+
+
 } // namespace AudioStandard
 } // namespace OHOS

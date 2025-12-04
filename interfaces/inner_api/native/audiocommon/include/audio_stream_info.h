@@ -254,6 +254,7 @@ enum AudioPipeType {
     PIPE_TYPE_IN_NORMAL_AI = 12,
     PIPE_TYPE_IN_NORMAL_UNPROCESS = 13,
     PIPE_TYPE_IN_NORMAL_ULTRASONIC = 14,
+    PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION = 15,
 };
 
 enum AudioPreloadType {
@@ -271,6 +272,8 @@ struct AudioStreamParams {
     uint32_t originalSessionId = 0;
     // Add customSampleRate
     uint32_t customSampleRate = 0;
+    bool isRemoteSpatialChannel = false;
+    uint64_t remoteChannelLayout = 0ULL;
 };
 
 // sampling rate

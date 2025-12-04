@@ -38,8 +38,8 @@ protected:
 private:
     AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteEnvAlgoInterfaceImpl> envAlgoInterfaceImpl_;
-    std::vector<uint8_t *> tmpin_{nullptr};
-    std::vector<uint8_t *> tmpout_{nullptr};
+    std::vector<uint8_t *> tmpIn_{nullptr};
+    std::vector<uint8_t *> tmpOut_{nullptr};
     bool isInit_ = false;
 };
 

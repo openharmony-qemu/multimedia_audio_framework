@@ -367,6 +367,27 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     AUDIO_INFO_LOG("Route flag after concurrency: %{public}u", streamDesc->routeFlag_);
 }
 
+AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
+{
+    if (flag & AUDIO_INPUT_FLAG_FAST) {
+        if (flag & AUDIO_INPUT_FLAG_VOIP) {
+            return PIPE_TYPE_IN_VOIP;
+        } else {
+            return PIPE_TYPE_IN_LOWLATENCY;
+        }
+    } else if (flag & AUDIO_INPUT_FLAG_AI) {
+        return PIPE_TYPE_IN_NORMAL_AI;
+    } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
+        return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
+    } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
+        return PIPE_TYPE_IN_NORMAL_UNPROCESS;
+    } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
+        return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
+    } else {
+        return PIPE_TYPE_IN_NORMAL;
+    }
+}
+
 AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
@@ -392,21 +413,7 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_NORMAL;
         }
     } else {
-        if (flag & AUDIO_INPUT_FLAG_FAST) {
-            if (flag & AUDIO_INPUT_FLAG_VOIP) {
-                return PIPE_TYPE_IN_VOIP;
-            } else {
-                return PIPE_TYPE_IN_LOWLATENCY;
-            }
-        } else if (flag & AUDIO_INPUT_FLAG_AI) {
-            return PIPE_TYPE_IN_NORMAL_AI;
-        } else if (flag & AUDIO_INPUT_FLAG_ULTRASONIC) {
-            return PIPE_TYPE_IN_NORMAL_ULTRASONIC;
-        } else if (flag & AUDIO_INPUT_FLAG_UNPROCESS) {
-            return PIPE_TYPE_IN_NORMAL_UNPROCESS;
-        } else {
-            return PIPE_TYPE_IN_NORMAL;
-        }
+        return GetInputNormalPipeType(flag);
     }
 }
 

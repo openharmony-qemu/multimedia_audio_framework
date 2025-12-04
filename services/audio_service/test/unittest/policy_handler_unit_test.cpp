@@ -214,5 +214,62 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_007, TestSize.Level1)
     auto ret = policyHandler->GetSharedVolume(streamType, deviceType, vol);
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name  : Test PolicyHandler API
+ * @tc.type  : FUNC
+ * @tc.number: PolicyHandler_008
+ * @tc.desc  : Test PolicyHandler interface.
+ */
+HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_008, TestSize.Level1)
+{
+    auto policyHandler = std::make_shared<PolicyHandler>();
+    EXPECT_NE(policyHandler, nullptr);
+
+    std::string dumpString = "";
+    sptr<IRemoteObject> impl = nullptr;
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
+    EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
+
+    policyHandler->policyVolumeMap_ = std::make_shared<AudioSharedMemoryTest>();
+    EXPECT_NE(policyHandler->policyVolumeMap_, nullptr);
+
+    Volume volume[IPolicyProvider::GetVolumeVectorSize()];
+    policyHandler->volumeVector_ = volume;
+
+    bool sharedAbsVolumeScene = true;
+    policyHandler->sharedAbsVolumeScene_ = &sharedAbsVolumeScene;
+    policyHandler->sharedSleAbsVolumeScene_ = nullptr;
+    policyHandler->Dump(dumpString);
+}
+
+/**
+ * @tc.name  : Test PolicyHandler API
+ * @tc.type  : FUNC
+ * @tc.number: PolicyHandler_009
+ * @tc.desc  : Test PolicyHandler interface.
+ */
+HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_009, TestSize.Level1)
+{
+    auto policyHandler = std::make_shared<PolicyHandler>();
+    EXPECT_NE(policyHandler, nullptr);
+
+    std::string dumpString = "";
+    sptr<IRemoteObject> impl = nullptr;
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
+    EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
+
+    policyHandler->policyVolumeMap_ = std::make_shared<AudioSharedMemoryTest>();
+    EXPECT_NE(policyHandler->policyVolumeMap_, nullptr);
+
+    Volume volume[IPolicyProvider::GetVolumeVectorSize()];
+    policyHandler->volumeVector_ = volume;
+
+    bool sharedAbsVolumeScene = true;
+    policyHandler->sharedAbsVolumeScene_ = &sharedAbsVolumeScene;
+    bool sharedSleAbsVolumeScene = true;
+    policyHandler->sharedSleAbsVolumeScene_ = &sharedSleAbsVolumeScene;
+    policyHandler->Dump(dumpString);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

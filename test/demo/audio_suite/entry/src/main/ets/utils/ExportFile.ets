@@ -38,6 +38,16 @@ export async function multiPipelineSaveFileBuffer(pipelineId: string, outputInfo
 }
 
 @Concurrent
+export async function multiPipelineRealTimeSaveFileBuffer(pipelineId: string, outputInfo:OutputFile, multiRenderFlag:boolean): Promise<ArrayBuffer[]> {
+  const TAG: string = 'AudioEditTestApp_AudioEdit';
+  Logger.info(TAG, `multiPipelineRealTimeSaveFileBuffer start---pipelineId:${pipelineId}, multiRenderFlag:${multiRenderFlag}`)
+  audioNapi.multiPipelineEnvPrepare(pipelineId);
+  audioNapi.multiSetFormat(outputInfo?.channels, outputInfo?.sampleRate, outputInfo?.bitDepth);
+  let pcmBuffer = audioNapi.multiRealTimeSaveFileBuffer();
+  return [pcmBuffer as ArrayBuffer];
+}
+
+@Concurrent
 export async function RealTimeSaveFileBuffer(): Promise<ArrayBuffer> {
     let pcmBuffer = audioNapi.realTimeSaveFileBuffer();
     return pcmBuffer;

@@ -80,6 +80,7 @@ private:
     std::vector<char> handle_;
     std::vector<char> scratchBuf_;
     void *libHandle_{nullptr};
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

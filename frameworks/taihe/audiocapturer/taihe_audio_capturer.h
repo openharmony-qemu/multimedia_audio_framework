@@ -38,7 +38,7 @@ public:
     int64_t GetImplPtr();
     std::shared_ptr<OHOS::AudioStandard::AudioCapturer> GetNativePtr();
     static std::shared_ptr<AudioCapturerImpl> CreateAudioCapturerNativeObject();
-    static AudioCapturer CreateAudioCapturerWrapper(OHOS::AudioStandard::AudioCapturerOptions capturerOptions);
+    static AudioCapturerOrNull CreateAudioCapturerWrapper(OHOS::AudioStandard::AudioCapturerOptions capturerOptions);
 
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     std::shared_ptr<OHOS::AudioStandard::AudioCapturer> audioCapturer_;

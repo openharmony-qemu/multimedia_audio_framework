@@ -15,7 +15,10 @@ import {
     VoiceBeautifierMap,
     AudioSeparationType,
     AudioSeparationMap,
-    NumberToNodeTypeMap
+    NumberToNodeTypeMap,
+    GeneralVoiceChangeType,
+    PureVoiceChangeGenderOption,
+    PureVoiceChangeType,
 } from "../../utils/importSongs/InterfaceInfo";
 import { JSON, util } from '@kit.ArkTS';
 import { Logger } from '../../utils/Logger';
@@ -540,6 +543,378 @@ struct SoundSpeedToneComponent {
   }
 }
 
+@Component
+struct GeneralVoiceChangeComponent {
+    private scrollerIndex: Scroller = new Scroller();
+    @Link generalVoiceChangeType: GeneralVoiceChangeType;
+    onCancel?: () => void;
+    onAgree?: () => void;
+
+    build() {
+        Scroll(this.scrollerIndex) {
+            Column() {
+                Row() {
+                    Text(`${NodeType.GENERAL_VOICE_CHANGE}`)
+                        .margin({ bottom: $r('app.float.margin_10') })
+                }
+                .margin({ top: $r('app.float.margin_10') })
+
+                Column() {
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE
+                                    })
+                                Text('可爱').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cyberpunk', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK
+                                    })
+                                Text('赛博朋克').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'female', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE
+                                    })
+                                Text('女声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'male', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE
+                                    })
+                                Text('男声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'mix', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX
+                                    })
+                                Text('混响').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'monster', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER
+                                    })
+                                Text('怪物').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'seasoned', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED
+                                    })
+                                Text('沉稳').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'synth', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH
+                                    })
+                                Text('合成器').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'trill', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL
+                                    })
+                                Text('颤音').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'war', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR
+                                    })
+                                Text('战争').fontSize(20)
+                            }.width(80)
+                        }
+                    }.rowsTemplate('1fr 1fr').height('80%')
+                }
+                .margin({ right: 20 })
+                .padding({ left: '10%', right: '10%' })
+
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Button('取消')
+                        .onClick(() => {
+                            if (this.onCancel) {
+                                this.onCancel()
+                            }
+                        })
+                    Button('确定')
+                        .onClick(() => {
+                            if (this.onAgree) {
+                                this.onAgree();
+                            }
+                        })
+                }.margin({ top: $r('app.float.margin_10') })
+                .padding(20)
+            }
+        }
+    }
+}
+
+@Component
+struct PureVoiceChangeComponent {
+    private scrollerIndex: Scroller = new Scroller();
+    @Link pureVoiceGender: PureVoiceChangeGenderOption;
+    @Link pureVoiceChangeType: PureVoiceChangeType;
+    @Link soundTone: number;
+    @State needSoundTone: boolean = false;
+    onCancel?: () => void;
+    onAgree?: () => void;
+
+    build() {
+        Scroll(this.scrollerIndex) {
+            Column() {
+                Row() {
+                    Text(`${NodeType.GENERAL_VOICE_CHANGE}`)
+                        .margin({ bottom: $r('app.float.margin_10') })
+                }
+                .margin({ top: $r('app.float.margin_10') })
+
+                Column() {
+                    Row() {
+                        Text("性别")
+                    }
+
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE
+                                    })
+                                Text('女性').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE
+                                    })
+                                Text('男性').fontSize(20)
+                            }.width(80)
+                        }
+                    }
+
+                    Row() {
+                        Text("变声类型")
+                    }
+
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON
+                                    })
+                                Text('卡通').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE
+                                    })
+                                Text('可爱').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'female', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE
+                                    })
+                                Text('女声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'male', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE
+                                    })
+                                Text('男声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'monster', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER
+                                    })
+                                Text('怪物').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'robot', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS
+                                    })
+                                Text('机器人').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'seasoned', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED
+                                    })
+                                Text('沉稳').fontSize(20)
+                            }.width(80)
+                        }
+                    }.rowsTemplate('1fr 1fr').height('80%')
+                    Column() {
+                        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                        Text('音调')
+                        Checkbox({ name: 'pureSoundTone', group: 'pureSoundTone' })
+                            .select(false)
+                            .selectedColor('app.color.index_audio_clip_card')
+                            .shape(CheckBoxShape.CIRCLE)
+                            .onChange((value: boolean) => {
+                            this.needSoundTone = value;
+                            if (!value) {
+                                this.soundTone = 0;
+                            }
+                            })
+                        Text(`+${this.soundTone.toFixed(1)}`)
+                        }.padding('10px')
+                        if (this.needSoundTone) {
+                        Slider({
+                            value: this.soundTone,
+                            step: 0.1,
+                            style: SliderStyle.OutSet,
+                            min: 0.3,
+                            max: 3,
+                        })
+                            .selectedColor($r('app.color.index_audio_clip_card'))
+                            .onChange((value: number) => {
+                            this.soundTone = value;
+                            })
+                        }
+                    }
+                    .height(50)
+                    .padding('10px')
+                    .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+                    .borderRadius(10)
+                }
+                .margin({ right: 20 })
+                .padding({ left: '10%', right: '10%' })
+
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Button('取消')
+                        .onClick(() => {
+                            if (this.onCancel) {
+                                this.onCancel()
+                            }
+                        })
+                    Button('确定')
+                        .onClick(() => {
+                            if (this.onAgree) {
+                                this.onAgree();
+                            }
+                        })
+                }.margin({ top: $r('app.float.margin_10') })
+                .padding(20)
+            }
+        }
+    }
+}
+
 @CustomDialog
 struct EffectNodeDialog {
     @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
@@ -569,6 +944,10 @@ struct EffectNodeDialog {
     @State soundTone: number = 1.0;
     // 实时播放（音源分离）
     @Consume isSeparation: boolean = false;
+    @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
+    @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     controllerTwo?: CustomDialogController;
 
     build() {
@@ -584,12 +963,10 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId);
-                        } else {
-                            result =
-                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId,
-                                this.selectedNode);
                         }
+                        result =
+                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId,
+                            this.selectedNode);
                         if (result !== 0) {
                             Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                             this.getUIContext().showAlertDialog({
@@ -623,12 +1000,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -660,12 +1034,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加环境节点失败',
@@ -698,12 +1069,8 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiAddNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
-                        } else {
-                            //预留编辑降噪功能方法
-                            result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
                         }
+                        result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
             
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
@@ -735,12 +1102,10 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId,
+                                this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加美化节点失败',
@@ -772,11 +1137,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiAddAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
-                        } else {
-                            result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
                         }
+                        result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId,
+                            this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: `添加${AudioSeparationMap.get(this.selectedAudioSeparation)}失败`,
@@ -831,6 +1194,62 @@ struct EffectNodeDialog {
                             soundTone: this.soundTone,
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+                        this.controllerTwo?.close();
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.GENERAL_VOICE_CHANGE) {
+                GeneralVoiceChangeComponent({
+                    generalVoiceChangeType: this.generalVoiceChangeType,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: () => {
+                        const nodeId = util.generateRandomUUID(true);
+                        let result = audioNapi.startGeneralVoiceChange(this.currentInputId, this.generalVoiceChangeType, nodeId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: '添加通用变声节点失败',
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            environmentType: this.selectedEnvironment
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
+                        this.controllerTwo?.close();
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.PURE_VOICE_CHANGE) {
+                PureVoiceChangeComponent({
+                    pureVoiceGender : this.pureVoiceGender,
+                    pureVoiceChangeType : this.pureVoiceChangeType,
+                    soundTone : this.pureVoiceSoundTone,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: () => {
+                        const nodeId = util.generateRandomUUID(true);
+                        let result = audioNapi.startPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: '添加传统变声节点失败',
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            environmentType: this.selectedEnvironment
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
                         this.controllerTwo?.close();
                     }
                 })
@@ -1101,6 +1520,10 @@ struct SetNodeDialog {
     @State soundSpeed: number = 1.0;
     // 音调
     @State soundTone: number = 1.0;
+    @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
+    @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     setNodeController?: CustomDialogController;
 
     aboutToAppear(): void {
@@ -1342,6 +1765,46 @@ struct SetNodeDialog {
                             });
                         }
                         this.setNodeController?.close();
+                        }
+                    })
+                } else if (this.nodeType === NodeType.GENERAL_VOICE_CHANGE) {
+                    GeneralVoiceChangeComponent({
+                        generalVoiceChangeType: this.generalVoiceChangeType,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: () => {
+                            const nodeId = util.generateRandomUUID(true);
+                            let result = audioNapi.resetGeneralVoiceChange(this.currentInputId, this.generalVoiceChangeType, nodeId);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: '设置通用变声节点失败',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            this.setNodeController?.close();
+                        }
+                    })
+                } else if (this.nodeType === NodeType.PURE_VOICE_CHANGE) {
+                    PureVoiceChangeComponent({
+                        pureVoiceGender : this.pureVoiceGender,
+                        pureVoiceChangeType : this.pureVoiceChangeType,
+                        soundTone : this.pureVoiceSoundTone,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: () => {
+                            const nodeId = util.generateRandomUUID(true);
+                            let result = audioNapi.resetPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: '设置传统变声节点失败',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            this.setNodeController?.close();
                         }
                     })
                 }

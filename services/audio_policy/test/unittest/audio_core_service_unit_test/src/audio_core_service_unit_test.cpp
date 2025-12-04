@@ -1944,7 +1944,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
     ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, NORMAL_PLAYBACK, 1111);
     EXPECT_NE(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, NORMAL_PLAYBACK, 1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
         INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
     EXPECT_NE(ret, SUCCESS);
@@ -1973,7 +1973,7 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2036,6 +2036,48 @@ HWTEST_F(AudioCoreServiceUnitTest, A2dpOffloadGetRenderPosition_001, TestSize.Le
     server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
     ret = server->coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HandleDeviceConfigChanged.
+ * @tc.number: HandleDeviceConfigChanged
+ * @tc.desc  : Test HandleDeviceConfigChanged interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleDeviceConfigChanged_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    ASSERT_NE(nullptr, desc) << "desc is nullptr.";
+    std::string macAddress = "00:11:22:33:44:55";
+    audioCoreService->HandleDeviceConfigChanged(desc);
+    auto &deviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_TRUE(deviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, macAddress));
+}
+
+/**
+ * @tc.name  : Test HandleDeviceConfigChanged.
+ * @tc.number: HandleDeviceConfigChanged
+ * @tc.desc  : Test HandleDeviceConfigChanged interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleDeviceConfigChanged_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = "00:00:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    ASSERT_NE(nullptr, desc) << "desc is nullptr.";
+    std::string macAddress = "00:00:00:00:44:55";
+    audioCoreService->HandleDeviceConfigChanged(desc);
+    auto &deviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_FALSE(deviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, macAddress));
 }
 } // namespace AudioStandard
 } // namespace OHOS
