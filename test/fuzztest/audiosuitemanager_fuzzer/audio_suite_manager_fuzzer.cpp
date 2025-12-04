@@ -262,6 +262,58 @@ void AudioSuiteMultiRenderFrameFuzzTest()
         &responseSize, &finishedFlag);
 }
 
+void AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    spaceRenderPosition.x = GetData<float>();
+    spaceRenderPosition.y = GetData<float>();
+    spaceRenderPosition.z = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(nodeId, &spaceRenderPosition);
+}
+ 
+void AudioSuiteManagerSetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    spaceRenderRotation.x = GetData<float>();
+    spaceRenderRotation.y = GetData<float>();
+    spaceRenderRotation.z = GetData<float>();
+    spaceRenderRotation.surroundTime = GetData<int32_t>();
+    spaceRenderRotation.surroundDirection = GetData<OH_AudioSuite_SurroundDirection>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(nodeId, &spaceRenderRotation);
+}
+ 
+void AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    spaceRenderExtension.extRadius = GetData<float>();
+    spaceRenderExtension.extAngle = GetData<int32_t>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(nodeId, &spaceRenderExtension);
+}
+
 vector g_testFuncs = {
     AudioSuiteManagerInitFuzzTest,
     AudioSuiteManagerDeInitFuzzTest,
@@ -288,6 +340,12 @@ vector g_testFuncs = {
     AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest,
     AudioSuiteRenderFrameFuzzTest,
     AudioSuiteMultiRenderFrameFuzzTest,
+    AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteManagerSetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest,
 };
 
 } // namespace AudioStandard
