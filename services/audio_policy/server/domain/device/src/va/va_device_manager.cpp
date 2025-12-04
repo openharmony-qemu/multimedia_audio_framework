@@ -89,17 +89,19 @@ void VADeviceManager::OnDevicesConnected(
     const std::shared_ptr<VADevice> &vaDevice,
     const sptr<IVADeviceController> &controller)
 {
-    std::lock_guard<std::mutex> lock(statusMutex_);
-    CHECK_AND_RETURN_LOG(vaDevice != nullptr && controller != nullptr, "invalid parameter: null pointer detected");
-    AUDIO_INFO_LOG("va device manager connecting to device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
-                   vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
-    std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
-    connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
+    {
+        std::lock_guard<std::mutex> lock(statusMutex_);
+        CHECK_AND_RETURN_LOG(vaDevice != nullptr && controller != nullptr, "invalid parameter: null pointer detected");
+        AUDIO_INFO_LOG("va device manager connecting to device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
+                    vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
+        std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
+        connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
 
-    if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
-        RegisterVAAdapterToMap();
+        if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
+            RegisterVAAdapterToMap();
+        }
+        AddVAStreamPropToMap(vaDevice->configuration_.properties_);
     }
-    AddVAStreamPropToMap(vaDevice->configuration_.properties_);
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, true);
 }
 
