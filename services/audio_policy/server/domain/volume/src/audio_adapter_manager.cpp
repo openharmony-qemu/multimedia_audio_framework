@@ -806,8 +806,7 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
         volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_[adapter].value(), streamType, deviceClass,
             &volumes);
         std::string routeDeviceClass = deviceClass == REMOTE_CLASS ? "remote_offload" : "offload";
-        AUDIO_INFO_LOG("routeDeviceClass:%{public}s, networkId:%{public}s, volume:%{public}f", routeDeviceClass.c_str(),
-            networkId.c_str(), volume);
+        AUDIO_INFO_LOG("routeDeviceClass:%{public}s, volume:%{public}f", routeDeviceClass.c_str(), volume);
         audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, networkId);
         AudioVolume::GetInstance()->Monitor(offloadSessionID_[adapter].has_value(), true);
     }
@@ -1317,8 +1316,7 @@ std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(pipeInfo->moduleInfo_);
-    AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s, moduleArgs %{public}s",
-        pipeInfo->name_.c_str(), moduleArgs.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s", pipeInfo->name_.c_str());
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     if (IsPaRoute(pipeInfo->routeFlag_)) {
