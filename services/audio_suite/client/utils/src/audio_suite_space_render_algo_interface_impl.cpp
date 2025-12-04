@@ -217,13 +217,11 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetRotationParameter(std::string &pa
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_ROTATION,
         ERR_INVALID_PARAM, "Mode is not rotation.");
-
-    int32_t rotationTime = static_cast<int>(spaceRenderParam_.rotationTime);
-
+ 
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]) + "," +
-        std::to_string(rotationTime) + "," +
+        std::to_string(spaceRenderParam_.rotationTime) + "," +
         std::to_string(spaceRenderParam_.rotationDirection);
 
     return SUCCESS;
