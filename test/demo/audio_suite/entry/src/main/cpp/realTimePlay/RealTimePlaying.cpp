@@ -106,8 +106,8 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
         *writeSize, (g_playFinishedFlag ? "true" : "false"));
-    free(audioData);
-    audioData = nullptr;
+    FreeBuffer(&audioData);
+    FreeBuffer(&g_playAudioData);
     return result;
 }
 

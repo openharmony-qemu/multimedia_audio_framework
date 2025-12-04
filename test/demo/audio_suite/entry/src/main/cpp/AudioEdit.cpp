@@ -38,6 +38,7 @@
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/AissEffect.h"
 #include "audioEffectNode/SoundSpeedTone.h"
+#include "audioEffectNode/VoiceChange.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -129,7 +130,8 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
     // 实例化NodeManager
-    g_nodeManager = std::make_shared<NodeManager>(g_audioSuitePipeline);
+    g_singlePipelineNodeManager = std::make_shared<NodeManager>(g_audioSuitePipeline);
+    g_nodeManager = g_singlePipelineNodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest createNodeManager result: %{public}d",
         static_cast<int>(g_nodeManager->getAllNodes().size()));
 
@@ -945,20 +947,6 @@ const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiSetFormat", nullptr, MultiSetFormat,
         nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiSetEqualizerMode", nullptr, MultiSetEqualizerMode,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiSetEqualizerFrequencyBandGains", nullptr, MultiSetEqualizerFrequencyBandGains,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiStartFieldEffect", nullptr, MultiStartFieldEffect,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiStartEnvEffect", nullptr, MultiStartEnvEffect,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiAddAudioSeparation", nullptr, MultiAddAudioSeparation,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiAddNoiseReduction", nullptr, MultiAddNoiseReduction,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"multiStartVBEffect", nullptr, MultiStartVBEffect,
-        nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer,
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio,
@@ -966,7 +954,22 @@ const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
     {"multiDeleteSong", nullptr, MultiDeleteSong,
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"destroyMultiPipeline", nullptr, DestroyMultiPipeline,
-        nullptr, nullptr, nullptr, napi_default, nullptr}
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioRendererInit", nullptr, MultiAudioRendererInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiAudioRendererStart", nullptr, MultiAudioRendererStart,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"multiRealTimeSaveFileBuffer", nullptr, MultiRealTimeSaveFileBuffer,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getAutoTestProcess", nullptr, GetAutoTestProcess,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+};
+
+const std::vector<napi_property_descriptor> voiceChangeDescriptors = {
+    {"startGeneralVoiceChange", nullptr, StartGeneralVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetGeneralVoiceChange", nullptr, ResetGeneralVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"startPureVoiceChange", nullptr, StartPureVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"resetPureVoiceChange", nullptr, ResetPureVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr },
 };
 
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
@@ -1015,6 +1018,7 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
+    desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;
 }

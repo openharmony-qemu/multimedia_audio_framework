@@ -9,21 +9,26 @@ import buffer from '@ohos.buffer';
 import { common } from '@kit.AbilityKit';
 import { fileUri, ListFileOptions, picker } from '@kit.CoreFileKit';
 import fs from '@ohos.file.fs';
-import { NodeType, ColorMap, SceneInfo, OutputFile, InputFile, ExpectedOutput } from '../utils/autoTest/Interface'
-import{ ExecuteReport, NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo } from '../utils/autoTest/Interface'
+import {NodeType, ColorMap, InputStringToNodeTypeMap} from '../utils/importSongs/InterfaceInfo'
+import { SceneInfo, OutputFile, InputFile, ExpectedOutput, ExecuteReport,
+  NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo } from '../utils/autoTest/Interface'
 import { BusinessError } from '@kit.BasicServicesKit';
-import { multiPipelineSaveFileBuffer, writeWavFileHeader } from '../utils/ExportFile';
+import { multiPipelineSaveFileBuffer, writeWavFileHeader, multiPipelineRealTimeSaveFileBuffer } from '../utils/ExportFile';
 import audioNapi from 'libentry.so';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
+import { initAllInputNode } from '../utils/autoTest/AsyncTask'
+import { getDateStringWithTimeStamp } from '../utils/Util'
+
+// root path of Auto Test APP
+const rootPath = `/storage/Users/currentUser/Download/src.main.audiodemo`;
+// the path to store all output audio files
+const outputPath = `${rootPath}/output_files`;
+// the path to store all input audio files of every test scene
+const inputDir = `${rootPath}/input_files`;
 
 const TAG: string = 'AudioEditTestApp_AudioEdit';
 const SUCCESS: number = 0;
 const FAILED: number = 1;
-const rootPath = `/storage/Users/currentUser/Download/src.main.audiodemo`;
-const jsonPath = `${rootPath}/case_json`;
-const outputPath = `${rootPath}/output_files`;
-const inputDir = `${rootPath}/input_files`;
-const expectedOutputPath = `${rootPath}/expected_output`;
 const csvReportHeaderText = `执行管线,开始执行时间,结束执行时间,总耗时,输入文件,输入音频时长,输出文件,执行结果\n`;
 
 const jsonSummaryToJsonFileInfoMap: Map<string, JsonFileInfo> = new Map();
@@ -35,62 +40,40 @@ const pipelineIdToSingleReportMap: Map<string, ExecuteReport> = new Map();
 const dirCheckList: string[] = ["expected_output", "output_files", "input_files", "case_json"];
 let preparedPipelineList: string[] = [];
 
-// 初始化pipeline任务子线程向主线程同步消息类
-class MultiInitPipelineSonMsg {
-  sceneInfoId: string = "";
-  pipelineId: string = "";
-  outputId: string = "";
-  mixerId: string = "";
-}
-
-function getMD5OfFile(filePath: string): string {
-  // 获取文件内容
-  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let fsStat = fs.statSync(filePath);
-  let buf = new ArrayBuffer(fsStat.size);
-  fs.readSync(file.fd, buf);
-  fs.closeSync(file);
-
-  let mdAlgName = 'MD5';
-  let md = cryptoFramework.createMd(mdAlgName);
-  md.updateSync({ data: new Uint8Array(buf) });
-  let mdResult = md.digestSync();
-  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
-  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
-  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
-  return md5Str;
+// init all folder required for running Auto Test
+async function initAutoTestDir() {
+  let documentSaveOptions = new picker.DocumentSaveOptions();
+  documentSaveOptions.pickerMode = 1;
+  let context = getContext() as common.Context;
+  let documentPicker = new picker.DocumentViewPicker(context);
+  documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
+    if (err) {
+      Logger.error(TAG,
+        `DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}`);
+      return;
+    }
+    Logger.info(TAG, 'documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
+    let uri = documentSaveResult[0];
+    let filePath = new fileUri.FileUri(uri + `/init.txt`).path;
+    try {
+      let file = fs.openSync(filePath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+      fs.writeSync(file.fd, new ArrayBuffer(0));
+      Logger.info(TAG, `audiodemo dir init success`);
+      fs.closeSync(file);
+      dirCheckList.forEach((dir: string) => {
+        let dirPath = new fileUri.FileUri(`${uri}/${dir}`).path;
+        fs.mkdirSync(dirPath);
+      })
+    } catch (err) {
+      Logger.error(TAG, `initAutoTestDir ERROR: ${err}`);
+    }
+  })
 }
 
 function getNodeTypeFromString(originStr: string): NodeType {
-  let ret: NodeType = NodeType.VALID;
-  switch (originStr) {
-    case "INPUT":
-      ret = NodeType.INPUT;
-      break;
-    case "OUTPUT":
-      ret = NodeType.OUTPUT;
-      break;
-    case "AISS":
-      ret = NodeType.AISS;
-      break;
-    case "NR":
-      ret = NodeType.NR;
-      break;
-    case "VB":
-      ret = NodeType.VB;
-      break;
-    case "MIXER":
-      ret = NodeType.MIXER;
-      break;
-    case "ENV":
-      ret = NodeType.ENV;
-      break;
-    case "EQ":
-      ret = NodeType.EQ;
-      break;
-    case "FIELD":
-      ret = NodeType.FIELD;
-      break;
+  let ret = InputStringToNodeTypeMap.get(originStr);
+  if (ret === undefined) {
+    ret = NodeType.VALID;
   }
   return ret;
 }
@@ -142,7 +125,8 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
       channels: 0,
       effect: [],
       inputPathId: '',
-      inputId: util.generateRandomUUID(true)
+      inputId: util.generateRandomUUID(true),
+      effectStr: []
     };
     let originInputFileStr: string = (Object(jsonObjectStr)["input_files"])[i]["path"];
     inputFile.path = originInputFileStr;
@@ -154,6 +138,7 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
     inputFile.effect = []
 
     let effectLen: number = (Object(jsonObjectStr)["input_files"])[i]["effect"]["length"];
+    inputFile.effectStr = (Object(jsonObjectStr)["input_files"])[i]["effect"];
 
     for (let j = 0; j < effectLen; j++) {
       let nodeInfo: NodeInfo = {
@@ -171,6 +156,7 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
         nodeInfo.gains = gains;
       }
       inputFile.effect.push(nodeInfo);
+
     }
     sceneInfo.inputFiles.push(inputFile)
   }
@@ -207,17 +193,21 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
   return sceneInfo;
 }
 
-function getDateStringWithTimeStamp(timestamp: number, mode: number = 0): string {
-  let date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = ('0' + (date.getMonth() + 1)).slice(-2);
-  const day = ('0' + date.getDate()).slice(-2);
-  const hour = date.getHours();
-  const min = date.getMinutes();
-  const sec = date.getSeconds();
-  const ms = date.getMilliseconds();
-  return mode == 0 ? `${year}/${month}/${day} ${hour}:${min}:${sec}:${ms}` :
-    `${year}-${month}-${day} ${hour}-${min}-${sec}`;
+function getMD5OfFile(filePath: string): string {
+  // 获取文件内容
+  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
+  let buf = new ArrayBuffer(40960);
+  fs.readSync(file.fd, buf);
+  fs.closeSync(file);
+
+  let mdAlgName = 'MD5';
+  let md = cryptoFramework.createMd(mdAlgName);
+  md.updateSync({ data: new Uint8Array(buf) });
+  let mdResult = md.digestSync();
+  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
+  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
+  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
+  return md5Str;
 }
 
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
@@ -233,203 +223,6 @@ function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): bo
   return ret;
 }
 
-@Concurrent
-async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToSceneInfoMap: Map<string, SceneInfo>, pipelineIdToPipelineInfoMap:Map<string, PipelineInfo>): Promise<number> {
-  const TAG: string = 'AudioEditTestApp_AudioEdit';
-  const inputDir = `/storage/Users/currentUser/Download/src.main.audiodemo/input_files`;
-  Logger.info(TAG, `initMultiPipelineTask start`);
-
-  for (const sceneInfoId of jsonFileInfo.sceneInfos) {
-    const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
-    const pipelineId = sceneInfo?.pipelineId;
-    if (sceneInfo == undefined || pipelineId == undefined) {
-      Logger.error(TAG, `initAllInputNode get null sceneInfo`);
-      return 1;
-    }
-    const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
-    if (pipelineInfo == undefined) {
-      Logger.error(TAG, `initAllInputNode get null pipelineInfo`);
-      return 1;
-    }
-    let status = audioNapi.multiPipelineEnvPrepare(pipelineId);
-    if (status != 0) {
-      Logger.error(TAG, `multiPipelineEnvPrepare ERROR while initAllInputNode`);
-      return 1;
-    }
-    for (const inputFile of sceneInfo.inputFiles) {
-      // 获取文件内容
-      let inputPath = `${inputDir}/${inputFile.path}`;
-      let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
-      let fsStat = fs.statSync(inputPath);
-      let buffer = new ArrayBuffer(fsStat.size);
-      try {
-        fs.readSync(file.fd, buffer);
-        Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-        let inputNodeStatus =
-          audioNapi.multiAudioInAndOutInit(inputFile.inputId, pipelineInfo.outputId, pipelineInfo.mixerId, file.fd,
-            buffer.byteLength);
-        if (inputNodeStatus != 0) {
-          Logger.error(TAG, `input node init ERROR, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-          return 1;
-        }
-      } finally {
-        fs.closeSync(file.fd);
-      }
-      Logger.info(TAG, `input node init done, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-    }
-    Logger.info(TAG, `all input node had inited , pipelineId:${pipelineId}`);
-  }
-  return 0;
-}
-
-@Concurrent
-async function multiInitPipeline(sceneInfoId: string, pipelineId: string): Promise<number> {
-  const TAG: string = 'AudioEditTestApp_AudioEdit';
-  Logger.info(TAG, ' AutoTest multiInitPipeline start');
-  let ret = audioNapi.audioEditNodeInitMultiPipeline(pipelineId);
-  let msg: MultiInitPipelineSonMsg = {
-    sceneInfoId: sceneInfoId,
-    pipelineId: pipelineId,
-    outputId: util.generateRandomUUID(true),
-    mixerId: util.generateRandomUUID(true)
-  }
-  taskpool.Task.sendData(msg);
-  Logger.info(TAG, ' AutoTest multiInitPipeline end');
-  return ret;
-}
-
-async function noticePipelineTask(msg: MultiInitPipelineSonMsg) {
-  Logger.info(TAG, `noticePipelineTask start msg: ${JSON.stringify(msg)}`);
-  const sceneInfo = sceneInfoIdToSceneInfoMap.get(msg.sceneInfoId);
-  if (sceneInfo === undefined) {
-    return;
-  }
-  let pipelineInfo: PipelineInfo = {
-    outputId: msg.outputId,
-    mixerId: msg.mixerId,
-    inputIdList: [],
-    pipelineId: msg.pipelineId,
-    multiRenderFrameFlag: false,
-    sceneInfoId: msg.sceneInfoId
-  }
-  sceneInfo.pipelineId = msg.pipelineId;
-  preparedPipelineList.push(msg.pipelineId);
-  pipelineIdToPipelineInfoMap.set(msg.pipelineId, pipelineInfo);
-  Logger.info(TAG, `noticePipelineTask end`);
-}
-
-@Concurrent
-async function multiInitInput(inputId: string, outputId: string, mixerId: string, pipelineId: string, audioFile: string,
-  multiPipelineFlag: boolean): Promise<number> {
-  const TAG: string = 'AudioEditTestApp_AudioEdit';
-  Logger.info(TAG, ` AutoTest multiInitInput start, inputId:${inputId}, pipelineId:${pipelineId}`);
-  const inputDir = `/storage/Users/currentUser/Download/src.main.audiodemo/input_files`;
-
-  // 获取文件内容
-  let inputPath = `${inputDir}/${audioFile}`;
-  let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
-  let fsStat = fs.statSync(inputPath);
-  let buffer = new ArrayBuffer(fsStat.size);
-  let ret = 1;
-  try {
-    fs.readSync(file.fd, buffer);
-    Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-    if (multiPipelineFlag) {
-      audioNapi.multiPipelineEnvPrepare(pipelineId);
-    }
-    ret = audioNapi.multiAudioInAndOutInit(inputId, outputId, mixerId, file.fd, buffer.byteLength);
-  } finally {
-    fs.closeSync(file.fd);
-  }
-  Logger.info(TAG, ` AutoTest multiInitInput end, inputId:${inputId}, pipelineId:${pipelineId}`);
-  return ret;
-}
-
-@Concurrent
-async function multiInitEffect(inputId: string | undefined, nodeType: NodeType, effect: NodeInfo,
-  pipelineId: string, multiPipelineFlag: boolean): Promise<number> {
-  const TAG: string = 'AudioEditTestApp_AudioEdit';
-  Logger.info(TAG, ' AutoTest multiInitEffect start');
-  let ret: number = 0;
-
-  if (multiPipelineFlag) {
-    audioNapi.multiPipelineEnvPrepare(pipelineId);
-  }
-  switch (nodeType) {
-    case NodeType.NR:
-      let NRId: string = util.generateRandomUUID(true);
-      let ret = audioNapi.multiAddNoiseReduction(NRId, inputId);
-      if (ret != 0) {
-        Logger.error(TAG, `addNoiseReduction error number is ${ret}`);
-      } else {
-        Logger.info(TAG, `addNoiseReduction node successful!!!`);
-      }
-      break;
-    case NodeType.AISS:
-      let AISSId: string = util.generateRandomUUID(true);
-      ret = audioNapi.multiAddAudioSeparation(effect.mode, AISSId, inputId);
-      if (ret != 0) {
-        Logger.error(TAG, `addAudioSeparation error number is ${ret}`);
-      } else {
-        Logger.info(TAG, `addAudioSeparation node successful!!!`);
-      }
-      taskpool.Task.sendData(pipelineId);
-      break;
-    case NodeType.ENV:
-      let ENVId: string = util.generateRandomUUID(true);
-      ret = audioNapi.multiStartEnvEffect(inputId, ENVId, effect.mode);
-      if (ret != 0) {
-        Logger.error(TAG, `multiStartEnvEffect error number is ${ret}`);
-      } else {
-        Logger.info(TAG, `multiStartEnvEffect node successful!!!`);
-      }
-      break;
-    case NodeType.FIELD:
-      let FIELDId: string = util.generateRandomUUID(true);
-      ret = audioNapi.multiStartFieldEffect(inputId, effect.mode, FIELDId);
-      if (ret != 0) {
-        Logger.error(TAG, `startFieldEffect error number is ${ret}`);
-      } else {
-        Logger.info(TAG, `startFieldEffect node successful!!!`);
-      }
-      break;
-    case NodeType.VB:
-      let VBId: string = util.generateRandomUUID(true);
-      ret = audioNapi.multiStartVBEffect(inputId, effect.mode, VBId);
-      if (ret != 0) {
-        Logger.error(TAG, `startVBEffect error number is ${ret}`);
-      } else {
-        Logger.info(TAG, `startVBEffect node successful!!!`);
-      }
-      break;
-    case NodeType.EQ:
-      let EQId: string = util.generateRandomUUID(true);
-      if (effect.gains == undefined || effect.gains.length == 0) {
-        ret = audioNapi.multiSetEqualizerMode(effect.mode, EQId, inputId);
-      } else {
-        ret = audioNapi.multiSetEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
-      }
-      if (ret != 0) {
-        Logger.error(TAG, `Add EQ Effect node error: ${ret}`);
-      } else {
-        Logger.info(TAG, `Add EQ Effect node successful!!!`);
-      }
-      break;
-  }
-  Logger.info(TAG, ' AutoTest multiInitEffect end');
-  return ret;
-}
-
-async function noticeEffectTask(msg: string) {
-  Logger.info(TAG, `noticeEffectTask start pipelineId: ${JSON.stringify(msg)}`);
-  const pipelineInfo = pipelineIdToPipelineInfoMap.get(msg);
-  if (pipelineInfo === undefined) {
-    return;
-  }
-  pipelineInfo.multiRenderFrameFlag = true;
-  Logger.info(TAG, `noticePipelineTask end`);
-}
-
 @Builder
 export function AutoTestBuilder() {
   AutoTest()
@@ -441,18 +234,20 @@ export struct AutoTest {
   @State index: number = 0;
   @State selectedFileSummary: string = "";
   @State selectOptionList: SelectOption[] = [];
+  @State selectedNodeId: string = "";
   @State nodeInfoShow: boolean = false;
   @State choosedNode: NodeInfo = {
     nodeInfoId: '',
     type: ''
   }
   @State displayPipelineInfoList: DisplayPipelineInfo[] = [];
+  @State autoTestProcessMap: Map<string, number> = new Map();
+  @State exeOneStateEffect: boolean = true;
+  @State executeProcessState: boolean = false;
   pageInfos: NavPathStack = new NavPathStack();
 
   async aboutToAppear(): Promise<void> {
     Logger.info(TAG, 'AutoTest aboutToAppear');
-
-    // 初始化支持自动化测试运行的文件夹
     try {
       let fileList: string[] = fs.listFileSync(rootPath);
       dirCheckList.forEach((check: string) => {
@@ -464,7 +259,7 @@ export struct AutoTest {
       })
     } catch (e) {
       Logger.error(TAG, "rootPath is null, need init rootPath");
-      await this.initAutoTestDir();
+      await initAutoTestDir();
     }
 
     const dirPath = new fileUri.FileUri(rootPath + `/case_json`).path;
@@ -479,9 +274,9 @@ export struct AutoTest {
         jsonInfoId: util.generateRandomUUID(true),
         filePath: '',
         sceneInfos: [],
-        summary: ''
+        summary: '',
+        realTime: false
       }
-
       const jsonFilePath = `${rootPath}/case_json/${jsonFile}`
       jsonFileInfo.filePath = jsonFilePath;
       try {
@@ -603,9 +398,9 @@ export struct AutoTest {
       Column() {
         if (this.displayPipelineInfoList.length > 0) {
           List() {
-            ForEach(this.displayPipelineInfoList, (displayPipelineInfo: DisplayPipelineInfo) => {
+            ForEach(this.displayPipelineInfoList, (displayPipelineInfo: DisplayPipelineInfo, index: number) => {
               ListItem() {
-                this.PipelineGraphArea(displayPipelineInfo)
+                this.PipelineGraphArea(displayPipelineInfo, index+1)
               }
             })
           }
@@ -616,15 +411,19 @@ export struct AutoTest {
 
       Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceAround, alignItems: ItemAlign.Center }) {
         Button() {
-          Text(`执行选中用例`)
+          Text(this.exeOneStateEffect?`执行选中用例`:`执行中...`)
         }
-        .onClick(() => {
-          this.executeSingleFile(`${this.selectedFileSummary}`);
+        .onClick(async () => {
+          this.exeOneStateEffect = false;
+          this.executeProcessState = true;
+          await this.executeSingleFileWithSyncInit(`${this.selectedFileSummary}`);
+          this.exeOneStateEffect = true;
         })
         .backgroundColor(0x317aff)
         .borderRadius(10)
         .width(100)
         .height(50)
+        .enabled(this.exeOneStateEffect)
 
         Button() {
           Text(`执行全部用例`)
@@ -640,6 +439,26 @@ export struct AutoTest {
       }.height('20%').width('100%')
 
     }
+    .bindSheet(this.executeProcessState && this.autoTestProcessMap.size > 0, this.ExecuteProcessDialog(), {
+      height: '100%',
+      backgroundColor: Color.White,
+      maskColor: Color.Transparent,
+      showClose: false,
+      onWillAppear: () => {
+      },
+      onAppear: () => {
+      },
+      onWillDisappear: () => {
+      },
+      onDisappear: () => {
+        this.executeProcessState = false;
+      },
+      onWillDismiss: (DismissSheetAction: DismissSheetAction) => {
+        if (DismissSheetAction.reason != DismissReason.TOUCH_OUTSIDE) {
+          DismissSheetAction.dismiss()
+        }
+      }
+    })
     .onReady((context: NavDestinationContext) => {
       this.pageInfos = context.pathStack;
     })
@@ -649,14 +468,37 @@ export struct AutoTest {
   }
 
   @Builder
-  PipelineGraphArea(displayPipelineInfo: DisplayPipelineInfo) {
+  PipelineGraphArea(displayPipelineInfo: DisplayPipelineInfo, index: number) {
     Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.SpaceAround }) {
+      Row() {
+        Text(`pipeline ${index}`).fontColor($r('app.color.index_audio_clip_card'))
+      }.width('100%').justifyContent(FlexAlign.Center)
       this.EffectGraphArea(displayPipelineInfo.inputNodeIdList, displayPipelineInfo.effectChain)
       this.MixerGraphArea(displayPipelineInfo.mixerChain)
     }
-    .border({ width: '3vp', color: Color.Blue, radius: '10vp' })
+    .border({ width: '3vp', color: $r('app.color.index_audio_clip_card'), radius: '10vp' })
     .padding({ left: '10vp', right: '10vp' })
     .margin({ bottom: '10vp' })
+    .bindSheet(this.nodeInfoShow, this.NodeInfoDialog(this.makeNodeMapNotBlank(this.selectedNodeId)), {
+      height: '50%',
+      backgroundColor: ($r('app.color.selected_node_info_background_color')),
+      maskColor: Color.Transparent,
+      showClose: false,
+      onWillAppear: () => {
+      },
+      onAppear: () => {
+      },
+      onWillDisappear: () => {
+      },
+      onDisappear: () => {
+        this.nodeInfoShow = false;
+      },
+      onWillDismiss: (DismissSheetAction: DismissSheetAction) => {
+        if (DismissSheetAction.reason != DismissReason.TOUCH_OUTSIDE) {
+          DismissSheetAction.dismiss()
+        }
+      }
+    })
   }
 
   @Builder
@@ -709,7 +551,7 @@ export struct AutoTest {
         List() {
           ForEach(mixerNodeChain, (nodeId: string) => {
             ListItem() {
-              this.NodeButton(this.makeNodeMapNotBlank(nodeId));
+              this.NodeButton(this.makeNodeMapNotBlank(nodeId))
             }
           })
         }
@@ -736,39 +578,20 @@ export struct AutoTest {
       }
       .backgroundColor(ColorMap.get(getNodeTypeFromString(nodeInfo.type)))
       .borderRadius(10)
-      .width(60)
-      .height(60)
+      .width(40)
+      .height(20)
       .margin({ left: 10 })
     }
     .onClick(() => {
       this.nodeInfoShow = true;
-    })
-    .bindSheet(this.nodeInfoShow, this.NodeInfoDialog(nodeInfo), {
-      height: '50%',
-      backgroundColor: Color.White,
-      maskColor: Color.Transparent,
-      showClose: false,
-      onWillAppear: () => {
-      },
-      onAppear: () => {
-      },
-      onWillDisappear: () => {
-      },
-      onDisappear: () => {
-        this.nodeInfoShow = false;
-      },
-      onWillDismiss: (DismissSheetAction: DismissSheetAction) => {
-        if (DismissSheetAction.reason != DismissReason.TOUCH_OUTSIDE) {
-          DismissSheetAction.dismiss()
-        }
-      }
+      this.selectedNodeId = nodeInfo.nodeInfoId;
     })
   }
 
   @Builder
   NodeInfoDialog(nodeInfo: NodeInfo) {
     Column() {
-      Row() {
+      Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start }) {
         Column() {
           Image($r('app.media.close_window'))
             .width(20)
@@ -781,7 +604,7 @@ export struct AutoTest {
 
         Column() {
           Text('Node Info').fontSize(20)
-        }.width('80%')
+        }.width('50%')
       }
 
       Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.SpaceAround }) {
@@ -791,7 +614,7 @@ export struct AutoTest {
         if (nodeInfo.mode) {
           Text(`mode: ${nodeInfo.mode}`).fontSize(20)
         }
-        if (nodeInfo.gains) {
+        if (nodeInfo.gains && nodeInfo.gains.length > 0) {
           Text(`gains: ${nodeInfo.gains.toString()}`).fontSize(20)
         }
         if (nodeInfo.format) {
@@ -811,12 +634,39 @@ export struct AutoTest {
 
   }
 
+  @Builder
+  ExecuteProcessDialog() {
+    Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.SpaceBetween }) {
+      Row() {
+        Image($r('app.media.close_window'))
+          .width(20)
+          .height('8%')
+          .onClick(() => {
+            this.executeProcessState = false;
+          })
+        Text(`用例执行进度`).fontColor($r('app.color.index_audio_clip_card')).fontSize(30).margin({left:50})
+      }
+
+      Text(`${this.selectedFileSummary}`).fontColor($r('app.color.index_audio_clip_card')).fontSize(25)
+      ForEach(Array.from(this.autoTestProcessMap.keys()), (pipelineId:string)=>{
+        Text(`pipeline：${pipelineIdToPipelineInfoMap.get(pipelineId)?.sceneInfoName}`).fontColor($r('app.color.index_audio_clip_card'))
+        Row() {
+          Progress({ value: this.autoTestProcessMap.get(pipelineId), total: 100, type: ProgressType.Linear }).width(200).height(50)
+          Text(`${this.autoTestProcessMap.get(pipelineId)}%`)
+            .fontSize(20)
+            .margin({ left: 20 })
+        }
+      })
+    }
+  }
+
   async executeAllFile() {
     Logger.info(TAG, "executeAllFile start");
     const jsonFiles = Array.from(jsonSummaryToJsonFileInfoMap.values());
     for (const jsonFile of jsonFiles) {
       Logger.info(TAG, `before task jsonFile=${jsonFile.summary}`);
-      let ret = await this.executeSingleFile(jsonFile.summary, false);
+      this.selectedFileSummary = jsonFile.summary;
+      let ret = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
       Logger.info(TAG, `before task ret = ${ret}`);
     }
     await this.saveAllCaseExecuteReport();
@@ -824,66 +674,12 @@ export struct AutoTest {
     Logger.info(TAG, "executeAllFile end");
   }
 
-  // async executeSingleFile(fileSummary: string, reportFlag: boolean = true): Promise<number> {
-  //   const jsonFileInfo = jsonSummaryToJsonFileInfoMap.get(fileSummary);
-  //   if (jsonFileInfo == undefined) {
-  //     return 1;
-  //   } else if (jsonFileInfo.sceneInfos.length >= 1) {
-  //     let scenePromises = jsonFileInfo.sceneInfos.map(async (sceneInfoId: string) => {
-  //       const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
-  //       if (sceneInfo == undefined) {
-  //         return;
-  //       }
-  //       const pipelineId = util.generateRandomUUID(true);
-  //       const pipelineInfo: PipelineInfo = {
-  //         pipelineId: pipelineId,
-  //         inputIdList: [],
-  //         outputId: '',
-  //         mixerId: '',
-  //         multiRenderFrameFlag: false,
-  //         sceneInfoId: ''
-  //       }
-  //       const start = new Date().getTime();
-  //       const singleReport: ExecuteReport = {
-  //         sceneInfoId: jsonFileInfo.sceneInfos[0],
-  //         sceneName: sceneInfo.sceneName,
-  //         startTime: getDateStringWithTimeStamp(start),
-  //         startTimeStamp: start,
-  //         endTime: '',
-  //         endTimeStamp: 0,
-  //         costTime: 0,
-  //         result: false,
-  //         exeReportPath: '',
-  //       }
-  //       pipelineIdToSingleReportMap.set(pipelineId, singleReport);
-  //       pipelineIdToPipelineInfoMap.set(pipelineId, pipelineInfo);
-  //       sceneInfo.pipelineId = pipelineId;
-  //
-  //       let ret = await this.initMultiPipelineTask(sceneInfo.sceneInfoId, pipelineId);
-  //       Logger.info(TAG, `initMultiPipelineTask done pipelineId：${pipelineId}`);
-  //       let outputInfo = sceneInfo.outputFile;
-  //       const multiRenderFrameFlag = pipelineInfo.multiRenderFrameFlag;
-  //       const buffer: object =
-  //         await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-  //       await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
-  //       this.generateSingleReportInfo(pipelineId);
-  //     })
-  //     await Promise.all(scenePromises).then(async () => {
-  //       Logger.info(TAG, `scenePromises done `);
-  //       if (reportFlag) {
-  //         await this.saveSingleCaseExecuteReport(fileSummary);
-  //       }
-  //       this.destroyPipeline();
-  //     })
-  //   }
-  //   return 0;
-  // }
-
-  async executeSingleFile(fileSummary: string, reportFlag: boolean = true): Promise<number> {
-    Logger.info(TAG, `executeSingleFile start fileSummary:${fileSummary}`);
+  async executeSingleFileWithSyncInit(fileSummary: string, reportFlag: boolean = true): Promise<number> {
+    Logger.info(TAG, `executeSingleFileWithSyncInit start fileSummary:${fileSummary}`);
+    this.autoTestProcessMap.clear();
     const jsonFileInfo = jsonSummaryToJsonFileInfoMap.get(fileSummary);
-    if (jsonFileInfo == undefined) {
-      return 1;
+    if (jsonFileInfo == undefined || jsonFileInfo.sceneInfos.length == 0) {
+      return FAILED;
     } else if (jsonFileInfo.sceneInfos.length >= 1) {
       let status = this.initAllPipeline(jsonFileInfo);
       if (status != SUCCESS) {
@@ -895,12 +691,43 @@ export struct AutoTest {
         Logger.error(TAG, `initAllInputNode ERROR`);
         return FAILED;
       }
+      Logger.info(TAG, `initAllInputNode successed, ready to initAllEffectNode`);
       status = this.initAllEffectNode(jsonFileInfo);
       if (status != SUCCESS) {
         Logger.error(TAG, `initAllEffectNode ERROR`);
         return FAILED;
       }
       Logger.info(TAG, `initAllEffectNode successed, ready to render frame`);
+      let timer = setInterval(()=>{
+        Logger.error(TAG, `getAutoTestProcess start`);
+        let processObj: Record<string, number> = audioNapi.getAutoTestProcess();
+        let newMap = new Map(Object.entries(processObj));
+        let continueFlag: boolean = false;
+        if (newMap.size == 0) {
+          Logger.error(TAG, `newMap size is 0`);
+          clearInterval(timer);
+          this.destroyPipeline();
+          return;
+        }
+        Logger.error(TAG, `newMap size is ${newMap.size}`);
+        if (this.autoTestProcessMap.size == 0) {
+          this.autoTestProcessMap = new Map(newMap);
+        } else if (newMap.size >= this.autoTestProcessMap.size) {
+          this.autoTestProcessMap = new Map(newMap);
+        }
+
+        this.autoTestProcessMap.forEach((value, key)=>{
+          Logger.error(TAG, `key:${key}----value:${value}`);
+          if (value < 100) {
+            continueFlag = true;
+          }
+        })
+        if (!continueFlag) {
+          Logger.info(TAG, `process done, ready to clear timer.`);
+          clearInterval(timer);
+          this.destroyPipeline();
+        }
+      }, 200);
       let scenePromises = jsonFileInfo.sceneInfos.map(async (sceneInfoId: string) => {
         const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
         const pipelineId = sceneInfo?.pipelineId;
@@ -916,9 +743,13 @@ export struct AutoTest {
 
         let outputInfo = sceneInfo.outputFile;
         const multiRenderFrameFlag = pipelineInfo.multiRenderFrameFlag;
-        const buffer: object =
-          await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-        await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
+        if (jsonFileInfo.realTime) {
+          const buffer: object = await taskpool.execute(multiPipelineRealTimeSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
+          await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
+        } else {
+          const buffer: object = await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
+          await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
+        }
         this.generateSingleReportInfo(pipelineId);
         return SUCCESS;
       })
@@ -927,50 +758,11 @@ export struct AutoTest {
         if (reportFlag) {
           await this.saveSingleCaseExecuteReport(fileSummary);
         }
-        this.destroyPipeline();
-      }).catch((err:BusinessError) => {
-        Logger.error(TAG, `scenePromises error:${err}`);
       })
     }
-    return 0;
+    return SUCCESS;
   }
-
-  async initMultiPipelineTask(sceneInfoId: string, pipelineId: string) {
-    Logger.info(TAG, `initMultiPipelineTask start`);
-    const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
-    if (sceneInfo == undefined) {
-      Logger.error(TAG, `initMultiPipelineTask get null info of :${sceneInfoId}`)
-      return;
-    }
-    let pipelineTask: taskpool.Task = new taskpool.Task(multiInitPipeline, sceneInfo.sceneInfoId, pipelineId);
-    pipelineTask.onReceiveData(noticePipelineTask);
-    await taskpool.execute(pipelineTask);
-    for (const ele of sceneInfo.inputFiles){
-      let pipelineId: string = sceneInfo.pipelineId;
-      const inputId = ele.inputId;
-      Logger.info(TAG, `input node init start, inputId:${inputId}, pipelineId :${pipelineId}`);
-      await taskpool.execute(multiInitInput, inputId, pipelineIdToPipelineInfoMap.get(pipelineId)?.outputId,
-        pipelineIdToPipelineInfoMap.get(pipelineId)?.mixerId, pipelineId, ele.path, true)
-      pipelineIdToPipelineInfoMap.get(pipelineId)?.inputIdList.push(inputId);
-      Logger.info(TAG, `input node init done, inputId:${inputId}, pipelineId :${pipelineId}`);
-    }
-    Logger.info(TAG, `all input node had inited , pipelineId:${pipelineId}`);
-    for (const ele of sceneInfo.inputFiles){
-      const inputId = ele.inputId;
-      for (const effect of ele.effect) {
-        Logger.info(TAG, `effect node init start, inputId :${inputId}, pipelineId:${pipelineId}`);
-        let nodeType: NodeType = getNodeTypeFromString(effect.type);
-        let multiInitEffectTask: taskpool.Task =
-          new taskpool.Task(multiInitEffect, inputId, nodeType, effect, pipelineId, true);
-        multiInitEffectTask.onReceiveData(noticeEffectTask);
-        await taskpool.execute(multiInitEffectTask);
-        Logger.info(TAG, `effect node init end, inputId :${inputId}, pipelineId:${pipelineId}`);
-      }
-    }
-    Logger.info(TAG, `all multiInitEffect end, pipelineId:${pipelineId}`);
-    return Promise.resolve();
-  }
-
+  // sync init pipeline/inputNode/effectNode
   initAllPipeline(jsonFileInfo:JsonFileInfo): number {
     Logger.info(TAG, `initAllPipeline start`);
     for (const sceneInfoId of jsonFileInfo.sceneInfos) {
@@ -985,13 +777,14 @@ export struct AutoTest {
         outputId: util.generateRandomUUID(true),
         mixerId: util.generateRandomUUID(true),
         multiRenderFrameFlag: false,
-        sceneInfoId: sceneInfoId
+        sceneInfoId: sceneInfoId,
+        sceneInfoName: sceneInfo.sceneName
       }
       const start = new Date().getTime();
       const singleReport: ExecuteReport = {
         sceneInfoId: sceneInfoId,
         sceneName: sceneInfo.sceneName,
-        startTime: getDateStringWithTimeStamp(start),
+        startTime: getDateStringWithTimeStamp(start, 0),
         startTimeStamp: start,
         endTime: '',
         endTimeStamp: 0,
@@ -1016,79 +809,6 @@ export struct AutoTest {
     return SUCCESS;
   }
 
-  async initAllInputNode(jsonFileInfo:JsonFileInfo): Promise<number> {
-    Logger.info(TAG, `initMultiPipelineTask start`);
-    for (const sceneInfoId of jsonFileInfo.sceneInfos) {
-      const sceneInfo = sceneInfoIdToSceneInfoMap.get(sceneInfoId);
-      const pipelineId = sceneInfo?.pipelineId;
-      if (sceneInfo == undefined || pipelineId == undefined) {
-        Logger.error(TAG, `initAllInputNode get null sceneInfo`);
-        return FAILED;
-      }
-      const pipelineInfo = pipelineIdToPipelineInfoMap.get(pipelineId);
-      if (pipelineInfo == undefined) {
-        Logger.error(TAG, `initAllInputNode get null pipelineInfo`);
-        return FAILED;
-      }
-      let status = audioNapi.multiPipelineEnvPrepare(pipelineId);
-      if (status != SUCCESS) {
-        Logger.error(TAG, `multiPipelineEnvPrepare ERROR while initAllInputNode`);
-        return FAILED;
-      }
-      for (const inputFile of sceneInfo.inputFiles) {
-        // 获取文件内容
-        let inputPath = `${inputDir}/${inputFile.path}`;
-        let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
-        let fsStat = fs.statSync(inputPath);
-        let buffer = new ArrayBuffer(fsStat.size);
-        fs.readSync(file.fd, buffer);
-
-        Logger.info(TAG, `input FIle: ${inputPath}, buffer.length: ${buffer.byteLength}`);
-
-        const wavView = new Uint8Array(buffer);
-        let wavHeaderBuffer = wavView.slice(0, 44).buffer;
-        const dataView = new DataView(wavHeaderBuffer);
-        // 获取通道数, 通道数位于22字节
-        const channels: number = dataView.getUint16(22, true);
-        // 获取采样率, 采样率位于第 24 到28 字节
-        const sampleRate: number = dataView.getUint32(24, true);
-        // 获取位深，位深位于 34字节
-        const bitsPerSample: number = dataView.getUint16(34, true);
-        // 获取音频的长度
-        const fmtSize = dataView.getUint32(16, true); // fmt chunk size
-        let offset = 20 + fmtSize;
-        let pcmLength = 0;
-        while (offset <= buffer.byteLength) {
-          const chunkId = dataView.getUint32(offset, true);
-          offset += 4;
-          const chunkSize = dataView.getUint32(offset, true);
-          offset += 4;
-          // 'data' 在 ASCII 小端字节
-          if (chunkId === 0x61746164) {
-            // 找到了 data 块，返回其大小
-            pcmLength = chunkSize;
-            break;
-          }
-          offset += chunkSize;
-        }
-        Logger.info(TAG, `pcmLength: ${pcmLength}`);
-        Logger.info(TAG,
-          `audioEffectNodeTestSuccess01 sampleRate: ${sampleRate}, bitsPerSample: ${bitsPerSample}, channels: ${channels}`);
-        let inputNodeStatus =
-          audioNapi.multiAudioInAndOutInit(inputFile.inputId, pipelineInfo.outputId, pipelineInfo.mixerId, file.fd,
-            buffer.byteLength);
-        fs.closeSync(file.fd);
-        if (inputNodeStatus != SUCCESS) {
-          Logger.error(TAG, `input node init ERROR, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-          return FAILED;
-        }
-        Logger.info(TAG, `input node init done, inputId:${inputFile.inputId}, pipelineId :${pipelineId}`);
-      }
-      Logger.info(TAG, `all input node had inited , pipelineId:${pipelineId}`);
-    }
-    return SUCCESS;
-  }
-
   initAllEffectNode(jsonFileInfo:JsonFileInfo): number {
     Logger.info(TAG, `initAllEffectNode start`);
     for (const sceneInfoId of jsonFileInfo.sceneInfos) {
@@ -1110,12 +830,14 @@ export struct AutoTest {
       }
       for (const inputFile of sceneInfo.inputFiles) {
         const inputId = inputFile.inputId;
+        let effectIndex = 0;
         for (const effect of inputFile.effect) {
+          const effectObj = inputFile.effectStr[effectIndex++];
           const nodeType: NodeType = getNodeTypeFromString(effect.type);
           switch (nodeType) {
             case NodeType.NR:
               let NRId: string = util.generateRandomUUID(true);
-              let status: number = audioNapi.multiAddNoiseReduction(NRId, inputId);
+              let status: number = audioNapi.addNoiseReduction(NRId, inputId);
               if (status != SUCCESS) {
                 Logger.error(TAG, `addNoiseReduction error number is ${status}`);
                 return FAILED;
@@ -1123,9 +845,9 @@ export struct AutoTest {
                 Logger.info(TAG, `addNoiseReduction node successful!!!`);
               }
               break;
-            case NodeType.AISS:
+            case NodeType.SEPARATION:
               let AISSId: string = util.generateRandomUUID(true);
-              status = audioNapi.multiAddAudioSeparation(effect.mode, AISSId, inputId);
+              status = audioNapi.addAudioSeparation(0, AISSId, inputId);
               if (status != SUCCESS) {
                 Logger.error(TAG, `addAudioSeparation error number is ${status}`);
                 return FAILED;
@@ -1136,7 +858,9 @@ export struct AutoTest {
               break;
             case NodeType.ENV:
               let ENVId: string = util.generateRandomUUID(true);
-              status = audioNapi.multiStartEnvEffect(inputId, ENVId, effect.mode);
+              const envMode:number = Object(effectObj)["mode"];
+              Logger.info(TAG, `multiStartEnvEffect mode=${envMode}`);
+              status = audioNapi.startEnvEffect(inputId, ENVId, envMode);
               if (status != SUCCESS) {
                 Logger.error(TAG, `multiStartEnvEffect error number is ${status}`);
                 return FAILED;
@@ -1146,7 +870,9 @@ export struct AutoTest {
               break;
             case NodeType.FIELD:
               let FIELDId: string = util.generateRandomUUID(true);
-              status = audioNapi.multiStartFieldEffect(inputId, effect.mode, FIELDId);
+              const fieldMode:number = Object(effectObj)["mode"];
+              Logger.info(TAG, `multiStartFieldEffect mode=${fieldMode}`);
+              status = audioNapi.startFieldEffect(inputId, fieldMode, FIELDId);
               if (status != SUCCESS) {
                 Logger.error(TAG, `startFieldEffect error number is ${status}`);
                 return FAILED;
@@ -1156,7 +882,9 @@ export struct AutoTest {
               break;
             case NodeType.VB:
               let VBId: string = util.generateRandomUUID(true);
-              status = audioNapi.multiStartVBEffect(inputId, effect.mode, VBId);
+              const vbMode:number = Object(effectObj)["mode"];
+              Logger.info(TAG, `multiStartVBEffect mode=${vbMode}`);
+              status = audioNapi.startVBEffect(inputId, vbMode, VBId);
               if (status != SUCCESS) {
                 Logger.error(TAG, `startVBEffect error number is ${status}`);
                 return FAILED;
@@ -1166,18 +894,87 @@ export struct AutoTest {
               break;
             case NodeType.EQ:
               let EQId: string = util.generateRandomUUID(true);
+              const eqMode = effect.mode;
+              Logger.info(TAG, `multiStartVBEffect mode=${eqMode}`);
               if (effect.gains == undefined || effect.gains.length == 0) {
-                status = audioNapi.multiSetEqualizerMode(effect.mode, EQId, inputId);
+                status = audioNapi.setEqualizerMode(eqMode, EQId, inputId);
               } else {
-                status = audioNapi.multiSetEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
+                status = audioNapi.setEqualizerFrequencyBandGains(effect.gains, EQId, inputId);
               }
               if (status != SUCCESS) {
                 Logger.error(TAG, `Add EQ Effect node error: ${status}`);
+                Logger.error(TAG, `EQ Effect error number is ${status}`);
                 return FAILED;
               } else {
                 Logger.info(TAG, `Add EQ Effect node successful!!!`);
+                Logger.info(TAG, `EQ Effect node successful!!!`);
               }
               break;
+            case NodeType.GENERAL_VOICE_CHANGE:
+              let generalId: string = util.generateRandomUUID(true);
+              const generalMode = effect.mode;
+              Logger.info(TAG, `startGeneralVoiceChange mode=${generalMode}`);
+              status = audioNapi.startGeneralVoiceChange(inputId, generalMode, generalId);
+              if (status != SUCCESS) {
+                Logger.error(TAG, `startGeneralVoiceChange error number is ${status}`);
+                return FAILED;
+              } else {
+                Logger.info(TAG, `startGeneralVoiceChange successful!!!`);
+              }
+              break;
+            case NodeType.PURE_VOICE_CHANGE:
+              let pureId: string = util.generateRandomUUID(true);
+              const gender:number = Object(effectObj)["gender"];
+              const changeType:number = Object(effectObj)["changeType"];
+              status = audioNapi.startPureVoiceChange(inputId, pureId, gender, 0, changeType);
+              if (status != SUCCESS) {
+                Logger.error(TAG, `startPureVoiceChange error number is ${status}`);
+                return FAILED;
+              } else {
+                Logger.info(TAG, `startPureVoiceChange successful!!!`);
+              }
+              break;
+            case NodeType.SOUND_SPEED_TONE:
+              let soundSpeedToneId: string = util.generateRandomUUID(true);
+              const pureMode = effect.mode;
+              Logger.info(TAG, `startPureVoiceChange mode=${pureMode}`);
+              const soundSpeed:number = Object(effectObj)["soundSpeed"];
+              const soundTone:number = Object(effectObj)["soundTone"];
+              status = audioNapi.setSoundSpeedTone(inputId, soundSpeedToneId, soundSpeed, soundTone);
+              if (status != SUCCESS) {
+                Logger.error(TAG, `setSoundSpeedTone error number is ${status}`);
+                return FAILED;
+              } else {
+                Logger.info(TAG, `setSoundSpeedTone successful!!!`);
+              }
+              break;
+            // case NodeType.SPACE_RENDER:
+            //   let spaceRenderId: string = util.generateRandomUUID(true);
+            //   const spaceRenderMode = effect.mode;
+            //   const x:number = Object(effectObj)["x"];
+            //   const y:number = Object(effectObj)["y"];
+            //   const z:number = Object(effectObj)["z"];
+            //   status = FAILED;
+            //   if (spaceRenderMode === 0) {
+            //     status = audioNapi.startFixedPositionEffect(x, y, z, spaceRenderId, inputId);
+            //   }
+            //   if (spaceRenderMode === 1) {
+            //     const surroundTime:number = Object(effectObj)["surroundTime"];
+            //     const surroundDirection:number = Object(effectObj)["surroundDirection"];
+            //     status = audioNapi.startDynamicRenderEffect(x,  y, z, surroundTime, surroundDirection, spaceRenderId, inputId);
+            //   }
+            //   if (spaceRenderMode === 2) {
+            //     const extRadius:number = Object(effectObj)["extRadius"];
+            //     const extAngle:number = Object(effectObj)["extAngle"];
+            //     status = audioNapi.startExpandEffect(extRadius, extAngle, spaceRenderId, inputId);
+            //   }
+            //   if (status != SUCCESS) {
+            //     Logger.error(TAG, `SPACE_RENDER error number is ${status}`);
+            //     return FAILED;
+            //   } else {
+            //     Logger.info(TAG, `add SPACE_RENDER successful!!!`);
+            //   }
+            //   break;
           }
         }
         Logger.info(TAG, `all effect node of input inited, inputId :${inputId}, pipelineId:${pipelineId}`);
@@ -1214,10 +1011,12 @@ export struct AutoTest {
       Logger.info(TAG, `saveSingleFile pcmBuffer of ---${index}---length : ${value.byteLength}`)
     })
     try {
-      let newFileName1 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Voice" :
-        ""}_${getDateStringWithTimeStamp(new Date().getTime(), 1)}.wav`;
-      let newFileName2 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Accompaniment" :
-        ""}_${getDateStringWithTimeStamp(new Date().getTime(), 1)}.wav`;
+      // let newFileName1 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Voice" :
+      //   ""}_${getDateStringWithTimeStamp(new Date().getTime())}.wav`;
+      // let newFileName2 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Accompaniment" :
+      //   ""}_${getDateStringWithTimeStamp(new Date().getTime())}.wav`;
+      let newFileName1 = `${outputInfo.nameTemplate}.wav`;
+      let newFileName2 = `${outputInfo.nameTemplate}.wav`;
       const outputFilePath = multiRenderFrameFlag ? [`${outputPath}/${newFileName1}`, `${outputPath}/${newFileName2}`] :
         [`${outputPath}/${newFileName1}`];
       outputFilePath.forEach((path: string, index: number) => {
@@ -1254,7 +1053,7 @@ export struct AutoTest {
       } catch (e) {
         Logger.error(TAG, `Get MD5 failed, error : ${e}`)
       }
-      if (expectedFileMd5 != undefined && checkMd5IsEqual(outputFileMd5, expectedFileMd5)) {
+      if (expectedFileMd5 != undefined && !checkMd5IsEqual(outputFileMd5, expectedFileMd5)) {
         Logger.error(TAG,
           `file MD5 compare ERROR --- file:${outputFilePath}; md5Value:${outputFileMd5}; expectedMd5:${expectedFileMd5}`);
         this.getUIContext().showAlertDialog({
@@ -1272,33 +1071,6 @@ export struct AutoTest {
     }
   }
 
-  async initAutoTestDir() {
-    let documentSaveOptions = new picker.DocumentSaveOptions();
-    documentSaveOptions.pickerMode = 1;
-    let context = getContext() as common.Context;
-    let documentPicker = new picker.DocumentViewPicker(context);
-    documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
-      if (err) {
-        Logger.error(TAG,
-          `DocumentViewPicker.save failed with err, code is: ${err.code}, message is: ${err.message}`);
-        return;
-      }
-      Logger.info(TAG,
-        'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
-      let uri = documentSaveResult[0];
-      let filePath = new fileUri.FileUri(uri + `/init.txt`).path;
-      // documentSaveResult数组中只有一个路径
-      let file = fs.openSync(filePath, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-      fs.writeSync(file.fd, new ArrayBuffer(0));
-      Logger.info(TAG, `audiodemo dir init success`);
-      fs.closeSync(file);
-      dirCheckList.forEach((dir: string) => {
-        let dirPath = new fileUri.FileUri(`${uri}/${dir}`).path;
-        fs.mkdirSync(dirPath);
-      })
-    })
-  }
-
   makeNodeMapNotBlank(nodeId: string): NodeInfo {
     let nodeInfo = nodeInfoIdToNodeInfoMap.get(nodeId);
     if (nodeInfo == undefined) {
@@ -1309,13 +1081,13 @@ export struct AutoTest {
 
   generateSingleReportInfo(pipelineId: string) {
     const endTime = new Date().getTime();
-    const csvFileSavePath = `execute_report_${getDateStringWithTimeStamp(endTime, 1)}.csv`;
+    const csvFileSavePath = `execute_report_${getDateStringWithTimeStamp(endTime)}.csv`;
     const singleReport = pipelineIdToSingleReportMap.get(pipelineId);
     if (singleReport == undefined) {
       return;
     }
     singleReport.endTimeStamp = endTime;
-    singleReport.endTime = getDateStringWithTimeStamp(endTime);
+    singleReport.endTime = getDateStringWithTimeStamp(endTime, 0);
     singleReport.costTime = endTime - singleReport.startTimeStamp;
     singleReport.result = true;
     singleReport.exeReportPath = csvFileSavePath;
@@ -1324,7 +1096,7 @@ export struct AutoTest {
 
   async saveSingleCaseExecuteReport(summary: string) {
     Logger.info(TAG, `saveSingleCaseExecuteReport start summary=${summary}`);
-    const csvFileSavePath = `${outputPath}/execute_report_${getDateStringWithTimeStamp(new Date().getTime(), 1)}.csv`;
+    const csvFileSavePath = `${outputPath}/execute_report_${getDateStringWithTimeStamp(new Date().getTime())}.csv`;
     let csvFileInfoText = await this.getCsvTextOfSingeCase(summary);
     let csvText = `执行用例: ${summary},,,,,,,\n` + csvReportHeaderText + csvFileInfoText + ",,,,,,,\n";
     const csvTextWithBom = this.addBOMToStartOfString(csvText);
@@ -1337,7 +1109,7 @@ export struct AutoTest {
 
   async saveAllCaseExecuteReport() {
     Logger.info(TAG, "saveAllCaseExecuteReport start");
-    const csvFileSavePath = `${outputPath}/execute_report_${getDateStringWithTimeStamp(new Date().getTime(), 1)}.csv`;
+    const csvFileSavePath = `${outputPath}/execute_report_${getDateStringWithTimeStamp(new Date().getTime())}.csv`;
     let csvText = ``;
     const summaryArray = Array.from(jsonSummaryToJsonFileInfoMap.keys());
     const promises = summaryArray.map(async (summary: string) => {
@@ -1388,7 +1160,7 @@ export struct AutoTest {
         inputFileReportText = inputCsvRet[0];
         inputDurationText = inputCsvRet[1];
       })
-    await this.getMetadataCsvTextOfoutputFiles(sceneInfoIdToSceneInfoMap.get(singleReport.sceneInfoId)?.outputFile.outputFileList)
+    await this.getMetadataCsvTextOfOutputFiles(sceneInfoIdToSceneInfoMap.get(singleReport.sceneInfoId)?.outputFile.outputFileList)
       .then((outputCsvRet: string) => {
         outputFileReportText = outputCsvRet;
       })
@@ -1446,7 +1218,7 @@ export struct AutoTest {
     return [ret, durationStr];
   }
 
-  async getMetadataCsvTextOfoutputFiles(outputFiles: string[] | undefined): Promise<string> {
+  async getMetadataCsvTextOfOutputFiles(outputFiles: string[] | undefined): Promise<string> {
     if (outputFiles == undefined) {
       return "OutputFiles open FAILED";
     }

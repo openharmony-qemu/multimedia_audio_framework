@@ -225,7 +225,8 @@ export struct PipelineCascad {
         outputId: util.generateRandomUUID(true),
         mixerId: util.generateRandomUUID(true),
         multiRenderFrameFlag: false,
-        sceneInfoId: ''
+        sceneInfoId: '',
+        sceneInfoName: ''
       };
 
       this.pipelineIdToPipelineInfoMap.set(pipelineId, pipelineInfo as PipelineInfo);

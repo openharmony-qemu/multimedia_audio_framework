@@ -50,11 +50,17 @@ struct AudioParams {
     unsigned int fileLength;
 };
 
-struct UpdateInputNodeParams {
+class UpdateInputNodeParams {
+public:
     std::string inputId;
     unsigned int channels;
     unsigned int sampleRate;
     unsigned int bitsPerSample;
+
+    UpdateInputNodeParams() {}
+    UpdateInputNodeParams(std::string inputId, unsigned int channels, unsigned int sampleRate,
+        unsigned int bitsPerSample) : inputId(inputId), channels(channels), sampleRate(sampleRate),
+        bitsPerSample(bitsPerSample) {}
 };
 
 struct AudioParamsByCascad {
