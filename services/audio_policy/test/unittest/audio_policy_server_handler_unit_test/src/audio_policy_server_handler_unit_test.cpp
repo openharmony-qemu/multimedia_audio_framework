@@ -1387,5 +1387,33 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleAdaptiveSpatialRenderingEnabledCh
     audioPolicyServerHandler_->HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
+
+/**
+ * @tc.name  : HandleDeviceConfigChangedEvent_Test_001
+ * @tc.number: HandleDeviceConfigChangedEvent_Test_001
+ * @tc.desc  : Test HandleDeviceConfigChangedEvent function.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_Test_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    eventContextObj->descriptor = devDesc;
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::DEVICE_CONFIG_CHANGED, eventContextObj);
+    int32_t ret =
+        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
+    uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::DEVICE_CONFIG_CHANGED;
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
