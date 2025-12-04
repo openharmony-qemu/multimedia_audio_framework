@@ -272,6 +272,8 @@ struct AudioStreamParams {
     uint32_t originalSessionId = 0;
     // Add customSampleRate
     uint32_t customSampleRate = 0;
+    bool isRemoteSpatialChannel = false;
+    uint64_t remoteChannelLayout = 0ULL;
 };
 
 // sampling rate

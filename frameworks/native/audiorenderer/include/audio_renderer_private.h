@@ -250,6 +250,8 @@ private:
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
