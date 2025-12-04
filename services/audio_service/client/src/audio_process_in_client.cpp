@@ -1312,6 +1312,7 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
 // client should call GetBufferDesc and Enqueue in OnHandleData
 void AudioProcessInClientInner::CallClientHandleCurrent()
 {
+    CHECK_AND_RETURN(!processConfig_.rendererInfo.isStatic);
     Trace trace("AudioProcessInClient::CallClientHandleCurrent");
     std::shared_ptr<AudioDataCallback> cb = audioDataCallback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "audio data callback is null.");
@@ -1345,6 +1346,8 @@ void AudioProcessInClientInner::CheckOperations()
         }
 
         std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
         while (audioBuffer_->IsNeedSendBufferEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
             audioBuffer_->DecreaseBufferEndCallbackSendTimes();

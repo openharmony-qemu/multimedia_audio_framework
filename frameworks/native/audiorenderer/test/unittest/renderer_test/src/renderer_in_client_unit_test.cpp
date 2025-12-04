@@ -149,6 +149,10 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
+
+    virtual int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
@@ -2498,11 +2502,11 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_092, TestSize.Level4
     EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), false);
 
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
-    ptrRendererInClientInner->WaitForBufferNeedWrite();
+    ptrRendererInClientInner->WaitForBufferNeedOperate();
     EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
 
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
-    ptrRendererInClientInner->WaitForBufferNeedWrite();
+    ptrRendererInClientInner->WaitForBufferNeedOperate();
     EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
 }
 

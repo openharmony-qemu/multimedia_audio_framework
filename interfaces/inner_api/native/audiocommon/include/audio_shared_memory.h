@@ -17,9 +17,8 @@
 #define AUDIO_SHARED_MEMORY_H
 
 #include <string>
-#include "stdint.h"
-
-#include "message_parcel.h"
+#include <stdint.h>
+#include <parcel.h>
 
 namespace OHOS {
 namespace AudioStandard {

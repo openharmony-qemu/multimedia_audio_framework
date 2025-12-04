@@ -491,6 +491,7 @@ void RendererInClientInner::WaitForBufferNeedOperate()
 
 void RendererInClientInner::CallClientHandle()
 {
+    CHECK_AND_RETURN(!rendererInfo_.isStatic);
     // call client write
     std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
     {
@@ -1105,6 +1106,8 @@ void RendererInClientInner::CheckOperations()
             sendStaticRecreateFunc_();
         }
         std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
         while (clientBuffer_->IsNeedSendBufferEndCallback()) {
             Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
             audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
