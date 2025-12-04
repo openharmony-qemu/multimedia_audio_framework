@@ -93,7 +93,7 @@ void VADeviceManager::OnDevicesConnected(
         std::lock_guard<std::mutex> lock(statusMutex_);
         CHECK_AND_RETURN_LOG(vaDevice != nullptr && controller != nullptr, "invalid parameter: null pointer detected");
         AUDIO_INFO_LOG("va device manager connecting to device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
-                    vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
+                        vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
         std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
         connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
 
