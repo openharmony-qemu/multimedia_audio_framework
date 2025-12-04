@@ -370,7 +370,7 @@ void AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest()
     spaceRenderRotation.z = GetData<float>();
     spaceRenderRotation.surroundTime = GetData<int32_t>();
     spaceRenderRotation.surroundDirection = GetData<OH_AudioSuite_SurroundDirection>();
-    OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode[nodeIndex], voiceBeautifierType);
+    OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode[nodeIndex], spaceRenderRotation);
 }
  
 void AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest()
