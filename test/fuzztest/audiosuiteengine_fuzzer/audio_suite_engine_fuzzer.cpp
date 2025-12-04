@@ -269,6 +269,31 @@ void AudioSuiteEngineSetVoiceBeautifierTypeFuzzTest()
     OH_AudioSuiteEngine_SetVoiceBeautifierType(audioNode[nodeIndex], voiceBeautifierType);
 }
 
+void AudioSuiteEngineSetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed = GetData<float>();
+    float pitch = GetData<float>();
+    OH_AudioSuiteEngine_SetTempoAndPitch(audioNode[nodeIndex], speed, pitch);
+}
+
+void AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_PureVoiceChangeOption option;
+    option.optionGender = GetData<OH_AudioSuite_PureVoiceChangeGenderOption>();
+    option.optionType = GetData<OH_AudioSuite_PureVoiceChangeType>();
+    option.pitch = GetData<float>();
+    OH_AudioSuiteEngine_SetPureVoiceChangeOption(audioNode[nodeIndex], option);
+}
+
+void AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_GeneralVoiceChangeType changeType = GetData<OH_AudioSuite_GeneralVoiceChangeType>();
+    OH_AudioSuiteEngine_SetGeneralVoiceChangeType(audioNode[nodeIndex], changeType);
+}
+
 void AudioSuiteEngineGetEqualizerFrequencyBandGainsFuzzTest()
 {
     uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
@@ -295,6 +320,50 @@ void AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest()
     uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
     OH_VoiceBeautifierType voiceBeautifierType;
     OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode[nodeIndex], &voiceBeautifierType);
+}
+
+void AudioSuiteEngineGetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed;
+    float pitch;
+    OH_AudioSuiteEngine_GetTempoAndPitch(audioNode[nodeIndex], &speed, &pitch);
+}
+
+void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_PureVoiceChangeOption option;
+    OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode[nodeIndex], &option);
+}
+
+void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_GeneralVoiceChangeType changeType;
+    OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode[nodeIndex], &changeType);
+}
+
+void AudioSuiteEngineGetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed;
+    float pitch;
+    OH_AudioSuiteEngine_GetTempoAndPitch(audioNode[nodeIndex], &speed, &pitch);
+}
+
+void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_PureVoiceChangeOption option;
+    OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode[nodeIndex], &option);
+}
+
+void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_GeneralVoiceChangeType changeType;
+    OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode[nodeIndex], &changeType);
 }
 
 void AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest()
@@ -374,10 +443,16 @@ vector g_testFuncs = {
     AudioSuiteEngineSetSoundFieldTypeFuzzTest,
     AudioSuiteEngineSetEnvironmentTypeFuzzTest,
     AudioSuiteEngineSetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineSetTempoAndPitchFuzzTest,
+    AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteEngineGetEqualizerFrequencyBandGainsFuzzTest,
     AudioSuiteEngineGetSoundFieldTypeFuzzTest,
     AudioSuiteEngineGetEnvironmentTypeFuzzTest,
     AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineGetTempoAndPitchFuzzTest,
+    AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest,
     AudioSuiteEngineGetSpaceRenderPositionParamsFuzzTest,
     AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest,
