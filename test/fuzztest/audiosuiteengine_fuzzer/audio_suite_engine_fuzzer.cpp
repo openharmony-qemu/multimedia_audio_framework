@@ -344,28 +344,6 @@ void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
     OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode[nodeIndex], &changeType);
 }
 
-void AudioSuiteEngineGetTempoAndPitchFuzzTest()
-{
-    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
-    float speed;
-    float pitch;
-    OH_AudioSuiteEngine_GetTempoAndPitch(audioNode[nodeIndex], &speed, &pitch);
-}
-
-void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
-{
-    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
-    OH_AudioSuite_PureVoiceChangeOption option;
-    OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode[nodeIndex], &option);
-}
-
-void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
-{
-    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
-    OH_AudioSuite_GeneralVoiceChangeType changeType;
-    OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode[nodeIndex], &changeType);
-}
-
 void AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest()
 {
     uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
