@@ -49,7 +49,7 @@ OH_AudioSuite_Result RenDerFrame()
     return result;
 }
 
-OH_AudioSuite_Result startPipelineAndCheckState(OH_AudioSuitePipeline *audioSuitePipeline)
+OH_AudioSuite_Result StartPipelineAndCheckState(OH_AudioSuitePipeline *audioSuitePipeline)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest renDerFrame start-"
                                                                "audioSuitePipeline:%{public}p", audioSuitePipeline);
