@@ -203,6 +203,31 @@ void AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest()
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(nodeId, voiceBeautifierType);
 }
 
+void AudioSuiteEngineSetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed = GetData<float>();
+    float pitch = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
+}
+
+void AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioPureVoiceChangeOption option;
+    option.optionGender = GetData<AudioSuite::AudioPureVoiceChangeGenderOption>();
+    option.optionType = GetData<AudioSuite::AudioPureVoiceChangeType>();
+    option.pitch = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, option);
+}
+
+void AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioGeneralVoiceChangeType changeType = GetData<AudioSuite::AudioGeneralVoiceChangeType>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(nodeId, changeType);
+}
+
 void AudioSuiteManagerGetEqFrequencyBandGainsModeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
@@ -229,6 +254,28 @@ void AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest()
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::VoiceBeautifierType voiceBeautifierType;
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifierType);
+}
+
+void AudioSuiteEngineGetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed;
+    float pitch;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(nodeId, speed, pitch);
+}
+
+void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioPureVoiceChangeOption option;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, option);
+}
+
+void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioGeneralVoiceChangeType changeType;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, changeType);
 }
 
 void AudioSuiteRenderFrameFuzzTest()
@@ -334,10 +381,16 @@ vector g_testFuncs = {
     AudioSuiteManagerSetSoundFieldTypeFuzzTest,
     AudioSuiteManagerSetEnvironmentTypeFuzzTest,
     AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineSetTempoAndPitchFuzzTest,
+    AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteManagerGetEqFrequencyBandGainsModeFuzzTest,
     AudioSuiteManagerGetSoundFieldTypeFuzzTest,
     AudioSuiteManagerGetEnvironmentTypeFuzzTest,
     AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineGetTempoAndPitchFuzzTest,
+    AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteRenderFrameFuzzTest,
     AudioSuiteMultiRenderFrameFuzzTest,
     AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest,
