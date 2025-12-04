@@ -210,6 +210,8 @@ private:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
+
+    int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
 private:
     std::atomic<bool> muteFlag_ = false;
