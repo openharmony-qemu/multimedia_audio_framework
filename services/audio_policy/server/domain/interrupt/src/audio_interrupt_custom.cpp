@@ -22,9 +22,13 @@
 #include "audio_log.h"
 #include "audio_common_log.h"
 #include "audio_source_type.h"
+#include "audio_bundle_manager.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+const std::string CELIA_APP_NAME = "vassistant";
 
 static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_MAP = {
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
@@ -56,9 +60,41 @@ void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingI
     }
 }
 
+static const std::map<std::pair<AudioStreamType, SourceType>,
+    std::pair<AudioFocuState, InterruptHint>> CELIA_FOCUS_MAP = {
+    {{STREAM_VOICE_CALL, SOURCE_TYPE_VOICE_RECOGNITION}, {ACTIVE, INTERRUPT_HINT_NONE}}
+};
+
+void AudioInterruptCustom::CeliaCustomFocus(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState,
+    InterruptEventInternal &interruptEvent, const std::string &appName)
+{
+    if (appName.empty() || appName != CELIA_APP_NAME) {
+        return;
+    }
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    AudioStreamType activeStreamType = activeInterrupt.audioFocusType.streamType;
+    std::pair<AudioStreamType, SourceType> CeliaFocus = {activeStreamType, incomingSourceType};
+    auto it = CELIA_FOCUS_MAP.find(CeliaFocus);
+    if (it != CELIA_FOCUS_MAP.end()) {
+        incomingState = it->second.first;
+        interruptEvent.hintType = it->second.second;
+        AUDIO_INFO_LOG("Two streams can mix because of %{public}s, incoming %{public}d, active %{public}d",
+            appName.c_str(), incomingSourceType, activeStreamType);
+        return;
+    }
+    return;
+}
+
 void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
+    std::string bundleName = incomingInterrupt.bundleName;
+    if (bundleName.empty()) {
+        AUDIO_INFO_LOG("bundleName is empty");
+        bundleName = AudioBundleManager::GetBundleNameFromUid(incomingInterrupt.uid);
+    }
+    CeliaCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent, bundleName);
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
 }
 
