@@ -22,6 +22,7 @@
 #include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_capabilities.h"
+#include "audio_suite_perf.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,6 +66,15 @@ protected:
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
     NodeCapability nodeCapability;
+    // for dfx
+    void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
+    void CheckEffectNodeOvertimeCount();
+
+private:
+    // for dfx
+    int32_t signalProcessTotalCount_ = 0;
+    std::array<int32_t, RTF_OVERTIME_LEVELS> rtfOvertimeCounters_{};
+    int32_t rtfOver100Count_ = 0;
 };
 
 }

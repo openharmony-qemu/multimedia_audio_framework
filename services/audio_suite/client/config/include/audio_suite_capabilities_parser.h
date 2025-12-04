@@ -35,11 +35,13 @@ struct NodeCapability {
     bool isLoaded = false;
     bool supportedOnThisDevice = false;
     bool isSupportRealtime = false;
+    float realtimeFactor = 1.0f;
 };
 
 static const std::map<std::string, AudioNodeType>
     NODE_TYPE_MAP = {{"EQUALIZER", NODE_TYPE_EQUALIZER},
         {"NOISE_REDUCTION", NODE_TYPE_NOISE_REDUCTION},
+        {"AUDIO_MIXER", NODE_TYPE_AUDIO_MIXER},
         {"SOUND_FIELD", NODE_TYPE_SOUND_FIELD},
         {"AUDIO_SEPARATION", NODE_TYPE_AUDIO_SEPARATION},
         {"VOICE_BEAUTIFIER", NODE_TYPE_VOICE_BEAUTIFIER},
@@ -69,6 +71,7 @@ private:
         std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
     void ParserNodeType(std::shared_ptr<AudioXmlNode> curNode,
         std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+    float GetRealtimeFactor(std::string valueStr);
 };
 }  // namespace AudioSuite
 }  // namespace AudioStandard
