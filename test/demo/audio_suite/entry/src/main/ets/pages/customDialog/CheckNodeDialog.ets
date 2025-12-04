@@ -1584,7 +1584,7 @@ struct EffectNodeDialog {
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
-                            color: colorMap.get(this.selectedEffectNode),
+                            color: ColorMap.get(this.selectedEffectNode),
                             spaceRender: this.spaceRenderPara
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
@@ -2107,6 +2107,7 @@ struct SetNodeDialog {
                     if (leftEffectNode?.soundTone !== undefined) {
                         this.soundTone = leftEffectNode.soundTone;
                     }
+                    this.spaceRenderPara = leftEffectNode?.spaceRender ?? this.spaceRenderPara;
                 }
             }
         } else {
@@ -2127,6 +2128,7 @@ struct SetNodeDialog {
             if (node?.audioSeparationType !== undefined) {
                 this.selectedAudioSeparation = node.audioSeparationType;
             }
+            this.spaceRenderPara = node?.spaceRender ?? this.spaceRenderPara;
         }
     }
 

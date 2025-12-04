@@ -10,7 +10,6 @@
 #include <string>
 
 class SpaceRender {
-
 };
 
 struct DynamicRenderParams {
@@ -34,7 +33,7 @@ napi_value resetFixedPositionEffect(napi_env env, napi_callback_info info);
 
 napi_value startDynamicRenderEffect(napi_env env, napi_callback_info info);
 
-static void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRenderParams& params);
+void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRenderParams& params);
 
 napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info);
 
@@ -55,6 +54,6 @@ OH_AudioSuite_Result createRenderNodeAndSetRenderPara(OH_AudioSuite_SpaceRenderR
                                                       std::string effectNodeId, Node &node);
 
 OH_AudioSuite_Result createRenderNodeAndSetExtension(OH_AudioSuite_SpaceRenderExtensionParams &extensionPara,
-                                                    std::string effectNodeId, Node &node);
+                                                     std::string effectNodeId, Node &node);
 
 #endif //AUDIOEDITTESTAPP_SPACERENDER_H

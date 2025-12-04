@@ -13,7 +13,7 @@
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include "audioEffectNode/Equailizer.h"
+#include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
@@ -26,7 +26,8 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *SP_TAG = "[AudioEditTestApp_SPATIALRENDER_cpp]";
 
-napi_value startFixedPositionEffect(napi_env env, napi_callback_info info) {
+napi_value startFixedPositionEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---startFixedPositionEffect---IN");
     size_t argc = 6;
     napi_value *argv = new napi_value[argc];
@@ -42,9 +43,9 @@ napi_value startFixedPositionEffect(napi_env env, napi_callback_info info) {
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &x);
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &y);
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &z);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_4], inputId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_5], selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_4], inputId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], selectedNodeId);
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "x:%{public}lf, y:%{public}lf, z:%{public}lf, ", x, y, z);
 
@@ -60,9 +61,9 @@ napi_value startFixedPositionEffect(napi_env env, napi_callback_info info) {
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputId, effectNodeId);
+        int insertRes = AddEffectNodeToNodeManager(inputId, effectNodeId);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -80,7 +81,8 @@ napi_value startFixedPositionEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value resetFixedPositionEffect(napi_env env, napi_callback_info info) {
+napi_value resetFixedPositionEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---resetFixedPositionEffect---IN");
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
@@ -94,14 +96,14 @@ napi_value resetFixedPositionEffect(napi_env env, napi_callback_info info) {
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &x);
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &y);
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &z);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "x:%{public}lf, y:%{public}lf, z:%{public}lf, ", x, y, z);
 
     napi_value ret;
     OH_AudioSuite_Result result;
 
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     OH_AudioSuite_SpaceRenderPositionParams positionPara = {static_cast<float>(x), static_cast<float>(y),
                                                             static_cast<float>(z)};
 
@@ -118,7 +120,8 @@ napi_value resetFixedPositionEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-static void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRenderParams& params) {
+void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRenderParams& params)
+{
     napi_status status;
 
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &params.x);
@@ -126,9 +129,9 @@ static void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRend
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &params.z);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_3], &params.surroundTime);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &params.surroundDirection);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_5], params.effectNodeId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_6], params.inputId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_7], params.selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params.effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_6], params.inputId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_7], params.selectedNodeId);
 
     switch (params.surroundDirection) {
         case 0:
@@ -146,7 +149,8 @@ static void parseDynamicRenderParams(napi_env env, napi_value* argv, DynamicRend
                  params.x, params.y, params.z, params.surroundTime, params.surroundDirection);
 }
 
-napi_value startDynamicRenderEffect(napi_env env, napi_callback_info info) {
+napi_value startDynamicRenderEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---startDynamicRenderEffect---IN");
     size_t argc = 8;
     napi_value *argv = new napi_value[argc];
@@ -177,9 +181,9 @@ napi_value startDynamicRenderEffect(napi_env env, napi_callback_info info) {
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputId, effectNodeId);
+        int insertRes = AddEffectNodeToNodeManager(inputId, effectNodeId);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -197,7 +201,8 @@ napi_value startDynamicRenderEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info) {
+napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---resetDynamicRenderEffect---IN");
     size_t argc = 6;
     napi_value *argv = new napi_value[argc];
@@ -215,18 +220,18 @@ napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info) {
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &z);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_3], &surroundTime);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &surroundDirection);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_5], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], effectNodeId);
 
     OH_AudioSuite_SurroundDirection surroundDirectionType;
     switch (surroundDirection) {
-    case 0:
-        surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
-        break;
-    case 1:
-        surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW;
-        break;
-    default:
-        surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
+        case 0:
+            surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
+            break;
+        case 1:
+            surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW;
+            break;
+        default:
+            surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
     }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "x:%{public}lf, y:%{public}lf, z:%{public}lf, ", x, y, z);
@@ -234,7 +239,7 @@ napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info) {
     napi_value ret;
     OH_AudioSuite_Result result;
 
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     OH_AudioSuite_SpaceRenderRotationParams rotationPara = {static_cast<float>(x), static_cast<float>(y),
                                                             static_cast<float>(z), surroundTime, surroundDirectionType};
 
@@ -251,7 +256,8 @@ napi_value resetDynamicRenderEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value startExpandEffect(napi_env env, napi_callback_info info) {
+napi_value startExpandEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---startExpandEffect---IN");
     size_t argc = 5;
     napi_value *argv = new napi_value[argc];
@@ -265,9 +271,9 @@ napi_value startExpandEffect(napi_env env, napi_callback_info info) {
 
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &extRadius);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_1], &extAngle);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_2], effectNodeId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_3], inputId);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_4], selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], inputId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_4], selectedNodeId);
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "extRadius:%{public}lf, extAngle:%{public}d, ", extRadius,
                  extAngle);
@@ -283,9 +289,9 @@ napi_value startExpandEffect(napi_env env, napi_callback_info info) {
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputId, effectNodeId);
+        int insertRes = AddEffectNodeToNodeManager(inputId, effectNodeId);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -303,7 +309,8 @@ napi_value startExpandEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value resetExpandEffect(napi_env env, napi_callback_info info) {
+napi_value resetExpandEffect(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---resetExpandEffect---IN");
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
@@ -315,7 +322,7 @@ napi_value resetExpandEffect(napi_env env, napi_callback_info info) {
 
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &extRadius);
     napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_1], &extAngle);
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_2], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], effectNodeId);
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "extRadius:%{public}lf, extAngle:%{public}d, ", extRadius,
                  extAngle);
@@ -323,7 +330,7 @@ napi_value resetExpandEffect(napi_env env, napi_callback_info info) {
     napi_value ret;
     OH_AudioSuite_Result result;
     OH_AudioSuite_SpaceRenderExtensionParams extensionPara = {static_cast<float>(extRadius), extAngle};
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
 
     result = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(node.physicalNode, extensionPara);
     if (result != AUDIOSUITE_SUCCESS) {
@@ -338,16 +345,17 @@ napi_value resetExpandEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value getFixedPositionParams(napi_env env, napi_callback_info info) {
+napi_value getFixedPositionParams(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "audioEditTest---getFixedPositionParams---IN");
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status;
     std::string effectNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
 
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     OH_AudioSuite_SpaceRenderPositionParams positionPara;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetSpaceRenderPositionParams(node.physicalNode, &positionPara);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -357,13 +365,17 @@ napi_value getFixedPositionParams(napi_env env, napi_callback_info info) {
     napi_value resultObj;
     status = napi_create_object(env, &resultObj);
     // 创建属性键（字符串）
-    napi_value xKey, yKey, zKey;
+    napi_value xKey;
+    napi_value yKey;
+    napi_value zKey;
     napi_create_string_utf8(env, "x", NAPI_AUTO_LENGTH, &xKey);
     napi_create_string_utf8(env, "y", NAPI_AUTO_LENGTH, &yKey);
     napi_create_string_utf8(env, "z", NAPI_AUTO_LENGTH, &zKey);
 
     // 创建属性值（double 类型 napi_value）
-    napi_value xValue, yValue, zValue;
+    napi_value xValue;
+    napi_value yValue;
+    napi_value zValue;
     napi_create_double(env, positionPara.x, &xValue);
     napi_create_double(env, positionPara.y, &yValue);
     napi_create_double(env, positionPara.z, &zValue);
@@ -378,15 +390,16 @@ napi_value getFixedPositionParams(napi_env env, napi_callback_info info) {
     return resultObj;
 }
 
-napi_value getDynamicRenderParams(napi_env env, napi_callback_info info) {
+napi_value getDynamicRenderParams(napi_env env, napi_callback_info info)
+{
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status;
     std::string effectNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
 
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     OH_AudioSuite_SpaceRenderRotationParams rotationPara;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetSpaceRenderRotationParams(node.physicalNode, &rotationPara);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -397,7 +410,11 @@ napi_value getDynamicRenderParams(napi_env env, napi_callback_info info) {
     status = napi_create_object(env, &resultObj);
 
     // 创建属性键（字符串）
-    napi_value xKey, yKey, zKey, surroundTimeKey, surroundDirectionKey;
+    napi_value xKey;
+    napi_value yKey;
+    napi_value zKey;
+    napi_value surroundTimeKey;
+    napi_value surroundDirectionKey;
     napi_create_string_utf8(env, "x", NAPI_AUTO_LENGTH, &xKey);
     napi_create_string_utf8(env, "y", NAPI_AUTO_LENGTH, &yKey);
     napi_create_string_utf8(env, "z", NAPI_AUTO_LENGTH, &zKey);
@@ -405,7 +422,11 @@ napi_value getDynamicRenderParams(napi_env env, napi_callback_info info) {
     napi_create_string_utf8(env, "surroundDirection", NAPI_AUTO_LENGTH, &surroundDirectionKey);
 
     // 创建属性值（double 类型 napi_value）
-    napi_value xValue, yValue, zValue, surroundTimeValue, surroundDirectionValue;
+    napi_value xValue;
+    napi_value yValue;
+    napi_value zValue;
+    napi_value surroundTimeValue;
+    napi_value surroundDirectionValue;
     napi_create_double(env, rotationPara.x, &xValue);
     napi_create_double(env, rotationPara.y, &yValue);
     napi_create_double(env, rotationPara.z, &zValue);
@@ -422,15 +443,16 @@ napi_value getDynamicRenderParams(napi_env env, napi_callback_info info) {
     return resultObj;
 }
 
-napi_value getExpandParams(napi_env env, napi_callback_info info) {
+napi_value getExpandParams(napi_env env, napi_callback_info info)
+{
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status;
     std::string effectNodeId;
-    status = parseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], effectNodeId);
 
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     OH_AudioSuite_SpaceRenderExtensionParams expandPara;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(node.physicalNode, &expandPara);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -441,12 +463,14 @@ napi_value getExpandParams(napi_env env, napi_callback_info info) {
     status = napi_create_object(env, &resultObj);
 
     // 创建属性键（字符串）
-    napi_value extRadiusKey, extAngleKey;
+    napi_value extRadiusKey;
+    napi_value extAngleKey;
     napi_create_string_utf8(env, "extRadius", NAPI_AUTO_LENGTH, &extRadiusKey);
     napi_create_string_utf8(env, "extAngle", NAPI_AUTO_LENGTH, &extAngleKey);
 
     // 创建属性值（double 类型 napi_value）
-    napi_value extRadiusValue, extAngleValue;
+    napi_value extRadiusValue;
+    napi_value extAngleValue;
     napi_create_double(env, expandPara.extRadius, &extRadiusValue);
     napi_create_double(env, expandPara.extAngle, &extAngleValue);
 
@@ -465,8 +489,9 @@ napi_value getExpandParams(napi_env env, napi_callback_info info) {
 }
 
 OH_AudioSuite_Result createRenderNodeAndSetPosition(OH_AudioSuite_SpaceRenderPositionParams &positionPara,
-                                                    std::string effectNodeId, Node &node) {
-    node = createNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
+    std::string effectNodeId, Node &node)
+{
+    node = CreateNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
     if (node.physicalNode == nullptr) {
         return AUDIOSUITE_ERROR_SYSTEM;
     }
@@ -480,8 +505,9 @@ OH_AudioSuite_Result createRenderNodeAndSetPosition(OH_AudioSuite_SpaceRenderPos
 }
 
 OH_AudioSuite_Result createRenderNodeAndSetRenderPara(OH_AudioSuite_SpaceRenderRotationParams &rotationPara,
-                                                      std::string effectNodeId, Node &node) {
-    node = createNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
+    std::string effectNodeId, Node &node)
+{
+    node = CreateNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
     if (node.physicalNode == nullptr) {
         return AUDIOSUITE_ERROR_SYSTEM;
     }
@@ -495,8 +521,9 @@ OH_AudioSuite_Result createRenderNodeAndSetRenderPara(OH_AudioSuite_SpaceRenderR
 }
 
 OH_AudioSuite_Result createRenderNodeAndSetExtension(OH_AudioSuite_SpaceRenderExtensionParams &extensionPara,
-                                                     std::string effectNodeId, Node &node) {
-    node = createNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
+    std::string effectNodeId, Node &node)
+{
+    node = CreateNodeByType(effectNodeId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SPACE_RENDER);
     if (node.physicalNode == nullptr) {
         return AUDIOSUITE_ERROR_SYSTEM;
     }

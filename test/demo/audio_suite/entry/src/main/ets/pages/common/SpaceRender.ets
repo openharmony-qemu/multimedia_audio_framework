@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ */
+
 import { SpacePosition, SpaceRender, SpaceRenderMode } from '../../utils/importSongs/InterfaceInfo'
 import { Logger } from '../../utils/Logger';
 

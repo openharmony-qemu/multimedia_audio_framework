@@ -31,6 +31,7 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
+  spaceRender?: SpaceRender;
 }
 
 export interface  OutSong {
