@@ -1030,7 +1030,7 @@ napi_value NapiAudioRenderer::GetBufferSize(napi_env env, napi_callback_info inf
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        size_t bufferSize;
+        size_t bufferSize = 0;
         context->intValue = napiAudioRenderer->audioRenderer_->GetBufferSize(bufferSize);
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);

@@ -382,8 +382,8 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
     return SUCCESS;
 }
 
-int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
+int32_t AudioCaptureSource::ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     if (attr_.sourceType != SOURCE_TYPE_EC) {
@@ -393,7 +393,42 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         CHECK_AND_RETURN_RET_LOG(fdescEc != nullptr && fdescEc->frame != nullptr, ERR_INVALID_PARAM,
             "desc frame is nullptr");
     }
+    return SUCCESS;
+}
 
+void AudioCaptureSource::SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc,
+    const AudioCaptureFrameInfo &frameInfo)
+{
+    switch (attr_.sourceType) {
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+        case SOURCE_TYPE_EC:
+            replyBytesEc = frameInfo.replyBytesEc;
+            break;
+        default:
+            replyBytesEc = fdescEc->frameLen;
+            break;
+    }
+}
+
+int32_t AudioCaptureSource::ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo)
+{
+    if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
+        AUDIO_ERR_LOG("copy desc ec fail");
+    } else {
+        SetReplyBytesEc(fdesc, replyBytesEc, frameInfo);
+    }
+
+    CheckUpdateState(fdesc->frame, replyBytes);
+    AudioCaptureFrameInfoFree(&frameInfo, false);
+    return SUCCESS;
+}
+
+int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc)
+{
+    int32_t ret = ValidateParameters(fdesc, replyBytes, fdescEc, replyBytesEc);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     if (IsNonblockingSource(adapterNameCase_)) {
         return NonblockingCaptureFrameWithEc(fdescEc, replyBytesEc);
     }
@@ -401,7 +436,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
-    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
+    ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     if (ret < 0) {
         AUDIO_ERR_LOG("fail, ret: %{public}x", ret);
         AudioCaptureFrameInfoFree(&frameInfo, false);
@@ -412,15 +447,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     }
 
     if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
-        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
-            AUDIO_ERR_LOG("copy desc ec fail");
-        } else {
-            replyBytesEc = frameInfo.replyBytesEc;
-        }
-
-        CheckUpdateState(fdesc->frame, replyBytes);
-        AudioCaptureFrameInfoFree(&frameInfo, false);
-        return SUCCESS;
+        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
     }
 
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
@@ -437,11 +464,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         }
     }
     if (frameInfo.frameEc != nullptr) {
-        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
-            AUDIO_ERR_LOG("copy desc ec fail");
-        } else {
-            replyBytesEc = (attr_.sourceType == SOURCE_TYPE_EC) ? frameInfo.replyBytesEc : fdescEc->frameLen;
-        }
+        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
     }
     CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
