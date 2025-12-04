@@ -205,7 +205,7 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::GetPositionParameter(std::string &pa
 {
     CHECK_AND_RETURN_RET_LOG(spaceRenderParam_.mode == SPACE_RENDER_MODE_STATIC,
         ERR_INVALID_PARAM, "Mode is not Position.");
- 
+
     paramValue = std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]) + "," +
         std::to_string(spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]);
