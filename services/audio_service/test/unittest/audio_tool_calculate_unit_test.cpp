@@ -222,7 +222,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioF32AbsPcmTest001, TestSize.Level1)
     EXPECT_FALSE(result.empty());
     channels = 4;
     num_samples = pcm.size() / channels - 1;
-    num_samples = 3;
+    split = 3;
     result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data() + 1, num_samples, channels, split);
     EXPECT_FALSE(result.empty());
     split = 2;
