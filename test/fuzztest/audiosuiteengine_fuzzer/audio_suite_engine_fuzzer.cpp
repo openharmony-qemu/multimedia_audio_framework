@@ -1,4 +1,3 @@
-LOG
 /*
  * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -298,6 +297,58 @@ void AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest()
     OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode[nodeIndex], &voiceBeautifierType);
 }
 
+void AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    spaceRenderPosition.x = GetData<float>();
+    spaceRenderPosition.y = GetData<float>();
+    spaceRenderPosition.z = GetData<float>();
+    OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode[nodeIndex], spaceRenderPosition);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    OH_AudioSuiteEngine_GetSpaceRenderPositionParams(audioNode[nodeIndex], &spaceRenderPosition);
+}
+ 
+void AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    spaceRenderRotation.x = GetData<float>();
+    spaceRenderRotation.y = GetData<float>();
+    spaceRenderRotation.z = GetData<float>();
+    spaceRenderRotation.surroundTime = GetData<int32_t>();
+    spaceRenderRotation.surroundDirection = GetData<OH_AudioSuite_SurroundDirection>();
+    OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode[nodeIndex], voiceBeautifierType);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    OH_AudioSuiteEngine_GetSpaceRenderRotationParams(audioNode[nodeIndex], &spaceRenderRotation);
+}
+ 
+void AudioSuiteEngineSetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    spaceRenderExtension.extRadius = GetData<float>();
+    spaceRenderExtension.extAngle = GetData<int32_t>();
+    OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode[nodeIndex], spaceRenderExtension);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode[nodeIndex], &spaceRenderExtension);
+}
+
 vector g_testFuncs = {
     AudioSuiteEngineCreateEngineFuzzTest,
     AudioSuiteEngineDestroyEngineFuzzTest,
@@ -327,6 +378,12 @@ vector g_testFuncs = {
     AudioSuiteEngineGetSoundFieldTypeFuzzTest,
     AudioSuiteEngineGetEnvironmentTypeFuzzTest,
     AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteEngineSetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
