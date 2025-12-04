@@ -96,7 +96,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
-    AUDIO_DEBUG_LOG("%{public}s::InitAudioProcessConfig for originalSessionId:%{public}u", logTag_.c_str(), config.originalSessionId);
+    AUDIO_DEBUG_LOG("%{public}s::InitAudioProcessConfig for originalSessionId:%{public}u",
+        logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
@@ -126,8 +127,9 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
-    AUDIO_INFO_LOG("%{public}s::SetAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d", logTag_.c_str(), info.samplingRate, info.channels, info.format, eStreamType_);
+    AUDIO_INFO_LOG("%{public}s::SetAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d,"
+        "format: %{public}d, stream type: %{public}d", logTag_.c_str(), info.samplingRate,
+        info.channels, info.format, eStreamType_);
     CHECK_AND_RETURN_RET_LOG(processClient_ == nullptr, ERR_INVALID_OPERATION,
         "%{public}s: Process is already inited, reset stream info is not supported.", logTag_.c_str());
     streamInfo_ = info;
@@ -183,7 +185,8 @@ void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 
 void FastAudioStream::OnHandle(uint32_t code, int64_t data)
 {
-    AUDIO_DEBUG_LOG("%{public}s::OnHandle event, event code: %{public}u, data: %{public}" PRId64, logTag_.c_str(), code, data);
+    AUDIO_DEBUG_LOG("%{public}s::OnHandle event, event code:%{public}u, data:%{public}" PRId64,
+        logTag_.c_str(), code, data);
     switch (code) {
         case STATE_CHANGE_EVENT:
             HandleStateChangeEvent(data);
@@ -382,7 +385,7 @@ int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
 
 bool FastAudioStream::GetMute()
 {
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, 
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
         "%{public}s::GetMute failed: null process", logTag_.c_str());
     return processClient_->GetMute();
 }
@@ -511,7 +514,7 @@ int32_t FastAudioStream::SetCapturerReadCallback(const std::shared_ptr<AudioCapt
         ERR_INVALID_PARAM, "callback or client is nullptr or mode is not record.");
     micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(callback);
     int32_t ret = processClient_->SaveDataCallback(micProcClientCb_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, 
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "%{public}s: Client save data callback fail, ret %{public}d.", logTag_.c_str(), ret);
     return SUCCESS;
 }
