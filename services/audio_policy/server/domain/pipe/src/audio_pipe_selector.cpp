@@ -118,6 +118,10 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     streamInfo.format = streamPropInfo->format_;
     streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
     streamInfo.SetChannels({streamPropInfo->channels_});
+    if (streamPropInfo->channelLayout_ != CH_LAYOUT_UNKNOWN) {
+        streamInfo.channelLayout.clear();
+        streamInfo.channelLayout.insert(streamPropInfo->channelLayout_);
+    }
     temp->audioStreamInfo_ = {streamInfo};
     std::string info = streamInfo.Serialize();
     AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());

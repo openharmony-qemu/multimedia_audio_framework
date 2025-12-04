@@ -218,10 +218,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
         "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
-        "remoteLayout: %{public}llx , isRemoteSpatialChannel: %{public}d",
+        "remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
         info.channels, info.format, eStreamType_, info.encoding,
-        info.remoteChannelLayout, info.isRemoteSpatialChannel);
+        static_cast<unsigned long long>(info.remoteChannelLayout), info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -231,7 +231,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
             cfg.outChannelLayout = info.remoteChannelLayout;
-            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx", cfg.outChannelLayout);
+            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx",
+                static_cast<unsigned long long>(cfg.outChannelLayout));
         }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {

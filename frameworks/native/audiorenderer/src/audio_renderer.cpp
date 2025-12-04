@@ -63,7 +63,6 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
-static constexpr int32_t AUDIO_VIVID_CHANNELS_LOW_LIMIT = 2;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -3036,11 +3035,9 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     CHECK_AND_RETURN_LOG(!streamDesc->newDeviceDescs_.empty(), "no exist device");
     CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front() != nullptr, "device is null");
-    if (streamDesc->streamInfo_.channels <= AUDIO_VIVID_CHANNELS_LOW_LIMIT) {
-        return;
-    }
     audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
-    audioStreamParams.remoteChannelLayout = streamDesc->streamInfo_.channelLayout;
+    audioStreamParams.remoteChannelLayout =
+        static_cast<uint64_t>(*streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().channelLayout.begin());
 }
 
 }  // namespace AudioStandard
