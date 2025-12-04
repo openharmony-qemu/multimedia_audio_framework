@@ -2699,6 +2699,9 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
         return SUCCESS;
     }
 
+    bool isMmap = devceClass == A2DP_FAST_CLASS || devceClass == MMAP_CLASS;
+    AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(isMmap, mute);
+
     uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(devceClass);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
