@@ -45,13 +45,6 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
 }
 
-enum AudioByteSize : int32_t {
-    BYTE_SIZE_SAMPLE_U8 = 1,
-    BYTE_SIZE_SAMPLE_S16 = 2,
-    BYTE_SIZE_SAMPLE_S24 = 3,
-    BYTE_SIZE_SAMPLE_S32 = 4,
-};
-
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
