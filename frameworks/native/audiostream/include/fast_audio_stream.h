@@ -274,6 +274,7 @@ private:
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;
+    std::string logTag_ = "FastRendererStream";
 
     enum {
         STATE_CHANGE_EVENT = 0

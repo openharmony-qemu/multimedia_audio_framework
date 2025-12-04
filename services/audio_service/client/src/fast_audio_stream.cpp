@@ -36,7 +36,8 @@ FastAudioStream::FastAudioStream(AudioStreamType eStreamType, AudioMode eMode, i
       renderMode_(RENDER_MODE_CALLBACK),
       captureMode_(CAPTURE_MODE_CALLBACK)
 {
-    AUDIO_INFO_LOG("FastAudioStream ctor, appUID = %{public}d", appUid);
+    logTag_ = eMode == AUDIO_MODE_RECORD ? "FastCapturerStream" : "FastRendererStream";
+    AUDIO_INFO_LOG("%{public}s ctor, appUID = %{public}d", logTag_.c_str(), appUid);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(eMode, appUid);
     AUDIO_DEBUG_LOG("AudioStreamTracker created");
 }
@@ -46,13 +47,13 @@ FastAudioStream::~FastAudioStream()
     if (state_ != RELEASED && state_ != NEW) {
         ReleaseAudioStream(false);
     }
-    AUDIO_INFO_LOG("FastAudioStream dtor, session %{public}u", sessionId_);
+    AUDIO_INFO_LOG("%{public}s dtor, session %{public}u", logTag_.c_str(), sessionId_);
 }
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
-        "fullTokenId:%{public}" PRIu64, clientPid, clientUid, appTokenId, fullTokenId);
+    AUDIO_INFO_LOG("Set %{public}s client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
+        "fullTokenId:%{public}" PRIu64, logTag_.c_str(), clientPid, clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
@@ -95,8 +96,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
+    AUDIO_DEBUG_LOG("%{public}s::InitAudioProcessConfig for originalSessionId:%{public}u", logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
-        AUDIO_DEBUG_LOG("FastAudioStream: Initialize playback");
         config.rendererInfo.contentType = rendererInfo_.contentType;
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
@@ -109,7 +110,6 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
         config.rendererInfo.keepRunning = rendererInfo_.keepRunning;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
-        AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
         config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
         config.capturerInfo.originalFlag = capturerInfo_.originalFlag;
@@ -126,13 +126,13 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
-    AUDIO_INFO_LOG("FastAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_);
+    AUDIO_INFO_LOG("%{public}s::SetAudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
+        " stream type: %{public}d", logTag_.c_str(), info.samplingRate, info.channels, info.format, eStreamType_);
     CHECK_AND_RETURN_RET_LOG(processClient_ == nullptr, ERR_INVALID_OPERATION,
         "Process is already inited, reset stream info is not supported.");
     streamInfo_ = info;
     if (state_ != NEW) {
-        AUDIO_INFO_LOG("FastAudioStream: State is not new, release existing stream");
+        AUDIO_INFO_LOG("%{public}s: State is not new, release existing stream", logTag_.c_str());
         StopAudioStream();
         ReleaseAudioStream(false);
     }
@@ -182,7 +182,7 @@ void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 
 void FastAudioStream::OnHandle(uint32_t code, int64_t data)
 {
-    AUDIO_DEBUG_LOG("On handle event, event code: %{public}u, data: %{public}" PRId64, code, data);
+    AUDIO_DEBUG_LOG("%{public}s On handle event, event code: %{public}u, data: %{public}" PRId64, logTag_.c_str(), code, data);
     switch (code) {
         case STATE_CHANGE_EVENT:
             HandleStateChangeEvent(data);
@@ -247,7 +247,7 @@ int32_t FastAudioStream::ParamsToStateCmdType(int64_t params, State &state, Stat
 
 int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 {
-    AUDIO_INFO_LOG("enter.");
+    AUDIO_INFO_LOG("%{public}s::GetAudioStreamInfo enter.", logTag_.c_str());
     audioStreamInfo = streamInfo_;
     return SUCCESS;
 }
@@ -255,7 +255,7 @@ int32_t FastAudioStream::GetAudioStreamInfo(AudioStreamParams &audioStreamInfo)
 int32_t FastAudioStream::GetAudioSessionID(uint32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
-        "GetAudioSessionID failed: null process");
+        "%{public}s::GetAudioSessionID failed: null process", logTag_.c_str());
     int32_t ret = processClient_->GetSessionID(sessionID);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionID error.");
     return ret;
@@ -270,7 +270,7 @@ State FastAudioStream::GetState()
 {
     std::lock_guard lock(switchingMutex_);
     if (switchingInfo_.isSwitching_) {
-        AUDIO_INFO_LOG("switching, return state in switchingInfo");
+        AUDIO_INFO_LOG("%{public}: switching, return state in switchingInfo", logTag_.c_str());
         return switchingInfo_.state_;
     }
     return state_;
@@ -660,13 +660,13 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_PRERELEASE_LOGI("enter");
+    AUDIO_PRERELEASE_LOGI("%{public}s enter", logTag_.c_str());
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
-        false, "Illegal state:%{public}u", state_);
+        false, "%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_);
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Start failed, process is null.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s: Start failed, process is null.", logTag_.c_str());
     if (spkProcClientCb_ != nullptr) {
-        AUDIO_DEBUG_LOG("StartAudioStream: reset the first frame state before starting");
+        AUDIO_DEBUG_LOG("%{public}s::StartAudioStream: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
@@ -679,13 +679,13 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     } else {
         ret = processClient_->Start();
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Client test stop fail, ret %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "%{public}s: Client test stop fail, ret %{public}d.", logTag_.c_str(), ret);
     state_ = RUNNING;
 
-    AUDIO_DEBUG_LOG("StartAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_DEBUG_LOG("%{public}s::StartAudioStream SUCCESS, sessionId: %{public}d", logTag_.c_str(), sessionId_);
 
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Running");
+        AUDIO_DEBUG_LOG("%{public}s: AudioStream:Calling Update tracker for Running", logTag_.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
 
@@ -697,21 +697,21 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_PRERELEASE_LOGI("enter");
+    AUDIO_PRERELEASE_LOGI("%{public}s enter", logTag_.c_str());
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
-        "state is not RUNNING. Illegal state:%{public}u", state_);
+        "%{public}s: state is not RUNNING. Illegal state:%{public}u", logTag_.c_str(), state_);
     State oldState = state_;
 
     state_ = PAUSED;
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Pause failed, process is null.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s: Pause failed, process is null.", logTag_.c_str());
     int32_t ret = processClient_->Pause();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("StreamPause fail,ret:%{public}d", ret);
+        AUDIO_ERR_LOG("%{public}s: StreamPause fail,ret:%{public}d", logTag_.c_str(), ret);
         state_ = oldState;
         return false;
     }
 
-    AUDIO_DEBUG_LOG("PauseAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_DEBUG_LOG("%{public}s::PauseAudioStream SUCCESS, sessionId: %{public}d", logTag_.c_str(), sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
         AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for Pause");
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
@@ -724,21 +724,21 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 bool FastAudioStream::StopAudioStream()
 {
     CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED), false,
-        "State is not RUNNING. Illegal state:%{public}u", state_);
+        "%{public}s: State is not RUNNING. Illegal state:%{public}u", logTag_.c_str(), state_);
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Stop failed, process is null.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "%{public}s Stop failed, process is null.", logTag_.c_str());
     int32_t ret = processClient_->Stop();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("StreamStop fail,ret:%{public}d", ret);
+        AUDIO_ERR_LOG("%{public}s: StreamStop fail,ret:%{public}d", logTag_.c_str(), ret);
         state_ = oldState;
         return false;
     }
 
-    AUDIO_INFO_LOG("StopAudioStream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_INFO_LOG("%{public}s::StopAudioStream SUCCESS, sessionId: %{public}d", logTag_.c_str(), sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for stop");
+        AUDIO_DEBUG_LOG("%{public}s: AudioStream:Calling Update tracker for stop", logTag_.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
 
@@ -748,38 +748,39 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_PRERELEASE_LOGI("enter");
+    AUDIO_PRERELEASE_LOGI("%{public}s enter", logTag_.c_str());
     return true;
 }
 
 bool FastAudioStream::DrainAudioStream(bool stopFlag)
 {
-    AUDIO_INFO_LOG("Drain stream SUCCESS");
+    AUDIO_INFO_LOG("%{public}s::Drain stream SUCCESS", logTag_.c_str());
     return true;
 }
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
-        false, "Illegal state: state = %{public}u", state_);
+        false, "%{public}s: Illegal state: state = %{public}u", logTag_.c_str(), state_);
     // If state_ is RUNNING try to Stop it first and Release
     if (state_ == RUNNING) {
         StopAudioStream();
     }
 
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "Release failed, process is null.");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
+        "%{public}s: Release failed, process is null.", logTag_.c_str());
     processClient_->Release(isSwitchStream);
     state_ = RELEASED;
-    AUDIO_INFO_LOG("ReleaseAudiostream SUCCESS, sessionId: %{public}d", sessionId_);
+    AUDIO_INFO_LOG("%{public}s::ReleaseAudiostream SUCCESS, sessionId: %{public}d", logTag_.c_str(), sessionId_);
     if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        AUDIO_DEBUG_LOG("AudioStream:Calling Update tracker for release");
+        AUDIO_DEBUG_LOG("%{public}s: AudioStream:Calling Update tracker for release", logTag_.c_str());
         audioStreamTracker_->UpdateTracker(sessionId_, state_, clientPid_, rendererInfo_, capturerInfo_);
     }
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        AUDIO_INFO_LOG("Notify client the state is released");
+        AUDIO_INFO_LOG("%{public}s: Notify client the state is released", logTag_.c_str());
         streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
     }
     lock.unlock();
@@ -806,7 +807,7 @@ int32_t FastAudioStream::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t
 
 uint32_t FastAudioStream::GetUnderflowCount()
 {
-    AUDIO_INFO_LOG("GetUnderflowCount enter.");
+    AUDIO_INFO_LOG("%{public}s::GetUnderflowCount enter.", logTag_.c_str());
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 0, "process client is null.");
     underflowCount_ = processClient_->GetUnderflowCount();
     return underflowCount_;
@@ -985,14 +986,14 @@ void FastAudioStream::OnFirstFrameWriting()
 void FastAudioStream::ResetFirstFrameState()
 {
     if (spkProcClientCb_ != nullptr) {
-        AUDIO_DEBUG_LOG("FastAudioStream::ResetFirstFrameState: reset the first frame state");
+        AUDIO_DEBUG_LOG("%{public}s::ResetFirstFrameState: reset the first frame state", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
 }
 
 void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
 {
-    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "Start failed, process is null.");
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s Start failed, process is null.", logTag_.c_str());
     processClient_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
@@ -1055,9 +1056,9 @@ void FastAudioStream::UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &regist
 
 bool FastAudioStream::RestoreAudioStream(bool needStoreState)
 {
-    CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "proxyObj_ is null");
+    CHECK_AND_RETURN_RET_LOG(proxyObj_ != nullptr, false, "%{public}s: proxyObj_ is null", logTag_.c_str());
     CHECK_AND_RETURN_RET_LOG(state_ != NEW && state_ != INVALID && state_ != RELEASED, true,
-        "state_ is %{public}d, no need for restore", state_);
+        "%{public}s: state_ is %{public}d, no need for restore", logTag_.c_str(), state_);
     bool result = false;
     State oldState = state_;
     state_ = NEW;
@@ -1093,7 +1094,7 @@ bool FastAudioStream::RestoreAudioStream(bool needStoreState)
     }
     return result;
 error:
-    AUDIO_ERR_LOG("RestoreAudioStream failed");
+    AUDIO_ERR_LOG("%{public}s::RestoreAudioStream failed", logTag_.c_str());
     state_ = oldState;
     return false;
 }
@@ -1103,7 +1104,7 @@ void FastAudioStream::JoinCallbackLoop()
     if (processClient_ != nullptr) {
         processClient_->JoinCallbackLoop();
     } else {
-        AUDIO_WARNING_LOG("processClient_ is nullptr!");
+        AUDIO_WARNING_LOG("%{public}s: processClient_ is nullptr!", logTag_.c_str());
     }
 }
 
@@ -1127,9 +1128,10 @@ bool FastAudioStream::GetHighResolutionEnabled()
 
 int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
+        "%{public}s: set failed: null process", logTag_.c_str());
     int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s: error.", logTag_.c_str());
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;
 }
@@ -1228,7 +1230,7 @@ int32_t FastAudioStream::SetRebuildFlag()
 void FastAudioStream::SetCallbackLoopTid(int32_t tid)
 {
     std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
-    AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
+    AUDIO_INFO_LOG("%{public}s: Callback loop tid: %{public}d", logTag_.c_str(), tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();
 }
@@ -1241,7 +1243,7 @@ int32_t FastAudioStream::GetCallbackLoopTid()
     });
 
     if (!stopWaiting) {
-        AUDIO_WARNING_LOG("Wait timeout");
+        AUDIO_WARNING_LOG("%{public}s: Wait timeout", logTag_.c_str());
         callbackLoopTid_ = 0; // set tid to prevent get operation from getting stuck
     }
     return callbackLoopTid_;
@@ -1249,7 +1251,7 @@ int32_t FastAudioStream::GetCallbackLoopTid()
 
 void FastAudioStream::ResetCallbackLoopTid()
 {
-    AUDIO_INFO_LOG("to -1");
+    AUDIO_INFO_LOG("%{public}s: to -1", logTag_.c_str());
     callbackLoopTid_ = -1;
 }
 
