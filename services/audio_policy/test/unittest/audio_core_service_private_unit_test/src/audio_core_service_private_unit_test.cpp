@@ -3347,6 +3347,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3377,6 +3378,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3409,6 +3411,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
