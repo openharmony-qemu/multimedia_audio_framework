@@ -163,11 +163,20 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         Trace trace("AudioSuiteTempoPitchNode::SignalProcess Start");
+
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
         if (SignalProcess(preOutputs) == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
         }
         trace.End();
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
