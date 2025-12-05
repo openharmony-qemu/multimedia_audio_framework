@@ -18,6 +18,7 @@
 #include "audio_utils.h"
 namespace OHOS {
 namespace AudioStandard {
+#if USE_ARM_NEON == 1
 const static constexpr uint32_t DEFAULT_OFFSET_3 = 3;
 const static constexpr uint32_t DEFAULT_OFFSET_7 = 7;
 const static constexpr uint32_t DEFAULT_OFFSET_15 = 15;
@@ -26,8 +27,9 @@ const static constexpr uint32_t DEFAULT_STEP_BY_4 = 4;
 const static constexpr uint32_t DEFAULT_STEP_BY_8 = 8;
 const static constexpr uint32_t DEFAULT_STEP_BY_16 = 16;
 const static constexpr uint32_t DEFAULT_STEP_BY_32 = 32;
+#endif
 
-const static constexpr uint32_t DEFAULT_CHANNEL_COUNT_2 = 2;
+const static constexpr int32_t DEFAULT_CHANNEL_COUNT_2 = 2;
 
 inline bool Is16ByteAligned(const void * ptr)
 {
