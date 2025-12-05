@@ -649,6 +649,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderPositionParams(
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
@@ -664,6 +665,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderPositionParams(
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
@@ -695,6 +697,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderRotationParams(
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a space render node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
@@ -727,6 +730,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a tempo and pitch node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
@@ -757,6 +761,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetTempoAndPitch(OH_AudioNode* audioNod
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a pure voice change node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
@@ -788,6 +793,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetPureVoiceChangeOption(
  * or {@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.
  * or {@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a general voice change node.
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.
+ * or {@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.
  * or {@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 23
  */
