@@ -53,7 +53,7 @@ inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_
 
 inline uint64x2_t Extension32bitTo64bit(int32x4_t value)
 {
-#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+#ifdef __aarch64__
     return vmovl_high_u32(vreinterpretq_u32_s32(value));
 #else
     return vmovl_u32(vget_high_u32(vreinterpretq_u32_s32(value)));
@@ -62,7 +62,7 @@ inline uint64x2_t Extension32bitTo64bit(int32x4_t value)
 
 inline uint32x4_t Extension16bitTo32bit(int16x8_t value)
 {
-#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+#ifdef __aarch64__
     return vmovl_high_u16(vreinterpretq_u16_s16(value));
 #else
     return vmovl_u16(vget_high_u16(vreinterpretq_u16_s16(value)));
@@ -71,7 +71,7 @@ inline uint32x4_t Extension16bitTo32bit(int16x8_t value)
 
 inline uint16x8_t Extension8bitTo16bit(uint8x16_t value)
 {
-#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+#ifdef __aarch64__
     return vmovl_high_u8(value);
 #else
     return vmovl_u8(vget_high_u8(value));
@@ -95,6 +95,16 @@ inline uint32_t SafeVaddvqU32(uint32x4_t value)
 #else
     uint32x2_t sum_pair = vadd_u32(vget_low_u32(value), vget_high_u32(value));
     return vget_lane_u32(vpadd_u32(sum_pair, sum_pair), 0);
+#endif
+}
+
+inline float SafeVaddvqF32(float32x4_t value)
+{
+#ifdef __aarch64__
+    return vaddvq_f32(value);
+#else
+    uint32x2_t sum_pair = vadd_f32(vget_low_f32(value), vget_high_f32(value));
+    return vget_lane_f32(vpadd_f32(sum_pair, sum_pair), 0);
 #endif
 }
 
@@ -350,7 +360,7 @@ std::vector<float> SumF32SingleAbsNeno(const float *pcm, uint32_t num_samples)
         sum_vec = vaddq_f32(sum_vec, vabsq_f32(v1));
     }
     // horizontal sum: add all 4 lanes together
-    sum[0] = vaddvq_f32(sum_vec);
+    sum[0] = SafeVaddvqF32(sum_vec);
 #endif
     return sum;
 }
