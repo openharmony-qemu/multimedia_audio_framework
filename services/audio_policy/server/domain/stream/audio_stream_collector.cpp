@@ -972,6 +972,20 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::CapturerMutedFlagChange(const uint32_t sessionId, bool muteFlag)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+
+    for (auto Info : audioCapturerChangeInfos_) {
+        if (Info->sessionId == static_cast<int32_t>(sessionId) && Info->muted != muteFlag) {
+            info->muted = muteFlag;
+        }
+    }
+    if (!audioCapturerChangeInfos_.empty()) {
+        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+    }
+    return SUCCESS;
+}
 void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid)
 {
     int32_t sessionID = -1;

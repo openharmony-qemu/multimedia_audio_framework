@@ -2197,5 +2197,74 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_003, TestSize.Lev
     EXPECT_EQ(infos.size(), 1);
     EXPECT_EQ(infos[0]->rendererState, RENDERER_RUNNING);
 }
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_100
+* @tc.desc  : Test CapturerMutedFlagChange with matching session ID and different mute flag.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_100, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 123;
+    changeInfo->muted = false;
+    collector.audioCaptureChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(123, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(changeInfo->muted);
+    EXPECT_FALSE(collector.audioCaptureChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_101
+* @tc.desc  : Test CapturerMutedFlagChange with matching session ID and same mute flag.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_101, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 456;
+    changeInfo->muted = true;
+    collector.audioCaptureChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(456, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(changeInfo->muted);
+    EXPECT_TRUE(collector.audioCaptureChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_102
+* @tc.desc  : Test CapturerMutedFlagChange with non-matching session ID.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_102, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 789;
+    collector.audioCaptureChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(999, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(changeInfo->muted);
+    EXPECT_TRUE(collector.audioCaptureChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_103
+* @tc.desc  : Test CapturerMutedFlagChange with emppty audioCapturerChangerInfos_.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_103, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    int32_t ret = collector.CapturerMutedFlagChange(1, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -35,6 +35,7 @@
 #include "audio_interrupt_zone.h"
 #include "audio_info.h"
 #include "istandard_audio_service.h"
+#include "audio_stream_collector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -380,6 +381,9 @@ private:
 
     std::mutex audioServerProxyMutex_;
     std::unordered_set<uint32_t> mutedGameSessionId_;
+
+    AudioStreamCollector& streamCollector_;
+    std::shared_ptr<AudioPolicyServerHandler> AudioPolicyServerHandler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
