@@ -69,7 +69,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioS32AbsPcmTest001, TestSize.Level1)
     std::vector<int32_t, AlignedAllocator<int32_t, 16>> pcm(16, 0);
     int32_t channels = 1;
     uint32_t num_samples = pcm.size() - 1;
-    size_t split = 1; 
+    size_t split = 1;
     std::vector<int64_t> result = AudioToolCalculate::SumAudioS32AbsPcm(pcm.data() + 1, num_samples, channels, split);
     EXPECT_FALSE(result.empty());
     channels = 4;
@@ -118,7 +118,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioU8AbsPcmTest002, TestSize.Level1)
     std::vector<uint8_t, AlignedAllocator<uint8_t, 16>> pcm(16, 0);
     int32_t channels = 1;
     uint32_t num_samples = pcm.size() / channels - 1;
-    size_t split = 1; 
+    size_t split = 1;
     std::vector<int32_t> result = AudioToolCalculate::SumAudioU8AbsPcm(pcm.data() + 1, num_samples, channels, split);
     EXPECT_FALSE(result.empty());
     channels = 4;
@@ -189,7 +189,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioS16AbsPcmTest002, TestSize.Level1)
     std::vector<int16_t, AlignedAllocator<int16_t, 16>> pcm = {1, -2, 3, -4, 5, -6, 7, -8, 1, -2, 3, -4, 5, -6, 7, -8};
     int32_t channels = 4;
     uint32_t num_samples = pcm.size() / channels;
-    size_t split = 1; 
+    size_t split = 1;
     std::vector<int32_t> result = AudioToolCalculate::SumAudioS16AbsPcm(pcm.data(), num_samples, channels, split);
     EXPECT_EQ(result[0], 12);
     channels = 2;

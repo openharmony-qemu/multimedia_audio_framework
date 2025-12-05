@@ -67,6 +67,15 @@ std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_sampl
     return sum;
 }
 
+uint64x2_t Extension32bitTo64bit(int32x4_t value)
+{
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+    return vmovl_high_u32(vreinterpretq_u32_s32(value));
+#else
+    return vmovl_u32(vget_high_u32(vreinterpretq_u32_s32(value)));
+#endif
+}
+
 std::vector<int64_t> SumS32StereoAbsNeno(const int32_t* data, uint32_t num_samples)
 {
     std::vector<int64_t> sum(DEFAULT_CHANNEL_COUNT_2, 0);
@@ -84,9 +93,9 @@ std::vector<int64_t> SumS32StereoAbsNeno(const int32_t* data, uint32_t num_sampl
 
         // zero-overhead extension to 64-bit
         uint64x2_t left_low = vmovl_u32(vget_low_u32(vreinterpretq_u32_s32(left_abs)));
-        uint64x2_t left_high = vmovl_high_u32(vreinterpretq_u32_s32(left_abs));
+        uint64x2_t left_high = Extension32bitTo64bit(left_abs);
         uint64x2_t right_low = vmovl_u32(vget_low_u32(vreinterpretq_u32_s32(right_abs)));
-        uint64x2_t right_high = vmovl_high_u32(vreinterpretq_u32_s32(right_abs));
+        uint64x2_t right_high = Extension32bitTo64bit(right_abs);
 
         // accumulate
         sum_left_64x2 = vaddq_u64(sum_left_64x2, left_low);
