@@ -126,7 +126,7 @@ bool AudioServerProxy::GetEffectOffloadEnabledProxy()
 }
 
 int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState state, const std::string &deviceName)
+    BluetoothOffloadState state, const std::string &deviceName, const std::string &networkId)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
@@ -135,7 +135,7 @@ int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<De
     for (auto &device : activeDevices) {
         activeDevicesInt.push_back({static_cast<int32_t>(device.first), static_cast<int32_t>(device.second)});
     }
-    int32_t ret = gsp->UpdateActiveDevicesRoute(activeDevicesInt, state, deviceName);
+    int32_t ret = gsp->UpdateActiveDevicesRoute(activeDevicesInt, state, deviceName, networkId);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }

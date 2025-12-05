@@ -503,6 +503,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     SetValueString(env, "displayName", deviceInfo.displayName_, result);
     SetValueInt32(env, "interruptGroupId", static_cast<int32_t>(deviceInfo.interruptGroupId_), result);
     SetValueInt32(env, "volumeGroupId", static_cast<int32_t>(deviceInfo.volumeGroupId_), result);
+    SetValueString(env, "dmDeviceInfo", deviceInfo.dmDeviceInfo_, result);
 
     napi_value value = nullptr;
     napi_value sampleRates;

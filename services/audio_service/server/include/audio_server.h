@@ -107,7 +107,8 @@ public:
     int32_t GetTransactionId(int32_t deviceType, int32_t deviceRole, uint64_t& transactionId) override;
     int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
-        int32_t a2dpOffloadFlag, const std::string &deviceName) override;
+        int32_t a2dpOffloadFlag, const std::string &deviceName,
+        const std::string &networkId = LOCAL_NETWORK_ID) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
@@ -311,9 +312,12 @@ private:
     void RegisterDataTransferStateChangeCallback();
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "",
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
+    int32_t SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+        const std::string &networkId);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();

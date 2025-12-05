@@ -265,6 +265,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
             AudioStreamDeviceChangeReason::OVERRODE);
     }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
+    SelectOutputDeviceForRemote(selectedDesc[0]);
     return SUCCESS;
 }
 
@@ -276,6 +277,15 @@ void AudioRecoveryDevice::SelectOutputDeviceLog(sptr<AudioRendererFilter> audioR
         selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
         AudioPolicyUtils::GetInstance().GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
         audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid(), audioDeviceSelectMode);
+}
+
+void AudioRecoveryDevice::SelectOutputDeviceForRemote(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
+    AUDIO_INFO_LOG("remote device, update active device route");
+    audioActiveDevice_.UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG,
+        desc->deviceName_, desc->networkId_);
 }
 
 void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason,

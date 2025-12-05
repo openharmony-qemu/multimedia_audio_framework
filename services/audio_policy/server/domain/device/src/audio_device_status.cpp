@@ -946,6 +946,8 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType));
         AUDIO_INFO_LOG("adapter name: %{public}s", moduleInfo.adapterName.c_str());
+        auto ret = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId);
+        JUDGE_AND_ERR_LOG(ret, "load adapter fail");
         uint32_t paIndex = 0;
         AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
@@ -987,6 +989,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         std::list<DeviceStreamInfo>{ streamInfo } : statusInfo.streamInfo;
     deviceDesc.SetDeviceCapability(streamInfoList, 0);
     deviceDesc.networkId_ = networkId;
+    deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
     audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
@@ -1026,6 +1029,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
         audioRouteMap_.RemoveDeviceInRouterMap(moduleName);
         audioRouteMap_.RemoveDeviceInFastRouterMap(networkId);
+        AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId, true);
     }
     return SUCCESS;
 }

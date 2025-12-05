@@ -96,6 +96,8 @@ public:
     void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
 
+    void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
+
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
@@ -209,6 +211,7 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    std::string dmDeviceInfo_ = "";
 
 private:
     bool IsOutput()

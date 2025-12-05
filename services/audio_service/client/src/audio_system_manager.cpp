@@ -48,7 +48,6 @@ constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 constexpr unsigned int MS_PER_SECOND = 1000;
 constexpr unsigned int AUDIO_DEADLINE_PARAM_MIN = 10;
 constexpr unsigned int AUDIO_DEADLINE_PARAM_MAX = 50;
-constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 mutex g_asProxyMutex;
@@ -1006,11 +1005,6 @@ int32_t AudioSystemManager::SelectOutputDevice(
         ERR_INVALID_PARAM, "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
-    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
-        audioDeviceDescriptors[0]->networkId_.size() != VALID_REMOTE_NETWORK_ID_LENGTH) {
-        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
-        return ERR_INVALID_PARAM;
-    }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_OPERATION_FAILED, "create renderer filter failed");
     audioRendererFilter->uid = -1;
@@ -1054,9 +1048,6 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
 
-    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->networkId_ == LOCAL_NETWORK_ID ||
-        audioDeviceDescriptors[0]->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
-        ERR_INVALID_PARAM, "invalid networkId.");
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
         ERR_INVALID_PARAM, "invalid uid.");
 
@@ -1107,9 +1098,6 @@ int32_t AudioSystemManager::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
         CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
             "invalid parameter: earpiece can not be excluded.");
-        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
-            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
-            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
     }
     return AudioPolicyManager::GetInstance().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
@@ -1127,9 +1115,6 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
             ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
         CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
             "invalid parameter: earpiece can not be excluded.");
-        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
-            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
-            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
     }
     return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
@@ -1149,9 +1134,6 @@ int32_t AudioSystemManager::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsag
             ERR_INVALID_PARAM, "invalid parameter: speaker can not be excluded.");
         CHECK_AND_RETURN_RET_LOG(devDesc->deviceType_ != DEVICE_TYPE_EARPIECE, ERR_INVALID_PARAM,
             "invalid parameter: earpiece can not be excluded.");
-        CHECK_AND_RETURN_RET_LOG(devDesc->networkId_ == LOCAL_NETWORK_ID ||
-            devDesc->networkId_.size() == VALID_REMOTE_NETWORK_ID_LENGTH,
-            ERR_INVALID_PARAM, "invalid parameter: invalid networkId.");
     }
     return AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, unexcludeOutputDevices);
 }
@@ -1904,12 +1886,6 @@ int32_t AudioSystemManager::ConfigDistributedRoutingRole(
     AUDIO_INFO_LOG(" Entered ConfigDistributedRoutingRole casttype %{public}d", type);
     if (descriptor->deviceRole_ != DeviceRole::OUTPUT_DEVICE) {
         AUDIO_ERR_LOG("ConfigDistributedRoutingRole: not an output device");
-        return ERR_INVALID_PARAM;
-    }
-
-    if (descriptor->networkId_ != LOCAL_NETWORK_ID &&
-        descriptor->networkId_.size() != VALID_REMOTE_NETWORK_ID_LENGTH) {
-        AUDIO_ERR_LOG("ConfigDistributedRoutingRole: invalid networkId");
         return ERR_INVALID_PARAM;
     }
 
