@@ -356,7 +356,7 @@ private:
     static constexpr int32_t DP_DEFAULT_VOLUME_LEVEL = 25;
     static constexpr int32_t APP_MAX_VOLUME_LEVEL = 100;
     static constexpr int32_t APP_MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 25;
+    static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 100;
     static constexpr int32_t CONST_FACTOR = 100;
     static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1140;
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
