@@ -35,11 +35,12 @@ struct StreamPropTestInfo {
 
 class GetDynamicInfoTestData {
 public:
-    GetDynamicInfoTestData(AudioSampleFormat format, uint32_t sampleRate, AudioChannelLayout channelLayout,
-        AudioChannel channels) : streamInfo_(static_cast<AudioSamplingRate>(sampleRate),
-        AudioEncodingType::ENCODING_PCM, format, channels, channelLayout) {}
+    GetDynamicInfoTestData(AudioStreamInfo streamInfo, AudioSampleFormat format, uint32_t sampleRate,
+        AudioChannelLayout channelLayout, AudioChannel channels);
 
+    bool Check(std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
     AudioStreamInfo streamInfo_;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo_ = nullptr;
 };
 
 class AudioPolicyServiceFourthUnitTest : public testing::Test {

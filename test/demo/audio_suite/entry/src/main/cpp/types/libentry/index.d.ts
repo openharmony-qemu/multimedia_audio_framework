@@ -44,3 +44,12 @@ export const startGeneralVoiceChange: (inputId: string, mode: number, effectId: 
 export const resetGeneralVoiceChange: (inputId: string, mode: number, effectId: string) => number;
 export const startPureVoiceChange: (inputId: string, effectId: string, gender: number, vocalPart: number, optionType: number, selectedNodeId?: string) => number;
 export const resetPureVoiceChange: (inputId: string, effectId: string, gender: number, vocalPart: number, optionType: number) => number;
+export const startFixedPositionEffect: (x: number, y: number, z: number, spaceRenderEffectId: string, inputId: string, selectedNodeId?: string) => number;
+export const startDynamicRenderEffect: (x: number, y: number, z: number, surroundTime: number, surroundDirection: number, spaceRenderEffectId: string, inputId: string, selectedNodeId?: string) => number;
+export const startExpandEffect: (extRadius: number, extAngle: number, spaceRenderEffectId: string, inputId: string, selectedNodeId?: string) => number;
+export const resetFixedPositionEffect: (x: number, y: number, z: number, spaceRenderEffectId: string) => number;
+export const resetDynamicRenderEffect: (x: number, y: number, z: number, surroundTime: number, surroundDirection: number, spaceRenderEffectId: string) => number;
+export const resetExpandEffect: (extRadius: number, extAngle: number, spaceRenderEffectId: string) => number;
+export const getFixedPositionParams: (nodeId: string) => { x: number, y: number, z: number };
+export const getDynamicRenderParams: (nodeId: string) => { x: number, y: number, z: number, surroundTime: number, surroundDirection: number };
+export const getExpandParams: (nodeId: string) => { extRadius: number, extAngle: number };

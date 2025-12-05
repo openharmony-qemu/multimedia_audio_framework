@@ -59,12 +59,13 @@ static AudioSamplingRate SelectMatchingSampleRate(const std::list<std::shared_pt
     AudioSamplingRate sampleRate)
 {
     CHECK_AND_RETURN_RET_LOG(!matchInfos.empty(), AudioSamplingRate::SAMPLE_RATE_8000, "matchInfos is empty");
+    AudioSamplingRate selectResult = AudioSamplingRate::SAMPLE_RATE_8000;
     for (auto &streamProp : matchInfos) {
-        CHECK_AND_RETURN_RET(!(streamProp && streamProp->sampleRate_ >= sampleRate),
-            static_cast<AudioSamplingRate>(streamProp->sampleRate_));
+        CHECK_AND_CONTINUE(streamProp != nullptr);
+        selectResult = static_cast<AudioSamplingRate>(streamProp->sampleRate_);
+        CHECK_AND_RETURN_RET(selectResult < sampleRate, selectResult);
     }
-    return matchInfos.back() != nullptr ? static_cast<AudioSamplingRate>(matchInfos.back()->sampleRate_) :
-        AudioSamplingRate::SAMPLE_RATE_8000;
+    return selectResult;
 }
 
 bool AudioPolicyConfigManager::Init(bool isRefresh)
@@ -907,9 +908,13 @@ bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPro
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
 {
-    std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, streamInfo);
-    CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is nullptr");
+    // use dynamic streamprop
+    if (!info->dynamicStreamPropInfos_.empty()) {
+        return GetDynamicStreamPropInfoFromPipe(info, streamInfo);
+    }
 
+    // use xml config streamprop
     AudioSampleFormat format = streamInfo.format;
     uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
     AudioChannel channels = streamInfo.channels;

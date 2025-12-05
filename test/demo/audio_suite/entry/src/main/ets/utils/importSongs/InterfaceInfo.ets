@@ -31,6 +31,7 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
+  spaceRender?: SpaceRender;
 }
 
 export interface  OutSong {
@@ -303,6 +304,46 @@ export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [210, NodeType.GENERAL_VOICE_CHANGE],
   [211, NodeType.SOUND_SPEED_TONE]
 ]);
+
+export interface SpaceRender {
+  mode: SpaceRenderMode;
+  fixedPosition?: SpacePosition;
+  dynamicPosition?: SpacePosition;
+  singleWeekCycleTime?: number;
+  clockWise?: ClockWise;
+  expansionRadius?: number;
+  expansionAngle?: number;
+}
+
+export interface SpacePosition {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export enum SpaceRenderMode {
+  CLOSE = -1,
+  FIXED_POSITION = 0,
+  DYNAMIC_RENDER = 1,
+  EXPAND = 2
+}
+
+export const SpaceRenderModeMap = new Map<SpaceRenderMode, string>([
+  [SpaceRenderMode.CLOSE, '无模式'],
+  [SpaceRenderMode.FIXED_POSITION, '固定摆位'],
+  [SpaceRenderMode.DYNAMIC_RENDER, '动态渲染'],
+  [SpaceRenderMode.EXPAND, '扩展']
+])
+
+export enum ClockWise {
+  CLOCK_WISE = 0,
+  Counter_Clock_Wise = 1
+}
+
+export const ClockWiseMap = new Map<ClockWise, string>([
+  [ClockWise.CLOCK_WISE, '顺时针'],
+  [ClockWise.Counter_Clock_Wise, '逆时针']
+])
 
 export const OFFLINEPIPELINE = 1;
 

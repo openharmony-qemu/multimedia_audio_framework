@@ -278,6 +278,7 @@ private:
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;
+    std::string logTag_ = "[Playback]";
 
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;

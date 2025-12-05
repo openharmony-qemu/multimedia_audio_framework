@@ -977,6 +977,8 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, 
     interruptServiceTest->zonesMap_[1] = audioInterruptZone;
     interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
 }
 
 /**
