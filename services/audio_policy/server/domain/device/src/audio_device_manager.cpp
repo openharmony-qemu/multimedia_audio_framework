@@ -986,8 +986,7 @@ void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage
 
 VolumeBehavior AudioDeviceManager::GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
-        networkId.c_str(), deviceType);
+    AUDIO_INFO_LOG("deviceType [%{public}d]", deviceType);
     VolumeBehavior volumeBehavior;
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ != deviceType || desc->networkId_ != networkId) {

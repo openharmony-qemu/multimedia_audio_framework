@@ -945,8 +945,7 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
             AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType), deviceType);
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType));
-        AUDIO_INFO_LOG("Module name: %{public}s, adapter name: %{public}s",
-            moduleName.c_str(), moduleInfo.adapterName.c_str());
+        AUDIO_INFO_LOG("adapter name: %{public}s", moduleInfo.adapterName.c_str());
         uint32_t paIndex = 0;
         AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
