@@ -133,6 +133,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:ring_buffer_wrapper_unit_test",
     "../services/audio_service/test/unittest:audio_resource_service_unit_test",
     "../services/audio_service/test/unittest:audio_stream_monitor_unit_test",
+    "../services/audio_service/test/unittest:audio_tool_calculate_unit_test",
   ]
 
   if (audio_framework_feature_audiosuite_support) {

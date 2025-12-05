@@ -260,7 +260,7 @@ int32_t OffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &
         BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
         AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
             static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-        VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_, OFFLOAD_DFX_SPLIT);
+        VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);

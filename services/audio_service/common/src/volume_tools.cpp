@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "audio_tool_calculate.h"
 
 namespace {
 static const int32_t UINT8_SHIFT = 0x80;
@@ -306,17 +307,11 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
     }
 
     // reset maps
-    for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] = 0;
-        volMaps.volEnd[index] = 0;
-    }
     uint8_t *raw8 = buffer.buffer;
-    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
-        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            volMaps.volStart[channelIdx] += (*raw8 >= UINT8_SHIFT ? *raw8 - UINT8_SHIFT : UINT8_SHIFT - *raw8);
-            raw8++;
-        }
-        raw8 += (split - 1) * channel;
+    std::vector<int32_t> vols = AudioToolCalculate::SumAudioU8AbsPcm(raw8, frameSize, channel, split);
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] = vols[index];
+        volMaps.volEnd[index] = 0;
     }
 
     for (size_t i = 0; i < channel; i++) {
@@ -352,17 +347,11 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
 
     // reset maps
-    for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] = 0;
-        volMaps.volEnd[index] = 0;
-    }
     int16_t *raw16 = reinterpret_cast<int16_t *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
-        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            volMaps.volStart[channelIdx] += (*raw16 >= 0 ? *raw16 : (-*raw16));
-            raw16++;
-        }
-        raw16 += (split - 1) * channel;
+    std::vector<int32_t> vols = AudioToolCalculate::SumAudioS16AbsPcm(raw16, frameSize, channel, split);
+    for (size_t index = 0; index < channel; index++) {
+        volMaps.volStart[index] = vols[index];
+        volMaps.volEnd[index] = 0;
     }
 
     for (size_t i = 0; i < channel; i++) {
@@ -378,6 +367,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         AUDIO_ERR_LOG("invalid split");
         return;
     }
+    Trace trace("SumS24PcmNormal");
     const size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
     if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
@@ -452,18 +442,10 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volSums[index] = 0;
     }
     int32_t *raw32 = reinterpret_cast<int32_t *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
-        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            if (*raw32 >= 0) {
-                volSums[channelIdx] += *raw32;
-            } else {
-                volSums[channelIdx] -= *raw32;
-            }
-            raw32++;
-        }
-        raw32 += (split - 1) * channel;
+    std::vector<int64_t> vols = AudioToolCalculate::SumAudioS32AbsPcm(raw32, frameSize, channel, split);
+    for (size_t index = 0; index < channel; index++) {
+        volSums[index] = vols[index];
     }
-
     for (size_t i = 0; i < channel; i++) {
         volSums[i] /= static_cast<int64_t>(size);
         volMaps.volStart[i] = static_cast<int32_t>(volSums[i]);
@@ -498,17 +480,14 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
 
     // reset maps
-    double volSums[CHANNEL_MAX] = {0};
+    float volSums[CHANNEL_MAX] = {0};
     for (size_t index = 0; index < CHANNEL_MAX; index++) {
         volSums[index] = 0.0;
     }
     float *raw32 = reinterpret_cast<float *>(buffer.buffer);
-    for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
-        for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            volSums[channelIdx] += (*raw32 >= 0 ? *raw32 : (-*raw32));
-            raw32++;
-        }
-        raw32 += (split - 1) * channel;
+    std::vector<float> vols = AudioToolCalculate::SumAudioF32AbsPcm(raw32, frameSize, channel, split);
+    for (size_t index = 0; index < channel; index++) {
+        volSums[index] = vols[index];
     }
 
     for (size_t i = 0; i < channel; i++) {
