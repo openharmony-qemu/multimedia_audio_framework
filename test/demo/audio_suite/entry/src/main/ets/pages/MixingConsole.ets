@@ -671,6 +671,8 @@ export struct MixingConsole {
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .borderRadius(5)
+                    .maxLines(isLeft ? 1 : 2)
+                    .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
             }
         } else if (type) {
             Text(type)
@@ -680,6 +682,8 @@ export struct MixingConsole {
                 .textAlign(TextAlign.Center)
                 .backgroundColor(ColorMap.get(type))
                 .borderRadius(5)
+                .maxLines(isLeft ? 1 : 2)
+                .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
         }   else{
             Text("+")
                 .height(isLeft ? '80%' : '20%')
