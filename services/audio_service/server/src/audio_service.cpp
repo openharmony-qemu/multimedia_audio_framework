@@ -1889,7 +1889,7 @@ void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
 {
     std::lock_guard lock(callManagerMutex_);
     if (callManager_ == nullptr) {
-        callManager_ = DelayedSingleton<TelePhony::CallManagerClient>::GetInstance();
+        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
         callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
     }
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
