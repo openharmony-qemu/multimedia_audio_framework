@@ -1893,8 +1893,8 @@ void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
         callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
     }
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        int32_t ret = callManager_->NotifyVoIPStart(uid);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPStart failed, ret:%{public}d", ret);
+        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
     }
 }
 } // namespace AudioStandard
