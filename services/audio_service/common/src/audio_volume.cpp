@@ -353,7 +353,9 @@ inline float AudioVolume::GetAppVolumeInternal(int32_t appUid, AudioVolumeMode m
     float appVolume = 1.0f;
     auto iter = appVolume_.find(appUid);
     if (iter != appVolume_.end()) {
-        appVolume = iter->second.totalVolume_;
+        appVolume = VolumeUtils::IsPCVolumeEnable() ? iter->second.totalVolume_ : (iter->second.isMuted_ ?
+            iter->second.totalVolume_ :	(mode == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 :
+            iter->second.totalVolume_));
     }
     return appVolume;
 }
@@ -379,7 +381,8 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
         if (stream.GetAppUid() == appUid) {
-            stream.appVolume_ = totalAppVolume;
+            stream.appVolume_ = VolumeUtils::IsPCVolumeEnable() ? totalAppVolume : (isMuted ? totalAppVolume :
+                (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : totalAppVolume));
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
         }
@@ -439,7 +442,9 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
         if (stream.GetAppUid() == appUid) {
-            stream.appVolume_ = appVolume.totalVolume_;
+            stream.appVolume_ = VolumeUtils::IsPCVolumeEnable() ? appVolume.totalVolume_ : (appVolume.isMuted_ ?
+                appVolume.totalVolume_ :(stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 :
+                    appVolume.totalVolume_));
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
         }
