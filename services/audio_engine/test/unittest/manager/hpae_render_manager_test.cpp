@@ -2167,7 +2167,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
  * @tc.number: HpaeOffloadRendererManagerSetCurrentNode_003
  * @tc.desc  : Test SetCurrentNode when stream is not running but SetCurrentNode.
  */
-HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -2185,6 +2185,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     CreateTwoStreamInOffload(offloadManager);
 
     offloadManager->DestroyStream(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(offloadManager);
     EXPECT_NE(offloadManager->curNode_->GetState(), HPAE_SESSION_RUNNING);
     EXPECT_NE(offloadManager->converterForOutput_, nullptr);
     EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
