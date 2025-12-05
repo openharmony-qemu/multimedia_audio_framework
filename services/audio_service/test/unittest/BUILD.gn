@@ -906,6 +906,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
     "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
@@ -1048,6 +1049,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
     "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
@@ -1174,6 +1176,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
     "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
