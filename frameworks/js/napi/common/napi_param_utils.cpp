@@ -817,6 +817,8 @@ napi_status NapiParamUtils::SetValueStreamVolumeEvent(const napi_env& env,
         NapiAudioEnum::GetJsStreamUsage(volumeEvent.streamUsage), result);
     SetValueInt32(env, "volume", volumeEvent.volume, result);
     SetValueBoolean(env, "updateUi", volumeEvent.updateUi, result);
+    SetValueInt32(env, "previousVolume", volumeEvent.previousVolume, result);
+
     return status;
 }
 

@@ -73,6 +73,8 @@ void NapiAudioStreamVolumeChangeCallback::OnStreamVolumeChange(StreamVolumeEvent
         cb->volumeEvent.streamUsage = volumeEvent.streamUsage;
         cb->volumeEvent.volume = volumeEvent.volume;
         cb->volumeEvent.updateUi = volumeEvent.updateUi;
+        cb->volumeEvent.previousVolume = volumeEvent.previousVolume;
+        
         OnJsCallbackStreamVolumeChange(cb);
     }
 }
