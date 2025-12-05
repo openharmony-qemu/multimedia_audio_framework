@@ -1031,6 +1031,81 @@ void AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest()
     audioCoreService->HandleCommonSourceOpened(pipeInfo);
 }
 
+void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
+{
+    auto aduioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    audioStreamDescriptor->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesscs.push_back(audioStreamDescriptor);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    audioCoreService->UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
+}
+
+void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
+    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
+    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+}
+
+void AudioCoreServicePrivateNotifyRouteUpdate()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    streamDescs.push_back(audioStreamDescriptor);
+    audioCoreService->NotifyRouteUpdate(streamDescs);
+}
+
+void AudioCoreServicePrivateUpdateModemRoute()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(audioDeviceDescriptor);
+    audioCoreService->UpdateModemRoute(descs);
+}
+
 TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchCapturerPipesAndExecuteFuzzTest,
@@ -1083,6 +1158,10 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateIsDeviceSwitchingFuzzTest,
     AudioCoreServicePrivateUpdateTrackerFuzzTest,
     AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest,
+    AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession,
+    AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream,
+    AudioCoreServicePrivateNotifyRouteUpdate,
+    AudioCoreServicePrivateUpdateModemRoute,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
