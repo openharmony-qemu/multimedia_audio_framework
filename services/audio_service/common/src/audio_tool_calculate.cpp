@@ -51,6 +51,53 @@ inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_
     return sum;
 }
 
+inline uint64x2_t Extension32bitTo64bit(int32x4_t value)
+{
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+    return vmovl_high_u32(vreinterpretq_u32_s32(value));
+#else
+    return vmovl_u32(vget_high_u32(vreinterpretq_u32_s32(value)));
+#endif
+}
+
+inline uint32x4_t Extension16bitTo32bit(int16x8_t value)
+{
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+    return vmovl_high_u16(vreinterpretq_u16_s16(value));
+#else
+    return vmovl_u16(vget_high_u16(vreinterpretq_u16_s16(value)));
+#endif
+}
+
+inline uint16x8_t Extension8bitTo16bit(uint8x16_t value)
+{
+#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
+    return vmovl_high_u8(value);
+#else
+    return vmovl_u8(vget_high_u8(value));
+#endif
+}
+
+inline int32_t SafeVaddvqS32(int32x4_t value)
+{
+#ifdef __aarch64__
+    return vaddvq_s32(value);
+#else
+    int32x2_t sum_pair = vadd_s32(vget_low_s32(value), vget_high_s32(value));
+    return vget_lane_s32(vpadd_s32(sum_pair, sum_pair), 0);
+#endif
+}
+
+inline uint32_t SafeVaddvqU32(uint32x4_t value)
+{
+#ifdef __aarch64__
+    return vaddvq_u32(value);
+#else
+    uint32x2_t sum_pair = vadd_u32(vget_low_u32(value), vget_high_u32(value));
+    return vget_lane_u32(vpadd_u32(sum_pair, sum_pair), 0);
+#endif
+}
+
 std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_samples)
 {
     std::vector<int64_t> sum(1, 0);
@@ -65,15 +112,6 @@ std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_sampl
     sum[0] = vgetq_lane_s64(sum_vec, 0) + vgetq_lane_s64(sum_vec, 1);
 #endif
     return sum;
-}
-
-uint64x2_t Extension32bitTo64bit(int32x4_t value)
-{
-#if defined(__aarch64__) || (defined(__ARM_ARCH) && __ARM_ARCH >= 8)
-    return vmovl_high_u32(vreinterpretq_u32_s32(value));
-#else
-    return vmovl_u32(vget_high_u32(vreinterpretq_u32_s32(value)));
-#endif
 }
 
 std::vector<int64_t> SumS32StereoAbsNeno(const int32_t* data, uint32_t num_samples)
@@ -148,7 +186,7 @@ std::vector<int32_t> SumS16SingleAbsNeno(const int16_t* pcm, uint32_t num_sample
     sum_vec = vaddq_s32(sum_vec, vabs_lo);
     sum_vec = vaddq_s32(sum_vec, vabs_hi);
     }
-    sum[0] = vaddvq_s32(sum_vec);
+    sum[0] = SafeVaddvqS32(sum_vec);
 #endif
     return sum;
 }
@@ -170,9 +208,9 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
 
         // zero-overhead extension to 32-bit
         uint32x4_t left_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(left_abs)));
-        uint32x4_t left_high = vmovl_high_u16(vreinterpretq_u16_s16(left_abs));
+        uint32x4_t left_high = Extension16bitTo32bit(left_abs);
         uint32x4_t right_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(right_abs)));
-        uint32x4_t right_high = vmovl_high_u16(vreinterpretq_u16_s16(right_abs));
+        uint32x4_t right_high = Extension16bitTo32bit(right_abs);
 
         // accumulate
         sum_left_32x4 = vaddq_u32(sum_left_32x4, left_low);
@@ -180,8 +218,8 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
         sum_right_32x4 = vaddq_u32(sum_right_32x4, right_low);
         sum_right_32x4 = vaddq_u32(sum_right_32x4, right_high);
     }
-    sum[0] = vaddvq_u32(sum_left_32x4);
-    sum[1] = vaddvq_u32(sum_right_32x4);
+    sum[0] = SafeVaddvqU32(sum_left_32x4);
+    sum[1] = SafeVaddvqU32(sum_right_32x4);
     AUDIO_INFO_LOG("SumS16StereoAbsNeno, sum 0 :%{public}d", sum[0]);
 #endif
     return sum;
@@ -234,7 +272,7 @@ std::vector<int32_t> SumU8SingleNeno(const uint8_t* pcm, uint32_t num_samples)
         acc32 = vpadalq_u16(acc32, high);
         pcm += DEFAULT_STEP_BY_16;
     }
-    sum[0] = vaddvq_u32(acc32);
+    sum[0] = SafeVaddvqU32(acc32);
 #endif
     return sum;
 }
@@ -253,9 +291,9 @@ std::vector<int32_t> SumU8StereoNeno(const uint8_t *data, uint32_t num_samples)
 
         // unsigned U8, absolute value is the value itself
         uint16x8_t left_low = vmovl_u8(vget_low_u8(samples.val[0]));
-        uint16x8_t left_high = vmovl_high_u8(samples.val[0]);
+        uint16x8_t left_high = Extension8bitTo16bit(samples.val[0]);
         uint16x8_t right_low = vmovl_u8(vget_low_u8(samples.val[1]));
-        uint16x8_t right_high = vmovl_high_u8(samples.val[1]);
+        uint16x8_t right_high = Extension8bitTo16bit(samples.val[1]);
 
         // accumulate left channel
         sum_left_32x4 = vaddq_u32(sum_left_32x4, vaddl_u16(vget_low_u16(left_low), vget_high_u16(left_low)));
@@ -267,8 +305,8 @@ std::vector<int32_t> SumU8StereoNeno(const uint8_t *data, uint32_t num_samples)
     }
 
     // horizontal summation
-    sum[0] = vaddvq_u32(sum_left_32x4);
-    sum[1] = vaddvq_u32(sum_right_32x4);
+    sum[0] = SafeVaddvqU32(sum_left_32x4);
+    sum[1] = SafeVaddvqU32(sum_right_32x4);
 #endif
     return sum;
 }
