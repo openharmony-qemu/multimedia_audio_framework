@@ -69,7 +69,7 @@ std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_sampl
 
 std::vector<int64_t> SumS32StereoAbsNeno(const int32_t* data, uint32_t num_samples)
 {
-    std::vector<int64_t> sum(2, 0);
+    std::vector<int64_t> sum(DEFAULT_CHANNEL_COUNT_2, 0);
 #if USE_ARM_NEON == 1
     uint64x2_t sum_left_64x2 = vdupq_n_u64(0);
     uint64x2_t sum_right_64x2 = vdupq_n_u64(0);
@@ -146,7 +146,7 @@ std::vector<int32_t> SumS16SingleAbsNeno(const int16_t* pcm, uint32_t num_sample
 
 std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_samples)
 {
-    std::vector<int32_t> sum(2, 0);
+    std::vector<int32_t> sum(DEFAULT_CHANNEL_COUNT_2, 0);
 #if USE_ARM_NEON == 1
     uint32x4_t sum_left_32x4 = vdupq_n_u32(0);
     uint32x4_t sum_right_32x4 = vdupq_n_u32(0);
@@ -191,7 +191,7 @@ std::vector<int32_t> SumS16AbsNeno(const int16_t* pcm, uint32_t num_samples, int
         Trace trace("SumS16StereoAbsNeno");
         return SumS16StereoAbsNeno(pcm, num_samples);
     }
-   return sum;
+    return sum;
 }
 
 std::vector<int32_t> AudioToolCalculate::SumAudioS16AbsPcm(const int16_t* pcm, uint32_t num_samples,
@@ -232,7 +232,7 @@ std::vector<int32_t> SumU8SingleNeno(const uint8_t* pcm, uint32_t num_samples)
 
 std::vector<int32_t> SumU8StereoNeno(const uint8_t *data, uint32_t num_samples)
 {
-    std::vector<int32_t> sum(2, 0);
+    std::vector<int32_t> sum(DEFAULT_CHANNEL_COUNT_2, 0);
 #if USE_ARM_NEON == 1
     uint32x4_t sum_left_32x4 = vdupq_n_u32(0);
     uint32x4_t sum_right_32x4 = vdupq_n_u32(0);
@@ -310,12 +310,12 @@ std::vector<float> SumF32SingleAbsNeno(const float *pcm, uint32_t num_samples)
 
 std::vector<float> SumF32StereoAbsNeno(const float *pcm, uint32_t num_samples)
 {
-    std::vector<float> sum(2, 0);
+    std::vector<float> sum(DEFAULT_CHANNEL_COUNT_2, 0);
 #if USE_ARM_NEON == 1
     float32x4_t sum_left_32x4 = vdupq_n_f32(0.0f);
     float32x4_t sum_right_32x4 = vdupq_n_f32(0.0f);
     // process 16 samples per iteration
-    for ( uint32_t i = 0; i + DEFAULT_OFFSET_3 < num_samples; i += DEFAULT_STEP_BY_4) {
+    for (uint32_t i = 0; i + DEFAULT_OFFSET_3 < num_samples; i += DEFAULT_STEP_BY_4) {
         // load and deinterleave 16 stereo samples
         float32x4x2_t samples = vld2q_f32(pcm);
         pcm += DEFAULT_STEP_BY_8;

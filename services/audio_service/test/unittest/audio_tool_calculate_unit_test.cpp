@@ -140,7 +140,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioU8AbsPcmTest001, TestSize.Level1)
     std::vector<uint8_t, AlignedAllocator<uint8_t, 16>> pcm(32, 1);
     int32_t channels = 4;
     uint32_t num_samples = pcm.size() / channels;
-    size_t split = 1; 
+    size_t split = 1;
     std::vector<int32_t> result = AudioToolCalculate::SumAudioU8AbsPcm(pcm.data(), num_samples, channels, split);
     EXPECT_EQ(result[0], 8);
     channels = 2;

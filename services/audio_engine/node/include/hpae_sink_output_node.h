@@ -65,7 +65,7 @@ private:
     void HandleHapticParam(uint64_t syncTime);
     bool ReadDataAndConvertFormat();
     InputPort<HpaePcmBuffer *> inputStream_;
-    std::vector<char, AlignedAllocator<char, 16>> renderFrameData_;
+    std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
     std::vector<float> interleveData_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
