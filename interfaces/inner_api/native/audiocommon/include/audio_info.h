@@ -1476,7 +1476,7 @@ struct AudioProcessConfig : public Parcelable {
         return config;
     }
 
-    void MarshallingRendererInfo(Parcel &parcel)
+    void MarshallingRendererInfo(Parcel &parcel) const
     {
         parcel.WriteInt32(rendererInfo.contentType);
         parcel.WriteInt32(rendererInfo.streamUsage);
@@ -1498,7 +1498,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(rendererInfo.isStatic);
     }
 
-    static void UnmarshallingRendererInfo(Parcel &parcel, AudioProcessConfig &config)
+    static void UnmarshallingRendererInfo(Parcel &parcel, AudioProcessConfig *config)
     {
         config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
         config->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
@@ -1519,7 +1519,6 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.keepRunning = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
     }
-
 };
 
 struct Volume {

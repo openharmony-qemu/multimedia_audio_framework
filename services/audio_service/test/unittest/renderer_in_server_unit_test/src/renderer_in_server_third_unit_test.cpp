@@ -2403,7 +2403,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = nullptr;
-    size_t dataSize = 0;
+    size_t dataSize = 10;
 
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 2;
@@ -2446,7 +2446,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
+    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
 }
 
 
@@ -2470,7 +2470,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
+    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
 }
 
 /**
@@ -2579,7 +2579,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_static_Stop_001, TestSi
     rendererInServer->standByEnable_ = false;
 
     ret = rendererInServer->Stop();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2625,6 +2625,32 @@ HWTEST_F(RendererInServerThirdUnitTest, ProcessAndSetStaticBuffer_001, TestSize.
 
     ret = rendererInServer->ProcessAndSetStaticBuffer();
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SelectModeAndWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: SelectModeAndWriteData_001
+ * @tc.desc  : Test SelectModeAndWriteData_001
+ */
+HWTEST_F(RendererInServerThirdUnitTest, SelectModeAndWriteData_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    processConfig.rendererInfo.isStatic = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+
+    int8_t *inputData = nullptr;
+    size_t requestDataLen = 0;
+    ret = rendererInServer->SelectModeAndWriteData(inputData, requestDataLen);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

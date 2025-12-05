@@ -113,6 +113,7 @@ int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticB
 
 void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
+    CHECK_AND_RETURN_LOG(bufferBase != nullptr, "bufferBase in SetProcessedBuffer is nullptr!");
     processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }

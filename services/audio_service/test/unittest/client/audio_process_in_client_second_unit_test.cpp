@@ -428,7 +428,7 @@ HWTEST(AudioProcessInClientUnitTest, SetLoopTimes_001, TestSize.Level4)
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
     ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
-    EXPECT_NE(ptrAudioProcessInClientInner->SetLoopTimes(99), SUCCESS);
+    EXPECT_EQ(ptrAudioProcessInClientInner->SetLoopTimes(99), SUCCESS);
 }
 
 /**
@@ -447,8 +447,12 @@ HWTEST(AudioProcessInClientUnitTest, CheckStaticAndOperate_001, TestSize.Level4)
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
     ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
-    EXPECT_NE(ptrAudioProcessInClientInner->CheckStaticAndOperate(), SUCCESS);
+    ptrAudioProcessInClientInner->audioBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
+    ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    EXPECT_FALSE(ptrAudioProcessInClientInner->CheckStaticAndOperate());
 }
+
+
 
 /**
  * @tc.name  : Test CheckOperations API with static renderer
@@ -473,10 +477,10 @@ HWTEST(AudioProcessInClientUnitTest, GetStaticBufferInfo_001, TestSize.Level4)
 /**
  * @tc.name  : Test CheckOperations API with static renderer
  * @tc.type  : FUNC
- * @tc.number: GetStaticBufferInfo_002
+ * @tc.number: SetStaticRenderRate_001
  * @tc.desc  : Test GetStaticBufferInfo with static renderer info
  */
-HWTEST(AudioProcessInClientUnitTest, GetStaticBufferInfo_002, TestSize.Level4)
+HWTEST(AudioProcessInClientUnitTest, SetStaticRenderRate_001, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();

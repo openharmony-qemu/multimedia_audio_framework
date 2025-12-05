@@ -1674,6 +1674,102 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_001, TestSize.
 }
 
 /**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_002
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = true;
+    switchInfo.staticBufferEventCallback = nullptr;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_003
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = false;
+    switchInfo.staticBufferEventCallback = nullptr;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_004
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = false;
+    switchInfo.staticBufferEventCallback = std::make_shared<StaticBufferEventCallbackTest>();
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
  * @tc.name  : Test AudioRendererPrivate
  * @tc.number: SetAudioInterrupt
  * @tc.desc  : Test SetAudioInterrupt API

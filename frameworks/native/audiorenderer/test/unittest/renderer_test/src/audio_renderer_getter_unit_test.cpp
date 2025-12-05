@@ -2909,20 +2909,38 @@ HWTEST(AudioRendererUnitTest, HandleSetRendererInfoByOptions_002, TestSize.Level
     ASSERT_TRUE(renderer != nullptr);
  
     AudioRendererOptions rendererOpts;
-    rendererOpts.rendererInfo.isStatic = true;
+    renderer->rendererInfo_.isStatic = true;
     rendererOpts.strategy.concurrencyMode = AudioConcurrencyMode::INVALID;
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
     EXPECT_EQ(renderer->strategy_.concurrencyMode, AudioConcurrencyMode::MIX_WITH_OTHERS);
 
-    rendererOpts.rendererInfo.isStatic = false;
+    renderer->rendererInfo_.isStatic = false;
     rendererOpts.strategy.concurrencyMode = AudioConcurrencyMode::INVALID;
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
     EXPECT_EQ(renderer->strategy_.concurrencyMode, AudioConcurrencyMode::INVALID);
 
-    rendererOpts.rendererInfo.isStatic = true;
+    renderer->rendererInfo_.isStatic = true;
     rendererOpts.strategy.concurrencyMode = AudioConcurrencyMode::DUCK_OTHERS;
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
     EXPECT_EQ(renderer->strategy_.concurrencyMode, AudioConcurrencyMode::DUCK_OTHERS);
+}
+
+/**
+ * @tc.name  : Test InitAudioStream API.
+ * @tc.number: InitAudioStream_001
+ * @tc.desc  : Test InitAudioStream_001 interface in staticMode.
+ */
+HWTEST(AudioRendererUnitTest, InitAudioStream_001, TestSize.Level3)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> renderer =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(renderer != nullptr);
+ 
+    AudioRendererOptions rendererOpts;
+    renderer->rendererInfo_.isStatic = true;
+    AudioStreamParams params;
+    renderer->InitAudioStream(params);
 }
 } // namespace AudioStandard
 } // namespace OHOS

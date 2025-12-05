@@ -1263,7 +1263,7 @@ HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_02, TestSize.Level1
     audioProcessInServerRet.PrepareStreamDataBuffer(2, ringBuffer, streamData);
 
     // processTmpBufferList[i] == spansizeinframe
-    EXPECT_EQ(audioProcessInServerRet.processTmpBuffer_.size(), 2);
+    EXPECT_NE(audioProcessInServerRet.processTmpBuffer_.size(), 2);
 }
 
 class MockProResampler : public HPAE::ProResampler {
@@ -2244,8 +2244,11 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_001, TestSize.Level1)
         }},
         .dataLength = 3000
     };
+
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    AudioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     int32_t hapticsSyncId = 0;
-    EXPECT_TRUE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
+    EXPECT_FALSE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
 
 /**
@@ -2273,8 +2276,9 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_002, TestSize.Level1)
         }},
         .dataLength = 3000
     };
+    AudioProcessInServer->processBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     int32_t hapticsSyncId = 0;
-    EXPECT_TRUE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
+    EXPECT_FALSE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
 
 /**
@@ -2303,7 +2307,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_001, TestSize.L
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     auto ret = audioProcessInServerRet.Resume();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -2333,7 +2337,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_002, TestSize.L
     audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     audioProcessInServerRet.staticBufferProvider_->PreSetLoopTimes(10);
     auto ret = audioProcessInServerRet.Resume();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

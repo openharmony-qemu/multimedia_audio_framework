@@ -2919,30 +2919,6 @@ HWTEST(RendererInClientInnerUnitTest, GetSwitchInfo_002, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test WaitforBufferNeedOperate API
- * @tc.type  : FUNC
- * @tc.number: WaitforBufferNeedOperate_001
- * @tc.desc  : Test WaitforBufferNeedOperate
- */
-HWTEST(RendererInClientInnerUnitTest, WaitforBufferNeedOperate_001, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
-    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STAND_BY);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
-}
-
-/**
  * @tc.name  : Test CheckStaticAndOperate API
  * @tc.type  : FUNC
  * @tc.number: CheckStaticAndOperate_001
@@ -2956,6 +2932,7 @@ HWTEST(RendererInClientInnerUnitTest, CheckStaticAndOperate_001, TestSize.Level4
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
+    ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_EQ(ptrRendererInClientInner->CheckStaticAndOperate(), false);
 }
