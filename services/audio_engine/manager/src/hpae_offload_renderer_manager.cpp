@@ -109,10 +109,10 @@ void HpaeOffloadRendererManager::SetCurrentNode()
     for (auto [_, node]: sinkInputNodeMap_) {
         curNode_ = node;
         CreateOffloadNodes();
-        if (curNode_->GetState() == HPAE_SESSION_RUNNING) { 
+        if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
             ConnectInputSession();
-            break;
         }
+        break;
     }
     AUDIO_INFO_LOG("now curNode_ is [%{public}u]", curNode_ ? curNode_->GetSessionId() : 0);
 }
