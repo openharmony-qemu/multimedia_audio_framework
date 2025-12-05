@@ -51,6 +51,7 @@ inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_
     return sum;
 }
 
+#if USE_ARM_NEON == 1
 inline uint64x2_t Extension32bitTo64bit(int32x4_t value)
 {
 #ifdef __aarch64__
@@ -107,6 +108,7 @@ inline float SafeVaddvqF32(float32x4_t value)
     return vget_lane_f32(vpadd_f32(sum_pair, sum_pair), 0);
 #endif
 }
+#endif
 
 std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_samples)
 {
