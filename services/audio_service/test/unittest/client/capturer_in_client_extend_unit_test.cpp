@@ -99,6 +99,11 @@ public:
     void OnMarkReached(const int64_t &framePosition) override {};
 };
 
+class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
 class IpcStreamTest : public IIpcStream {
 public:
     virtual ~IpcStreamTest() = default;
@@ -1990,5 +1995,23 @@ HWTEST(CapturerInClientUnitTest, IsRestoreNeeded_001, TestSize.Level4)
         ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
     EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), true);
 }
+
+/**
+ * @tc.name  : CapturerInClient_Static_Unused_apis
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_Static_Unused_apis
+ * @tc.desc  : Test CapturerInClient CapturerInClient_Static_Unused_apis
+ */
+HWTEST(CapturerInClientUnitTest, StaticMode_001, TestSize.Level4)
+{
+    auto testCapturerClient = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(testCapturerClient);
+    EXPECT_EQ(testCapturerClient->SetLoopTimes(10), ERR_INCORRECT_MODE);
+    testCapturerClient->SetStaticBufferInfo();
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+    EXPECT_EQ(testCapturerClient->SetStaticBufferEventCallback(callback), ERR_INCORRECT_MODE);
+    EXPECT_EQ(testCapturerClient->SetStaticTriggerRecreateCallback([](){return;}), ERR_INCORRECT_MODE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

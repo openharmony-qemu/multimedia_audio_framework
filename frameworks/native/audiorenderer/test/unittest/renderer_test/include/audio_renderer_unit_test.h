@@ -105,6 +105,11 @@ public:
     void OnPeriodReached(const int64_t &frameNumber) override {}
 };
 
+class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
 class TestAudioStremStub : public FastAudioStream {
 public:
     TestAudioStremStub() : FastAudioStream(AudioStreamType::STREAM_MUSIC,

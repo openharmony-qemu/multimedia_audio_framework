@@ -1378,6 +1378,8 @@ int32_t AudioProcessInServer::ProcessAndSetStaticBuffer()
 int32_t AudioProcessInServer::CreateServerBuffer()
 {
     if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(processConfig_.staticBufferInfo.sharedMemory_ != nullptr,
+            ERR_OPERATION_FAILED, "sharedMemory is nullptr");
         uint32_t byteSizePerFrame = processConfig_.streamInfo.channels *
             PcmFormatToBits(processConfig_.streamInfo.format);
         uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame;

@@ -214,10 +214,8 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     off_t actualSize = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
-    if (actualSize < (off_t)size || size == 0) {
-        AUDIO_ERR_LOG("CreateFromRemote failed: actualSize is not equal to declareSize");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG((actualSize == (off_t)size) && size != 0,
+        nullptr, "CreateFromRemote failed: actualSize is not equal to declareSize");
 
     std::string name = msgParcel.ReadString();
 

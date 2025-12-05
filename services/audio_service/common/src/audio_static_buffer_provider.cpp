@@ -77,6 +77,12 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
         }
     }
 
+    return CheckIsValid(inputData, offset, requestDataLen, remainSize);
+}
+
+int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,
+    size_t offset, size_t requestDataLen, size_t remainSize)
+{
     if (offset != requestDataLen || remainSize != 0) {
         AUDIO_ERR_LOG("GetDataFromStaticBuffer failed");
         memset_s(inputData, requestDataLen, 0, requestDataLen);

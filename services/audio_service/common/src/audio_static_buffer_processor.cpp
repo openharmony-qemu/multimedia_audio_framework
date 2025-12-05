@@ -26,6 +26,7 @@ namespace AudioStandard {
 std::shared_ptr<AudioStaticBufferProcessor> AudioStaticBufferProcessor::CreateInstance(AudioStreamInfo streamInfo,
     std::shared_ptr<OHAudioBufferBase> sharedBuffer)
 {
+    CHECK_AND_RETURN_RET_LOG(sharedBuffer != nullptr, nullptr, "sharedBuffer is nullptr");
     return std::make_shared<AudioStaticBufferProcessor>(streamInfo, sharedBuffer);
 }
 

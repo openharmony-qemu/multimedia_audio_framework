@@ -1865,7 +1865,7 @@ int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticB
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
-        ERR_NULL_POINTER, "SetStaticRenderRate processProxy_ is nullptr");
+        ERR_NULL_POINTER, "GetStaticBufferInfo processProxy_ is nullptr");
     return processProxy_->GetStaticBufferInfo(staticBufferInfo);
 }
 

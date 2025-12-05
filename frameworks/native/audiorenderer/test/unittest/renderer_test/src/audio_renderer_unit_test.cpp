@@ -4692,5 +4692,38 @@ HWTEST(AudioRendererUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
     audioRendererPrivate->SetInSwitchingFlag(false);
     EXPECT_FALSE(audioRendererPrivate->inSwitchingFlag_);
 }
+
+/**
+ * @tc.name  : Test IsRendererFlagsSupportStatic.
+ * @tc.number: IsRendererFlagsSupportStatic.
+ * @tc.desc  : Test IsRendererFlagsSupportStatic.
+ */
+HWTEST(AudioRendererUnitTest, IsRendererFlagsSupportStatic_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_NORMAL));
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_MMAP));
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_FORCED_NORMAL));
+    EXPECT_FALSE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_DIRECT));
+}
+
+/**
+ * @tc.name  : Test SetStaticBufferCallback.
+ * @tc.number: SetStaticBufferCallback.
+ * @tc.desc  : Test SetStaticBufferCallback.
+ */
+HWTEST(AudioRendererUnitTest, SetStaticBufferCallback_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+    audioRendererPrivate->audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    EXPECT_NE(audioRendererPrivate->SetStaticBufferCallback(callback), SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

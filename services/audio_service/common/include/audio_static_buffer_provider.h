@@ -41,6 +41,7 @@ public:
     int32_t IncreaseCurrentLoopTimes();
 
 private:
+    int32_t CheckIsValid(int8_t *inputData, size_t offset, size_t requestDataLen, size_t remainSize);
     std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
     uint8_t *processedBuffer_ = nullptr;
     size_t processedBufferSize_ = 0;

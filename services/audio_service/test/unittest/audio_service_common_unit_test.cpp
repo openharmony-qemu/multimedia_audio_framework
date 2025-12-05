@@ -1462,6 +1462,34 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_001, TestS
 }
 
 /**
+ * @tc.name  : Test CreateFromRemote API
+ * @tc.type  : FUNC
+ * @tc.number: OHAudioBufferBase_CreateFromRemote _002
+ * @tc.desc  : Test OHAudioBufferBase::CreateFromRemote interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_002, TestSize.Level4)
+{
+    uint32_t totalSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    int dataFd = 3;
+    int infoFd = 1;
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
+        byteSizePerFrame, bufferHolder, dataFd, infoFd);
+
+    int dataFd = 99;
+    int infoFd = 99;
+    AudioBufferHolder bufferHolder = AUDIO_APP_SHARED;
+    std::shared_ptr<OHAudioBufferBase> buffer1 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
+        byteSizePerFrame, bufferHolder, dataFd, infoFd);
+    
+    int infoFd = -1;
+    AudioBufferHolder bufferHolder = AUDIO_APP_SHARED;
+    std::shared_ptr<OHAudioBufferBase> buffer2 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
+        byteSizePerFrame, bufferHolder, dataFd, infoFd);
+    EXPECT_EQ(buffer, nullptr);
+}
+
+/**
  * @tc.name  : Test GetSyncWriteFrame API
  * @tc.type  : FUNC
  * @tc.number: OHAudioBufferBase_GetSyncWriteFrame_001
@@ -2173,6 +2201,73 @@ HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_0010, TestSize.Level1)
     EXPECT_NE(SharedStatusInfo_, nullptr);
     SharedStatusInfo_->InitVASharedStatusInfo();
     EXPECT_NE(SharedStatusInfo_->statusInfo_, nullptr);
+}
+
+/**
+ * @tc.name  : Test  API
+ * @tc.type  : FUNC
+ * @tc.number: IncreaseBufferEndCallbackSendTimes_001
+ * @tc.desc  : Test IncreaseBufferEndCallbackSendTimes interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, IncreaseBufferEndCallbackSendTimes_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+
+    ohAudioBuffer->SetStaticMode(true);
+    ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.store(ULLONG_MAX);
+    ohAudioBuffer->IncreaseBufferEndCallbackSendTimes();
+
+    ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
+    ohAudioBuffer->IncreaseBufferEndCallbackSendTimes();
+    EXPECT_EQ(ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.load(), 1);
+}
+
+/**
+ * @tc.name  : Test  API
+ * @tc.type  : FUNC
+ * @tc.number: DecreaseBufferEndCallbackSendTimes
+ * @tc.desc  : Test DecreaseBufferEndCallbackSendTimes interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, DecreaseBufferEndCallbackSendTimes_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+
+    ohAudioBuffer->SetStaticMode(true);
+    ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
+    ohAudioBuffer->DecreaseBufferEndCallbackSendTimes();
+
+    ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.store(1);
+    ohAudioBuffer->DecreaseBufferEndCallbackSendTimes();
+    EXPECT_EQ(ohAudioBuffer->basicBufferInfo_->bufferEndCallbackSendTimes.load(), 0);
+}
+
+/**
+ * @tc.name  : Test  API
+ * @tc.type  : FUNC
+ * @tc.number: CheckFrozenAndSetLastProcessTime
+ * @tc.desc  : Test CheckFrozenAndSetLastProcessTime interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, CheckFrozenAndSetLastProcessTime_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ohAudioBuffer->SetStaticMode(true);
+
+    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), true);
+
+    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT), true);
+    EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), false);
+    EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT), false);
 }
 
 } // namespace AudioStandard

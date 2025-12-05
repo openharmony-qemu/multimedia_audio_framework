@@ -3121,11 +3121,11 @@ bool AudioRendererPrivate::IsRendererFlagsSupportStatic(const int32_t rendererFl
 // inner function. Must be called with AudioRendererPrivate::createRendererMutex_ held.
 int32_t AudioRendererPrivate::SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback param is null");
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_NULL_POINTER, "audioStream_ is null");
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG(state != RENDERER_NEW && state != RENDERER_RELEASED, ERR_ILLEGAL_STATE,
         "incorrect state:%{public}d to register cb", state);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback param is null");
-    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_NULL_POINTER, "audioStream_ is null");
     audioStream_->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate");});
     return audioStream_->SetStaticBufferEventCallback(callback);
 }
