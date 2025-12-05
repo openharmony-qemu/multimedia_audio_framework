@@ -333,6 +333,8 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
+    "./client/audio_wakeup_manager_unit_test.cpp",
+    "./client/audio_workgroup_manager_unit_test.cpp",
     "./client/audio_session_manager_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
