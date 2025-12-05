@@ -1643,10 +1643,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_004, TestSize.Level1)
 
 /**
  * @tc.name  : Test SetSwitchInfo
- * @tc.number: Audio_Renderer_SetSwitchInfo_005
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_001
  * @tc.desc  : Test SetSwitchInfo interface. in static mode
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_004, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
     AudioStreamParams audioStreamParams;

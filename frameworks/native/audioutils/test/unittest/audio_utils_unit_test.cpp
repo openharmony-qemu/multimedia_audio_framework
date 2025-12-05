@@ -3517,15 +3517,15 @@ HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
     EXPECT_FLOAT_EQ(ret, 1.0f);
 
     renderRate = RENDER_RATE_DOUBLE;
-    float ret = ConvertAudioRenderRateToSpeed(renderRate);
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 2.0f);
 
     renderRate = RENDER_RATE_HALF;
-    float ret = ConvertAudioRenderRateToSpeed(renderRate);
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 0.5f);
 
     renderRate = static_cast<AudioRendererRate>(999);
-    float ret = ConvertAudioRenderRateToSpeed(renderRate);
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
     EXPECT_FLOAT_EQ(ret, 1.0f);
 }
 

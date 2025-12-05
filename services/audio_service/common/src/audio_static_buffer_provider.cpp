@@ -93,7 +93,7 @@ int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,
 
 void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
+    CHECK_AND_RETURN_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
     preSetTotalLoopTimes_ = staticBufferInfo.preSetTotalLoopTimes_;
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;

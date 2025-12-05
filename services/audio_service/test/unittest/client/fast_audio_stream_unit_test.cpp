@@ -92,7 +92,7 @@ public:
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
 
     MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
-    MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback), (override));
+    MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback>), (override));
     MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
@@ -2119,7 +2119,7 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level1)
  * @tc.number: SetRenderRate_001
  * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
  */
-HWTEST_F(FastSystemStreamExtUnitTest, SetRenderRate_001, TestSize.Level1)
+HWTEST(FastAudioStreamUnitTest, SetRenderRate_001, TestSize.Level1)
 {
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream =

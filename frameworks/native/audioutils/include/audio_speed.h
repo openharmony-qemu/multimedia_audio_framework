@@ -17,9 +17,11 @@
 
 #include <cstdint>
 #include <string>
-
-#include "sonic.h"
 #include "audio_info.h"
+
+struct sonicStreamStruct;
+using sonicStream = sonicStreamStruct*;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -28,11 +30,9 @@ static const int32_t MAX_SPEED_BUFFER_SIZE = 614400; // 192khz 100ms 8ch float
 }
 class AudioSpeed {
 public:
-    static std::shared_ptr<AudioSpeed> Create
-
+    AudioSpeed();
     AudioSpeed(size_t rate, size_t format, size_t channels, int32_t maxSpeedBufferSize = MAX_SPEED_BUFFER_SIZE);
 
-    AudioSpeed();
     ~AudioSpeed();
     static float GetPitchForSpeed(float speed);
     int32_t Init();

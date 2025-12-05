@@ -2448,10 +2448,10 @@ HWTEST(IpcStreamInServerUnitTest, PreSetLoopTimes_001, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(), ERR_OPERATION_FAILED);
+    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(), ERR_OPERATION_FAILED);
+    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
 }
 
 /**
@@ -2466,10 +2466,10 @@ HWTEST(IpcStreamInServerUnitTest, PreSetLoopTimes_002, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(), ERR_OPERATION_FAILED);
+    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_NE(ipcStreamInServerRet.PreSetLoopTimes(), SUCCESS);
+    EXPECT_NE(ipcStreamInServerRet.PreSetLoopTimes(10), SUCCESS);
 }
 
 /**

@@ -326,9 +326,56 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
 {
     CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr, nullptr, "sharedMemory is null");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, nullptr, "callback param is null");
-    auto sharedRenderer = CreateStaticRenderer(rendererOptions, sharedMemory, callback, appInfo);
-    CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
-    return sharedRenderer;
+        Trace trace("KeyAction AudioRenderer::StaticCreate");
+    std::lock_guard<std::mutex> lock(createRendererMutex_);
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
+        nullptr, "sa not start");
+    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage);
+    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+        return nullptr;
+    }
+
+    auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
+    if (audioRenderer == nullptr) {
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
+    }
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
+
+    audioRenderer->rendererInfo_.isStatic = true;
+    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
+    int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    CHECK_AND_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
+        nullptr, "rendererFlags not support!");
+
+    HILOG_COMM_INFO("StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
+        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
+    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
+    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
+    // cannot set offload when in static mode.
+    audioRenderer->rendererInfo_.isOffloadAllowed = false;
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
+    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+    if (audioRenderer->SetParams(params) != SUCCESS) {
+        audioRenderer = nullptr;
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
+    }
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "SetParams failed in renderer!");
+    audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
+        nullptr, "SetStaticBufferCallback fail");
+    return audioRenderer;
 }
 
 void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
@@ -424,63 +471,6 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
             ERR_OPERATION_FAILED);
     }
 
-    return audioRenderer;
-}
-
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer(const AudioRendererOptions &rendererOptions,
-    std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
-    const AppInfo &appInfo)
-{
-    Trace trace("KeyAction AudioRenderer::StaticCreate");
-    std::lock_guard<std::mutex> lock(createRendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
-        nullptr, "sa not start");
-    AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage);
-    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
-        return nullptr;
-    }
-
-    auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
-    if (audioRenderer == nullptr) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_OPERATION_FAILED);
-    }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
-
-    audioRenderer->rendererInfo_.isStatic = true;
-    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
-    int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
-    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
-    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
-    CHECK_AND_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
-        nullptr, "rendererFlags not support!");
-
-    HILOG_COMM_INFO("StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
-        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
-        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
-        "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
-
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
-    // cannot set offload when in static mode.
-    audioRenderer->rendererInfo_.isOffloadAllowed = false;
-    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
-    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
-    if (audioRenderer->SetParams(params) != SUCCESS) {
-        audioRenderer = nullptr;
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
-    }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "SetParams failed in renderer!");
-    audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
-        nullptr, "SetStaticBufferCallback fail");
     return audioRenderer;
 }
 
@@ -2150,15 +2140,8 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
 {
     CHECK_AND_RETURN_RET_LOG(audioStream, false, "stream is nullptr");
 
-    audioStream->SetStreamTrackerState(false);
-    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
-    audioStream->SetPrivacyType(info.privacyType);
-    audioStream->SetRendererInfo(info.rendererInfo);
-    audioStream->SetCapturerInfo(info.capturerInfo);
-    if (info.rendererInfo.isStatic) {
-        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
-        audioStream->SetRenderRate(info.renderRate);
-    }
+    SetSwitchInfoInner(info, audioStream);
+
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice, true);
@@ -3141,6 +3124,20 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     }
     audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
     audioStreamParams.remoteChannelLayout = streamDesc->streamInfo_.channelLayout;
+}
+
+void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
+    std::shared_ptr<IAudioStream> audioStream)
+{
+    audioStream->SetStreamTrackerState(false);
+    audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
+    audioStream->SetPrivacyType(info.privacyType);
+    audioStream->SetRendererInfo(info.rendererInfo);
+    audioStream->SetCapturerInfo(info.capturerInfo);
+    if (info.rendererInfo.isStatic) {
+        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
+        audioStream->SetRenderRate(info.renderRate);
+    }
 }
 
 }  // namespace AudioStandard

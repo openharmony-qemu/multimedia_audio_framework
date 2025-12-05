@@ -1336,30 +1336,6 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
     }
 }
 
-void AudioProcessInClientInner::CheckOperations()
-{
-    if (processConfig_.rendererInfo.isStatic) {
-        Trace trace("AudioProcessInClient::HandleStaticOperation");
-
-        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
-            sendStaticRecreateFunc_();
-        }
-
-        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
-        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
-        CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
-        while (audioBuffer_->IsNeedSendBufferEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
-            audioBuffer_->DecreaseBufferEndCallbackSendTimes();
-        }
-        if (audioBuffer_->IsNeedSendLoopEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
-            audioBuffer_->SetIsNeedSendLoopEndCallback(false);
-        }
-        return;
-    }
-}
-
 void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWritePos)
 {
     Trace traceSync("AudioProcessInClient::UpdateHandleInfo");
@@ -1820,6 +1796,30 @@ void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHaptic
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
     processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
+
+void AudioProcessInClientInner::CheckOperations()
+{
+    if (processConfig_.rendererInfo.isStatic) {
+        Trace trace("AudioProcessInClient::HandleStaticOperation");
+
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
+        while (audioBuffer_->IsNeedSendBufferEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            audioBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (audioBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            audioBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
+        return;
+    }
 }
 
 int32_t AudioProcessInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)

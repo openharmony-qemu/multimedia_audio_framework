@@ -1380,24 +1380,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(audioMode);
 
         // AudioRendererInfo
-        parcel.WriteInt32(rendererInfo.contentType);
-        parcel.WriteInt32(rendererInfo.streamUsage);
-        parcel.WriteInt32(rendererInfo.rendererFlags);
-        parcel.WriteInt32(rendererInfo.volumeMode);
-        parcel.WriteInt32(rendererInfo.originalFlag);
-        parcel.WriteString(rendererInfo.sceneType);
-        parcel.WriteBool(rendererInfo.spatializationEnabled);
-        parcel.WriteBool(rendererInfo.headTrackingEnabled);
-        parcel.WriteBool(rendererInfo.isSatellite);
-        parcel.WriteInt32(rendererInfo.pipeType);
-        parcel.WriteInt32(rendererInfo.playerType);
-        parcel.WriteUint64(rendererInfo.expectedPlaybackDurationBytes);
-        parcel.WriteInt32(rendererInfo.effectMode);
-        parcel.WriteBool(rendererInfo.isLoopback);
-        parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
-        parcel.WriteBool(rendererInfo.isVirtualKeyboard);
-        parcel.WriteBool(rendererInfo.keepRunning);
-        parcel.WriteBool(rendererInfo.isStatic);
+        MarshallingRendererInfo(parcel);
 
         //AudioPrivacyType
         parcel.WriteInt32(privacyType);
@@ -1457,24 +1440,7 @@ struct AudioProcessConfig : public Parcelable {
         config->audioMode = static_cast<AudioMode>(parcel.ReadInt32());
 
         // AudioRendererInfo
-        config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
-        config->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        config->rendererInfo.rendererFlags = parcel.ReadInt32();
-        config->rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
-        config->rendererInfo.originalFlag = parcel.ReadInt32();
-        config->rendererInfo.sceneType = parcel.ReadString();
-        config->rendererInfo.spatializationEnabled = parcel.ReadBool();
-        config->rendererInfo.headTrackingEnabled = parcel.ReadBool();
-        config->rendererInfo.isSatellite = parcel.ReadBool();
-        config->rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
-        config->rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
-        config->rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
-        config->rendererInfo.effectMode = parcel.ReadInt32();
-        config->rendererInfo.isLoopback = parcel.ReadBool();
-        config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
-        config->rendererInfo.keepRunning = parcel.ReadBool();
-        config->rendererInfo.isStatic = parcel.ReadBool();
+        UnmarshallingRendererInfo(parcel, config);
 
         //AudioPrivacyType
         config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -1509,6 +1475,51 @@ struct AudioProcessConfig : public Parcelable {
 
         return config;
     }
+
+    void MarshallingRendererInfo(Parcel &parcel)
+    {
+        parcel.WriteInt32(rendererInfo.contentType);
+        parcel.WriteInt32(rendererInfo.streamUsage);
+        parcel.WriteInt32(rendererInfo.rendererFlags);
+        parcel.WriteInt32(rendererInfo.volumeMode);
+        parcel.WriteInt32(rendererInfo.originalFlag);
+        parcel.WriteString(rendererInfo.sceneType);
+        parcel.WriteBool(rendererInfo.spatializationEnabled);
+        parcel.WriteBool(rendererInfo.headTrackingEnabled);
+        parcel.WriteBool(rendererInfo.isSatellite);
+        parcel.WriteInt32(rendererInfo.pipeType);
+        parcel.WriteInt32(rendererInfo.playerType);
+        parcel.WriteUint64(rendererInfo.expectedPlaybackDurationBytes);
+        parcel.WriteInt32(rendererInfo.effectMode);
+        parcel.WriteBool(rendererInfo.isLoopback);
+        parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
+        parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteBool(rendererInfo.keepRunning);
+        parcel.WriteBool(rendererInfo.isStatic);
+    }
+
+    static void UnmarshallingRendererInfo(Parcel &parcel, AudioProcessConfig &config)
+    {
+        config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        config->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        config->rendererInfo.rendererFlags = parcel.ReadInt32();
+        config->rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        config->rendererInfo.originalFlag = parcel.ReadInt32();
+        config->rendererInfo.sceneType = parcel.ReadString();
+        config->rendererInfo.spatializationEnabled = parcel.ReadBool();
+        config->rendererInfo.headTrackingEnabled = parcel.ReadBool();
+        config->rendererInfo.isSatellite = parcel.ReadBool();
+        config->rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
+        config->rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
+        config->rendererInfo.effectMode = parcel.ReadInt32();
+        config->rendererInfo.isLoopback = parcel.ReadBool();
+        config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.keepRunning = parcel.ReadBool();
+        config->rendererInfo.isStatic = parcel.ReadBool();
+    }
+
 };
 
 struct Volume {

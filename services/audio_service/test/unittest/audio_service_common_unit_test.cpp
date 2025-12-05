@@ -1473,17 +1473,18 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_002, TestS
     uint32_t byteSizePerFrame = 10;
     int dataFd = 3;
     int infoFd = 1;
+    AudioBufferHolder bufferHolder = AUDIO_CLIENT;
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
         byteSizePerFrame, bufferHolder, dataFd, infoFd);
 
-    int dataFd = 99;
-    int infoFd = 99;
-    AudioBufferHolder bufferHolder = AUDIO_APP_SHARED;
+    dataFd = 99;
+    infoFd = 99;
+    bufferHolder = AUDIO_APP_SHARED;
     std::shared_ptr<OHAudioBufferBase> buffer1 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
         byteSizePerFrame, bufferHolder, dataFd, infoFd);
     
-    int infoFd = -1;
-    AudioBufferHolder bufferHolder = AUDIO_APP_SHARED;
+    infoFd = -1;
+    bufferHolder = AUDIO_APP_SHARED;
     std::shared_ptr<OHAudioBufferBase> buffer2 = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
         byteSizePerFrame, bufferHolder, dataFd, infoFd);
     EXPECT_EQ(buffer, nullptr);

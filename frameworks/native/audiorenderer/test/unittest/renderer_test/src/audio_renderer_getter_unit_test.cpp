@@ -2914,13 +2914,11 @@ HWTEST(AudioRendererUnitTest, HandleSetRendererInfoByOptions_002, TestSize.Level
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
     EXPECT_EQ(renderer->strategy_.concurrencyMode, AudioConcurrencyMode::MIX_WITH_OTHERS);
 
-    AudioRendererOptions rendererOpts;
     rendererOpts.rendererInfo.isStatic = false;
     rendererOpts.strategy.concurrencyMode = AudioConcurrencyMode::INVALID;
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
     EXPECT_EQ(renderer->strategy_.concurrencyMode, AudioConcurrencyMode::INVALID);
 
-    AudioRendererOptions rendererOpts;
     rendererOpts.rendererInfo.isStatic = true;
     rendererOpts.strategy.concurrencyMode = AudioConcurrencyMode::DUCK_OTHERS;
     renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);

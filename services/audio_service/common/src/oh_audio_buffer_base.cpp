@@ -1088,7 +1088,7 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
     basicBufferInfo_->needSendLoopEndCallback.store(value);
 }
 
-// In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen, 
+// In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen,
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
 bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
 {

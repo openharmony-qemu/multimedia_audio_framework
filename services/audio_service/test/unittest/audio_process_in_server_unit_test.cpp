@@ -1245,6 +1245,7 @@ HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1
 HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_02, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
+    configRet.rendererInfo.isStatic = true;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
 
@@ -1257,7 +1258,6 @@ HWTEST(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_02, TestSize.Level1
         .dataLength = 1
     };
     AudioStreamData streamData;
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
     audioProcessInServerRet.PrepareStreamDataBuffer(1, ringBuffer, streamData);
     // spansizeinframe == 2; spansizeinframe > datalenth
     audioProcessInServerRet.PrepareStreamDataBuffer(2, ringBuffer, streamData);
@@ -2228,6 +2228,7 @@ HWTEST(AudioProcessInServerUnitTest, HandleCapturerDataParams_001, TestSize.Leve
 HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_001, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
+    configRet.rendererInfo.isStatic = true;
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
@@ -2244,9 +2245,35 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_001, TestSize.Level1)
         .dataLength = 3000
     };
     int32_t hapticsSyncId = 0;
-    audioProcessInServer->processConfig_.rendererInfo.isStatic = true;
     EXPECT_TRUE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
-    audioProcessInServer->processConfig_.rendererInfo.isStatic = false;
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: PrepareRingBuffer
+ * @tc.desc  : Test PrepareRingBuffer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.rendererInfo.isStatic = false;
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->byteSizePerFrame_ = 10;
+
+    uint8_t* bufA = new uint8_t[2048];
+    uint8_t* bufB = new uint8_t[2048];
+    RingBufferWrapper writeBuf = {
+        .basicBufferDescs = {{
+            {bufA, 2048},
+            {bufB, 2048}
+        }},
+        .dataLength = 3000
+    };
+    int32_t hapticsSyncId = 0;
     EXPECT_TRUE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
 
@@ -2262,21 +2289,21 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_001, TestSize.L
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServerRet.processConfig_.staticBufferInfo.sharedMemory_ =
-        AudioSharedMemory::CreateFromLocal(10, "test");
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
 
     audioProcessInServerRet.streamStatus_->store(STREAM_PAUSED);
     EXPECT_EQ(audioProcessInServerRet.streamStatus_->load(), STREAM_PAUSED);
 
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::GetInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     auto ret = audioProcessInServerRet.Resume();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2291,22 +2318,22 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_002, TestSize.L
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServerRet.processConfig_.staticBufferInfo.sharedMemory_ =
-        AudioSharedMemory::CreateFromLocal(10, "test");
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
 
     audioProcessInServerRet.streamStatus_->store(STREAM_PAUSED);
     EXPECT_EQ(audioProcessInServerRet.streamStatus_->load(), STREAM_PAUSED);
 
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::GetInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     audioProcessInServerRet.staticBufferProvider_->PreSetLoopTimes(10);
     auto ret = audioProcessInServerRet.Resume();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2319,16 +2346,15 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_stop_001, TestSize.Lev
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
+    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = true;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServerRet.processConfig_.staticBufferInfo.sharedMemory_ =
-        AudioSharedMemory::CreateFromLocal(10, "test");
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
     audioProcessInServerRet.streamStatus_->store(STREAM_RUNNING);
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
 
     int32_t ret = 0;
     audioProcessInServerRet.Stop(ret);
@@ -2349,15 +2375,13 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_configbuffer_001, Test
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
+    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
     EXPECT_EQ(audioProcessInServerRet.processBuffer_, nullptr);
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
-
-    audioProcessInServerRet.processConfig_.staticBufferInfo.sharedMemory_ =
-        AudioSharedMemory::CreateFromLocal(10, "test");
     auto ret = audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
         spanSizeInFrame, g_audioStreamInfo);
     EXPECT_EQ(ret, SUCCESS);
@@ -2373,15 +2397,13 @@ HWTEST(AudioProcessInServerUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Lev
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
+    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
+    configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
     EXPECT_EQ(audioProcessInServerRet.processBuffer_, nullptr);
-    audioProcessInServerRet.processConfig_.rendererInfo.isStatic = true;
-
-    audioProcessInServerRet.processConfig_.staticBufferInfo.sharedMemory_ =
-        AudioSharedMemory::CreateFromLocal(10, "test");
     auto ret = audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
         spanSizeInFrame, g_audioStreamInfo);
     EXPECT_EQ(ret, SUCCESS);

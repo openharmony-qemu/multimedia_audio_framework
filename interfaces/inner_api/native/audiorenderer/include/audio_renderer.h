@@ -263,7 +263,7 @@ public:
      * refer AudioSharedMemory in audio_shared_memory.h
      * @param callback Call the registered callback when the corresponding event ID operation is triggered.
      * @param appInfo Originating application's uid and token id can be passed here
-     * 
+     *
      * @return Returns shared pointer to the AudioRenderer object
      * @since 22
     */
@@ -283,24 +283,6 @@ public:
      * @since 12
     */
     static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
-        const AppInfo &appInfo = AppInfo());
-
-    /**
-     * @brief create static renderer instance.
-     *
-     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
-     * refer AudioRendererOptions in audio_info.h.
-     * @param sharedMemory The shared memory structure containing the data to be played.
-     * refer AudioSharedMemory in audio_shared_memory.h
-     * @param callback Call the registered callback when the corresponding event ID operation is triggered.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns shared pointer to the AudioRenderer object
-     * @since 22
-    */
-    static std::shared_ptr<AudioRenderer> CreateStaticRenderer(
-        const AudioRendererOptions &rendererOptions,
-        std::shared_ptr<AudioSharedMemory> sharedMemory,
-        std::shared_ptr<StaticBufferEventCallback> callback,
         const AppInfo &appInfo = AppInfo());
 
     /**

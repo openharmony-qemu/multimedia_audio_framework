@@ -26,8 +26,7 @@ namespace AudioStandard {
 
 static const int32_t MAX_SPEED_BUFFER_FACTOR = 3;
 
-class AudioStaticBufferProcessor
-{
+class AudioStaticBufferProcessor {
 public:
     static std::shared_ptr<AudioStaticBufferProcessor> CreateInstance(AudioStreamInfo streamInfo,
         std::shared_ptr<OHAudioBufferBase> sharedBuffer);

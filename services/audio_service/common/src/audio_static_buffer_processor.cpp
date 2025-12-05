@@ -43,7 +43,6 @@ AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInf
 int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
 {
     float speed = ConvertAudioRenderRateToSpeed(renderRate);
-
     if (isEqual(speed, SPEED_NORMAL)) {
         curSpeed_ = speed;
         return SUCCESS;
@@ -63,7 +62,6 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
         return ERR_OPERATION_FAILED;
     }
     CHECK_AND_RETURN_RET_LOG(outBufferSize != 0, ERR_OPERATION_FAILED, "speed bufferSize is 0");
-    AUDIO_INFO_LOG("WJJ outBufferSize %{public}d", outBufferSize);
 
     speedBufferSize_ = static_cast<size_t>(outBufferSize);
     curSpeed_ = speed;

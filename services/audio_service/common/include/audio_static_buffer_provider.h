@@ -23,8 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioStaticBufferProvider
-{
+class AudioStaticBufferProvider {
 public:
     static std::shared_ptr<AudioStaticBufferProvider> CreateInstance(std::shared_ptr<OHAudioBufferBase> sharedBuffer);
 

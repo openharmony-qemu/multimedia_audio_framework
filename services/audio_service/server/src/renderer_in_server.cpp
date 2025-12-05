@@ -139,7 +139,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         "spanSizeInByte_: %{public}zu, bufferTotalSizeInFrame_: %{public}zu", engineTotalSizeInFrame_,
         spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, bufferTotalSizeInFrame_);
 
-    CHECK_AND_RETURN_RET_LOG(CreateServerBuffer() == SUCCESS, ERR_OPERATION_FAILED "CreateServerBuffer failed");
+    CHECK_AND_RETURN_RET_LOG(CreateServerBuffer() == SUCCESS, ERR_OPERATION_FAILED, "CreateServerBuffer failed");
 
     uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND /
         (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
@@ -2688,7 +2688,8 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
-    CHECK_AND_RETURN_RET(SelectModeAndWriteData(inputData, requestDataLen) == SUCCESS, ret);
+    int32_t ret = SelectModeAndWriteData(inputData, requestDataLen);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 
     BufferDesc bufferDesc = {
         .buffer = reinterpret_cast<uint8_t*>(inputData),

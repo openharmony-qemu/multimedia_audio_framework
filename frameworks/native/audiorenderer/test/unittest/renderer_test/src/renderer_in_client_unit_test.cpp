@@ -284,6 +284,11 @@ public:
     virtual void GetSingleStreamVolumeImpl(float &volume) {}
 };
 
+class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
 class MockWriteCallback : public AudioRendererWriteCallback {
 public:
     void OnWriteData(size_t length) {};
@@ -2926,12 +2931,12 @@ HWTEST(RendererInClientInnerUnitTest, WaitforBufferNeedOperate_001, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0)
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    ptrRendererInClientInner->WaitforBufferNeedOperate();
+    ptrRendererInClientInner->WaitForBufferNeedOperate();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STAND_BY);
-    ptrRendererInClientInner->WaitforBufferNeedOperate();
+    ptrRendererInClientInner->WaitForBufferNeedOperate();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
     ptrRendererInClientInner->WaitForBufferNeedOperate();
     EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
@@ -2950,7 +2955,7 @@ HWTEST(RendererInClientInnerUnitTest, CheckStaticAndOperate_001, TestSize.Level4
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0)
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_EQ(ptrRendererInClientInner->CheckStaticAndOperate(), false);
 }
@@ -2965,7 +2970,6 @@ HWTEST(RendererInClientInnerUnitTest, CheckOperations_001, TestSize.Level4)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
@@ -3000,7 +3004,6 @@ HWTEST(RendererInClientInnerUnitTest, CheckOperations_002, TestSize.Level4)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
@@ -3027,7 +3030,6 @@ HWTEST(RendererInClientInnerUnitTest, CheckOperations_003, TestSize.Level4)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
@@ -3054,25 +3056,25 @@ HWTEST(RendererInClientInnerUnitTest, StopAudioStream_static, TestSize.Level1)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ptrRendererInClientInner->offloadEnable_ = true;
-    ptrRendererInClientInner->rendererInfo_.isStatic_ = true;
+    ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->state_ = RUNNING;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_FALSE(ptrRendererInClientInner->StopAudioStream());
 
     ptrRendererInClientInner->offloadEnable_ = false;
-    ptrRendererInClientInner->rendererInfo_.isStatic_ = true;
+    ptrRendererInClientInner->rendererInfo_.isStatic = true;
     ptrRendererInClientInner->state_ = RUNNING;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_FALSE(ptrRendererInClientInner->StopAudioStream());
 
     ptrRendererInClientInner->offloadEnable_ = true;
-    ptrRendererInClientInner->rendererInfo_.isStatic_ = false;
+    ptrRendererInClientInner->rendererInfo_.isStatic = false;
     ptrRendererInClientInner->state_ = RUNNING;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_FALSE(ptrRendererInClientInner->StopAudioStream());
 
     ptrRendererInClientInner->offloadEnable_ = false;
-    ptrRendererInClientInner->rendererInfo_.isStatic_ = false;
+    ptrRendererInClientInner->rendererInfo_.isStatic = false;
     ptrRendererInClientInner->state_ = RUNNING;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_FALSE(ptrRendererInClientInner->StopAudioStream());

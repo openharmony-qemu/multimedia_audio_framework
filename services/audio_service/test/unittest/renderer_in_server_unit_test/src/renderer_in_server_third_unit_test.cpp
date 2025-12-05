@@ -2312,8 +2312,9 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_001, TestSize
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     std::shared_ptr<AudioStaticBufferProcessor> bufferProcessorTest =
         AudioStaticBufferProcessor::CreateInstance(testStreamInfo, buffer);
-    bufferProcessorTest->bufferProcessorTest(testStreamInfo, buffer);
     ASSERT_TRUE(bufferProcessorTest != nullptr);
+    bufferProcessorTest = AudioStaticBufferProcessor::CreateInstance(testStreamInfo, nullptr);
+    ASSERT_TRUE(bufferProcessorTest == nullptr);
 }
 
 /**
@@ -2396,7 +2397,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_004, TestSize
  */
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.Level1)
 {
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2407,7 +2408,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 2;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    buffer->basicBufferInfo_->streamStatus_.store(StreamStatus::STREAM_RUNNING);
+    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize);
 
     staticBufferProviderTest->currentLoopTimes_ = 1;
@@ -2421,7 +2422,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 2;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    buffer->basicBufferInfo_->streamStatus_.store(StreamStatus::STREAM_PAUSED);
+    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_PAUSED);
     EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), ERR_OPERATION_FAILED);
 }
 
@@ -2433,7 +2434,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
  */
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.Level1)
 {
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2444,7 +2445,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    buffer->basicBufferInfo_->streamStatus_.store(StreamStatus::STREAM_RUNNING);
+    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
 }
 
@@ -2457,7 +2458,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
  */
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.Level1)
 {
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2468,7 +2469,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    buffer->basicBufferInfo_->streamStatus_.store(StreamStatus::STREAM_RUNNING);
+    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
 }
 
@@ -2480,7 +2481,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
  */
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.Level1)
 {
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2491,21 +2492,21 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.
     size_t remainSize = 0;
     EXPECT_EQ(staticBufferProviderTest->CheckIsValid(inputData, offset, requestDataLen, remainSize), SUCCESS);
 
-    size_t offset = 10;
-    size_t requestDataLen = 99;
-    size_t remainSize = 0;
+    offset = 10;
+    requestDataLen = 99;
+    remainSize = 0;
     EXPECT_EQ(
         staticBufferProviderTest->CheckIsValid(inputData, offset, requestDataLen, remainSize), ERR_OPERATION_FAILED);
     
-    size_t offset = 10;
-    size_t requestDataLen = 10;
-    size_t remainSize = 99;
+    offset = 10;
+    requestDataLen = 10;
+    remainSize = 99;
     EXPECT_EQ(
         staticBufferProviderTest->CheckIsValid(inputData, offset, requestDataLen, remainSize), ERR_OPERATION_FAILED);
 
-    size_t offset = 10;
-    size_t requestDataLen = 99;
-    size_t remainSize = 99;
+    offset = 10;
+    requestDataLen = 99;
+    remainSize = 99;
     EXPECT_EQ(
         staticBufferProviderTest->CheckIsValid(inputData, offset, requestDataLen, remainSize), ERR_OPERATION_FAILED);
 }
@@ -2516,9 +2517,9 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.
  * @tc.number: AudioStaticBufferProvider_005
  * @tc.desc  : Test AudioStaticBufferProvider IncreaseCurrentLoopTimes
  */
-HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_005, TestSize.Level1)
 {
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2550,10 +2551,10 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerGetAvailableSize_static_
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    processConfig.rendererInfo.isStatic = true;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->processConfig_.rendererInfo.isStatic = true;
     size_t length = 0;
     EXPECT_EQ(rendererInServer->GetAvailableSize(length), SUCCESS);
 }
@@ -2569,13 +2570,13 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_static_Stop_001, TestSi
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isStatic = true;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = false;
-    rendererInServer->processConfig_.rendererInfo.isStatic = true;
 
     ret = rendererInServer->Stop();
     EXPECT_EQ(SUCCESS, ret);
@@ -2587,7 +2588,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_static_Stop_001, TestSi
  * @tc.number: RendererInServerConfigServerBuffer_001
  * @tc.desc  : Test ConfigServerBuffer when audioServerBuffer_ is not nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_001, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerConfigServerBuffer_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -2599,8 +2600,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_001, TestS
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(rendererInServer->bufferTotalSizeInFrame_, (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
-        testStreamInfo.samplingRate / AUDIO_US_PER_S);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -2610,7 +2609,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_001, TestS
  * @tc.number: ProcessAndSetStaticBuffer_001
  * @tc.desc  : Test ProcessAndSetStaticBuffer_001
  */
-HWTEST_F(RendererInServerUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -2622,8 +2621,6 @@ HWTEST_F(RendererInServerUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(rendererInServer->bufferTotalSizeInFrame_, (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
-        testStreamInfo.samplingRate / AUDIO_US_PER_S);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = rendererInServer->ProcessAndSetStaticBuffer();

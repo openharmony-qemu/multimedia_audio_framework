@@ -20,6 +20,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "sonic.h"
 
 namespace OHOS {
 namespace AudioStandard {
