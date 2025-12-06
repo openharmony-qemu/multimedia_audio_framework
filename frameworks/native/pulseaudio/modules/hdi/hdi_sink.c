@@ -3332,7 +3332,7 @@ static void RendererSinkSetPriPaPower(pa_sink_input *i, pa_sink_input_state_t st
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         bool isZeroVolume = IsZeroVolume(volume);
-        AUDIO_INFO_LOG(
+        HILOG_COMM_INFO(
             "session %{public}u, stream %{public}s, zerovol %{public}d", sessionID, streamType, isZeroVolume);
         if (!isZeroVolume) {
             u->primary.sinkAdapter->SinkAdapterSetPriPaPower(u->primary.sinkAdapter);

@@ -120,7 +120,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
-    AUDIO_INFO_LOG("%{public}s update validState:true", logTypeTag_.c_str());
+    HILOG_COMM_INFO("%{public}s update validState:true", logTypeTag_.c_str());
     validState_ = true;
 }
 
@@ -144,7 +144,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Start");
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Start]%{public}s in", logTypeTag_.c_str());
     CHECK_AND_RETURN_RET(IsSinkInited(), ERR_NOT_STARTED);
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
@@ -170,7 +170,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         CHECK_AND_BREAK_LOG(audioRender_ != nullptr && IsValidState(), "Bluetooth renderer is nullptr");
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            AUDIO_ERR_LOG("start fail, remain %{public}d attempt(s)", tryCount);
+            HILOG_COMM_ERROR("start fail, remain %{public}d attempt(s)", tryCount);
             HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
                 "failed:" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
@@ -179,7 +179,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         started_ = true;
         return CheckBluetoothScenario();
     }
-    AUDIO_ERR_LOG("start fail for three times, return");
+    HILOG_COMM_ERROR("start fail for three times, return");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
         AUDIO_INFO_LOG("running lock unlock");
@@ -195,7 +195,7 @@ int32_t BluetoothAudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Stop");
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Stop]%{public}s in", logTypeTag_.c_str());
     DeInitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -257,7 +257,7 @@ int32_t BluetoothAudioRenderSink::Pause(void)
 
 int32_t BluetoothAudioRenderSink::Flush(void)
 {
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Flush]%{public}s in", logTypeTag_.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
@@ -327,7 +327,7 @@ int64_t BluetoothAudioRenderSink::GetVolumeDataCount()
 
 int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
 {
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::SuspendRenderSink]%{public}s in", logTypeTag_.c_str());
     Trace trace("BluetoothAudioRenderSink::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
@@ -335,7 +335,7 @@ int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
 
 int32_t BluetoothAudioRenderSink::RestoreRenderSink(void)
 {
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::RestoreRenderSink]%{public}s in", logTypeTag_.c_str());
     Trace trace("BluetoothAudioRenderSink::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
@@ -344,7 +344,7 @@ int32_t BluetoothAudioRenderSink::RestoreRenderSink(void)
 void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     SetAudioParameterInner(value);
 
@@ -361,7 +361,7 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
                 CheckBluetoothScenario();
                 return;
             } else {
-                AUDIO_ERR_LOG("start fail, remain %{public}d attempt(s)", tryCount);
+                HILOG_COMM_ERROR("start fail, remain %{public}d attempt(s)", tryCount);
                 usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             }
         }
@@ -696,7 +696,7 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
+    HILOG_COMM_INFO("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
         param.channelCount, param.format);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -849,7 +849,7 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
             continue;
         }
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("A2dp RenderFrame fail, ret: %{public}x", ret);
+            HILOG_COMM_ERROR("A2dp RenderFrame fail, ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
         }
         break;

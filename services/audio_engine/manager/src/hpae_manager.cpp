@@ -625,7 +625,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
         lock.lock();
     }
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-        AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
+        HILOG_COMM_WARN("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
         return SUCCESS;
     }
     bool isChangeDefaultSink = false;
