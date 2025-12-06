@@ -269,11 +269,7 @@ int32_t HpaeInjectorRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    if (sinkOutputNode_ != nullptr) {
-        sinkOutputNode_->RenderSinkStop();
-        sinkOutputNode_->RenderSinkDeInit();
-        sinkOutputNode_->ResetAll();
-    }
+    StopOuputNode();
     isInit_.store(false);
     return SUCCESS;
 }
