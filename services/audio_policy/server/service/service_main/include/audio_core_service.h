@@ -293,6 +293,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void HandleRingToDefaultSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
     // Functions related to get operations - device related
