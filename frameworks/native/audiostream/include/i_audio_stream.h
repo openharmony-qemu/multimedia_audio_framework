@@ -114,6 +114,9 @@ public:
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
         RenderTarget target = NORMAL_PLAYBACK;
+
+        StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
     };
 
     virtual ~IAudioStream() = default;
@@ -345,6 +348,14 @@ public:
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 
     virtual bool IsRestoreNeeded() { return false; }
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+
+    virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

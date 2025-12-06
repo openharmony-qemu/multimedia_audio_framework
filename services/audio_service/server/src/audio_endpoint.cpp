@@ -1224,6 +1224,9 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 needCheckStandby = true;
                 continue;
             }
+            // StaticMode do not refresh Time here, skip;
+            CHECK_AND_CONTINUE(!processBufferList_[i]->GetStaticMode());
+
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
             uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
             if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {

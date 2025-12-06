@@ -81,6 +81,11 @@ public:
     virtual void OnHandleData(size_t length) {}
 };
 
+class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
 /**
  * @tc.name  : Test GetPredictNextHandleTime API
  * @tc.type  : FUNC
@@ -245,5 +250,246 @@ HWTEST(AudioProcessInClientUnitTest, CopyWithVolume_001, TestSize.Level4)
     dstDesc.bufLength = 1;
     ptrAudioProcessInClientInner->CopyWithVolume(srcDesc, dstDesc);
 }
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: CheckOperations_001
+ * @tc.desc  : Test CheckOperations with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, CheckOperations_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrAudioProcessInClientInner->audioBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    ptrAudioProcessInClientInner->sendStaticRecreateFunc_ = nullptr;
+    ptrAudioProcessInClientInner->CheckOperations();
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
+    ptrAudioProcessInClientInner->sendStaticRecreateFunc_ = nullptr;
+    ptrAudioProcessInClientInner->CheckOperations();
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    ptrAudioProcessInClientInner->sendStaticRecreateFunc_ = [](){return;};
+    ptrAudioProcessInClientInner->CheckOperations();
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
+    ptrAudioProcessInClientInner->sendStaticRecreateFunc_ = [](){return;};
+    ptrAudioProcessInClientInner->CheckOperations();
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: CheckOperations_002
+ * @tc.desc  : Test CheckOperations with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, CheckOperations_002, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrAudioProcessInClientInner->audioBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    ptrAudioProcessInClientInner->audioStaticBufferEventCallback_ = std::make_shared<StaticBufferEventCallbackTest>();
+    ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    ptrAudioProcessInClientInner->audioBuffer_->IncreaseBufferEndCallbackSendTimes();
+    ptrAudioProcessInClientInner->CheckOperations();
+    EXPECT_EQ(ptrAudioProcessInClientInner->audioBuffer_->IsNeedSendBufferEndCallback(), false);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: CheckOperations_003
+ * @tc.desc  : Test CheckOperations with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, CheckOperations_003, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrAudioProcessInClientInner->audioBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    ptrAudioProcessInClientInner->audioStaticBufferEventCallback_ = std::make_shared<StaticBufferEventCallbackTest>();
+    ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    ptrAudioProcessInClientInner->audioBuffer_->SetIsNeedSendLoopEndCallback(true);
+    ptrAudioProcessInClientInner->CheckOperations();
+    EXPECT_EQ(ptrAudioProcessInClientInner->audioBuffer_->IsNeedSendLoopEndCallback(), false);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: SetStaticBufferEventCallback_001
+ * @tc.desc  : Test SetStaticBufferInfo with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, SetStaticBufferInfo_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrAudioProcessInClientInner->audioBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    ptrAudioProcessInClientInner->audioStaticBufferEventCallback_ = std::make_shared<StaticBufferEventCallbackTest>();
+    ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    ptrAudioProcessInClientInner->audioBuffer_->SetIsNeedSendLoopEndCallback(true);
+    ptrAudioProcessInClientInner->CheckOperations();
+    EXPECT_EQ(ptrAudioProcessInClientInner->audioBuffer_->IsNeedSendLoopEndCallback(), false);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: SetStaticBufferEventCallback_001
+ * @tc.desc  : Test SetStaticBufferEventCallback with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, SetStaticBufferEventCallback_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+    EXPECT_EQ(ptrAudioProcessInClientInner->SetStaticBufferEventCallback(callback), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: SetStaticTriggerRecreateCallback_001
+ * @tc.desc  : Test SetStaticTriggerRecreateCallback with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, SetStaticTriggerRecreateCallback_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    EXPECT_EQ(ptrAudioProcessInClientInner->SetStaticTriggerRecreateCallback([](){return;}), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: SetLoopTimes_001
+ * @tc.desc  : Test SetLoopTimes with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, SetLoopTimes_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    EXPECT_EQ(ptrAudioProcessInClientInner->SetLoopTimes(99), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: CheckStaticAndOperate_001
+ * @tc.desc  : Test CheckStaticAndOperate with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, CheckStaticAndOperate_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    ptrAudioProcessInClientInner->audioBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
+    ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    EXPECT_FALSE(ptrAudioProcessInClientInner->CheckStaticAndOperate());
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: GetStaticBufferInfo_001
+ * @tc.desc  : Test GetStaticBufferInfo with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, GetStaticBufferInfo_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    StaticBufferInfo staticBufferInfo{};
+    EXPECT_NE(ptrAudioProcessInClientInner->GetStaticBufferInfo(staticBufferInfo), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CheckOperations API with static renderer
+ * @tc.type  : FUNC
+ * @tc.number: SetStaticRenderRate_001
+ * @tc.desc  : Test GetStaticBufferInfo with static renderer info
+ */
+HWTEST(AudioProcessInClientUnitTest, SetStaticRenderRate_001, TestSize.Level4)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
+    EXPECT_NE(ptrAudioProcessInClientInner->SetStaticRenderRate(RENDER_RATE_NORMAL), SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOSs

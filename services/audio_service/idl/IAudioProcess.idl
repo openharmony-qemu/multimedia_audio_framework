@@ -17,6 +17,7 @@ package OHOS.AudioStandard;
 
 sequenceable OHOS.IRemoteObject;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
+sequenceable audio_info..OHOS.AudioStandard.StaticBufferInfo;
 
 interface IAudioProcess {
     [ipccode 0] void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer, [out] unsigned int spanSizeInFrame);
@@ -39,4 +40,7 @@ interface IAudioProcess {
     void SetRebuildFlag();
     void GetServerKeepRunning([out] boolean keepRunning);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
+    void PreSetLoopTimes([in] long bufferLoopTimes);
+    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
+    void SetStaticRenderRate([in] unsigned int renderRate);
 }

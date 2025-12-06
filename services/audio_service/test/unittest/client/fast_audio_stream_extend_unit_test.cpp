@@ -90,6 +90,12 @@ public:
     MOCK_METHOD(bool, IsRestoreNeeded, (), (override));
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
+
+    MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
+    MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback), (override));
+    MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
+    MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
+    MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
 };
 
 class FastSystemStreamExtUnitTest : public testing::Test {

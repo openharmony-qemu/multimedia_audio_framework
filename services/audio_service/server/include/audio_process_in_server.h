@@ -29,6 +29,8 @@
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
 #include "format_converter.h"
+#include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -171,6 +173,10 @@ public:
     void UpdateStreamInfo() override;
 
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
+
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticRenderRate(uint32_t renderRate) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -204,6 +210,9 @@ private:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
+
+    int32_t CreateServerBuffer();
+    int32_t ProcessAndSetStaticBuffer();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -222,7 +231,6 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
-    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
 
     uint32_t totalSizeInframe_ = 0;
@@ -278,6 +286,10 @@ private:
     std::string logUtilsTag_ = "";
 
     mutable int64_t volumeDataCount_ = 0;
+
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -735,13 +735,12 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
-        "RENDER_MODE_CALLBACK");
+    AUDIO_INFO_LOG("to %{public}d", renderMode);
     if (renderMode_ == renderMode) {
         return SUCCESS;
     }
 
-    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK.
+    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK or RENDER_MODE_STATIC.
     if (renderMode_ == RENDER_MODE_CALLBACK && renderMode == RENDER_MODE_NORMAL) {
         AUDIO_ERR_LOG("SetRenderMode from callback to normal is not supported.");
         return ERR_INCORRECT_MODE;
@@ -1094,7 +1093,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !rendererInfo_.isStatic) {
         lock.lock();
         DrainAudioStreamInner(true);
     }
@@ -1491,6 +1490,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
+
+    if (rendererInfo_.isStatic) {
+        GetStaticBufferInfo(info.staticBufferInfo);
+    }
+    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {

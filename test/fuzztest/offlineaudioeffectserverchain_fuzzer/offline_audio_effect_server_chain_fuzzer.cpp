@@ -77,10 +77,10 @@ void OfflineAudioEffectServerChainPrepareFuzzTest()
     CHECK_AND_RETURN(serverChain != nullptr);
     size_t inSize = g_fuzzUtils.GetData<size_t>();
     std::string inName = "testBuffer";
-    std::shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFormLocal(inSize, inName);
+    std::shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFromLocal(inSize, inName);
     size_t outSize = g_fuzzUtils.GetData<size_t>();
     std::string outName = "testBuffer";
-    std::shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFormLocal(outSize, outName);
+    std::shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFromLocal(outSize, outName);
     serverChain->Prepare(bufferIn, bufferOut);
 }
 
@@ -90,10 +90,10 @@ void OfflineAudioEffectServerChainProcessFuzzTest()
     CHECK_AND_RETURN(serverChain != nullptr);
     size_t inBufferSize = g_fuzzUtils.GetData<size_t>();
     std::string inName = "testBuffer";
-    std::shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFormLocal(inBufferSize, inName);
+    std::shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFromLocal(inBufferSize, inName);
     size_t outBufferSize = g_fuzzUtils.GetData<size_t>();
     std::string outName = "testBuffer";
-    std::shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFormLocal(outBufferSize, outName);
+    std::shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFromLocal(outBufferSize, outName);
     serverChain->inBufferSize_ = inBufferSize;
     serverChain->outBufferSize_ = outBufferSize;
     uint32_t inSize = g_fuzzUtils.GetData<uint32_t>();
