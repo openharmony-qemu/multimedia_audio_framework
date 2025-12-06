@@ -121,7 +121,7 @@ void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 {
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-        if (a2dpInstance_ == nullptr) {
+    if (a2dpInstance_ == nullptr) {
         HILOG_COMM_ERROR("A2DP profile instance unavailable");
         return;
     }
