@@ -618,7 +618,6 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
         return SUCCESS;
     }
     int32_t ret = BluetoothHfpInterface::GetInstance().Connect(virtualDevice);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Hfp Connect Failed");
     if (ret != 0) {
         HILOG_COMM_ERROR("Hfp Connect Failed");
         return ERROR;
