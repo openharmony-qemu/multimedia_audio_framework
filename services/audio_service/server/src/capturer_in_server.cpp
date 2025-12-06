@@ -50,6 +50,8 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     processConfig_ = processConfig;
     streamListener_ = streamListener;
     innerCapId_ = processConfig.innerCapId;
+    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
 
 CapturerInServer::~CapturerInServer()
@@ -300,6 +302,18 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+void CapturerInServer::RecordOverflowStatus(bool currentStatus)
+{
+    if (currentStatus == true && currentStatus != lastOverflowStatus_.load()) {
+        lastOverflowStatus_.store(currentStatus);
+        audioStreamChecker_->RecordOverflowTime(currentStatus);
+    }
+    if (currentStatus == false && currentStatus != lastOverflowStatus_.load()) {
+        lastOverflowStatus_.store(currentStatus);
+        audioStreamChecker_->RecordOverflowTime(currentStatus);
+    }
+}
+
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
@@ -312,8 +326,10 @@ void CapturerInServer::ReadData(size_t length)
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(length);
+        RecordOverflowStatus(true);
         return;
     }
+    RecordOverflowStatus(false);
     Trace trace(traceTag_ + "::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
@@ -376,8 +392,10 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);
+        RecordOverflowStatus(true);
         return ERR_WRITE_FAILED;
     }
+    RecordOverflowStatus(false);
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
@@ -416,7 +434,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
-
+    audioStreamChecker_->RecordNormalFrame();
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -527,6 +545,7 @@ int32_t CapturerInServer::Start()
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
         CaptureConcurrentCheck(streamIndex_);
     }
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     return ret;
 }
 
@@ -614,6 +633,7 @@ int32_t CapturerInServer::Pause()
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, false);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -690,6 +710,7 @@ int32_t CapturerInServer::Stop()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     CaptureConcurrentCheck(streamIndex_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -706,6 +727,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     }
     lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =

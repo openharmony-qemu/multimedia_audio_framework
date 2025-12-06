@@ -555,7 +555,7 @@ HWTEST(AudioStreamCheckerTest, RecordStandbyTime_001, TestSize.Level1)
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     checker->InitChecker(para, 100000, 100000);
     checker->RecordStandbyTime(true);
-    int64_t time = checker->checkParaVector_[0].standbyStartTime;
+    int64_t time = checker->checkParaVector_[0].abnormalStartTime;
     EXPECT_GT(time, 0);
 }
 
@@ -574,7 +574,7 @@ HWTEST(AudioStreamCheckerTest, RecordStandbyTime_002, TestSize.Level1)
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     checker->InitChecker(para, 100000, 100000);
     checker->RecordStandbyTime(false);
-    int64_t time = checker->checkParaVector_[0].standbyStopTime;
+    int64_t time = checker->checkParaVector_[0].abnormalStopTime;
     EXPECT_GT(time, 0);
 }
 
@@ -594,8 +594,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_001, TestSize.Level1)
     checker->InitChecker(para, 100000, 100000);
     CheckerParam checkerPara;
     checkerPara.isMonitorNoDataFrame = true;
-    checkerPara.standbyStartTime = ClockTime::GetCurNano();
-    checkerPara.standbyStopTime = checkerPara.standbyStartTime + 1000000000;
+    checkerPara.abnormalStartTime = ClockTime::GetCurNano();
+    checkerPara.abnormalStopTime = checkerPara.abnormalStartTime + 1000000000;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_GT(abnormalFrameNum, 0);
@@ -617,8 +617,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_002, TestSize.Level1)
     checker->InitChecker(para, 100000, 100000);
     CheckerParam checkerPara;
     checkerPara.isMonitorNoDataFrame = true;
-    checkerPara.standbyStartTime = ClockTime::GetCurNano() - 1000000000;
-    checkerPara.standbyStopTime = 0;
+    checkerPara.abnormalStartTime = ClockTime::GetCurNano() - 1000000000;
+    checkerPara.abnormalStopTime = 0;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_GT(abnormalFrameNum, 0);
@@ -640,9 +640,9 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_003, TestSize.Level1)
     checker->InitChecker(para, 100000, 100000);
     CheckerParam checkerPara;
     checkerPara.isMonitorNoDataFrame = true;
-    checkerPara.standbyStartTime = 0;
+    checkerPara.abnormalStartTime = 0;
     checkerPara.lastUpdateTime = ClockTime::GetCurNano();
-    checkerPara.standbyStopTime = checkerPara.lastUpdateTime + 1000000000;
+    checkerPara.abnormalStopTime = checkerPara.lastUpdateTime + 1000000000;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_GT(abnormalFrameNum, 0);
@@ -664,8 +664,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_004, TestSize.Level1)
     checker->InitChecker(para, 100000, 100000);
     CheckerParam checkerPara;
     checkerPara.isMonitorNoDataFrame = true;
-    checkerPara.standbyStartTime = 0;
-    checkerPara.standbyStopTime = 0;
+    checkerPara.abnormalStartTime = 0;
+    checkerPara.abnormalStopTime = 0;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_EQ(abnormalFrameNum, 0);
@@ -893,8 +893,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_005, TestSize.Level1)
     CheckerParam para;
     int64_t abnormalFrameNum = 0;
 
-    para.standbyStartTime = 1;
-    para.standbyStopTime = 20000001;
+    para.abnormalStartTime = 1;
+    para.abnormalStopTime = 20000001;
     para.isMonitorNoDataFrame = true;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
@@ -913,8 +913,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_006, TestSize.Level1)
     CheckerParam para;
     int64_t abnormalFrameNum = 0;
 
-    para.standbyStartTime = 0;
-    para.standbyStopTime = 20000000;
+    para.abnormalStartTime = 0;
+    para.abnormalStopTime = 20000000;
     para.lastUpdateTime = 0;
     para.isMonitorNoDataFrame = true;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
@@ -1184,7 +1184,7 @@ HWTEST(AudioStreamCheckerTest, RecordStandbyTime_003, TestSize.Level1)
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     CheckerParam checkerParamTest;
     checkerParamTest.pid = 0;
-    checkerParamTest.standbyStartTime = 0;
+    checkerParamTest.abnormalStartTime = 0;
     checkerParamTest.isMonitorNoDataFrame = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
@@ -1192,8 +1192,8 @@ HWTEST(AudioStreamCheckerTest, RecordStandbyTime_003, TestSize.Level1)
     checker->RecordStandbyTime(false);
     int size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 1);
-    EXPECT_TRUE(checker->checkParaVector_[0].standbyStopTime > 0);
-    EXPECT_EQ(checker->checkParaVector_[0].isInStandby, false);
+    EXPECT_TRUE(checker->checkParaVector_[0].abnormalStopTime > 0);
+    EXPECT_EQ(checker->checkParaVector_[0].isInAbnormalState, false);
 }
 
 /**
@@ -1406,8 +1406,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_007, TestSize.Level0)
     AudioProcessConfig cfg;
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     CheckerParam para;
-    para.standbyStartTime = 0;
-    para.standbyStopTime = 0;
+    para.abnormalStartTime = 0;
+    para.abnormalStopTime = 0;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
     EXPECT_EQ(abnormalFrameNum, 0);
@@ -1423,8 +1423,8 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_008, TestSize.Level0)
     AudioProcessConfig cfg;
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     CheckerParam para;
-    para.standbyStartTime = 0;
-    para.standbyStopTime = 200;
+    para.abnormalStartTime = 0;
+    para.abnormalStopTime = 200;
     int64_t abnormalFrameNum = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
     EXPECT_NE(abnormalFrameNum, 10);
@@ -1583,12 +1583,12 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_009, TestSize.Level1)
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
     EXPECT_EQ(false, para.isMonitorNoDataFrame);
 
-    para.standbyStopTime = DEFAULT_TIME;
+    para.abnormalStopTime = DEFAULT_TIME;
     para.isMonitorNoDataFrame = true;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
     EXPECT_EQ(0, para.sumFrameCount);
 
-    para.isInStandby = 1;
+    para.isInAbnormalState = 1;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
     EXPECT_EQ(DATA_TRANS_RESUME, para.lastStatus);
 }

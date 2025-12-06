@@ -80,33 +80,56 @@ void AudioStreamChecker::DeleteCheckerPara(const int32_t pid, const int32_t call
     AUDIO_INFO_LOG("Delete check para end, pid = %{public}d, callbackId = %{public}d", pid, callbackId);
 }
 
-void AudioStreamChecker::CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum)
+template<typename T>
+void CalculateFrameCommon(CheckerParam &para, int64_t &abnormalFrameNum, const T &configGetter)
 {
-    int64_t timePerFrame = (streamConfig_.rendererInfo.rendererFlags == AUDIOSTREAM_LATENCY_MODE_NORMAL) ?
-        NORMAL_FRAME_PER_TIME : FAST_FRAME_PER_TIME;
-    AUDIO_DEBUG_LOG("Frame per time = %{public}" PRId64"", timePerFrame);
-    AUDIO_DEBUG_LOG("StandbyStartTime = %{public}" PRId64", StandbyStopTime = %{public}" PRId64"",
-        para.standbyStartTime, para.standbyStopTime);
-    AUDIO_DEBUG_LOG("IsInStandby = %{public}d", para.isInStandby);
+    int64_t timePerFrame = configGetter() != 0 ? configGetter() : NORMAL_FRAME_PER_TIME;
+    int64_t startVal = para.abnormalStartTime;
+    int64_t stopVal = para.abnormalStopTime;
+    bool stateFlag = para.isInAbnormalState;
+
     int64_t calculateFrameNum = 0;
-    if (para.standbyStartTime != DEFAULT_TIME && para.standbyStopTime != DEFAULT_TIME) {
-        calculateFrameNum = ((para.standbyStopTime - para.standbyStartTime) / timePerFrame);
-    } else if (para.standbyStartTime != DEFAULT_TIME && para.standbyStopTime == DEFAULT_TIME) {
-        calculateFrameNum = ((ClockTime::GetCurNano() - para.standbyStartTime) / timePerFrame);
-        AUDIO_DEBUG_LOG("Current time = %{public}" PRId64"", ClockTime::GetCurNano());
-    } else if (para.standbyStartTime == DEFAULT_TIME && para.standbyStopTime != DEFAULT_TIME) {
-        calculateFrameNum = ((para.standbyStopTime - para.lastUpdateTime) / timePerFrame);
-        AUDIO_DEBUG_LOG("Last update time = %{public}" PRId64"", para.lastUpdateTime);
+    const auto now = ClockTime::GetCurNano();
+
+    if (startVal != DEFAULT_TIME && stopVal != DEFAULT_TIME) {
+        calculateFrameNum = ((stopVal - startVal) / timePerFrame);
+    } else if (startVal != DEFAULT_TIME && stopVal == DEFAULT_TIME) {
+        calculateFrameNum = ((now - startVal) / timePerFrame);
+    } else if (startVal == DEFAULT_TIME && stopVal != DEFAULT_TIME) {
+        calculateFrameNum = ((stopVal - para.lastUpdateTime) / timePerFrame);
     } else {
-        calculateFrameNum = (para.isInStandby ? (para.para.timeInterval / timePerFrame) : 0);
+        calculateFrameNum = (stateFlag ? (para.para.timeInterval / timePerFrame) : 0);
     }
-    AUDIO_DEBUG_LOG("Calculate no data frame num = %{public}" PRId64"", calculateFrameNum);
+
     if (para.isMonitorNoDataFrame) {
         abnormalFrameNum += calculateFrameNum;
     }
+
     para.noDataFrameNum += calculateFrameNum;
-    AUDIO_DEBUG_LOG("AbnormalFrameNum = %{public}" PRId64", NoDataFrameNum = %{public}" PRId64"",
-        abnormalFrameNum, para.noDataFrameNum);
+}
+
+void AudioStreamChecker::CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum)
+{
+    CHECK_AND_RETURN(streamConfig_.audioMode == AUDIO_MODE_PLAYBACK);
+
+    auto configGetter = [this]() -> int64_t {
+        return (streamConfig_.rendererInfo.rendererFlags == AUDIOSTREAM_LATENCY_MODE_NORMAL) ?
+            NORMAL_FRAME_PER_TIME : FAST_FRAME_PER_TIME;
+    };
+
+    CalculateFrameCommon(para, abnormalFrameNum, configGetter);
+}
+
+void AudioStreamChecker::CalculateFrameAfterOverflow(CheckerParam &para, int64_t &abnormalFrameNum)
+{
+    CHECK_AND_RETURN(streamConfig_.audioMode == AUDIO_MODE_RECORD);
+
+    auto configGetter = [this]() -> int64_t {
+        return (streamConfig_.capturerInfo.capturerFlags == AUDIOSTREAM_LATENCY_MODE_NORMAL) ?
+            NORMAL_FRAME_PER_TIME : FAST_FRAME_PER_TIME;
+    };
+
+    CalculateFrameCommon(para, abnormalFrameNum, configGetter);
 }
 
 void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
@@ -217,6 +240,7 @@ void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
     }
     AUDIO_DEBUG_LOG("Before calculate abnormalFrameNum = %{public}" PRId64"", abnormalFrameNum);
     CalculateFrameAfterStandby(para, abnormalFrameNum);
+    CalculateFrameAfterOverflow(para, abnormalFrameNum);
     para.sumFrameCount = para.normalFrameCount + para.noDataFrameNum;
     float badFrameRatio = para.para.badFramesRatio / TRANS_PERCENTAGE;
     AUDIO_DEBUG_LOG("Check frame sum = %{public}" PRId64", abnormal = %{public}" PRId64", badRatio = %{public}f",
@@ -231,8 +255,8 @@ void AudioStreamChecker::CleanRecordData(CheckerParam &para)
     para.noDataFrameNum = 0;
     para.normalFrameCount = 0;
     para.sumFrameCount = 0;
-    para.standbyStartTime = 0;
-    para.standbyStopTime = 0;
+    para.abnormalStartTime = 0;
+    para.abnormalStopTime = 0;
     para.lastUpdateTime = ClockTime::GetCurNano();
     AUDIO_DEBUG_LOG("Clean check para end...");
 }
@@ -267,11 +291,24 @@ void AudioStreamChecker::RecordStandbyTime(bool isStandbyStart)
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     for (size_t index = 0; index < checkParaVector_.size(); index++) {
         if (isStandbyStart) {
-            checkParaVector_[index].standbyStartTime = ClockTime::GetCurNano();
+            checkParaVector_[index].abnormalStartTime = ClockTime::GetCurNano();
         } else {
-            checkParaVector_[index].standbyStopTime = ClockTime::GetCurNano();
+            checkParaVector_[index].abnormalStopTime = ClockTime::GetCurNano();
         }
-        checkParaVector_[index].isInStandby = isStandbyStart;
+        checkParaVector_[index].isInAbnormalState = isStandbyStart;
+    }
+}
+
+void AudioStreamChecker::RecordOverflowTime(bool isStart)
+{
+    std::lock_guard<std::recursive_mutex> lock(checkLock_);
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
+        if (isStart) {
+            checkParaVector_[index].abnormalStartTime = ClockTime::GetCurNano();
+        } else {
+            checkParaVector_[index].abnormalStopTime = ClockTime::GetCurNano();
+        }
+        checkParaVector_[index].isInAbnormalState = isStart;
     }
 }
 
@@ -287,6 +324,7 @@ void AudioStreamChecker::InitCallbackInfo(DataTransferStateChangeType type,
         std::lock_guard<std::recursive_mutex> lock(backgroundStateLock_);
         callbackInfo.isBackground = isBackground_;
     }
+    callbackInfo.audioMode = streamConfig_.audioMode;
 }
 
 void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para)
