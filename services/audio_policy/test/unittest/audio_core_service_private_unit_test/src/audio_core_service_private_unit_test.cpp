@@ -3033,7 +3033,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.
 
     audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
     EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
-    
+
     // Test3
     audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
     streamDesc->oldRouteFlag_ = (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
@@ -3072,7 +3072,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_002, TestSize.
     EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
     streamDesc->newDeviceDescs_.clear();
 
-    
+
     // Test5
     newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
@@ -3512,7 +3512,7 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3531,11 +3531,11 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_003, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     oldDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+    streamDesc->oldDupDeviceDescs_.push_back(oldDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3554,11 +3554,11 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_004, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     oldDeviceDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+    streamDesc->oldDupDeviceDescs_.push_back(oldDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3575,8 +3575,8 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_005, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->oldDeviceDescs_.clear();
-    streamDesc->newDeviceDescs_.clear();
+    streamDesc->oldDupDeviceDescs_.clear();
+    streamDesc->newDupDeviceDescs_.clear();
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 

@@ -357,7 +357,7 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
     CHECK_AND_RETURN_LOG(ringDescs.size() != 0, "Fetch output device for ring failed");
-    
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> voipDescs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "CheckRingAndVoipScene");
     CHECK_AND_RETURN_LOG(voipDescs.size() != 0, "Fetch output device for voip failed");
@@ -3006,7 +3006,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         };
     } else {
         devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE);
+            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
     }
 
     streamDesc->UpdateNewDevice(devices);

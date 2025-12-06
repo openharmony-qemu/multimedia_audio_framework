@@ -174,7 +174,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     FetchDeviceInfo bak = {
-        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, info.privacyType
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
