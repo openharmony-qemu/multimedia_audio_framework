@@ -840,7 +840,7 @@ void AudioPolicyConfigManager::SortStreamPropInfosBySampleRate(
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo matchStreamInfo)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
@@ -848,12 +848,6 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     AUDIO_INFO_LOG("use dynamic streamProp");
 
     SortStreamPropInfosBySampleRate(info->dynamicStreamPropInfos_);
-    AudioStreamInfo matchStreamInfo = streamInfo;
-    // for audiovivid, need convert to 5.1.2 channelLayout
-    if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
-        matchStreamInfo.channels = CHANNEL_8;
-        matchStreamInfo.channelLayout = CH_LAYOUT_5POINT1POINT2;
-    }
 
     std::list<std::shared_ptr<PipeStreamPropInfo>> matchInfos;
     std::function<bool(std::shared_ptr<PipeStreamPropInfo>)> limitFunc;
@@ -892,6 +886,30 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
         GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, info->dynamicStreamPropInfos_);
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipeForViVid(
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(info != nullptr && !info->dynamicStreamPropInfos_.empty(), nullptr, "info is null");
+    std::vector<std::pair<AudioChannel, AudioChannelLayout>> channelLayouts = {
+        {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
+        {CHANNEL_8, CH_LAYOUT_5POINT1POINT2}
+    };
+    AudioStreamInfo matchStreamInfo = streamInfo;
+    for (auto layout : channelLayouts) {
+        // first match channelLayout
+        for (auto &streamProp : info->dynamicStreamPropInfos_) {
+            CHECK_AND_CONTINUE(streamProp != nullptr);
+            if (streamProp->channelLayout_ == layout.second) {
+                matchStreamInfo.channels = layout.first;
+                matchStreamInfo.channelLayout = layout.second;
+                AUDIO_INFO_LOG("match layout as %{public}llx", static_cast<unsigned long long>(layout.second));
+                break;
+            }
+        }
+    }
+    return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+}
+
 bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
     std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
 {
@@ -911,7 +929,12 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is nullptr");
     // use dynamic streamprop
     if (!info->dynamicStreamPropInfos_.empty()) {
-        return GetDynamicStreamPropInfoFromPipe(info, streamInfo);
+        if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
+            return GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
+        } else {
+            AudioStreamInfo matchStreamInfo = streamInfo;
+            return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+        }
     }
 
     // use xml config streamprop
