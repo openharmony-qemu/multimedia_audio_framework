@@ -1352,7 +1352,7 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     } else {
         paIndex = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, moduleArgs.c_str());
     }
-    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1403,7 +1403,7 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
     }
-    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
 }
 
