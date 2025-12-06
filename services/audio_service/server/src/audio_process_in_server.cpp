@@ -218,7 +218,7 @@ bool AudioProcessInServer::GetKeepRunning()
 void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
 {
     muteFlag_ = muteFlag;
-    AUDIO_INFO_LOG("muteFlag_: %{public}d", muteFlag);
+    HILOG_COMM_INFO("muteFlag_: %{public}d", muteFlag);
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 

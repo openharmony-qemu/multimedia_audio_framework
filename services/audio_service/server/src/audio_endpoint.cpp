@@ -81,7 +81,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed!");
+        HILOG_COMM_ERROR("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -622,7 +622,7 @@ static std::shared_ptr<IAudioRenderSink> SwitchSink(uint32_t &id, HdiIdType type
         HdiAdapterManager::GetInstance().ReleaseId(id);
     }
     id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info, true);
-    AUDIO_INFO_LOG("Id after process: %{public}u", id);
+    HILOG_COMM_INFO("Id after process: %{public}u", id);
     return HdiAdapterManager::GetInstance().GetRenderSink(id, true);
 }
 
@@ -687,7 +687,7 @@ int32_t AudioEndpointInner::GetAdapterBufferInfo(const AudioDeviceDescriptor &de
 
     if (ret != SUCCESS || dstBufferFd_ == -1 || dstTotalSizeInframe_ == 0 || dstSpanSizeInframe_ == 0 ||
         dstByteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \
+        HILOG_COMM_ERROR("get mmap buffer info fail, ret %{public}d, dstBufferFd %{public}d, \
             dstTotalSizeInframe %{public}d, dstSpanSizeInframe %{public}d, dstByteSizePerFrame %{public}d.",
             ret, dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
         return ERR_ILLEGAL_STATE;
@@ -920,7 +920,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
 
 void AudioEndpointInner::HandleStartDeviceFailed()
 {
-    AUDIO_ERR_LOG("Start failed for %{public}d, endpoint type %{public}u, process list size: %{public}zu.",
+    HILOG_COMM_ERROR("Start failed for %{public}d, endpoint type %{public}u, process list size: %{public}zu.",
         deviceInfo_.deviceRole_, endpointType_, processList_.size());
     isStarted_ = false;
     if (processList_.size() <= 1) { // The endpoint only has the current stream
@@ -1219,7 +1219,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             bool keepRunning = processList_[i]->GetKeepRunning();
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS && !keepRunning) {
                 Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
-                AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
+                HILOG_COMM_INFO("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
                 continue;
@@ -1651,7 +1651,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
     int64_t predictWakeupTime = nextHdiWriteTime + tempDelay;
     if (predictWakeupTime <= ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
-        AUDIO_ERR_LOG("hdi send wrong position time");
+        HILOG_COMM_ERROR("hdi send wrong position time");
     } else {
         wakeUpTime = predictWakeupTime;
     }
@@ -1746,7 +1746,7 @@ void AudioEndpointInner::AsyncGetPosTime()
             break;
         }
         if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
-            AUDIO_INFO_LOG("IDEL for too long, let's call hdi stop");
+            HILOG_COMM_INFO("IDEL for too long, let's call hdi stop");
             DelayStopDevice();
             continue;
         }
@@ -2062,7 +2062,7 @@ void AudioEndpointInner::BindCore()
 
     int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
     if (ret != 0) {
-        AUDIO_ERR_LOG("set target cpu failed, set ret: %{public}d", ret);
+        HILOG_COMM_ERROR("set target cpu failed, set ret: %{public}d", ret);
     }
     AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
     coreBinded_ = true;

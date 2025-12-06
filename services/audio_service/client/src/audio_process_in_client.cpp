@@ -358,7 +358,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
 */
 void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
-    AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
+    HILOG_COMM_INFO("audio server died, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
     gAudioServerProxy = nullptr;
 }
@@ -401,7 +401,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
-    AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
+    HILOG_COMM_INFO("AudioProcessInClient deconstruct.");
 
     JoinCallbackLoop();
     if (isInited_) {
@@ -1367,7 +1367,7 @@ void AudioProcessInClientInner::CallExitStandBy()
     int32_t result = processProxy_->Start();
     StreamStatus targetStatus = StreamStatus::STREAM_STARTING;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_RUNNING);
-    AUDIO_INFO_LOG("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
+    HILOG_COMM_INFO("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
     UpdateHandleInfo();
 }
 
