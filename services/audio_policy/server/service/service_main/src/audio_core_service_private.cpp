@@ -1963,7 +1963,7 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
 
     SleepForSwitchDevice(streamDesc, reason);
 
-    HILOG_COMM_INFO("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
+    HILOG_COMM_INFO("Trigger recreate renderer stream %{public}u, pid: %{public}d, routeflag: 0x%{public}x",
         sessionId, callerPid, routeFlag);
     audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 }
@@ -2627,7 +2627,7 @@ void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &
     oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->oldDeviceDescs_.front(),
         streamDesc->sessionId_);
 
-    HILOG_COMM_INFO("[StreamExecInfo] Move stream %{public}u, [%{public}d][%{public}s] to [%{public}d][%{public}s]" \
+    HILOG_COMM_INFO("[StreamExecInfo] Move stream %{public}u [%{public}d][%{public}s] to [%{public}d][%{public}s]" \
         " reason %{public}d",
         streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
         GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(), newDeviceDesc->deviceType_,
