@@ -1043,7 +1043,7 @@ void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
     }
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     audioStreamDescriptor->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesscs.push_back(audioStreamDescriptor);
+    streamDescs.push_back(audioStreamDescriptor);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
@@ -1068,8 +1068,8 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
         return;
     }
     audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
-    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
-    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
 }
 
 void AudioCoreServicePrivateNotifyRouteUpdate()

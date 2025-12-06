@@ -653,7 +653,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_007, TestSize.Level4)
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     int32_t volumeLevel = 5;
     bool isBtDevice = false;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
     EXPECT_LT(-10, ret);
@@ -671,7 +671,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_008, TestSize.Level4)
     bool isBtDevice = false;
     audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
     audioVolumeManager.safeStatus_ = SAFE_UNKNOWN;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
     auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
     EXPECT_LT(-10, ret);
@@ -689,7 +689,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_009, TestSize.Level4)
     bool isBtDevice = true;
     audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
     audioVolumeManager.safeStatus_ = SAFE_UNKNOWN;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
 
     auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
     EXPECT_LT(-10, ret);
