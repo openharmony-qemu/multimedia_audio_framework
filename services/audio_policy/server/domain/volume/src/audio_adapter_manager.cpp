@@ -1316,7 +1316,7 @@ std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(pipeInfo->moduleInfo_);
-    HILOG_COMM_INFO("[PipeExecInfo] pipe name %{public}s", pipeInfo->name_.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s", pipeInfo->name_.c_str());
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     if (IsPaRoute(pipeInfo->routeFlag_)) {
