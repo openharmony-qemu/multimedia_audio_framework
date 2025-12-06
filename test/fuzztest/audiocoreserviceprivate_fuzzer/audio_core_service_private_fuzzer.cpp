@@ -1033,7 +1033,7 @@ void AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest()
 
 void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
 {
-    auto aduioCoreService = std::make_shared<AudioCoreService>();
+    auto audioCoreService = std::make_shared<AudioCoreService>();
     if (audioCoreService == nullptr) {
         return;
     }
