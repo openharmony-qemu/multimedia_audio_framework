@@ -143,7 +143,8 @@ inline int32_t GetAudioScenePriority(const AudioScene audioScene)
 }
 
 AudioInterruptService::AudioInterruptService()
-    : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
+    : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
+    streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
 {
     zoneManager_.InitService(this);
 }
@@ -2933,6 +2934,7 @@ void AudioInterruptService::SetNonInterruptMute(int32_t streamId, bool muteFlag)
     } else {
         mutedGameSessionId_.erase(streamId);
     }
+    streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     gsp->SetNonInterruptMute(streamId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);
 }

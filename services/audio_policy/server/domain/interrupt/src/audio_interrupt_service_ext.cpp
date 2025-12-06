@@ -133,6 +133,7 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
 void AudioInterruptService::SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag)
 {
     AudioServerProxy::GetInstance().SetSessionMuteState(sessionId, insert, muteFlag);
+    streamCollector_.CapturerMutedFlagChange(sessionId, muteFlag);
 }
 
 void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &interruptEvent,
@@ -143,6 +144,7 @@ void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &int
         interruptEvent.hintType);
     bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
+    streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
 }
 
 void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,

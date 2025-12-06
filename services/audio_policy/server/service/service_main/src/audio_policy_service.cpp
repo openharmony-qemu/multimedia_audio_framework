@@ -216,7 +216,7 @@ int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLeve
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
 {
     int32_t status = audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
-    if (status > 0) {
+    if (status == 0) {
         streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
     }
     return status;

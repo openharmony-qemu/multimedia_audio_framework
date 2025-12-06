@@ -2510,6 +2510,14 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t type
         MicStateChangeEvent micStateChangeEvent;
         micStateChangeEvent.mute = newMicrophoneMute;
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set persistent mic mute state:%{public}d", newMicrophoneMute);
+        std::vector<shared_ptr<AudioCapturerChangeInfo>> capturerInfos;
+        int32_t ret = GetCurrentCapturerChangeInfos(capturerInfos);
+        if (ret == SUCCESS) {
+            for (auto& info : capturerInfos) {
+                info->muted = newMicrophoneMute;
+            }
+            audioPolicyServerHandler_->SendCapturerInfoEvent(capturerInfos);
+        }
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
         audioInjectorPolicy_.SetInjectorStreamsMute(newMicrophoneMute);
     }
