@@ -229,11 +229,19 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
 
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
         tempOut = SignalProcess(preOutputs);
         CHECK_AND_RETURN_RET_LOG(tempOut != nullptr,
             ERR_OPERATION_FAILED,
             "node %{public}d do SignalProcess failed, return a nullptr",
             GetNodeType());
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         tempOut = splitDataInHalf(preOutputs);
