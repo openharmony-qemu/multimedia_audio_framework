@@ -218,7 +218,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
         "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
-        "remoteLayout: %{public}llx , isRemoteSpatialChannel: %{public}d",
+        "remoteLayout: %{public}" PRIu64 " , isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
         info.channels, info.format, eStreamType_, info.encoding,
         info.remoteChannelLayout, info.isRemoteSpatialChannel);
@@ -230,8 +230,14 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
-            cfg.outChannelLayout = info.remoteChannelLayout;
-            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx", cfg.outChannelLayout);
+            if (std::find(cfg.supportOutChannelLayout.begin(), cfg.supportOutChannelLayout.end(),
+                info.remoteChannelLayout) != cfg.supportOutChannelLayout.end()) {
+                cfg.outChannelLayout = info.remoteChannelLayout;
+                AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}" PRIu64, cfg.outChannelLayout);
+            } else {
+                cfg.outChannelLayout = CH_LAYOUT_5POINT1POINT2;
+                AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}" PRIu64, CH_LAYOUT_5POINT1POINT2);
+            }
         }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
