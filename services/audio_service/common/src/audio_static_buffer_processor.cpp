@@ -45,7 +45,7 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
         return SUCCESS;
     }
 
-    if (speed == curSpeed_) {
+    if (isEqual(speed, curSpeed_)) {
         return SUCCESS;
     }
     speedBuffer_ = std::make_unique<uint8_t[]>(sharedBuffer_->GetDataSize() * MAX_SPEED_BUFFER_FACTOR);

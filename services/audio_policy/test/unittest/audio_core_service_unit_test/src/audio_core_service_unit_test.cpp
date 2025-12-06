@@ -2105,10 +2105,10 @@ HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Le
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
- * @tc.number : CheckStaticModeAndSelectFlag_001
+ * @tc.number : CheckStaticModeAndSelectFlag_002
  * @tc.desc   : Test CheckStaticModeAndSelectFlag interface - when rendererInfo_.isStatic = true
  */
-HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Level1)
+HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);

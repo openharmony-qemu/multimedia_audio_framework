@@ -2407,7 +2407,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
     uint8_t *processedData = new uint8_t[10];
     size_t dataSize = 10;
 
-    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBuffer_ = processedData;
     staticBufferProviderTest->processedBufferSize_ = dataSize;
 
     staticBufferProviderTest->currentLoopTimes_ = 1;
@@ -2452,7 +2452,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     uint8_t *processedData = new uint8_t[10];
     size_t dataSize = 10;
 
-    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBuffer_ = processedData;
     staticBufferProviderTest->processedBufferSize_ = dataSize;
 
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
@@ -2484,7 +2484,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
     uint8_t *processedData = new uint8_t[10];
     size_t dataSize = 10;
 
-    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBuffer_ = processedData;
     staticBufferProviderTest->processedBufferSize_ = dataSize;
 
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
