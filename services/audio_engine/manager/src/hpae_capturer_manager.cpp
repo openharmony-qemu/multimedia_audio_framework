@@ -631,7 +631,7 @@ int32_t HpaeCapturerManager::InitCapturer()
 
 void HpaeCapturerManager::StopOuputNode()
 {
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_INVALID_OPERATION,
+    CHECK_AND_RETURN_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_),
         "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
     CapturerSourceStop();
     sourceInputClusterMap_[mainMicType_]->CapturerSourceDeInit();
