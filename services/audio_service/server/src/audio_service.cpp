@@ -55,6 +55,7 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -86,6 +87,10 @@ AudioService::AudioService()
 
 AudioService::~AudioService()
 {
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ != nullptr) {
+        callManager_->UnInit();
+    }
     AUDIO_INFO_LOG("~AudioService()");
 }
 
@@ -1878,6 +1883,19 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
+}
+
+void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ == nullptr) {
+        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+        callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+    }
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

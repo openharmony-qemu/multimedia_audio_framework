@@ -482,6 +482,8 @@ audio_ohos_library("audio_process_service") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {
@@ -595,6 +597,7 @@ audio_ohos_library("audio_service") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "call_manager:tel_call_manager_api",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
