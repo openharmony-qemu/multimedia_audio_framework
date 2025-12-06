@@ -592,6 +592,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
+        CHECK_AND_RETURN(info.audioMode == AUDIO_MODE_PLAYBACK);
         std::string bundleName = AppBundleManager::GetBundleNameFromUid(info.clientUID);
         CHECK_AND_RETURN_LOG(AudioService::GetInstance()->InRenderWhitelist(bundleName),
             "%{public}s not in whitelist", bundleName.c_str());
@@ -615,7 +616,7 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
         Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
     CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
 
-    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("IS_PLAYBACK", info.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0);
     bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
     bean->Add("UID", info.clientUID);
     bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
