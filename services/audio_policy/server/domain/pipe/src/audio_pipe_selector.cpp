@@ -269,7 +269,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             std::string result = logstream.str();
             result.pop_back();
-            HILOG_COMM_INFO("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
+            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
