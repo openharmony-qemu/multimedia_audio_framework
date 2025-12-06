@@ -2246,7 +2246,7 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_001, TestSize.Level1)
     };
 
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    AudioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     int32_t hapticsSyncId = 0;
     EXPECT_FALSE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
@@ -2276,7 +2276,7 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_002, TestSize.Level1)
         }},
         .dataLength = 3000
     };
-    AudioProcessInServer->processBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
+    audioProcessInServer->processBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     int32_t hapticsSyncId = 0;
     EXPECT_FALSE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
@@ -2360,7 +2360,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_stop_001, TestSize.Lev
     audioProcessInServerRet.streamStatus_->store(STREAM_RUNNING);
 
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    AudioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     int32_t ret = 0;
     audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);

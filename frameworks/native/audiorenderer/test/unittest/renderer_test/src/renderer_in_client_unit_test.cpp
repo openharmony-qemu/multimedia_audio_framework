@@ -3068,15 +3068,15 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_001, TestSize
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
-    ptrRendererInClientInner->SetStaticMode(true);
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
+    ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    ptrRendererInClientInner->clientBuffer_->store(StreamStatus::STREAM_STAND_BY);
+    ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->load(), StreamStatus::STREAM_IDEL);
+    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->load(), StreamStatus::STREAM_IDEL);
 }
 
 /**
@@ -3090,15 +3090,15 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_002, TestSize
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
     ptrRendererInClientInner->rendererInfo_.isStatic = false;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
-    ptrRendererInClientInner->SetStaticMode(true);
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
+    ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    ptrRendererInClientInner->clientBuffer_->store(StreamStatus::STREAM_STAND_BY);
+    ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->load(), StreamStatus::STREAM_IDEL);
+    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->load(), StreamStatus::STREAM_IDEL);
 }
 
 /**
@@ -3112,13 +3112,13 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_003, TestSize
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    ptrRendererInClientInner->clientBuffer_->store(StreamStatus::STREAM_STAND_BY);
+    ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->load(), StreamStatus::STREAM_IDEL);
+    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->load(), StreamStatus::STREAM_IDEL);
 }
 
 /**
@@ -3132,13 +3132,13 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_004, TestSize
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
     ptrRendererInClientInner->rendererInfo_.isStatic = false;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    ptrRendererInClientInner->clientBuffer_->store(StreamStatus::STREAM_STAND_BY);
+    ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     ptrRendererInClientInner->CheckFrozenStateInStaticMode();
-    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->load(), StreamStatus::STREAM_IDEL);
+    EXPECT_NE(ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->load(), StreamStatus::STREAM_IDEL);
 }
 
 } // namespace AudioStandard

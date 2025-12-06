@@ -2172,7 +2172,7 @@ HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_static_001, TestSize.Level
     EXPECT_NE(status, RESTORING);
 
     fastAudioStream->rendererInfo_.isStatic = false;
-    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    status = fastAudioStream->CheckRestoreStatus();
     EXPECT_NE(status, RESTORING);
 
     std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
@@ -2182,11 +2182,11 @@ HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_static_001, TestSize.Level
     std::shared_ptr<AudioCapturerReadCallback> micCallback = std::make_shared<AudioCapturerReadCallbackTest>();
     fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
     fastAudioStream->rendererInfo_.isStatic = true;
-    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    status = fastAudioStream->CheckRestoreStatus();
     EXPECT_NE(status, RESTORING);
 
     fastAudioStream->rendererInfo_.isStatic = false;
-    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    status = fastAudioStream->CheckRestoreStatus();
     EXPECT_NE(status, RESTORING);
 }
 } // namespace AudioStandard
