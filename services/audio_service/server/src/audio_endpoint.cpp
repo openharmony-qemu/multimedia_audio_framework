@@ -2061,9 +2061,8 @@ void AudioEndpointInner::BindCore()
     }
 
     int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
-    if (ret != 0) {
-        HILOG_COMM_ERROR("set target cpu failed, set ret: %{public}d", ret);
-    }
+    if (ret != 0) { HILOG_COMM_ERROR("set target cpu failed, set ret: %{public}d", ret); }
+
     AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
     coreBinded_ = true;
 }
