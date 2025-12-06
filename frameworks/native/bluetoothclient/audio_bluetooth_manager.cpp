@@ -187,7 +187,7 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     }
     int32_t ret = a2dpInstance_->SetActiveSinkDevice(device);
     if (ret != 0) {
-        HILOG_COMM_ERROR("SetActiveA2dpDevice failed. result: %{public}d", ret);
+        HILOG_COMM_ERROR("SetActiveA2dpDevice failed, result: %{public}d", ret);
         return ERROR;
     }
     activeA2dpDevice_ = device;
@@ -253,8 +253,8 @@ int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStream
 {
     std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
-    if (ctiveA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
-        HILOG_COMM_ERROR("Invalid mac address, not request, return A2DP_NOT_OFFLOAD.");
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        HILOG_COMM_ERROR("A2dpOffloadSessionRequest Invalid mac address, not request, return A2DP_NOT_OFFLOAD.");
         return A2DP_NOT_OFFLOAD;
     }
     int32_t ret = a2dpInstance_->A2dpOffloadSessionRequest(activeA2dpDevice_, info);
@@ -266,8 +266,8 @@ int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessio
 {
     std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
-    if (ctiveA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
-        HILOG_COMM_ERROR("Invalid mac address, not start, return error.");
+    if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
+        HILOG_COMM_ERROR("OffloadStartPlaying Invalid mac address, not start, return error.");
         return ERROR;
     }
     AUDIO_DEBUG_LOG("Start playing %{public}zu stream", sessionsID.size());
@@ -331,7 +331,7 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
             wearState = BluetoothAudioManager::GetInstance().IsDeviceWearing(device);
             if (wearState == 1) MediaBluetoothDeviceManager::SetMediaStack(device, WEAR_ACTION); // 1 wear state
         }
-        HILOG_COMM_WARN("reconnect a2dp device:%{public}s, wear state:%{public}d",
+        HILOG_COMM_WARN("CheckA2dpDeviceReconnect reconnect a2dp device:%{public}s, wear state:%{public}d",
             GetEncryptAddr(device.GetDeviceAddr()).c_str(), wearState);
     }
 
@@ -363,7 +363,7 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
     }
     int32_t ret = a2dpInstance_->Connect(virtualDevice);
     if (ret != 0) {
-        HILOG_COMM_ERROR("A2dp Connect Failed")
+        HILOG_COMM_ERROR("A2dp Connect Failed");
         return ERROR;
     }
     virtualDevice.SetVirtualAutoConnectType(CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG, 0);
@@ -372,8 +372,8 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 
 void AudioA2dpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
-    HILOG_COMM_WARN("state: %{public}d, macAddress: %{public}s", state,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    HILOG_COMM_WARN("OnConnectionStateChanged state: %{public}d, macAddress: %{public}s",
+        state, GetEncryptAddr(device.GetDeviceAddr()).c_str());
     // Record connection state and device for hdi start time to check
     AudioA2dpManager::SetConnectionState(state);
     if (state == static_cast<int>(BTConnectState::CONNECTING)) {
@@ -408,14 +408,15 @@ void AudioA2dpListener::OnPlayingStatusChanged(const BluetoothRemoteDevice &devi
 
 void AudioA2dpListener::OnMediaStackChanged(const BluetoothRemoteDevice &device, int action)
 {
-    HILOG_COMM_WARN("action: %{public}d, macAddress: %{public}s", action,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    HILOG_COMM_WARN("OnMediaStackChanged action: %{public}d, macAddress: %{public}s",
+        action, GetEncryptAddr(device.GetDeviceAddr()).c_str());
     MediaBluetoothDeviceManager::SetMediaStack(device, action);
 }
 
 void AudioA2dpListener::OnVirtualDeviceChanged(int32_t action, std::string macAddress)
 {
-    HILOG_COMM_WARN("action: %{public}d, macAddress: %{public}s", action, GetEncryptAddr(macAddress).c_str());
+    HILOG_COMM_WARN("OnVirtualDeviceChanged action: %{public}d, macAddress: %{public}s",
+        action, GetEncryptAddr(macAddress).c_str());
     if (action == static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD)) {
         MediaBluetoothDeviceManager::SetMediaStack(BluetoothRemoteDevice(macAddress),
             BluetoothDeviceAction::VIRTUAL_DEVICE_ADD_ACTION);
@@ -429,7 +430,7 @@ void AudioA2dpListener::OnVirtualDeviceChanged(int32_t action, std::string macAd
 void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDevice &device, int state,
     const A2dpCodecInfo &codecInfo)
 {
-    HILOG_COMM_INFO("capture connection state: %{public}d", state);
+    HILOG_COMM_INFO("OnCaptureConnectionStateChanged capture connection state: %{public}d", state);
     AudioA2dpManager::SetCaptureConnectionState(static_cast<int32_t>(state));
     AudioStreamInfo streamInfo = {};
     if (state == static_cast<int>(BTHdapConnectState::CONNECTED)) {
