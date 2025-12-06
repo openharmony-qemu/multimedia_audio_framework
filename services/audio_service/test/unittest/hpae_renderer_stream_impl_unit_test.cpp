@@ -340,6 +340,106 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetLatencyWithFlag with no hardware/engine flag.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_001
+ * @tc.desc  : Flag 0 should return success and latency 0 without waiting.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_001, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    uint64_t latency = 123; // preset non-zero
+    int32_t ret = unit->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(0));
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 0u);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag timeout before first data.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_002
+ * @tc.desc  : WaitFirstStreamData returns false, expect ERR_OPERATION_FAILED.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_002, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(false, std::memory_order_release);
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag hardware path success.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_003
+ * @tc.desc  : FetchSinkLatency success should include sink latency.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_003, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(unit->sinkLatencyFetcherMutex_);
+        unit->sinkLatencyFetcher_ = [] (uint32_t &latency) {
+            latency = 7; // ms
+            return SUCCESS;
+        };
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 7u * AUDIO_US_PER_MS);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag hardware fetch failure.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_004
+ * @tc.desc  : FetchSinkLatency failure should propagate error.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_004, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(unit->sinkLatencyFetcherMutex_);
+        unit->sinkLatencyFetcher_ = [] (uint32_t &latency) {
+            (void)latency;
+            return ERR_INVALID_OPERATION;
+        };
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag engine path only.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_005
+ * @tc.desc  : When only engine flag set, should add internal latency_ value.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_005, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::unique_lock<std::shared_mutex> lock(unit->latencyMutex_);
+        unit->latency_ = 1234;
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 1234u);
+}
+
+/**
  * @tc.name  : Test GetCurrentPosition.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_005

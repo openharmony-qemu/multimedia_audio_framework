@@ -295,6 +295,7 @@ private:
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
+    void RegisterSinkLatencyFetcher(uint32_t renderId);
 
     void ResetRecordConfig(AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);

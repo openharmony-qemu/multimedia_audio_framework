@@ -18,6 +18,7 @@
 
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_info.h"
 #include "fast_audio_stream.h"
 
 using namespace testing::ext;

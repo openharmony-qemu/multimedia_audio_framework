@@ -1605,6 +1605,12 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
     }
 }
 
+void LatencyMonitor::UpdateRendererInServerTime(std::string &timestamp)
+{
+    std::lock_guard lock(mutex_);
+    rendererInServerDetectedTime_ = timestamp;
+}
+
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
     std::lock_guard lock(mutex_);
@@ -1630,21 +1636,24 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
     if (isRenderer) {
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParameter failed!");
-            AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s",
-                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
-            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s",
-                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+            AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                           "SinkDetectedTime:%{public}s", rendererMockTime_.c_str(),
+                rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, SinkDetectedTime:%s",
+                rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
             return;
         }
         dspBeforeSmartPa_ = dspDetectedTime_.substr(extraStrLen_, DATE_LENGTH);
         dspAfterSmartPa_ = dspDetectedTime_.substr(extraStrLen_ + DATE_LENGTH + 1 +
             extraStrLen_, DATE_LENGTH);
-        AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s, "
-                       "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
-                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
-        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s, "
+        AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                       "SinkDetectedTime:%{public}s, DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s",
+            rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str(),
+            dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, SinkDetectedTime:%s, "
                        "DspBeforeSmartPa:%s, DspAfterSmartPa:%s", rendererMockTime_.c_str(),
-                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+            rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str(),
+            dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
         AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {

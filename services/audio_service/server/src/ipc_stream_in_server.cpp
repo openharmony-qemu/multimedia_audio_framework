@@ -596,5 +596,11 @@ int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInf
     return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
 }
 
+int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
+}
 } // namespace AudioStandard
 } // namespace OHOS

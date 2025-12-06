@@ -1172,6 +1172,17 @@ public:
      */
     virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
+    /**
+     * @brief Gets audio renderer latency with specific flag.
+     *
+     * @param latency Indicates latency (in frames) corresponding to requested flag.
+     * @param flag Indicates latency flag defined in {@link LatencyFlag}.
+     * @return Returns {@link SUCCESS} if the getting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const = 0;
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

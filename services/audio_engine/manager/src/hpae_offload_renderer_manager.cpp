@@ -142,6 +142,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
         ConnectInputSession();
     }
+    node->OnStreamInfoChange(false);
 }
 
 int32_t HpaeOffloadRendererManager::AddAllNodesToSink(

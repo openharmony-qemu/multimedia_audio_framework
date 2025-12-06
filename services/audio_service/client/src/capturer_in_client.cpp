@@ -1885,6 +1885,13 @@ int32_t CapturerInClientInner::SetRebuildFlag()
     return ipcStream_->SetRebuildFlag();
 }
 
+int32_t CapturerInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    (void)latency;
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
 bool CapturerInClientInner::IsRestoreNeeded()
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");

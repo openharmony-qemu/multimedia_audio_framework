@@ -435,6 +435,7 @@ public:
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
+    void UpdateRendererInServerTime(std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
 
@@ -446,6 +447,7 @@ private:
     LatencyMonitor() = default;
 
     std::string rendererMockTime_ = "";
+    std::string rendererInServerDetectedTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
     std::string capturerDetectedTime_ = "";

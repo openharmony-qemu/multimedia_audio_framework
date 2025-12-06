@@ -61,6 +61,7 @@
 #include "audio_manager_listener.h"
 #include "app_bundle_manager.h"
 #include "audio_injector_service.h"
+#include "audio_sink_latency_fetcher.h"
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
 #ifdef PA
@@ -75,6 +76,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
+constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
@@ -2983,6 +2985,7 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
         sink->Init(attr);
     }
+    RegisterSinkLatencyFetcher(renderId);
     return SUCCESS;
 }
 
@@ -3018,6 +3021,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     if (!sink->IsInited()) {
         sink->Init(attr);
     }
+    RegisterSinkLatencyFetcher(renderId);
     return SUCCESS;
 }
 
@@ -3082,8 +3086,31 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
 
+    SinkLatencyFetcherManager::GetInstance().RemoveFetcherById(id);
     HdiAdapterManager::GetInstance().ReleaseId(id);
     return SUCCESS;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)
+{
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
+        [] (uint32_t renderId, uint32_t &latency) -> int32_t {
+        latency = DEFAULT_SINK_LATENCY_MS; // preset default latency in ms from hdi provider
+        std::shared_ptr<IAudioRenderSink> audioRendererSink =
+            HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+        CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION,
+            "audioRendererSink is null, renderId %{public}u", renderId);
+        int32_t ret = audioRendererSink->GetLatency(latency);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_LATENCY_DEFAULT_VALUE,
+            "GetLatency failed, renderId %{public}u ret %{public}d, use default", renderId, ret);
+        return SUCCESS;
+    });
+    auto fetcher = SinkLatencyFetcherManager::GetInstance().EnsureFetcher(renderId);
+    CHECK_AND_RETURN_LOG(fetcher, "sinkLatencyFetcher is null, renderId %{public}u", renderId);
+    uint32_t dummyLatency = 0;
+    int32_t ret = fetcher(dummyLatency);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS,
+        "Preload sink latency failed, renderId %{public}u, ret %{public}d", renderId, ret);
 }
 
 int32_t AudioServer::SetDeviceConnectedFlag(bool flag)

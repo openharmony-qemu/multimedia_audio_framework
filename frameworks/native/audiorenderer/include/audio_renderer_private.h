@@ -43,6 +43,7 @@ class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_fro
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;
     AudioPrivacyType GetAudioPrivacyType() override;
     int32_t SetParams(const AudioRendererParams params) override;
@@ -236,7 +237,7 @@ private:
     bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
-    RendererState GetStatusInner();
+    RendererState GetStatusInner() const;
     void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     float GetVolumeInner() const;

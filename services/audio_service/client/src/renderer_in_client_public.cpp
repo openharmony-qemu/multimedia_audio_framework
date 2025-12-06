@@ -447,6 +447,12 @@ int32_t RendererInClientInner::GetLatency(uint64_t &latency)
     return ipcStream_->GetLatency(latency);
 }
 
+int32_t RendererInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->GetLatencyWithFlag(latency, flag);
+}
+
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
 {
     AUDIO_ERR_LOG("Change stream type %{public}d to %{public}d is not supported", eStreamType_, audioStreamType);

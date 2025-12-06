@@ -339,6 +339,21 @@ int32_t FastAudioStream::GetLatency(uint64_t &latency)
     return ret;
 }
 
+int32_t FastAudioStream::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    latency = 0;
+    bool needHardware = (flag & LATENCY_FLAG_HARDWARE) != 0;
+    bool needEngine = (flag & LATENCY_FLAG_ENGINE) != 0;
+
+    if (needEngine) {
+        latency += 5ULL * AUDIO_US_PER_MS; // engine latency 5 ms
+    }
+    if (needHardware) {
+        latency += 20ULL * AUDIO_US_PER_MS; // hardware latency 20 ms
+    }
+    return SUCCESS;
+}
+
 int32_t FastAudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
 {
     // Stream type can only be set when create.
