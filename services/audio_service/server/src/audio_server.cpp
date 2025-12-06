@@ -3027,7 +3027,8 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
-    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
+    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, sourceType: %{public}d, info: %{public}s",
+        idBase, idType, attr.sourceType, idInfo.c_str());
     captureId = HdiAdapterManager::GetInstance().GetId(static_cast<HdiIdBase>(idBase),
         static_cast<HdiIdType>(idType), idInfo, true);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
