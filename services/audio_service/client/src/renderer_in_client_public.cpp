@@ -230,14 +230,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
-            if (std::find(cfg.supportOutChannelLayout.begin(), cfg.supportOutChannelLayout.end(),
-                info.remoteChannelLayout) != cfg.supportOutChannelLayout.end()) {
-                cfg.outChannelLayout = info.remoteChannelLayout;
-                AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}" PRIu64, cfg.outChannelLayout);
-            } else {
-                cfg.outChannelLayout = CH_LAYOUT_5POINT1POINT2;
-                AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}" PRIu64, CH_LAYOUT_5POINT1POINT2);
-            }
+            cfg.outChannelLayout = (std::find(cfg.supportOutChannelLayout.begin(), cfg.supportOutChannelLayout.end(),
+                info.remoteChannelLayout) != cfg.supportOutChannelLayout.end()) ? info.remoteChannelLayout :
+                CH_LAYOUT_5POINT1POINT2;
+            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}" PRIu64, cfg.outChannelLayout);
         }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {

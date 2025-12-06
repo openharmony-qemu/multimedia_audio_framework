@@ -125,24 +125,6 @@ static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlN
 
 static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
-    std::string strChannelLayout;
-    auto ret = curNode->GetProp("out_channel_layout", strChannelLayout);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("missing information: config has no out_channel_layout attribute, set to default STEREO");
-        result.outChannelLayout = CH_LAYOUT_STEREO;
-        return;
-    }
-    if (str2layout.count(strChannelLayout) == 0) {
-        AUDIO_ERR_LOG("unsupported format: invalid channel layout, set to STEREO");
-        result.outChannelLayout = CH_LAYOUT_STEREO;
-    } else {
-        result.outChannelLayout = str2layout[strChannelLayout];
-        AUDIO_INFO_LOG("AudioVivid MCR output format is %{public}s", strChannelLayout.c_str());
-    }
-}
-
-static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
-{
     curNode->MoveToChildren();
     int32_t countLayoutConf = 0;
     while (curNode->IsNodeValid()) {
@@ -165,7 +147,7 @@ static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<Aud
                 AUDIO_INFO_LOG("AudioVivid MCR output format is %{public}s", strChannelLayout.c_str());
             }
         } else {
-            AUDIO_WARNING_LOG("wrong name: %{public}s, should be layout_conf", curNode->GetName);
+            AUDIO_WARNING_LOG("wrong name: %{public}s, should be layout_conf", curNode->GetName().c_str());
         }
         countLayoutConf++;
         curNode->MoveToNext();
