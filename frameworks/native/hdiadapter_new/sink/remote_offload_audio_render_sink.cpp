@@ -96,7 +96,6 @@ void RemoteOffloadAudioRenderSink::DeInit(void)
     AUDIO_INFO_LOG("in");
     Trace trace("RemoteOffloadAudioRenderSink::DeInit");
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    std::lock_guard<std::mutex> switchDeviceLock(switchDeviceMutex_);
     sinkInited_.store(false);
     renderInited_.store(false);
     started_.store(false);
@@ -131,8 +130,12 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
 
     if (started_.load()) {
         if (isFlushing_.load()) {
+#ifdef SUPPORT_OLD_ENGINE
             isNeedRestart_ = true;
             AUDIO_ERR_LOG("start fail, will restart after flush");
+#else
+            AUDIO_ERR_LOG("start fail, during flush");
+#endif
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -217,7 +220,9 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
     Trace trace("RemoteOffloadAudioRenderSink::FlushInner");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_.load(), ERR_OPERATION_FAILED, "duplicate flush");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
+    AUDIO_INFO_LOG("in");
 
+#ifdef SUPPORT_OLD_ENGINE
     CheckFlushThread();
     isFlushing_.store(true);
     flushThread_ = std::make_shared<std::thread>([&] {
@@ -242,6 +247,14 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
     });
     FlushResetPosition();
     renderPos_ = 0;
+#else
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    isFlushing_.store(true);
+    renderPos_ = 0;
+    int32_t ret = audioRender_->Flush();
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
+    isFlushing_.store(false);
+#endif
     return SUCCESS;
 }
 
@@ -254,10 +267,12 @@ int32_t RemoteOffloadAudioRenderSink::Flush(void)
 
 void RemoteOffloadAudioRenderSink::CheckFlushThread()
 {
+#ifdef SUPPORT_OLD_ENGINE
     if (flushThread_ != nullptr && flushThread_->joinable()) {
         flushThread_->join();
     }
     flushThread_.reset();
+#endif
 }
 
 int32_t RemoteOffloadAudioRenderSink::Reset(void)
@@ -266,10 +281,14 @@ int32_t RemoteOffloadAudioRenderSink::Reset(void)
     Trace trace("RemoteOffloadAudioRenderSink::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
+#ifdef SUPPORT_OLD_ENGINE
     isNeedRestart_ = true;
+#endif
     int32_t ret = FlushInner();
     if (ret != SUCCESS) {
+#ifdef SUPPORT_OLD_ENGINE
         isNeedRestart_ = false;
+#endif
         AUDIO_ERR_LOG("reset fail");
         return ERR_OPERATION_FAILED;
     }
@@ -348,7 +367,6 @@ std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
 {
     std::lock_guard<std::mutex> sinkLock(sinkMutex_);
-    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::SetVolume");
 
     leftVolume_ = left;
@@ -690,7 +708,6 @@ void RemoteOffloadAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 int32_t RemoteOffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> sinkLock(sinkMutex_);
-    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set offload mute %{public}d", mute);
 
     if (mute) {
