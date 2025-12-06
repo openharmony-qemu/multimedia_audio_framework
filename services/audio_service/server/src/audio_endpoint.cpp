@@ -1651,7 +1651,7 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
     int64_t predictWakeupTime = nextHdiWriteTime + tempDelay;
     if (predictWakeupTime <= ClockTime::GetCurNano()) {
         wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION;
-        HILOG_COMM_ERROR("hdi send wrong position time");
+        AUDIO_ERR_LOG("hdi send wrong position time");
     } else {
         wakeUpTime = predictWakeupTime;
     }
@@ -2061,7 +2061,9 @@ void AudioEndpointInner::BindCore()
     }
 
     int32_t ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &targetCpus);
-    if (ret != 0) { HILOG_COMM_ERROR("set target cpu failed, set ret: %{public}d", ret); }
+    if (ret != 0) {
+        HILOG_COMM_ERROR("set target cpu failed, set ret: %{public}d", ret);
+    }
 
     AUDIO_INFO_LOG("set pid: %{public}d, tid: %{public}d cpus", getpid(), gettid());
     coreBinded_ = true;
