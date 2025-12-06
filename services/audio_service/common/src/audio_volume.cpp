@@ -472,7 +472,7 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
         systemVolume_.emplace(key, systemVolume);
     }
 
-    HILOG_COMM_INFO("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
+    HILOG_COMM_INFO("SetSystemVolume system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
         volumeType, deviceClass.c_str(), systemVolume.volume_, systemVolume.volumeLevel_, systemVolume.isMuted_,
         systemVolume_.size());
@@ -494,7 +494,7 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
         systemVolume_.emplace(key, systemVolume);
     }
 
-    AUDIO_INFO_LOG("SetSystemVolume system volume, volumeType:%{public}d, deviceClass:%{public}s,"
+    AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
         volumeType, deviceClass.c_str(), volume, volumeLevel, systemVolume_.size());
 }
