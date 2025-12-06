@@ -769,10 +769,8 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_ULTRASONIC: // This configuration uses the old channel.
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_ULTRASONIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:
             hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
