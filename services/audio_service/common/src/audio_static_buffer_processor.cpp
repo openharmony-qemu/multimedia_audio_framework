@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_static_buffer_processor.h"
-#include <cinttypes>
 #include "audio_errors.h"
 
 namespace OHOS {

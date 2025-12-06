@@ -2127,7 +2127,7 @@ HWTEST(FastAudioStreamUnitTest, SetRenderRate_002, TestSize.Level1)
     fastAudioStream->processClient_ = mockProcessClient;
 
     fastAudioStream->rendererInfo_.isStatic = false;
-    EXPECT_EQ( fastAudioStream->SetRenderRate(RENDER_RATE_DOUBLE), ERR_INVALID_OPERATION);
+    EXPECT_EQ(fastAudioStream->SetRenderRate(RENDER_RATE_DOUBLE), ERR_INVALID_OPERATION);
 }
 
 /**
