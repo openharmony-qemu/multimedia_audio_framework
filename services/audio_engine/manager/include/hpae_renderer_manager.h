@@ -153,6 +153,7 @@ private:
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
+    void StopOuputNode();
 
 private:
 

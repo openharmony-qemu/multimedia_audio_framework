@@ -238,15 +238,24 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
     SendRequestInner(request, __func__);
     return SUCCESS;
 }
+
+void HpaeInnerCapturerManager::StopOuputNode()
+{
+    if (hpaeInnerCapSinkNode_  != nullptr) {
+        hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
+        hpaeInnerCapSinkNode_->ResetAll();
+        hpaeInnerCapSinkNode_ = nullptr;
+    }
+}
  
 int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
-    if (IsInit()) {
-        AUDIO_INFO_LOG("deinit inner capture first.");
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
+        AUDIO_INFO_LOG("reload inner capture");
+        StopOuputNode();
         for (const auto &it: sinkInputNodeMap_) {
             CHECK_AND_CONTINUE_LOG(it.second != nullptr, "sessionid: %{public}u can not found in sinkInputNodeMap",
                 it.first);
@@ -270,7 +279,9 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
         }
     };
     SendRequestInner(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
 }
 
@@ -331,11 +342,7 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
     }
     hpaeNoLockQueue_.HandleRequests();
     int32_t ret = SUCCESS;
-    if (hpaeInnerCapSinkNode_  != nullptr) {
-        ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
-        hpaeInnerCapSinkNode_->ResetAll();
-        hpaeInnerCapSinkNode_ = nullptr;
-    }
+    StopOuputNode();
     isInit_.store(false);
     if (isMoveDefault) {
         std::string sinkName = "";

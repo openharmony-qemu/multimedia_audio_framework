@@ -930,16 +930,31 @@ void HpaeRendererManager::HandleMsg()
     hpaeNoLockQueue_.HandleRequests();
 }
 
+void HpaeRendererManager::StopOuputNode()
+{
+    if (outputCluster_ != nullptr) {
+        outputCluster_->Stop();
+        outputCluster_->DeInit();
+    }
+    for (const auto &item : sceneClusterMap_) {
+        if (item.second) {
+            item.second->SetConnectedFlag(false);
+        }
+    }
+    if (outputCluster_ != nullptr) {
+        outputCluster_->ResetAll();
+        outputCluster_ = nullptr;
+    }
+}
+
 int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
-    if (IsInit()) {
-        AUDIO_INFO_LOG("deinit:%{public}s renderer first.", sinkInfo.deviceName.c_str());
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", sinkInfo.deviceName.c_str());
-        
+        StopOuputNode();
         for (const auto &it : sinkInputNodeMap_) {
             TriggerStreamState(it.first, it.second);
             DeleteProcessCluster(it.first);
@@ -955,7 +970,9 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         AUDIO_INFO_LOG("connect device:%{public}s all processor end", sinkInfo.deviceName.c_str());
     };
     SendRequest(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
 }
 
@@ -1074,19 +1091,7 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    if (outputCluster_ != nullptr) {
-        outputCluster_->Stop();
-        outputCluster_->DeInit();
-    }
-    for (const auto &item : sceneClusterMap_) {
-        if (item.second) {
-            item.second->SetConnectedFlag(false);
-        }
-    }
-    if (outputCluster_ != nullptr) {
-        outputCluster_->ResetAll();
-        outputCluster_ = nullptr;
-    }
+    StopOuputNode();
     isInit_.store(false);
     return SUCCESS;
 }

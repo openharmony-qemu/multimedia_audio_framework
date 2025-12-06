@@ -504,13 +504,12 @@ int32_t HpaeInjectorRendererManager::ReloadRenderManager(const HpaeSinkInfo &sin
         return ERR_ILLEGAL_STATE;
     }
 
-    if (IsInit()) {
-        AUDIO_INFO_LOG("deinit:%{public}s before reload injector renderer manager", sinkInfo.deviceName.c_str());
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
         AUDIO_INFO_LOG("reload injector renderer manager, deviceName %{public}s", sinkInfo.deviceName.c_str());
+        StopOuputNode();
         for (const auto &it : sinkInputNodeMap_) {
             TriggerStreamState(it.first, it.second);
             DisConnectInputSession(it.first);
@@ -523,8 +522,19 @@ int32_t HpaeInjectorRendererManager::ReloadRenderManager(const HpaeSinkInfo &sin
         }
     };
     SendRequest(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
+}
+
+void HpaeInjectorRendererManager::StopOuputNode()
+{
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkStop();
+        sinkOutputNode_->RenderSinkDeInit();
+        sinkOutputNode_->ResetAll();
+    }
 }
 
 std::string HpaeInjectorRendererManager::GetDeviceHDFDumpInfo()
