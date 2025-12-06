@@ -364,7 +364,7 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
-    HILOG_COMM_INFO("Route flag after concurrency: %{public}u  sessionId: %{public}u", 
+    HILOG_COMM_INFO("Route flag after concurrency: %{public}u  sessionId: %{public}u",
         streamDesc->routeFlag_, streamDesc->sessionId_);
 }
 
