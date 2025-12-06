@@ -276,7 +276,6 @@ private:
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
     int64_t pausedTime_ = 0;
-    int64_t stopedTime_ = 0;
     int64_t flushedTime_ = 0;
     int64_t drainedTime_ = 0;
     uint32_t underrunCount_ = 0;

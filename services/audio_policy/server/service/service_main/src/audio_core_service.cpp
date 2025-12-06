@@ -413,7 +413,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");
 
-    CHECK_AND_RETURN_LOG(CheckStaticModeAndSelectFlag() == false, "StaticMode directly return!");
+    CHECK_AND_RETURN_LOG(CheckStaticModeAndSelectFlag(streamDesc) == false, "StaticMode directly return!");
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
