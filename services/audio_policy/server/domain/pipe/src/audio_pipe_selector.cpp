@@ -99,7 +99,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     info.pipeAction_ = PIPE_ACTION_NEW;
     selectedPipeInfoList.push_back(std::make_shared<AudioPipeInfo>(info));
-    AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
+    HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
 
     return selectedPipeInfoList;
@@ -247,7 +247,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         std::vector<uint64_t> sessionIdForLog{};
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
             if (streamDescToOldPipeInfo.find(streamDesc->sessionId_) == streamDescToOldPipeInfo.end()) {
-                AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
+                HILOG_COMM_INFO("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
                 continue;
             }
             streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
@@ -269,7 +269,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             std::string result = logstream.str();
             result.pop_back();
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
+            HILOG_COMM_INFO("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
@@ -333,7 +333,7 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
     pipeInfo.pipeAction_ = PIPE_ACTION_NEW;
     std::shared_ptr<AudioPipeInfo> tempPipeInfo = std::make_shared<AudioPipeInfo>(pipeInfo);
     newPipeInfoList.push_back(tempPipeInfo);
-    AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d, "
+    HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d, "
         "routeFlag %{public}d", tempPipeInfo->ToString().c_str(), streamDesc->sessionId_, streamDesc->streamAction_,
         streamDesc->routeFlag_);
 }
@@ -364,7 +364,8 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
-    AUDIO_INFO_LOG("Route flag after concurrency: %{public}u", streamDesc->routeFlag_);
+    HILOG_COMM_INFO("Route flag after concurrency: %{public}u  sessionId: %{public}u", 
+        streamDesc->routeFlag_, streamDesc->sessionId_);
 }
 
 AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
@@ -599,7 +600,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
-    AUDIO_INFO_LOG("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
+    HILOG_COMM_INFO("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
@@ -694,7 +695,7 @@ void AudioPipeSelector::ProcessModemCommunicationConcurrency(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal)
 {
     CHECK_AND_RETURN(AudioPipeManager::GetPipeManager()->IsModemCommunicationIdExist());
-    AUDIO_INFO_LOG("ModemCommunication exists, need process concurrency");
+    HILOG_COMM_INFO("ModemCommunication exists, need process concurrency");
     std::shared_ptr<AudioStreamDescriptor> modemCommStream =
         AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc();
     for (auto &streamDesc : streamDescs) {
@@ -739,7 +740,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
         pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
-        AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
+        HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
             pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
         return true;
     }

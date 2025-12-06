@@ -252,7 +252,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
-    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
+    HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
     UpdateRecordStreamInfo(streamDesc);

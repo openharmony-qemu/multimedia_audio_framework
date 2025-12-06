@@ -1164,7 +1164,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
         UpdateVolumeForLowLatency(desc, volumeType);
-        AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
+        HILOG_COMM_INFO("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
             volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
@@ -1316,7 +1316,7 @@ std::shared_ptr<AllDeviceVolumeInfo> AudioAdapterManager::GetAllDeviceVolumeInfo
 AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(pipeInfo->moduleInfo_);
-    AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s", pipeInfo->name_.c_str());
+    HILOG_COMM_INFO("[PipeExecInfo] pipe name %{public}s", pipeInfo->name_.c_str());
     curActiveCount_++;
     AudioIOHandle ioHandle = HDI_INVALID_ID;
     if (IsPaRoute(pipeInfo->routeFlag_)) {
@@ -1352,7 +1352,7 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     } else {
         paIndex = audioServiceAdapter_->OpenAudioPort(pipeInfo->moduleInfo_.lib, moduleArgs.c_str());
     }
-    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1403,7 +1403,7 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);
     }
-    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end.", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1469,7 +1469,7 @@ void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo
     int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
     paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
 
-    AUDIO_INFO_LOG("[PipeExecInfo] Reload audio port, paIndex: %{public}u end", paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Reload audio port, paIndex: %{public}u end", paIndex);
 }
 
 AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
@@ -1504,7 +1504,7 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
     int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
     paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
 
-    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1546,7 +1546,7 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioMod
         paIndex = audioServiceAdapter_->OpenAudioPort(audioModuleInfo.lib, moduleArgs.c_str());
     }
 
-    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
     return ioHandle;
 }
 
@@ -1562,7 +1562,7 @@ int32_t AudioAdapterManager::CloseAudioPort(AudioIOHandle ioHandle, uint32_t paI
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     audioServerProxy_->DestroyHdiPort(ioHandle);
     IPCSkeleton::SetCallingIdentity(identity);
-    AUDIO_INFO_LOG("[PipeExecInfo] Close %{public}u port, paIndex: %{public}u end", handleToClose, paIndex);
+    HILOG_COMM_INFO("[PipeExecInfo] Close %{public}u port, paIndex: %{public}u end", handleToClose, paIndex);
     return ret;
 }
 
