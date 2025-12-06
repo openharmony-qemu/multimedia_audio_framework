@@ -86,6 +86,7 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/audio_tool_calculate.cpp",
     "common/src/app_bundle_manager.cpp",
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
@@ -483,6 +484,8 @@ audio_ohos_library("audio_process_service") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {
@@ -596,6 +599,7 @@ audio_ohos_library("audio_service") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "call_manager:tel_call_manager_api",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {

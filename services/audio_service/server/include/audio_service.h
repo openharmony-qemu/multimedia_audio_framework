@@ -33,6 +33,7 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
+#include "call_manager_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -144,6 +145,7 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -250,6 +252,9 @@ private:
     float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
+
+    std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
+    std::mutex callManagerMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -414,6 +414,11 @@ int32_t AudioProcessInServer::StartInner()
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS,
         ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
 
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+        AudioService::GetInstance()->NotifyVoIPStart(
+            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
+    }
+
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);

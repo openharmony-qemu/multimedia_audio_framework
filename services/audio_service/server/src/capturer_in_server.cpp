@@ -45,13 +45,6 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
 }
 
-enum AudioByteSize : int32_t {
-    BYTE_SIZE_SAMPLE_U8 = 1,
-    BYTE_SIZE_SAMPLE_S16 = 2,
-    BYTE_SIZE_SAMPLE_S24 = 3,
-    BYTE_SIZE_SAMPLE_S32 = 4,
-};
-
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
 {
     processConfig_ = processConfig;
@@ -557,6 +550,7 @@ int32_t CapturerInServer::StartInner()
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
+    AudioService::GetInstance()->NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);

@@ -104,7 +104,8 @@
             "usb_manager",
             "ringtone_library",
             "frame_aware_sched",
-            "window_manager"
+            "window_manager",
+            "call_manager"
           ],
           "third_party": [
             "openssl"

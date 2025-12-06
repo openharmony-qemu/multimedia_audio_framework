@@ -1398,7 +1398,7 @@ void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeIn
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
     moduleName = pipeInfo->moduleInfo_.name;
-    AUDIO_INFO_LOG("remote offload, set module name %{public}s", moduleName.c_str());
+    AUDIO_INFO_LOG("remote offload");
 }
 
 int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
@@ -1418,7 +1418,6 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
     UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
-    AUDIO_ERR_LOG("moduleName %{public}s", moduleName.c_str());
 
     AudioIOHandle moduleId;
     if (audioIOHandleMap_.GetModuleIdByKey(moduleName, moduleId)) {
@@ -2684,7 +2683,7 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     oldSinkPortName = GetFinalSinkPortName(streamDesc->oldRouteFlag_, oldSinkPortName);
     newSinkPortName = GetFinalSinkPortName(streamDesc->routeFlag_, newSinkPortName);
 
-    AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkPortName.c_str(), newSinkPortName.c_str());
+    AUDIO_INFO_LOG("mute sink new:[%{public}s]", newSinkPortName.c_str());
     MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
 }
 

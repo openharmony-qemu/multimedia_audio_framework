@@ -88,8 +88,7 @@ uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceCl
     bool isResident, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
-    AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
-        deviceClass.c_str(), info.c_str(), id);
+    AUDIO_INFO_LOG("Device class: %{public}s, id: %{public}u", deviceClass.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     ProcessIdUseCount(id, isResident, tryCreate);
     return id;

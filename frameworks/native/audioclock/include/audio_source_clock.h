@@ -23,6 +23,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+enum AudioByteSize : int32_t {
+    BYTE_SIZE_SAMPLE_U8 = 1,
+    BYTE_SIZE_SAMPLE_S16 = 2,
+    BYTE_SIZE_SAMPLE_S24 = 3,
+    BYTE_SIZE_SAMPLE_S32 = 4,
+};
+
 class AudioSourceClock {
 public:
     AudioSourceClock() {}

@@ -905,6 +905,8 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
@@ -1046,6 +1048,8 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
@@ -1171,6 +1175,8 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   defines = []
@@ -1508,5 +1514,38 @@ ohos_unittest("audio_resource_service_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "qos_manager:concurrent_task_client",
+  ]
+}
+
+ohos_unittest("audio_tool_calculate_unit_test") {
+  module_out_path = module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_tool_calculate_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+    ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
   ]
 }
