@@ -245,7 +245,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
-        AUDIO_ERR_LOG("State is not new, release existing stream and recreate, state %{public}d", state_.load());
+        HILOG_COMM_ERROR("State is not new, release existing stream and recreate, state %{public}d", state_.load());
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
@@ -714,14 +714,14 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+            HILOG_COMM_WARN("Strong ref is nullptr, could cause error");
         }
         strongRef = nullptr;
         // start loop
         while (keepRunning) {
             strongRef = weakRef.lock();
             if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("RendererInClientInner destroyed");
+                HILOG_COMM_INFO("RendererInClientInner destroyed");
                 break;
             }
             keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop

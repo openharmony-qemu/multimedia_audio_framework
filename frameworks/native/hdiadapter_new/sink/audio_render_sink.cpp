@@ -147,7 +147,7 @@ int32_t AudioRenderSink::Start(void)
 int32_t AudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_WARNING_LOG("halName: %{public}s", halName_.c_str());
+    HILOG_COMM_WARN("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Stop");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -213,7 +213,7 @@ int32_t AudioRenderSink::Pause(void)
 
 int32_t AudioRenderSink::Flush(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    HILOG_COMM_INFO("[AudioRenderSink::Flush]halName: %{public}s", halName_.c_str());
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
@@ -270,7 +270,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     if (stamp >= RENDER_FRAME_LIMIT) {
-        AUDIO_WARNING_LOG("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
+        HILOG_COMM_WARN("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
     }
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_) {
@@ -320,7 +320,7 @@ void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::stri
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
+    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
         halName_.c_str());
     if (condition.starts_with("get_usb_info#C") && halName_ == HDI_ID_INFO_USB) {
         // init adapter to get parameter before load sink module (need fix)
@@ -591,7 +591,7 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_.load());
+    HILOG_COMM_INFO("flag: %{public}d, paStatus: %{public}d", flag, paStatus_.load());
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
         AUDIO_INFO_LOG("param: %{public}s", param.c_str());
@@ -924,7 +924,7 @@ int32_t AudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
+    HILOG_COMM_INFO("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
         "devicePin: %{public}u, desc: %{public}s", halName_.c_str(), param.sampleRate, param.channelCount, param.format,
         deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();

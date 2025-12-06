@@ -1297,7 +1297,7 @@ void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] bt [%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
+    HILOG_COMM_WARN("[ADeviceEvent] bt [%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
         "connectState[%{public}d] isEnable[%{public}d] deviceUsage[%{public}d]",
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.deviceCategory_,
         desc.connectState_, desc.isEnable_, desc.deviceUsage_);

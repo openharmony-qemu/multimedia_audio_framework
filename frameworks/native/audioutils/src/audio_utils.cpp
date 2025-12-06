@@ -582,7 +582,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        AUDIO_ERR_LOG("failed: not allowed!");
+        HILOG_COMM_ERROR("failed: not allowed!");
     }
     return ret;
 }

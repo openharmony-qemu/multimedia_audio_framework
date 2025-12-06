@@ -243,11 +243,11 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Create fast playback stream");
+        HILOG_COMM_INFO("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
 #else
         (void)params;
-        AUDIO_INFO_LOG("Unsupport create fast playback stream, so create ipc playback stream");
+        HILOG_COMM_INFO("Unsupport create fast playback stream, so create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
 #endif
     }

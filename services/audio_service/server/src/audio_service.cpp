@@ -1079,7 +1079,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
             break;
         }
         default:
-            AUDIO_ERR_LOG("Create mmap AudioEndpoint failed.");
+            HILOG_COMM_ERROR("Create mmap AudioEndpoint failed.");
             break;
     }
 
@@ -1496,7 +1496,7 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
+        HILOG_COMM_WARN("Current audio renderer stream num is greater than the renderer stream num limit per uid");
     }
 
     if (appUseNumMap_[appUid] > maxStreamCntPerUid) {

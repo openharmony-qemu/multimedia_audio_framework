@@ -61,7 +61,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+        HILOG_COMM_ERROR("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
             ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
