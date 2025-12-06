@@ -149,7 +149,7 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
         audioWorkgroupMap_.erase(pidIt);
         allowWorkgroupPidSet_.erase(pid);
         AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d release all groups "
-                        "allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
+            "allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
     }
 
     DumpAudioWorkgroupMap();
