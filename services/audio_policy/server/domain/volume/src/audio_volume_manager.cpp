@@ -827,7 +827,10 @@ void AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice()
 
 int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice)
 {
-    if (isBtDevice) {
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDevice();
+    bool isDealSafeVolumeForCurDevice = curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        curOutputDeviceType == DEVICE_TYPE_NEARLINK ? true : false;
+    if (isBtDevice && isDealSafeVolumeForCurDevice) {
         DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
         AUDIO_INFO_LOG("bluetooth Category:%{public}d", curOutputDeviceCategory);
         if (curOutputDeviceCategory == BT_SOUNDBOX || curOutputDeviceCategory == BT_CAR) {
