@@ -452,8 +452,6 @@ HWTEST(AudioProcessInClientUnitTest, CheckStaticAndOperate_001, TestSize.Level4)
     EXPECT_FALSE(ptrAudioProcessInClientInner->CheckStaticAndOperate());
 }
 
-
-
 /**
  * @tc.name  : Test CheckOperations API with static renderer
  * @tc.type  : FUNC

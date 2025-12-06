@@ -128,7 +128,7 @@ void AudioStaticBufferProvider::RefreshLoopTimes()
 {
     totalLoopTimes_ = preSetTotalLoopTimes_;
     needRefreshLoopTimes_ = false;
-    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}ld", totalLoopTimes_);
+    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}" PRId64 "", totalLoopTimes_);
 }
 
 bool AudioStaticBufferProvider::NeedRefreshLoopTimes()
@@ -157,7 +157,7 @@ int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
         return SUCCESS;
     }
     if (currentLoopTimes_ > totalLoopTimes_) {
-        AUDIO_ERR_LOG("CurrentLoopTimes Reach %{public}ld", totalLoopTimes_);
+        AUDIO_ERR_LOG("CurrentLoopTimes Reach %{public}" PRId64 "", totalLoopTimes_);
         return ERROR;
     }
     return SUCCESS;
