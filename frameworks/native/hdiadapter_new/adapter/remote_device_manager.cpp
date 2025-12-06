@@ -237,7 +237,7 @@ int32_t RemoteDeviceManager::HandleEvent(const std::string &adapterName, const A
 }
 
 void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
-    IDeviceManagerCallback *callback)
+    std::shared_ptr<IDeviceManagerCallback> callback)
 {
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
@@ -250,7 +250,7 @@ void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterNam
 }
 
 void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
-    IDeviceManagerCallback *callback)
+    std::shared_ptr<IDeviceManagerCallback> callback)
 {
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
@@ -564,24 +564,36 @@ int32_t RemoteDeviceManager::HandleStateChangeEvent(const std::string &adapterNa
     return SUCCESS;
 }
 
+uint32_t RemoteDeviceManager::ParseRenderId(const char *condition)
+{
+    CHECK_AND_RETURN_RET_LOG(condition != nullptr, HDI_INVALID_ID, "invalid condition param");
+    uint32_t renderId = HDI_INVALID_ID;
+    const char *target = "renderId=";
+    const char *start = strstr(condition, target);
+    CHECK_AND_RETURN_RET_LOG(start != nullptr, HDI_INVALID_ID, "not find renderId info in condition");
+
+    int32_t ret = sscanf_s(start, "renderId=%u", &renderId);
+    // ret value is 1 when read success.
+    CHECK_AND_RETURN_RET_LOG(ret == 1, HDI_INVALID_ID, "not find renderId value");
+
+    return renderId;
+}
+
 int32_t RemoteDeviceManager::HandleRenderParamEvent(const std::string &adapterName, const AudioParamKey key,
     const char *condition, const char *value)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    IDeviceManagerCallback *renderCallback = nullptr;
+    std::shared_ptr<IDeviceManagerCallback> renderCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->renderCallbackMtx_);
         if (wrapper->renderCallbacks_.size() != 1) {
             AUDIO_WARNING_LOG("exist %{public}zu renders port in adapter", wrapper->renderCallbacks_.size());
         }
-        for (auto &cb : wrapper->renderCallbacks_) {
-            if (cb.second != nullptr) {
-                renderCallback = cb.second;
-                break;
-            }
-        }
+        uint32_t renderId = ParseRenderId(condition);
+        renderCallback = renderId != HDI_INVALID_ID && wrapper->renderCallbacks_.count(renderId) != 0 ?
+            wrapper->renderCallbacks_[renderId] : renderCallback;
     }
     CHECK_AND_RETURN_RET_LOG(renderCallback != nullptr, ERR_INVALID_HANDLE, "not find render port in adapter");
     renderCallback->OnAudioParamChange(adapterName, key, std::string(condition), std::string(value));
@@ -594,7 +606,7 @@ int32_t RemoteDeviceManager::HandleCaptureParamEvent(const std::string &adapterN
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    IDeviceManagerCallback *captureCallback = nullptr;
+    std::shared_ptr<IDeviceManagerCallback> captureCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->captureCallbackMtx_);
         if (wrapper->captureCallbacks_.size() != 1) {

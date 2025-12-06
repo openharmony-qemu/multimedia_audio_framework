@@ -11,13 +11,13 @@ import { Logger } from '../Logger';
 const TAG: string = 'AudioEditTestApp_ImportSongs';
 
 // 导入歌曲
-export async function importSongs(playList: Map<string, SongInfo): Promise<Map<string, SongInfo>> {
+export async function importSongs(playList: Map<string, SongInfo>): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
     try {
         let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
         let documentPicker = new picker.DocumentViewPicker(context);
         let selectResult: string[] =
-            await documentPicker.select({fileSuffixFilters: ['.pcm', '.wav'], maxSelectNumber: 500});
+            await documentPicker.select({fileSuffixFilters: ['.wav'], maxSelectNumber: 500});
         Logger.info(TAG, `DocumentViewPicker.select successfully, documentSelectResult uri: ${JSON.stringify(selectResult)}`);
         let tempMap: Map<string, SongInfo> = new Map();
         playList.forEach((song: SongInfo, key: string) => {
@@ -46,7 +46,7 @@ export async function importSongs(playList: Map<string, SongInfo): Promise<Map<s
 }
 
 // 导入歌曲（修改为单文件导入）
-export async function importSingSong(nodeList: Map<string, SongInfo>,
+export async function importSingleSong(nodeList: Map<string, SongInfo>,
     nodeId: string): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
     try {
@@ -84,7 +84,7 @@ export async function importSingSong(nodeList: Map<string, SongInfo>,
         Logger.warn(TAG, `File ${tempMap.size} ***************`);
         newMap = tempMap;
     } catch (error) {
-        Logger.error(TAG, `DocumentViewPicker failed with err: JSON.stringify(error)`);
+        Logger.error(TAG, `DocumentViewPicker failed with err: ${JSON.stringify(error)}`);
     }
 
     return newMap;
@@ -96,8 +96,14 @@ export async function importSingSong(nodeList: Map<string, SongInfo>,
  * @param info     已有歌曲信息
  * @param tempMap  所有歌曲集合的 map
  */
-export async function addToList(uri: string, info: SongInfo, tempMap: Map<string, SongInfo>, isSingle?: boolean) {
-    await METADATA_SERVICE.fetchMetadata(uri).then((data: MusicMetadata) => {
+export async function addToList(
+    uri: string,
+    info: SongInfo,
+    tempMap: Map<string, SongInfo>,
+    isSingle?: boolean
+) {
+    try {
+        const data: MusicMetadata = await METADATA_SERVICE.fetchMetadata(uri);
         if (data.metadata?.title) {
             info.songName = data.metadata.title;
         }
@@ -109,11 +115,14 @@ export async function addToList(uri: string, info: SongInfo, tempMap: Map<string
         }
         info.albumName = data.metadata?.album;
         info.albumCover = data.pixelMap;
-    }).finally(() => {
         if (isSingle && info?.nodeId) {
             tempMap.set(info.nodeId, info);
         } else {
             tempMap.set(info.uri, info);
         }
-    });
+        return true;
+    } catch (error) {
+        Logger.error(TAG, `Failed to fetch metadata for ${uri}: ${JSON.stringify(error)}`);
+        return false;
+    }
 }

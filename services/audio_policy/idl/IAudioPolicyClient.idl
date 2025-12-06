@@ -93,4 +93,7 @@ interface IAudioPolicyClient {
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnVolumeDegreeEvent([in] VolumeEvent volumeEvent);
     void OnDeviceInfoUpdate([in] DeviceChangeAction deviceChangeAction);
+    void OnCollaborationEnabledChangeForCurrentDevice([in] boolean enabled);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice([in] sharedptr<AudioDeviceDescriptor> deviceDescriptor, [in] boolean enabled);
 }

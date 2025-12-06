@@ -57,10 +57,12 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDupDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
+    int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
+    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor);
     virtual ~AudioStreamDescriptor() = default;
 
     // Need to delete later
@@ -228,6 +230,12 @@ public:
     void SetOriginalFlagForcedNormal()
     {
         rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
+
+    void ResetOriginalFlag()
+    {
+        rendererInfo_.originalFlag = rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ? oldOriginalFlag_:
+            rendererInfo_.originalFlag;
     }
 
     // Device funcs above

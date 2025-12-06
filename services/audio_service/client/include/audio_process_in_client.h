@@ -115,7 +115,7 @@ public:
 
     virtual int64_t GetFramesRead() = 0;
 
-    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
+    virtual void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) = 0;
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
@@ -145,6 +145,18 @@ public:
     virtual void SetRebuildFlag() = 0;
 
     virtual bool IsRestoreNeeded() = 0;
+
+    virtual void GetKeepRunning(bool &keepRunning) = 0;
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+
+    virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual int32_t SetStaticRenderRate(AudioRendererRate renderRate) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

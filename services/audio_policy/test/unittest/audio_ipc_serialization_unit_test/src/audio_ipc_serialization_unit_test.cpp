@@ -194,7 +194,7 @@ void InitAudioRendererInfo(AudioRendererInfo &info)
     info.sceneType = TEST_STRING_VALUE_1;
     info.spatializationEnabled = true;
     info.headTrackingEnabled = false;
-    info.pipeType = PIPE_TYPE_DIRECT_OUT;
+    info.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     info.samplingRate = SAMPLE_RATE_44100;
     info.encodingType = TEST_VALUE_1;
     info.channelLayout = TEST_VALUE_3;
@@ -215,7 +215,7 @@ void InitAudioCapturerInfo(AudioCapturerInfo &info)
     info.sceneType = SOURCE_TYPE_WAKEUP;
     info.capturerFlags = TEST_VALUE_1;
     info.originalFlag = TEST_VALUE_2;
-    info.pipeType = PIPE_TYPE_DIRECT_OUT;
+    info.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     info.samplingRate = SAMPLE_RATE_44100;
     info.encodingType = TEST_VALUE_1;
     info.channelLayout = TEST_VALUE_2;
@@ -1148,7 +1148,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioSharedMemory_001, TestSize.Level1)
     Parcel parcel;
     size_t mapSize = 100;
     std::string name = "test";
-    auto sharedMemory = AudioSharedMemory::CreateFormLocal(mapSize, name);
+    auto sharedMemory = AudioSharedMemory::CreateFromLocal(mapSize, name);
     ASSERT_NE(sharedMemory, nullptr);
 
     EXPECT_TRUE(sharedMemory->Marshalling(parcel));

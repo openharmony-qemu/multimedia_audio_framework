@@ -88,14 +88,14 @@ public:
  
     virtual bool GetSilentState() = 0;
     virtual void SetSilentState(bool state) = 0;
-    virtual void AddMuteWriteFrameCnt(int64_t muteFrameCnt) = 0;
+    virtual void SetKeepRunning(bool keepRunning) {}
+    virtual bool GetKeepRunning() { return false; }
     virtual void AddMuteFrameSize(int64_t muteFrameCnt) {}
     virtual void AddNormalFrameSize() {}
     virtual void AddNoDataFrameSize() {}
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
-    virtual int32_t GetAudioHapticsSyncId() = 0;
-    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) = 0;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer, int32_t &audioHapticsSyncId) = 0;
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) = 0;
     virtual void UpdateStreamInfo() {}
@@ -104,6 +104,8 @@ public:
     {
         return SUCCESS;
     }
+
+    virtual void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

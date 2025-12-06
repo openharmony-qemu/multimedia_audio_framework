@@ -32,7 +32,10 @@ ohos_fuzztest("AudioClientTrackerCallbackListenerFuzzTest") {
   ]
   configs = []
 
-  sources = [ "audio_client_tracker_callback_listener_fuzzer.cpp" ]
+  sources = [
+    "audio_client_tracker_callback_listener_fuzzer.cpp",
+    "../../../services/audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+  ]
 
   deps = [
     "../../../services/audio_service/idl:audio_framework_interface",

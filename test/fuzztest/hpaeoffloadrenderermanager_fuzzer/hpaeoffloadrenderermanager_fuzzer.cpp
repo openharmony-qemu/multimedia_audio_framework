@@ -342,50 +342,6 @@ void HpaeOffloadRendererManagerSetMuteFuzzTest()
     offloadRendererManager->DeInit();
 }
 
-void HpaeOffloadRendererManagerProcessFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->Process();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerHandleMsgFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->HandleMsg();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerIsMsgProcessingFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->IsMsgProcessing();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerDeactivateThreadFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->DeactivateThread();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
 void HpaeOffloadRendererManagerSetClientVolumeFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -576,11 +532,8 @@ void HpaeOffloadRendererManagerOnFadeDoneFuzzTest()
     auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     offloadRendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    for (size_t i = 0; i < IOperationVec.size(); i++) {
-        IOperation operation = IOperationVec[i];
-        offloadRendererManager->OnFadeDone(sessionId, operation);
-        WaitForMsgProcessing(offloadRendererManager);
-    }
+    offloadRendererManager->OnFadeDone(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
     offloadRendererManager->DeInit();
 }
 
@@ -814,10 +767,6 @@ TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerMoveAllStreamFuzzTest,
     HpaeOffloadRendererManagerSuspendStreamManagerFuzzTest,
     HpaeOffloadRendererManagerSetMuteFuzzTest,
-    HpaeOffloadRendererManagerProcessFuzzTest,
-    HpaeOffloadRendererManagerHandleMsgFuzzTest,
-    HpaeOffloadRendererManagerIsMsgProcessingFuzzTest,
-    HpaeOffloadRendererManagerDeactivateThreadFuzzTest,
     HpaeOffloadRendererManagerSetClientVolumeFuzzTest,
     HpaeOffloadRendererManagerSetRateFuzzTest,
     HpaeOffloadRendererManagerSetAudioEffectModeFuzzTest,

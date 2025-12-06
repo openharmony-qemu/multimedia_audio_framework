@@ -22,7 +22,6 @@
     *ConfigPolicyProvider*;
     *NotifyStreamVolumeChanged*;
     *GetMaxAmplitude*;
-    *ResetAudioEndpoint*;
     *GetRendererBySessionID*;
     *RestoreSession*;
     *OnDataLinkConnectionUpdate*;
@@ -85,6 +84,7 @@
     *HpaeCapturerStreamImpl*;
     *GetPrivacyType*;
     *GetEndPointByType*;
+    *SetEndpointMuteForSwitchDevice*;
   local:
     *;
 };

@@ -23,6 +23,7 @@
 #include "iaudio_policy_client.h"
 #include "audio_policy_client_holder.h"
 #include "audio_policy_manager_listener.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -615,6 +616,19 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeEvent(const bool &e
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor>
+    &selectedAudioDevice)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::DEVICE_CONFIG_CHANGED,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send DEVICE_CONFIG_CHANGED event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForAnyDeviceEvent(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
 {
@@ -638,6 +652,21 @@ bool AudioPolicyServerHandler::SendSpatializatonEnabledChangeForCurrentDeviceEve
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
         EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->adaptiveSpatialRenderingEnabled = enabled;
+    eventContextObj->descriptor = selectedAudioDevice;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE event failed");
+    AUDIO_INFO_LOG("Send ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE event");
     return ret;
 }
 
@@ -799,6 +828,7 @@ void AudioPolicyServerHandler::HandleVolumeChangeCallback(int32_t clientId,
         streamVolumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
         streamVolumeEvent.networkId = volumeEvent.networkId;
         streamVolumeEvent.volumeMode = volumeEvent.volumeMode;
+        streamVolumeEvent.previousVolume = volumeEvent.previousVolume;
         audioPolicyClient->OnStreamVolumeChange(streamVolumeEvent);
     }
 }
@@ -825,6 +855,38 @@ void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
     }
 }
 
+void AudioPolicyServerHandler::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioClientInfoMgrCallback_ = callback;
+}
+
+bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
+{
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
+    return ret;
+}
+
+bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent)
+{
+    CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
+
+    int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
+    bool isByVolumeType = IsForceGetDevByVolumeType(uid);
+    auto deviceDesc = isByVolumeType ? AudioActiveDevice::GetInstance().GetDeviceForVolume(volumeEvent.volumeType) :
+        AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, true);
+    bool ret = volumeEvent.deviceType == deviceDesc->deviceType_ && volumeEvent.networkId == deviceDesc->networkId_;
+    AUDIO_INFO_LOG("uid: %{public}d, [%{public}d, %{public}s] is target device [%{public}d, %{public}s]: %{public}s",
+        uid, deviceDesc->deviceType_, GetEncryptStr(deviceDesc->networkId_).c_str(), volumeEvent.deviceType,
+        GetEncryptStr(volumeEvent.networkId).c_str(), ret ? "true" : "false");
+    return ret;
+}
+
 void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -846,9 +908,10 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             continue;
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d ", it->first,
+            " volume : %{public}d, updateUi : %{public}d, previousVolume : %{public}d ", it->first,
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi), eventContextObj->volumeEvent.previousVolume);
+        CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
@@ -1385,6 +1448,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    bool cbFlag = false;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
@@ -1399,8 +1463,10 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     if (clientCallbacksMap_.count(pid) > 0 &&
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        cbFlag = true;
         capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
     }
+    AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
 }
 
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1592,6 +1658,15 @@ void AudioPolicyServerHandler::HandleAudioSceneChange(const AppExecFwk::InnerEve
     }
 }
 
+void AudioPolicyServerHandler::HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    CHECK_AND_RETURN_LOG(eventContextObj->descriptor != nullptr, "EventContextObj->descriptor get nullptr");
+    AudioCoreService::GetCoreService()->GetEventEntry()->HandleDeviceConfigChanged(eventContextObj->descriptor);
+}
+
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
     const AppExecFwk::InnerEvent::Pointer &event)
 {
@@ -1632,11 +1707,31 @@ void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFw
     }
 }
 
+void AudioPolicyServerHandler::HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    AUDIO_INFO_LOG("AudioPolicyServerHandler::HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent");
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> adaptiveSpatialRenderingEnabledChangeCb = it->second;
+        CHECK_AND_CONTINUE_LOG(adaptiveSpatialRenderingEnabledChangeCb != nullptr,
+            "adaptiveSpatialRenderingEnabledChangeCb : nullptr for client : %{public}d", it->first);
+        CHECK_AND_CONTINUE(clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE]);
+        adaptiveSpatialRenderingEnabledChangeCb->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+            eventContextObj->descriptor, eventContextObj->adaptiveSpatialRenderingEnabled);
+    }
+}
+
 // Run with event-runner mutex hold, lock any mutex that SendSyncEvent-calling holds may cause dead lock.
 void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
     HandleOtherServiceEvent(eventId, event);
+    HandleOtherServiceSecondEvent(eventId, event);
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
@@ -1733,6 +1828,21 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
     }
 }
 
+void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
+        case EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
+            HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::DEVICE_CONFIG_CHANGED:
+            HandleDeviceConfigChangedEvent(event);
+            break;
+        default:
+            break;
+    }
+}
+
 void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     uint32_t eventId = event->GetInnerEventId();
@@ -1782,6 +1892,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::HEAD_TRACKING_ENABLED_CHANGE:
             HandleHeadTrackingEnabledChangeEvent(event);
+            break;
+        case EventAudioServerCmd::ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE:
+            HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
             break;
         default:
             break;
@@ -1904,6 +2017,38 @@ int32_t AudioPolicyServerHandler::SetCallbackStreamUsageInfo(const std::set<Stre
         clientCbStreamUsageMap_[clientId] = streamUsages;
     }
     return AUDIO_OK;
+}
+
+void AudioPolicyServerHandler::SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    eventContextObj->collaborationEnabled = enabled;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_LOG(ret, "Send COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE event failed");
+}
+
+void AudioPolicyServerHandler::HandleCollaborationEnabledChangeForCurrentDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> collaborationEnabledChangeForCurrentDeviceCb = it->second;
+        if (collaborationEnabledChangeForCurrentDeviceCb == nullptr) {
+            AUDIO_ERR_LOG("collaborationEnabledChangeForCurrentDeviceCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE]) {
+            collaborationEnabledChangeForCurrentDeviceCb->OnCollaborationEnabledChangeForCurrentDevice(
+                eventContextObj->collaborationEnabled);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

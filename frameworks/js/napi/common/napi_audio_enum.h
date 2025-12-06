@@ -164,7 +164,7 @@ public:
     static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
     static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
-    static bool IsLegalRenderTargetType(int32_t type);
+    static bool IsLegalRenderTarget(int32_t target);
     static bool IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category);
 
 private:

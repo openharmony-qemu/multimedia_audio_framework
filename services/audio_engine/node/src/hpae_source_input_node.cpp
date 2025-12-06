@@ -18,6 +18,7 @@
 #endif
 
 #include <cinttypes>
+#include <thread>
 #include "hpae_source_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
@@ -150,10 +151,17 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
     AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
+    if (isInjecting_ && replyBytes == 0 && audioCapturerSource_->GetArmUsbDeviceStatus() != 1) {
+        AUDIO_WARNING_LOG("HpaeSourceInputNode::DoProcessMicInner injecting need sleep");
+        std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DURATION_DEFAULT));
+        return;
+    }
     auto &historyData = historyDataMap_.at(bufferType);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
-    if (historyRemainSizeMap_.at(bufferType) < byteSize) {
+    if (historyRemainSizeMap_.at(bufferType) == 0) {
+        return;
+    } else if (historyRemainSizeMap_.at(bufferType) < byteSize) {
         historyData.insert(historyData.end(), byteSize - historyRemainSizeMap_.at(bufferType), 0);
         historyRemainSizeMap_.at(bufferType) = byteSize;
     }
@@ -212,7 +220,7 @@ void HpaeSourceInputNode::DoProcess()
         } else {
             CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
                 "request != reply");
-            DoProcessInner(sourceBufferType, replyBytes);
+            DoProcessMicInner(sourceBufferType, replyBytes);
         }
     }
 }
@@ -380,10 +388,10 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
+    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -391,11 +399,11 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
+    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
+    SetSourceState(STREAM_MANAGER_SUSPENDED);
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
-    SetSourceState(STREAM_MANAGER_SUSPENDED);
     if (audioCapturerSource_->Stop() != SUCCESS) {
         AUDIO_ERR_LOG("stop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
     }
@@ -476,8 +484,11 @@ void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferT
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
     while (historyRemainSizeMap_[bufferType] < byteSize) {
-        audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
+        int32_t ret = audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
             (uint64_t)frameByteSizeMap_.at(bufferType), replyBytes);
+        if (sourceInputNodeType_ == HPAE_SOURCE_MIC) { // micref not sleep
+            backoffController_.HandleResult(ret == SUCCESS);
+        }
         CHECK_AND_RETURN_LOG(replyBytes != 0, "replyBytes is 0");
         PushDataToBuffer(bufferType, replyBytes);
     }
@@ -489,6 +500,11 @@ void HpaeSourceInputNode::PushDataToBuffer(const HpaeSourceBufferType &bufferTyp
     auto newData = capturerFrameDataMap_.at(bufferType).data();
     historyData.insert(historyData.end(), newData, newData + replyBytes);
     historyRemainSizeMap_[bufferType] += replyBytes;
+}
+
+void HpaeSourceInputNode::SetInjectState(bool isInjecting)
+{
+    isInjecting_ = isInjecting;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -43,6 +43,7 @@ static const char* INVALID_CLASS = "invalid";
 static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
 static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* MMAP_CLASS = "primary_mmap";
+static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";
@@ -57,6 +58,7 @@ static const char* USB_MIC = "Usb_arm_mic";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
 static const char* PRIMARY_AI_MIC = "Built_in_ai";
+static const char* PRIMARY_ULTRASONIC_MIC = "Built_in_ultrasonic";
 static const char* FILE_SINK = "file_sink";
 static const char* FILE_SOURCE = "file_source";
 static const char* PIPE_SINK = "fifo_output";
@@ -68,8 +70,11 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* PRIMARY_MMAP = "mmap";
+static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
+static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
+static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
 }
 
 enum NodeName {

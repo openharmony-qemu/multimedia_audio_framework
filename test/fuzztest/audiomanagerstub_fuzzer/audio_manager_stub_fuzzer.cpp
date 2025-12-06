@@ -120,7 +120,6 @@ vector<AudioServerInterfaceCode> AudioServerInterfaceCodeVec = {
     AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED,
     AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE,
     AudioServerInterfaceCode::GET_MAX_AMPLITUDE,
-    AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT,
     AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT,
     AudioServerInterfaceCode::GET_EFFECT_LATENCY,
     AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP,

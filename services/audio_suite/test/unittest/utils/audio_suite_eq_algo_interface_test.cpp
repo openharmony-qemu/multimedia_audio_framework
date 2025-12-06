@@ -36,7 +36,10 @@ public:
 
 HWTEST_F(AudioSuiteEqAlgoInterfaceImplTest, AudioSuiteEqAlgoInterfaceImplTest, TestSize.Level0)
 {
-    AudioSuiteEqAlgoInterfaceImpl eqAlgo;
+    NodeCapability nc;
+    nc.soName = "libimedia_sws.z.so";
+    nc.soPath = "/system/lib64/";
+    AudioSuiteEqAlgoInterfaceImpl eqAlgo(nc);
     EXPECT_EQ(eqAlgo.Init(), 0);
     EXPECT_NE(eqAlgo.Init(), 0);
     std::string a = "";

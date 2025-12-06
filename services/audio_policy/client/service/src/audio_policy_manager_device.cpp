@@ -46,7 +46,7 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors, audioDeviceSelectMode);
 }
 
-int32_t AudioPolicyManager::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
+int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::string &macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -60,6 +60,14 @@ int32_t AudioPolicyManager::ForceSelectDevice(DeviceType devType, const std::str
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ForceSelectDevice(devType, macAddress, filter);
 }
+
+int32_t AudioPolicyManager::SetActiveHfpDevice(const std::string &macAddress)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetActiveHfpDevice(macAddress);
+}
+
 
 int32_t AudioPolicyManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter)
 {

@@ -68,7 +68,8 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
     std::vector<HpaeInputOutputInfo> &dumpInfo);
 void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
     HpaeNodeInfo &nodeInfo);
-size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo);
+size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate);
+size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

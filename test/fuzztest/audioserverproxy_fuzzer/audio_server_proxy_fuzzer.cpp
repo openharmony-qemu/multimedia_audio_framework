@@ -125,12 +125,6 @@ void AudioServerProxyCheckRemoteDeviceStateProxyFuzzTest()
     audioServerProxy.CheckRemoteDeviceStateProxy(networkId, deviceRole, isStartDevice);
 }
 
-void AudioServerProxyResetAudioEndpointProxyFuzzTest()
-{
-    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    audioServerProxy.ResetAudioEndpointProxy();
-}
-
 void AudioServerProxyOffloadSetVolumeProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
@@ -355,7 +349,6 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyUpdateDualToneStateProxyFuzzTest,
     AudioServerProxyUpdateSessionConnectionStateProxyFuzzTest,
     AudioServerProxyCheckRemoteDeviceStateProxyFuzzTest,
-    AudioServerProxyResetAudioEndpointProxyFuzzTest,
     AudioServerProxyOffloadSetVolumeProxyFuzzTest,
     AudioServerProxyUnsetOffloadModeProxyFuzzTest,
     AudioServerProxySetOffloadModeProxyFuzzTest,

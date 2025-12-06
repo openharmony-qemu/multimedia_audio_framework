@@ -20,9 +20,9 @@
 #include <vector>
 #include "audio_errors.h"
 #include "audio_suite_channel.h"
-#include "hpae_format_convert.h"
 #include "audio_suite_pcm_buffer.h"
-#include "audio_proresampler.h"
+#include "audio_suite_capabilities.h"
+#include "audio_suite_perf.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,7 +31,6 @@ class AudioSuiteProcessNode : public AudioNode {
 public:
     AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat);
     virtual ~AudioSuiteProcessNode() = default;
-    virtual bool Reset() = 0;
     int32_t DoProcess() override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
@@ -60,21 +59,22 @@ public:
         return outputStream_;
     }
 
-    int32_t ConvertProcess(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer,
-                           AudioSuitePcmBuffer *tmpPcmBuffer);
-
 protected:
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_;
     std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
+    NodeCapability nodeCapability;
+    // for dfx
+    void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
+    void CheckEffectNodeOvertimeCount();
 
 private:
-    int32_t CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    Tap tap_;
+    // for dfx
+    int32_t signalProcessTotalCount_ = 0;
+    std::array<int32_t, RTF_OVERTIME_LEVELS> rtfOvertimeCounters_{};
+    int32_t rtfOver100Count_ = 0;
 };
 
 }

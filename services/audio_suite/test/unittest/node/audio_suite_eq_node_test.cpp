@@ -35,156 +35,26 @@ void AudioSuiteEqNodeTest::SetUp()
 void AudioSuiteEqNodeTest::TearDown()
 {}
 
-const AudioChannelLayout layout = CH_LAYOUT_STEREO;
 namespace {
+static std::string g_inputfile001 = "/data/audiosuite/eqnode/48000_2_16.pcm";
+static std::string g_outputfile001 = "/data/audiosuite/eqnode/eq_48000_2_16Out.pcm";
+static std::string g_targetfile001 = "/data/audiosuite/eqnode/eq_48000_2_16_target.pcm";
+
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_001, TestSize.Level0)
 {
-    AudioSuiteEqNode eq;
-    eq.Init();
+    auto node = std::make_shared<AudioSuiteEqNode>();
+    ASSERT_EQ(node->Init(), 0);
+
+    std::string name = "AudioEqualizerFrequencyBandGains";
     std::string eqValue = "5:2:1:-1:-5:-5:-2:1:2:4";
-    std::string name = "AudioEqualizerFrequencyBandGains";
-    eq.SetOptions(name, eqValue);
-    std::vector<AudioSuitePcmBuffer *> inputs;
-    std::ifstream file("/data/audiosuite/eqnode/audiosuite/eqnode/eq_48000_2_16.pcm", std::ios::binary | std::ios::ate);
-    file.seekg(0, std::ios::beg);
-    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_48000, ALGO_CHANNEL_NUM, layout);
-    const size_t frameBytes = 48000 * 0.02 * 2 * 2;
-    std::ofstream outFile("/data/audiosuite/eqnode/eq_48000_2_16Out.pcm", std::ios::binary | std::ios::out);
-    if (!outFile || !file.is_open()) {
-        eq.DeInit();
-        delete buffer;
-        file.close();
-        return;
-    }
-    vector<char> rawBuffer(frameBytes);
-    while (file.read(rawBuffer.data(), frameBytes).gcount() > 0) {
-        size_t actualBytesRead = file.gcount();
-        if (file.gcount() != rawBuffer.size()) {
-            rawBuffer.resize(file.gcount());
-        }
-        int inputSamples = actualBytesRead / 2;
-        eq.ConvertToFloat(SAMPLE_S16LE, inputSamples, rawBuffer.data(), buffer->GetPcmDataBuffer());
-        inputs.clear();
-        inputs.push_back(buffer);
-        AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = eq.SignalProcess(inputs);
-        float *data = outPcmbuffer->GetPcmDataBuffer();
-        int16_t *outData = new int16_t[inputSamples];
-        eq.ConvertFromFloat(SAMPLE_S16LE, inputSamples, data, outData);
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(outData), actualBytesRead);
-            if (outFile.fail()) {
-                break;
-            }
-        }
-        delete[] outData;
-    }
-    delete buffer;
-    file.close();
-    outFile.close();
-    EXPECT_EQ(IsFilesEqual(
-                  "/data/audiosuite/eqnode/eq_48000_2_16Out.pcm", "/data/audiosuite/eqnode/eq_48000_2_16_target.pcm"),
-        true);
-}
 
-HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_002, TestSize.Level0)
-{
-    AudioSuiteEqNode eq;
-    eq.Init();
-    std::string eqValue = "2:0:2:3:6:5:-1:3:4:4";
-    std::string name = "AudioEqualizerFrequencyBandGains";
-    eq.SetOptions(name, eqValue);
-    std::vector<AudioSuitePcmBuffer *> inputs;
-    std::ifstream file("/data/audiosuite/eqnode/eq_44100_2_32f.pcm", std::ios::binary | std::ios::ate);
-    file.seekg(0, std::ios::beg);
-    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_44100, ALGO_CHANNEL_NUM, layout);
-    const size_t frameBytes = 44100 * 0.02 * 2 * 2;
-    std::ofstream outFile("/data/audiosuite/eqnode/eq_44100_2_32fOut.pcm", std::ios::binary | std::ios::out);
-    if (!outFile || !file.is_open()) {
-        eq.DeInit();
-        delete buffer;
-        file.close();
-        return;
-    }
-    vector<char> rawBuffer(frameBytes);
-    while (file.read(rawBuffer.data(), frameBytes).gcount() > 0) {
-        size_t actualBytesRead = file.gcount();
-        if (file.gcount() != rawBuffer.size()) {
-            rawBuffer.resize(file.gcount());
-        }
-        int inputSamples = actualBytesRead / 2;
-        eq.ConvertToFloat(SAMPLE_S16LE, inputSamples, rawBuffer.data(), buffer->GetPcmDataBuffer());
-        inputs.clear();
-        inputs.push_back(buffer);
-        AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = eq.SignalProcess(inputs);
-        float *data = outPcmbuffer->GetPcmDataBuffer();
-        int16_t *outData = new int16_t[inputSamples];
-        eq.ConvertFromFloat(SAMPLE_S16LE, inputSamples, data, outData);
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(outData), actualBytesRead);
-            if (outFile.fail()) {
-                break;
-            }
-        }
-        delete[] outData;
-    }
-    delete buffer;
-    file.close();
-    outFile.close();
-    EXPECT_EQ(IsFilesEqual(
-                  "/data/audiosuite/eqnode/eq_44100_2_32fOut.pcm", "/data/audiosuite/eqnode/eq_44100_2_32f_target.pcm"),
-        true);
-}
+    EXPECT_EQ(node->SetOptions(name, eqValue), 0);
 
-HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_003, TestSize.Level0)
-{
-    AudioSuiteEqNode eq;
-    eq.Init();
-    std::string eqValue = "4:3:2:-3:0:0:5:4:2:0";
-    std::string name = "AudioEqualizerFrequencyBandGains";
-    eq.SetOptions(name, eqValue);
-    std::vector<AudioSuitePcmBuffer *> inputs;
-    std::ifstream file("/data/audiosuite/eqnode/eq_44100_1_32f.pcm", std::ios::binary | std::ios::ate);
-    file.seekg(0, std::ios::beg);
-    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_44100, 1, layout);
-    const size_t frameBytes = 44100 * 0.02 * 2;
-    std::ofstream outFile("/data/audiosuite/eqnode/eq_44100_1_32fOut.pcm", std::ios::binary | std::ios::out);
-    if (!outFile || !file.is_open()) {
-        eq.DeInit();
-        delete buffer;
-        file.close();
-        return;
-    }
-    vector<char> rawBuffer(frameBytes);
-    while (file.read(rawBuffer.data(), frameBytes).gcount() > 0) {
-        size_t actualBytesRead = file.gcount();
-        if (file.gcount() != rawBuffer.size()) {
-            rawBuffer.resize(file.gcount());
-        }
-        int inputSamples = actualBytesRead / 2;
-        eq.ConvertToFloat(SAMPLE_S16LE, inputSamples, rawBuffer.data(), buffer->GetPcmDataBuffer());
-        inputs.clear();
-        inputs.push_back(buffer);
-        AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = eq.SignalProcess(inputs);
-        float *data = outPcmbuffer->GetPcmDataBuffer();
-        int16_t *outData = new int16_t[inputSamples];
-        eq.ConvertFromFloat(SAMPLE_S16LE, inputSamples, data, outData);
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(outData), actualBytesRead);
-            if (outFile.fail()) {
-                break;
-            }
-        }
-        delete[] outData;
-    }
-    delete buffer;
-    file.close();
-    outFile.close();
-    EXPECT_EQ(IsFilesEqual(
-                  "/data/audiosuite/eqnode/eq_44100_1_32fOut.pcm", "/data/audiosuite/eqnode/eq_44100_1_32f_target.pcm"),
-        true);
+    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE});
+    std::vector<AudioSuitePcmBuffer *> inputs = {&inputBuffer};
+    EXPECT_EQ(TestEffectNodeSignalProcess(node, inputs, g_inputfile001, g_outputfile001, g_targetfile001), SUCCESS);
+
+    EXPECT_EQ(node->DeInit(), 0);
 }
 
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSetOptions, TestSize.Level0)

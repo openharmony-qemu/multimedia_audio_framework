@@ -62,6 +62,7 @@ static std::map<AudioChannelSet, pa_channel_position> chSetToPaPositionMap = {
 
 int32_t EffectChainManagerProcess(char *sceneType, BufferAttr *bufferAttr)
 {
+    CHECK_AND_RETURN_RET_LOG(bufferAttr != nullptr, ERROR, "bufferAttr is nullptr");
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
     std::string sceneTypeString = "";
@@ -182,6 +183,7 @@ int32_t EffectChainManagerVolumeUpdate(const char *sessionID)
 
 uint32_t ConvertChLayoutToPaChMap(const uint64_t channelLayout, pa_channel_map *paMap)
 {
+    CHECK_AND_RETURN_RET_LOG(paMap != nullptr, 0, "null paMap");
     if (channelLayout == CH_LAYOUT_MONO) {
         pa_channel_map_init_mono(paMap);
         return AudioChannel::MONO;
@@ -295,15 +297,6 @@ int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_
     uint32_t &chans = *channels;
     uint64_t &chLayout = *channelLayout;
     return audioEffectChainManager->QueryEffectChannelInfo(sceneTypeString, chans, chLayout);
-}
-
-int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
-{
-    if (channels == nullptr || channelLayout == nullptr) {
-        return ERROR;
-    }
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    return audioEffectChainManager->ReturnMultiChannelInfo(channels, channelLayout);
 }
 
 void EffectChainManagerEffectUpdate()

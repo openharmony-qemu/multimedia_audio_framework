@@ -389,5 +389,30 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_019, TestSize.Level1)
     EXPECT_TRUE(ret);
 }
 
+/**
+* @tc.name  : Test GetAudioSessionStreamUsageForDevice
+* @tc.number: AudioSessionUnitTest_020
+* @tc.desc  : Test GetAudioSessionStreamUsageForDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_020, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    uint32_t streamId = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    StreamUsage ret = audioSession->GetAudioSessionStreamUsageForDevice(streamId);
+    EXPECT_EQ(ret, StreamUsage::STREAM_USAGE_INVALID);
+    audioSession->SetAudioSessionScene(AudioSessionScene::VOICE_COMMUNICATION);
+    ret = audioSession->GetAudioSessionStreamUsageForDevice(streamId);
+    EXPECT_EQ(ret, StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION);
+    AudioInterrupt interrupt;
+    interrupt.streamId = streamId;
+    interrupt.streamUsage = StreamUsage::STREAM_USAGE_RINGTONE;
+    interrupt.audioFocusType.streamType = STREAM_RING;
+    audioSession->streamsInSession_.push_back(interrupt);
+    ret = audioSession->GetAudioSessionStreamUsageForDevice(streamId);
+    EXPECT_EQ(ret, StreamUsage::STREAM_USAGE_RINGTONE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_service.h"
+#include "audio_stream_common.h"
 
 #include <thread>
 
@@ -54,6 +55,7 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -85,6 +87,10 @@ AudioService::AudioService()
 
 AudioService::~AudioService()
 {
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ != nullptr) {
+        callManager_->UnInit();
+    }
     AUDIO_INFO_LOG("~AudioService()");
 }
 
@@ -184,6 +190,17 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
+}
+
+void AudioService::SetEndpointMuteForSwitchDevice(bool isMmap, bool mute)
+{
+    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
+    // mmap sink can't mute, must mut endpoint
+    CHECK_AND_RETURN(isMmap);
+    for (auto item : endpointList_) {
+        CHECK_AND_CONTINUE(item.second != nullptr);
+        item.second->SetMuteForSwitchDevice(mute);
+    }
 }
 #endif
 
@@ -802,7 +819,7 @@ int32_t AudioService::OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCa
     std::vector<std::shared_ptr<RendererInServer>> renderers;
 
     {
-        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        std::lock_guard<std::mutex> maplock(rendererMapMutex_);
         if (filteredRendererMap_.count(innerCapId)) {
             for (size_t i = 0; i < filteredRendererMap_[innerCapId].size(); i++) {
                 std::shared_ptr<RendererInServer> renderer = filteredRendererMap_[innerCapId][i].lock();
@@ -846,6 +863,8 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
+    // if reuse endpoint should keep samplerate same
+    audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
@@ -855,11 +874,11 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
+    process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
-    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo, buffer);
+    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -870,72 +889,6 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     CheckInnerCapForProcess(process, audioEndpoint);
 #endif
     return process;
-}
-
-void AudioService::ResetAudioEndpoint()
-{
-    std::lock_guard<std::mutex> lock(processListMutex_);
-
-    std::vector<std::string> audioEndpointNames;
-    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
-        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            // unlink old link
-            if (UnlinkProcessToEndpoint(paired->first, paired->second) != SUCCESS) {
-                AUDIO_ERR_LOG("Unlink process to old endpoint failed");
-            }
-            audioEndpointNames.push_back(paired->second->GetEndpointName());
-        }
-    }
-
-    // release old endpoint
-    for (auto &endpointName : audioEndpointNames) {
-        if (endpointList_.count(endpointName) > 0) {
-            endpointList_[endpointName]->Release();
-            AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
-            endpointList_.erase(endpointName);
-        }
-    }
-
-    ReLinkProcessToEndpoint();
-}
-
-void AudioService::ReLinkProcessToEndpoint()
-{
-    using LinkPair = std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>;
-    std::vector<std::vector<LinkPair>::iterator> errorLinkedPaireds;
-    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
-        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
-
-            // get new endpoint
-            AudioStreamInfo streamInfo;
-            const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, streamInfo, true);
-            std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-                streamInfo, IsEndpointTypeVoip(config, deviceInfo));
-            if (audioEndpoint == nullptr) {
-                AUDIO_ERR_LOG("Get new endpoint failed");
-                errorLinkedPaireds.push_back(paired);
-                continue;
-            }
-            // link new endpoint
-            if (LinkProcessToEndpoint(paired->first, audioEndpoint) != SUCCESS) {
-                AUDIO_ERR_LOG("LinkProcessToEndpoint failed");
-                errorLinkedPaireds.push_back(paired);
-                continue;
-            }
-            // reset shared_ptr before to new
-            paired->second.reset();
-            paired->second = audioEndpoint;
-#ifdef HAS_FEATURE_INNERCAPTURER
-            CheckInnerCapForProcess(paired->first, audioEndpoint);
-#endif
-        }
-    }
-
-    for (auto &paired : errorLinkedPaireds) {
-        linkedPairedList_.erase(paired);
-    }
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -1022,9 +975,7 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
             deviceInfo.a2dpOffloadFlag_);
-        if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        if (AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType)) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
                 streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
@@ -1089,18 +1040,11 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
 
-    bool reuse = false;
-    AudioStreamInfo oldStreamInfo = endpointList_[deviceKey]->GetAudioStreamInfo();
-    if (IsInjectEnable() && endpointList_[deviceKey]->GetDeviceRole() == INPUT_DEVICE &&
-        endpointFlag == AUDIO_FLAG_VOIP_FAST) {
-        /* capture voip fast support resample, so can reuse at not same sample */
-        if (IsSameAudioStreamInfoNotIncludeSample(streamInfo, oldStreamInfo)) {
-            reuse = true;
-        }
-    } else {
-        reuse = streamInfo == oldStreamInfo;
+    if (endpointList_[deviceKey]->GetDeviceRole() == OUTPUT_DEVICE) {
+        return ReuseEndpointType::REUSE_ENDPOINT;
     }
-
+    
+    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
@@ -1158,7 +1102,7 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
         }
     }
 #endif
-    UpdateSystemVolume(streamType, volume);
+    UpdateSystemVolumeForWorkgroup(streamType, volume);
     return ret;
 }
 
@@ -1704,7 +1648,7 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
     return SUCCESS;
 }
 
-float AudioService::GetSystemVolume()
+float AudioService::GetSystemVolumeForWorkgroup()
 {
     std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
     return audioWorkGroupSystemVolume_;
@@ -1716,7 +1660,7 @@ bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
         workgroupSupportStreamTypeSet_.end());
 }
 
-void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
+void AudioService::UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
     if (!IsStreamTypeFitWorkgroup(streamType)) {
@@ -1756,7 +1700,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
-                = renderer->CollectInfosForWorkgroup(GetSystemVolume());
+                = renderer->CollectInfosForWorkgroup(GetSystemVolumeForWorkgroup());
         }
     }
     // all processes in workgroup
@@ -1900,6 +1844,7 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
 
 std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
 {
+    std::lock_guard<std::mutex> lock(processListMutex_);
     for (const auto &pair : endpointList_) {
         CHECK_AND_CONTINUE(pair.second != nullptr);
         if (pair.second->GetEndpointType() == type) {
@@ -1938,6 +1883,19 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
+}
+
+void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ == nullptr) {
+        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+        callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+    }
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

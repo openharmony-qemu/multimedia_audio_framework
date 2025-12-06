@@ -193,7 +193,6 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
     AudioPolicyManager::GetInstance().SetLowPowerVolume(streamId, volume);
     AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
-    AudioPolicyManager::GetInstance().GetFastStreamInfo(sessionId);
     AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
     AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
     AudioPolicyManager::GetInstance().IsStreamActiveByStreamUsage(streamUsage);
@@ -298,8 +297,6 @@ void AudioPolicyManagerFourFuzzTest()
     AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientPid);
     AudioPolicyManager::GetInstance().RegisterTracker(mode, streamChangeInfo, clientTrackerObj);
     AudioPolicyManager::GetInstance().UpdateTracker(mode, streamChangeInfo);
-    AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo);
-    AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo);
     AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, networkId);
     AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
     AudioPolicyManager::GetInstance().SetVolumeDegreeCallback(clientPid, volumeDegreeEventCallback, api_v);

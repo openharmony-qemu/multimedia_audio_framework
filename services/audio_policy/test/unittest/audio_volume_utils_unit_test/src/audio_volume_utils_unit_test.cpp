@@ -36,7 +36,7 @@ void AudioVolumeUtilsUnitTest::TearDown(void) {}
  */
 HWTEST_F(AudioVolumeUtilsUnitTest, GetDefaultVolumeLevel, TestSize.Level1)
 {
-    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStreamType type = STREAM_MUSIC;
     AudioStreamType type2 = STREAM_RING;
@@ -73,7 +73,7 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetDefaultVolumeLevel, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUtilsUnitTest, GetMaxVolumeLevelFromConfig, TestSize.Level1)
 {
-    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t volume = MAX_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
@@ -96,7 +96,7 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMaxVolumeLevelFromConfig, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUtilsUnitTest, GetMinVolumeLevelFromConfig, TestSize.Level1)
 {
-    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t volume = MIN_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
@@ -119,7 +119,7 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMinVolumeLevelFromConfig, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUtilsUnitTest, IsDistributedDevice, TestSize.Level1)
 {
-    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     EXPECT_EQ(utils.IsDistributedDevice(desc), false);
     desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
@@ -139,7 +139,7 @@ HWTEST_F(AudioVolumeUtilsUnitTest, IsDistributedDevice, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUtilsUnitTest, IsDeviceWithSafeVolume, TestSize.Level1)
 {
-    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), false);
     desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;

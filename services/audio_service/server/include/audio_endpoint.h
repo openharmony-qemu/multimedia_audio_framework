@@ -95,6 +95,7 @@ public:
     virtual void Dump(std::string &dumpString) = 0;
 
     virtual DeviceRole GetDeviceRole();
+    virtual void SetMuteForSwitchDevice(bool mute);
     virtual AudioDeviceDescriptor &GetDeviceInfo();
     virtual AudioStreamInfo &GetAudioStreamInfo();
     virtual float GetMaxAmplitude() = 0;
@@ -110,6 +111,7 @@ public:
 protected:
     // SamplingRate EncodingType SampleFormat Channel
     AudioStreamInfo dstStreamInfo_;
+    bool switchDevicesMute_ = false;
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
 
 private:

@@ -177,5 +177,23 @@ HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_008, TestSize.Level4)
     auto descriptors = router.GetRingRenderDevices(streamUsage, clientUID);
     EXPECT_EQ(descriptors.front()->deviceType_, DEVICE_TYPE_INVALID);
 }
+
+/**
+ * @tc.name  : Test PublicPriorityRouter.
+ * @tc.number: PublicPriorityRouter_009
+ * @tc.desc  : Test GetMediaRenderDevice interface via streamUsage == default.
+ */
+HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_009, TestSize.Level4)
+{
+    PublicPriorityRouter router;
+    router.audioPolicyManager_.HandleCastingConnection();
+    StreamUsage streamUsage  = STREAM_USAGE_ALARM;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_DP;
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPublicDevices_ = { desc };
+    auto descriptors = router.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(descriptors.empty(), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

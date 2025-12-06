@@ -15,17 +15,18 @@
 
 #ifndef AUDIO_SUITE_ENV_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_ENV_ALGO_INTERFACE_IMPL_H
-#define ALGO_CHANNEL_NUM (2)    // 算法声道数
-#define ALGO_BYTE_NUM (2)       // 算法每个采样点的字节数
-#define MASTERVOLUME (15)       // 算法音量设置
+#define ALGO_CHANNEL_NUM (2)    // Algorithm channel number
+#define ALGO_BYTE_NUM (2)       // Bytes per sample point for the algorithm
+#define MASTERVOLUME (15)       // Algorithm master volume setting
 #define TWO_BYTES_WIDTH (16)
-#define AUDIO_DURATION (2)        // 输入音频的持续时间，以10ms为单位
+#define AUDIO_DURATION (2)      // Duration of input audio, in units of 10ms
 
+#include <charconv>
+#include <utility>
+#include <dlfcn.h>
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
 #include "audio_suite_log.h"
-#include <utility>
-#include <dlfcn.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,7 +48,7 @@ struct EnvAlgoApi {
 
 class AudioSuiteEnvAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteEnvAlgoInterfaceImpl();
+    explicit AudioSuiteEnvAlgoInterfaceImpl(NodeCapability &nc);
     ~AudioSuiteEnvAlgoInterfaceImpl();
 
     int32_t Init() override;
@@ -62,7 +63,7 @@ private:
     std::vector<char> scratchBuf_;
 
     void *libHandle_{nullptr};
-    EnvAlgoApi algoApi_{0};
+    EnvAlgoApi algoApi_;
     iMedia_SWS_DATA stData_;
     std::vector<uint32_t> dataIn_;
     std::vector<uint32_t> dataOut_;
@@ -70,6 +71,7 @@ private:
     iMedia_SWS_MEM_SIZE stSize_;
     size_t frameLen_;
     size_t inputSamples_;
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

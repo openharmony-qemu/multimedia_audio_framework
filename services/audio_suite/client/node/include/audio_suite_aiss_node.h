@@ -15,7 +15,7 @@
  
 #ifndef AUDIO_SUITE_AISS_NODE_H
 #define AUDIO_SUITE_AISS_NODE_H
-#include "audio_suite_info.h"
+
 #include "audio_log.h"
 #include "audio_suite_process_node.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
@@ -30,14 +30,8 @@ namespace AudioSuite {
 class AudioSuiteAissNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteAissNode();
-    ~AudioSuiteAissNode()
-    {
-        int32_t ret = DeInit();
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissNode DeInit failed");
-    }
-    bool Reset() override;
+    ~AudioSuiteAissNode();
     int32_t DoProcess() override;
-    int32_t Flush() override;
     int32_t Init() override;
     int32_t DeInit() override;
 
@@ -46,15 +40,11 @@ protected:
 private:
     std::shared_ptr<AudioSuiteAlgoInterface> aissAlgo_{ nullptr };
     bool isInit_ = false;
-    Tap humanTap_;
-    Tap bkgTap_;
-    AudioSuitePcmBuffer tmpInput_;
     AudioSuitePcmBuffer tmpOutput_;
     AudioSuitePcmBuffer tmpHumanSoundOutput_;
     AudioSuitePcmBuffer tmpBkgSoundOutput_;
-    AudioSuitePcmBuffer tmpPcmBuffer_;
-    std::vector<uint8_t *> tmpin_;
-    std::vector<uint8_t *> tmpout_;
+    std::vector<uint8_t *> tmpin_{nullptr};
+    std::vector<uint8_t *> tmpout_{nullptr, nullptr, nullptr};
 };
  
 }  // namespace AudioSuite

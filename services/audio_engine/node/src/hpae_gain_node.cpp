@@ -166,7 +166,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_);
+        statusCallback->OnFadeDone(GetSessionId());
         return;
     }
     AudioRawFormat rawFormat;
@@ -184,13 +184,14 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
+        statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
         return;
     }
     // do fade in
     if (fadeInState_) {
         if (!input->IsValid() || IsSilentData(input)) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
+            SilenceData(input);
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
@@ -226,6 +227,8 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
         preSystemGain = volumes.volumeHistory;
     }
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::DoGain, curSystemGain: " +
+        std::to_string(curSystemGain) + ", preSystemGain: " + std::to_string(preSystemGain));
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
     AUDIO_DEBUG_LOG(

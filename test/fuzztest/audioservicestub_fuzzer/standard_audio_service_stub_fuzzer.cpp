@@ -65,7 +65,6 @@ vector<IStandardAudioServiceIpcCode> IStandardAudioServiceIpcCodeVec = {
     IStandardAudioServiceIpcCode::COMMAND_NOTIFY_STREAM_VOLUME_CHANGED,
     IStandardAudioServiceIpcCode::COMMAND_SET_SPATIALIZATION_SCENE_TYPE,
     IStandardAudioServiceIpcCode::COMMAND_GET_MAX_AMPLITUDE,
-    IStandardAudioServiceIpcCode::COMMAND_RESET_AUDIO_ENDPOINT,
     IStandardAudioServiceIpcCode::COMMAND_RESET_ROUTE_FOR_DISCONNECT,
     IStandardAudioServiceIpcCode::COMMAND_GET_EFFECT_LATENCY,
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_LATENCY_TIMESTAMP,

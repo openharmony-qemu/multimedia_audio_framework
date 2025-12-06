@@ -33,6 +33,8 @@
 #include "audio_session_service.h"
 #include "audio_usr_select_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 
 namespace OHOS {
 namespace AudioStandard {

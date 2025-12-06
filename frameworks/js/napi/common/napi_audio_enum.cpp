@@ -135,6 +135,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
     {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"NEARLINK_PORT", DEVICE_TYPE_NEARLINK_PORT},
+    {"SYSTEM_PRIVATE", DEVICE_TYPE_SYSTEM_PRIVATE},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
@@ -1202,10 +1204,10 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
     return result;
 }
 
-bool NapiAudioEnum::IsLegalRenderTargetType(int32_t type)
+bool NapiAudioEnum::IsLegalRenderTarget(int32_t target)
 {
     bool result = false;
-    switch (type) {
+    switch (target) {
         case NORMAL_PLAYBACK:
         case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
             result = true;

@@ -38,6 +38,7 @@
 #include "audio_info.h"
 #include "device_status_listener.h"
 #include "audio_policy_service.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,6 +47,7 @@ using namespace std;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 const size_t THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
@@ -178,16 +180,23 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
+
 void RecoveryPreferredDevicesFuzzTest()
 {
     auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
     audioRecoveryDevice->RecoveryPreferredDevices();
+    OnStop();
 }
 
 void RecoverExcludedOutputDevicesFuzzTest()
 {
     auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
     audioRecoveryDevice->RecoverExcludedOutputDevices();
+    OnStop();
 }
 
 void HandleExcludedOutputDevicesRecoveryFuzzTest()
@@ -199,6 +208,7 @@ void HandleExcludedOutputDevicesRecoveryFuzzTest()
     uint32_t audioDevUsageCount = GetData<uint32_t>() % AudioDeviceUsageVec.size();
     AudioDeviceUsage audioDevUsage = AudioDeviceUsageVec[audioDevUsageCount];
     audioRecoveryDevice->HandleExcludedOutputDevicesRecovery(audioDevUsage, excludedDevices);
+    OnStop();
 }
 
 void AudioRecoveryDeviceHandleRecoveryPreferredDevicesFuzzTest()
@@ -222,6 +232,7 @@ void AudioRecoveryDeviceHandleRecoveryPreferredDevicesFuzzTest()
     audioDeviceDescriptor->deviceType_ = deviceType;
     audioRecoveryDevice->audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
     audioRecoveryDevice->HandleRecoveryPreferredDevices(preferredType, deviceTypeToInt, usageOrSourceType);
+    OnStop();
 }
 
 void AudioRecoveryDeviceSelectOutputDeviceFuzzTest()
@@ -241,6 +252,9 @@ void AudioRecoveryDeviceSelectOutputDeviceFuzzTest()
     selectedDesc.push_back(deviceDescriptor);
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
     audioRecoveryDevice->SelectOutputDevice(audioRendererFilter, selectedDesc);
+    OnStop();
+    delete audioRendererFilter;
+    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceHandleFetchDeviceChangeFuzzTest()
@@ -266,6 +280,7 @@ void AudioRecoveryDeviceHandleFetchDeviceChangeFuzzTest()
     std::string caller{};
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
     audioRecoveryDevice->HandleFetchDeviceChange(reason, caller);
+    OnStop();
 }
 
 void AudioRecoveryDeviceSelectOutputDeviceForFastInnerFuzzTest()
@@ -275,11 +290,16 @@ void AudioRecoveryDeviceSelectOutputDeviceForFastInnerFuzzTest()
         return;
     }
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    CHECK_AND_RETURN(audioRendererFilter != nullptr);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
     std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     selectedDesc.push_back(deviceDescriptor);
 
     audioRecoveryDevice->SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
+    OnStop();
+    selectedDesc.clear();
+    delete audioRendererFilter;
+    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSetRenderDeviceForUsageFuzzTest()
@@ -294,6 +314,7 @@ void AudioRecoveryDeviceSetRenderDeviceForUsageFuzzTest()
     desc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
 
     audioRecoveryDevice->SetRenderDeviceForUsage(streamUsage, desc);
+    OnStop();
 }
 
 void AudioRecoveryDeviceConnectVirtualDeviceFuzzTest()
@@ -306,6 +327,7 @@ void AudioRecoveryDeviceConnectVirtualDeviceFuzzTest()
     selectedDesc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
 
     audioRecoveryDevice->ConnectVirtualDevice(selectedDesc);
+    OnStop();
 }
 
 void AudioRecoveryDeviceWriteSelectOutputSysEventsFuzzTest()
@@ -322,6 +344,7 @@ void AudioRecoveryDeviceWriteSelectOutputSysEventsFuzzTest()
     StreamUsage strUsage = g_testStreamUsages[GetData<uint32_t>() % g_testStreamUsages.size()];
 
     audioRecoveryDevice->WriteSelectOutputSysEvents(selectedDescs, strUsage);
+    OnStop();
 }
 
 void AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest()
@@ -336,6 +359,9 @@ void AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest()
     deviceDescriptor->networkId_ = "testNetworkId";
 
     audioRecoveryDevice->SelectFastOutputDevice(audioRendererFilter, deviceDescriptor);
+    OnStop();
+    delete audioRendererFilter;
+    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest()
@@ -356,6 +382,9 @@ void AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest()
     audioRecoveryDevice->streamCollector_.audioRendererChangeInfos_.push_back(audioRendererChangeInfo);
 
     audioRecoveryDevice->SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
+    OnStop();
+    delete audioRendererFilter;
+    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSelectInputDeviceFuzzTest()
@@ -378,6 +407,9 @@ void AudioRecoveryDeviceSelectInputDeviceFuzzTest()
     selectedDesc.push_back(deviceDescriptor);
 
     audioRecoveryDevice->SelectInputDevice(audioCapturerFilter, selectedDesc);
+    OnStop();
+    delete audioCapturerFilter;
+    audioCapturerFilter = nullptr;
 }
 
 void AudioRecoveryDeviceExcludeOutputDevicesFuzzTest()
@@ -406,6 +438,7 @@ void AudioRecoveryDeviceExcludeOutputDevicesFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->ExcludeOutputDevices(audioDevUsage, selectedDesc);
+    OnStop();
 }
 
 void AudioRecoveryDeviceUnexcludeOutputDevicesFuzzTest()
@@ -434,6 +467,7 @@ void AudioRecoveryDeviceUnexcludeOutputDevicesFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->UnexcludeOutputDevices(audioDevUsage, selectedDesc);
+    OnStop();
 }
 
 void AudioRecoveryDeviceSetCaptureDeviceForUsageFuzzTest()
@@ -449,6 +483,7 @@ void AudioRecoveryDeviceSetCaptureDeviceForUsageFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->SetCaptureDeviceForUsage(scene, srcType, deviceDescriptor);
+    OnStop();
 }
 
 void AudioRecoveryDeviceSelectFastInputDeviceFuzzTest()
@@ -462,6 +497,9 @@ void AudioRecoveryDeviceSelectFastInputDeviceFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->SelectFastInputDevice(audioCapturerFilter, deviceDescriptor);
+    OnStop();
+    delete audioCapturerFilter;
+    audioCapturerFilter = nullptr;
 }
 
 void AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest()
@@ -481,6 +519,7 @@ void AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->WriteSelectInputSysEvents(selectedDesc, srcType, scene);
+    OnStop();
 }
 
 void AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest()
@@ -497,6 +536,7 @@ void AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest()
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
 
     audioRecoveryDevice->WriteExcludeOutputSysEvents(audioDevUsage, deviceDescriptor);
+    OnStop();
 }
 
 TestFuncs g_testFuncs[] = {
@@ -532,13 +572,14 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return true;
 }

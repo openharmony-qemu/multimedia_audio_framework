@@ -76,6 +76,7 @@ static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; //1s
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -139,6 +140,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
         registerTrackerInfo.channelCount = curStreamParams_.channels;
+        registerTrackerInfo.streamInfo = clientConfig_.streamInfo;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
@@ -166,9 +168,9 @@ void RendererInClientInner::InitDirectPipeType()
         int32_t type = ipcStream_->GetStreamManagerType();
         if (type == AUDIO_DIRECT_MANAGER_TYPE) {
             rendererInfo_.pipeType = (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) ?
-                PIPE_TYPE_CALL_OUT : PIPE_TYPE_DIRECT_MUSIC;
-        } else if (originType == PIPE_TYPE_DIRECT_MUSIC) {
-            rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+                PIPE_TYPE_OUT_VOIP : PIPE_TYPE_OUT_DIRECT_NORMAL;
+        } else if (originType == PIPE_TYPE_OUT_DIRECT_NORMAL) {
+            rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
         }
     }
 }
@@ -217,6 +219,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.privacyType = privacyType_;
 
+    config.staticBufferInfo = staticBufferInfo_;
+
     clientConfig_ = config;
 
     return config;
@@ -230,7 +234,6 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
     cacheSizeInFrame_ = engineSize;
-    AUDIO_INFO_LOG("using cache size:%{public}d", cacheSizeInFrame_.load());
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -245,6 +248,9 @@ int32_t RendererInClientInner::InitSharedBuffer()
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
+    if (rendererInfo_.isStatic) {
+        clientBuffer_->SetStaticMode(true);
+    }
 
     return SUCCESS;
 }
@@ -323,14 +329,18 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     // Calculate buffer size based on duration.
 
     size_t metaSize = 0;
+    uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
+            curStreamParams_.customSampleRate;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
         metaSize = converter_->GetMetaSize();
         converter_->GetInputBufferSize(cbBufferSize_);
     } else {
-        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
+        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
+    uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
+    SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -448,12 +458,14 @@ bool RendererInClientInner::IsRestoreNeeded()
     return false;
 }
 
-void RendererInClientInner::WaitForBufferNeedWrite()
+void RendererInClientInner::WaitForBufferNeedOperate()
 {
-    Trace trace("WaitForBufferNeedWrite");
+    Trace trace("WaitForBufferNeedOperate");
+    CheckFrozenStateInStaticMode();
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
-        static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        (rendererInfo_.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : static_cast<int64_t>(timeout)) *
+        AUDIO_US_PER_SECOND,
         [this] () {
             if (state_ != RUNNING) {
                 return true;
@@ -463,7 +475,7 @@ void RendererInClientInner::WaitForBufferNeedWrite()
                 return true;
             }
 
-            return CheckBufferNeedWrite();
+            return CheckStaticAndOperate();
         });
     if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
@@ -472,6 +484,7 @@ void RendererInClientInner::WaitForBufferNeedWrite()
 
 void RendererInClientInner::CallClientHandle()
 {
+    CHECK_AND_RETURN(!rendererInfo_.isStatic);
     // call client write
     std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
     {
@@ -518,7 +531,9 @@ bool RendererInClientInner::WriteCallbackFunc()
         }
     }
 
-    WaitForBufferNeedWrite();
+    WaitForBufferNeedOperate();
+
+    CheckOperations();
 
     if (state_ != RUNNING) {
         return true;
@@ -1037,5 +1052,92 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
+
+int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    audioStaticBufferEventCallback_ = callback;
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(sendStaticRecreateFunc != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    sendStaticRecreateFunc_ = sendStaticRecreateFunc;
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    ipcStream_->PreSetLoopTimes(bufferLoopTimes);
+    return SUCCESS;
+}
+
+bool RendererInClientInner::CheckStaticAndOperate()
+{
+    if (rendererInfo_.isStatic) {
+        return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
+    } else {
+        return CheckBufferNeedWrite();
+    }
+}
+
+void RendererInClientInner::CheckOperations()
+{
+    if (rendererInfo_.isStatic) {
+        Trace trace("RendererInClientInner::ProcessStaticOperations");
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
+        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+            Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
+    }
+}
+
+void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
+    staticBufferInfo_ = staticBufferInfo;
+}
+
+int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    return ipcStream_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+void RendererInClientInner::CheckFrozenStateInStaticMode()
+{
+    if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+            Trace trace2(traceTag_ + "call start to exit stand-by");
+            CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+            int32_t ret = ipcStream_->Start();
+            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+        }
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

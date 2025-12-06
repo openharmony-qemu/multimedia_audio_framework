@@ -114,6 +114,9 @@ public:
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
         RenderTarget target = NORMAL_PLAYBACK;
+
+        StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
     };
 
     virtual ~IAudioStream() = default;
@@ -187,6 +190,7 @@ public:
     virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
+    virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
@@ -266,7 +270,7 @@ public:
     virtual int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) = 0;
     virtual int32_t SetChannelBlendMode(ChannelBlendMode blendMode) = 0;
     virtual int32_t SetVolumeWithRamp(float volume, int32_t duration) = 0;
-    virtual void SetPreferredFrameSize(int32_t frameSize) = 0;
+    virtual void SetPreferredFrameSize(int32_t frameSize, bool isRecreate = false) = 0;
     virtual IAudioStream::StreamClass GetStreamClass() = 0;
     virtual void SetStreamTrackerState(bool trackerRegisteredState) = 0;
     virtual void GetSwitchInfo(SwitchInfo& info) = 0;
@@ -344,6 +348,14 @@ public:
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 
     virtual bool IsRestoreNeeded() { return false; }
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+
+    virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

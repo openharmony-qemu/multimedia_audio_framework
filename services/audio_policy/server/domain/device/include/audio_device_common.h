@@ -105,12 +105,13 @@ public:
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-        ConnectState connectState);
+        ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
     int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
+    bool GetVirtualCall(pid_t uid);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -183,6 +184,9 @@ private:
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
     void ClearRingMuteWhenCallStart(bool pre, bool after);
+    bool NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+        const std::shared_ptr<AudioDeviceDescriptor> &updated,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const;
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount,

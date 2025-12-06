@@ -30,6 +30,7 @@
     *IsRecognitionStatus*;
     *SendUserSelectionEvent*;
     *SetActiveHfpDevice*;
+    *ClearActiveHfpDevice*;
     *RegisterA2dpPlayingStateChangedListener*;
     *Connect*;
     *DisconnectBluetoothHfpSink*;
@@ -47,6 +48,7 @@
     *IsVirtualCall*;
     *GetAudioScoDeviceMac*;
     *GetScoCategory*;
+    *connectionState_*;
   local:
     *;
 };

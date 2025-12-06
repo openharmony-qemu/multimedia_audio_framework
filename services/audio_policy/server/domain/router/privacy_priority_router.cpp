@@ -46,7 +46,7 @@ void PrivacyPriorityRouter::RemoveArmUsb(vector<shared_ptr<AudioDeviceDescriptor
     descs.erase(removeBeginIt, descs.end());
 }
 
-bool PrivacyPriorityRouter::isA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfpDesc)
+bool PrivacyPriorityRouter::IsA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfpDesc)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetDevicesByFilter(
@@ -101,13 +101,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
     }
 
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
-    if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connecte desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connecte desc type is none, just only add default device.");
+    if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
@@ -146,8 +140,8 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     if (isScoSupportSource) {
         vector<shared_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
-        shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE && !isA2dpDisable(desc)) {
+        shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
+        if (desc->deviceType_ != DEVICE_TYPE_NONE && !IsA2dpDisable(desc)) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
                 sourceType, clientUID, desc->deviceType_);
             return desc;

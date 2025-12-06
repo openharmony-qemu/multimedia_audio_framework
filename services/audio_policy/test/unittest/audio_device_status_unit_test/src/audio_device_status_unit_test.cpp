@@ -848,29 +848,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_005, TestSize.Lev
 }
 
 /**
-* @tc.name  : Test DeactivateNearlinkDevice.
-* @tc.number: DeactivateNearlinkDevice_001
-* @tc.desc  : Test DeactivateNearlinkDevice.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor desc;
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
-    desc.macAddress_ = "";
-
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.audioActiveDevice_.currentActiveDevice_.macAddress_ = "LOCALDEVICE";
-    std::string ret = "LOCALDEVICE";
-
-    audioDeviceStatus.DeactivateNearlinkDevice(desc);
-    EXPECT_NE(desc.macAddress_, ret);
-
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
-    audioDeviceStatus.DeactivateNearlinkDevice(desc);
-    EXPECT_NE(desc.macAddress_, ret);
-}
-
-/**
 * @tc.name : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_030
 * @tc.desc : Test HandleLocalDeviceConnected interface.
@@ -1748,6 +1725,50 @@ HWTEST_F(AudioDeviceStatusUnitTest, UpdateNearlinkDeviceVolume_001, TestSize.Lev
     VolumeUtils::SetPCVolumeEnable(false);
     result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ClearActiveHfpDevice.
+* @tc.number: ClearActiveHfpDevice_001
+* @tc.desc  : Test ClearActiveHfpDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = "LOCALDEVICE";
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioStreamDeviceChangeReasonExt::ExtEnum oldDevice =
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
+    AudioStreamDeviceChangeReasonExt reason(oldDevice);
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    desc.isEnable_ = true;
+    desc.connectState_ = DEACTIVE_CONNECTED;
+    desc.exceptionFlag_ = false;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, ENABLE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.isEnable_ = false;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, ENABLE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CONNECTSTATE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.connectState_ = SUSPEND_CONNECTED;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CONNECTSTATE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.exceptionFlag_ = true;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
 }
 } // namespace AudioStandard
 } // namespace OHOS

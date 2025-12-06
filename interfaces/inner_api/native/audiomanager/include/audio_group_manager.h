@@ -120,6 +120,7 @@ private:
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t CONST_FACTOR = 100;
+    std::mutex volumeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

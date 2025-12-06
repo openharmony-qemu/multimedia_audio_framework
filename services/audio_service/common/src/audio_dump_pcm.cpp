@@ -174,6 +174,11 @@ bool AudioCacheMgrInner::DeInit()
 
 void AudioCacheMgrInner::CacheData(std::string &dumpFileName, void* srcDataPointer, size_t dataLength)
 {
+    if (srcDataPointer == nullptr || dataLength == 0 || dataLength > EACH_CHUNK_SIZE) {
+        Trace trace("AudioCacheMgrInner::CacheData::InvalidParam");
+        return;
+    }
+
     if (!isInited_.load()) {
         Trace trace("AudioCacheMgrInner::CacheData::NotInited");
         return;
@@ -276,6 +281,7 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
         memChunkDeque_.pop_front();
 
         std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
+        CHECK_AND_RETURN_RET_LOG(curMemChunk != nullptr, ERROR, "curMemChunk is null pointer");
         for (auto it = curMemBlockDeque->begin(); it != curMemBlockDeque->end(); ++it) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer("pcm_dump_" +
                 curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);

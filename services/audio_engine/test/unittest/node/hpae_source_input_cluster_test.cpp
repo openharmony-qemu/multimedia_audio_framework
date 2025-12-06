@@ -22,6 +22,7 @@
 #include "hpae_source_input_node.h"
 #include "hpae_source_output_node.h"
 #include "hpae_format_convert.h"
+#include "hpae_mocks.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -102,6 +103,222 @@ HWTEST_F(HpaeSourceInputClusterTest, testInterfaces, TestSize.Level0)
 
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
     hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+}
+
+static std::shared_ptr<MockAudioCaptureSource> SetMockSourceInputNode(
+    std::shared_ptr<HpaeSourceInputCluster> &sourceInputCluster, bool isInited = true)
+{
+    if (!sourceInputCluster) {
+        return nullptr;
+    }
+    auto sourceInputNode = sourceInputCluster->sourceInputNode_;
+    EXPECT_NE(sourceInputNode, nullptr);
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    sourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    sourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillRepeatedly(Return(isInited));
+    return mockCaptureSource;
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterInitTest
+ * @tc.desc  : Test HpaeSourceInputCluster init interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterInitTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster, false);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Init(_))
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Init(_))
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Flush
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterFlushTest
+ * @tc.desc  : Test HpaeSourceInputCluster Flush interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterFlushTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Flush())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceFlush(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Flush())
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceFlush(), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Pause
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterPauseTest
+ * @tc.desc  : Test HpaeSourceInputCluster Pause interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterPauseTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Pause())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourcePause(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Pause())
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourcePause(), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Reset
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterResetTest
+ * @tc.desc  : Test HpaeSourceInputCluster Reset interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterResetTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Reset())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceReset(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Reset())
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceReset(), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Resume
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterResumeTest
+ * @tc.desc  : Test HpaeSourceInputCluster Resume interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterResumeTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Resume())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceResume(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Resume())
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceResume(), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Start
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterStartTest
+ * @tc.desc  : Test HpaeSourceInputCluster Start interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterStartTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Start())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStart(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Start())
+        .WillOnce(Return(ERROR));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStart(), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster Stop
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterStopTest
+ * @tc.desc  : Test HpaeSourceInputCluster Stop interface return SUCCESS and ERROR
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterStopTest, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto mockCaptureSource = SetMockSourceInputNode(hpaeSourceInputCluster);
+    IAudioSourceAttr attr;
+    EXPECT_CALL(*mockCaptureSource, Stop())
+        .WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
+
+    EXPECT_CALL(*mockCaptureSource, Stop())
+        .WillOnce(Return(ERROR));
+    // iAudioCapturerSource stop fail does not block sourceInputNode, so interface return is SUCCESS
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster constructor
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterConstructorTest_001
+ * @tc.desc  : Test HpaeSourceInputCluster constructor with vector parameter
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterConstructorTest_001, TestSize.Level1)
+{
+    std::vector<HpaeNodeInfo> vec;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sourceType = SOURCE_TYPE_MIC;
+    nodeInfo.deviceName = "Begin";
+    vec.emplace_back(nodeInfo);
+    nodeInfo.sourceType = SOURCE_TYPE_INVALID;
+    nodeInfo.deviceName = "End";
+    vec.emplace_back(nodeInfo);
+    EXPECT_EQ(vec.size(), 2); // 2 for size
+    auto sourceInputCluster = std::make_shared<HpaeSourceInputCluster>(vec);
+    EXPECT_NE(sourceInputCluster, nullptr);
+    HpaeNodeInfo clusterInfo = sourceInputCluster->GetNodeInfo();
+    EXPECT_EQ(clusterInfo.sourceType, vec.begin()->sourceType);
+    EXPECT_EQ(clusterInfo.deviceName, vec.begin()->deviceName);
+}
+
+/**
+ * @tc.name  : Test HpaeSourceInputCluster ResetAll
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSourceInputClusterResetAllTest_001
+ * @tc.desc  : Test HpaeSourceInputCluster ResetAll with convertMap not empty
+ */
+HWTEST_F(HpaeSourceInputClusterTest, HpaeSourceInputClusterResetAllTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    auto &fmtConverMap = hpaeSourceInputCluster->fmtConverterNodeMap_;
+
+    nodeInfo.channels = MONO;
+    auto node1 = hpaeSourceInputCluster->GetSharedInstance(nodeInfo);
+    EXPECT_NE(node1, nullptr);
+    EXPECT_EQ(fmtConverMap.size(), 1);
+
+    nodeInfo.format = SAMPLE_S16LE;
+    auto node2 = hpaeSourceInputCluster->GetSharedInstance(nodeInfo);
+    EXPECT_NE(node2, nullptr);
+    EXPECT_EQ(fmtConverMap.size(), 2); // 2 for converterMap size
+    EXPECT_EQ(hpaeSourceInputCluster->ResetAll(), true);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

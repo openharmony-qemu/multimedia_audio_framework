@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioSessionRestoreParame {
+class AudioSessionRestoreParams {
 public:
     enum class OperationType {
         AUDIO_SESSION_ACTIVATE,
@@ -40,14 +40,14 @@ public:
         ~AudioSessionAction() = default;
     };
 
-    explicit AudioSessionRestoreParame() = default;
+    explicit AudioSessionRestoreParams() = default;
 
-    ~AudioSessionRestoreParame() = default;
+    ~AudioSessionRestoreParams() = default;
 
     void OnAudioSessionDeactive();
     void OnAudioSessionStateChanged(AudioSessionStateChangeHint audioSessionStateChangeHint);
     void RecordAudioSessionOpt(const OperationType type, const int32_t value);
-    bool RestoreParame(void);
+    bool RestoreParams(void);
 
 private:
     std::mutex actionsMutex_;
@@ -285,21 +285,21 @@ public:
     void RegisterAudioPolicyServerDiedCb();
 
     /**
-     * @brief Restore all audio session parame when AudioPolicyServer died.
+     * @brief Restore all audio session params when AudioPolicyServer died.
      *
      * @since 20
      */
     bool Restore();
 
     /**
-     * @brief Clear restoreParame opt when session deactived.
+     * @brief Clear restoreParams opt when session deactived.
      *
      * @since 20
      */
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent);
 
     /**
-     * @brief Clear restoreParame opt when session scene state changed.
+     * @brief Clear restoreParams opt when session scene state changed.
      *
      * @since 20
      */
@@ -355,7 +355,7 @@ private:
     bool policyServerDiedCbRegistered_ = false;
     std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> sessionManagerRestoreCb_ = nullptr;
 
-    AudioSessionRestoreParame restoreParame_;
+    AudioSessionRestoreParams restoreParams_;
 };
 
 class AudioSessionManagerServiceDiedRestore : public AudioSessionManagerPolicyServiceDiedCallback {

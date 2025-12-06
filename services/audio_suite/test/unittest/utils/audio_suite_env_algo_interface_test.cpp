@@ -38,11 +38,14 @@ void AudioSuiteEnvAlgoInterfaceImplTest::SetUp()
 void AudioSuiteEnvAlgoInterfaceImplTest::TearDown()
 {}
 
-const size_t FRAME_LEN = 1920;   // 每帧采样点数
+const size_t FRAME_LEN = 1920;
 
 HWTEST_F(AudioSuiteEnvAlgoInterfaceImplTest, AudioSuiteEnvAlgoInterfaceImplTest, TestSize.Level0)
 {
-    AudioSuiteEnvAlgoInterfaceImpl envAlgo;
+    NodeCapability nc;
+    nc.soName = "libimedia_sws.z.so";
+    nc.soPath = "/system/lib64/";
+    AudioSuiteEnvAlgoInterfaceImpl envAlgo(nc);
     EXPECT_EQ(envAlgo.Init(), 0);
     EXPECT_NE(envAlgo.Init(), 0);
     std::string a = "";

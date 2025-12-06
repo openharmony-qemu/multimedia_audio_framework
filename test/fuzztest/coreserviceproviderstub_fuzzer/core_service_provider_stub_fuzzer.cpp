@@ -31,6 +31,7 @@ using namespace std;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 const size_t THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
@@ -67,15 +68,15 @@ uint32_t GetArrLength(T& arr)
 void CoreServiceProviderWrapperFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
 }
 
 void UpdateSessionOperationFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t operation = GetData<uint32_t>();
     uint32_t opMsg = GetData<uint32_t>();
@@ -85,8 +86,8 @@ void UpdateSessionOperationFuzzTest()
 void ReloadCaptureSessionFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t operation = GetData<uint32_t>();
     coreServiceProviderWrapper.ReloadCaptureSession(sessionId, operation);
@@ -95,8 +96,8 @@ void ReloadCaptureSessionFuzzTest()
 void SetDefaultOutputDeviceFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     int32_t defaultOutputDevice = GetData<int32_t>();
     uint32_t sessionID = GetData<uint32_t>();
     int32_t streamUsage = GetData<int32_t>();
@@ -107,8 +108,8 @@ void SetDefaultOutputDeviceFuzzTest()
 void GetAdapterNameBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionID = GetData<uint32_t>();
     std::string name = "abc";
     coreServiceProviderWrapper.GetAdapterNameBySessionId(sessionID, name);
@@ -117,8 +118,8 @@ void GetAdapterNameBySessionIdFuzzTest()
 void GetProcessDeviceInfoBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
@@ -129,8 +130,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
 void GenerateSessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
+    auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
+    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionId = GetData<uint32_t>();
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
 }
@@ -157,13 +158,14 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return;
 }

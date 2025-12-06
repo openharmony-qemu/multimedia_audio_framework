@@ -193,6 +193,7 @@ void AudioStreamMonitor::NotifyAppStateChange(const int32_t uid, bool isBackgrou
 
 void AudioStreamMonitor::UpdateMonitorVolume(const uint32_t &sessionId, const float &volume)
 {
+    Trace trace("AudioStreamMonitor::UpdateMonitorVolume");
     std::lock_guard<std::mutex> lock(regStatusMutex_);
     auto iter = audioStreamCheckers_.find(sessionId);
     if (iter != audioStreamCheckers_.end()) {

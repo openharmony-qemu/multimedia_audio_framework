@@ -44,6 +44,8 @@ public:
     void SetHeadPostureData(HeadPostureData headPostureData);
 private:
     static void HeadPostureDataProcCb(SensorEvent *event);
+    static int32_t CheckPostureDataIsValid(HeadPostureData *headPostureDataTmp);
+
     static HeadPostureData headPostureData_;
     SensorUser sensorUser_ = {};
     int64_t sensorSamplingInterval_ = 30000000; // 30000000 ns = 30 ms

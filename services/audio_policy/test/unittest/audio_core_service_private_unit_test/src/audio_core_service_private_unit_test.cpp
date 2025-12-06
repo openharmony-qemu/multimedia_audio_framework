@@ -124,47 +124,11 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_005
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_001
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_005, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    bool handleFlag = true;
-    std::string address = "abc";
-    ConnectState connectState = CONNECTED;
-
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_006
- * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    bool handleFlag = true;
-    std::string address = "abc";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_007
- * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -172,25 +136,196 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Leve
     bool handleFlag = false;
     std::string address = "abc";
     ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
 
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_008
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_002
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_003
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = false;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_004
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = true;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_005
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = true;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoFetch.
+ * @tc.number: BluetoothScoFetch_001
  * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
  */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_008, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptor->isVrSupported_ = true;
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RELEASED;
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
+
+    audioCoreService->BluetoothScoFetch(streamDesc);
+    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoFetch.
+ * @tc.number: BluetoothScoFetch_002
+ * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptor->isVrSupported_ = true;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
+
+    audioCoreService->BluetoothScoFetch(streamDesc);
+    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoFetch.
+ * @tc.number: BluetoothScoFetch_003
+ * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptor->isVrSupported_ = false;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RELEASED;
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
+
+    audioCoreService->BluetoothScoFetch(streamDesc);
+    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoFetch.
+ * @tc.number: BluetoothScoFetch_004
+ * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    audioDeviceDescriptor->isVrSupported_ = false;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
+    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
 
     audioCoreService->BluetoothScoFetch(streamDesc);
     EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
@@ -349,28 +484,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Leve
 
     auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
     EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_ERROR);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_017
- * @tc.desc  : Test AudioCoreService::BluetoothDeviceFetchOutputHandle()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->newDeviceDescs_.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    std::string encryptMacAddr = "abc";
-
-    auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
-    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_DEFAULT);
 }
 
 /**
@@ -2109,6 +2222,26 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_003, 
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleFetchOutputWhenNoRunningStream_004
+ * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
+ */
+
+HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(
+        AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+    EXPECT_EQ(ret, SUCCESS);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(
+        AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckModemScene_001
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
@@ -2952,6 +3085,34 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_002, TestSize.
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: MuteSinkPortForSwitchDevice_003
+ * @tc.desc  : Test AudioCoreService::MuteSinkPortForSwitchDevice()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test5
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
+    streamDesc->oldRouteFlag_ = (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_HD);
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
+
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckAndSleepBeforeVoiceCallDeviceSet_001
  * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet()
  */
@@ -3017,8 +3178,6 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_001, 
     streamDesc->streamStatus_ == STREAM_STATUS_NEW;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
 
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
-
     std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
@@ -3032,7 +3191,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_001, 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
 
     auto start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -3047,7 +3206,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_001, 
     streamDesc->newDeviceDescs_.push_back(newDesc3);
 
     start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     end = std::chrono::steady_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -3071,40 +3230,17 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_002, 
     streamDesc->streamStatus_ == STREAM_STATUS_NEW;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
 
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-
-    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
-    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    streamDesc->newDeviceDescs_.push_back(newDesc1);
-    streamDesc->newDeviceDescs_.push_back(newDesc2);
-
     auto info = std::make_shared<AudioRendererChangeInfo>();
     info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     info->rendererState = RENDERER_RUNNING;
     audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
 
     auto start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     uint32_t deltaUs = 5000; // 5ms
-    EXPECT_LE(duration, deltaUs);
-    streamDesc->newDeviceDescs_.clear();
-    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
-
-    // Test4
-    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
-
-    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE;
-
-    start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
-    end = std::chrono::steady_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
     EXPECT_LE(duration, deltaUs);
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
 }
@@ -3119,12 +3255,10 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, 
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    // Test5
+    // Test4
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamStatus_ == STREAM_STATUS_NEW;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
-
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
     std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
@@ -3139,7 +3273,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
 
     auto start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -3148,7 +3282,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, 
     streamDesc->newDeviceDescs_.clear();
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
 
-    // Test6
+    // Test5
     streamDesc->streamStatus_ == STREAM_STATUS_NEW;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
 
@@ -3156,7 +3290,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
 
     start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     end = std::chrono::steady_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -3174,12 +3308,10 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_004, 
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    // Test7
+    // Test6
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamStatus_ == STREAM_STATUS_NEW;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
-
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
     std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
@@ -3194,7 +3326,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_004, 
     audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
 
     auto start = std::chrono::steady_clock::now();
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
@@ -3215,6 +3347,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3245,6 +3378,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3277,6 +3411,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3590,6 +3725,49 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    uint32_t sessionId = 100001;
+    uint32_t audioFlag = 16;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag, reason);
+    EXPECT_TRUE(AudioPipeManager::GetPipeManager()->curPipeList_.size() == 1);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output");
+}
+
+/**
+ * @tc.name  : AudioCoreServicePrivateTest_FetchRendererPipeAndExecute_002
+ * @tc.number: FetchRendererPipeAndExecute_002
+ * @tc.desc  : Test AudioCoreService::FetchRendererPipeAndExecute()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 

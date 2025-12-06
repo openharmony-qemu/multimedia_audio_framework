@@ -16,56 +16,45 @@
 #ifndef AUDIO_SUITE_INPUT_NODE_H
 #define AUDIO_SUITE_INPUT_NODE_H
 
-#include "audio_suite_channel.h"
 #include "audio_suite_common.h"
+#include "audio_suite_channel.h"
+#include "audio_suite_format_conversion.h"
 
 class InputNodeRequestDataCallBack;
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr uint32_t SECONDS_TO_MS = 1000; // 1秒对应毫秒数
-
 class AudioInputNode : public AudioNode {
 public:
     explicit AudioInputNode(AudioFormat format);
     ~AudioInputNode();
 
-    int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
-    int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t Flush() override;
-    int32_t DoProcess() override;
+
+    int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
+    int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override;
+    int32_t DoProcess() override;
     int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
 
 private:
     int32_t GetDataFromUser();
-    uint32_t GetFrameSize();
-    uint32_t GetFrameSize(const AudioFormat& format);
     int32_t GeneratePushBuffer();
-    uint32_t GetCacheBufferCapacity(const AudioFormat& format);
-    uint32_t GetFrameSizeAfterTransfer(const AudioFormat& format);
-    int32_t SetFormatTransfer(AudioSamplingRate sampleRate);
-    uint32_t GetUserDataSizeByCacheSize(uint32_t cacheSize);
-    int32_t DoResample(uint8_t* inData, uint32_t inSize, AudioSamplingRate inSample,
-        float* out, uint32_t outSize, AudioSamplingRate outSample);
-    uint32_t GetCacheSizeByUserDataSize(uint32_t userSize);
-    uint32_t GetNeedSizeFromUser();
-    int32_t DoRequestData(uint8_t* rawData, uint32_t needSize, uint32_t& getSize, bool& isFinished);
-    int32_t PushDataToCache(uint8_t* rawData, uint32_t dataSize);
-    uint32_t GetNeedMinCacheSize();
 
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_ = nullptr;
-    std::shared_ptr<InputNodeRequestDataCallBack> writeCallback_ = nullptr;
-    AudioSuiteRingBuffer cachedBuffer_; // 数据缓存区
-    AudioSuitePcmBuffer* inputNodeBuffer_ = nullptr; // 待返回的数据
-    Tap tap_;
-    bool needResample_ = false; // 从应用拿到数据后， 是否需要重采样
-    bool needTransferBitWidth_ = false; // 往后面结点传数据时，是否需要位深转换
+    std::shared_ptr<InputNodeRequestDataCallBack> reqDataCallback_ = nullptr;
+
+    AudioSuitePcmBuffer inPcmData_;
+    AudioSuitePcmBuffer outPcmData_;
+    AudioSuiteRingBuffer cachedBuffer_;
+    uint32_t singleRequestSize_ = 0;
+    uint32_t inPcmDataGetSize_ = 0;
+    AudioSuiteFormatConversion convert_;
 };
 }
 }

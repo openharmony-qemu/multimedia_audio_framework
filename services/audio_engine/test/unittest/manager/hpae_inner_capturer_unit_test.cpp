@@ -283,8 +283,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, Test
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    hpaeInnerCapturerManager_->OnFadeDone(playStreamInfo.sessionId, OPERATION_PAUSED);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -344,8 +343,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001, TestS
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(recordStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    hpaeInnerCapturerManager_->OnFadeDone(playStreamInfo.sessionId, OPERATION_STOPPED);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -391,18 +389,11 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDump_001, TestSize.Lev
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
-
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DumpSinkInfo() == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(recordStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
 }
 
@@ -509,7 +500,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001, TestSize.Level1)
     EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    hpaeInnerCapturerManager_->OnFadeDone(playStreamInfo.sessionId, OPERATION_STOPPED);
+    hpaeInnerCapturerManager_->OnFadeDone(playStreamInfo.sessionId);
 }
 
 /**
@@ -755,6 +746,38 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetSessionFade_001, TestSize.Level0)
     hpaeInnerCapturerManager_->rendererSceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->idGainMap_.clear();
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), false);
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), false);
+}
+
+/**
+ * @tc.name  : Test SetSessionFade
+ * @tc.type  : FUNC
+ * @tc.number: SetSessionFade_002
+ * @tc.desc  : Test SetSessionFade
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetSessionFade_002, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STOPPED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
 }
 
 /**

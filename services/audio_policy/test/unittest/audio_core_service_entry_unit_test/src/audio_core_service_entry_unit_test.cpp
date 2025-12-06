@@ -915,41 +915,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_035, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_036
- * @tc.desc  : Test AudioCoreService::EventEntry::GetPreferredOutputStreamType()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_036, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    AudioRendererInfo rendererInfo;
-    std::string bundleName = "bundleName";
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    auto ret = eventEntry->GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_037
- * @tc.desc  : Test AudioCoreService::EventEntry::GetPreferredInputStreamType()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_037, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    AudioCapturerInfo capturerInfo;
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    auto ret = eventEntry->GetPreferredInputStreamType(capturerInfo);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_038
  * @tc.desc  : Test AudioCoreService::EventEntry::SetSessionDefaultOutputDevice
  */

@@ -47,6 +47,7 @@ public:
     int32_t MoveAllStream(const std::string &sinkName, const std::vector<uint32_t> &sessionIds,
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
+    int32_t StopManager() override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
@@ -79,7 +80,7 @@ public:
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;

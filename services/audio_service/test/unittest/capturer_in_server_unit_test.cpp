@@ -1385,6 +1385,38 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test ReleaseCaptureInjector.
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_001.
+ * @tc.desc  : Test ReleaseCaptureInjector interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, ReleaseCaptureInjector_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    EXPECT_NE(capturerInServer_, nullptr);
+    capturerInServer_->ReleaseCaptureInjector();
+}
+
+/**
+ * @tc.name  : Test ReleaseCaptureInjector.
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_002.
+ * @tc.desc  : Test ReleaseCaptureInjector interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, ReleaseCaptureInjector_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    EXPECT_NE(capturerInServer_, nullptr);
+    capturerInServer_->ReleaseCaptureInjector();
+}
+
+/**
  * @tc.name  : Test OnStatusUpdate.
  * @tc.type  : FUNC
  * @tc.number: StopSession_001

@@ -50,6 +50,7 @@ public:
     int32_t MoveAllStream(const std::string& sinkName, const std::vector<uint32_t>& sessionIds,
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
+    int32_t StopManager() override;
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
@@ -94,10 +95,13 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+    bool IsBypassSpatializationForStereo() override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
+    int32_t CreateOffloadNodes();
+    int32_t DestroyOffloadNodes();
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
     void DeleteInputSession();

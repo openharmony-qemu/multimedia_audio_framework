@@ -16,6 +16,7 @@
 #include <iostream>
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
+#include "bluetooth_host.h"
 #include "audio_info.h"
 #include "audio_engine_log.h"
 #include "idevice_status_observer.h"
@@ -62,11 +63,17 @@ public:
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {}
 };
 
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
+
 void RegisterDeviceObserverFuzzTest()
 {
     DummyDeviceStatusObserver observer;
     RegisterDeviceObserver(observer);
     UnregisterDeviceObserver();
+    OnStop();
 }
 
 void SetMediaStackFuzzTest()
@@ -76,6 +83,7 @@ void SetMediaStackFuzzTest()
 
     MediaBluetoothDeviceManager deviceManager;
     deviceManager.SetMediaStack(device, action);
+    OnStop();
 }
 
 void SendUserSelectionEventFuzzTest()
@@ -84,6 +92,7 @@ void SendUserSelectionEventFuzzTest()
     std::string macAddress = DEFAULT_BLUETOOTH_MAC_ADDRESS;
     int32_t eventType = g_fuzzUtils.GetData<int32_t>();
     SendUserSelectionEvent(devType, macAddress, eventType);
+    OnStop();
 }
 
 void NotifyToUpdateAudioDeviceFuzzTest()
@@ -93,6 +102,7 @@ void NotifyToUpdateAudioDeviceFuzzTest()
     DeviceStatus status = g_fuzzUtils.GetData<DeviceStatus>();
     MediaBluetoothDeviceManager deviceManager;
     deviceManager.NotifyToUpdateAudioDevice(device, desc, status);
+    OnStop();
 }
 
 void IsA2dpBluetoothDeviceConnectingFuzzTest()
@@ -105,6 +115,7 @@ void IsA2dpBluetoothDeviceConnectingFuzzTest()
         deviceManager.SetMediaStack(device, action);
     }
     deviceManager.IsA2dpBluetoothDeviceConnecting(DEFAULT_BLUETOOTH_MAC_ADDRESS);
+    OnStop();
 }
 
 void UpdateA2dpDeviceConfigurationFuzzTest()
@@ -116,6 +127,7 @@ void UpdateA2dpDeviceConfigurationFuzzTest()
     deviceManager.GetAllA2dpBluetoothDevice();
     deviceManager.GetA2dpVirtualDeviceList();
     deviceManager.ClearAllA2dpBluetoothDevice();
+    OnStop();
 }
 
 void SetA2dpInStackFuzzTest()
@@ -127,6 +139,7 @@ void SetA2dpInStackFuzzTest()
 
     A2dpInBluetoothDeviceManager deviceManager;
     deviceManager.SetA2dpInStack(device, streamInfo, action);
+    OnStop();
 }
 
 void A2dpInNotifyToUpdateAudioDeviceFuzzTest()
@@ -137,6 +150,7 @@ void A2dpInNotifyToUpdateAudioDeviceFuzzTest()
     DeviceStatus status = g_fuzzUtils.GetData<DeviceStatus>();
     A2dpInBluetoothDeviceManager deviceManager;
     deviceManager.NotifyToUpdateAudioDevice(device, streamInfo, desc, status);
+    OnStop();
 }
 
 void GetA2dpInDeviceStreamInfoFuzzTest()
@@ -155,6 +169,7 @@ void GetA2dpInDeviceStreamInfoFuzzTest()
     deviceManager.SetA2dpInStack(device, streamInfo, action);
 
     deviceManager.GetA2dpInDeviceStreamInfo(macAddresses[idx], streamInfo);
+    OnStop();
 }
 
 void GetAllA2dpInBluetoothDeviceFuzzTest()
@@ -165,6 +180,7 @@ void GetAllA2dpInBluetoothDeviceFuzzTest()
     deviceManager.GetAllA2dpInBluetoothDevice();
     deviceManager.ClearAllA2dpInBluetoothDevice();
     deviceManager.ClearAllA2dpInStreamInfo();
+    OnStop();
 }
 
 void SetHfpStackFuzzTest()
@@ -174,6 +190,7 @@ void SetHfpStackFuzzTest()
 
     HfpBluetoothDeviceManager deviceManager;
     deviceManager.SetHfpStack(device, action);
+    OnStop();
 }
 
 void HfpNotifyToUpdateAudioDeviceFuzzTest()
@@ -183,6 +200,7 @@ void HfpNotifyToUpdateAudioDeviceFuzzTest()
     DeviceStatus status = g_fuzzUtils.GetData<DeviceStatus>();
     HfpBluetoothDeviceManager deviceManager;
     deviceManager.NotifyToUpdateAudioDevice(device, desc, status);
+    OnStop();
 }
 
 void IsHfpBluetoothDeviceConnectingFuzzTest()
@@ -196,6 +214,7 @@ void IsHfpBluetoothDeviceConnectingFuzzTest()
     }
 
     deviceManager.IsHfpBluetoothDeviceConnecting(DEFAULT_BLUETOOTH_MAC_ADDRESS);
+    OnStop();
 }
 
 void GetConnectedHfpBluetoothDeviceFuzzTest()
@@ -212,6 +231,7 @@ void GetConnectedHfpBluetoothDeviceFuzzTest()
     int32_t action = g_fuzzUtils.GetData<BluetoothDeviceAction>();
     deviceManager.SetHfpStack(device, action);
     deviceManager.GetConnectedHfpBluetoothDevice(macAddresses[idx], device);
+    OnStop();
 }
 
 void GetAllHfpBluetoothDeviceFuzzTest()
@@ -221,6 +241,7 @@ void GetAllHfpBluetoothDeviceFuzzTest()
     deviceManager.GetAllHfpBluetoothDevice();
     deviceManager.GetHfpVirtualDeviceList();
     deviceManager.ClearAllHfpBluetoothDevice();
+    OnStop();
 }
 
 void OnScoStateChangedFuzzTest()
@@ -230,12 +251,14 @@ void OnScoStateChangedFuzzTest()
     bool isScoConnected = g_fuzzUtils.GetData<bool>();
     int32_t reason = g_fuzzUtils.GetData<int32_t>();
     deviceManager.OnScoStateChanged(device, isScoConnected, reason);
+    OnStop();
 }
 
 void RegisterDisconnectScoFuncFuzzTest()
 {
     HfpBluetoothDeviceManager deviceManager;
     deviceManager.RegisterDisconnectScoFunc(nullptr);
+    OnStop();
 }
 
 void HandleDisconnectDeviceFuzzTest()
@@ -244,6 +267,7 @@ void HandleDisconnectDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleDisconnectDevice(device);
+    OnStop();
 }
 
 void HandleWearDeviceFuzzTest()
@@ -252,6 +276,7 @@ void HandleWearDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleWearDevice(device);
+    OnStop();
 }
 
 void HandleUnwearDeviceFuzzTest()
@@ -260,6 +285,7 @@ void HandleUnwearDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleUnwearDevice(device);
+    OnStop();
 }
 
 void HandleEnableDeviceFuzzTest()
@@ -268,6 +294,7 @@ void HandleEnableDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleEnableDevice(device);
+    OnStop();
 }
 
 void HandleDisableDeviceFuzzTest()
@@ -276,6 +303,7 @@ void HandleDisableDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleDisableDevice(device);
+    OnStop();
 }
 
 void HandleWearEnableFuzzTest()
@@ -284,6 +312,7 @@ void HandleWearEnableFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleWearEnable(device);
+    OnStop();
 }
 
 void HandleUpdateDeviceCategoryFuzzTest()
@@ -292,6 +321,7 @@ void HandleUpdateDeviceCategoryFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleUpdateDeviceCategory(device);
+    OnStop();
 }
 
 void HfpHandleDisconnectDeviceFuzzTest()
@@ -300,6 +330,7 @@ void HfpHandleDisconnectDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleDisconnectDevice(device);
+    OnStop();
 }
 
 void HfpHandleWearDeviceFuzzTest()
@@ -308,6 +339,7 @@ void HfpHandleWearDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleWearDevice(device);
+    OnStop();
 }
 
 void HfpHandleUnwearDeviceFuzzTest()
@@ -316,6 +348,7 @@ void HfpHandleUnwearDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleUnwearDevice(device);
+    OnStop();
 }
 
 void HfpHandleEnableDeviceFuzzTest()
@@ -324,6 +357,7 @@ void HfpHandleEnableDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleEnableDevice(device);
+    OnStop();
 }
 
 void HfpHandleDisableDeviceFuzzTest()
@@ -332,6 +366,7 @@ void HfpHandleDisableDeviceFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleDisableDevice(device);
+    OnStop();
 }
 
 void HfpHandleUpdateDeviceCategoryFuzzTest()
@@ -340,6 +375,7 @@ void HfpHandleUpdateDeviceCategoryFuzzTest()
     BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
     deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
     deviceManager.HandleUpdateDeviceCategory(device);
+    OnStop();
 }
 
 void OnDeviceCategoryUpdatedFuzzTest()
@@ -350,6 +386,7 @@ void OnDeviceCategoryUpdatedFuzzTest()
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
     deviceManager.OnDeviceCategoryUpdated(device, desc);
+    OnStop();
 }
 
 void OnDeviceEnableUpdatedFuzzTest()
@@ -360,6 +397,7 @@ void OnDeviceEnableUpdatedFuzzTest()
     AudioDeviceDescriptor desc;
     desc.isEnable_ = g_fuzzUtils.GetData<bool>();
     deviceManager.OnDeviceEnableUpdated(device, desc);
+    OnStop();
 }
 
 void TryDisconnectScoSyncFuzzTest()
@@ -371,6 +409,7 @@ void TryDisconnectScoSyncFuzzTest()
     deviceManager.RegisterDisconnectScoFunc(func);
     std::string reason = "test";
     deviceManager.TryDisconnectScoSync(device, reason);
+    OnStop();
 }
 
 vector<TestFuncs> g_testFuncs = {

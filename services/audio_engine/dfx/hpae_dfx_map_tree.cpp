@@ -111,6 +111,7 @@ std::shared_ptr<const DfxMapTreeNode> HpaeDfxMapTree::FindDfxNode(uint32_t nodeI
 
 bool HpaeDfxMapTree::AddNode(const HpaeDfxNodeInfo &nodeInfo)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     uint32_t nodeId = nodeInfo.nodeId;
     if (FindDfxNode(nodeId) != nullptr) {
         AUDIO_WARNING_LOG("Node already exists, nodeName:%{public}s nodeId:%{public}u",
@@ -127,6 +128,7 @@ bool HpaeDfxMapTree::AddNode(const HpaeDfxNodeInfo &nodeInfo)
 
 bool HpaeDfxMapTree::RemoveNode(uint32_t nodeId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto node = FindDfxNode(nodeId);
     if (node == nullptr) {
         AUDIO_WARNING_LOG("Node %{public}u not found", nodeId);
@@ -154,6 +156,7 @@ bool HpaeDfxMapTree::RemoveNode(uint32_t nodeId)
 
 bool HpaeDfxMapTree::ConnectNodes(uint32_t parentId, uint32_t childId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (parentId == childId) {
         AUDIO_WARNING_LOG("Cannot connect node to itself, nodeId:%{public}u", parentId);
         return false;
@@ -180,6 +183,7 @@ bool HpaeDfxMapTree::ConnectNodes(uint32_t parentId, uint32_t childId)
 
 bool HpaeDfxMapTree::DisConnectNodes(uint32_t parentId, uint32_t childId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto parent = FindDfxNode(parentId);
     auto child = FindDfxNode(childId);
     if (parent == nullptr || child == nullptr) {
@@ -201,6 +205,7 @@ bool HpaeDfxMapTree::DisConnectNodes(uint32_t parentId, uint32_t childId)
 
 void HpaeDfxMapTree::UpdateNodeInfo(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto node = FindDfxNode(nodeId);
     CHECK_AND_RETURN_LOG(node != nullptr, "Node %{public}u not found", nodeId);
     node->SetNodeInfo(nodeInfo);
@@ -242,6 +247,7 @@ std::vector<uint32_t> HpaeDfxMapTree::GetRoots() const
 
 void HpaeDfxMapTree::PrintTree(std::string &outStr) const
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (nodeMap_.empty()) {
         outStr += "Graph is empty\n";
         return;

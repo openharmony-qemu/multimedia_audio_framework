@@ -216,7 +216,7 @@ int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLeve
 int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute) const
 {
     int32_t status = audioPolicyManager_.SetSourceOutputStreamMute(uid, setMute);
-    if (status > 0) {
+    if (status == 0) {
         streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
     }
     return status;
@@ -554,35 +554,6 @@ bool AudioPolicyService::getFastControlParam()
         isFastControlled_ = false;
     }
     return isFastControlled_;
-}
-
-int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo,
-    const std::string &bundleName)
-{
-    // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-        audioDeviceLock_.GetPreferredOutputDeviceDescriptors(rendererInfo, LOCAL_NETWORK_ID);
-    if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_NORMAL;
-    }
-
-    int32_t flag = audioDeviceCommon_.GetPreferredOutputStreamTypeInner(rendererInfo.streamUsage,
-        preferredDeviceList[0]->deviceType_, rendererInfo.rendererFlags, preferredDeviceList[0]->networkId_,
-        rendererInfo.samplingRate);
-    if (isFastControlled_ && (rendererInfo.playerType != PLAYER_TYPE_SOUND_POOL) &&
-        (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
-        std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
-        std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
-        if (result == "true") {
-            AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
-            return AUDIO_FLAG_NORMAL;
-        }
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
-        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
-        flag = AUDIO_FLAG_NORMAL;
-    }
-    return flag;
 }
 
 void AudioPolicyService::SetDefaultDeviceLoadFlag(bool isLoad)
@@ -1228,11 +1199,6 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
 int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
-}
-
-int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
-{
-    return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
 
 bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)

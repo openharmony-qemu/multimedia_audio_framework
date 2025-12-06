@@ -5,6 +5,9 @@
       "copyCodeResource": {
         "enable": false
       }
+    },
+    "externalNativeOptions":{
+      "path" : "./src/main/cpp/CMakeLists.txt",
     }
   },
   "buildOptionSet": [

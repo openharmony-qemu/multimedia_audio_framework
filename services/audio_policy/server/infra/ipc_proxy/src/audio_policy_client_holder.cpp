@@ -300,5 +300,24 @@ void AudioPolicyClientHolder::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent
     audioPolicyClient_->OnVolumeDegreeEvent(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnCollaborationEnabledChangeForCurrentDevice(enabled);
+}
+
+void AudioPolicyClientHolder::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    if (hasSystemPermission_) {
+        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        deviceDescriptor->SetClientInfo(clientInfo);
+        audioPolicyClient_->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    } else {
+        audioPolicyClient_->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, false);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

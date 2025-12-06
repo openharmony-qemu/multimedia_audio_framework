@@ -46,6 +46,7 @@ public:
     // current device change, map state unchanged
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
     bool GetRealCollaborativeState();
+    void updateCollaborativeProductId(const std::string &productId);
 private:
     AudioCollaborativeService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -55,6 +56,7 @@ private:
     int32_t UpdateCollaborativeStateReal();
     void RecoverCollaborativeState();
     void WriteCollaborativeStateSysEvents(std::string macAddress_, CollaborativeState state);
+    void LoadCollaborationConfig();
     bool isCollaborativePlaybackSupported_ = false;
     // same with current device in map
     bool isCollaborativeStateEnabled_ = false;

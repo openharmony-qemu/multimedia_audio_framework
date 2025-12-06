@@ -39,10 +39,14 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(void);
     void TearDown(void);
+private:
+    NodeCapability nc;
 };
 
 void AudioSuiteNrAlgoInterfaceImplUnitTest::SetUp(void)
 {
+    nc.soName = "libimedia_vqe_ainr.z.so";
+    nc.soPath = "/system/lib64/";
     std::filesystem::remove(g_outputPcmFilePath);
 }
 
@@ -51,7 +55,7 @@ void AudioSuiteNrAlgoInterfaceImplUnitTest::TearDown(void)
 
 HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoInitAndDeinit_001, TestSize.Level0)
 {
-    AudioSuiteNrAlgoInterfaceImpl nrAlgo;
+    AudioSuiteNrAlgoInterfaceImpl nrAlgo(nc);
     EXPECT_EQ(nrAlgo.Init(), 0);
     EXPECT_EQ(nrAlgo.Deinit(), 0);
 
@@ -63,7 +67,7 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoInitAndDeinit_001, Tes
 
 HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyOK_001, TestSize.Level0)
 {
-    AudioSuiteNrAlgoInterfaceImpl nrAlgo;
+    AudioSuiteNrAlgoInterfaceImpl nrAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(AUDIO_AINR_PCM_16K_FRAME_LEN, 0);
@@ -80,7 +84,7 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyOK_001, TestSize.
 
 HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyNOK_002, TestSize.Level0)
 {
-    AudioSuiteNrAlgoInterfaceImpl nrAlgo;
+    AudioSuiteNrAlgoInterfaceImpl nrAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(AUDIO_AINR_PCM_16K_FRAME_LEN, 0);
@@ -93,7 +97,7 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyNOK_002, TestSize
 
 HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyPcmFile_003, TestSize.Level0)
 {
-    AudioSuiteNrAlgoInterfaceImpl nrAlgo;
+    AudioSuiteNrAlgoInterfaceImpl nrAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     size_t frameSize = AUDIO_AINR_PCM_16K_FRAME_LEN * sizeof(int16_t);

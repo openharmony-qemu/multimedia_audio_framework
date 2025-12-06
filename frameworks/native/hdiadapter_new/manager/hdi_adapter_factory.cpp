@@ -62,7 +62,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
     CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
     uint32_t type = idHandler.ParseType(renderId);
     std::string info = idHandler.ParseInfo(renderId);
-    AUDIO_INFO_LOG("Type: %{public}u, info: %{public}s", type, info.c_str());
+    AUDIO_INFO_LOG("Type: %{public}u", type);
 
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     switch (type) {

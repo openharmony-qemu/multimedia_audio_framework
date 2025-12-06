@@ -33,6 +33,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,7 @@ using namespace std;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 const size_t THRESHOLD = 10;
 static int32_t NUM_2 = 2;
 static const int32_t MEDIA_SERVICE_UID = 1013;
@@ -121,6 +123,7 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_INPUT_FLAG_VOIP_FAST,
     AUDIO_INPUT_FLAG_WAKEUP,
     AUDIO_INPUT_FLAG_AI,
+    AUDIO_INPUT_FLAG_ULTRASONIC,
     AUDIO_FLAG_MAX,
 };
 
@@ -642,6 +645,7 @@ void AudioCoreServicePrivateMoveToRemoteInputDeviceFuzzTest()
     std::vector<SourceOutput> sourceOutputs;
     SourceOutput sourceOutput;
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(remoteDeviceDescriptor != nullptr);
     remoteDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
     audioCoreService->MoveToRemoteInputDevice(sourceOutputs, remoteDeviceDescriptor);
 }
@@ -1027,6 +1031,81 @@ void AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest()
     audioCoreService->HandleCommonSourceOpened(pipeInfo);
 }
 
+void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    audioStreamDescriptor->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesscs.push_back(audioStreamDescriptor);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    audioCoreService->UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
+}
+
+void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
+    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
+    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+}
+
+void AudioCoreServicePrivateNotifyRouteUpdate()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    if (audioStreamDescriptor == nullptr) {
+        return;
+    }
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    streamDescs.push_back(audioStreamDescriptor);
+    audioCoreService->NotifyRouteUpdate(streamDescs);
+}
+
+void AudioCoreServicePrivateUpdateModemRoute()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(audioDeviceDescriptor);
+    audioCoreService->UpdateModemRoute(descs);
+}
+
 TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchCapturerPipesAndExecuteFuzzTest,
@@ -1079,6 +1158,10 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateIsDeviceSwitchingFuzzTest,
     AudioCoreServicePrivateUpdateTrackerFuzzTest,
     AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest,
+    AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession,
+    AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream,
+    AudioCoreServicePrivateNotifyRouteUpdate,
+    AudioCoreServicePrivateUpdateModemRoute,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
@@ -1092,17 +1175,23 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return true;
 }
 } // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
 } // namesapce OHOS
 
 /* Fuzzer entry point */
@@ -1113,5 +1202,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::OnStop();
     return 0;
 }

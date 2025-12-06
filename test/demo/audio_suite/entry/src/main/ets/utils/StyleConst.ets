@@ -27,6 +27,10 @@
      */
     public static readonly FULL_HEIGHT: string = '100%';
     /**
+    * Ninety-five percent width.
+    */
+    public static readonly NINETY_FIVE_PERCENT_WIDTH: string = '95%';
+    /**
      * Thirty percent height.
      */
     public static readonly THIRTY_PERCENT_HEIGHT: string = '30%';
@@ -45,5 +49,5 @@
     /**
      * Font weight.
      */
-    public static readonly FONT_WIGHT_500: number = 500;
+    public static readonly FONT_WEIGHT_500: number = 500;
  }

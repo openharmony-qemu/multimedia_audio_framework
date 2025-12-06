@@ -29,8 +29,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const uint32_t FIRST_SESSIONID = 100000;
-constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 }
 
 PolicyHandler& PolicyHandler::GetInstance()
@@ -49,6 +47,7 @@ PolicyHandler::~PolicyHandler()
 {
     volumeVector_ = nullptr;
     sharedAbsVolumeScene_ = nullptr;
+    sharedSleAbsVolumeScene_ = nullptr;
     policyVolumeMap_ = nullptr;
     iPolicyProvider_ = nullptr;
     AUDIO_INFO_LOG("~PolicyHandler()");
@@ -78,6 +77,12 @@ void PolicyHandler::Dump(std::string &dumpString)
         return;
     }
     AppendFormat(dumpString, "  sharedAbsVolumeScene: %s \n", (*sharedAbsVolumeScene_ ? "true" : "false"));
+    if (sharedSleAbsVolumeScene_ == nullptr) {
+        dumpString += "sharedSleAbsVolumeScene_ is null...\n";
+        AUDIO_INFO_LOG("sharedSleAbsVolumeScene_ is null");
+        return;
+    }
+    AppendFormat(dumpString, "  sharedSleAbsVolumeScene: %s \n", (*sharedSleAbsVolumeScene_ ? "true" : "false"));
 }
 
 bool PolicyHandler::ConfigPolicyProvider(const sptr<IPolicyProviderIpc> policyProvider)
@@ -110,12 +115,14 @@ bool PolicyHandler::InitVolumeMap()
     iPolicyProvider_->InitSharedVolume(policyVolumeMap_);
     CHECK_AND_RETURN_RET_LOG((policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr), false,
         "InitSharedVolume failed.");
-    size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
+    size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool) + sizeof(bool);
     CHECK_AND_RETURN_RET_LOG(policyVolumeMap_->GetSize() == mapSize, false,
         "InitSharedVolume get error size:%{public}zu, target:%{public}zu", policyVolumeMap_->GetSize(), mapSize);
     volumeVector_ = reinterpret_cast<Volume *>(policyVolumeMap_->GetBase());
     sharedAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
         IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
+    sharedSleAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
+        IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool);
     AUDIO_INFO_LOG("InitSharedVolume success.");
     return true;
 }
@@ -138,21 +145,8 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
 
 void PolicyHandler::SetActiveOutputDevice(DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetActiveOutputDevice to device[%{public}d].", deviceType);
+    AUDIO_INFO_LOG("device[%{public}d].", deviceType);
     deviceType_ = deviceType;
-}
-
-std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 100000
-
-uint32_t PolicyHandler::GenerateSessionId(int32_t uid)
-{
-    uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("uid:%{public}d sessionId:%{public}d", uid, sessionId);
-    if (g_sessionId > MAX_VALID_SESSIONID) {
-        AUDIO_WARNING_LOG("sessionId is too large, reset it!");
-        g_sessionId = FIRST_SESSIONID;
-    }
-    return sessionId;
 }
 
 DeviceType PolicyHandler::GetActiveOutPutDevice()
@@ -181,10 +175,12 @@ bool PolicyHandler::IsAbsVolumeSupported()
     return *sharedAbsVolumeScene_;
 }
 
-int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+bool PolicyHandler::IsSleAbsVolumeSupported()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
-    return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    CHECK_AND_RETURN_RET_LOG((iPolicyProvider_ != nullptr && sharedSleAbsVolumeScene_ != nullptr), false,
+        "sle abs volume scene failed not configed");
+
+    return *sharedSleAbsVolumeScene_;
 }
 
 int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)
@@ -261,12 +257,6 @@ int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
-}
-
-int32_t PolicyHandler::CaptureConcurrentCheck(const uint32_t &sessionID)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    return iPolicyProvider_->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

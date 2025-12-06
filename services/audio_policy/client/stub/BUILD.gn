@@ -120,6 +120,7 @@ ohos_unittest("audio_zone_client_unit_test") {
     "../service/src/audio_policy_manager.cpp",
     "../service/src/audio_policy_manager_zone.cpp",
     "./src/audio_policy_client_stub_impl.cpp",
+    "../../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
   ]
 
   deps = [

@@ -103,6 +103,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
     EXPECT_NE(AudioHfpManager::SetActiveHfpDevice("33:33:33"), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC1), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC2), SUCCESS);
+    AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice("");
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(""), SUCCESS);
 }
 
@@ -222,17 +223,8 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
     AudioHfpManager::SetVirtualCall(0, false);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED,
-        AudioHfpManager::activeHfpDevice_);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
-
-    AudioHfpManager::SetVirtualCall(0, true);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED,
-        AudioHfpManager::activeHfpDevice_);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), false);
 }
 
 /**
@@ -249,6 +241,17 @@ HWTEST_F(BluetoothHfpManagerTest, HandleUserSelection_001, TestSize.Level1)
     BluetoothRemoteDevice device2(HFP_DEVICE_MAC2);
     HfpBluetoothDeviceManager::HandleUserSelection(device2);
     EXPECT_NE(device1.GetDeviceAddr(), device2.GetDeviceAddr());
+}
+
+/**
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_007
+ * @tc.desc  : Test hfp device manager.
+ */
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_007, TestSize.Level1)
+{
+    EXPECT_NE(AudioHfpManager::ClearActiveHfpDevice("33:33:33"), SUCCESS);
+    EXPECT_EQ(AudioHfpManager::ClearActiveHfpDevice(""), SUCCESS);
 }
 } // namespace Bluetooth
 } // namespace OHOS

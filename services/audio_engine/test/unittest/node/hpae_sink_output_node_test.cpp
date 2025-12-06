@@ -325,10 +325,14 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_FirstSilence_ShouldStartTimer, Te
 
     // Initial state: timer not started
     hpaeSinkOutputNode->isDisplayPaPowerState_ = false;
+    std::vector<int32_t> appsUid{0};
 
     EXPECT_CALL(*mockSink, GetAudioScene()).Times(0);
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0);
+    EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
 
+    hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
 
     // Verify timer start flag is set
@@ -356,10 +360,14 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeout_ShouldClosePa, Tes
     // Initial state: PA on and silence time near threshold
     hpaeSinkOutputNode->isOpenPaPower_ = true;
     hpaeSinkOutputNode->silenceDataUs_ = SILENCE_TIME_OUT_US; // 5 seconds
+    std::vector<int32_t> appsUid{0};
 
     // Mock: normal audio scene
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(0));
     EXPECT_CALL(*mockSink, SetPaPower(false)).WillOnce(Return(0));
+    EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify PA is closed and timer reset
     EXPECT_FALSE(hpaeSinkOutputNode->isOpenPaPower_);
@@ -383,8 +391,12 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_PaClosedSilence_ShouldMonitorTime
     // Initial state: PA closed and silence time exceeds 10 seconds
     hpaeSinkOutputNode->isOpenPaPower_ = false;
     hpaeSinkOutputNode->silenceDataUs_ = 5 * 60 * 1000000; // 5 * 60s
+    std::vector<int32_t> appsUid{0};
 
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Should not close again
+    EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify timer reset and log triggered
     EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 0);
@@ -453,9 +465,13 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeoutWrongScene_ShouldNo
     // Initial state: PA on and silence time exceeded
     hpaeSinkOutputNode->isOpenPaPower_ = true;
     hpaeSinkOutputNode->silenceDataUs_ = SILENCE_TIME_OUT_US; // 5s
+    std::vector<int32_t> appsUid{0};
     // Mock: non-normal audio scene
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(1)); // Scene not 0
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Should not call close
+    EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify PA still on and timer not reset
     EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);

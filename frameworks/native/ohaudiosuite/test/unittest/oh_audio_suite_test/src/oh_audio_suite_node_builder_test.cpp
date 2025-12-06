@@ -51,7 +51,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
     ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, type);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    if ((type == INPUT_NODE_TYPE_DEFAULT) || (type == OUT_NODE_TYPE_DEFAULT)) {
+    if ((type == INPUT_NODE_TYPE_DEFAULT) || (type == OUTPUT_NODE_TYPE_DEFAULT)) {
         OH_AudioFormat audioFormat;
         audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
         audioFormat.channelCount = AudioChannel::STEREO;
@@ -120,7 +120,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_002, TestSi
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
@@ -291,7 +291,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallb
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
@@ -465,7 +465,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_004, TestSize
 
     OH_AudioNodeBuilder *builder = nullptr;
     ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *audioNode = nullptr;
@@ -499,7 +499,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_005, TestSize
 
     OH_AudioNodeBuilder *builder = nullptr;
     ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
@@ -673,7 +673,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_009, TestSize
 
     OH_AudioNodeBuilder *builder = nullptr;
     ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioFormat audioFormat;
@@ -862,7 +862,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_013, TestSize
 
     OH_AudioNodeBuilder *builder = nullptr;
     ret = OH_AudioSuiteNodeBuilder_Create(&builder);
-    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUT_NODE_TYPE_DEFAULT);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, OUTPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioFormat audioFormat;
@@ -1135,7 +1135,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_004, TestSiz
     CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

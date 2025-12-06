@@ -28,6 +28,9 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
+#include "format_converter.h"
+#include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,6 +55,14 @@ private:
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
+
+    enum HandleRendererDataType {
+        NONE_ACTION = 0,
+        CONVERT_TO_F32_ACTION = 0x1,
+        RESAMPLE_ACTION = 0x10,
+        CONVERT_TO_SERVER_ACTION = 0x100,
+    };
+
     static sptr<AudioProcessInServer> Create(const AudioProcessConfig &processConfig,
         ProcessReleaseCallback *releaseCallback);
     virtual ~AudioProcessInServer();
@@ -93,9 +104,11 @@ public:
         uint32_t method) override;
 
     int32_t SetRebuildFlag() override;
+
+    int32_t GetServerKeepRunning(bool &keepRunning) override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
-    int32_t GetAudioHapticsSyncId() override;
+    void CheckAudioHapticsSyncId(int32_t &audioHapticsSyncId);
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -109,7 +122,7 @@ public:
     void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        AudioStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &endpoint = nullptr);
+        AudioStreamInfo &serverStreamInfo);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
@@ -128,7 +141,8 @@ public:
     BufferDesc &GetConvertedBuffer() override;
 
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
-    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer,
+        int32_t &audioHapticsSyncId) override;
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
@@ -139,7 +153,8 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
+    void SetKeepRunning(bool keepRunning) override;
+    bool GetKeepRunning() override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -156,14 +171,29 @@ public:
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
     void UpdateStreamInfo() override;
+
+    void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
+
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticRenderRate(uint32_t renderRate) override;
 public:
     const AudioProcessConfig processConfig_;
 
 private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
+    void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
+    void InitRendererStream(uint32_t spanTime,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void InitCapturerStream(uint32_t spanSizeInByte,
+        const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
+    void RendererResample(BufferDesc &buffer);
+    void RendererConvertF32(BufferDesc &buffer);
+    void RendererConvertServer(BufferDesc &buffer);
+
     bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
@@ -177,8 +207,12 @@ private:
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
     void RemoveStreamInfo();
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
+
+    int32_t CreateServerBuffer();
+    int32_t ProcessAndSetStaticBuffer();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -193,11 +227,10 @@ private:
     bool isMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
-    bool isInited_ = false;
+    std::atomic<bool> isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
-    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
 
     uint32_t totalSizeInframe_ = 0;
@@ -208,13 +241,24 @@ private:
     std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
+    AudioStreamInfo serverStreamInfo_;
+    BufferDesc resampleBuffer_ = {};
+    BufferDesc f32Buffer_ = {};
     BufferDesc convertedBuffer_ = {};
+    std::unique_ptr<uint8_t []> resampleBufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> f32BufferNew_ = nullptr;
+    std::unique_ptr<uint8_t []> convertedBufferNew_ = nullptr;
+
+    FormatKey dataToServerKey_;
+    FormatKey clientToResampleKey_;
+    int32_t handleRendererDataType_ = NONE_ACTION;
+    
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
     int64_t enterStandbyTime_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-
+    bool keepRunning_ = false;
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};
     int64_t lastWriteFrame_{};
@@ -228,7 +272,8 @@ private:
     std::mutex scheduleGuardsMutex_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
-    std::atomic<int32_t> audioHapticsSyncId_ = 0;
+    std::mutex syncIdLock_;
+    int32_t audioHapticsSyncId_ = 0;
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
 
@@ -238,10 +283,13 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpResampleName_;
-    std::string dumpFACName_;
-    FILE *dumpResample_ = nullptr;
-    FILE *dumpFAC_ = nullptr;
+    std::string logUtilsTag_ = "";
+
+    mutable int64_t volumeDataCount_ = 0;
+
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

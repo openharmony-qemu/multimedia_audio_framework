@@ -405,8 +405,7 @@ void HpaeManagerFuzzTest::DumpFuzzTest()
     hpaeManager_->DumpSinkInfo(sinkName);
     std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
     hpaeManager_->DumpSourceInfo(sourceName);
-    HpaeDeviceInfo devicesInfo_;
-    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    hpaeManager_->DumpAllAvailableDevice();
     hpaeManager_->DumpSourceInfo(sourceName);
     bool mute = GetData<bool>();
     bool isSync = GetData<bool>();
@@ -506,25 +505,25 @@ void DumpFuzzTest()
 void StreamManagerFuzzTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.StreamManagerFuzzTest();
 }
 
 void MoveStreamManagerFuzzTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.MoveStreamManagerFuzzTest();
 }
 
 void HpaeManagerEffectTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.HpaeManagerEffectTest();
 }
 
 void HpaeManagerEffectTest2()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.HpaeManagerEffectTest2();
 }
 
 TestFuncs g_testFuncs[] = {

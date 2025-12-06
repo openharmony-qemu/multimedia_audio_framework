@@ -44,6 +44,7 @@ static constexpr uint32_t TEST_SESSION_ID = 123456;
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
+    format = format > SAMPLE_F32LE ? -1 : format;
     return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
 }
 
@@ -937,6 +938,138 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
         .WillOnce(DoAll(SetArgReferee<0>(1), Return(SUCCESS)));
     EXPECT_EQ(unit->OnQueryUnderrun(), true); // requestDataLen == 0, return true
     EXPECT_EQ(unit->OnQueryUnderrun(), false); // requestDataLen != 0, return false
+}
+
+/**
+ * @tc.name  : Test OnStreamData with noWaitDataFlag.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_037
+ * @tc.desc  : Test OnStreamData with noWaitDataFlag.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+ 
+    std::vector<int8_t> buffer(2048);
+    AudioCallBackStreamInfo info = {
+        .needData = true,
+        .requestDataLen = 1024,
+        .inputData = buffer.data(),
+    };
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCallback;
+    unit->noWaitDataFlag_ = false; // when start
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ false, do not write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1024), // enough dataLen, noWaitDataFlag_ false, write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ true, write
+            Return(0)
+    ));
+    EXPECT_CALL(*mockWriteCallback, OnWriteData(::testing::_, ::testing::_))
+        .WillOnce(Return(-1))
+        .WillOnce(Return(0))
+        .WillOnce(Return(0));
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
+    EXPECT_FALSE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success even if not enough data
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+}
+
+/**
+ * @tc.name  : Test Start.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_038
+ * @tc.desc  : Test Start with noWaitDataFlag_.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(DUP_PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    int32_t ret = rendererStreamImpl->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
+
+    rendererStreamImpl->noWaitDataFlag_ = true;
+    int32_t syncId = 123;
+    ret = rendererStreamImpl->StartWithSyncId(syncId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
+}
+
+/**
+ * @tc.name  : Test GetSpeedPosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_039
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
+    uint64_t framePosition = 1;
+    uint64_t timestamp = 1;
+    uint64_t latency = 1;
+    EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition, timestamp, latency, 0), SUCCESS);
+    uint64_t framePosition2 = 2;
+    uint64_t timestamp2 = 2;
+    uint64_t latency2 = 2;
+    EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
+    EXPECT_EQ(framePosition, framePosition2);
+    EXPECT_EQ(timestamp, timestamp2);
+    EXPECT_EQ(latency, latency2);
+}
+
+/**
+ * @tc.name  : Test GetSpeedPosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_040
+ * @tc.desc  : Test GetCurrentPosition with offload_inactive_background.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
+{
+    adapterManager = std::make_shared<HpaeAdapterManager>(PLAYBACK);
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    rendererStreamImpl->offloadStatePolicy_.store(OFFLOAD_INACTIVE_BACKGROUND);
+    uint64_t framePosition = 1;
+    uint64_t timestamp = 1;
+    uint64_t latency = 1;
+    EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition, timestamp, latency, 0), SUCCESS);
+    uint64_t framePosition2 = 2;
+    uint64_t timestamp2 = 2;
+    uint64_t latency2 = 2;
+    EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
+    EXPECT_EQ(framePosition, framePosition2);
+    EXPECT_EQ(timestamp, timestamp2);
+    EXPECT_EQ(latency, latency2);
 }
 }
 }

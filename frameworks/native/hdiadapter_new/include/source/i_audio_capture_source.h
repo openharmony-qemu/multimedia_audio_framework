@@ -84,6 +84,7 @@ public:
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
     virtual bool IsCaptureInvalid(void) NOT_SUPPORT_RET
+    virtual int32_t GetArmUsbDeviceStatus() {return 0;}
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

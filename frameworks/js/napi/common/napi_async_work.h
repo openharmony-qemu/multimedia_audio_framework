@@ -116,6 +116,14 @@ struct AutoRef {
             workData = nullptr;
         }
     }
+    napi_env GetEnv() const
+    {
+        return env_;
+    }
+    napi_ref GetRef() const
+    {
+        return cb_;
+    }
     napi_env env_;
     napi_ref cb_;
 };

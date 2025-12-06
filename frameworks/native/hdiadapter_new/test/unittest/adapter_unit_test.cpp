@@ -20,6 +20,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "manager/hdi_adapter_factory.h"
+#include "adapter/local_device_manager.h"
 
 using namespace testing::ext;
 
@@ -182,6 +183,48 @@ HWTEST_F(AdapterUnitTest, DoSetSinkPrestoreInfo_001, TestSize.Level1)
     param = {AudioParamKey::NONE, {"", ""}};
     ret = HdiAdapterManager::GetInstance().sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test DoSetSinkPrestoreInfo API
+ * @tc.number : ReportBundleNameEvent_001
+ * @tc.desc   : Test ReportBundleNameEvent
+ */
+HWTEST_F(AdapterUnitTest, ReportBundleNameEvent_001, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    const std::string value = "test";
+
+    manager.ReportBundleNameEvent(value);
+    EXPECT_EQ(value, "test");
+}
+
+/**
+ * @tc.name   : Test DoSetSinkPrestoreInfo API
+ * @tc.number : ReportBundleNameEvent_002
+ * @tc.desc   : Test ReportBundleNameEvent
+ */
+HWTEST_F(AdapterUnitTest, ReportBundleNameEvent_002, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    const std::string value = "test=false";
+
+    manager.ReportBundleNameEvent(value);
+    EXPECT_EQ(value, "test=false");
+}
+
+/**
+ * @tc.name   : Test DoSetSinkPrestoreInfo API
+ * @tc.number : ReportBundleNameEvent_003
+ * @tc.desc   : Test ReportBundleNameEvent
+ */
+HWTEST_F(AdapterUnitTest, ReportBundleNameEvent_003, TestSize.Level1)
+{
+    LocalDeviceManager manager;
+    const std::string value = "output_mute=false";
+
+    manager.ReportBundleNameEvent(value);
+    EXPECT_EQ(value, "output_mute=false");
 }
 
 } // namespace AudioStandard

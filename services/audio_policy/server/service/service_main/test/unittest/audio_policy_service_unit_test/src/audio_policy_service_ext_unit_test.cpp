@@ -295,31 +295,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_011, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_012
-* @tc.desc  : Test GetPreferredOutputStreamType interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_012, TestSize.Level1)
-{
-    AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    std::string bundleName = "test";
-    AudioPolicyService::GetAudioPolicyService().isFastControlled_ = false;
-    auto ret = AudioPolicyService::GetAudioPolicyService().GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-    AudioPolicyService::GetAudioPolicyService().isFastControlled_ = true;
-    rendererInfo.playerType = PLAYER_TYPE_SOUND_POOL;
-    ret = AudioPolicyService::GetAudioPolicyService().GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-    rendererInfo.playerType = PLAYER_TYPE_AV_PLAYER;
-    ret = AudioPolicyService::GetAudioPolicyService().GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(AUDIO_FLAG_NORMAL, ret);
-    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    ret = AudioPolicyService::GetAudioPolicyService().GetPreferredOutputStreamType(rendererInfo, bundleName);
-    EXPECT_EQ(AUDIO_FLAG_MMAP, ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_014
 * @tc.desc  : Test RegisterBluetoothListener interfaces.
 */

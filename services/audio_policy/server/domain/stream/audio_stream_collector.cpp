@@ -30,18 +30,12 @@
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK
-};
 
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
-constexpr const char* RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 240000; //4min
-constexpr const char* RECLAIM_FILE_STRING = "1";
+constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
+constexpr const char *RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
@@ -119,8 +113,10 @@ AudioStreamCollector::AudioStreamCollector() : audioAbilityMgr_
     (AudioAbilityManager::GetInstance())
 {
     audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    audioConcurrencyService_ = std::make_shared<AudioConcurrencyService>();
-    audioConcurrencyService_->Init();
+#ifdef ACTIVATED_RECLAIM_MEMORY
+    activatedReclaimMemory_ = true;
+    AUDIO_INFO_LOG("activated Reclaim Memory is %{public}d", activatedReclaimMemory_);
+#endif
     AUDIO_INFO_LOG("AudioStreamCollector()");
 }
 
@@ -154,6 +150,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->outputDeviceInfo = streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo;
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
+    rendererChangeInfo->streamInfo = streamChangeInfo.audioRendererChangeInfo.streamInfo;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -452,6 +449,7 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
             rendererChangeInfo->channelCount = (*it)->channelCount;
             rendererChangeInfo->backMute = (*it)->backMute;
+            rendererChangeInfo->streamInfo = (*it)->streamInfo;
             if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_INVALID) {
                 streamChangeInfo.audioRendererChangeInfo.outputDeviceInfo = (*it)->outputDeviceInfo;
                 rendererChangeInfo->outputDeviceInfo = (*it)->outputDeviceInfo;
@@ -793,7 +791,8 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
-        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+        if (!activatedReclaimMemory_ &&
+            system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
             return;
         }
         AUDIO_INFO_LOG("start reclaim memory task");
@@ -801,7 +800,7 @@ void AudioStreamCollector::PostReclaimMemoryTask()
             ReclaimMem();
             isActivatedMemReclaiTask_.store(false);
         };
-        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
         isActivatedMemReclaiTask_.store(true);
     }
 }
@@ -976,8 +975,8 @@ int32_t AudioStreamCollector::CapturerMutedFlagChange(const uint32_t sessionId, 
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
 
-    for (auto Info : audioCapturerChangeInfos_) {
-        if (Info->sessionId == static_cast<int32_t>(sessionId) && Info->muted != muteFlag) {
+    for (auto info : audioCapturerChangeInfos_) {
+        if (info->sessionId == static_cast<int32_t>(sessionId) && info->muted != muteFlag) {
             info->muted = muteFlag;
         }
     }
@@ -1051,6 +1050,7 @@ void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
+    PostReclaimMemoryTask();
 }
 
 bool AudioStreamCollector::GetAndCompareStreamType(StreamUsage targetUsage, AudioRendererInfo rendererInfo)
@@ -1540,12 +1540,6 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     }
 
     return SUCCESS;
-}
-
-ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
-    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
-{
-    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

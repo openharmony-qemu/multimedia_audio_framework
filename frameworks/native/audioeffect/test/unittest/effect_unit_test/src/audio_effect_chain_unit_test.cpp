@@ -805,5 +805,53 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_032, TestSize.Level1)
     auto ret = audioEffectChain->UpdateMultichannelIoBufferConfigInner();
     EXPECT_EQ(ret, ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_033
+ * @tc.desc  : Test HeadTracker::CheckPostureDataIsValid(HeadPostureData *headPostureDataTmp)
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_033, TestSize.Level1)
+{
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+
+    auto event = std::make_unique<SensorEvent>();
+    event->dataLen = sizeof(HeadPostureData);
+
+    auto validData1 = std::make_unique<HeadPostureData>(HeadPostureData{1, 1.0, 0.0, 0.0, 0.0});
+    auto invalidData = std::make_unique<HeadPostureData>(HeadPostureData{2, 10.0, 0.0, 0.0, 0.0});
+    auto validData2 = std::make_unique<HeadPostureData>(HeadPostureData{3, 0.0, 1.0, 0.0, 0.0});
+
+    event->data = reinterpret_cast<uint8_t*>(validData1.get());
+    headTracker->HeadPostureDataProcCb(event.get());
+    HeadPostureData result1 = headTracker->GetHeadPostureData();
+    EXPECT_EQ(result1.order, validData1->order);
+    EXPECT_FLOAT_EQ(result1.w, validData1->w);
+    EXPECT_FLOAT_EQ(result1.x, validData1->x);
+    EXPECT_FLOAT_EQ(result1.y, validData1->y);
+    EXPECT_FLOAT_EQ(result1.z, validData1->z);
+
+    event->data = reinterpret_cast<uint8_t*>(invalidData.get());
+    headTracker->HeadPostureDataProcCb(event.get());
+    HeadPostureData result2 = headTracker->GetHeadPostureData();
+    EXPECT_EQ(result2.order, validData1->order);
+    EXPECT_FLOAT_EQ(result2.w, validData1->w);
+    EXPECT_FLOAT_EQ(result2.x, validData1->x);
+    EXPECT_FLOAT_EQ(result2.y, validData1->y);
+    EXPECT_FLOAT_EQ(result2.z, validData1->z);
+    
+    event->data = reinterpret_cast<uint8_t*>(validData2.get());
+    headTracker->HeadPostureDataProcCb(event.get());
+    HeadPostureData result3 = headTracker->GetHeadPostureData();
+    EXPECT_EQ(result3.order, validData2->order);
+    EXPECT_FLOAT_EQ(result3.w, validData2->w);
+    EXPECT_FLOAT_EQ(result3.x, validData2->x);
+    EXPECT_FLOAT_EQ(result3.y, validData2->y);
+    EXPECT_FLOAT_EQ(result3.z, validData2->z);
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

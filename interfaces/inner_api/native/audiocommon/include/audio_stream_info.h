@@ -240,21 +240,21 @@ enum ContentType {
 
 enum AudioPipeType {
     PIPE_TYPE_UNKNOWN = 0,
-    PIPE_TYPE_NORMAL_OUT = 1,
-    PIPE_TYPE_NORMAL_IN = 2,
-    PIPE_TYPE_LOWLATENCY_OUT = 3,
-    PIPE_TYPE_LOWLATENCY_IN = 4,
-    PIPE_TYPE_DIRECT_OUT = 5,
-    PIPE_TYPE_DIRECT_IN = 6,
-    PIPE_TYPE_CALL_OUT = 7,
-    PIPE_TYPE_CALL_IN = 8,
-    PIPE_TYPE_OFFLOAD = 9,
-    PIPE_TYPE_MULTICHANNEL = 10,
-    PIPE_TYPE_HIGHRESOLUTION = 11,
-    PIPE_TYPE_SPATIALIZATION = 12,
-    PIPE_TYPE_DIRECT_MUSIC = 13,
-    PIPE_TYPE_DIRECT_VOIP = 14,
-    PIPE_TYPE_NORMAL_IN_AI = 15,
+    PIPE_TYPE_OUT_NORMAL = 1,
+    PIPE_TYPE_IN_NORMAL = 2,
+    PIPE_TYPE_OUT_LOWLATENCY = 3,
+    PIPE_TYPE_IN_LOWLATENCY = 4,
+    PIPE_TYPE_OUT_CELLULAR_CALL = 5,
+    PIPE_TYPE_IN_CELLULAR_CALL = 6,
+    PIPE_TYPE_OUT_VOIP = 7,
+    PIPE_TYPE_IN_VOIP = 8,
+    PIPE_TYPE_OUT_OFFLOAD = 9,
+    PIPE_TYPE_OUT_MULTICHANNEL = 10,
+    PIPE_TYPE_OUT_DIRECT_NORMAL = 11,
+    PIPE_TYPE_IN_NORMAL_AI = 12,
+    PIPE_TYPE_IN_NORMAL_UNPROCESS = 13,
+    PIPE_TYPE_IN_NORMAL_ULTRASONIC = 14,
+    PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION = 15,
 };
 
 enum AudioPreloadType {
@@ -272,6 +272,8 @@ struct AudioStreamParams {
     uint32_t originalSessionId = 0;
     // Add customSampleRate
     uint32_t customSampleRate = 0;
+    bool isRemoteSpatialChannel = false;
+    uint64_t remoteChannelLayout = 0ULL;
 };
 
 // sampling rate

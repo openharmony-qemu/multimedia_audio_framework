@@ -597,6 +597,8 @@ bool SetDefaultChannelLayout(AudioChannel channels, AudioChannelLayout &channelL
 
 bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
 {
+    // for HOA, bitCount does not match channelCount
+    CHECK_AND_RETURN_RET(!CheckIsHOA(chLayout), true);
     if (chLayout == CH_LAYOUT_UNKNOWN || BitCounts(chLayout) != chCounts) {
         return SetDefaultChannelLayout(static_cast<AudioChannel>(chCounts), chLayout);
     }

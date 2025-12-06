@@ -16,6 +16,7 @@
 #ifndef HPAE_SOURCE_INTPUT_NODE_H
 #define HPAE_SOURCE_INTPUT_NODE_H
 #include <memory>
+#include "hpae_backoff_controller.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 #include "source/i_audio_capture_source.h"
@@ -59,6 +60,7 @@ public:
     HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
+    void SetInjectState(bool isInjecting);
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
@@ -88,6 +90,9 @@ private:
     std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;      // size of stored data
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
+
+    bool isInjecting_ = false; // mark injecting state
+    HpaeBackoffController backoffController_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

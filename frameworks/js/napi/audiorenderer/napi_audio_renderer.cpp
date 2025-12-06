@@ -307,6 +307,23 @@ bool NapiAudioRenderer::CheckAudioRendererStatus(NapiAudioRenderer *napi,
     return true;
 }
 
+bool NapiAudioRenderer::CheckAudioRendererStreamUsage(NapiAudioRenderer *napi,
+    std::shared_ptr<AudioRendererAsyncContext> context)
+{
+    CHECK_AND_RETURN_RET_LOG(napi != nullptr, false, "napi object is nullptr.");
+    AudioRendererInfo rendererInfo = {};
+    napi->audioRenderer_->GetRendererInfo(rendererInfo);
+    if (rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        rendererInfo.streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
+        rendererInfo.streamUsage != STREAM_USAGE_VOICE_MESSAGE) {
+        context->SignError(NAPI_ERR_ILLEGAL_STATE,
+            "StreamUsage: " + std::to_string(static_cast<int32_t>(rendererInfo.streamUsage)) +
+            " does not support using SetDefaultOutputDevice.");
+        return false;
+    }
+    return true;
+}
+
 NapiAudioRenderer* NapiAudioRenderer::GetParamWithSync(const napi_env &env, napi_callback_info info,
     size_t &argc, napi_value *args)
 {
@@ -562,15 +579,13 @@ napi_value NapiAudioRenderer::GetRendererSamplingRate(napi_env env, napi_callbac
 napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "Caller is not a system application.");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetTarget failed : no memory");
-        NapiAudioError::ThrowError(env, "SetTarget failed : no memory",
-            NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetTarget failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
@@ -578,9 +593,7 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get Target failed",
             NAPI_ERR_INVALID_PARAM);
     };
-
     context->GetCbInfo(env, info, inputParser);
-
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
@@ -588,7 +601,7 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        if (!NapiAudioEnum::IsLegalRenderTargetType(context->target)) {
+        if (!NapiAudioEnum::IsLegalRenderTarget(context->target)) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed.");
             return;
         }
@@ -596,18 +609,17 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
-            context->SignError(NAPI_ERR_NO_PERMISSION);
+            context->SignError(NAPI_ERR_NO_PERMISSION, "Permission denied.");
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
-            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+            context->SignError(NAPI_ERR_PERMISSION_DENIED, "Caller is not a system application.");
         } else if (context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE, "Operation not permit at running and release state.");
         } else if (context->intValue == ERR_NOT_SUPPORTED) {
             context->SignError(NAPI_ERR_UNSUPPORTED, "Current renderer is not supported to set target.");
         } else {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "Audio client call audio service error, System error.");
         }
     };
-
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
@@ -1018,7 +1030,7 @@ napi_value NapiAudioRenderer::GetBufferSize(napi_env env, napi_callback_info inf
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        size_t bufferSize;
+        size_t bufferSize = 0;
         context->intValue = napiAudioRenderer->audioRenderer_->GetBufferSize(bufferSize);
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);
@@ -1911,6 +1923,8 @@ napi_value NapiAudioRenderer::SetDefaultOutputDevice(napi_env env, napi_callback
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStreamUsage(napiAudioRenderer, context),
+            "streamUsage not support for this renderer.");
         DeviceType deviceType = static_cast<DeviceType>(context->deviceType);
         context->intValue = napiAudioRenderer->audioRenderer_->SetDefaultOutputDevice(deviceType);
         if (context->intValue != SUCCESS) {

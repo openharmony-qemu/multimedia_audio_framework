@@ -22,6 +22,7 @@
 
 #include "audio_stream_manager.h"
 #include "audio_renderer.h"
+#include "taihe_audio_enum.h"
 #include "taihe_work.h"
 #include "taihe_audio_renderer_device_change_callback.h"
 
@@ -37,7 +38,7 @@ public:
 
     static void CreateRendererFailed();
     static std::shared_ptr<AudioRendererImpl> CreateAudioRendererNativeObject();
-    static AudioRenderer CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
+    static AudioRendererOrNull CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
 
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     std::shared_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer_;
@@ -79,6 +80,8 @@ public:
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
     void SetLoudnessGainSync(double loudnessGain);
     double GetLoudnessGain();
+    void SetTargetSync(RenderTarget target);
+    RenderTarget GetTarget();
 
     void OnStateChange(callback_view<void(AudioState)> callback);
     void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);

@@ -39,10 +39,15 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(void);
     void TearDown(void);
+
+private:
+    NodeCapability nc;
 };
 
 void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::SetUp(void)
 {
+    nc.soName = "libimedia_sws.z.so";
+    nc.soPath = "/system/lib64/";
     std::filesystem::remove(g_outputfile);
 }
 
@@ -51,7 +56,7 @@ void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::TearDown(void)
 
 HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestInitAndDeinit_001, TestSize.Level0)
 {
-    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo;
+    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo(nc);
     ASSERT_EQ(soundFieldAlgo.Init(), 0);
     EXPECT_EQ(soundFieldAlgo.Deinit(), 0);
 
@@ -63,7 +68,7 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestInitAndDeinit_001, T
 
 HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestApplyOK_001, TestSize.Level0)
 {
-    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo;
+    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo(nc);
     std::vector<uint8_t *> pcmInputs(1);
     std::vector<uint8_t *> pcmOutputs(1);
     std::vector<int16_t> dataIn(SOUNDFIELD_ALGO_FRAME_LEN, 0);
@@ -80,7 +85,7 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestApplyOK_001, TestSiz
 
 HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestWithoutInitDoApplyNOK_002, TestSize.Level0)
 {
-    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo;
+    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo(nc);
     std::vector<uint8_t *> pcmInputs(1);
     std::vector<uint8_t *> pcmOutputs(1);
     std::vector<int16_t> dataIn(SOUNDFIELD_ALGO_FRAME_LEN, 0);
@@ -93,7 +98,7 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestWithoutInitDoApplyNO
 
 HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSetAndGetParameter_001, TestSize.Level0)
 {
-    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo;
+    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo(nc);
     std::vector<uint8_t *> pcmInputs(1);
     std::vector<uint8_t *> pcmOutputs(1);
     std::vector<int16_t> dataIn(SOUNDFIELD_ALGO_FRAME_LEN, 0);
@@ -135,7 +140,7 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSetAndGetParameter_0
 
 HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSoundFieldAlgoApply_001, TestSize.Level0)
 {
-    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo;
+    AudioSuiteSoundFieldAlgoInterfaceImpl soundFieldAlgo(nc);
     std::vector<uint8_t *> pcmInputs(1);
     std::vector<uint8_t *> pcmOutputs(1);
 

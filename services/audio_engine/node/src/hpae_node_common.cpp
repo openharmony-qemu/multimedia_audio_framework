@@ -29,6 +29,10 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
+// to judge whether SampleRate is multiples of 50, if true use 20ms, false use 100ms
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
+static constexpr uint32_t FRAME_LEN_40MS = 40;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -120,11 +124,11 @@ static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
 };
 
 static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
-    {"primary", PIPE_TYPE_NORMAL_OUT},
-    {"a2dp", PIPE_TYPE_NORMAL_OUT},
-    {"remote", PIPE_TYPE_NORMAL_OUT},
-    {"dp", PIPE_TYPE_NORMAL_OUT},
-    {"multichannel", PIPE_TYPE_MULTICHANNEL},
+    {"primary", PIPE_TYPE_OUT_NORMAL},
+    {"a2dp", PIPE_TYPE_OUT_NORMAL},
+    {"remote", PIPE_TYPE_OUT_NORMAL},
+    {"dp", PIPE_TYPE_OUT_NORMAL},
+    {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
 };
 
 static long StringToNum(const std::string &str)
@@ -521,9 +525,22 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.statusCallback = statusCallback;
 }
 
-size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo)
+size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
-    return nodeInfo.samplingRate * FRAME_LEN_20MS / MS_PER_SECOND;
+    size_t frameLen = 0;
+    if (sampleRate == SAMPLE_RATE_11025) {
+        frameLen = static_cast<size_t>(FRAME_LEN_40MS) * sampleRate / MS_PER_SECOND;
+    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
+        frameLen = static_cast<size_t>(FRAME_LEN_20MS) * sampleRate / MS_PER_SECOND;
+    } else {
+        frameLen = static_cast<size_t>(FRAME_LEN_100MS) * sampleRate / MS_PER_SECOND;
+    }
+    return frameLen;
+}
+
+size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
+{
+    return CalculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
 }
 
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
@@ -539,6 +556,7 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
+    nodeInfo.encoding = streamInfo.encoding;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

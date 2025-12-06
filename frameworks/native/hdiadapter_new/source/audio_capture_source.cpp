@@ -35,6 +35,7 @@
 #include "manager/hdi_monitor.h"
 #include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +82,14 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
+static std::mutex g_usbAddressMtx;
+static std::unordered_map<uint32_t, std::string> g_usbAddressMap;
+
+static std::string GetAddress(uint32_t key)
+{
+    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
+    return g_usbAddressMap[key];
+}
 
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
@@ -94,6 +103,7 @@ AudioCaptureSource::~AudioCaptureSource()
     isCaptureThreadRunning_ = false;
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
+    g_usbAddressMap.erase(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -139,6 +149,11 @@ void AudioCaptureSource::DeInit(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
+    if (audioCapture_ != nullptr && !attr_.isPrimarySinkExist_) {
+        struct AudioSceneDescriptor sceneDesc;
+        InitSceneDesc(sceneDesc, AUDIO_SCENE_DEFAULT);
+        audioCapture_->SelectScene(audioCapture_, &sceneDesc);
+    }
     sourceInited_ = false;
     started_.store(false);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -367,8 +382,8 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
     return SUCCESS;
 }
 
-int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
+int32_t AudioCaptureSource::ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     if (attr_.sourceType != SOURCE_TYPE_EC) {
@@ -378,7 +393,42 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         CHECK_AND_RETURN_RET_LOG(fdescEc != nullptr && fdescEc->frame != nullptr, ERR_INVALID_PARAM,
             "desc frame is nullptr");
     }
+    return SUCCESS;
+}
 
+void AudioCaptureSource::SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc,
+    const AudioCaptureFrameInfo &frameInfo)
+{
+    switch (attr_.sourceType) {
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+        case SOURCE_TYPE_EC:
+            replyBytesEc = frameInfo.replyBytesEc;
+            break;
+        default:
+            replyBytesEc = fdescEc->frameLen;
+            break;
+    }
+}
+
+int32_t AudioCaptureSource::ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo)
+{
+    if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
+        AUDIO_ERR_LOG("copy desc ec fail");
+    } else {
+        SetReplyBytesEc(fdesc, replyBytesEc, frameInfo);
+    }
+
+    CheckUpdateState(fdesc->frame, replyBytes);
+    AudioCaptureFrameInfoFree(&frameInfo, false);
+    return SUCCESS;
+}
+
+int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    uint64_t &replyBytesEc)
+{
+    int32_t ret = ValidateParameters(fdesc, replyBytes, fdescEc, replyBytesEc);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     if (IsNonblockingSource(adapterNameCase_)) {
         return NonblockingCaptureFrameWithEc(fdescEc, replyBytesEc);
     }
@@ -386,7 +436,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
-    int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
+    ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
     if (ret < 0) {
         AUDIO_ERR_LOG("fail, ret: %{public}x", ret);
         AudioCaptureFrameInfoFree(&frameInfo, false);
@@ -397,15 +447,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     }
 
     if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
-        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
-            AUDIO_ERR_LOG("copy desc ec fail");
-        } else {
-            replyBytesEc = frameInfo.replyBytesEc;
-        }
-
-        CheckUpdateState(fdesc->frame, replyBytes);
-        AudioCaptureFrameInfoFree(&frameInfo, false);
-        return SUCCESS;
+        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
     }
 
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
@@ -422,11 +464,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         }
     }
     if (frameInfo.frameEc != nullptr) {
-        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
-            AUDIO_ERR_LOG("copy desc ec fail");
-        } else {
-            replyBytesEc = (attr_.sourceType == SOURCE_TYPE_EC) ? frameInfo.replyBytesEc : fdescEc->frameLen;
-        }
+        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
     }
     CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
@@ -618,7 +656,8 @@ int32_t AudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 
 void AudioCaptureSource::SetAddress(const std::string &address)
 {
-    address_ = address;
+    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
+    g_usbAddressMap[captureId_] = address;
 }
 
 void AudioCaptureSource::DumpInfo(std::string &dumpString)
@@ -698,7 +737,8 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_NOISE_REDUCTION_TYPE", AUDIO_INPUT_NOISE_REDUCTION_TYPE},
     {"AUDIO_INPUT_RAW_TYPE", AUDIO_INPUT_RAW_TYPE},
     {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
-    {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION}
+    {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION},
+    {"AUDIO_INPUT_ULTRASONIC_TYPE",  AUDIO_INPUT_ULTRASONIC_TYPE}
 };
 
 AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
@@ -729,8 +769,10 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+        case SOURCE_TYPE_ULTRASONIC:
+            hdiAudioInputType = AUDIO_INPUT_ULTRASONIC_TYPE;
             break;
         case SOURCE_TYPE_WAKEUP:
             hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
@@ -865,8 +907,29 @@ uint32_t AudioCaptureSource::GetUniqueId(void) const
     return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
 }
 
+uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const
+{
+    switch (hdiSource) {
+        case AUDIO_INPUT_VOICE_TRANSCRIPTION:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
+        case AUDIO_INPUT_RAW_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESS);
+        case AUDIO_INPUT_ULTRASONIC_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_ULTRASONIC);
+        case AUDIO_INPUT_VOICE_RECOGNITION_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_RECOGNITION);
+        default:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
+    }
+}
+
 uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
 {
+    AudioInputType hdiSource = MappingAudioInputType(attr_.hdiSourceType);
+    if (hdiSource != AUDIO_INPUT_DEFAULT_TYPE) {
+        return GenerateUniqueIDByHdiSource(hdiSource);
+    }
+
     switch (attr_.sourceType) {
         case SOURCE_TYPE_EC:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_EC);
@@ -874,8 +937,8 @@ uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_MIC_REF);
         case SOURCE_TYPE_WAKEUP:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
-        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -957,6 +1020,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_IN_MIC;
+    address_ = GetAddress(captureId_);
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
         if (address_.empty()) {
@@ -1333,5 +1397,21 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
     }
 }
 
+int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
+{
+    Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
+    address_ = GetAddress(captureId_);
+    std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "deviceManager is nullptr");
+    std::string infoCond = std::string("get_usb_status#C") + GetField(address, "card", ';') +
+        "D" + GetField(address, "device", ';');
+    std::string deviceInfo = deviceManager->GetAudioParameter(adapterNameCase_, USB_DEVICE, infoCond);
+    std::string status = GetField(deviceInfo, "status", ',');
+    int32_t ret = 0;
+    StringConverter(status, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

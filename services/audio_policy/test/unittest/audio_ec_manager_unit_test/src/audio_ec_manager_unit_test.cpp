@@ -371,12 +371,12 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_012, TestSize.Level1)
 */
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_013, TestSize.Level1)
 {
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
     SessionInfo sessionInfo;
-    auto ecManager = std::make_shared<AudioEcManager>();
-    ASSERT_TRUE(ecManager != nullptr);
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
 
-    sessionInfo.sourceType = SOURCE_TYPE_INVALID;
-    ecManager->ReloadSourceForSession(sessionInfo);
+    int32_t ret = ecManager.ReloadSourceForSession(sessionInfo);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**

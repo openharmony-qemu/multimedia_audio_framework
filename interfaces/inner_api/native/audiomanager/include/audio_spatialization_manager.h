@@ -98,6 +98,22 @@ public:
     virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
 };
 
+class AudioAdaptiveSpatialRenderingEnabledChangeCallback {
+public:
+    virtual ~AudioAdaptiveSpatialRenderingEnabledChangeCallback() = default;
+
+    /**
+     * @brief AudioAdaptiveSpatialRenderingEnabledChangeCallback will be executed
+     * when adaptive spatial rendering enabled state changes
+     *
+     * @param deviceDescriptor audio device description.
+     * @param enabled the adaptive spatial rendering enabled state.
+     * @since 23
+     */
+    virtual void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
+};
+
 class HeadTrackingDataRequestedChangeCallback {
 public:
     virtual ~HeadTrackingDataRequestedChangeCallback() = default;
@@ -225,6 +241,16 @@ public:
         const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
 
     /**
+     * @brief Register the adaptive spatial rendering enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    int32_t RegisterAdaptiveSpatialRenderingEnabledEventListener(
+        const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
+
+    /**
      * @brief Unregister the spatialization enabled change callback listener
      *
      * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
@@ -250,6 +276,15 @@ public:
      * @since 11
      */
     int32_t UnregisterHeadTrackingEnabledEventListener();
+
+    /**
+     * @brief Unregister the adaptive spatial rendering enabled change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
 
     /**
      * @brief Check whether the spatialization is supported
@@ -333,6 +368,24 @@ public:
      * @since 12
      */
     int32_t UnregisterHeadTrackingDataRequestedEventListener(const std::string &macAddress);
+
+    /**
+     * @brief Check whether the adaptive spatial rendering is enabled by the specified device.
+     *
+     * @return Returns <b>true</b> if the adaptive spatial rendering is successfully enabled;
+     * returns <b>false</b> otherwise.
+     * @since 23
+     */
+    bool IsAdaptiveSpatialRenderingEnabled(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Set the adaptive spatial rendering enabled or disabled by the specified device.
+     *
+     * @return Returns success or not
+     * @since 23
+     */
+    int32_t SetAdaptiveSpatialRenderingEnabled(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();

@@ -243,18 +243,6 @@ public:
     /**
      * @brief create renderer instance.
      *
-     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
-     * refer AudioRendererOptions in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns shared pointer to the AudioRenderer object
-     * @since 12
-    */
-    static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
-        const AppInfo &appInfo = AppInfo());
-
-    /**
-     * @brief create renderer instance.
-     *
      * @param cachePath Application cache path
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
@@ -265,6 +253,46 @@ public:
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param sharedMemory The shared memory structure containing the data to be played.
+     * refer AudioSharedMemory in audio_shared_memory.h
+     * @param callback Call the registered callback when the corresponding event ID operation is triggered.
+     * @param appInfo Originating application's uid and token id can be passed here
+     *
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 22
+    */
+    static std::shared_ptr<AudioRenderer> Create(
+        const AudioRendererOptions &rendererOptions,
+        std::shared_ptr<AudioSharedMemory> sharedMemory,
+        std::shared_ptr<StaticBufferEventCallback> callback,
+        const AppInfo &appInfo = AppInfo());
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 12
+    */
+    static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
+        const AppInfo &appInfo = AppInfo());
+
+    /**
+     * @brief Sets buffer LoopTimes.
+     *
+     * @param bufferLoopTimes Indicates The cache will be played in a loop for the extra specified number of times
+     * after played once. Setting it to -1 indicates continuous looping.
+     * @since 22
+     */
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) = 0;
 
     /**
      * @brief Sets audio privacy type.
@@ -1121,7 +1149,7 @@ public:
     static bool CheckSupportedSamplingRates(uint32_t rates);
 
     /**
-     * @brief Sef the render target
+     * @brief Set the render target
      * @param target The target at which the stream needs to be rendered.
      * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -1135,6 +1163,14 @@ public:
      * @since 22
      */
     virtual RenderTarget GetTarget() const { return NORMAL_PLAYBACK; }
+
+    /**
+     * @brief Obtains the current render running flag
+     * @return Returns {@link SUCCESS} if keep running is successfully get; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

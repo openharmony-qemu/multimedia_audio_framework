@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-OHAudioWorkgroup::OHAudioWorkgroup(int id) : workgroupId(id)
+OHAudioWorkgroup::OHAudioWorkgroup(int id) : workgroupId_(id)
 {
     AUDIO_INFO_LOG("OHAudioWorkgroup Constructor is called\n");
 }
@@ -32,8 +32,9 @@ OHAudioWorkgroup::~OHAudioWorkgroup()
 
 bool OHAudioWorkgroup::AddThread(int32_t tokenId)
 {
-    if (AudioSystemManager::GetInstance()->AddThreadToGroup(workgroupId, tokenId) == AUDIO_OK) {
-        threads_[tokenId] = true;
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (AudioSystemManager::GetInstance()->AddThreadToGroup(workgroupId_, tokenId) == AUDIO_OK) {
+        workgroupThreads_[tokenId] = true;
         SetNeedUpdatePrioFlag(true);
         return true;
     }
@@ -42,8 +43,9 @@ bool OHAudioWorkgroup::AddThread(int32_t tokenId)
 
 bool OHAudioWorkgroup::RemoveThread(int32_t tokenId)
 {
-    if (AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workgroupId, tokenId) == AUDIO_OK) {
-        threads_.erase(tokenId);
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workgroupId_, tokenId) == AUDIO_OK) {
+        workgroupThreads_.erase(tokenId);
         return true;
     }
     return false;
@@ -51,9 +53,10 @@ bool OHAudioWorkgroup::RemoveThread(int32_t tokenId)
 
 bool OHAudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 {
+    std::lock_guard<std::mutex> lock(mtx_);
     bool isUpdatePrio = GetNeedUpdatePrioFlag();
-    if (AudioSystemManager::GetInstance()->StartGroup(workgroupId, startTime, deadlineTime,
-        threads_, isUpdatePrio) == AUDIO_OK) {
+    if (AudioSystemManager::GetInstance()->StartGroup(workgroupId_, startTime, deadlineTime,
+        workgroupThreads_, isUpdatePrio) == AUDIO_OK) {
         SetNeedUpdatePrioFlag(isUpdatePrio);
         return true;
     }
@@ -62,13 +65,18 @@ bool OHAudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 
 bool OHAudioWorkgroup::Stop()
 {
-    if (AudioSystemManager::GetInstance()->StopGroup(workgroupId) == AUDIO_OK) {
+    if (AudioSystemManager::GetInstance()->StopGroup(workgroupId_) == AUDIO_OK) {
         return true;
     }
     return false;
 }
 
-bool OHAudioWorkgroup::GetNeedUpdatePrioFlag()
+int32_t OHAudioWorkgroup::GetWorkgroupId() const
+{
+    return workgroupId_;
+}
+ 
+bool OHAudioWorkgroup::GetNeedUpdatePrioFlag() const
 {
     return isNeedUpdatePrio_;
 }

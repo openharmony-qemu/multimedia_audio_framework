@@ -20,13 +20,20 @@
 #include <vector>
 #include <memory>
 #include "audio_suite_process_node.h"
+#include "audio_utils.h"
+#include "media_monitor_manager.h"
+#include "media_monitor_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat)
     : AudioNode(nodeType, audioFormat), inputStream_(std::make_shared<InputPort<AudioSuitePcmBuffer*>>())
-{}
+{
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
+        "node: %{public}d GetNodeCapability failed.", nodeType);
+}
 
 int32_t AudioSuiteProcessNode::DoProcess()
 {
@@ -45,11 +52,22 @@ int32_t AudioSuiteProcessNode::DoProcess()
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
+        Trace trace("AudioSuiteProcessNode::SignalProcess Start");
         tempOut = SignalProcess(preOutputs);
+        trace.End();
         if (tempOut == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
         }
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(tempOut->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         tempOut = preOutputs[0];
@@ -77,6 +95,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
     auto& preOutputs = inputStream_->getInputDataRef();
     preOutputs.clear();
     auto& preOutputMap = inputStream_->GetPreOutputMap();
+
     for (auto& o : preOutputMap) {
         if (o.first == nullptr || !o.second) {
             AUDIO_ERR_LOG("node %{public}d has a invalid connection with prenode, "
@@ -88,7 +107,8 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
                 "finished, skip this outputport.", GetNodeType(), o.second->GetNodeType());
             continue;
         }
-        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData();
+        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData(
+            GetAudioNodeInPcmFormat(), !GetNodeBypassStatus());
         if (!outputData.empty() && (outputData[0] != nullptr)) {
             if (outputData[0]->GetIsFinished()) {
                 finishedPrenodeSet.insert(o.second);
@@ -104,12 +124,18 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
 
 int32_t AudioSuiteProcessNode::Flush()
 {
+    // for dfx
+    CheckEffectNodeOvertimeCount();
+
     CHECK_AND_RETURN_RET_LOG(DeInit() == SUCCESS, ERROR, "DeInit failed");
     CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "Init failed");
     if (!paraName_.empty() && !paraValue_.empty()) {
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
+    if (outputStream_) {
+        outputStream_->resetResampleCfg();
+    }
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
@@ -138,115 +164,81 @@ int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preN
     return SUCCESS;
 }
 
-int32_t AudioSuiteProcessNode::CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
+void AudioSuiteProcessNode::CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS)
 {
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() * sizeof(float);
-    return memcpy_s(outputData, outFrameSize, inputData, inFrameSize);
+    if (dataDurationMS == 0) {
+        AUDIO_WARNING_LOG("Invalid para, data duration is 0.");
+        return;
+    }
+
+    signalProcessTotalCount_++;
+
+    // for dfx, overtime counter add when realtime factor exceeds the threshold
+    uint64_t dataDurationUS = static_cast<uint64_t>(dataDurationMS) * MILLISECONDS_TO_MICROSECONDS;
+    for (size_t i = 0; i < RTF_OVERTIME_LEVELS; ++i) {
+        uint64_t thresholdValue = dataDurationUS * nodeCapability.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
+        if (processDurationUS >= thresholdValue) {
+            rtfOvertimeCounters_[i]++;
+        }
+    }
+
+    // count for RTF of node exceeds 100%
+    if (processDurationUS >= dataDurationUS) {
+        rtfOver100Count_++;
+    }
 }
 
-int32_t AudioSuiteProcessNode::ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
+void AudioSuiteProcessNode::CheckEffectNodeOvertimeCount()
 {
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    AUDIO_DEBUG_LOG(
-        "Do ChannelConvert: inChannelCount: %{public}u, outChannelCount: %{public}u", inChannelCount, outChannelCount);
+    std::string pipelineWorkMode = (GetAudioNodeWorkMode() == PIPELINE_REALTIME_MODE) ? "Realtime mode" : "Edit mode";
+    AUDIO_INFO_LOG("[%{public}s] - [%{public}s] effect node realtimeFactor overtime counters(1.0, 1.1, 1.2, 100%%): "
+                   "%{public}d, %{public}d, %{public}d, %{public}d, signalProcess total count: %{public}d.",
+        pipelineWorkMode.c_str(),
+        GetNodeTypeString().c_str(),
+        rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE],
+        rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE],
+        rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE],
+        rtfOver100Count_,
+        signalProcessTotalCount_);
 
-    CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount != outChannelCount),
-        ERROR, "Do ChannelConvert error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
-        inChannelCount, outChannelCount);
+    bool allOvertimeCounterZero = std::all_of(
+        std::begin(rtfOvertimeCounters_),
+        std::end(rtfOvertimeCounters_),
+        [](int32_t count) { return count == 0; }
+    );
+    if (!allOvertimeCounterZero || rtfOver100Count_ != 0) {
+        // report SuiteEngineUtilizationStats event
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean =
+            std::make_shared<Media::MediaMonitor::EventBean>(Media::MediaMonitor::ModuleId::AUDIO,
+                Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
+                Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
 
-    AudioChannelInfo inChannelInfo = {inputPcmBuffer->GetChannelLayout(), inChannelCount};
-    AudioChannelInfo outChannelInfo = {outputPcmBuffer->GetChannelLayout(), outChannelCount};
-    bool mixLfe = true;
-    int32_t ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, mixLfe);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: SetParam fail with error code: %{public}d", ret);
+        bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+        bean->Add("AUDIO_NODE_TYPE", GetNodeTypeString());
+        if (GetAudioNodeWorkMode() == PIPELINE_REALTIME_MODE) {
+            bean->Add("RT_MODE_RENDER_COUNT", signalProcessTotalCount_);
+            bean->Add("RT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+            bean->Add("RT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+            bean->Add("RT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+            bean->Add("RT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
+        } else {
+            bean->Add("EDIT_MODE_RENDER_COUNT", signalProcessTotalCount_);
+            bean->Add("EDIT_MODE_RTF_OVER_BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_110BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_120BASE_COUNT", rtfOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_100_COUNT", rtfOver100Count_);
+        }
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 
-    uint32_t frameSize = inputPcmBuffer->GetFrameLen() / inChannelCount;
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inLen = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outLen = outputPcmBuffer->GetFrameLen() * sizeof(float);
-
-    ret = ChannelConvertProcess(frameSize, inputData, inLen, outputData, outLen);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: Process fail with error code: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    uint32_t inRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outRate = outputPcmBuffer->GetSampleRate();
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    uint32_t resampleQuality = 5;
-    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u", inRate, outRate);
-
-    CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount == outChannelCount),
-        ERROR, "Do Resample error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
-        inChannelCount, outChannelCount);
-
-    int32_t ret = SetUpResample(inRate, outRate, inChannelCount, resampleQuality);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetUpResample fail with error code: %{public}d", ret);
-
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() / inChannelCount;
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() / outChannelCount;
-    ret = DoResampleProcess(inputData, inFrameSize, outputData, outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess fail with error code: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::ConvertProcess(
-    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer, AudioSuitePcmBuffer *tmpPcmBuffer)
-{
-    CHECK_AND_RETURN_RET_LOG((inputPcmBuffer != nullptr) && (outputPcmBuffer != nullptr) && (tmpPcmBuffer != nullptr),
-        ERROR, "ConvertProcess input error: inputPcmBuffer or outputPcmBuffer is null");
-
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    AudioChannelLayout inChannelLayout = inputPcmBuffer->GetChannelLayout();
-    AudioChannelLayout outChannelLayout = outputPcmBuffer->GetChannelLayout();
-    uint32_t inSampleRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outSampleRate = outputPcmBuffer->GetSampleRate();
-
-    AUDIO_DEBUG_LOG("Do ConvertProcess: inChannelCount: %{public}u, outChannelCount: %{public}u,"
-                   "inSampleRate: %{public}u, outSampleRate: %{public}u",
-        inChannelCount, outChannelCount, inSampleRate, outSampleRate);
-    
-    int32_t ret = SUCCESS;
-    if (inChannelCount == outChannelCount && inSampleRate == outSampleRate) {
-        return CopyPcmBuffer(inputPcmBuffer, outputPcmBuffer);
+        AUDIO_WARNING_LOG(
+            "effect node [%{public}s] run signalProcess overtime, report SuiteEngineUtilizationStats event.",
+            GetNodeTypeString().c_str());
     }
 
-    if (inChannelCount == outChannelCount) {
-        return Resample(inputPcmBuffer, outputPcmBuffer);
-    }
-
-    if (inSampleRate == outSampleRate) {
-        return ChannelConvert(inputPcmBuffer, outputPcmBuffer);
-    }
-
-    if (inChannelCount > outChannelCount) {
-        // downMix: output channels less than input channels, convert, then resample
-        tmpPcmBuffer->ResetPcmBuffer(inSampleRate, outChannelCount, outChannelLayout);
-        ret = ChannelConvert(inputPcmBuffer, tmpPcmBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        return Resample(tmpPcmBuffer, outputPcmBuffer);
-    } else {
-        // upMix:output channels larger than input channels, resample, then convert
-        tmpPcmBuffer->ResetPcmBuffer(outSampleRate, inChannelCount, inChannelLayout);
-        ret = Resample(inputPcmBuffer, tmpPcmBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        return ChannelConvert(tmpPcmBuffer, outputPcmBuffer);
-    }
-
-    return SUCCESS;
+    // reset counter
+    signalProcessTotalCount_ = 0;
+    rtfOver100Count_ = 0;
+    std::fill(rtfOvertimeCounters_.begin(), rtfOvertimeCounters_.end(), 0);
 }
 
 }

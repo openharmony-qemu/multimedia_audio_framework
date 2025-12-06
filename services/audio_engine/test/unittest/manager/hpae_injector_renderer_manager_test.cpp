@@ -40,6 +40,7 @@ constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr uint32_t INVALID_SESSION_ID = 9999;
 
 class HpaeInjectorRendererManagerTest : public testing::Test {
 public:
@@ -372,5 +373,519 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerDeinitWithMov
 
     EXPECT_EQ(hpaeRendererManager->DeInit(true), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ == nullptr, true);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager CreateStream without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorRenderManagerCreateStreamNotInitTest
+ * @tc.desc  : Test HpaeInjectorRendererManager CreateStream func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerCreateStreamNotInitTest, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_44100;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.frameLen = FRAME_LENGTH_882;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    
+    EXPECT_NE(hpaeRendererManager->CreateStream(streamInfo), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager DestroyStream without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorRenderManagerDestroyStreamNotInitTest
+ * @tc.desc  : Test HpaeInjectorRendererManager DestroyStream func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerDestroyStreamNotInitTest, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    
+    EXPECT_NE(hpaeRendererManager->DestroyStream(TEST_STREAM_SESSION_ID), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager MoveAllStream without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorRenderManagerMoveAllStreamNotInitTest_001
+ * @tc.desc  : Test HpaeInjectorRendererManager MoveAllStream func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerMoveAllStreamNotInitTest_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    
+    std::vector<uint32_t> sessionIds;
+    EXPECT_EQ(hpaeRendererManager->MoveAllStream("", sessionIds, MOVE_ALL), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager SendRequest without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorRenderManagerNotInitTest_004
+ * @tc.desc  : Test HpaeInjectorRendererManager SendRequest func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerSendRequestNotInitTest, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    auto request = []() {};
+    
+    hpaeRendererManager->SendRequest(std::move(request), "TestFunction", false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager movestream without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorMoveStreamNotInitTest_001
+ * @tc.desc  : Test HpaeInjectorRendererManager movestream func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorMoveStreamNotInitTest_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->MoveStream(INVALID_SESSION_ID, ""), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager movestream without init
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorMoveStreamNotInitTest_002
+ * @tc.desc  : Test HpaeInjectorRendererManager movestream func without init
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorMoveStreamNotInitTest_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 1);
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->MoveStream(streamInfo.sessionId, "Speaker"), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager CheckIsStreamRunning API
+ * @tc.type  : FUNC
+ * @tc.number: CheckIsStreamRunning_NoSessions_Test
+ * @tc.desc  : Test CheckIsStreamRunning with no sessions
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, CheckIsStreamRunning_NoSessions_Test, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    // No sessions created, should return false
+    bool result = hpaeRendererManager->CheckIsStreamRunning();
+    EXPECT_EQ(result, false);
+    
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager CheckIsStreamRunning API
+ * @tc.type  : FUNC
+ * @tc.number: CheckIsStreamRunning_WithRunningSession_Test
+ * @tc.desc  : Test CheckIsStreamRunning with running session
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, CheckIsStreamRunning_WithRunningSession_Test, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeSinkInputInfo sinkInputInfo;
+    int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
+    EXPECT_EQ(ret == SUCCESS, true);
+    hpaeRendererManager->SetSessionState(streamInfo.sessionId, HPAE_SESSION_RUNNING);
+    auto sinkInputNode = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    EXPECT_NE(sinkInputNode, hpaeRendererManager->sinkInputNodeMap_.end());
+    EXPECT_EQ(sinkInputNode->second->GetState(), HPAE_SESSION_RUNNING);
+
+    bool result = hpaeRendererManager->CheckIsStreamRunning();
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager GetSinkInfo API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorRenderManagerGetSinkInfoTest
+ * @tc.desc  : Test GetSinkInfo returns correct sink information
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRenderManagerGetSinkInfoTest, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    HpaeSinkInfo actualSinkInfo = hpaeRendererManager->GetSinkInfo();
+    EXPECT_EQ(sinkInfo.deviceNetId, actualSinkInfo.deviceNetId);
+    EXPECT_EQ(sinkInfo.deviceClass, actualSinkInfo.deviceClass);
+    EXPECT_EQ(sinkInfo.adapterName, actualSinkInfo.adapterName);
+    EXPECT_EQ(sinkInfo.filePath, actualSinkInfo.filePath);
+    EXPECT_EQ(sinkInfo.frameLen, actualSinkInfo.frameLen);
+    EXPECT_EQ(sinkInfo.samplingRate, actualSinkInfo.samplingRate);
+    EXPECT_EQ(sinkInfo.format, actualSinkInfo.format);
+    EXPECT_EQ(sinkInfo.channels, actualSinkInfo.channels);
+    EXPECT_EQ(sinkInfo.deviceType, actualSinkInfo.deviceType);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager TriggerStreamState API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorTriggerStreamStateTest_001
+ * @tc.desc  : Test TriggerStreamState STOPPING
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorTriggerStreamStateTest_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeSinkInputInfo sinkInputInfo;
+    int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
+    EXPECT_EQ(ret == SUCCESS, true);
+    auto sinkInputNodePair = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    EXPECT_NE(sinkInputNodePair, hpaeRendererManager->sinkInputNodeMap_.end());
+    auto &sinkInputNode = sinkInputNodePair->second;
+    EXPECT_NE(sinkInputNode, nullptr);
+
+    sinkInputNode->SetState(HPAE_SESSION_STOPPING);
+    hpaeRendererManager->TriggerStreamState(streamInfo.sessionId, sinkInputNode);
+    EXPECT_EQ(sinkInputNode->GetState(), HPAE_SESSION_STOPPED);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager TriggerStreamState API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorTriggerStreamStateTest_002
+ * @tc.desc  : Test TriggerStreamState PAUSING
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorTriggerStreamStateTest_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeSinkInputInfo sinkInputInfo;
+    int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
+    EXPECT_EQ(ret == SUCCESS, true);
+    auto sinkInputNodePair = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    EXPECT_NE(sinkInputNodePair, hpaeRendererManager->sinkInputNodeMap_.end());
+    auto &sinkInputNode = sinkInputNodePair->second;
+    EXPECT_NE(sinkInputNode, nullptr);
+
+    sinkInputNode->SetState(HPAE_SESSION_PAUSING);
+    hpaeRendererManager->TriggerStreamState(streamInfo.sessionId, sinkInputNode);
+    EXPECT_EQ(sinkInputNode->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager TriggerStreamState API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorTriggerStreamStateTest_003
+ * @tc.desc  : Test TriggerStreamState not PAUSING or STOPPING
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorTriggerStreamStateTest_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    HpaeSinkInputInfo sinkInputInfo;
+    int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
+    EXPECT_EQ(ret == SUCCESS, true);
+    auto sinkInputNodePair = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
+    EXPECT_NE(sinkInputNodePair, hpaeRendererManager->sinkInputNodeMap_.end());
+    auto &sinkInputNode = sinkInputNodePair->second;
+    EXPECT_NE(sinkInputNode, nullptr);
+
+    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->TriggerStreamState(streamInfo.sessionId, sinkInputNode);
+    EXPECT_EQ(sinkInputNode->GetState(), HPAE_SESSION_RUNNING);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager SetSessionFade API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorSetSessionFadeTest_001
+ * @tc.desc  : Test HpaeInjectorRendererManager SetSessionFade with no gainnode
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorSetSessionFadeTest_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+
+    EXPECT_EQ(hpaeRendererManager->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager SetSessionFade API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorSetSessionFadeTest_002
+ * @tc.desc  : Test HpaeInjectorRendererManager SetSessionFade with no gainnode
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorSetSessionFadeTest_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    hpaeRendererManager->SetSessionState(streamInfo.sessionId, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(streamInfo.sessionId), SUCCESS);
+
+    EXPECT_EQ(hpaeRendererManager->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), true);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager DeleteInputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorDeleteInputSession_001
+ * @tc.desc  : Test HpaeInjectorRendererManager DeleteInputSession
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorDeleteInputSession_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 1);
+
+    hpaeRendererManager->DeleteInputSession(streamInfo.sessionId);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager DeleteInputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorDeleteInputSession_002
+ * @tc.desc  : Test HpaeInjectorRendererManager DeleteInputSession not exit
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorDeleteInputSession_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 1);
+
+    hpaeRendererManager->DeleteInputSession(streamInfo.sessionId + 1);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 1);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager DeleteInputSession API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorDeleteInputSession_003
+ * @tc.desc  : Test HpaeInjectorRendererManager DeleteInputSession not delete all
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorDeleteInputSession_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    size_t size = 10; // 10 for test size
+    HpaeStreamInfo streamInfo;
+    for (size_t i = 0; i < size; i++) {
+        streamInfo.sessionId = i;
+        EXPECT_EQ(hpaeRendererManager->CreateInputSession(streamInfo), SUCCESS);
+    }
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), size);
+    size_t deleteSize = 5; // 5 for delete size
+    for (size_t i = 0; i < deleteSize; i++) {
+        hpaeRendererManager->DeleteInputSession(i);
+    }
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), size - deleteSize);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_001
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning with sinkoutputnode is null
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ == nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_002
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning with processthread is null
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ == nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_003
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning with sinkoutputnode not run
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    EXPECT_NE(sinkOutputNode->GetState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_004
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning with sinkoutputnode not read finished
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_004, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    sinkOutputNode->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkOutputNode->GetState(), STREAM_MANAGER_RUNNING);
+    OptResult result = sinkOutputNode->ringCache_->GetWritableSize();
+    EXPECT_EQ(result.ret == OPERATION_SUCCESS, true);
+    size_t size = result.size;
+    EXPECT_NE(size, 0);
+    std::vector<char> vec(size);
+    sinkOutputNode->ringCache_->Enqueue({reinterpret_cast<uint8_t *>(vec.data()), vec.size()});
+    EXPECT_EQ(sinkOutputNode->GetIsReadFinished(), false);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_005
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning with processthread not run
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_005, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    sinkOutputNode->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkOutputNode->GetState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkOutputNode->GetIsReadFinished(), true);
+    ASSERT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    hpaeRendererManager->hpaeSignalProcessThread_->DeactivateThread();
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_->IsRunning(), false);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeInjectorRenderManager IsRunning API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeInjectorIsRunningTest_006
+ * @tc.desc  : Test HpaeInjectorRendererManager IsRunning true
+ */
+HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorIsRunningTest_006, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    auto sinkOutputNode = SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sinkOutputNode_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    sinkOutputNode->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkOutputNode->GetState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkOutputNode->GetIsReadFinished(), true);
+    ASSERT_EQ(hpaeRendererManager->hpaeSignalProcessThread_ != nullptr, true);
+    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_->IsRunning(), true);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
 }
 }  // namespace

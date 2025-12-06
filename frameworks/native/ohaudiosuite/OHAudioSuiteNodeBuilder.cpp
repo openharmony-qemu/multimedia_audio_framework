@@ -40,7 +40,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder **build
 
     OHAudioSuiteNodeBuilder *nodeBuilder = new OHAudioSuiteNodeBuilder();
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
-        AUDIOSUITE_ERROR_SYSTEM, "Create audio suite builder failed, malloc error.");
+        AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED, "Create audio suite builder failed, malloc error.");
 
     *builder = (OH_AudioNodeBuilder *)nodeBuilder;
     return AUDIOSUITE_SUCCESS;

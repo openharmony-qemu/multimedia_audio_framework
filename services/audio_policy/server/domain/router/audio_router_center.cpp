@@ -106,7 +106,7 @@ bool AudioRouterCenter::HasScoDevice()
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     for (auto &desc : descs) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc->deviceType_ == DEVICE_TYPE_NEARLINK) {
             return true;
         }
     }
@@ -114,7 +114,8 @@ bool AudioRouterCenter::HasScoDevice()
     vector<shared_ptr<AudioDeviceDescriptor>> publicDescs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
     for (auto &desc : publicDescs) {
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->deviceCategory_ == BT_CAR) {
+        if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc->deviceType_ == DEVICE_TYPE_NEARLINK) &&
+            desc->deviceCategory_ == BT_CAR) {
             return true;
         }
     }
@@ -173,7 +174,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     FetchDeviceInfo bak = {
-        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
@@ -210,6 +211,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
+        HILOG_COMM_INFO("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
+            "id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
+            clientUID, descs.size(), type, audioId_, routerType);
     }
     return descs;
 }
@@ -250,7 +254,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchDupD
         info.streamUsage = fetchDeviceInfo.streamUsage;
         info.clientUID = fetchDeviceInfo.clientUID;
         info.routerType = ROUTER_TYPE_NONE;
-        info.audioPipeType = PIPE_TYPE_NORMAL_OUT;
+        info.audioPipeType = PIPE_TYPE_OUT_NORMAL;
         info.privacyType = fetchDeviceInfo.privacyType;
 
         audioDeviceRefinerCb_->OnAudioDupDeviceRefined(descs, info);
@@ -356,7 +360,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(SourceType
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     if (audioDeviceRefinerCb_ != nullptr) {
-        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_NORMAL_IN);
+        audioDeviceRefinerCb_->OnAudioInputDeviceRefined(descs, routerType, sourceType, clientUID, PIPE_TYPE_IN_NORMAL);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;

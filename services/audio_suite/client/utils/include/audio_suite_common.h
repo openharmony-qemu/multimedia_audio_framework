@@ -16,6 +16,8 @@
 #ifndef AUDIO_SUITE_COMMON_H
 #define AUDIO_SUITE_COMMON_H
 
+#include <dlfcn.h>
+#include <stdlib.h>
 #include "audio_suite_log.h"
 #include "audio_stream_info.h"
 
@@ -30,9 +32,10 @@ static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
 
 class AudioSuiteRingBuffer {
 public:
-    AudioSuiteRingBuffer(uint32_t size)
+    AudioSuiteRingBuffer() = default;
+    AudioSuiteRingBuffer(uint32_t capacity) : capacity_(capacity), head_(0), tail_(0), size_(0)
     {
-        ResizeBuffer(size);
+        ResizeBuffer(capacity);
     }
 
     ~AudioSuiteRingBuffer()
@@ -82,6 +85,13 @@ public:
         return sampleSize;
     }
 };
+
+class AudioSuiteLibraryManager {
+    public:
+        bool IsValidPath(const char *path);
+        void* LoadLibrary(std::string& libraryPath);
+};
+
 }
 }
 }

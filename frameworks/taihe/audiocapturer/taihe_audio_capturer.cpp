@@ -183,7 +183,8 @@ std::shared_ptr<AudioCapturerImpl> AudioCapturerImpl::CreateAudioCapturerNativeO
     return audioCapturerImpl;
 }
 
-AudioCapturer AudioCapturerImpl::CreateAudioCapturerWrapper(OHOS::AudioStandard::AudioCapturerOptions capturerOptions)
+AudioCapturerOrNull AudioCapturerImpl::CreateAudioCapturerWrapper(
+    OHOS::AudioStandard::AudioCapturerOptions capturerOptions)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
     if (sCapturerOptions_ != nullptr) {
@@ -192,15 +193,15 @@ AudioCapturer AudioCapturerImpl::CreateAudioCapturerWrapper(OHOS::AudioStandard:
     sCapturerOptions_ = std::make_unique<OHOS::AudioStandard::AudioCapturerOptions>();
     if (sCapturerOptions_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "sCapturerOptions create failed");
-        return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
+        return AudioCapturerOrNull::make_type_null();
     }
     *sCapturerOptions_ = capturerOptions;
     std::shared_ptr<AudioCapturerImpl> impl = AudioCapturerImpl::CreateAudioCapturerNativeObject();
     if (impl == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "failed to CreateAudioCapturerNativeObject");
-        return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
+        return AudioCapturerOrNull::make_type_null();
     }
-    return make_holder<AudioCapturerImpl, AudioCapturer>(impl);
+    return AudioCapturerOrNull::make_type_audioCapturer(make_holder<AudioCapturerImpl, AudioCapturer>(impl));
 }
 
 void AudioCapturerImpl::UnregisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,
@@ -849,14 +850,14 @@ void AudioCapturerImpl::OffMarkReach(optional_view<callback<void(int64_t)>> call
     UnregisterCapturerPositionCallback(cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-AudioCapturer CreateAudioCapturerSync(AudioCapturerOptions const &options)
+AudioCapturerOrNull CreateAudioCapturerSync(AudioCapturerOptions const &options)
 {
     OHOS::AudioStandard::AudioCapturerOptions capturerOptions;
     if (TaiheParamUtils::GetCapturerOptions(&capturerOptions, options) != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
             "parameter verification failed: The param of options must be interface AudioCapturerOptions");
         AUDIO_ERR_LOG("get captureOptions failed");
-        return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
+        return AudioCapturerOrNull::make_type_null();
     }
     return AudioCapturerImpl::CreateAudioCapturerWrapper(capturerOptions);
 }

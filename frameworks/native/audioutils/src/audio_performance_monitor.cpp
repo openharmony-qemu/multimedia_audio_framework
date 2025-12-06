@@ -185,7 +185,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());
             AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
             int32_t periodMs = static_cast<int32_t>(silenceDetectMap_[sessionId].silenceStateCount *
-                (pipeType == PIPE_TYPE_LOWLATENCY_OUT ? FAST_DURATION_MS : NORMAL_DURAION_MS));
+                (pipeType == PIPE_TYPE_OUT_LOWLATENCY ? FAST_DURATION_MS : NORMAL_DURAION_MS));
             ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
@@ -270,10 +270,10 @@ void RecordPaSilenceState(uint32_t sessionId, bool isSilence, enum PA_PIPE_TYPE 
 {
     switch (paPipeType) {
         case PA_PIPE_TYPE_NORMAL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_NORMAL_OUT, uid);
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_OUT_NORMAL, uid);
             break;
         case PA_PIPE_TYPE_MULTICHANNEL:
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_MULTICHANNEL,
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, isSilence, PIPE_TYPE_OUT_MULTICHANNEL,
                 uid);
             break;
         default:

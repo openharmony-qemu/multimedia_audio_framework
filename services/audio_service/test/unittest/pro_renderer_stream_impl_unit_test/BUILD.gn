@@ -17,6 +17,7 @@ import("../../../../../config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/pro_renderer_stream_impl"
+audio_framework_root = "../../../../.."
 
 ohos_unittest("pro_renderer_stream_impl_unit_test") {
   testonly = true
@@ -39,6 +40,16 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
     "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audio_service:audio_process_service_static",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
 
   external_deps = [
     "c_utils:utils",

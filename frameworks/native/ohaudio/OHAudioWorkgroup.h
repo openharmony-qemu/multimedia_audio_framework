@@ -31,12 +31,14 @@ public:
     bool RemoveThread(int32_t tokenId);
     bool Start(uint64_t startTime, uint64_t deadlineTime);
     bool Stop();
-    int32_t workgroupId;
-    bool GetNeedUpdatePrioFlag();
+    int32_t GetWorkgroupId() const;
+    bool GetNeedUpdatePrioFlag() const;
     void SetNeedUpdatePrioFlag(bool flag);
 private:
-    std::unordered_map<int32_t, bool> threads_;
+    mutable std::mutex mtx_;
+    std::unordered_map<int32_t, bool> workgroupThreads_;
     bool isNeedUpdatePrio_ = false;
+    const int32_t workgroupId_;
 };
 
 } // namespace AudioStandard

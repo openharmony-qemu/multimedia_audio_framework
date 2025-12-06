@@ -141,6 +141,8 @@ private:
         AudioDeviceDescriptor &desc, const std::shared_ptr<AudioDeviceDescriptor> &selectDesc);
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
+    void ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
+        const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
     void OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
     void AddEarpiece();
@@ -153,8 +155,6 @@ private:
     int32_t ActivateNewDevice(std::string networkId, DeviceType deviceType, bool isRemote);
     int32_t RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         AudioModuleInfo &moduleInfo, std::string &currentActivePort);
-
-    void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
 
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);

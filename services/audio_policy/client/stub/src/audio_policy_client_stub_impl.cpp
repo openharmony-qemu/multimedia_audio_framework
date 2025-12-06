@@ -1379,6 +1379,16 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
+    for (const auto &callback : adaptiveSpatialRenderingEnabledChangeCallbackList_) {
+        callback->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(nnStateChangeMutex_);
@@ -1492,6 +1502,59 @@ int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent 
         }
     }
     return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddCollaborationEnabledChangeForCurrentDeviceCallback(
+    const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveCollaborationEnabledChangeForCurrentDeviceCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    return collaborationEnabledChangeForCurrentDeviceCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnCollaborationEnabledChangeForCurrentDevice(bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    for (const auto &callback : collaborationEnabledChangeForCurrentDeviceCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        AUDIO_INFO_LOG("OnCollaborationEnabledChangeForCurrentDevice enabled: %{public}d", enabled);
+        callback->OnCollaborationEnabledChangeForCurrentDevice(enabled);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddAdaptiveSpatialRenderingEnabledChangeCallback(
+    const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
+    adaptiveSpatialRenderingEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAdaptiveSpatialRenderingEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
+    adaptiveSpatialRenderingEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAdaptiveSpatialRenderingEnabledChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
+    return adaptiveSpatialRenderingEnabledChangeCallbackList_.size();
 }
 } // namespace AudioStandard
 } // namespace OHOS

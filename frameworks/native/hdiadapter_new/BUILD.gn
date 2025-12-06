@@ -126,6 +126,9 @@ ohos_shared_library("hdiadapter_new") {
     external_deps += [ "power_manager:powermgr_client" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
+  if(!audio_framework_feature_new_engine_flag) {
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
@@ -177,6 +180,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "../audioutils/include",
     "../../../frameworks/native/hdiadapter_new/include/sink",
     "../../../frameworks/native/audioclock/include",
+    "../../../frameworks/native/audiodefinitions/include",
   ]
 
   sources = [
@@ -206,6 +210,7 @@ ohos_unittest("hdiadapter_unit_test") {
   deps = [
       ":hdiadapter_new",
       "../audioclock:audio_clock",
+      "../audioutils:audio_utils",
   ]
 
   external_deps = [

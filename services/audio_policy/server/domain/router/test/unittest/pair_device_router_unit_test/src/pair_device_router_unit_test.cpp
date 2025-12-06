@@ -189,5 +189,279 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_009, TestSize.Level4)
     ASSERT_NE(dev, nullptr);
 }
 
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_001
+ * @tc.desc  : Has valid SCO device, no default device, only SCO.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_001, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        nullptr
+    );
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_002
+ * @tc.desc  : Has SCO device and default device, double ring.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_002, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    defaultDev->deviceId_ = 200;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_NE(result[1], nullptr);
+    EXPECT_EQ(result[1]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_003
+ * @tc.desc  : Has SCO device and default device, same ID, only SCO.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_003, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    defaultDev->deviceId_ = 100;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_004
+ * @tc.desc  : Skip pair device router.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_004, TestSize.Level4)
+{
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        nullptr,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_005
+ * @tc.desc  : Skip pair device router.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_005, TestSize.Level4)
+{
+    auto wrongDev = std::make_shared<AudioDeviceDescriptor>();
+    wrongDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        wrongDev,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_006
+ * @tc.desc  : RINGTONE and SILENT mode, only SCO.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_006, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_RINGTONE,
+        RINGER_MODE_SILENT,
+        nullptr
+    );
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_007
+ * @tc.desc  : VOICE_RINGTONE and SLIENT mode, only SCO.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_007, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_VOICE_RINGTONE,
+        RINGER_MODE_SILENT,
+        nullptr
+    );
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_008
+ * @tc.desc  : RINGTONE and NORMAL mode, double ring.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_008, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_RINGTONE,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_NE(result[1], nullptr);
+    EXPECT_EQ(result[1]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_009
+ * @tc.desc  : VOICE_RINGTONE and NORMAL mode, double ring.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_009, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_VOICE_RINGTONE,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_NE(result[1], nullptr);
+    EXPECT_EQ(result[1]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_010
+ * @tc.desc  : Skip pair device router.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_010, TestSize.Level4)
+{
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        false,
+        nullptr,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_011
+ * @tc.desc  : No Sco, no default device, empty result.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_011, TestSize.Level4)
+{
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_SPEAKER;
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        false,
+        nullptr,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test PairDeviceRouter GetRingRenderDevices.
+ * @tc.number: DecideRingRenderDevices_012
+ * @tc.desc  : Default device exists but type is NONE, should be ignored.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_012, TestSize.Level4)
+{
+    auto scoDev = std::make_shared<AudioDeviceDescriptor>();
+    scoDev->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDev->deviceId_ = 100;
+
+    auto defaultDev = std::make_shared<AudioDeviceDescriptor>();
+    defaultDev->deviceType_ = DEVICE_TYPE_NONE;
+    defaultDev->deviceId_ = 200;
+
+    auto result = PairDeviceRouter::DecideRingRenderDevices(
+        true,
+        scoDev,
+        STREAM_USAGE_ALARM,
+        RINGER_MODE_NORMAL,
+        defaultDev
+    );
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
 } // namespace AudioStandard
 } // namespace OHOS

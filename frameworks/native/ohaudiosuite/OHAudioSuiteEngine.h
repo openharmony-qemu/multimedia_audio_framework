@@ -106,7 +106,7 @@ public:
     int32_t CreateNode(
         OHAudioSuitePipeline *audioSuitePipeline, OHAudioSuiteNodeBuilder *builder, OH_AudioNode **audioNode);
     int32_t DestroyNode(OHAudioNode *node);
-    int32_t GetNodeBypassStatus(OHAudioNode *audioNode, bool *bypass);
+    int32_t GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus);
     int32_t BypassEffectNode(OHAudioNode *node, bool bypass);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
@@ -123,6 +123,19 @@ public:
         OH_EqualizerFrequencyBandGains *frequencyBandGains);
     int32_t GetVoiceBeautifierType(OHAudioNode *node,
         OH_VoiceBeautifierType *voiceBeautifierType);
+    int32_t SetSpaceRenderPositionParams(OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position);
+    int32_t GetSpaceRenderPositionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderPositionParams* position);
+    int32_t SetSpaceRenderRotationParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams rotation);
+    int32_t GetSpaceRenderRotationParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation);
+    int32_t SetSpaceRenderExtensionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension);
+    int32_t GetSpaceRenderExtensionParams(OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams* extension);
+    int32_t SetTempoAndPitch(OHAudioNode* node, float speed, float pitch);
+    int32_t GetTempoAndPitch(OHAudioNode* node, float* speed, float* pitch);
+    int32_t SetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option);
+    int32_t GetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option);
+    int32_t SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type);
+    int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
+    int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
 
 private:
     explicit OHAudioSuiteEngine() {};

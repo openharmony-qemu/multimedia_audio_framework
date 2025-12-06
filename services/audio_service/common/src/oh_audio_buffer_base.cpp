@@ -18,6 +18,7 @@
 
 #include "oh_audio_buffer.h"
 
+#include <fcntl.h>
 #include <cinttypes>
 #include <climits>
 #include <memory>
@@ -36,6 +37,7 @@ namespace {
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
+    static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
 }
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -172,11 +174,11 @@ int AudioSharedMemoryImpl::GetFd()
     return fd_;
 }
 
-std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFormLocal(size_t size, const std::string &name)
+std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromLocal(size_t size, const std::string &name)
 {
     std::shared_ptr<AudioSharedMemoryImpl> sharedMemory = std::make_shared<AudioSharedMemoryImpl>(size, name);
     CHECK_AND_RETURN_RET_LOG(sharedMemory->Init() == SUCCESS,
-        nullptr, "CreateFormLocal failed");
+        nullptr, "CreateFromLocal failed");
     return sharedMemory;
 }
 
@@ -209,6 +211,11 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
     uint64_t sizeTmp = msgParcel.ReadUint64();
     CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
     size_t size = static_cast<size_t>(sizeTmp);
+
+    off_t actualSize = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    CHECK_AND_RETURN_RET_LOG((actualSize == (off_t)size) && size != 0,
+        nullptr, "CreateFromRemote failed: actualSize is not equal to declareSize");
 
     std::string name = msgParcel.ReadString();
 
@@ -258,18 +265,22 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
 
     // init for statusInfoBuffer
     size_t statusInfoSize = sizeof(BasicBufferInfo) + statusInfoExtSize;
-    if (infoFd != INVALID_FD && (bufferHolder_ == AUDIO_CLIENT || bufferHolder_ == AUDIO_SERVER_INDEPENDENT)) {
+    if (infoFd != INVALID_FD && (bufferHolder_ == AUDIO_CLIENT || bufferHolder_ == AUDIO_SERVER_INDEPENDENT ||
+        bufferHolder_ == AUDIO_APP_SHARED)) {
         statusInfoMem_ = AudioSharedMemory::CreateFromRemote(infoFd, statusInfoSize, STATUS_INFO_BUFFER);
     } else {
-        statusInfoMem_ = AudioSharedMemory::CreateFormLocal(statusInfoSize, STATUS_INFO_BUFFER);
+        statusInfoMem_ = AudioSharedMemory::CreateFromLocal(statusInfoSize, STATUS_INFO_BUFFER);
     }
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, ERR_OPERATION_FAILED, "BasicBufferInfo mmap failed.");
 
     // init for dataBuffer
     if (dataFd == INVALID_FD && bufferHolder_ == AUDIO_SERVER_SHARED) {
-        dataMem_ = AudioSharedMemory::CreateFormLocal(totalSizeInByte_, "server_client_buffer");
+        dataMem_ = AudioSharedMemory::CreateFromLocal(totalSizeInByte_, "server_client_buffer");
     } else {
         std::string memoryDesc = (bufferHolder_ == AUDIO_SERVER_ONLY ? "server_hdi_buffer" : "server_client_buffer");
+        if (bufferHolder_ == AUDIO_APP_SHARED) {
+            memoryDesc = "app_created_buffer";
+        }
         if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
             AUDIO_INFO_LOG("Init sever_hdi_buffer with sync info");
             dataMem_ = AudioSharedMemory::CreateFromRemote(dataFd, totalSizeInByte_ + BASIC_SYNC_INFO_SIZE, memoryDesc);
@@ -280,7 +291,7 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, ERR_OPERATION_FAILED, "dataMem_ mmap failed.");
     if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
         syncReadFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_);
-        syncWriteFrame_ = syncReadFrame_ + sizeof(uint32_t);
+        syncWriteFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_ + sizeof(uint32_t));
     }
 
     dataBase_ = dataMem_->GetBase();
@@ -342,7 +353,8 @@ bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
     MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
     AudioBufferHolder bufferHolder = bufferHolder_;
     CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
-        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
+        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT ||
+        bufferHolder == AudioBufferHolder::AUDIO_APP_SHARED,
         false, "buffer holder error:%{public}d", bufferHolder);
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, false, "dataMem_ is nullptr.");
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
@@ -361,7 +373,8 @@ OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
     uint32_t holder = messageParcel.ReadUint32();
     AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
     if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT &&
+        bufferHolder != AudioBufferHolder::AUDIO_APP_SHARED) {
         AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
         return nullptr;
     }
@@ -632,6 +645,9 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
     if (writeFrame == oldWritePos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldWritePos >= basePos, ERR_INVALID_PARAM,
+        "oldWritePos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldWritePos, basePos);
     CHECK_AND_RETURN_RET_LOG(writeFrame > oldWritePos, ERR_INVALID_PARAM, "Too small writeFrame:%{public}" PRIu64".",
         writeFrame);
 
@@ -664,6 +680,9 @@ int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
     if (readFrame == oldReadPos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldReadPos >= oldBasePos, ERR_INVALID_PARAM,
+        "oldReadPos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldReadPos, oldBasePos);
 
     // new read position should not be bigger than write position or less than old read position
     CHECK_AND_RETURN_RET_LOG(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),
@@ -988,6 +1007,12 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
+
+    // for static audio renderer
+    basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
+    basicBufferInfo_->needSendLoopEndCallback.store(false);
+    basicBufferInfo_->isStatic_.store(false);
+    basicBufferInfo_->clientLastProcessTime_.store(ClockTime::GetCurNano());
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1001,5 +1026,92 @@ void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 {
     WakeFutexIfNeed(wakeVal);
 }
+
+void OHAudioBufferBase::SetStaticMode(bool state)
+{
+    CHECK_AND_RETURN_LOG(basicBufferInfo_ != nullptr, "basicBufferInfo_ is null");
+    basicBufferInfo_->isStatic_.store(state);
+}
+
+bool OHAudioBufferBase::GetStaticMode()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "basicBufferInfo_ is null");
+    return basicBufferInfo_->isStatic_.load();
+}
+
+std::shared_ptr<AudioSharedMemory> OHAudioBufferBase::GetSharedMem()
+{
+    return dataMem_;
+}
+
+void OHAudioBufferBase::IncreaseBufferEndCallbackSendTimes()
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    if (basicBufferInfo_->bufferEndCallbackSendTimes > ULLONG_MAX - 1) {
+        AUDIO_ERR_LOG("bufferEndCallbackSendTimes increase will overflow");
+        return;
+    }
+    basicBufferInfo_->bufferEndCallbackSendTimes.fetch_add(1);
+}
+
+void OHAudioBufferBase::DecreaseBufferEndCallbackSendTimes()
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    if (basicBufferInfo_->bufferEndCallbackSendTimes < 1) {
+        AUDIO_ERR_LOG("bufferEndCallbackSendTimes decrease will overflow");
+        return;
+    }
+    basicBufferInfo_->bufferEndCallbackSendTimes.fetch_sub(1);
+}
+
+void OHAudioBufferBase::ResetBufferEndCallbackSendTimes()
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
+}
+
+bool OHAudioBufferBase::IsNeedSendBufferEndCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
+    return basicBufferInfo_->bufferEndCallbackSendTimes != 0;
+}
+
+bool OHAudioBufferBase::IsNeedSendLoopEndCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
+    return basicBufferInfo_->needSendLoopEndCallback;
+}
+
+void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->needSendLoopEndCallback.store(value);
+}
+
+// In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen,
+// clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
+bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    Trace trace("CheckFrozenAndSetLastProcessTime" + std::to_string(bufferPosition));
+    int64_t curTimestamp = ClockTime::GetCurNano();
+
+    bool ret = false;
+    if (curTimestamp - basicBufferInfo_->clientLastProcessTime_.load() >
+        STATIC_CLIENT_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND) {
+        if (bufferPosition == BUFFER_IN_CLIENT) {
+            ret = GetStreamStatus()->load() == STREAM_STAND_BY;
+        } else {
+            // buffer_in_server only need to check when stream is running.
+            ret = GetStreamStatus()->load() == STREAM_RUNNING;
+        }
+    }
+
+    if (bufferPosition == BUFFER_IN_CLIENT) {
+        basicBufferInfo_->clientLastProcessTime_.store(curTimestamp);
+    }
+    return ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

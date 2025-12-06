@@ -50,6 +50,7 @@
 #include "i_hpae_soft_link.h"
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
+#include "async_action_handler.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -177,19 +178,19 @@ public:
             const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
         int32_t FetchInputDeviceAndRoute(std::string caller,
             const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
-        int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
         int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
-        int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
-        void ReleaseCaptureInjector(uint32_t streamId) override;
+        void ReleaseCaptureInjector() override;
         void RebuildCaptureInjector(uint32_t streamId) override;
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
+        int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
+        void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -205,6 +206,8 @@ private:
     void DeInit();
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
+    void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
@@ -291,6 +294,8 @@ private:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     // Functions related to get operations - device related
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -307,9 +312,7 @@ private:
     int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
     int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
     void RestoreDistributedDeviceInfo();
@@ -344,11 +347,15 @@ private:
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
-    void ReleaseCaptureInjector(uint32_t sessionId);
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector(uint32_t sessionId);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     bool InVideoCommFastBlockList(const std::string &bundleName);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    void ActivateNearlinkDeviceAsync(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
+    void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -356,7 +363,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ScoInputDeviceFetchedForRecongnition(
-        bool handleFlag, const std::string &address, ConnectState connectState);
+        bool handleFlag, const std::string &address, ConnectState connectState, bool isVrSupported = true);
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
@@ -383,7 +390,8 @@ private:
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
         const AudioStreamInfo& audioStreamInfo, std::string networkId, std::string sinkName,
         SourceType sourceType);
-    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+        const AudioStreamDeviceChangeReasonExt reason);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -459,6 +467,8 @@ private:
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    bool CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetVolumeForSwitchDeviceIfNeed(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isNeed);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
         const std::vector<SourceOutput>& sourceOutputs);
@@ -510,11 +520,12 @@ private:
     int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
+    bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason);
-    void CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const AudioStreamDeviceChangeReasonExt reason);
+    void CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
@@ -528,7 +539,8 @@ private:
         AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     void OnAudioSceneChange(const AudioScene& audioScene);
     bool HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         AudioStreamDeviceChangeReasonExt reason);
@@ -553,6 +565,7 @@ private:
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
+    void DeactivateBluetoothDevice(bool isRunning);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
@@ -572,6 +585,11 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId);
     int32_t PlayBackToInjection(uint32_t sessionId);
     int32_t InjectionToPlayBack(uint32_t sessionId);
+
+    // for remote
+    void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+
+    bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -607,6 +625,7 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     bool hearingAidCallFlag_ = false;
     std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
@@ -659,10 +678,35 @@ private:
     };
     bool isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
+    bool isActivateA2dpDeviceForLog_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 
+    AudioConcurrencyService &audioConcurrencyService_;
+
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+};
+
+class ActivateNearlinkDeviceAction : public AsyncActionHandler::AsyncAction {
+public:
+    ActivateNearlinkDeviceAction(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> &ringAndVoipDescMap,
+        const AudioStreamDeviceChangeReasonExt reason)
+        : streamDesc_(streamDesc), ringAndVoipDescMap_(ringAndVoipDescMap), reason_(reason)
+    {}
+    void Exec() override
+    {
+        AudioCoreService::GetCoreService()->ActivateNearlinkDeviceAsync(streamDesc_, reason_);
+        for (auto &entry : ringAndVoipDescMap_) {
+            CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
+            SleAudioDeviceManager::GetInstance().UpdateSleStreamTypeCount(entry.second);
+        }
+    }
+
+private:
+    std::shared_ptr<AudioStreamDescriptor> streamDesc_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_;
+    const AudioStreamDeviceChangeReasonExt reason_;
 };
 }
 }

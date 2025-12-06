@@ -59,6 +59,79 @@ void AudioPolicyServiceFourthUnitTest::TearDown(void)
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::TearDown start-end");
 }
 
+GetDynamicInfoTestData::GetDynamicInfoTestData(AudioStreamInfo streamInfo, AudioSampleFormat format,
+    uint32_t sampleRate, AudioChannelLayout channelLayout, AudioChannel channels)
+    : streamInfo_(streamInfo)
+{
+    streamPropInfo_ = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo_->format_ = format;
+    streamPropInfo_->sampleRate_ = sampleRate;
+    streamPropInfo_->channelLayout_ = channelLayout;
+    streamPropInfo_->channels_ = channels;
+}
+
+bool GetDynamicInfoTestData::Check(std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (streamPropInfo == nullptr) {
+        return false;
+    }
+    return streamPropInfo->sampleRate_ == streamPropInfo_->sampleRate_ &&
+        streamPropInfo->channels_ == streamPropInfo_->channels_ &&
+        streamPropInfo->format_ == streamPropInfo_->format_ &&
+        streamPropInfo->channelLayout_ == streamPropInfo_->channelLayout_;
+}
+
+static std::vector<GetDynamicInfoTestData> testData = {
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_10, CH_LAYOUT_5POINT1POINT4 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_5POINT1POINT4, CHANNEL_10
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+    {
+        { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
+        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+    },
+};
+
 static void GetPermission()
 {
     if (!g_hasPermissioned) {
@@ -92,6 +165,30 @@ static void GetPermission()
         OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
         g_hasPermissioned = true;
     }
+}
+
+static bool IsSelectResultCorrect(std::shared_ptr<PipeStreamPropInfo> streamPropInfo,
+    const StreamPropTestInfo &testInfo)
+{
+    return streamPropInfo->sampleRate_ == testInfo.sampleRate_ &&
+        streamPropInfo->channels_ == testInfo.channels_ &&
+        streamPropInfo->format_ == testInfo.format_ &&
+        streamPropInfo->channelLayout_ == testInfo.channelLayout_;
+}
+
+static std::shared_ptr<AdapterPipeInfo> CreateAdapterPipeInfo(const std::vector<StreamPropTestInfo> &testInfos)
+{
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+
+    for (auto &testInfo : testInfos) {
+        std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        pipeStreamPropInfo->format_ = testInfo.format_;
+        pipeStreamPropInfo->sampleRate_ = testInfo.sampleRate_;
+        pipeStreamPropInfo->channelLayout_ = testInfo.channelLayout_;
+        pipeStreamPropInfo->channels_ = testInfo.channels_;
+        info->dynamicStreamPropInfos_.push_back(pipeStreamPropInfo);
+    }
+    return info;
 }
 
 /**
@@ -772,7 +869,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
         AUDIO_TONE_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
-    uint32_t preferredType = 6;
+    uint32_t preferredType = 9999;
     PreferredType ERR_PFTYPE = static_cast<PreferredType>(preferredType);
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         ERR_PFTYPE, audioDeviceDescriptorSptr2);
@@ -1699,9 +1796,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST; // Not VOIP | FAST combination
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should return early without modifying sampling rate
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_44100);
 }
@@ -1719,11 +1815,10 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_16000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
-    // Should not modify since it's already 16000
-    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_16000);
+
+    // Should modify streamInfo since desc's rate is not 16000.
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
 
 /**
@@ -1739,9 +1834,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
-    
+
     // Should not modify since it's already 48000
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
@@ -1759,7 +1853,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
 
-    SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should change from 44100 to 48000
@@ -1788,15 +1881,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
         SAMPLE_RATE_384000  // Should change to 48000
     };
 
-    SetInjectEnable(true);
     for (auto rate : testRates) {
         std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
         AudioStreamInfo streamInfo;
         streamInfo.samplingRate = rate;
         desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
-        
+
         manager.UpdateStreamSampleInfo(desc, streamInfo);
-        
+
         // All unsupported rates should be changed to 48000
         EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
     }
@@ -1899,6 +1991,60 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_002,
     AudioStreamInfo temp_0(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
     defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, temp_0);
     EXPECT_EQ(channelLayoutVec[1], defaultStreamProp->channelLayout_);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetDynamicStreamPropInfoFromPipe_003
+* @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_003, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+
+    std::vector<StreamPropTestInfo> propVec = {
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+        {AudioSampleFormat::SAMPLE_S16LE, 96000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_5POINT1POINT4, AudioChannel::CHANNEL_10},
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+        {AudioSampleFormat::SAMPLE_S24LE, 48000, AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+    };
+    auto info = CreateAdapterPipeInfo(propVec);
+    EXPECT_NE(info, nullptr);
+
+    for (auto &data : testData) {
+        auto streamProp = manager.GetDynamicStreamPropInfoFromPipe(info, data.streamInfo_);
+        EXPECT_EQ(data.Check(streamProp), true);
+    }
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetStreamPropInfoFromPipe_001
+* @tc.desc  : Test GetStreamPropInfoFromPipe
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfoFromPipe_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    uint32_t sampleRate = 48000;
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S16LE;
+    AudioChannel channels = AudioChannel::STEREO;
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
+
+    auto streamProp = manager.GetStreamPropInfoFromPipe(info, streamInfo);
+    EXPECT_TRUE(streamProp == nullptr);
+
+    std::vector<StreamPropTestInfo> propVec = {
+        {AudioSampleFormat::SAMPLE_S16LE, 48000, AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO}
+    };
+    info = CreateAdapterPipeInfo(propVec);
+    streamProp = manager.GetStreamPropInfoFromPipe(info, streamInfo);
+    EXPECT_TRUE(streamProp->channelLayout_ == CH_LAYOUT_STEREO);
 }
 
 /**
@@ -2177,7 +2323,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetOutputDevice_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor>speaker = std::make_shared<AudioDeviceDescriptor>();
     speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
     speaker->deviceId_ = 2;
-    
+
     deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
 
     server->audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, speaker);

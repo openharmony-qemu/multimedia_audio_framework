@@ -30,7 +30,6 @@
     *EnhanceChainManagerInitEnhanceBuffer*;
     *EffectChainManagerCheckEffectOffload*;
     *EffectChainManagerReturnEffectChannelInfo*;
-    *EffectChainManagerReturnMultiChannelInfo*;
     *ConvertChLayoutToPaChMap*;
     *EffectChainManagerGetSpatializationEnabled*;
     *EffectChainManagerGetSceneCount*;
@@ -99,6 +98,11 @@
     *DeleteStreamVolume*;
     *ExistAudioEffectChainArm*;
     *IsChannelLayoutSupportedForDspEffect*;
+    *updateCollaborativeProductId*;
+    *LoadCollaborationConfig*;
+    *SetBypassSpatializationForStereo*;
+    *IsSpatializationEnabledForChains*;
+    *IsEffectChainFading*;
   local:
     *;
 };

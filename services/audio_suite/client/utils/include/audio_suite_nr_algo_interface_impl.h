@@ -16,6 +16,7 @@
 #ifndef AUDIO_SUITE_NR_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_NR_ALGO_INTERFACE_IMPL_H
 
+#include "audio_errors.h"
 #include "audio_hms_ainr_api.h"
 #include "audio_suite_algo_interface.h"
 
@@ -37,7 +38,7 @@ struct AinrAlgoApi {
 
 class AudioSuiteNrAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteNrAlgoInterfaceImpl();
+    explicit AudioSuiteNrAlgoInterfaceImpl(NodeCapability &nc);
     ~AudioSuiteNrAlgoInterfaceImpl();
 
     int32_t Init() override;
@@ -51,6 +52,7 @@ private:
     std::unique_ptr<signed char[]> algoHandle_{nullptr};
     AudioAinrStruSysConfig algoDefaultConfig_{0};
     void *libHandle_{nullptr};
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

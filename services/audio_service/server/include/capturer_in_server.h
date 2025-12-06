@@ -69,6 +69,8 @@ public:
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
 
+    void ReleaseCaptureInjector();
+
 private:
     bool CheckBGCapture();
     int32_t InitCacheBuffer(size_t targetSize);

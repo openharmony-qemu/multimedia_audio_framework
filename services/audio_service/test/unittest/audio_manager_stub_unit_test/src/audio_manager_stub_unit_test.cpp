@@ -626,24 +626,6 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_003, TestSize.Level1)
 /**
 * @tc.name  : Test HandleThirdPartCode API
 * @tc.type  : FUNC
-* @tc.number: HandleThirdPartCode_004
-* @tc.desc  : Test HandleThirdPartCode interface. Set code value to RESET_AUDIO_ENDPOINT
-*/
-HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_004, TestSize.Level1)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT);
-    MessageParcel data;
-    data.WriteInt32(0);
-    MessageParcel reply;
-    MessageOption option;
-    auto ret = audioServer->HandleThirdPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
-* @tc.name  : Test HandleThirdPartCode API
-* @tc.type  : FUNC
 * @tc.number: HandleThirdPartCode_005
 * @tc.desc  : Test HandleThirdPartCode interface. Set code value to RESET_ROUTE_FOR_DISCONNECT
 */

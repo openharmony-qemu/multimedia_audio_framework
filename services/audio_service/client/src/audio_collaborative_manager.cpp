@@ -66,5 +66,16 @@ int32_t AudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevice(
     return AudioPolicyManager::GetInstance().SetCollaborativePlaybackEnabledForDevice(
         selectedAudioDevice, enabled);
 }
+
+int32_t AudioCollaborativeManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(
+    const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback)
+{
+    return AudioPolicyManager::GetInstance().RegisterCollaborationEnabledForCurrentDeviceEventListener(callback);
+}
+
+int32_t AudioCollaborativeManager::UnregisterCollaborationEnabledForCurrentDeviceEventListener()
+{
+    return AudioPolicyManager::GetInstance().UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+}
 } // AudioStandard
 } // OHOS

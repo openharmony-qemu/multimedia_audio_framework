@@ -27,6 +27,7 @@
 #include "audio_engine_manager.h"
 #include "none_mix_engine.h"
 #include "audio_utils.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,7 +57,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = 0;
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
-        sessionId = PolicyHandler::GetInstance().GenerateSessionId(processConfig.appInfo.appUid);
+        sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId = processConfig.originalSessionId;
     }
@@ -112,7 +113,7 @@ int32_t ProAudioStreamManager::StopRender(uint32_t streamIndex)
     return SUCCESS;
 }
 
-int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
+int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     Trace trace("ProAudioStreamManager::PauseRender");
     AUDIO_DEBUG_LOG("Pause renderer enter");
@@ -124,7 +125,7 @@ int32_t ProAudioStreamManager::PauseRender(uint32_t streamIndex)
     }
     rendererStreamMap_[streamIndex]->Pause();
     if (playbackEngine_) {
-        playbackEngine_->Pause();
+        playbackEngine_->Pause(isStandby);
     }
     return SUCCESS;
 }

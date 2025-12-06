@@ -100,7 +100,9 @@ typedef struct IAudioSourceAttr : public Parcelable {
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
     std::string hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    bool isPrimarySinkExist_ = true;
 
+    // struct should use Marshalling Serialization
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteString(adapterName) &&

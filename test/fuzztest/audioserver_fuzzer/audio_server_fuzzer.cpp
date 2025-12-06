@@ -45,6 +45,7 @@ constexpr float BIAS  = 1.0f;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
@@ -497,20 +498,6 @@ void AudioServerGetMaxAmplitudeTest()
         data, reply, option);
 }
 
-void AudioServerResetAudioEndpointTest()
-{
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(deviceType);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT),
-        data, reply, option);
-}
-
 void AudioServerCreatePlaybackCapturerManagerTest()
 {
     MessageParcel data;
@@ -615,6 +602,7 @@ void AudioServerGetAudioParameterTest()
     std::string key = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteString(key);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER),
@@ -645,6 +633,7 @@ void AudioServerSetMicrophoneMuteTest()
     bool isMute = provider.ConsumeBool();
     data.WriteBool(isMute);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE),
@@ -753,6 +742,7 @@ void AudioServerNotifyMuteStateChangeTest()
     data.WriteBool(true);
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE),
@@ -764,8 +754,6 @@ void AudioServerAudioWorkgroupCreateTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -779,9 +767,7 @@ void AudioServerAudioWorkgroupReleaseTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
     data.WriteInt32(static_cast<int32_t>(workgroupId));
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -796,10 +782,8 @@ void AudioServerAudioWorkgroupAddThreadTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     int32_t tokenId = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteInt32(static_cast<int32_t>(tokenId));
 
@@ -815,10 +799,8 @@ void AudioServerAudioWorkgroupRemoveThreadTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     int32_t tokenId = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteInt32(static_cast<int32_t>(tokenId));
 
@@ -834,11 +816,9 @@ void AudioServerAudioWorkgroupStartGroupTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     uint64_t startTime = provider.ConsumeIntegral<uint64_t>();
     uint64_t deadlineTime = provider.ConsumeIntegral<uint64_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
     data.WriteInt32(static_cast<int32_t>(workgroupId));
     data.WriteUint64(static_cast<int32_t>(startTime));
     data.WriteUint64(static_cast<int32_t>(deadlineTime));
@@ -855,9 +835,7 @@ void AudioServerAudioWorkgroupStopGroupTest()
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t testPid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(static_cast<int32_t>(testPid));
     data.WriteInt32(static_cast<int32_t>(workgroupId));
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -1059,7 +1037,9 @@ void AudioServerCreateHdiSourcePortTest()
 void AudioServerRegisterDataTransferCallbackTest()
 {
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
+    CHECK_AND_RETURN(focusListenerStub != nullptr);
     sptr<IRemoteObject> object = focusListenerStub->AsObject();
 
     audioServerPtr->RegisterDataTransferCallback(object);
@@ -1483,6 +1463,7 @@ void AudioServerCheckPlaybackPermissionFuzzTest()
 {
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->CheckPlaybackPermission(config);
 }
 
@@ -1548,6 +1529,7 @@ void AudioServerGetMaxAmplitudeFuzzTest()
     float maxAmplitude = provider.ConsumeFloatingPoint<float>();
     int32_t sourceType = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->GetMaxAmplitude(isOutputDevice, deviceClass, sourceType, maxAmplitude);
 }
 
@@ -1701,30 +1683,27 @@ void AudioServerSetBtHdiInvalidStateFuzzTest()
 void AudioServerCreateAudioWorkgroupFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t pid = provider.ConsumeIntegral<int32_t>();
     sptr<IRemoteObject> object = nullptr;
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->CreateAudioWorkgroup(pid, object, workgroupId);
+    audioServerPtr->CreateAudioWorkgroup(object, workgroupId);
 }
 
 void AudioServerReleaseAudioWorkgroupFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t pid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ReleaseAudioWorkgroup(pid, workgroupId);
+    audioServerPtr->ReleaseAudioWorkgroup(workgroupId);
 }
 
 void AudioServerAddThreadToGroupFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t pid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     int32_t tokenId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->AddThreadToGroup(pid, workgroupId, tokenId);
+    audioServerPtr->AddThreadToGroup(workgroupId, tokenId);
 }
 
 void AudioServerForceStopAudioStreamFuzzTest()
@@ -1738,21 +1717,19 @@ void AudioServerForceStopAudioStreamFuzzTest()
 void AudioServerStartGroupFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t pid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     uint64_t startTime = provider.ConsumeIntegral<uint64_t>();
     uint64_t deadlineTime = provider.ConsumeIntegral<uint64_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StartGroup(pid, workgroupId, startTime, deadlineTime);
+    audioServerPtr->StartGroup(workgroupId, startTime, deadlineTime);
 }
 
 void AudioServerStopGroupFuzzTest()
 {
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t pid = provider.ConsumeIntegral<int32_t>();
     int32_t workgroupId = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StopGroup(pid, workgroupId);
+    audioServerPtr->StopGroup(workgroupId);
 }
 
 void AudioServerSetActiveOutputDeviceFuzzTest()
@@ -1954,7 +1931,7 @@ void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
 {
     DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    
+
     auto callbackId = provider.ConsumeIntegral<int32_t>();
     auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
 
@@ -2000,7 +1977,6 @@ TestFuncs g_testFuncs[] = {
     AudioServerResetRouteForDisconnectFuzzTest,
     AudioServerGetEffectLatencyTest,
     AudioServerGetMaxAmplitudeTest,
-    AudioServerResetAudioEndpointTest,
     AudioServerCreatePlaybackCapturerManagerTest,
     AudioServerSetOutputDeviceSinkTest,
     AudioServerSetAudioMonoStateTest,
@@ -2108,13 +2084,14 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     g_pos = 0;
 
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return;
 }

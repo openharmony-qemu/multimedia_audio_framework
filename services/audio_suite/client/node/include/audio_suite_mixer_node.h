@@ -16,12 +16,8 @@
 #ifndef AUDIO_SUITE_MIXER_NODE_H
 #define AUDIO_SUITE_MIXER_NODE_H
 
-#include <memory>
 #include "audio_suite_process_node.h"
 #include "audio_limiter.h"
-#include "audio_suite_pcm_buffer.h"
-#include "channel_converter.h"
-#include "hpae_format_convert.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,35 +27,19 @@ class AudioSuiteMixerNode : public AudioSuiteProcessNode {
 public:
     AudioSuiteMixerNode();
     virtual ~AudioSuiteMixerNode();
-    bool Reset() override;
+
+    void SetAudioNodeFormat(AudioFormat audioFormat) override;
+    int32_t Init() override;
+    int32_t DeInit() override;
+
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
+
 private:
     int32_t InitAudioLimiter();
-    AudioSuitePcmBuffer *preProcess(AudioSuitePcmBuffer *input);
-    AudioSuitePcmBuffer *preRateProcess(AudioSuitePcmBuffer *input,
-        uint32_t sampleRate, uint32_t channelCount);
-    AudioSuitePcmBuffer *preChannelProcess(AudioSuitePcmBuffer *input,
-        uint32_t sampleRate, uint32_t channelCount);
-
-    AudioSamplingRate rate_;
-
-    AudioSuitePcmBuffer mixerOutput_;
-    AudioSuitePcmBuffer tmpOutput_;
-    AudioSuitePcmBuffer channelOutput_;
-    AudioSuitePcmBuffer rateOutput_;
-
-    uint32_t frameLen_;
-
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
-
-    uint32_t channel_sampleRate_ = SAMPLE_RATE_192000;
-    uint32_t channel_channelCount_ = STEREO;
-
-    uint32_t rate_sampleRate_ = SAMPLE_RATE_192000;
-    uint32_t rate_channelCount_ = STEREO;
-
-    AudioSamplingRate mixrate_ = SAMPLE_RATE_8000;
+    AudioSuitePcmBuffer tmpOutput_;
+    AudioSuitePcmBuffer mixerOutput_;
 };
 
 }  // namespace AudioSuite

@@ -44,6 +44,13 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
         const uint32_t sessionID = 0) override;
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    static vector<shared_ptr<AudioDeviceDescriptor>> DecideRingRenderDevices(
+        bool hasScoState,
+        const shared_ptr<AudioDeviceDescriptor> &activeScoDevice,
+        StreamUsage streamUsage,
+        AudioRingerMode curRingerMode,
+        const shared_ptr<AudioDeviceDescriptor> &defaultDevice
+    );
 };
 } // namespace AudioStandard
 } // namespace OHOS

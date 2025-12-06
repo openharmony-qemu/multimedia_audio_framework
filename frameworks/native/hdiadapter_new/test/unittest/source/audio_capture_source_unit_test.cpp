@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t DEFAULT_SIZE = 8;
+const uint32_t UNIQUE_ID_INTERVAL = 8;
 class AudioCaptureSourceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -486,5 +487,154 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetChannelCountByChannelLayout_001, TestSiz
     EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
 }
 
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_001
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_EC;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_EC * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_002
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_002, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_MIC_REF;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_MIC_REF * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_003
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_003, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_WAKEUP;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_WAKEUP * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_004
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_004, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_VOICE_TRANSCRIPTION";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_005
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_005, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_UNPROCESSED;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_RAW_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESS * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_006
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_006, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_007
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_007, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_INVALID;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_008
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_008, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_INVALID;
+    captureSource->attr_.hdiSourceType = "";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_009
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_009, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_ULTRASONIC;
+    captureSource->attr_.hdiSourceType = "AUIDO_INPUT_ULTRASONIC_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_010
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_010, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    captureSource->attr_.hdiSourceType = "AUIDO_INPUT_VOICE_RECOGNITION_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS

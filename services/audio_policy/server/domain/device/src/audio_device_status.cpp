@@ -62,16 +62,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
 static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
 {
     bool exclude{false};
@@ -955,8 +945,7 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
             AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType), deviceType);
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType));
-        AUDIO_INFO_LOG("Module name: %{public}s, adapter name: %{public}s",
-            moduleName.c_str(), moduleInfo.adapterName.c_str());
+        AUDIO_INFO_LOG("adapter name: %{public}s", moduleInfo.adapterName.c_str());
         uint32_t paIndex = 0;
         AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
@@ -1059,6 +1048,7 @@ void AudioDeviceStatus::AddEarpiece()
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
 }
 
@@ -1119,6 +1109,7 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 
 int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
@@ -1381,14 +1372,21 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelec
     return userSelectDeviceMap;
 }
 
-void AudioDeviceStatus::DeactivateNearlinkDevice(AudioDeviceDescriptor &desc)
+#ifdef BLUETOOTH_ENABLE
+void AudioDeviceStatus::ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
-    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK || desc.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
-        if (desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-            SleAudioDeviceManager::GetInstance().SetActiveDevice(desc, STREAM_USAGE_INVALID);
-        }
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+    if ((updateCommand == CATEGORY_UPDATE && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) ||
+        (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) ||
+        (updateCommand == CONNECTSTATE_UPDATE && desc.connectState_ == SUSPEND_CONNECTED) ||
+        (updateCommand == EXCEPTION_FLAG_UPDATE && desc.exceptionFlag_ == true)) {
+        Bluetooth::AudioHfpManager::ClearActiveHfpDevice(desc.macAddress_);
     }
 }
+#endif
 
 void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
@@ -1404,8 +1402,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
             }
 #endif
-            // Handle Nearlink Device
-            DeactivateNearlinkDevice(desc);
         } else {
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             auto usage = audioDeviceManager_.GetDeviceUsage(desc);
@@ -1434,6 +1430,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     } else if (updateCommand == USAGE_UPDATE) {
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
     }
+#ifdef BLUETOOTH_ENABLE
+    ClearActiveHfpDevice(desc, updateCommand, reason);
+#endif
 }
 
 void AudioDeviceStatus::UpdateAllUserSelectDevice(

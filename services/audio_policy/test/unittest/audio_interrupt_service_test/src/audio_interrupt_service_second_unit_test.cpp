@@ -90,6 +90,11 @@ public:
         volumeBehavior.databaseVolumeName = "";
         return SUCCESS;
     }
+
+    ErrCode OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {
@@ -1802,6 +1807,8 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_067, TestSize.
     EXPECT_EQ(ret, true);
     audioInterruptService->mutedGameSessionId_.insert(streamId);
     audioInterruptZone->audioFocusInfoList.clear();
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, false);
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, PAUSE});
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
     ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
@@ -1861,6 +1868,40 @@ HWTEST_F(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedur
     int32_t ret = audioInterruptService->ActivateAudioInterruptCoreProcedure(DEFAULT_ZONE_ID,
         audioInterrupt, false, updateScene);
     EXPECT_EQ(ret, ERR_FOCUS_DENIED);
+}
+
+/**
+ * @tc.name  : Test ActivateAudioInterruptInternal
+ * @tc.number: ActivateAudioInterruptInternal01
+ * @tc.desc  : Test ActivateAudioInterruptInternal
+ */
+HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+
+    uint32_t streamId = 0;
+    uint32_t uid = 123;
+    int32_t pid = 0;
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    audioInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+    audioInterrupt.pid = pid;
+    audioInterrupt.streamId = streamId;
+    audioInterrupt.streamUsage = STREAM_USAGE_GAME;
+    audioInterrupt.audioFocusType.isPlay = true;
+
+    bool updateScene = false;
+
+    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = CLIENT_TYPE_GAME;
+
+    audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, true);
+    auto ret = audioInterruptService->ActivateAudioInterruptInternal(DEFAULT_ZONE_ID,
+        audioInterrupt, false, updateScene);
+    EXPECT_EQ(ret, ERR_FOCUS_DENIED);
+    audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, false);
+    ret = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 } // namespace AudioStandard

@@ -433,15 +433,6 @@ void AudioPolicyServerSetLowPowerVolumeFuzzTest()
     audioPolicyServer->SetLowPowerVolume(streamId, volume);
 }
 
-void AudioPolicyServerGetFastStreamInfoFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamInfo streamInfo;
-    uint32_t sessionId = GetData<uint32_t>();
-    audioPolicyServer->GetFastStreamInfo(streamInfo, sessionId);
-}
-
 void AudioPolicyServerGetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -619,10 +610,12 @@ void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()
     int32_t zoneId = GetData<int32_t>();
     int32_t volumeLevel = 0;
     bool mute = false;
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi, zoneId);
+    VolInfoForUpdateMute muteInfo = { streamType, volumeLevel, mute, zoneId };
+    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(muteInfo, isUpdateUi);
     volumeLevel = 1;
     mute = true;
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi, zoneId);
+    VolInfoForUpdateMute unmuteInfo = { streamType, volumeLevel, mute, zoneId };
+    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
 }
 
 void AudioPolicyServerProcUpdateRingerModeFuzztest()
@@ -1025,8 +1018,10 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest()
     int32_t uid = GetData<int32_t>();
     int32_t pid = GetData<int32_t>();
     bool isAllowed = GetData<bool>();
+    int32_t streamUsage = GetData<StreamUsage>();
+    bool silentControl = GetData<bool>();
 
-    audioPolicyServer->IsAllowedPlayback(uid, pid, isAllowed);
+    audioPolicyServer->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
 }
 
 void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
@@ -1845,24 +1840,6 @@ void AudioPolicyServerInfoDumpHelpFuzzTest()
     server->InfoDumpHelp(dumpString);
 }
 
-void AudioPolicyServerGetPreferredOutputStreamTypeFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioRendererInfo rendererInfo;
-    int32_t streamType = GetData<int32_t>();
-    server->GetPreferredOutputStreamType(rendererInfo, streamType);
-}
-
-void AudioPolicyServerGetPreferredInputStreamTypeFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioCapturerInfo capturerInfo;
-    int32_t streamType = GetData<int32_t>();
-    server->GetPreferredInputStreamType(capturerInfo, streamType);
-}
-
 void AudioPolicyServerCreateRendererClientFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2048,6 +2025,15 @@ void AudioPolicyServerPermStateChangeCallbackFuzzTest()
     callback->PermStateChangeCallback(result);
 }
 
+void AudioPolicyServerSetActiveHfpDeviceFuzzTest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+
+    std::string macAddress = "test_mac";
+    audioPolicyServer->SetActiveHfpDevice(macAddress);
+}
+
 void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest()
 {
     Security::AccessToken::PermStateChangeScope scopeInfo;
@@ -2094,7 +2080,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest,
     AudioPolicyServerGetAppVolumeLevelInternalFuzzTest,
     AudioPolicyServerSetLowPowerVolumeFuzzTest,
-    AudioPolicyServerGetFastStreamInfoFuzzTest,
     AudioPolicyServerGetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetSingleStreamVolumeFuzzTest,
     AudioPolicyServerIsVolumeUnadjustableFuzzTest,
@@ -2228,8 +2213,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerPolicyDataDumpFuzzTest,
     AudioPolicyServerArgInfoDumpFuzzTest,
     AudioPolicyServerInfoDumpHelpFuzzTest,
-    AudioPolicyServerGetPreferredOutputStreamTypeFuzzTest,
-    AudioPolicyServerGetPreferredInputStreamTypeFuzzTest,
     AudioPolicyServerCreateRendererClientFuzzTest,
     AudioPolicyServerCreateCapturerClientFuzzTest,
     AudioPolicyServerRegisterTrackerFuzzTest,
@@ -2245,6 +2228,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerVolumeOnChangeFuzzTest,
     AudioPolicyServerInterruptOnChangeFuzzTest,
     AudioPolicyServerStateOnChangeFuzzTest,
+    AudioPolicyServerSetActiveHfpDeviceFuzzTest,
     AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest,
 };
 

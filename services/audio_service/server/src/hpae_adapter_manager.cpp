@@ -165,7 +165,7 @@ int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
     return rendererStreamMap_[streamIndex]->Stop();
 }
 
-int32_t HpaeAdapterManager::PauseRender(uint32_t streamIndex)
+int32_t HpaeAdapterManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     AUDIO_DEBUG_LOG("Enter PauseRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);

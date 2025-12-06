@@ -46,7 +46,9 @@ enum AudioBufferHolder : uint32_t {
     // Server buffer shared with hdi and has sync info
     AUDIO_SERVER_ONLY_WITH_SYNC,
     // Independent stream
-    AUDIO_SERVER_INDEPENDENT
+    AUDIO_SERVER_INDEPENDENT,
+    // StaticRenderer Mode, shared from soundpool
+    AUDIO_APP_SHARED
 };
 
 enum StreamStatus : uint32_t {
@@ -60,6 +62,11 @@ enum StreamStatus : uint32_t {
     STREAM_RELEASED,
     STREAM_STAND_BY,
     STREAM_INVALID
+};
+
+enum BufferPosition : uint32_t {
+    BUFFER_IN_CLIENT = 0,
+    BUFFER_IN_SERVER
 };
 
 /**
@@ -97,6 +104,13 @@ struct BasicBufferInfo {
     std::atomic<bool> isNeedStop = false;
 
     RestoreInfo restoreInfo;
+
+    // only for static renderer
+    std::atomic<bool> isStatic_;
+    std::atomic<int64_t> clientLastProcessTime_;
+
+    std::atomic<uint64_t> bufferEndCallbackSendTimes;
+    std::atomic<bool> needSendLoopEndCallback;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -233,6 +247,22 @@ public:
     void WakeFutex(uint32_t wakeVal = IS_READY);
 
     RestoreStatus GetRestoreStatus();
+
+    // for sharedbuffer in static mode
+    void IncreaseBufferEndCallbackSendTimes();
+    void DecreaseBufferEndCallbackSendTimes();
+    void ResetBufferEndCallbackSendTimes();
+    void SetIsNeedSendLoopEndCallback(bool value);
+
+    bool IsNeedSendBufferEndCallback();
+    bool IsNeedSendLoopEndCallback();
+
+    void SetStaticMode(bool state);
+    bool GetStaticMode();
+    std::shared_ptr<AudioSharedMemory> GetSharedMem();
+
+    bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
+
 private:
     int32_t SizeCheck();
 

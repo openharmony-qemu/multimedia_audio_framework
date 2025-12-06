@@ -33,6 +33,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -101,6 +102,11 @@ vector<DeviceType> DeviceTypeVec = {
     DEVICE_TYPE_MAX,
 };
 
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
+
 void OffloadStartPlayingFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
@@ -115,6 +121,7 @@ void OffloadStartPlayingFuzzTest()
         static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % a2dpOffloadConnectionStateCount);
     manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
     manager->OffloadStartPlaying(sessionIds);
+    OnStop();
 }
 
 void OffloadStopPlayingFuzzTest()
@@ -126,6 +133,7 @@ void OffloadStopPlayingFuzzTest()
     manager->SetA2dpOffloadFlag(state);
     std::vector<int32_t> sessionIds = {1, 2, 3};
     manager->OffloadStopPlaying(sessionIds);
+    OnStop();
 }
 
 void HandleA2dpDeviceOutOffloadFuzzTest()
@@ -141,6 +149,7 @@ void HandleA2dpDeviceOutOffloadFuzzTest()
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     std::vector<int32_t> allRunningSessions = {1};
     manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag, allRunningSessions);
+    OnStop();
 }
 
 void HandleA2dpDeviceInOffloadFuzzTest()
@@ -163,6 +172,7 @@ void HandleA2dpDeviceInOffloadFuzzTest()
         static_cast<BluetoothOffloadState>(GetData<int32_t>() % a2dpOffloadFlagCount);
     std::vector<int32_t> allRunningSessions = {1};
     manager->HandleA2dpDeviceInOffload(a2dpOffloadFlag, allRunningSessions);
+    OnStop();
 }
 
 void GetA2dpOffloadCodecAndSendToDspFuzzTest()
@@ -173,6 +183,7 @@ void GetA2dpOffloadCodecAndSendToDspFuzzTest()
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
     manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
+    OnStop();
 }
 
 void OnA2dpPlayingStateChangedFuzzTest()
@@ -187,6 +198,7 @@ void OnA2dpPlayingStateChangedFuzzTest()
         static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % currentOffloadConnectionStateCount);
     manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
     manager->OnA2dpPlayingStateChanged(deviceAddress, playingState);
+    OnStop();
 }
 
 void IsA2dpOffloadConnectingFuzzTest()
@@ -200,6 +212,7 @@ void IsA2dpOffloadConnectingFuzzTest()
         static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % currentOffloadConnectionStateCount);
     manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
     manager->IsA2dpOffloadConnecting(GetData<uint32_t>());
+    OnStop();
 }
 
 TestFuncs g_testFuncs[] = {

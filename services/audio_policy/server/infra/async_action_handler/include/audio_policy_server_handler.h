@@ -84,6 +84,9 @@ public:
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
         VOLUME_DEGREE_EVENT,
         AUDIO_DEVICE_INFO_UPDATE,
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        DEVICE_CONFIG_CHANGED,
+        ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE,
     };
     /* event data */
     class EventContextObj {
@@ -103,6 +106,7 @@ public:
         CastType type;
         bool spatializationEnabled;
         bool headTrackingEnabled;
+        bool adaptiveSpatialRenderingEnabled;
         AudioScene audioScene;
         int32_t nnState;
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
@@ -116,6 +120,7 @@ public:
         uint32_t routeFlag;
         AudioErrors errorCode;
         int32_t callerPid_ = -1;
+        bool collaborationEnabled;
     };
 
     struct RendererDeviceChangeEvent {
@@ -215,6 +220,11 @@ public:
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
+    void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
+    void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    bool SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    bool SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -262,18 +272,25 @@ private:
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleOtherServiceSecondEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
+    void HandleCollaborationEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
+
+    bool IsForceGetDevByVolumeType(int32_t uid);
+    bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;
@@ -296,6 +313,8 @@ private:
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
+
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

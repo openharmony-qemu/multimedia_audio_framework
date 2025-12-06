@@ -53,6 +53,7 @@ public:
         MoveSessionType moveType = MOVE_ALL) override;
     int32_t SuspendStreamManager(bool isSuspend) override;
     int32_t SetMute(bool isMute) override;
+    int32_t StopManager() override;
     void Process() override;
     void HandleMsg() override;
     int32_t Init(bool isReload = false) override;
@@ -85,7 +86,7 @@ public:
 
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
@@ -98,6 +99,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    bool IsBypassSpatializationForStereo() override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -143,13 +145,14 @@ private:
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     /**
-     * @brief Refresh the usage and type of the cluster corresponding to the given session id.
-     * @param sessionId session id of the target cluster.
+     * @brief Refresh the usage and type of the cluster corresponding to the given scene type.
+     * @param sceneType scene type of the target cluster.
      * @return errCode
      */
-    int32_t UpdateClusterBySessionId(uint32_t sessionId);
+    int32_t UpdateClusterStreamInfo(HpaeProcessorType sceneType);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
+    void DeleteNodesByTraversal(uint32_t sessionId);
 
 private:
 
@@ -172,6 +175,7 @@ private:
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
+    int64_t lastSessionStateChangeTime_ = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

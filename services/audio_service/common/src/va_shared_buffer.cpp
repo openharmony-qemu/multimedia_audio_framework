@@ -63,7 +63,7 @@ VAAudioSharedMemory::~VAAudioSharedMemory()
 std::shared_ptr<VAAudioSharedMemory> VAAudioSharedMemory::CreateFromLocal(size_t size, const std::string &name)
 {
     std::shared_ptr<VAAudioSharedMemory> sharedMemory = std::make_shared<VAAudioSharedMemory>(size, name);
-    CHECK_AND_RETURN_RET_LOG(sharedMemory->Init() == SUCCESS, nullptr, "CreateFormLocal failed");
+    CHECK_AND_RETURN_RET_LOG(sharedMemory->Init() == SUCCESS, nullptr, "CreateFromLocal failed");
     return sharedMemory;
 }
 

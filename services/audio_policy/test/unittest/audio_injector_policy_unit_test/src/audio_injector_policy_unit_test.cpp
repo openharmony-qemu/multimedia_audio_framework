@@ -459,7 +459,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_001, TestSize.Level1)
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     VoipType type = VoipType::NO_VOIP;
-    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, wid);
 }
 
 /**
@@ -485,7 +486,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_002, TestSize.Level1)
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     VoipType type = VoipType::NO_VOIP;
-    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, wid);
 }
 
 /**
@@ -511,7 +513,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_003, TestSize.Level1)
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     VoipType type = VoipType::NO_VOIP;
-    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, wid);
 }
 
 /**
@@ -537,7 +540,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_004, TestSize.Level1)
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     VoipType type = VoipType::NO_VOIP;
-    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, wid);
 }
 
 /**
@@ -554,11 +558,12 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_001, TestSize.
     EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
     auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
     pipelist.clear();
-    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag, wid);
 
     audioInjectorPolicy.isOpened_ = true;
     pipelist.clear();
-    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag, wid);
 }
 
 /**
@@ -575,7 +580,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_002, TestSize.
     EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
     auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
     pipelist.clear();
-    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag, wid);
 
     audioInjectorPolicy.isOpened_ = true;
     pipelist.clear();
@@ -589,7 +595,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_002, TestSize.
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     audioInjectorPolicy.capturePortIdx_ = 1234;
-    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag, wid);
 }
 
 /**
@@ -616,7 +622,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_003, TestSize.
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
     audioInjectorPolicy.capturePortIdx_ = 4321;
-    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag, wid);
 }
 
 /**
@@ -633,11 +640,12 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_001, TestSize
     EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
     auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
     pipelist.clear();
-    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag, wid);
 
     audioInjectorPolicy.isOpened_ = true;
     pipelist.clear();
-    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag, wid);
 }
 
 /**
@@ -663,7 +671,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_002, TestSize
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
-    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag, wid);
 }
 
 /**
@@ -689,7 +698,8 @@ HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_003, TestSize
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     pipe1->streamDescriptors_.push_back(desc);
     pipelist.push_back(pipe1);
-    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+    uint32_t wid = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag, wid);
 }
 
 /**
@@ -767,7 +777,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForInjection_001, Test
     audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
     audioInjectorPolicy.rendererMuteStreamMap_.clear();
     audioInjectorPolicy.SetInjectStreamsMuteForInjection(streamId);
-    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 0);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
 }
  
 /**
@@ -875,7 +885,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_003, TestS
     audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId1, newMicrophoneMute));
     audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
     audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
-    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 2);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
 }
  
 /**
@@ -894,7 +904,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_004, TestS
     audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId1, newMicrophoneMute));
     audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
     audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
-    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 2);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

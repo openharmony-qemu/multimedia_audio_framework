@@ -21,6 +21,9 @@
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
 #include "audio_utils.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 #include <chrono>
 #include <thread>
@@ -50,11 +53,52 @@ namespace {
     // "hello world" sha256
     constexpr const char *TEST_NETWORK_ID = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
     constexpr const char *TEST_SPLIT_ARGS = "8:4096:1";
+    bool g_hasPermission = false;
+}
+
+void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audio_manager_unit_test",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
 }
 
 void AudioManagerUnitTest::SetUpTestCase(void) {}
 void AudioManagerUnitTest::TearDownTestCase(void) {}
-void AudioManagerUnitTest::SetUp(void) {}
+
+void AudioManagerUnitTest::SetUp(void)
+{
+    GetPermission();
+}
+
 void AudioManagerUnitTest::TearDown(void) {}
 
 /**
@@ -2267,11 +2311,11 @@ HWTEST(AudioManagerUnitTest, SetVolumeDegree_001, TestSize.Level0)
     int32_t degree = 44;
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t ret = manager->SetVolumeDegree(streamType, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     AudioStreamType streamType2 = STREAM_ULTRASONIC;
     ret = manager->SetVolumeDegree(streamType2, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     AudioStreamType streamType3 = STREAM_APP;
     ret = manager->SetVolumeDegree(streamType3, degree);
@@ -2289,11 +2333,13 @@ HWTEST(AudioManagerUnitTest, GetVolumeDegree_001, TestSize.Level0)
     auto manager = AudioSystemManager::GetInstance();
     int32_t degree = 44;
     AudioStreamType streamType = STREAM_ALARM;
+    auto ret1 = manager->GetVolumeDegree(streamType);
+
     int32_t ret = manager->SetVolumeDegree(streamType, degree);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     ret = manager->GetVolumeDegree(streamType);
-    EXPECT_EQ(ret, degree);
+    EXPECT_EQ(ret, ret1);
 
     AudioStreamType streamType3 = STREAM_APP;
     ret = manager->GetVolumeDegree(streamType3);

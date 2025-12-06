@@ -116,8 +116,6 @@ public:
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
@@ -253,7 +251,6 @@ public:
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
-    int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

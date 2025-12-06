@@ -239,7 +239,7 @@ int32_t AudioSocketThread::AudioAnahsDetectDevice(struct AudioPnpUevent *audioPn
             audioEvent.eventType);
         return SUCCESS;
     }
-    audioSocketEvent_.anahsName = audioEvent.anahsName;
+    UpdatePnpDeviceState(&audioEvent);
     return SUCCESS;
 }
 
@@ -250,7 +250,7 @@ int32_t AudioSocketThread::AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent 
         AUDIO_ERR_LOG("audioPnpUevent is null!");
         return HDF_ERR_INVALID_PARAM;
     }
- 
+
     if (SetAudioPnpServerEventValue(&audioEvent, audioPnpUevent) != SUCCESS) {
         return ERROR;
     }
@@ -295,7 +295,7 @@ int32_t AudioSocketThread::AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUe
             AUDIO_ERR_LOG("NN state is invalid");
             return HDF_ERR_INVALID_PARAM;
     }
-    
+
     // callback of bluetooth
     auto handle = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
     if (handle == nullptr) {
@@ -336,7 +336,7 @@ int32_t AudioSocketThread::AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUe
         audioEvent.name = switchNameStr.substr(portBegin + std::strlen("device_port="),
             switchNameStr.length() - portBegin - std::strlen("device_port="));
     }
-    
+
     auto addressBegin = switchNameStr.find("hdmi_audio");
     auto addressEnd = switchNameStr.find_first_of("device_port", portBegin);
     if (addressEnd != switchNameStr.npos) {
@@ -393,7 +393,7 @@ int32_t AudioSocketThread::AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnp
         AUDIO_DEBUG_LOG("AudioHDMIDetectDevice fail");
         return HDF_ERR_INVALID_PARAM;
     }
- 
+
     if (strcmp(audioPnpUevent->switchState, "1") == 0) {
         audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
     } else if (strcmp(audioPnpUevent->switchState, "0") == 0) {
@@ -403,15 +403,15 @@ int32_t AudioSocketThread::AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnp
         return ERROR;
     }
     audioEvent.deviceType = PNP_DEVICE_HDMI_DEVICE;
- 
+
     std::string switchNameStr = audioPnpUevent->switchName;
- 
+
     auto portBegin = switchNameStr.find("device_port=");
     if (portBegin != switchNameStr.npos) {
         audioEvent.name = switchNameStr.substr(portBegin + std::strlen("device_port="),
             switchNameStr.length() - portBegin - std::strlen("device_port="));
     }
-    
+
     auto addressBegin = switchNameStr.find("hdmi_mipi_audio");
     auto addressEnd = switchNameStr.find_first_of("device_port", portBegin);
     if (addressEnd != switchNameStr.npos) {
@@ -419,7 +419,7 @@ int32_t AudioSocketThread::AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnp
             addressEnd - addressBegin - std::strlen("hdmi_mipi_audio")-1);
         audioEvent.address = portId;
     }
- 
+
     if (audioEvent.address.empty()) {
         audioEvent.address = '0';
     }

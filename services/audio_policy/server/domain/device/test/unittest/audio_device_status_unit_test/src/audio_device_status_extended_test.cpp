@@ -444,21 +444,6 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_022, TestSize.Level4)
 
 /**
  * @tc.name  : Test AudioDeviceStatus.
- * @tc.number: AudioDeviceStatus_023
- * @tc.desc  : Test DeactivateNearlinkDevice desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr().
- */
-HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_023, TestSize.Level4)
-{
-    AudioDeviceDescriptor desc;
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
-    desc.macAddress_ = "00:11:22:33:44:55";
-    audioDeviceStatus_->audioActiveDevice_.currentActiveDevice_.macAddress_ = desc.macAddress_;
-    audioDeviceStatus_->DeactivateNearlinkDevice(desc);
-    EXPECT_EQ(desc.macAddress_, audioDeviceStatus_->audioActiveDevice_.GetCurrentOutputDeviceMacAddr());
-}
-
-/**
- * @tc.name  : Test AudioDeviceStatus.
  * @tc.number: AudioDeviceStatus_024
  * @tc.desc  : Test OnPreferredStateUpdated updateCommand != ENABLE_UPDATE.
  */

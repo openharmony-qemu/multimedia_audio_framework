@@ -56,6 +56,7 @@ public:
 
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
     StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
+    StreamUsage GetAudioSessionStreamUsageForDevice(const int32_t callerPid, const uint32_t streamId);
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
@@ -79,7 +80,7 @@ public:
     bool IsSessionInputDeviceChanged(int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc);
     void MarkSystemApp(int32_t pid);
     bool IsSystemApp(int32_t pid);
-    bool IsSystemAppWithMixStrategy(int32_t pid);
+    bool IsSystemAppWithMixStrategy(const AudioInterrupt &audioInterrupt);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

@@ -33,6 +33,7 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
+#include "call_manager_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -96,8 +97,8 @@ public:
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void ResetAudioEndpoint();
     std::shared_ptr<AudioEndpoint> GetEndPointByType(AudioEndpoint::EndpointType type);
+    void SetEndpointMuteForSwitchDevice(bool isMmap, bool mute);
 #endif
 
     void Dump(std::string &dumpString);
@@ -144,6 +145,7 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -179,12 +181,11 @@ private:
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
-    void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
-    float GetSystemVolume();
+    float GetSystemVolumeForWorkgroup();
     bool IsStreamTypeFitWorkgroup(AudioStreamType streamType);
-    void UpdateSystemVolume(AudioStreamType streamType, float volume);
+    void UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
     std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
     int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
@@ -251,6 +252,9 @@ private:
     float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
+
+    std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
+    std::mutex callManagerMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

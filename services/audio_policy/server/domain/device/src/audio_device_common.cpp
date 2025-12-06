@@ -90,7 +90,10 @@ static const std::vector<std::string> SourceNames = {
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE),
-    std::string(PRIMARY_AI_MIC)
+    std::string(PRIMARY_AI_MIC),
+    std::string(PRIMARY_UNPROCESS_MIC),
+    std::string(PRIMARY_ULTRASONIC_MIC),
+    std::string(PRIMARY_VOICE_RECOGNITION_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -144,7 +147,9 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
         AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
-    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice =
+            std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(selectedAudioDevice);
 }
 
 void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -190,7 +195,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
 
         FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
         info.caller = "GetPreferredOutputDeviceDescInner";
         descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
@@ -442,10 +447,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return; // No need to update preferred device for virtual device
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
-    if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
+    if (NeedClearPreferredMediaRenderer(audioStateManager_.GetPreferredMediaRenderDevice(), audioDescriptor,
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-        "UpdateConnectedDevicesWhenConnectingForOutputDevice_1",
-        ROUTER_TYPE_USER_SELECT).front()) && (usage & MEDIA) == MEDIA) {
+            "UpdateConnectedDevicesWhenConnectingForOutputDevice_1", ROUTER_TYPE_USER_SELECT), usage)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
@@ -457,6 +461,31 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
     }
+}
+
+bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const std::shared_ptr<AudioDeviceDescriptor> &updated,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const
+{
+    CHECK_AND_RETURN_RET(preferred != nullptr, false);
+    if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(updated != nullptr, false);
+    if (updated->networkId_ != LOCAL_NETWORK_ID) {
+        return false;
+    }
+
+    if ((usage & MEDIA) != MEDIA) {
+        return false;
+    }
+
+    CHECK_AND_RETURN_RET(!fetched.empty(), false);
+    const auto &frontDesc = fetched.front();
+
+    CHECK_AND_RETURN_RET(frontDesc != nullptr, false);
+    return updated->IsSameDeviceDescPtr(frontDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
@@ -995,7 +1024,6 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
-    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 
@@ -1263,8 +1291,9 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
+    CHECK_AND_RETURN(desc != nullptr);
     int32_t ret;
-    if (Util::IsScoSupportSource(sourceType)) {
+    if (desc->isVrSupported_ && Util::IsScoSupportSource(sourceType)) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
@@ -1273,7 +1302,7 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
                 std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchInputDevice(capturerChangeInfos);
         }
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
+        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
@@ -1394,9 +1423,9 @@ int32_t AudioDeviceCommon::MoveToRemoteInputDevice(std::vector<SourceOutput> sou
 }
 
 int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState)
+    ConnectState connectState, bool isVrSupported)
 {
-    if (handleFlag && connectState != DEACTIVE_CONNECTED) {
+    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
@@ -1837,6 +1866,11 @@ void AudioDeviceCommon::SetFirstScreenOn()
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
+}
+
+bool AudioDeviceCommon::GetVirtualCall(pid_t uid)
+{
+    return Bluetooth::AudioHfpManager::IsVirtualCall();
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

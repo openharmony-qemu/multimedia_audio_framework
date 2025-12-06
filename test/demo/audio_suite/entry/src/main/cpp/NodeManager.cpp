@@ -5,6 +5,8 @@
 #include "NodeManager.h"
 #include <hilog/log.h>
 #include <stack>
+#include <sstream>
+#include "./utils/Utils.h"
 
 static const int GLOBAL_RESMGR = 0xFF00;
 static const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -86,8 +88,8 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
     Node node = nodes[nodeId];
     OH_AudioSuite_Result result;
 
-    // 调用服务端解连接和连接接口，解开该节点的前后连接，并连接前后节点
-    if (node.preNodeIds.empty() && node.nextNodeId, empty()) {
+    // Disconnect the old connection first, then connect the new node.
+    if (node.preNodeIds.empty() && node.nextNodeId.empty()) {
         result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
     } else if (node.preNodeIds.empty()) {
         result = disconnect(node.id, node.nextNodeId);
@@ -95,7 +97,7 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
             return result;
         }
         result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
-    } else if (node.nextNodeId, empty()) {
+    } else if (node.nextNodeId.empty()) {
         result = disconnect(node.preNodeIds[0], node.id);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             return result;
@@ -108,7 +110,7 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             return result;
         }
-        result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode)；
+        result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
     }
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
@@ -131,7 +133,7 @@ OH_AudioSuite_Result NodeManager::moveNode(
         LOG_INFO,
         GLOBAL_RESMGR,
         TAG,
-        "NodeManagerTset moveNode targetNode:%{pubilc}d",
+        "NodeManagerTset moveNode targetNode:%{public}d",
         static_cast<int>(targetNode.type));
     if (sourceNode.preNodeIds.empty()) {
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
@@ -164,7 +166,7 @@ OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::
         GLOBAL_RESMGR,
         TAG,
         "NodeManagerTest connect fromId toId: %{public}s %{public}s",
-        fromId.cstr(),
+        fromId.c_str(),
         toId.c_str());
     OH_AudioSuite_Result result;
     Node preNode = nodes[fromId];
@@ -185,7 +187,7 @@ OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::
         static_cast<int>(result));
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         nodes[toId].preNodeIds.push_back(fromId);
-        nodes[fromId], nextNodeId = toId;
+        nodes[fromId].nextNodeId = toId;
     }
     return result;
 }
@@ -217,7 +219,7 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
         return result;
     }
 
-    result = OH_AudioSuiteEngine_DisConnectNodes(preNode.physicalNode, nextNode.physicalNode);
+    result = OH_AudioSuiteEngine_DisconnectNodes(preNode.physicalNode, nextNode.physicalNode);
     OH_LOG_Print(
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "NodeManagerTest disconnect: %{public}d", static_cast<int>(result));
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -249,6 +251,108 @@ const Node &NodeManager::GetNodeById(const std::string &nodeId) const
         return it->second;
     } else {
         return g_defaultNode;
+    }
+}
+
+//获取均衡器类型
+std::string GetEqualizerOptions(const Node &node)
+{
+    OH_EqualizerFrequencyBandGains type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return "0";
+    }
+    std::ostringstream oss;
+    int equalenceBandsCount = 10;
+    oss << "[";
+    for (int i = 0; i < equalenceBandsCount; ++i) { // The equalizer has 10 frequency bands.
+        if (i > 0)
+            oss << ",";
+        oss << type.gains[i];
+    }
+    oss << "]";
+    return oss.str();
+}
+
+//获取声音美化类型
+std::string GetVoiceBeautifierOptions(const Node &node)
+{
+    OH_VoiceBeautifierType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return STR_0;
+    }
+    switch (type) {
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
+            return STR_1;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
+            return STR_2;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
+            return STR_3;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
+            return STR_4;
+        default:
+            return STR_0;
+    }
+}
+
+//获取声场类型
+std::string GetSoundFieldOptions(const Node &node)
+{
+    OH_SoundFieldType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSoundFieldType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return STR_0;
+    }
+    switch (type) {
+        case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
+            return STR_1;
+        case OH_SoundFieldType::SOUND_FIELD_GRAND:
+            return STR_2;
+        case OH_SoundFieldType::SOUND_FIELD_NEAR:
+            return STR_3;
+        case OH_SoundFieldType::SOUND_FIELD_WIDE:
+            return STR_4;
+        default:
+            return STR_0;
+    }
+}
+
+//获取环境类型
+std::string GetEnvironmentEffectOptions(const Node &node)
+{
+    OH_EnvironmentType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEnvironmentType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return STR_0;
+    }
+    switch (type) {
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_BROADCAST:
+            return STR_1;
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_EARPIECE:
+            return STR_2;
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_UNDERWATER:
+            return STR_3;
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_GRAMOPHONE:
+            return STR_4;
+        default:
+            return STR_0;
+    }
+}
+
+std::string NodeManager::GetOptionsByType(const Node &node)
+{
+    switch (node.type) {
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER:
+            return GetEqualizerOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER:
+            return GetVoiceBeautifierOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD:
+            return GetSoundFieldOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT:
+            return GetEnvironmentEffectOptions(node);
+        default:
+            return "";
     }
 }
 
@@ -295,9 +399,9 @@ OH_AudioSuite_Result NodeManager::insertBefore(
 }
 
 OH_AudioSuite_Result NodeManager::insertAfter(
-    const std::string &sourceNodeId, const std::string &targerNodeId, const Node &targetNode)
+    const std::string &sourceNodeId, const std::string &targetNodeId, const Node &targetNode)
 {
-    OH_AudioSuite_Result result = disconnect(targetNodeId, targetNodenextNodeId);
+    OH_AudioSuite_Result result = disconnect(targetNodeId, targetNode.nextNodeId);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
@@ -345,7 +449,7 @@ OH_AudioSuite_Result NodeManager::stopPipelineState()
 char *NodeManager::getNodeTypeName(OH_AudioNode_Type type)
 {
     switch (type) {
-        case OH_AudioNode_Type::INPUT_NOE_TYPE_DEFAULT:
+        case OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT:
             return "inputNode";
         case OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER:
             return "mixerNode";
@@ -356,7 +460,7 @@ char *NodeManager::getNodeTypeName(OH_AudioNode_Type type)
 
 void NodeManager::GetPipeLineDetail()
 {
-    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     if (outputNodes.size() != 1) {
         OH_LOG_Print(LOG_APP,
             LOG_INFO,
@@ -366,7 +470,8 @@ void NodeManager::GetPipeLineDetail()
             static_cast<int>(outputNodes.size()));
         return;
     }
-    std::string pipelineDetails = "outputNode ";
+    std::ostringstream pipelineDetails;
+    pipelineDetails << "outputNode ";
     std::stack<Node> nodeStack;
     nodeStack.push(outputNodes[0]);
 
@@ -378,19 +483,19 @@ void NodeManager::GetPipeLineDetail()
             continue;
         }
 
-        pipelineDetails += "[";
+        pipelineDetails << "[";
         for (auto it = currentNode.preNodeIds.rbegin(); it != currentNode.preNodeIds.rend(); ++it) {
             Node childNode = GetNodeById(*it);
-            const char *nodeType = getNodeTypeName(childNode.type);
-            pipelineDetails += nodeType;
+            char *nodeType = getNodeTypeName(childNode.type);
+            pipelineDetails << nodeType;
             nodeStack.push(childNode);
         }
-        pipelineDetails += "] ";
+        pipelineDetails << "] ";
     }
     OH_LOG_Print(LOG_APP,
         LOG_INFO,
         GLOBAL_RESMGR,
         TAG,
         "NodeManagerTest GetPipeLineDetail: %{public}s",
-        pipelineDetails.c_str());
+        pipelineDetails.str().c_str());
 }

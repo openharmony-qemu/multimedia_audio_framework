@@ -80,10 +80,13 @@ ohos_shared_library("audio_common") {
     "common/src/limiter/audio_limiter.cpp",
     "common/src/limiter/audio_limiter_adapter.cpp",
     "common/src/limiter/audio_limiter_manager.cpp",
+    "common/src/audio_static_buffer_processor.cpp",
+    "common/src/audio_static_buffer_provider.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/audio_tool_calculate.cpp",
     "common/src/app_bundle_manager.cpp",
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
@@ -142,6 +145,13 @@ ohos_shared_library("audio_common") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
+  if (is_ohos && is_clang && target_cpu == "arm64") {
+    ldflags = [ 
+        "-Wl,--emit-relocs", 
+        "-Wl,--no-relax", 
+        "-mno-fix-cortex-a53-843419" 
+    ]
+  }
 }
 
 config("audio_client_public_config") {
@@ -224,7 +234,6 @@ ohos_shared_library("audio_client") {
     "client/src/ipc_stream_listener_impl.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/offline_stream_in_client.cpp",
-    "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
@@ -242,6 +251,7 @@ ohos_shared_library("audio_client") {
   deps = [
     ":audio_common",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
@@ -298,6 +308,10 @@ ohos_shared_library("audio_client") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (factory == true) {
+    defines += [ "CONFIG_FACTORY_VERSION" ]
   }
 
   version_script = "../../audio_framework.versionscript"
@@ -432,9 +446,10 @@ audio_ohos_library("audio_process_service") {
   configs = [ ":audio_service_config" ]
 
   include_dirs = [
-      "../../services/audio_engine/plugin/channel_converter/include",
-      "../audio_engine/plugin/resample/include",
-      "../audio_engine/simd",
+    "../../services/audio_engine/plugin/channel_converter/include",
+    "../../frameworks/native/audiodefinitions/include",
+    "../audio_engine/plugin/resample/include",
+    "../audio_engine/simd",
   ]
 
   deps = [
@@ -442,6 +457,7 @@ audio_ohos_library("audio_process_service") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
@@ -468,6 +484,8 @@ audio_ohos_library("audio_process_service") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "call_manager:tel_call_manager_api",
+    "ability_base:want",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {
@@ -581,6 +599,7 @@ audio_ohos_library("audio_service") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "call_manager:tel_call_manager_api",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {

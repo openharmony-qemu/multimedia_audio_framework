@@ -33,6 +33,8 @@
 #include "i_renderer_stream.h"
 #include "audio_service_log.h"
 #include "ipc_stream_in_server.h"
+#include "audio_static_buffer_provider.h"
+#include "audio_static_buffer_processor.h"
 
 namespace OHOS {
 namespace AudioStandard {

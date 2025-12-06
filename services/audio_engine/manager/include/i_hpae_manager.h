@@ -38,7 +38,7 @@ public:
     virtual int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) = 0;
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
-    virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
+    virtual void DumpAllAvailableDevice() = 0;
     virtual void DumpSinkInputsInfo() = 0;
     virtual void DumpSourceOutputsInfo() = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
@@ -61,6 +61,7 @@ public:
     virtual bool IsRunning() = 0;
     virtual bool IsMsgProcessing() = 0;
     virtual int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) = 0;
+    virtual int32_t StopAudioPort(const std::string &audioPortName) = 0;
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
     virtual int32_t SetSourceOutputMute(int32_t uid, bool setMute) = 0;
     virtual int32_t GetAllSinks() = 0;
@@ -154,6 +155,8 @@ public:
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
 
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
+    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void LoadCollaborationConfig() = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

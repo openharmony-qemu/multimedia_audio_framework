@@ -128,6 +128,10 @@ public:
     {
         return;
     }
+    void OnSetOptions(int32_t result) override
+    {
+        return;
+    }
 };
 
 class IAudioSuitePipelineTestImpl : public IAudioSuitePipeline {
@@ -977,6 +981,28 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_002
     EXPECT_EQ(result, SUCCESS);
 }
 
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_003, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    sleep(1);
+    uint32_t srcNodeId = 21;
+    uint32_t destNodeId = 22;
+
+    audioSuitePipeline.nodeMap_[21] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    audioSuitePipeline.nodeMap_[22] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+
+    audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
+    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
+    EXPECT_EQ(result, SUCCESS);
+
+    auto srcNode = audioSuitePipeline.nodeMap_[srcNodeId];
+    auto destNode = audioSuitePipeline.nodeMap_[destNodeId];
+
+    EXPECT_EQ(destNode->GetAudioNodeFormat().rate, srcNode->GetAudioNodeFormat().rate);
+}
+
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
@@ -1125,7 +1151,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRu
     audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
     audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = destNodeId;
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
-    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 
     destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
@@ -1133,7 +1159,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRu
 
     audioSuitePipeline.reverseConnections_[destNodeId] = {};
     result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
-    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRenderFrameTest, TestSize.Level0)
@@ -1282,6 +1308,65 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckPipelineNodeTes
 
     bool result = audioSuitePipeline.CheckPipelineNode(0);
     EXPECT_FALSE(result);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckRenderFrameTimeTest_001, TestSize.Level0)
+{
+    AudioSuitePipeline pl(PIPELINE_REALTIME_MODE);
+    pl.Init();
+    EXPECT_EQ(pl.IsInit(), true);
+
+    int32_t frameDurationMS = 20;  // 20 ms frame duraion
+    // DurationBase is for compare use, frameduration * rtfBase(1.0 for pipeline)
+    uint64_t processDurationBase = frameDurationMS * MILLISECONDS_TO_MICROSECONDS;
+    uint64_t testDurationNormal = 1;  // 1 microsecond
+    uint64_t testDurationBase = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_BASE];
+    uint64_t testDuration110Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_110BASE];
+    uint64_t testDuration120Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_120BASE];
+    uint64_t testDurationOver120Base = testDuration120Base + 1;
+    // expected OvertimeCounters
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayEmpty = {0, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayBase = {1, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArray110Base = {1, 1, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayOver120Base = {1, 1, 1};
+
+    std::array<PipelineWorkMode, 2> workModeArray = {PIPELINE_REALTIME_MODE, PIPELINE_EDIT_MODE};
+    for (PipelineWorkMode testWorkMode : workModeArray) {
+        pl.pipelineWorkMode_ = testWorkMode;
+
+        // rtf equal baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationBase);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayBase);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // rtf equal 110% baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration110Base);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArray110Base);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // rtf over 120% baseline
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationOver120Base);
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayOver120Base);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+
+        // check multiple times
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationNormal);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationNormal);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationBase);
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration110Base);
+        pl.CheckRenderFrameTime(frameDurationMS, testDuration120Base);
+        pl.CheckRenderFrameTime(frameDurationMS, testDurationOver120Base);
+        pl.CheckRenderFrameTime(0, 1);  // invalid data duration, ignore.
+        EXPECT_EQ(pl.renderFrameTotalCount_, 6);
+        std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayMultiple = {4, 3, 2};
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayMultiple);
+        pl.CheckRenderFrameOverTimeCount();
+        EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
+        EXPECT_EQ(pl.renderFrameTotalCount_, 0);
+    }
 }
 
 }  // namespace

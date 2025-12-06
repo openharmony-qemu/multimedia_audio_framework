@@ -58,7 +58,6 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallCaptureDevice(Sou
 vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID)
 {
-    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
@@ -70,13 +69,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     }
 
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
-    if (!latestConnDesc.get()) {
-        AUDIO_INFO_LOG("Have no latest connected desc, just only add default device.");
-        descs.push_back(make_shared<AudioDeviceDescriptor>());
-        return descs;
-    }
-    if (latestConnDesc->getType() == DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("Latest connected desc type is none, just only add default device.");
+    if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
@@ -85,7 +78,14 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
+    return GetRingRenderDevicesByLastConnDesc(latestConnDesc, streamUsage);
+}
 
+vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRenderDevicesByLastConnDesc(
+    shared_ptr<AudioDeviceDescriptor> latestConnDesc, StreamUsage streamUsage)
+{
+    AudioRingerMode curRingerMode = audioPolicyManager_.GetRingerMode();
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
     if (NeedLatestConnectWithDefaultDevices(latestConnDesc->getType())) {
         // Add the latest connected device.
         descs.push_back(move(latestConnDesc));
@@ -106,6 +106,11 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
                 break;
         }
     } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
+        if (audioPolicyManager_.IsDPCastingConnect() && latestConnDesc->getType() == DEVICE_TYPE_DP &&
+            streamUsage == STREAM_USAGE_ALARM) {
+            AUDIO_INFO_LOG("Wired cast scenarios, alarm clock's sound on the local device.");
+            return descs;
+        }
         descs.push_back(move(latestConnDesc));
     } else {
         descs.push_back(make_shared<AudioDeviceDescriptor>());

@@ -57,7 +57,6 @@ int32_t EffectChainManagerInitCb(const char *sceneType);
 bool EffectChainManagerCheckEffectOffload();
 int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *sessionID);
 int32_t EffectChainManagerReturnEffectChannelInfo(const char *sceneType, uint32_t *channels, uint64_t *channelLayout);
-int32_t EffectChainManagerReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
 int32_t EffectChainManagerVolumeUpdate(const char *sessionID);
 void EffectChainManagerEffectUpdate(void);
 bool EffectChainManagerSceneCheck(const char *sinkSceneType, const char *sceneType);

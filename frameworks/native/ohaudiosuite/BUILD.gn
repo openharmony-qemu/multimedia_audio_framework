@@ -45,20 +45,23 @@ ohos_shared_library("ohaudiosuite") {
 
   configs = [ ":audio_config" ]
 
-  sources = [
-    "./OHAudioSuiteEngine.cpp",
-    "./OHAudioSuiteNodeBuilder.cpp",
-  ]
+  if (audio_framework_feature_audiosuite_support) {
+    sources = [
+      "./OHAudioSuiteEngine.cpp",
+      "./OHAudioSuiteNodeBuilder.cpp",
+    ]
 
   deps = [
     "../../../services/audio_suite:audio_suite",
+    "../audioutils:audio_utils",
   ]
   cflags = [ "-Werror" ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+    ]
+  }
 
   innerapi_tags = [ "ndk" ]
 

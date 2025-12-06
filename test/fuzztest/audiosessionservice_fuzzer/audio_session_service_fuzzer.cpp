@@ -186,6 +186,14 @@ void AudioSessionServiceAudioSessionInfoDumpFuzzTest()
     audioSessionService.AudioSessionInfoDump(dumpString);
 }
 
+void AudioSessionServiceGetAudioSessionStreamUsageForDeviceFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    uint32_t streamId = GetData<uint32_t>();
+    audioSessionService.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+}
+
 TestPtr g_testPtrs[] = {
     AudioSessionServiceIsSameTypeForAudioSessionFuzzTest,
     AudioSessionServiceActivateAudioSessionFuzzTest,
@@ -194,6 +202,7 @@ TestPtr g_testPtrs[] = {
     AudioSessionServiceSetSessionTimeOutCallbackFuzzTest,
     AudioSessionServiceOnAudioSessionTimeOutFuzzTest,
     AudioSessionServiceAudioSessionInfoDumpFuzzTest,
+    AudioSessionServiceGetAudioSessionStreamUsageForDeviceFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

@@ -104,8 +104,6 @@ public:
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 
-    int32_t CaptureConcurrentCheck(const uint32_t &sessionID) override;
-
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 
@@ -140,7 +138,7 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
 int32_t MockPolicyProvider::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
 {
     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-    policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "MockVolumeMap");
+    policyVolumeMap_ = AudioSharedMemory::CreateFromLocal(mapSize, "MockVolumeMap");
     buffer = policyVolumeMap_;
     return SUCCESS;
 }
@@ -192,11 +190,6 @@ int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 }
 
 int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
-{
-    return SUCCESS;
-}
-
-int32_t MockPolicyProvider::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return SUCCESS;
 }
@@ -331,7 +324,7 @@ void ModifyRendererConfig(AudioProcessConfig &config)
     config.rendererInfo.rendererFlags = config.rendererInfo.rendererFlags % (AUDIO_FLAG_VOIP_DIRECT + 1);
 
     config.rendererInfo.pipeType = static_cast<AudioPipeType>(config.rendererInfo.pipeType %
-        (PIPE_TYPE_DIRECT_VOIP + 1));
+        (PIPE_TYPE_OUT_VOIP + 1));
 }
 
 void ModifyRecorderConfig(AudioProcessConfig &config)
@@ -341,7 +334,7 @@ void ModifyRecorderConfig(AudioProcessConfig &config)
     config.capturerInfo.capturerFlags = config.capturerInfo.capturerFlags % (AUDIO_FLAG_VOIP_DIRECT + 1);
 
     config.capturerInfo.pipeType = static_cast<AudioPipeType>(config.capturerInfo.pipeType %
-        (PIPE_TYPE_DIRECT_VOIP + 1));
+        (PIPE_TYPE_OUT_VOIP + 1));
 }
 
 void ModifyProcessConfig(AudioProcessConfig &config)
@@ -469,7 +462,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     config.rendererInfo.sceneType = ""; // in plan
 
     config.rendererInfo.originalFlag = GetData<int32_t>();
-    config.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    config.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     config.rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
     config.rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
     config.rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
@@ -477,7 +470,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     config.capturerInfo.capturerFlags = GetData<int32_t>();
-    config.capturerInfo.pipeType = PIPE_TYPE_CALL_IN;
+    config.capturerInfo.pipeType = PIPE_TYPE_IN_VOIP;
     config.capturerInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     config.capturerInfo.encodingType = GetData<uint8_t>();
     config.capturerInfo.channelLayout = GetData<uint64_t>();

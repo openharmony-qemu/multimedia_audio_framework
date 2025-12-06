@@ -31,7 +31,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr int32_t MAX_FAILURE_NUM = 50;
 static constexpr int32_t DIRECT_STOP_TIMEOUT_IN_SEC = 8; // 8S
 static const std::string EAC3_SINK_NAME = "eac3";
 static const char *PRIMARY_ADAPTER_TYPE = "primary";
@@ -39,7 +38,6 @@ static const char *PRIMARY_ADAPTER_TYPE = "primary";
 DirectPlayBackEngine::DirectPlayBackEngine()
     : isStart_(false),
       isInit_(false),
-      failedCount_(0),
       latency_(0),
       stream_(nullptr),
       uChannel_(0),
@@ -51,7 +49,6 @@ DirectPlayBackEngine::DirectPlayBackEngine()
 
 DirectPlayBackEngine::~DirectPlayBackEngine()
 {
-    failedCount_ = 0;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     if (sink && sink->IsInited()) {
         sink->Stop();
@@ -86,7 +83,6 @@ int32_t DirectPlayBackEngine::Start()
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink!");
     CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first!");
-    failedCount_ = 0;
     latency_ = 0;
     if (!isStart_) {
         ret = sink->Start();
@@ -107,7 +103,6 @@ int32_t DirectPlayBackEngine::Stop()
         "DirectPlayBackEngine::Stop", DIRECT_STOP_TIMEOUT_IN_SEC,
         [](void *) { AUDIO_ERR_LOG("stop timeout"); }, nullptr,
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    failedCount_ = 0;
     ret = StopAudioSink();
     isStart_ = false;
     return ret;
@@ -125,7 +120,7 @@ int32_t DirectPlayBackEngine::StopAudioSink()
     return ret;
 }
 
-int32_t DirectPlayBackEngine::Pause()
+int32_t DirectPlayBackEngine::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Enter");
     if (!isStart_) {
@@ -136,7 +131,6 @@ int32_t DirectPlayBackEngine::Pause()
         "DirectPlayBackEngine::Pause", DIRECT_STOP_TIMEOUT_IN_SEC,
         [](void *) { AUDIO_ERR_LOG("stop timeout"); }, nullptr,
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    failedCount_ = 0;
     int32_t ret = StopAudioSink();
     isStart_ = false;
     return ret;
@@ -192,10 +186,6 @@ void DirectPlayBackEngine::MixStreams()
         AUDIO_INFO_LOG("stream is nullptr");
         return;
     }
-    if (failedCount_ >= MAX_FAILURE_NUM) {
-        AUDIO_WARNING_LOG("failed count is overflow.");
-        return;
-    }
     std::vector<char> audioBuffer;
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
@@ -203,13 +193,11 @@ void DirectPlayBackEngine::MixStreams()
     uint32_t sessionId = stream_->GetStreamIndex();
     if (index < 0) {
         AUDIO_WARNING_LOG("peek buffer failed.result:%{public}d,buffer size:%{public}d", result, index);
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_DIRECT_OUT, appUid);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
         stream_->ReturnIndex(index);
-        failedCount_++;
         return;
     }
-    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_DIRECT_OUT, appUid);
-    failedCount_ = 0;
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_DIRECT_NORMAL, appUid);
     DoRenderFrame(audioBuffer, index, appUid);
 }
 

@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef AUDIO_SUITE_PURE_VOICE_CHANGE_NODE_H
+#define AUDIO_SUITE_PURE_VOICE_CHANGE_NODE_H
+
+#include "audio_suite_algo_interface.h"
+#include "audio_suite_process_node.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace AudioSuite {
+class AudioSuitePureVoiceChangeNode : public AudioSuiteProcessNode {
+public:
+    AudioSuitePureVoiceChangeNode();
+    ~AudioSuitePureVoiceChangeNode();
+    int32_t Init() override;
+    int32_t DeInit() override;
+    int32_t DoProcess() override;
+    int32_t SetOptions(std::string name, std::string value) override;
+    int32_t GetOptions(std::string name, std::string &value) override;
+
+protected:
+    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
+    std::vector<AudioSuitePcmBuffer*>& ReadDoubleProcessNodePreOutputData();
+    AudioSuitePcmBuffer* splitDataInHalf(const std::vector<AudioSuitePcmBuffer *> &inputs);
+
+private:
+    std::shared_ptr<AudioSuiteAlgoInterface> algoInterfaceImpl_;
+    bool isInit_ = false;
+    std::vector<uint8_t *> tmpin_{nullptr};
+    std::vector<uint8_t *> tmpout_{nullptr};
+    AudioSuitePcmBuffer outPcmBuffer_;
+    AudioSuitePcmBuffer postProcessedPcmBuffer_;
+    std::vector<AudioSuitePcmBuffer*> rawPcmData_;
+    AudioSuitePcmBuffer tempPcmData_;
+    bool isSecondRequest_ = false;
+    bool isDataReadComplete_ = false;
+};
+
+}  // namespace AudioSuite
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif  // AUDIO_SUITE_PURE_VOICE_CHANGE_NODE_H

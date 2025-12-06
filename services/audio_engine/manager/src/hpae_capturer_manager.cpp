@@ -103,7 +103,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
         clusterNodeInfo.channels = sourceInfo_.channels;
         clusterNodeInfo.format = sourceInfo_.format;
         clusterNodeInfo.samplingRate = sourceInfo_.samplingRate;
-        clusterNodeInfo.frameLen = CaculateFrameLenByNodeInfo(clusterNodeInfo);
+        clusterNodeInfo.frameLen = CalculateFrameLenBySampleRate(clusterNodeInfo.samplingRate);
         clusterNodeInfo.statusCallback = weak_from_this();
         clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
         sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
@@ -1033,6 +1033,15 @@ std::string HpaeCapturerManager::GetDeviceHDFDumpInfo()
     return config;
 }
 
+int32_t HpaeCapturerManager::StopManager()
+{
+    auto request = [this] {
+        CapturerSourceStop();
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
     const SourceType &sourceType)
 {
@@ -1043,6 +1052,9 @@ int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->ConnectInjector(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, set inject state failed");
+        inputCluster->SetInjectState(true);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1058,6 +1070,9 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->DisConnectInjector(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, remove inject state failed");
+        inputCluster->SetInjectState(false);
     };
     SendRequest(request, __func__);
     return SUCCESS;

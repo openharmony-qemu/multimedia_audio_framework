@@ -40,6 +40,7 @@ public:
     int32_t SetDefaultSource(std::string name) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
     int32_t SuspendAudioDevice(std::string &audioPortName, bool isSuspend) override;
+    int32_t StopAudioPort(const std::string &audioPortName) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     std::vector<SinkInput> GetAllSinkInputs() override;
     std::vector<SourceOutput> GetAllSourceOutputs() override;
@@ -85,6 +86,8 @@ public:
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
+    void updateCollaborativeProductId(const std::string &productId) override;
+    void LoadCollaborationConfig() override;
 
 private:
     std::mutex lock_;

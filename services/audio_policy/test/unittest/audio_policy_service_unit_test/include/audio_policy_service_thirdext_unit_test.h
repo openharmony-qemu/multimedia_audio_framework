@@ -26,6 +26,23 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct StreamPropTestInfo {
+    AudioSampleFormat format_ = INVALID_WIDTH;
+    uint32_t sampleRate_ = 0;
+    AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
+    AudioChannel channels_ = CHANNEL_UNKNOW;
+};
+
+class GetDynamicInfoTestData {
+public:
+    GetDynamicInfoTestData(AudioStreamInfo streamInfo, AudioSampleFormat format, uint32_t sampleRate,
+        AudioChannelLayout channelLayout, AudioChannel channels);
+
+    bool Check(std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
+    AudioStreamInfo streamInfo_;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo_ = nullptr;
+};
+
 class AudioPolicyServiceFourthUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

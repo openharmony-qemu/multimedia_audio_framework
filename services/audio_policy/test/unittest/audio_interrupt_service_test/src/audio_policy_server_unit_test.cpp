@@ -1095,29 +1095,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_043, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_044
-* @tc.desc  : Test AudioPolicyServer::GetPreferredOutputStreamType
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_044, TestSize.Level1)
-{
-    auto ptrAudioPolicyServer = GetPolicyServerUnitTest();
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    AudioRendererInfo rendererInfo;
-    int32_t ret = 0;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    ptrAudioPolicyServer->audioPolicyService_.isFastControlled_ = true;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    ptrAudioPolicyServer->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
-}
-
-/**
 * @tc.name  : Test TranslateErrorCodeer.
 * @tc.number: TranslateErrorCode_001
 * @tc.desc  : Test TranslateErrorCodeer.
@@ -1185,7 +1162,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_001, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int32_t volumeLevel = 1;
     bool mute = true;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1202,7 +1180,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_002, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int32_t volumeLevel = 0;
     bool mute = false;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1219,22 +1198,8 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     AudioStreamType streamType = AudioStreamType::STREAM_SYSTEM;
     int32_t volumeLevel = 1;
     bool mute = false;
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute);
-}
-
-/**
-* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
-* @tc.number: ChangeVolumeOnVoiceAssistant_001
-* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
-*/
-HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
-    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
+    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1604,20 +1569,6 @@ HWTEST(AudioPolicyUnitTest, MicrophoneMuteInfoDump_001, TestSize.Level1)
     ptrAudioPolicyServer->MicrophoneMuteInfoDump(dumpString);
 }
 
-/**
-* @tc.name  : Test ChangeVolumeOnVoiceAssistant.
-* @tc.number: ChangeVolumeOnVoiceAssistant_002
-* @tc.desc  : Test AudioPolicyServer::ChangeVolumeOnVoiceAssistant
-*/
-HWTEST(AudioPolicyUnitTest, ChangeVolumeOnVoiceAssistant_002, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_DEFAULT;
-    ptrAudioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
-}
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_046
@@ -3537,9 +3488,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_224, TestSize.Level4)
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
-    audioPolicyServer->interruptService_->isSwitchUser_ = true;
-    audioPolicyServer->OnReceiveEvent(eventData);
-    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->interruptService_ = nullptr;
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
@@ -3672,7 +3620,7 @@ HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.L
     object = new RemoteObjectTestStub();
 
     ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -3764,6 +3712,48 @@ HWTEST(AudioPolicyUnitTest, GetBundleNameFromUidandGetBundleInfoFromUid_001, Tes
     bundleInfo = AudioBundleManager::GetBundleInfoFromUid(666);
     callerName = AudioBundleManager::GetBundleNameFromUid(666);
     EXPECT_EQ(callerName, "");
+}
+
+/**
+* @tc.name  : Test VerifyBluetoothPermission.
+* @tc.number: VerifyBluetoothPermission_001
+* @tc.desc  : VerifyBluetoothPermission for UID_BOOTUP_MUSIC
+*/
+HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    constexpr int32_t UID_BOOTUP_MUSIC = 1003;
+    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_BOOTUP_MUSIC));
+}
+
+/**
+* @tc.name  : Test VerifyBluetoothPermission.
+* @tc.number: VerifyBluetoothPermission_002
+* @tc.desc  : VerifyBluetoothPermission for UID_MEDIA
+*/
+HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_002, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    constexpr int32_t UID_MEDIA = 1013;
+    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MEDIA));
+}
+
+/**
+* @tc.name  : Test VerifyBluetoothPermission.
+* @tc.number: VerifyBluetoothPermission_003
+* @tc.desc  : VerifyBluetoothPermission for UID_MCU
+*/
+HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    constexpr int32_t UID_MCU = 7500;
+    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MCU));
 }
 } // AudioStandard
 } // OHOS

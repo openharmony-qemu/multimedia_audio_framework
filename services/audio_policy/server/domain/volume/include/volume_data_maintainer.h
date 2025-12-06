@@ -159,6 +159,9 @@ public:
         AudioStreamType streamType);
     void SaveVolumeDegreeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType, int32_t volumeDegree);
+    
+    int32_t CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+    int32_t CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
 
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
@@ -197,6 +200,7 @@ private:
         std::unordered_map<AudioStreamType, int32_t>> volumeDegreeMap_;
     bool isSettingsCloneHaveStarted_ = false;
     std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
+    bool isDataShareReady_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,19 +20,28 @@
 #include <dlfcn.h>
 #include <vector>
 #include <sstream>
+#include <cstring>
 #include <iostream>
+#include "securec.h"
+#include "audio_utils.h"
+#include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_eq_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-namespace {
-const std::string ALGO_SO_PATH = "/system/lib64/libimedia_sws.z.so";
-}
 
-AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl()
-{}
+AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc)
+{
+    nodeCapability = nc;
+    frameLen_ = 0;
+    inputSamples_ = 0;
+    algoApi_ = {0};
+    stData_ = {0};
+    para_ = {0};
+    stSize_ = {0};
+}
 
 AudioSuiteEqAlgoInterfaceImpl::~AudioSuiteEqAlgoInterfaceImpl()
 {
@@ -60,22 +69,24 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
         return ERROR;
     }
-    std::string soPath = ALGO_SO_PATH;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
+        AUDIO_ERR_LOG("LoadLibrary failed with path: %{private}s", soPath.c_str());
         return ERROR;
     }
     algoApi_.getSize = reinterpret_cast<FuniMedia_Eq_GetSize>(dlsym(libHandle_, "iMedia_Eq_GetSize"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.getSize != nullptr, ERROR, "Failed to get symbol iMedia_Eq_GetSize");
     algoApi_.initAlgo = reinterpret_cast<FuniMedia_Eq_Init>(dlsym(libHandle_, "iMedia_Eq_Init"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.initAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Eq_Init");
     algoApi_.applyAlgo = reinterpret_cast<FuniMedia_Eq_Apply>(dlsym(libHandle_, "iMedia_Eq_Apply"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Eq_Apply");
     algoApi_.setPara = reinterpret_cast<FuniMedia_Eq_SetParams>(dlsym(libHandle_, "iMedia_Eq_SetParams"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.setPara != nullptr, ERROR, "Failed to get symbol iMedia_Eq_SetParams");
     algoApi_.getPara = reinterpret_cast<FuniMedia_Eq_GetParams>(dlsym(libHandle_, "iMedia_Eq_GetParams"));
-    CHECK_AND_RETURN_RET_LOG(algoApi_.getPara != nullptr, ERROR, "Failed to get symbol iMedia_Eq_GetParams");
+    bool loadAlgoApiFail = algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr ||
+                           algoApi_.applyAlgo == nullptr || algoApi_.setPara == nullptr || algoApi_.getPara == nullptr;
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
 
     stSize_.iStrSize = 0;
     stSize_.iScracthSize = 0;
@@ -99,7 +110,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Deinit()
     isEqAlgoInit_ = false;
     if (libHandle_ != nullptr) {
         int32_t ret = dlclose(libHandle_);
-        CHECK_AND_RETURN_RET_LOG(ret != 0, ret, "dlclose failed: %{public}s", dlerror());
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "dlclose failed: %{public}s", dlerror());
         libHandle_ = nullptr;
     }
     static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
@@ -123,7 +134,13 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
 
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
-            result.push_back(std::stoi(token));
+            int32_t value = 0;
+            CHECK_AND_RETURN_RET_LOG(
+                StringConverter(token, value), std::vector<int>(), "convert invalid string: %{public}s", str.c_str());
+            result.push_back(value);
+        } else {
+            AUDIO_ERR_LOG("Invalid Eq para: %{public}s", str.c_str());
+            return std::vector<int>();
         }
     }
 
@@ -138,6 +155,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain,
 
     std::vector<int> gainsL = ParseStringToIntArray(sEQLGain, ':');
     std::vector<int> gainsR = ParseStringToIntArray(sEQRGain, ':');
+    CHECK_AND_RETURN_RET(!gainsL.empty() && !gainsR.empty(), ERROR);
     AUDIO_INFO_LOG("Set EQLGain to %{public}s, EQRGain to %{public}s", sEQLGain.c_str(), sEQRGain.c_str());
 
     size_t i = 0;
@@ -190,7 +208,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
 
     int32_t result = -1;
     size_t start = 0;
-    size_t i = 0;
+
     IMEDIA_INT16 *bufIn = reinterpret_cast<IMEDIA_INT16 *>(pcmInBuf[0]);
     IMEDIA_INT16 *pcmOut = reinterpret_cast<IMEDIA_INT16 *>(pcmOutBuf[0]);
     if (libHandle_ == nullptr) {
@@ -199,7 +217,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
 
     while (inputSamples_ >= start + frameLen_) {
         frameLen_ = frameLen_ < inputSamples_ - start ? frameLen_ : inputSamples_ - start;
-        for (i = 0; i < frameLen_; i++) {
+        for (size_t i = 0; i < frameLen_; i++) {
             dataIn_[i] = static_cast<uint32_t>(bufIn[start + i]);
             dataIn_[i] <<= TWO_BYTES_WIDTH;
         }
@@ -210,7 +228,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
             return result;
         }
 
-        for (i = 0; i < frameLen_; i++) {
+        for (size_t i = 0; i < frameLen_; i++) {
             pcmOut[start + i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
         }
         start = start + frameLen_ < inputSamples_ ? start + frameLen_ : inputSamples_;

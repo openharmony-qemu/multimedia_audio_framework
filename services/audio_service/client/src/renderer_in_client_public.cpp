@@ -117,7 +117,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
-        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OUT_OFFLOAD : PIPE_TYPE_OUT_NORMAL;
         return SUCCESS;
     }
 
@@ -217,9 +217,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
-        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
+        "remoteLayout: %{public}llx , isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
-        info.channels, info.format, eStreamType_, info.encoding);
+        info.channels, info.format, eStreamType_, info.encoding,
+        info.remoteChannelLayout, info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -227,6 +229,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+        if (info.isRemoteSpatialChannel) {
+            cfg.outChannelLayout = info.remoteChannelLayout;
+            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx", cfg.outChannelLayout);
+        }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
             AUDIO_ERR_LOG("AudioStream: converter construct error");
@@ -298,7 +304,7 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
-
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, false, "Now in injection mode.​​");
     uint64_t readPos = 0;
     int64_t handleTime = 0;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
@@ -608,7 +614,7 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
-    std::lock_guard lock(firstFrameWritingMutex_);
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
     return SUCCESS;
 }
@@ -620,7 +626,7 @@ void RendererInClientInner::OnFirstFrameWriting()
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
     {
-        std::lock_guard lock(firstFrameWritingMutex_);
+        std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
@@ -729,13 +735,12 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
-        "RENDER_MODE_CALLBACK");
+    AUDIO_INFO_LOG("to %{public}d", renderMode);
     if (renderMode_ == renderMode) {
         return SUCCESS;
     }
 
-    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK.
+    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK or RENDER_MODE_STATIC.
     if (renderMode_ == RENDER_MODE_CALLBACK && renderMode == RENDER_MODE_NORMAL) {
         AUDIO_ERR_LOG("SetRenderMode from callback to normal is not supported.");
         return ERR_INCORRECT_MODE;
@@ -906,7 +911,7 @@ int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
 }
@@ -1088,7 +1093,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !rendererInfo_.isStatic) {
         lock.lock();
         DrainAudioStreamInner(true);
     }
@@ -1132,7 +1137,8 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1193,7 +1199,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
+        sessionId_, clientUid_, volumeDataCount_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1283,7 +1290,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
     return WriteInner(buffer, bufferSize);
 }
 
-void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
+void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
@@ -1291,9 +1298,11 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+    size_t minSize = static_cast<size_t>(isRecreate ? MIN_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
     size_t minCbBufferSize =
-        static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
+        static_cast<size_t>(minSize * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
+    SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;
@@ -1458,6 +1467,14 @@ void RendererInClientInner::SetStreamTrackerState(bool trackerRegisteredState)
     streamTrackerRegistered_ = trackerRegisteredState;
 }
 
+void RendererInClientInner::GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info)
+{
+    std::lock_guard<std::mutex> lock(firstFrameWritingMutex_);
+    if (firstFrameWritingCb_) {
+        info.rendererFirstFrameWritingCallback = firstFrameWritingCb_;
+    }
+}
+
 void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 {
     info.params = streamParams_;
@@ -1473,6 +1490,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
+
+    if (rendererInfo_.isStatic) {
+        GetStaticBufferInfo(info.staticBufferInfo);
+    }
+    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1484,6 +1506,8 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
         std::lock_guard<std::mutex> lock(lastCallStartByUserTidMutex_);
         info.lastCallStartByUserTid = lastCallStartByUserTid_;
     }
+
+    GetRendererFirstFrameWritingCallback(info);
 }
 
 void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
@@ -1756,8 +1780,8 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     SetStreamTrackerState(false);
     // If pipe type is offload, need reset to normal.
     // Otherwise, unable to enter offload mode.
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
+    if (rendererInfo_.pipeType == PIPE_TYPE_OUT_OFFLOAD) {
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
     if (ret != SUCCESS) {
@@ -1798,6 +1822,7 @@ error:
 
 int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
     if (ret == SUCCESS) {
@@ -1818,6 +1843,7 @@ DeviceType RendererInClientInner::GetDefaultOutputDevice()
 
 int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
         ERR_INVALID_PARAM, "Timestampbase is not allowed");

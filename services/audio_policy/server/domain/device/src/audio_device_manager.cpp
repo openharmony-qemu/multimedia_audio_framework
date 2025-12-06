@@ -25,7 +25,10 @@
 #include "audio_bluetooth_manager.h"
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
+#include "audio_pipe_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -229,6 +232,10 @@ void AudioDeviceManager::MakePairedDefaultDeviceDescriptor(const shared_ptr<Audi
     if (it != connectedDevices_.end()) {
         MakePairedDefaultDeviceImpl(devDesc, *it);
     }
+
+    if (!AudioPipeManager::GetPipeManager()->HasPrimarySink()) {
+        MakePairedDPDeviceDescriptor(devDesc, devRole);
+    }
 }
 
 void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
@@ -252,6 +259,44 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
         }
         if (speaker_->networkId_ == devDesc->networkId_) {
             speaker_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
+    }
+}
+
+void AudioDeviceManager::MakePairedDPDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    DeviceRole devRole)
+{
+    // DP -> MIC ; MIC -> DP
+    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        if (devDesc->deviceType_ == DEVICE_TYPE_DP && devRole == INPUT_DEVICE &&
+            desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == devDesc->networkId_) {
+            return true;
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && devRole == OUTPUT_DEVICE &&
+            desc->deviceType_ == DEVICE_TYPE_DP && desc->networkId_ == devDesc->networkId_) {
+            return true;
+        }
+        return false;
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        MakePairedDPDeviceImpl(devDesc, *it);
+    }
+}
+
+void AudioDeviceManager::MakePairedDPDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    const shared_ptr<AudioDeviceDescriptor> &connectedDesc)
+{
+    devDesc->pairDeviceDescriptor_ = connectedDesc;
+    if (devDesc->deviceType_ == DEVICE_TYPE_DP && defalutMic_ != NULL) {
+        if (defalutMic_->networkId_ == devDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
+    } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && defalutMic_ != NULL) {
+        if (defalutMic_->networkId_ == connectedDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = connectedDesc;
         }
         connectedDesc->pairDeviceDescriptor_ = devDesc;
     }
@@ -461,17 +506,17 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
         if (descriptor->deviceType_ == deviceDescriptor->deviceType_ &&
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
-            if (IsUsb(descriptor->deviceType_)) {
-                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
-            }
-            if (descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-                descriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK &&
-                descriptor->deviceType_ != DEVICE_TYPE_NEARLINK_IN) {
-                return true;
-            } else {
-                // if the disconnecting device is A2DP, need to compare mac address in addition.
-                return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+            switch (descriptor->deviceType_) {
+                case DEVICE_TYPE_USB_HEADSET:
+                case DEVICE_TYPE_USB_ARM_HEADSET:
+                case DEVICE_TYPE_BLUETOOTH_A2DP:
+                case DEVICE_TYPE_BLUETOOTH_SCO:
+                case DEVICE_TYPE_NEARLINK:
+                case DEVICE_TYPE_NEARLINK_IN:
+                case DEVICE_TYPE_REMOTE_DAUDIO:
+                    return descriptor->macAddress_ == deviceDescriptor->macAddress_;
+                default:
+                    return true;
             }
         }
         return false;
@@ -941,8 +986,7 @@ void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage
 
 VolumeBehavior AudioDeviceManager::GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
-        networkId.c_str(), deviceType);
+    AUDIO_INFO_LOG("deviceType [%{public}d]", deviceType);
     VolumeBehavior volumeBehavior;
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ != deviceType || desc->networkId_ != networkId) {
@@ -1636,18 +1680,17 @@ int32_t AudioDeviceManager::SetPreferredInputDevice(
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_PERMISSION_DENIED, "set preferred input device denied: no system permission");
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter");
     std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
     preferredInputDeviceInfo_[sessionID] = std::make_pair(devDesc, sourceType);
-    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, deviceName_ = %{public}s, "
-        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceName_.c_str(),
-        devDesc->deviceType_, sourceType);
+    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, "
+        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceType_, sourceType);
     return SUCCESS;
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDevice(const uint32_t sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG(preferredInputDeviceInfo_.count(sessionID), nullptr,
-        "sessionID %{public}d: preferredInputDevice is empty", sessionID);
+    CHECK_AND_RETURN_RET(preferredInputDeviceInfo_.count(sessionID), nullptr, sessionID);
     shared_ptr<AudioDeviceDescriptor> preferredInputDevice = preferredInputDeviceInfo_[sessionID].first;
     shared_ptr<AudioDeviceDescriptor> onlinePreferredInputDevice = nullptr;
 
@@ -1670,8 +1713,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDev
     }
     CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice != nullptr, nullptr, "cannot find online preferredInputDevice");
     CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice->deviceRole_ == INPUT_DEVICE, nullptr, "wrong deviceRole");
-    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d, deviceName: %{public}s",
-        onlinePreferredInputDevice->deviceType_, onlinePreferredInputDevice->deviceName_.c_str());
+    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d", onlinePreferredInputDevice->deviceType_);
     return onlinePreferredInputDevice;
 }
 

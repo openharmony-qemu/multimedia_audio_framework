@@ -24,6 +24,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_engine_log.h"
+#include "audio_collaboration_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -238,6 +239,27 @@ bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void HpaePolicyManager::updateCollaborativeProductId(const std::string &productId)
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
+    audioCollaborationManager->updateCollaborativeProductId(productId);
+}
+
+void HpaePolicyManager::LoadCollaborationConfig()
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
+    audioCollaborationManager->LoadCollaborationConfig();
+}
+
+void HpaePolicyManager::SetBypassSpatializationForStereo(bool bypass)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->SetBypassSpatializationForStereo(bypass);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -33,7 +33,10 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "-fno-access-control",
   ]
 
-  sources = [ "audio_stream_fuzzer.cpp" ]
+  sources = [
+    "audio_stream_fuzzer.cpp",
+    "../../../services/audio_service/client/src/policy_provider_stub.cpp",
+  ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]

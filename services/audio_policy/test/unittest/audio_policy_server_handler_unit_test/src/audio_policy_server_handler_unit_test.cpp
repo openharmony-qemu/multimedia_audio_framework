@@ -331,6 +331,55 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestS
 }
 
 /**
+ * @tc.name  : HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.number: HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.desc  : Test HandleCollaborationEnabledChangeForCurrentDeviceEvent function
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001,
+    TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->collaborationEnabled = true;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        eventContextObj);
+
+    bool testEnabled = true;
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(AudioPolicyServerHandler::EventAudioServerCmd::
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    std::shared_ptr<AudioPolicyClientHolder> testHolder = nullptr;
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = testHolder;
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, true);
+
+    std::unordered_map<CallbackChange, bool> testCallBackChangeMap;
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = true;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    testCallBackChangeMap.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = false;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = nullptr;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, false);
+}
+
+/**
  * @tc.name  : HandleMicrophoneBlockedCallback_Test_001
  * @tc.number: Audio_HandleMicrophoneBlockedCallback_001
  * @tc.desc  : Test HandleMicrophoneBlockedCallback function when eventContextObj is nullptr.
@@ -1312,6 +1361,58 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleFormatUnsupportedErrorEvent_001, 
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR, 0);
     audioPolicyServerHandler_->HandleFormatUnsupportedErrorEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
+
+
+/**
+ * @tc.name  : HandleAdaptiveSpatialRenderingEnabledChangeEvent_001
+ * @tc.number: HandleAdaptiveSpatialRenderingEnabledChangeEvent_001
+ * @tc.desc  : Test HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleAdaptiveSpatialRenderingEnabledChangeEvent_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    int32_t ret =
+        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, true);
+    audioPolicyServerHandler_->HandleAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
+
+/**
+ * @tc.name  : HandleDeviceConfigChangedEvent_Test_001
+ * @tc.number: HandleDeviceConfigChangedEvent_Test_001
+ * @tc.desc  : Test HandleDeviceConfigChangedEvent function.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_Test_001, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    eventContextObj->descriptor = devDesc;
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::DEVICE_CONFIG_CHANGED, eventContextObj);
+    int32_t ret =
+        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
+    uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::DEVICE_CONFIG_CHANGED;
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 } // namespace AudioStandard

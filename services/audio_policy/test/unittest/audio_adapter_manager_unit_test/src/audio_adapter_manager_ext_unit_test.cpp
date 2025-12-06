@@ -513,7 +513,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetCurentDeviceSafeTime_001, TestSize.L
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
 
     auto ret = audioAdapterManager->GetCurentDeviceSafeTime(device->deviceType_);
-    EXPECT_LT(0, ret);
+    EXPECT_NE(ret, -1);
 }
 
 /**
@@ -529,7 +529,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetRestoreVolumeLevel_001, TestSize.Lev
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
 
     auto ret = audioAdapterManager->GetRestoreVolumeLevel(device->deviceType_);
-    EXPECT_LT(0, ret);
+    EXPECT_NE(ret, -1);
 }
 
 /**
@@ -593,7 +593,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SafeVolumeDump_001, TestSize.Level4)
 
     std::string dumpString;
     audioAdapterManager->SafeVolumeDump(dumpString);
-    EXPECT_EQ(audioAdapterManager->isSafeBoot_, true);
+    EXPECT_EQ(audioAdapterManager->isSafeBoot_, false);
 }
 
 /**
@@ -610,6 +610,24 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SafeVolumeDump_002, TestSize.Level4)
     std::string dumpString;
     audioAdapterManager->SafeVolumeDump(dumpString);
     EXPECT_EQ(audioAdapterManager->isSafeBoot_, false);
+}
+
+/**
+ * @tc.name: GetStreamMuteInternal
+ * @tc.desc: Test SafeVolumeDump
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetStreamMuteInternal, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_RING), false);
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_MUSIC), false);
+    audioAdapterManager->ringerNoMuteDevice_ = desc;
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_RING), false);
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_MUSIC), false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

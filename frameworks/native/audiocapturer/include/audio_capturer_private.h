@@ -140,6 +140,7 @@ private:
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     IAudioStream::StreamClass DecideStreamClassAndUpdateCapturerInfo(uint32_t flag);
     int32_t InitInputDeviceChangeCallback();
+    void ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
@@ -160,7 +161,6 @@ private:
     uint32_t GetOverflowCountInner() const;
     CapturerState GetStatusInner() const;
     std::shared_ptr<IAudioStream> GetInnerStream() const;
-    IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
@@ -192,7 +192,6 @@ private:
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
     AudioCaptureMode audioCaptureMode_ = CAPTURE_MODE_NORMAL;
-    bool isFastVoipSupported_ = false;
     std::mutex setCapturerCbMutex_;
     mutable std::shared_mutex capturerMutex_;
     std::mutex capturerPolicyServiceDiedCbMutex_;

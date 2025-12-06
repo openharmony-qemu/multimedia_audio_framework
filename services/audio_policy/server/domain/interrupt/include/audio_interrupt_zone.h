@@ -75,6 +75,8 @@ private:
     AudioFocusIterator QueryAudioFocusFromZone(int32_t zoneId, const std::string &deviceTag);
     void ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
+    void SendInterruptEventForMigration(const std::pair<AudioInterrupt, AudioFocuState> &audioInterrupt,
+        const int32_t toZoneId);
 
     AudioInterruptService *service_ = nullptr;
 };

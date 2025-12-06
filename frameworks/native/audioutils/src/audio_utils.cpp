@@ -208,6 +208,9 @@ bool Util::IsScoSupportSource(const SourceType sourceType)
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        return false;
+    }
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
 }
 
@@ -375,6 +378,14 @@ void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
     if (tmpTime > 0) {
         timestamp[Timestamp::Timestampbase::BOOTTIME] = static_cast<uint64_t>(tmpTime);
     }
+}
+
+bool ClockTime::CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval)
+{
+    int64_t curTimestamp = GetCurNano();
+    CHECK_AND_RETURN_RET(lastRecordTimestamp.load() + timeInterval < curTimestamp, false);
+    lastRecordTimestamp.store(curTimestamp);
+    return true;
 }
 
 void Trace::Count(const std::string &value, int64_t count)
@@ -831,6 +842,29 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
+    return true;
+}
+
+static std::unordered_map<int32_t, std::pair<uint32_t, std::string>> g_solePipeSourceMap = {};
+
+void SolePipe::SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName)
+{
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
+    g_solePipeSourceMap[sourceType] = std::make_pair(routeFlag, pipeName);
+}
+
+bool SolePipe::IsSolePipeSource(int32_t sourceType)
+{
+    return g_solePipeSourceMap.find(sourceType) != g_solePipeSourceMap.end();
+}
+
+bool SolePipe::GetSolePipeBySourceType(int32_t sourceType, uint32_t &routeFlag, std::string &pipeName)
+{
+    auto it = g_solePipeSourceMap.find(sourceType);
+    CHECK_AND_RETURN_RET_LOG(it != g_solePipeSourceMap.end(), false, "can not find sourceType:%{public}d", sourceType);
+    routeFlag = it->second.first;
+    pipeName = it->second.second;
+    AUDIO_INFO_LOG("source:%{public}d flag:%{public}u pipe:%{public}s", sourceType, routeFlag, pipeName.c_str());
     return true;
 }
 
@@ -1362,6 +1396,16 @@ std::string GetTime()
     return curTime;
 }
 
+std::string GetField(const std::string &src, const char* field, const char sep)
+{
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
 int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;
@@ -1553,6 +1597,7 @@ LatencyMonitor& LatencyMonitor::GetInstance()
 
 void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         rendererMockTime_ = timestamp;
     } else {
@@ -1562,6 +1607,7 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
 
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
+    std::lock_guard lock(mutex_);
     if (isRenderer) {
         sinkDetectedTime_ = timestamp;
     } else {
@@ -1571,11 +1617,13 @@ void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timest
 
 void LatencyMonitor::UpdateDspTime(std::string timestamp)
 {
+    std::lock_guard lock(mutex_);
     dspDetectedTime_ = timestamp;
 }
 
 void LatencyMonitor::ShowTimestamp(bool isRenderer)
 {
+    std::lock_guard lock(mutex_);
     if (extraStrLen_ == 0) {
         extraStrLen_ = dspDetectedTime_.find("20");
     }
@@ -1620,6 +1668,7 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
+    std::lock_guard lock(mutex_);
     AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
         rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
     AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
@@ -1734,6 +1783,7 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
 }
 
 bool VolumeUtils::isPCVolumeEnable_ = false;
+bool VolumeUtils::isVolumeFixEnable_ = false;
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
@@ -1908,6 +1958,16 @@ void VolumeUtils::SetPCVolumeEnable(const bool& isPCVolumeEnable)
 bool VolumeUtils::IsPCVolumeEnable()
 {
     return isPCVolumeEnable_;
+}
+
+void VolumeUtils::SetVolumeFixEnable(const bool& isVolumeFixEnable)
+{
+    isVolumeFixEnable_ = isVolumeFixEnable;
+}
+
+bool VolumeUtils::IsVolumeFixEnable()
+{
+    return isVolumeFixEnable_;
 }
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)
@@ -2161,6 +2221,24 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     }
 }
 
+uint32_t PcmFormatToBits(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1; // 1 byte
+        case SAMPLE_S16LE:
+            return 2; // 2 byte
+        case SAMPLE_S24LE:
+            return 3; // 3 byte
+        case SAMPLE_S32LE:
+            return 4; // 4 byte
+        case SAMPLE_F32LE:
+            return 4; // 4 byte
+        default:
+            return 2; // 2 byte
+    }
+}
+
 static std::unordered_map<AudioSampleFormat, std::string> g_formatToStringMap = {
     {SAMPLE_U8, "s8"},
     {SAMPLE_S16LE, "s16le"},
@@ -2194,15 +2272,38 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-bool g_injectSwitch = system::GetBoolParameter("persist.multimedia.audio.inject", false);
-bool IsInjectEnable()
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid)
 {
-    return g_injectSwitch;
+    std::ostringstream uidStream;
+    uidStream << "AppInfo=";
+    bool first = true;
+    for (const auto &uid : appsUid) {
+        if (!first) {
+            uidStream << ";";
+        }
+        uidStream << "0," << uid;
+        first = false;
+    }
+    return uidStream.str();
 }
 
-void SetInjectEnable(bool injectSwitch)
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)
 {
-    g_injectSwitch = injectSwitch;
+    float speed = 1.0f;
+    switch (renderRate) {
+        case RENDER_RATE_NORMAL:
+            speed = 1.0f;
+            break;
+        case RENDER_RATE_DOUBLE:
+            speed = 2.0f;
+            break;
+        case RENDER_RATE_HALF:
+            speed = 0.5f;
+            break;
+        default:
+            speed = 1.0f;
+    }
+    return speed;
 }
 
 } // namespace AudioStandard

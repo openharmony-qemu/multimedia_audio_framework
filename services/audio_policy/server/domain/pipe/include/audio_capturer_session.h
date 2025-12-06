@@ -112,6 +112,7 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool IsValidSessionIdForReload(uint32_t sessionId);
     bool IsIndependentPipe(const std::shared_ptr<AudioPipeInfo> &pipe);
     bool IsVirtualAudioRecognitionSession(uint32_t sessionId);
     bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
@@ -119,6 +120,15 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool IsRemainingSourceIndependent();
     bool hearingAidReloadFlag_ = false;
+    int32_t ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation);
+    bool GetTargetSessionIdForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
+    uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t sessionId,
+        AudioStreamDescriptor &maxRunningDesc, AudioStreamDescriptor &maxRemainingDesc);
+    bool IsPipeInSourceStrategyMap(std::shared_ptr<AudioPipeInfo> pipeInfo, uint64_t sessionId);
+    std::pair<SourceType, uint32_t> GetTargetSessionForEc();
+    bool IsSourceTypeValidForEc(SourceType sourceType);
+    bool IsSessionIdValidForEc(uint32_t sessionId);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;
@@ -133,6 +143,8 @@ private:
     std::atomic<bool> isPolicyConfigParsered_ = false;
     std::mutex onCapturerSessionChangedMutex_;
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
+    // key:sessionId value:routeFlag
+    std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;

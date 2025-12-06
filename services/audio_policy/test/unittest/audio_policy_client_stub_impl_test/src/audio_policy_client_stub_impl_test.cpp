@@ -1709,5 +1709,68 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_082, TestSize.Le
     streamVolumeEvent.streamUsage = STREAM_USAGE_INVALID;
     EXPECT_EQ(audioPolicyClient->OnStreamVolumeChange(streamVolumeEvent), SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_083
+* @tc.desc  : Test CollaborationEnabledChangeForCurrentDeviceCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_083, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+
+    EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
+    auto testCallback = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallback), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 1);
+    EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_084
+* @tc.desc  : Test OnCollaborationEnabledChangeForCurrentDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_084, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+
+    EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
+    auto testCallbackFirst = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    auto testCallbackSecond = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallbackFirst), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallbackSecond), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 1 + 1);
+
+    bool testEnabled = true;
+    EXPECT_EQ(audioPolicyClient->OnCollaborationEnabledChangeForCurrentDevice(testEnabled), SUCCESS);
+    testEnabled = false;
+    EXPECT_EQ(audioPolicyClient->OnCollaborationEnabledChangeForCurrentDevice(testEnabled), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
+}
+
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_085
+* @tc.desc  : Test onAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_085, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback>();
+    int32_t result = audioPolicyClient->AddAdaptiveSpatialRenderingEnabledChangeCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyClient->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

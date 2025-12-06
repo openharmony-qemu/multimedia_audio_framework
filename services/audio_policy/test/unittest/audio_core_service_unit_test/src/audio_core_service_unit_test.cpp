@@ -451,6 +451,42 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_001
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_001, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_REMOTE_CAST;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_002
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_002, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_SPEAKER;
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        REMOTE_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        LOCAL_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: EventEntry_GetDevices_001
 * @tc.desc  : Test GetDevices - Get output devices.
 */
@@ -576,6 +612,36 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_006
+* @tc.desc  : Test UpdateTracker - RENDERER_PREPARED.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_006, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_006 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PREPARED;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_007
+* @tc.desc  : Test UpdateTracker - RENDERER_INVALID.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_007 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_INVALID;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -1108,13 +1174,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, true);
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-    
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 666;
-    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
-    EXPECT_EQ(result, true);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**
@@ -1127,19 +1186,23 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 777;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NONE;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
     bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
     
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->appInfo_.appUid = 888;
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
 }
 
 /**
@@ -1294,50 +1357,6 @@ HWTEST_F(AudioCoreServiceUnitTest, GetExcludedDevicesTest_002, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
         server->eventEntry_->GetExcludedDevices(audioDevUsage);
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: GetPreferredOutputStreamType_001
-* @tc.desc  : Test interface GetPreferredOutputStreamType - will return SUCCESS.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputStreamType_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioRendererInfo rendererInfo;
-    int32_t ret = 0;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    server->coreService_->isFastControlled_ = true;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-    rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    server->GetPreferredOutputStreamType(rendererInfo, ret);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: GetPreferredInputStreamType_001
-* @tc.desc  : Test interface GetPreferredInputStreamType - will return SUCCESS.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputStreamType_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioCapturerInfo capturerInfo;
-    int32_t ret = 0;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
-    server->coreService_->isFastControlled_ = true;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
-    capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    server->GetPreferredInputStreamType(capturerInfo, ret);
-    EXPECT_EQ(ret, 0);
 }
 
 /**
@@ -1925,7 +1944,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
     ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, NORMAL_PLAYBACK, 1111);
     EXPECT_NE(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, NORMAL_PLAYBACK, 1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
         INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
     EXPECT_NE(ret, SUCCESS);
@@ -1954,7 +1973,38 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleMuteBeforeDeviceSwitch_001
+ * @tc.desc  : Test AudioCoreService::HandleMuteBeforeDeviceSwitch()
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleMuteBeforeDeviceSwitch_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::vector<AudioStreamStatus> streamStatusVec = {
+        STREAM_STATUS_NEW,
+        STREAM_STATUS_STARTED,
+        STREAM_STATUS_PAUSED,
+        STREAM_STATUS_STOPPED,
+        STREAM_STATUS_RELEASED
+    };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto status : streamStatusVec) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        streamDesc->streamStatus_ = status;
+        streamDescs.push_back(streamDesc);
+    }
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    auto result = audioCoreService->HandleMuteBeforeDeviceSwitch(streamDescs, reason);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -1987,5 +2037,94 @@ HWTEST_F(AudioCoreServiceUnitTest, A2dpOffloadGetRenderPosition_001, TestSize.Le
     ret = server->coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test HandleDeviceConfigChanged.
+ * @tc.number: HandleDeviceConfigChanged
+ * @tc.desc  : Test HandleDeviceConfigChanged interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleDeviceConfigChanged_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    ASSERT_NE(nullptr, desc) << "desc is nullptr.";
+    std::string macAddress = "00:11:22:33:44:55";
+    audioCoreService->HandleDeviceConfigChanged(desc);
+    auto &deviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_TRUE(deviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, macAddress));
+}
+
+/**
+ * @tc.name  : Test HandleDeviceConfigChanged.
+ * @tc.number: HandleDeviceConfigChanged
+ * @tc.desc  : Test HandleDeviceConfigChanged interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleDeviceConfigChanged_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = "00:00:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    ASSERT_NE(nullptr, desc) << "desc is nullptr.";
+    std::string macAddress = "00:00:00:00:44:55";
+    audioCoreService->HandleDeviceConfigChanged(desc);
+    auto &deviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_FALSE(deviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, macAddress));
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : CheckStaticModeAndSelectFlag_001
+ * @tc.desc   : Test CheckStaticModeAndSelectFlag interface - when rendererInfo_.isStatic = true
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->rendererInfo_.isStatic = false;
+    EXPECT_FALSE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.isStatic = true;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : CheckStaticModeAndSelectFlag_001
+ * @tc.desc   : Test CheckStaticModeAndSelectFlag interface - when rendererInfo_.isStatic = true
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->rendererInfo_.isStatic = false;
+    EXPECT_FALSE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.isStatic = true;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

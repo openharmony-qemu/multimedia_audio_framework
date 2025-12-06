@@ -23,6 +23,8 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
+#include "media_monitor_manager.h"
+#include "media_monitor_info.h"
 #include "audio_suite_eq_node.h"
 #include "audio_suite_env_node.h"
 #include "audio_suite_pipeline.h"
@@ -33,6 +35,10 @@
 #include "audio_suite_soundfield_node.h"
 #include "audio_suite_mixer_node.h"
 #include "audio_suite_voice_beautifier_node.h"
+#include "audio_suite_general_voice_change_node.h"
+#include "audio_suite_pure_voice_change_node.h"
+#include "audio_suite_tempo_pitch_node.h"
+#include "audio_suite_space_render_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +50,7 @@ std::mutex AudioSuitePipeline::allocateIdLock;
 uint32_t AudioSuitePipeline::allocateId = 0;
 
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
-    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_AUDIO_MIXER + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
+    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_TEMPO_PITCH + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
     std::lock_guard<std::mutex> lock(allocateIdLock);
     id_ = ++allocateId;
@@ -204,6 +210,9 @@ int32_t AudioSuitePipeline::Stop()
     };
     SendRequest(request, __func__);
 
+    // for dfx
+    CheckRenderFrameOverTimeCount();
+
     return SUCCESS;
 }
 
@@ -248,6 +257,9 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
             return;
         }
 
+        // for dfx, effect node get pipelineWorkMode
+        node->SetAudioNodeWorkMode(pipelineWorkMode_);
+
         nodeMap_[node->GetAudioNodeId()] = node;
         nodeCounts_[static_cast<std::size_t>(builder.nodeType)]++;
         AUDIO_INFO_LOG("CreateNode finish");
@@ -261,10 +273,8 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        if ((builder.nodeType != NODE_TYPE_INPUT) &&
-            (builder.nodeType != NODE_TYPE_OUTPUT) &&
-            (builder.nodeType != NODE_TYPE_EQUALIZER)) {
-            AUDIO_ERR_LOG("pipline in REALTIME mode, only can craet input, output and equalizer node.");
+        if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
+            AUDIO_ERR_LOG("pipline in REALTIME mode, not support SEPARATION.");
             return ERR_NOT_SUPPORTED;
         }
     }
@@ -275,6 +285,11 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
     }
 
+    bool isSupported;
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
+    CHECK_AND_RETURN_RET_LOG((error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
+        "node type: %{public}d is not supported.", builder.nodeType);
     return SUCCESS;
 }
 
@@ -309,6 +324,12 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_ENVIRONMENT_EFFECT) {
         AUDIO_INFO_LOG("Create AudioSuiteEnvNode");
         node = std::make_shared<AudioSuiteEnvNode>();
+    } else if (builder.nodeType == NODE_TYPE_GENERAL_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuiteGeneralVoiceChangeNode");
+        node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    } else if (builder.nodeType == NODE_TYPE_PURE_VOICE_CHANGE) {
+        AUDIO_INFO_LOG("Create AudioSuitePureVoiceChangeNode");
+        node = std::make_shared<AudioSuitePureVoiceChangeNode>();
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
@@ -328,6 +349,12 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
+    } else if (builder.nodeType == NODE_TYPE_TEMPO_PITCH) {
+        AUDIO_INFO_LOG("Create AudioSuiteTempoPitchNode");
+        node = std::make_shared<AudioSuiteTempoPitchNode>();
+    } else if (builder.nodeType == NODE_TYPE_SPACE_RENDER) {
+        AUDIO_INFO_LOG("Create AudioSuiteSpaceRenderNode");
+        node = std::make_shared<AudioSuiteSpaceRenderNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
@@ -588,6 +615,10 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             return;
         }
 
+        if (srcNode->GetNodeType() == NODE_TYPE_AUDIO_MIXER) {
+            srcNode->SetAudioNodeFormat(destNode->GetAudioNodeFormat());
+        }
+
         AddNodeConnections(srcNodeId, destNodeId);
         TriggerCallback(CONNECT_NODES, SUCCESS);
         return;
@@ -653,7 +684,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId same destNodeId.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -673,7 +704,7 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
-            TriggerCallback(DISCONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
 
@@ -720,7 +751,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     if (reverseConnections_.find(destNodeId) == reverseConnections_.end()) {
@@ -728,7 +759,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     }
 
     if (reverseConnections_[destNodeId].size() <= 1) {
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+        return ERR_NOT_SUPPORTED;
     }
 
     return destNode->DisConnect(srcNode);
@@ -818,12 +849,20 @@ int32_t AudioSuitePipeline::RenderFrame(
             return;
         }
 
+        int32_t frameDuration =  GetFrameDuration(requestFrameSize, outputNode_->GetAudioNodeFormat());
+        auto startTime = std::chrono::steady_clock::now();
+
         int32_t ret = outputNode_->DoProcess(audioData, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RenderFrame, ret = %{public}d.", ret);
             TriggerCallback(RENDER_FRAME, ret, id_);
             return;
         }
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
 
         TriggerCallback(RENDER_FRAME, SUCCESS, id_);
     };
@@ -833,7 +872,7 @@ int32_t AudioSuitePipeline::RenderFrame(
 }
 
 int32_t AudioSuitePipeline::MultiRenderFrame(
-    uint8_t **audioDataArray, int arraySize,
+    uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
     AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter");
@@ -872,6 +911,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
     auto request = [this, nodeId, name, value]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
+            TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
 
@@ -880,8 +920,10 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
+            TriggerCallback(SET_OPTIONS, ret);
             return;
         }
+        TriggerCallback(SET_OPTIONS, SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -1009,6 +1051,83 @@ bool AudioSuitePipeline::IsDirectConnected(uint32_t srcNodeId, uint32_t destNode
     }
 
     return connections_[srcNodeId] == destNodeId;
+}
+
+int32_t AudioSuitePipeline::GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat)
+{
+    int32_t bytesPerSecond = nodeFormat.rate * nodeFormat.audioChannelInfo.numChannels *
+                             AudioSuiteUtil::GetSampleSize(nodeFormat.format);
+
+    CHECK_AND_RETURN_RET_LOG(bytesPerSecond != 0, 0, "Invalid AudioFormat.");
+    double frameDurationMS = std::ceil(static_cast<double>(frameSize) * SECONDS_TO_MS / bytesPerSecond); // round up
+
+    return static_cast<int32_t>(frameDurationMS);
+}
+
+void AudioSuitePipeline::CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS)
+{
+    if (frameDurationMS == 0) {
+        AUDIO_WARNING_LOG("Invalid para, frame duration is 0.");
+        return;
+    }
+
+    renderFrameTotalCount_++;
+
+    // for dfx, overtime counter add when realtime factor exceeds the threshold
+    uint64_t frameDurationUS = static_cast<uint64_t>(frameDurationMS) * MILLISECONDS_TO_MICROSECONDS;
+    for (size_t i = 0; i < RTF_OVERTIME_LEVELS; ++i) {
+        if (processDurationUS >= static_cast<uint64_t>(frameDurationUS * RTF_OVERTIME_THRESHOLDS[i])) {
+            renderFrameOvertimeCounters_[i]++;
+        }
+    }
+}
+
+void AudioSuitePipeline::CheckRenderFrameOverTimeCount()
+{
+    std::string pipelineWorkMode = (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) ? "Realtime mode" : "Edit mode";
+    AUDIO_INFO_LOG("[%{public}s] pipeline renderFrame realtimeFactor overtime counters(1.0, 1.1, 1.2): %{public}d, "
+                   "%{public}d, %{public}d, renderFrame total count: %{public}d",
+        pipelineWorkMode.c_str(),
+        renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_BASE],
+        renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE],
+        renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE],
+        renderFrameTotalCount_);
+
+    bool allOvertimeCounterZero = std::all_of(
+        std::begin(renderFrameOvertimeCounters_),
+        std::end(renderFrameOvertimeCounters_),
+        [](int32_t count) { return count == 0; }
+    );
+    if (!allOvertimeCounterZero) {
+        // report SuiteEngineUtilizationStats event
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean =
+            std::make_shared<Media::MediaMonitor::EventBean>(Media::MediaMonitor::ModuleId::AUDIO,
+                Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
+                Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+
+        bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+        bean->Add("AUDIO_NODE_TYPE", "PIPELINE");
+        if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+            bean->Add("RT_MODE_RENDER_COUNT", renderFrameTotalCount_);
+            bean->Add("RT_MODE_RTF_OVER_BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+            bean->Add("RT_MODE_RTF_OVER_110BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+            bean->Add("RT_MODE_RTF_OVER_120BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+            bean->Add("RT_MODE_RTF_OVER_100_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+        } else {
+            bean->Add("EDIT_MODE_RENDER_COUNT", renderFrameTotalCount_);
+            bean->Add("EDIT_MODE_RTF_OVER_BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_110BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_110BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_120BASE_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_120BASE]);
+            bean->Add("EDIT_MODE_RTF_OVER_100_COUNT", renderFrameOvertimeCounters_[RtfOvertimeLevel::OVER_BASE]);
+        }
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+
+        AUDIO_WARNING_LOG("pipeline run renderFrame timeout, report SuiteEngineUtilizationStats event.");
+    }
+
+    // reset counter
+    renderFrameTotalCount_ = 0;
+    std::fill(renderFrameOvertimeCounters_.begin(), renderFrameOvertimeCounters_.end(), 0);
 }
 
 }  // namespace AudioSuite

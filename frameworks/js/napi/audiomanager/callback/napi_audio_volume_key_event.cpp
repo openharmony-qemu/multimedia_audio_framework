@@ -63,7 +63,7 @@ napi_threadsafe_function NapiAudioVolumeKeyEvent::GetTsfn()
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_PRERELEASE_LOGI("vt=%{public}d, vl=%{public}d, updateUi=%{public}d", volumeEvent.volumeType,
+    AUDIO_PRERELEASE_LOGI("vt=%{public}d, vl=%{public}d, ui=%{public}d", volumeEvent.volumeType,
         volumeEvent.volume, volumeEvent.updateUi);
     CHECK_AND_RETURN_LOG(audioVolumeKeyEventJsCallback_ != nullptr,
         "NapiAudioVolumeKeyEvent:No JS callback registered return");
@@ -241,7 +241,7 @@ void NapiAudioVolumeKeyEventEx::RemoveCallbackReference(napi_env env, napi_value
         }
         bool isSameCallback = IsSameCallback(env_, callback, temp->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("find audioSceneChanged callback, remove it");
+            AUDIO_INFO_LOG("find key event callback, remove it");
             napi_delete_reference(env_, temp->cb_);
             temp->cb_ = nullptr;
             audioVolumeKeyEventCbList_.erase(it);

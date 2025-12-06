@@ -23,6 +23,20 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum HpaeRendererStreamTimestampTag {
+    GET_REMOTE_OFFLOAD_SPEED_POSITION,
+    GET_CURRENT_POSITION,
+    GET_LATENCY,
+    ON_DEVICE_CLASS_CHANGE,
+    TIMESTAMP_TAG_NUM,
+};
+
+struct PositionData {
+    uint64_t framePosition = 0;
+    uint64_t timestamp = 0;
+    uint64_t latency = 0;
+    int64_t lastCallTime = 0;
+};
 
 class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
                                public IStreamStatusCallback,
@@ -127,6 +141,7 @@ private:
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
+    std::atomic<int64_t> lastLogTimestampArr_[TIMESTAMP_TAG_NUM];
 
     std::string deviceClass_;
     std::string deviceNetId_;
@@ -141,6 +156,9 @@ private:
 
     std::atomic<size_t> mutePaddingFrames_ = 0;
     bool noWaitDataFlag_ = true;
+
+    std::unordered_map<int32_t, PositionData> currentPositionData;
+    std::unordered_map<int32_t, PositionData> speedPositionData;
 };
 } // namespace AudioStandard
 } // namespace OHOS
