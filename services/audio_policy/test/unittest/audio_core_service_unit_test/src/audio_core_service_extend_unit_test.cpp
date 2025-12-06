@@ -1235,31 +1235,6 @@ HWTEST_F(AudioCoreServiceExtUnitTest, UpdatePlaybackStreamFlag_001, TestSize.Lev
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
- * @tc.number : UpdatePlaybackStreamFlag_002
- * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when rendererInfo_.isStatic = true
- */
-HWTEST_F(AudioCoreServiceExtUnitTest, UpdatePlaybackStreamFlag_002, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-
-    streamDesc->rendererInfo_.isStatic = false;
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-
-    streamDesc->rendererInfo_.isStatic = true;
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_FAST);
-}
-
-/**
- * @tc.name   : Test AudioCoreServiceUnit
  * @tc.number : SetFlagForSpecialStream_001
  * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
  */

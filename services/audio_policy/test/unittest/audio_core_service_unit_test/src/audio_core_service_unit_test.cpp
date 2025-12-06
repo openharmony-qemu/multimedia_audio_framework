@@ -2079,5 +2079,52 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleDeviceConfigChanged_002, TestSize.Level
     auto &deviceManager_ = AudioDeviceManager::GetAudioDeviceManager();
     EXPECT_FALSE(deviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_NEARLINK, macAddress));
 }
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : CheckStaticModeAndSelectFlag_001
+ * @tc.desc   : Test CheckStaticModeAndSelectFlag interface - when rendererInfo_.isStatic = true
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->rendererInfo_.isStatic = false;
+    EXPECT_FALSE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.isStatic = true;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : CheckStaticModeAndSelectFlag_001
+ * @tc.desc   : Test CheckStaticModeAndSelectFlag interface - when rendererInfo_.isStatic = true
+ */
+HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+
+    streamDesc->rendererInfo_.isStatic = false;
+    EXPECT_FALSE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.isStatic = true;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

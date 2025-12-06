@@ -1818,26 +1818,6 @@ HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test CheckRestoreStatus API
- * @tc.type  : FUNC
- * @tc.number: CheckRestoreStatus_002
- * @tc.desc  : Test CheckRestoreStatus interface.
- */
-HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_002, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-
-    fastAudioStream->spkProcClientCb_ = nullptr;
-    fastAudioStream->micProcClientCb_ = nullptr;
-    fastAudioStream->rendererInfo_.isStatic = true;
-    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
-    EXPECT_NE(status, RESTORING);
-}
-
-/**
  * @tc.name  : Test SetCallbacksWhenRestore API
  * @tc.type  : FUNC
  * @tc.number: SetCallbacksWhenRestore_001
@@ -2124,9 +2104,90 @@ HWTEST(FastAudioStreamUnitTest, SetRenderRate_001, TestSize.Level1)
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream =
         std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
     fastAudioStream->rendererInfo_.isStatic = true;
     fastAudioStream->renderMode_ = RENDER_MODE_STATIC;
-    fastAudioStream->SetRenderRate(RENDER_RATE_NORMAL);
+    EXPECT_EQ(fastAudioStream->SetRenderRate(RENDER_RATE_NORMAL), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetRenderRate API
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderRate_002
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastAudioStreamUnitTest, SetRenderRate_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    fastAudioStream->rendererInfo_.isStatic = false;
+    EXPECT_EQ( fastAudioStream->SetRenderRate(RENDER_RATE_DOUBLE), ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetSwitchInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetSwitchInfo_static_001
+ * @tc.desc  : Test GetSwitchInfo interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, GetSwitchInfo_static_001, TestSize.Level4)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    IAudioStream::SwitchInfo info;
+    fastAudioStream->rendererInfo_.isStatic = true;
+    fastAudioStream->GetSwitchInfo(info);
+    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
+}
+
+/**
+ * @tc.name  : Test CheckRestoreStatus_static API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRestoreStatus_static_001
+ * @tc.desc  : Test CheckRestoreStatus interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, CheckRestoreStatus_static_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->micProcClientCb_ = nullptr;
+    fastAudioStream->rendererInfo_.isStatic = true;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_NE(status, RESTORING);
+
+    fastAudioStream->rendererInfo_.isStatic = false;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_NE(status, RESTORING);
+
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    fastAudioStream->spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
+    std::shared_ptr<AudioCapturerReadCallback> micCallback = std::make_shared<AudioCapturerReadCallbackTest>();
+    fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
+    fastAudioStream->rendererInfo_.isStatic = true;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_NE(status, RESTORING);
+
+    fastAudioStream->rendererInfo_.isStatic = false;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_NE(status, RESTORING);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -461,14 +461,7 @@ bool RendererInClientInner::IsRestoreNeeded()
 void RendererInClientInner::WaitForBufferNeedOperate()
 {
     Trace trace("WaitForBufferNeedOperate");
-    if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
-        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
-            Trace trace2(traceTag_ + "call start to exit stand-by");
-            CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-            int32_t ret = ipcStream_->Start();
-            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
-        }
-    }
+    CheckFrozenStateInStaticMode();
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
         (rendererInfo_.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : static_cast<int64_t>(timeout)) *
@@ -1132,6 +1125,18 @@ int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBuffe
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
     return ipcStream_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+void RendererInClientInner::CheckFrozenStateInStaticMode()
+{
+    if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+            Trace trace2(traceTag_ + "call start to exit stand-by");
+            CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+            int32_t ret = ipcStream_->Start();
+            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+        }
+    }
 }
 
 } // namespace AudioStandard

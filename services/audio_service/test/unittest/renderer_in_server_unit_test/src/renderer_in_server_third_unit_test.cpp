@@ -2398,18 +2398,17 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_004, TestSize
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.Level1)
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
+    buffer->SetStaticMode(true);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
-    int8_t *inputData = nullptr;
+    int8_t *inputData = new int8_t[10];
+    uint8_t *processedData = new uint8_t[10];
     size_t dataSize = 10;
 
-    staticBufferProviderTest->currentLoopTimes_ = 1;
-    staticBufferProviderTest->totalLoopTimes_ = 2;
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize);
+    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBufferSize_ = dataSize;
 
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 1;
@@ -2424,6 +2423,15 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
     buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_PAUSED);
     EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), ERR_OPERATION_FAILED);
+
+    staticBufferProviderTest->currentLoopTimes_ = 1;
+    staticBufferProviderTest->totalLoopTimes_ = 2;
+    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
+    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), ERR_OPERATION_FAILED);
+
+    delete[] inputData;
+    delete[] processedData;
 }
 
 /**
@@ -2435,18 +2443,26 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.Level1)
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
-    int8_t *inputData = nullptr;
-    size_t dataSize = 90;
+    int8_t *inputData = new int8_t[10];
+    uint8_t *processedData = new uint8_t[10];
+    size_t dataSize = 10;
 
+    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBufferSize_ = dataSize;
+
+    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
+
+    delete[] inputData;
+    delete[] processedData;
 }
 
 
@@ -2459,18 +2475,26 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.Level1)
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
-    int8_t *inputData = nullptr;
-    size_t dataSize = 110;
+    int8_t *inputData = new int8_t[10];
+    uint8_t *processedData = new uint8_t[10];
+    size_t dataSize = 10;
 
+    staticBufferProviderTest->processedBuffer_ = processedData
+    staticBufferProviderTest->processedBufferSize_ = dataSize;
+
+    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
+    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
+
+    delete[] inputData;
+    delete[] processedData;
 }
 
 /**
@@ -2482,6 +2506,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.Level1)
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2520,6 +2545,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_005, TestSize.Level1)
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
         AudioStaticBufferProvider::CreateInstance(buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
@@ -2563,7 +2589,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerGetAvailableSize_static_
  * @tc.name  : Test Stop API
  * @tc.type  : FUNC
  * @tc.number: RendererInServer_static_Stop_001
- * @tc.desc  : Test Stop when playerDfx_ is 0.
+ * @tc.desc  : Test RendererInServer_static_Stop_001.
  */
 HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_static_Stop_001, TestSize.Level1)
 {

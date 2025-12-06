@@ -38,7 +38,8 @@ AudioStaticBufferProvider::AudioStaticBufferProvider(std::shared_ptr<OHAudioBuff
 
 int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen)
 {
-    CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr && processedBuffer_ != nullptr, ERR_INVALID_OPERATION,
+        "sharedBuffer is nullptr or read data before processBuffer!");
     if (currentLoopTimes_ == totalLoopTimes_ ||
         sharedBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER) ||
         sharedBuffer_->GetStreamStatus()->load() != STREAM_RUNNING) {
@@ -128,7 +129,7 @@ void AudioStaticBufferProvider::RefreshLoopTimes()
 {
     totalLoopTimes_ = preSetTotalLoopTimes_;
     needRefreshLoopTimes_ = false;
-    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}" PRId64 "", totalLoopTimes_);
+    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
 }
 
 bool AudioStaticBufferProvider::NeedRefreshLoopTimes()
@@ -157,7 +158,7 @@ int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
         return SUCCESS;
     }
     if (currentLoopTimes_ > totalLoopTimes_) {
-        AUDIO_ERR_LOG("CurrentLoopTimes Reach %{public}" PRId64 "", totalLoopTimes_);
+        AUDIO_ERR_LOG("CurrentLoopTimes Reach %{public}" PRId64, totalLoopTimes_);
         return ERROR;
     }
     return SUCCESS;

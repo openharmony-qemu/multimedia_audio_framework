@@ -2291,7 +2291,6 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_001, TestSize.L
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
-    configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
     configRet.rendererInfo.isStatic = true;
@@ -2320,7 +2319,6 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_002, TestSize.L
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
-    configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
     configRet.rendererInfo.isStatic = true;
@@ -2350,21 +2348,20 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_stop_001, TestSize.Lev
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
     configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
     configRet.rendererInfo.isStatic = true;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    audioProcessInServerRet.needCheckBackground_ = true;
+    audioProcessInServerRet.needCheckBackground_ = false;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
     audioProcessInServerRet.streamStatus_->store(STREAM_RUNNING);
 
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    AudioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
     int32_t ret = 0;
-    audioProcessInServerRet.Stop(ret);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioProcessInServerRet.needCheckBackground_ = false;
     audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
 }

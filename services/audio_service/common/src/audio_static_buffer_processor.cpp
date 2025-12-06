@@ -17,7 +17,7 @@
 #endif
 
 #include "audio_static_buffer_processor.h"
-
+#include <cinttypes>
 #include "audio_errors.h"
 
 namespace OHOS {
@@ -34,10 +34,8 @@ AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInf
     std::shared_ptr<OHAudioBufferBase> sharedBuffer)
 {
     sharedBuffer_ = sharedBuffer;
-    if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(streamInfo.samplingRate, streamInfo.format,
-            streamInfo.channels, static_cast<int32_t>(sharedBuffer->GetDataSize()));
-    }
+    audioSpeed_ = std::make_unique<AudioSpeed>(streamInfo.samplingRate, streamInfo.format,
+        streamInfo.channels, static_cast<int32_t>(sharedBuffer->GetDataSize()));
 }
 
 int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
