@@ -569,7 +569,7 @@ void RendererInClientInner::DfxWriteInterval()
     CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
     if (preWriteEndTime_ != 0 &&
         ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
-        HILOG_COMM_WARN("[%{public}s] write interval too long cost %{public}" PRId64,
+        AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,
             logUtilsTag_.c_str(), (ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_);
     }
 }
