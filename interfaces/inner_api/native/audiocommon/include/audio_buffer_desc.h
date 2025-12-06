@@ -33,6 +33,7 @@ struct BufferDesc {
     size_t metaLength = 0;
     uint64_t position = 0;
     uint64_t timeStampInNs = 0;
+    uint64_t syncFramePts = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
