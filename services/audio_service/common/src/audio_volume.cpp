@@ -189,7 +189,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
         volumeStream =
             it->second.isMuted_ ? 0.0f : it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_;
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        HILOG_COMM_ERROR("stream volume not exist, sessionId:%{public}u", sessionId);
     }
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumeStream)) {
         it->second.monitorVolume_ = volumeStream;
@@ -229,7 +229,7 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
                 streamVolumeParams.uid, streamVolumeParams.pid, streamVolumeParams.isSystemApp, streamVolumeParams.mode,
                 streamVolumeParams.isVKB));
     } else {
-        AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", streamVolumeParams.sessionId);
+        HILOG_COMM_ERROR("AddStreamVolume stream volume already exist, sessionId:%{public}u", streamVolumeParams.sessionId);
     }
 }
 
@@ -241,13 +241,13 @@ void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
     if (it != streamVolume_.end()) {
         streamVolume_.erase(sessionId);
     } else {
-        AUDIO_ERR_LOG("stream volume already delete, sessionId:%{public}u", sessionId);
+        HILOG_COMM_ERROR("RemoveStreamVolume stream volume already delete, sessionId:%{public}u", sessionId);
     }
 }
 
 void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
 {
-    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    HILOG_COMM_INFO("SetStreamVolume stream volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
@@ -256,7 +256,7 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_) ? 0.0f :
             it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        HILOG_COMM_ERROR("SetStreamVolume stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
 
@@ -434,7 +434,7 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
         appVolume_.emplace(appUid, appVolume);
     }
 
-    AUDIO_INFO_LOG("system volume, appUId:%{public}d, "
+    HILOG_COMM_INFO("SetAppVolume system volume, appUId:%{public}d, "
         " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
         appUid, appVolume.volume_, appVolume.volumeLevel_, appVolume.isMuted_,
         appVolume_.size());
@@ -493,7 +493,7 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
         systemVolume_.emplace(key, systemVolume);
     }
 
-    AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
+    HILOG_COMM_INFO("SetSystemVolume system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
         volumeType, deviceClass.c_str(), volume, volumeLevel, systemVolume_.size());
 }

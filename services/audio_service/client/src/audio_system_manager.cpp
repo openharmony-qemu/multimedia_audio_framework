@@ -634,7 +634,7 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
 
 int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
 {
-    AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
+    HILOG_COMM_INFO("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
     std::lock_guard<std::mutex> lock(volumeMutex_);
 
     /* Validate volumeType and return INVALID_PARAMS error */
