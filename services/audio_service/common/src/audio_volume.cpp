@@ -189,7 +189,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
         volumeStream =
             it->second.isMuted_ ? 0.0f : it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_;
     } else {
-        HILOG_COMM_ERROR("stream volume not exist, sessionId:%{public}u", sessionId);
+        HILOG_COMM_ERROR("GetStreamVolume stream volume not exist, sessionId:%{public}u", sessionId);
     }
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumeStream)) {
         it->second.monitorVolume_ = volumeStream;
@@ -229,7 +229,8 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
                 streamVolumeParams.uid, streamVolumeParams.pid, streamVolumeParams.isSystemApp, streamVolumeParams.mode,
                 streamVolumeParams.isVKB));
     } else {
-        HILOG_COMM_ERROR("AddStreamVolume stream volume already exist, sessionId:%{public}u", streamVolumeParams.sessionId);
+        HILOG_COMM_ERROR("AddStreamVolume stream volume already exist, sessionId:%{public}u",
+            streamVolumeParams.sessionId);
     }
 }
 
@@ -471,7 +472,7 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
         systemVolume_.emplace(key, systemVolume);
     }
 
-    AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
+    HILOG_COMM_INFO("system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, isMuted:%{public}d, systemVolumeSize:%{public}zu",
         volumeType, deviceClass.c_str(), systemVolume.volume_, systemVolume.volumeLevel_, systemVolume.isMuted_,
         systemVolume_.size());
@@ -493,7 +494,7 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
         systemVolume_.emplace(key, systemVolume);
     }
 
-    HILOG_COMM_INFO("SetSystemVolume system volume, volumeType:%{public}d, deviceClass:%{public}s,"
+    AUDIO_INFO_LOG("SetSystemVolume system volume, volumeType:%{public}d, deviceClass:%{public}s,"
         " volume:%{public}f, volumeLevel:%{public}d, systemVolumeSize:%{public}zu",
         volumeType, deviceClass.c_str(), volume, volumeLevel, systemVolume_.size());
 }
