@@ -296,6 +296,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     int32_t volumeLevel = 8;
     bool isA2dpDevice = true;
+    server->audioPolicyService_.audioVolumeManager_.audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
     EXPECT_EQ(volumeLevelRet, 8);
