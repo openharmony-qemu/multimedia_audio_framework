@@ -388,6 +388,8 @@ public:
 
     std::string GetSystemSoundUri(const std::string &key);
 
+    std::string GetSystemSoundPath(const int32_t systemSoundType);
+
     float GetMinStreamVolume(void);
 
     float GetMaxStreamVolume(void);

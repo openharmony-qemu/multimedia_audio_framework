@@ -1590,6 +1590,17 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
     return out;
 }
 
+std::string AudioPolicyManager::GetSystemSoundPath(const int32_t systemSoundType)
+{
+    AUDIO_DEBUG_LOG("GetSystemSoundPath: %{public}d", systemSoundType);
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
+
+    std::string out{};
+    gsp->GetSystemSoundPath(systemSoundType, out);
+    return out;
+}
+
 float AudioPolicyManager::GetMinStreamVolume()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

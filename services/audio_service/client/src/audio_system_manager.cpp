@@ -1346,6 +1346,14 @@ std::string AudioSystemManager::GetSystemSoundUri(const std::string &key)
     return AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
 }
 
+std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType)
+{
+    std::string systemSoundPath = AudioPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
+    AUDIO_INFO_LOG("systemSoundType: %{public}d, systemSoundType: %{public}s",
+        systemSoundType, systemSoundPath.c_str());
+    return systemSoundPath;
+}
+
 // Below stub implementation is added to handle compilation error in call manager
 // Once call manager adapt to new interrupt implementation, this will be removed
 int32_t AudioSystemManager::SetAudioManagerCallback(const AudioVolumeType streamType,

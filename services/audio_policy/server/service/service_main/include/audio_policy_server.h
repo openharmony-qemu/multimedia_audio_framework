@@ -392,6 +392,8 @@ public:
 
     int32_t GetSystemSoundUri(const std::string &key, std::string &uri) override;
 
+    int32_t GetSystemSoundPath(const int32_t systemSoundType, std::string &path) override;
+
     int32_t GetMinStreamVolume(float &volume) override;
 
     int32_t GetMaxStreamVolume(float &volume) override;

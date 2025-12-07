@@ -830,6 +830,15 @@ public:
      */
     std::string GetSystemSoundUri(const std::string &key);
 
+    /**
+     * @brief Get system sound path
+     *
+     * @param systemSoundType the system sound type
+     * @return Returns the path for the system sound type
+     * @since 23
+     */
+    std::string GetSystemSoundPath(const int32_t systemSoundType);
+
     // Below APIs are added to handle compilation error in call manager
     // Once call manager adapt to new interrupt APIs, this will be removed
 
