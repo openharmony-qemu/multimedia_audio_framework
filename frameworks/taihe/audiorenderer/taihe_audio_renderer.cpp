@@ -681,7 +681,7 @@ double AudioRendererImpl::GetLoudnessGain()
     return loudnessGain;
 }
 
-int32_t AudioRendererImpl::GetLatencySync(AudioLatencyType type)
+int32_t AudioRendererImpl::GetLatency(AudioLatencyType type)
 {
     if (audioRenderer_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
