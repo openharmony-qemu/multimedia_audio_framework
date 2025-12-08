@@ -995,9 +995,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
-    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
@@ -1947,12 +1944,6 @@ RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatu
 void RendererInClientInner::FetchDeviceForSplitStream()
 {
     AUDIO_INFO_LOG("Fetch output device for split stream %{public}u", sessionId_);
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
-            state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    } else {
-        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
-    }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
