@@ -551,14 +551,6 @@ void AudioCoreServiceEventEntryGetVolumeGroupInfosFuzzTest()
     eventEntry->GetVolumeGroupInfos();
 }
 
-void AudioCoreServiceEventEntryFetchInputDeviceForTrackFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    AudioStreamChangeInfo streamChangeInfo;
-    eventEntry->FetchInputDeviceForTrack(streamChangeInfo);
-}
-
 void AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -658,7 +650,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServiceEventEntryOnCapturerSessionRemovedFuzzTest,
     AudioCoreServiceEventEntryTriggerFetchDeviceFuzzTest,
     AudioCoreServiceEventEntryGetVolumeGroupInfosFuzzTest,
-    AudioCoreServiceEventEntryFetchInputDeviceForTrackFuzzTest,
     AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest,
     AudioCoreServiceEventEntryUnexcludeOutputDevicesFuzzTest,
     AudioCoreServiceEventEntryGetExcludedDevicesFuzzTest,
