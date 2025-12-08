@@ -79,7 +79,7 @@ public:
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
         const std::string &deviceName = "", std::string networkId = LOCAL_NETWORK_ID);
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
-        const std::string &deviceName = "");
+        const std::string &deviceName = "", const std::string &networkId = LOCAL_NETWORK_ID);
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);

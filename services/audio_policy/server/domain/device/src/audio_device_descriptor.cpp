@@ -153,6 +153,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     isVrSupported_ = true;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    dmDeviceInfo_ = "";
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -186,6 +187,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     isVrSupported_ = true;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    dmDeviceInfo_ = "";
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -222,6 +224,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
+    dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -259,6 +262,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     clientInfo_ = deviceDescriptor->clientInfo_;
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
+    dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -342,7 +346,8 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
         parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_);
+        parcel.WriteBool(highQualityRecordingSupported_) &&
+        parcel.WriteString(dmDeviceInfo_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -404,7 +409,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
         parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_);
+        parcel.WriteBool(highQualityRecordingSupported_) &&
+        parcel.WriteString(dmDeviceInfo_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -440,6 +446,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
     modemCallSupported_ = parcel.ReadBool();
     highQualityRecordingSupported_ = parcel.ReadBool();
+    dmDeviceInfo_ = parcel.ReadString();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -494,6 +501,12 @@ void AudioDeviceDescriptor::SetDeviceCapability(const std::list<DeviceStreamInfo
     audioStreamInfo_ = audioStreamInfo;
     channelMasks_ = channelMask;
     channelIndexMasks_ = channelIndexMasks;
+}
+
+void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission)
+{
+    dmDeviceType_ = statusInfo.dmDeviceType;
+    dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }
 
 bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const

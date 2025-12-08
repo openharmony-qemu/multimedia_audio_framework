@@ -1682,6 +1682,8 @@ struct DStatusInfo {
     std::string macAddress;
     std::list<DeviceStreamInfo> streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
+    uint16_t dmDeviceType = 0;
+    std::string dmDeviceInfo = "";
 };
 
 struct AudioRendererDataInfo {

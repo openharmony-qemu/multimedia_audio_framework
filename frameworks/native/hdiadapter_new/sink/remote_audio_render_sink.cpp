@@ -425,8 +425,10 @@ int32_t RemoteAudioRenderSink::GetAudioScene(void)
 
 int32_t RemoteAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
+        ERR_INVALID_PARAM, "invalid device");
+    AUDIO_INFO_LOG("device: %{public}d", outputDevices[0]);
+    return DoSetOutputRoute();
 }
 
 void RemoteAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
