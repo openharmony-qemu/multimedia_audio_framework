@@ -578,11 +578,6 @@ public:
 
     ConverterConfig GetConverterConfig();
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-
     bool IsHighResolutionExist();
 
     int32_t SetHighResolutionExist(bool highResExist);

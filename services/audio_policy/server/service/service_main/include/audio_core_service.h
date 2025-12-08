@@ -151,9 +151,6 @@ public:
         void CloseWakeUpAudioCapturer();
         void OnCapturerSessionRemoved(uint64_t sessionID);
         int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
-        void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-            const AudioStreamDeviceChangeReasonExt reason);
-        void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
         int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,

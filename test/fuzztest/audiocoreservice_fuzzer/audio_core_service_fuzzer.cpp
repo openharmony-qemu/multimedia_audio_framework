@@ -175,22 +175,6 @@ void AudioCoreServiceGetExcludedDevicesFuzzTest()
     audioCoreService->GetExcludedDevices(audioDevUsage);
 }
 
-void AudioCoreServiceFetchOutputDeviceForTrackFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    AudioStreamChangeInfo streamChangeInfo;
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-}
-
-void AudioCoreServiceFetchInputDeviceForTrackFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    AudioStreamChangeInfo streamChangeInfo;
-    audioCoreService->FetchInputDeviceForTrack(streamChangeInfo);
-}
-
 void AudioCoreServiceExcludeOutputDevicesFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -317,8 +301,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServiceCheckAndSetCurrentInputDeviceFuzzTest,
     AudioCoreServiceSetCallDeviceActiveFuzzTest,
     AudioCoreServiceGetExcludedDevicesFuzzTest,
-    AudioCoreServiceFetchOutputDeviceForTrackFuzzTest,
-    AudioCoreServiceFetchInputDeviceForTrackFuzzTest,
     AudioCoreServiceExcludeOutputDevicesFuzzTest,
     AudioCoreServiceUnexcludeOutputDevicesFuzzTest,
     AudioCoreServiceOnReceiveUpdateDeviceNameEventFuzzTest,

@@ -2261,35 +2261,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_086, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_087
-* @tc.desc  : Test FetchOutputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_087, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    server->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_088
-* @tc.desc  : Test FetchInputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_088, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    server->FetchInputDeviceForTrack(streamChangeInfo);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_093
 * @tc.desc  : Test GetNetworkIdByGroupId.
 */

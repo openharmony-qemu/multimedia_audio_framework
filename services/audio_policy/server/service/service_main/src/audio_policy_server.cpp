@@ -3256,39 +3256,6 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
     return ret;
 }
 
-int32_t AudioPolicyServer::FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfoIn,
-    const AudioStreamDeviceChangeReasonExt &reason)
-{
-    // update the clientUid
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    AudioStreamChangeInfo streamChangeInfo = streamChangeInfoIn;
-    streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
-    AUDIO_DEBUG_LOG("[caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID) {
-        streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
-        AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
-            streamChangeInfo.audioRendererChangeInfo.clientUID);
-    }
-    eventEntry_->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyServer::FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfoIn)
-{
-    // update the clientUid
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    AudioStreamChangeInfo streamChangeInfo = streamChangeInfoIn;
-    streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
-    AUDIO_DEBUG_LOG("[caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID) {
-        streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
-        AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
-            streamChangeInfo.audioCapturerChangeInfo.clientUID);
-    }
-    eventEntry_->FetchInputDeviceForTrack(streamChangeInfo);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
