@@ -214,8 +214,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
             "node type = %{public}d outputStream is null!", GetNodeType());
     }
-    CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data
