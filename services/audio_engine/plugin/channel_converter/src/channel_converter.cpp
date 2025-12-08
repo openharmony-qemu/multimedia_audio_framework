@@ -72,7 +72,6 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
-        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
@@ -90,7 +89,6 @@ int32_t ChannelConverter::SetInChannelInfo(AudioChannelInfo inChannelInfo)
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
-        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
@@ -109,7 +107,6 @@ int32_t ChannelConverter::SetOutChannelInfo(AudioChannelInfo outChannelInfo)
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
-        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
