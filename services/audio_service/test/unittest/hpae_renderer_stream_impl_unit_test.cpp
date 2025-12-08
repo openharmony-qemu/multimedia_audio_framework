@@ -135,6 +135,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -160,6 +161,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16010);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_100MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -185,6 +187,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16050);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -209,6 +212,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSi
     processConfig.streamInfo.channels = CHANNEL_UNKNOW;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, processConfig.streamInfo.samplingRate);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, 0);
@@ -231,6 +235,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *

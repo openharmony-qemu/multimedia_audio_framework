@@ -151,6 +151,8 @@ private:
 
     std::unordered_map<int32_t, PositionData> currentPositionData;
     std::unordered_map<int32_t, PositionData> speedPositionData;
+
+    uint32_t usedSampleRate_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

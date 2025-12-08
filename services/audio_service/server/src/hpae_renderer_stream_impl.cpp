@@ -59,29 +59,24 @@ static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    if (processConfig.streamInfo.customSampleRate == 0) {
-        spanSizeInFrame_ = processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025 ?
-            FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S :
-            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;
-    } else if (processConfig.streamInfo.customSampleRate == SAMPLE_RATE_11025) {
-        spanSizeInFrame_ =
-            FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S;
+    usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
+        static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
+    if (usedSampleRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
+        spanSizeInFrame_ = FRAME_LEN_20MS * usedSampleRate_ / AUDIO_MS_PER_S;
+    } else if (usedSampleRate_ == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ = FRAME_LEN_40MS * usedSampleRate_ / AUDIO_MS_PER_S;
     } else {
-        spanSizeInFrame_ = processConfig.streamInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0 ?
-            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S :
-            FRAME_LEN_100MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S;
+        spanSizeInFrame_ = FRAME_LEN_100MS * usedSampleRate_ / AUDIO_MS_PER_S;
     }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
-    if (byteSizePerFrame_ == 0 ||
-        (processConfig.streamInfo.samplingRate == 0 && processConfig.streamInfo.customSampleRate == 0)) {
+    if (byteSizePerFrame_ == 0 || usedSampleRate_ == 0) {
         expectedPlaybackDurationMs_ = 0;
     } else {
         expectedPlaybackDurationMs_ =
             (processConfig.rendererInfo.expectedPlaybackDurationBytes * AUDIO_MS_PER_S / byteSizePerFrame_) /
-                (processConfig.streamInfo.customSampleRate == 0 ?
-                processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate);
+                usedSampleRate_;
     }
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
@@ -323,9 +318,9 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     // Here, latency and sampling count are calculated, and latency is exposed to the client as 0.
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     // latencyMutex_ begin
-    latency = static_cast<uint64_t>(curLatencyUS) * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+    latency = static_cast<uint64_t>(curLatencyUS) * usedSampleRate_ / AUDIO_US_PER_S;
 
-    uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+    uint64_t frames = framesUS * usedSampleRate_ / AUDIO_US_PER_S;
     framePosition = lastHdiFramePosition_ + frames;
     timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
     AUDIO_DEBUG_LOG("frame: %{public}" PRIu64, framePosition);
@@ -358,7 +353,7 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
-    latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
+    latency = latencyUs * static_cast<uint64_t>(usedSampleRate_) / AUDIO_US_PER_S;
     // latencyMutex_ end
     positionData.framePosition = framePosition;
     positionData.timestamp = timestamp;
@@ -385,7 +380,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     // latencyMutex_ begin
     latencyUs += latency_;
     AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
-    latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
+    latency = latencyUs * static_cast<uint64_t>(usedSampleRate_) / AUDIO_US_PER_S;
     framePosition = framePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
@@ -519,7 +514,7 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
-            callBackStreamInfo.hdiFramePosition * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S;
     }
 }
 
@@ -816,7 +811,7 @@ void HpaeRendererStreamImpl::InitRingBuffer()
     }
 
     std::string dumpEnqueueInFileName = std::to_string(processConfig_.originalSessionId) + "_dual_in_" +
-        std::to_string(processConfig_.streamInfo.samplingRate) + "_" +
+        std::to_string(usedSampleRate_) + "_" +
         std::to_string(processConfig_.streamInfo.channels) + "_" +
         std::to_string(processConfig_.streamInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpEnqueueInFileName, &dumpEnqueueIn_);
