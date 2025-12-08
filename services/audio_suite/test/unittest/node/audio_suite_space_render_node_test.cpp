@@ -245,7 +245,6 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderDoProcess001, TestSize.Level0)
  
     node->SetAudioNodeDataFinishedFlag(false);
     node->outputStream_ = nullptr;
-    node->inputStream_ = nullptr;
     ret = node->DoProcess();
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
