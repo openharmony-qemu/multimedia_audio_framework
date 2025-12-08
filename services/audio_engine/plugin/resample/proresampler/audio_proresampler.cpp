@@ -360,8 +360,6 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
         size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE;
         buf11025_.reserve(capacityNeed);
-        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}u, buf11025_ size %{public}zu",
-            outRate_, buf11025_.capacity());
         CHECK_AND_RETURN_RET_LOG(buf11025_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
             "buf11025_ size error, should be above %{public}zu, actually %{public}zu",
             capacityNeed, buf11025_.capacity());
@@ -370,8 +368,6 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {   // not multiples of 50
         size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE;
         bufFor100ms_.reserve(capacityNeed);
-        AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}u, bufFor100ms_ size %{public}zu",
-            inRate_, outRate_, bufFor100ms_.capacity());
         CHECK_AND_RETURN_RET_LOG(bufFor100ms_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
             "bufFor100ms_ size error, should be above %{public}zu, actually %{public}zu",
             capacityNeed, bufFor100ms_.capacity());
@@ -381,6 +377,9 @@ int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
         tmpOutBuf_.resize(expectedOutFrameLen_ * channels_, 0.0f);
     }
+    AUDIO_INFO_LOG("input %{public}u Hz, output %{public}u Hz, outChannel: %{public}u, buf11025 size %{public}zu, "
+        "bufFor100ms size %{public}zu, tmpOutBuf size %{public}zu",
+        inRate_, outRate_, channels_, buf11025_.capacity(), bufFor100ms_.capacity(), tmpOutBuf_.size());
     return RESAMPLER_ERR_SUCCESS;
 }
 
