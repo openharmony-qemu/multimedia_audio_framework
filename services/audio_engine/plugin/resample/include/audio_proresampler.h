@@ -62,6 +62,7 @@ private:
     uint32_t expectedOutFrameLen_ = 0;
     uint32_t expectedInFrameLen_ = 0;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
+    std::vector<float> tmpOutBuf_;
 };
 } // HPAE
 } // AudioStandard

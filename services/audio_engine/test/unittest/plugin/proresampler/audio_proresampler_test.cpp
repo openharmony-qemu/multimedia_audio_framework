@@ -84,6 +84,7 @@ HWTEST_F(AudioProResamplerTest, InitTest_001, TestSize.Level0)
     EXPECT_EQ(resampler1.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler1.buf11025_.capacity(),
         resampler1.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2);
 
     // test other input
     ProResampler resampler2(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
@@ -91,6 +92,7 @@ HWTEST_F(AudioProResamplerTest, InitTest_001, TestSize.Level0)
     EXPECT_EQ(resampler2.outRate_, SAMPLE_RATE_44100);
     EXPECT_EQ(resampler2.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler2.expectedOutFrameLen_, SAMPLE_RATE_44100 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler2.tmpOutBuf_.size(), resampler2.expectedOutFrameLen_ * STEREO);
 
     // test custom sample rate that is not multiples of 50
     ProResampler resampler3(SAMPLE_RATE_48010, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
@@ -100,6 +102,7 @@ HWTEST_F(AudioProResamplerTest, InitTest_001, TestSize.Level0)
     EXPECT_EQ(resampler3.expectedOutFrameLen_, SAMPLE_RATE_44100 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler3.bufFor100ms_.capacity(),
         resampler3.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler3.tmpOutBuf_.size(), resampler3.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
 }
 
 /*
@@ -251,6 +254,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_002, TestSize.Level0)
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
     EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * CHANNEL_6);
 }
 
 /*
@@ -268,6 +272,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_003, TestSize.Level0)
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
     EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * CHANNEL_6);
 
     ProResampler resampler1(SAMPLE_RATE_48000, SAMPLE_RATE_96000, INVALID_CHANNELS, QUALITY_ONE);
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS);
@@ -297,6 +302,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_004, TestSize.Level0)
     EXPECT_NE(resampler.state_, nullptr);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_5);
 
     ProResampler resampler1(SAMPLE_RATE_11025, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler1.channels_, STEREO);
@@ -309,6 +315,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_004, TestSize.Level0)
     EXPECT_NE(resampler1.state_, nullptr);
     EXPECT_EQ(resampler1.buf11025_.capacity(),
         resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2);
 }
 
 /*
@@ -333,6 +340,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRates_001, TestSize.Level0)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.buf11025_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2);
 }
 
 /*
@@ -381,6 +389,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_003, TestSize.Level0)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
 }
 
 /*
@@ -403,6 +412,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_004, TestSize.Level0)
     EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_96000);
     EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
 }
 
 /*
@@ -428,6 +438,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_005, TestSize.Level0)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
 }
 
 /*
