@@ -1070,9 +1070,7 @@ interface AudioRenderer {
 
   GetLoudnessGain(): f64;
 
-  @gen_async("getLatency")
-  @gen_promise("getLatency")
-  GetLatencySync(type: AudioLatencyType): i32;
+  GetLatency(type: AudioLatencyType): i32;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
