@@ -72,6 +72,7 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
+        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
@@ -89,6 +90,7 @@ int32_t ChannelConverter::SetInChannelInfo(AudioChannelInfo inChannelInfo)
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
+        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
@@ -107,6 +109,7 @@ int32_t ChannelConverter::SetOutChannelInfo(AudioChannelInfo outChannelInfo)
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
+        UpmixGainAttenuation();
     }
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
@@ -189,7 +192,8 @@ int32_t ChannelConverter::MixProcess(bool isDmix, uint32_t frameLen, float* in, 
     }
     return MIX_ERR_SUCCESS;
 }
-
+// used to add gain adjustment to upmix
+// mutiplty some gain to output channel that is not in input channelmap, for now it is COEF_0DB_F (not used)
 void ChannelConverter::UpmixGainAttenuation()
 {
     uint64_t outChMsk = outChannelInfo_.channelLayout;
@@ -199,7 +203,7 @@ void ChannelConverter::UpmixGainAttenuation()
         for (uint32_t j = 0; j < inChannelInfo_.numChannels; j++) {
             uint64_t inBit = inChMsk & (~inChMsk + 1);
             if (inBit != outBit) {
-                mixTable_[j][i] *= COEF_M6DB_F;
+                mixTable_[j][i] *= COEF_0DB_F;
             }
             inChMsk ^= inBit;
         }
