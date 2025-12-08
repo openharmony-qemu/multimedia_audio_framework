@@ -903,7 +903,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
                 matchStreamInfo.channels = layout.first;
                 matchStreamInfo.channelLayout = layout.second;
                 AUDIO_INFO_LOG("match layout as %{public}llx", static_cast<unsigned long long>(layout.second));
-                break;
+                return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
             }
         }
     }
