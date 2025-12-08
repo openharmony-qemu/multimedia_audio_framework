@@ -61,11 +61,8 @@ int32_t AudioResourceService::AudioWorkgroupCheck(int32_t pid)
         for (const auto& [key, process] : audioWorkgroupMap_) {
             if (!process.hasSystemPermission) {
                 normalPidCount++;
+                AUDIO_INFO_LOG("[WorkgroupInServer] current normal pid count:%{public}d\n", normalPidCount);
             }
-        }
-        if (normalPidCount >= AUDIO_MAX_PROCESS) {
-            AUDIO_INFO_LOG("[WorkgroupInServer] more than %{public}d processes is not allowed\n", AUDIO_MAX_PROCESS);
-            return ERR_NOT_SUPPORTED;
         }
     }
     return SUCCESS;
@@ -150,6 +147,9 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
     groups.erase(grpIt);
     if (groups.empty()) {
         audioWorkgroupMap_.erase(pidIt);
+        allowWorkgroupPidSet_.erase(pid);
+        AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d release all groups"
+            " allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
     }
 
     DumpAudioWorkgroupMap();
@@ -260,8 +260,10 @@ void AudioResourceService::OnWorkgroupRemoteDied(const std::shared_ptr<AudioWork
         }
     }
     for (int32_t pid : pidsToDelete) {
-        AUDIO_INFO_LOG("[WorkgroupInServer] All workgroups for pid:%{public}d released", pid);
         audioWorkgroupMap_.erase(pid);
+        allowWorkgroupPidSet_.erase(pid);
+        AUDIO_INFO_LOG("[WorkgroupInServer] All workgroups for pid:%{public}d released"
+            " allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
     }
     DumpAudioWorkgroupMap();
 }
@@ -342,10 +344,21 @@ void AudioResourceService::WorkgroupRendererMonitor(int32_t pid, const bool isAl
         return;
     }
     audioWorkgroupMap_[pid].permission = isAllowed;
+    bool isAllowWorkgroupNotFull = false;
+ 
+    if ((allowWorkgroupPidSet_.size() < AUDIO_MAX_PROCESS) && isAllowed) {
+        allowWorkgroupPidSet_.insert(pid);
+        isAllowWorkgroupNotFull = true;
+    } else if (allowWorkgroupPidSet_.count(pid) && !isAllowed) {
+        allowWorkgroupPidSet_.erase(pid);
+    } else {
+        AUDIO_INFO_LOG("[WorkgroupInServer]pid:%{public}d not allow, allowWorkgroupPidSet size:%{public}zu",
+            pid, allowWorkgroupPidSet_.size());
+    }
 
     struct AudioWorkgroupChangeInfo info = {
         .pid = pid,
-        .startAllowed = audioWorkgroupMap_[pid].permission,
+        .startAllowed = audioWorkgroupMap_[pid].permission && isAllowWorkgroupNotFull,
     };
 
     for (const auto &[id, group]: audioWorkgroupMap_[pid].groups) {
