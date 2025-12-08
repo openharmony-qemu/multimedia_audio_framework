@@ -60,10 +60,6 @@ public:
         }
         return nullptr;
     }
-    std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> GetInputPort()
-    {
-        return inputStream_;
-    }
 };
 class TestReadTapCallBack : public SuiteNodeReadTapDataCallback {
 public:
@@ -101,7 +97,6 @@ public:
 
 HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
-    EXPECT_NE(node_->GetInputPort(), nullptr);
     EXPECT_NE(node_->GetOutputPort(), nullptr);
     EXPECT_EQ(node_->GetNodeBypassStatus(), false);
 }

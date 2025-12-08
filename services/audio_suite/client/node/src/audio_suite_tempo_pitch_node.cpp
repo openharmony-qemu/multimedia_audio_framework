@@ -58,6 +58,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
@@ -214,8 +215,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
             "node type = %{public}d outputStream is null!", GetNodeType());
     }
-    CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data

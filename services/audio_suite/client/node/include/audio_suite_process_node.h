@@ -34,6 +34,7 @@ public:
     int32_t DoProcess() override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
+    int32_t InitOutputStream();
     int32_t Flush() override;
     std::string paraName_ = "";
     std::string paraValue_ = "";
@@ -53,15 +54,12 @@ public:
 
     virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override
     {
-        if (!outputStream_) {
-            outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        }
         return outputStream_;
     }
 
 protected:
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_;
-    std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> inputStream_;
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_ = nullptr;
+    InputPort<AudioSuitePcmBuffer *> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
