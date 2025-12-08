@@ -111,12 +111,20 @@ private:
     int32_t GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat);
     void CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS);
     void CheckRenderFrameOverTimeCount();
+    // for DDL, set deadline for renderframe
+    void CreateDdlGroup();
+    void ReleaseDdlGroup();
+    void AddDdlThread();
+    void RemoveDdlThread();
+    void StartDdl(int32_t frameDurationMS);
+    void StopDdl();
 
 private:
     static std::mutex allocateIdLock;
     static uint32_t allocateId;
 
     uint32_t id_;
+    int32_t workGroupId_ = -1;
     PipelineWorkMode pipelineWorkMode_;
     std::atomic<bool> isInit_ = false;
     AudioEdiPipelineCfg pipelineCfg_;

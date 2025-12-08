@@ -25,6 +25,7 @@
 #include "audio_suite_log.h"
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
+#include "audio_system_manager.h"
 #include "audio_suite_eq_node.h"
 #include "audio_suite_env_node.h"
 #include "audio_suite_pipeline.h"
@@ -43,6 +44,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+static constexpr int32_t DDL_MIN_MS = 20;   // 20 ms, lowwer limit of deadlinetime param
+static constexpr int32_t DDL_MAX_MS = 100;  // 100 ms, upper limit of deadlinetime param
 
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -78,6 +82,7 @@ int32_t AudioSuitePipeline::Init()
     pipelineThread_ = std::make_unique<AudioSuiteManagerThread>();
     pipelineThread_->ActivateThread(this);
     isInit_.store(true);
+    CreateDdlGroup();
     AUDIO_INFO_LOG("AudioSuitePipeline::Init end");
     return SUCCESS;
 }
@@ -100,7 +105,7 @@ int32_t AudioSuitePipeline::DeInit()
     nodeMap_.clear();
     connections_.clear();
     reverseConnections_.clear();
-
+    ReleaseDdlGroup();
     AUDIO_INFO_LOG("AudioSuitePipeline::DeInit end");
     return SUCCESS;
 }
@@ -166,6 +171,8 @@ int32_t AudioSuitePipeline::Start()
 
         pipelineState_ = PIPELINE_RUNNING;
         AUDIO_INFO_LOG("Start pipeline, id is %{public}d", id_);
+        AddDdlThread();
+
         TriggerCallback(START_PIPELINE, SUCCESS);
     };
     SendRequest(request, __func__);
@@ -179,6 +186,7 @@ int32_t AudioSuitePipeline::Stop()
 
     auto request = [this]() {
         AUDIO_INFO_LOG("Stop pipeline, id is %{public}d", id_);
+        RemoveDdlThread();
 
         if (pipelineState_ == PIPELINE_STOPPED) {
             AUDIO_INFO_LOG("Current pipeline already stop, id is %{public}d", id_);
@@ -849,8 +857,12 @@ int32_t AudioSuitePipeline::RenderFrame(
             return;
         }
 
-        int32_t frameDuration =  GetFrameDuration(requestFrameSize, outputNode_->GetAudioNodeFormat());
+        // for dfx
+        int32_t frameDuration = GetFrameDuration(requestFrameSize, outputNode_->GetAudioNodeFormat());
         auto startTime = std::chrono::steady_clock::now();
+
+        // DDL start, set deadline for RenderFrame execution
+        StartDdl(frameDuration);
 
         int32_t ret = outputNode_->DoProcess(audioData, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
@@ -863,6 +875,9 @@ int32_t AudioSuitePipeline::RenderFrame(
         auto endTime = std::chrono::steady_clock::now();
         auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
+
+        // DDL stop
+        StopDdl();
 
         TriggerCallback(RENDER_FRAME, SUCCESS, id_);
     };
@@ -890,12 +905,27 @@ int32_t AudioSuitePipeline::MultiRenderFrame(
             return;
         }
 
+        // for dfx
+        int32_t frameDuration = GetFrameDuration(requestFrameSize, outputNode_->GetAudioNodeFormat());
+        auto startTime = std::chrono::steady_clock::now();
+
+        // DDL start, set deadline for MultiRenderFrame execution
+        StartDdl(frameDuration);
+
         int32_t ret = outputNode_->DoProcess(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("MultiRenderFrame, ret = %{public}d.", ret);
             TriggerCallback(MULTI_RENDER_FRAME, ret, id_);
             return;
         }
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
+
+        // DDL stop
+        StopDdl();
 
         TriggerCallback(MULTI_RENDER_FRAME, SUCCESS, id_);
     };
@@ -1128,6 +1158,64 @@ void AudioSuitePipeline::CheckRenderFrameOverTimeCount()
     // reset counter
     renderFrameTotalCount_ = 0;
     std::fill(renderFrameOvertimeCounters_.begin(), renderFrameOvertimeCounters_.end(), 0);
+}
+
+void AudioSuitePipeline::CreateDdlGroup()
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+        workGroupId_ = AudioSystemManager::GetInstance()->CreateAudioWorkgroup();
+        CHECK_AND_RETURN_LOG(workGroupId_ > 0, "CreateAudioWorkgroup failed.");
+        AUDIO_INFO_LOG("CreateAudioWorkgroup success, group id:%{public}d", workGroupId_);
+    }
+}
+
+void AudioSuitePipeline::ReleaseDdlGroup()
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+        AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(workGroupId_);
+        workGroupId_ = -1;
+        AUDIO_INFO_LOG("ReleaseAudioWorkgroup, group id:%{public}d", workGroupId_);
+    }
+}
+
+void AudioSuitePipeline::AddDdlThread()
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+        CHECK_AND_RETURN_LOG(workGroupId_ > 0, "workgroup id is invalid.");
+        int32_t ret = AudioSystemManager::GetInstance()->AddThreadToGroup(workGroupId_, gettid());
+        AUDIO_INFO_LOG("Add current pipeline thread %{public}d to group %{public}d", gettid(), workGroupId_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "AddThreadToGroup failed.");
+    }
+}
+
+void AudioSuitePipeline::RemoveDdlThread()
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+        AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workGroupId_, gettid());
+        AUDIO_INFO_LOG("Remove thread %{public}d from group %{public}d", gettid(), workGroupId_);
+    }
+}
+
+void AudioSuitePipeline::StartDdl(int32_t frameDurationMS)
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE && AudioSystemManager::GetInstance() != nullptr) {
+        uint64_t startTime = 0;
+        uint64_t deadlineTime = static_cast<uint64_t>(std::clamp(frameDurationMS, DDL_MIN_MS, DDL_MAX_MS));
+        std::unordered_map<int32_t, bool> threads{{gettid(), true}};
+        bool needUpdatePrio = true;
+        AudioSystemManager::GetInstance()->StartGroup(workGroupId_, startTime, deadlineTime, threads, needUpdatePrio);
+    }
+}
+
+void AudioSuitePipeline::StopDdl()
+{
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE && AudioSystemManager::GetInstance() != nullptr) {
+        AudioSystemManager::GetInstance()->StopGroup(workGroupId_);
+    }
 }
 
 }  // namespace AudioSuite

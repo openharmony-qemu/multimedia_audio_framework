@@ -58,17 +58,21 @@ int32_t AudioSuiteAissNode::DoProcess()
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
             "do SignalProcess.", GetNodeType());
         Trace trace("AudioSuiteAissNode::SignalProcess Start");
+        auto startTime = std::chrono::steady_clock::now();
         tempOut = SignalProcess(preOutputs);
         trace.End();
         if (tempOut == nullptr) {
-            AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d do SignalProcess failed, "
-                "return a nullptr", GetNodeType());
+            AUDIO_ERR_LOG("AudioSuiteAissNode::DoProcess: do SignalProcess failed, return a nullptr");
             return ERR_OPERATION_FAILED;
         }
         tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         outputStream_->WriteDataToOutput(&tmpHumanSoundOutput_);
         outputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(tempOut->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d signalProcess "
             "is not enabled.", GetNodeType());

@@ -76,9 +76,9 @@ void AudioSuiteCapabilitiesParser::ParserNodeType(
 
 float AudioSuiteCapabilitiesParser::GetRealtimeFactor(std::string valueStr)
 {
-    float value = 1.0f;  // default value when get config from XML failed.
-
-    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), value,
+    float defaultValue = 1.0f;  // default value when get config from XML failed.
+    float value = 1.0f;
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(valueStr, value), defaultValue,
         "convert string to float value error, invalid valueStr =%{public}s", valueStr.c_str());
     return value;
 }

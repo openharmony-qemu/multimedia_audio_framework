@@ -1369,4 +1369,21 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckRenderFrameTime
     }
 }
 
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineStartDdlTest, TestSize.Level0)
+{
+    std::vector<PipelineWorkMode> workModeVec = {PIPELINE_REALTIME_MODE, PIPELINE_EDIT_MODE};
+    for (PipelineWorkMode workMode : workModeVec) {
+        AudioSuitePipeline audioSuitePipeline(workMode);
+        audioSuitePipeline.Init();
+        EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+
+        audioSuitePipeline.CreateDdlGroup();
+        audioSuitePipeline.AddDdlThread();
+        audioSuitePipeline.StartDdl(20);
+        audioSuitePipeline.StopDdl();
+        audioSuitePipeline.RemoveDdlThread();
+        audioSuitePipeline.ReleaseDdlGroup();
+    }
+}
+
 }  // namespace
