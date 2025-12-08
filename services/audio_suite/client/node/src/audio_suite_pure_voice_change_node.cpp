@@ -220,10 +220,6 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
-        return ERR_INVALID_PARAM;
-    }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
 
