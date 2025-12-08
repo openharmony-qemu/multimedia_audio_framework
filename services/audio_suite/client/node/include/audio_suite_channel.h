@@ -281,7 +281,10 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
             outData.push_back(data);
         } else {
             AudioSuitePcmBuffer *convertData = convert_[idx]->Process(data, outFormat);
-            CHECK_AND_RETURN_RET_LOG(convertData != nullptr, std::vector<T>(), "convertData is nullptr.");
+            if (convertData == nullptr) {
+                AUDIO_ERROR_LOG("convertData is nullptr.");
+                return std::vector<T>();
+            }
             convertData->SetIsFinished(data->GetIsFinished());
             outData.push_back(convertData);
         }
