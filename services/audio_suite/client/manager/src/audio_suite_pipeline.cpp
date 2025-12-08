@@ -1042,8 +1042,9 @@ bool AudioSuitePipeline::IsDirectConnected(uint32_t srcNodeId, uint32_t destNode
 
 int32_t AudioSuitePipeline::GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat)
 {
-    int32_t bytesPerSecond = static_cast<int32_t>(nodeFormat.rate) * static_cast<int32_t>(nodeFormat.audioChannelInfo.numChannels) *
-                             static_cast<int32_t>(AudioSuiteUtil::GetSampleSize(nodeFormat.format));
+    int3_t bytesPerSecond = static_cast<int32_t>(nodeFormat.rate) *
+                            static_cast<int32_t>(nodeFormat.audioChannelInfo.numChannels) *
+                            static_cast<int32_t>(AudioSuiteUtil::GetSampleSize(nodeFormat.format));
 
     CHECK_AND_RETURN_RET_LOG(bytesPerSecond != 0, 0, "Invalid AudioFormat.");
     double frameDurationMS = std::ceil(static_cast<double>(frameSize) * SECONDS_TO_MS / bytesPerSecond); // round up
