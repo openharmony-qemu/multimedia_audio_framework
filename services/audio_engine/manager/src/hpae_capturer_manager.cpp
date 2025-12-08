@@ -629,13 +629,29 @@ int32_t HpaeCapturerManager::InitCapturer()
     return SUCCESS;
 }
 
+void HpaeCapturerManager::StopOuputNode()
+{
+    CHECK_AND_RETURN_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_),
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CapturerSourceStop();
+    sourceInputClusterMap_[mainMicType_]->CapturerSourceDeInit();
+    if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
+        sourceInputClusterMap_[HPAE_SOURCE_EC]->CapturerSourceDeInit();
+    }
+    if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
+        sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
+    }
+    sourceInputClusterMap_.clear();
+}
+
 int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)
 {
-    if (IsInit()) {
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sourceInfo, isReload] {
+        AUDIO_INFO_LOG("reload capture");
+        StopOuputNode();
         // disconnect
         std::vector<HpaeCaptureMoveInfo> moveInfos;
         for (const auto &it : sourceOutputNodeMap_) {
@@ -667,7 +683,9 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
     };
     SendRequest(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
 }
 

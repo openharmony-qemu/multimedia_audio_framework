@@ -502,15 +502,25 @@ void HpaeOffloadRendererManager::HandleMsg()
     hpaeNoLockQueue_.HandleRequests();
 }
 
+void HpaeOffloadRendererManager::StopOuputNode()
+{
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkStop();
+        sinkOutputNode_->RenderSinkDeInit();
+        sinkOutputNode_->ResetAll();
+        sinkOutputNode_ = nullptr;
+    }
+}
+
 int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
-    if (IsInit()) {
-        AUDIO_INFO_LOG("deinit offload renderer first.");
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
+        AUDIO_INFO_LOG("reload offload");
+        StopOuputNode();
         if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
             DisConnectInputSession();
             DestroyOffloadNodes();
@@ -524,7 +534,9 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         }
     };
     SendRequest(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
 }
 
@@ -606,12 +618,7 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    if (sinkOutputNode_ != nullptr) {
-        sinkOutputNode_->RenderSinkStop();
-        sinkOutputNode_->RenderSinkDeInit();
-        sinkOutputNode_->ResetAll();
-        sinkOutputNode_ = nullptr;
-    }
+    StopOuputNode();
     
     isInit_.store(false);
     return SUCCESS;

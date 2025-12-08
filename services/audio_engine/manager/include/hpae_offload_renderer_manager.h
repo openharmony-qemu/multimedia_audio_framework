@@ -113,6 +113,7 @@ private:
     void AddNodeToMap(std::shared_ptr<HpaeSinkInputNode> node);
     void RemoveNodeFromMap(uint32_t sessionId);
     void SetCurrentNode();
+    void StopOuputNode();
     
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
