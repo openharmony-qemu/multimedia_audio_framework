@@ -142,10 +142,6 @@ int32_t AudioSuiteProcessNode::InitOutputStream()
 
 int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode)
 {
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
-        return ERR_INVALID_PARAM;
-    }
     if (!preNode) {
         AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
