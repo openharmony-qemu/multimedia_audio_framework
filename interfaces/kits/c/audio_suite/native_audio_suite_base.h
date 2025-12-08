@@ -132,7 +132,7 @@ typedef enum {
      * The audio format output by the space render node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_S16LE}.
-     * Channels: 1.
+     * Channels: 2.
      *
      * @since 23
      */
@@ -140,7 +140,7 @@ typedef enum {
     /**
      * Pure voice change node type.
      * The audio format output by the pure voice change node is as follows:
-     * Sample rate: 48000 Hz.
+     * Sample rate: 16000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_S16LE}.
      * Channels: 1.
      *
@@ -152,7 +152,7 @@ typedef enum {
      * The audio format output by the general voice change node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_S16LE}.
-     * Channels: 1.
+     * Channels: 2.
      *
      * @since 23
      */
@@ -809,7 +809,7 @@ typedef struct OH_AudioSuite_SpaceRenderExtensionParams {
      */
     float extRadius;
     /**
-     * Expansion angle, value range: [0, 360], unit: degrees.
+     * Expansion angle, value range: (0, 360), unit: degrees.
      *
      * @since 23
      */
