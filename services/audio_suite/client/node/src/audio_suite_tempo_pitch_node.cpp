@@ -58,6 +58,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
