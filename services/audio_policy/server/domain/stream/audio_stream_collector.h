@@ -67,7 +67,7 @@ public:
     void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia);
+    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();

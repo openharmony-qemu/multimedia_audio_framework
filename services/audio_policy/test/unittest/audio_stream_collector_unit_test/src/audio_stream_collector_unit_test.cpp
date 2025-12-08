@@ -2098,16 +2098,17 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_001, TestSize.
     changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     changeInfo->sessionId = 1;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true);
+    bool silentControl = false;
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->createrUID = 1013;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
 }
 
@@ -2129,20 +2130,21 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_002, TestSize.
     changeInfo->clientPid = clientPid;
     changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     changeInfo->sessionId = 1;
+    bool silentControl = false;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->createrUID = 1013;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->clientPid = 2002;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
 }
 

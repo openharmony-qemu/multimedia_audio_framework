@@ -79,21 +79,18 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
         appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
     if (!(appState.isBack && !appState.isSystem)) {
-        silentControl = false;
-        streamCollector_.HandleStartStreamMuteState(uid, pid, false, false);
+        streamCollector_.HandleStartStreamMuteState(uid, pid, false, false, silentControl);
         return true;
     }
     bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
     if (appState.hasSession) {
-        silentControl = mute;
-        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, false);
+        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, false, silentControl);
         return true;
     }
     bool mediaUsage = std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
         streamUsage) != 0;
     if (!mediaUsage) {
-        silentControl = mute;
-        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, true);
+        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, true, silentControl);
         return true;
     }
     HandleSessionStateChange(uid, pid, silentControl);

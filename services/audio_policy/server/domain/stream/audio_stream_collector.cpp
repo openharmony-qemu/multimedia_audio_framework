@@ -1285,7 +1285,8 @@ void AudioStreamCollector::HandleBackTaskStateChange(int32_t uid, bool hasSessio
     }
 }
 
-void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia)
+void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute,
+    bool skipMedia, bool &silentControl)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
@@ -1308,6 +1309,7 @@ void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, 
                 setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
                 callback->MuteStreamImpl(setStateEvent);
                 changeInfo->backMute = true;
+                silentControl = true;
             } else if (!mute && changeInfo->backMute) {
                 AUDIO_INFO_LOG("Unmute the stream in uid=%{public}d", uid);
                 setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;
