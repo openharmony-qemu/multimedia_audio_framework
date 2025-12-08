@@ -33,7 +33,9 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
+#ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -253,8 +255,10 @@ private:
 
     std::mutex dualStreamMutex_;
 
+#ifdef FEATURE_CALL_MANAGER
     std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
     std::mutex callManagerMutex_;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

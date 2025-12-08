@@ -120,6 +120,14 @@ ohos_unittest("renderer_in_server_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
+
   if (!audio_framework_feature_new_engine_flag) {
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
@@ -183,6 +191,13 @@ ohos_unittest("renderer_in_server_second_unit_test") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("renderer_in_server_third_unit_test") {
@@ -241,6 +256,13 @@ ohos_unittest("renderer_in_server_third_unit_test") {
   defines = []
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
   }
 }
 
