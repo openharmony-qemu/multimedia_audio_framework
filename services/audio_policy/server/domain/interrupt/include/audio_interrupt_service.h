@@ -145,6 +145,7 @@ public:
         int32_t zoneId = ZONEID_DEFAULT);
     void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
+    std::thread stopThread_;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
