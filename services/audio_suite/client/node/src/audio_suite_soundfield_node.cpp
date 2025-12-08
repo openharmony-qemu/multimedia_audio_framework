@@ -56,6 +56,7 @@ AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
 int32_t AudioSuiteSoundFieldNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
 
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeCapability);
