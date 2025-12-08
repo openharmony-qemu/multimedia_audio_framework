@@ -1042,7 +1042,7 @@ bool AudioSuitePipeline::IsDirectConnected(uint32_t srcNodeId, uint32_t destNode
 
 int32_t AudioSuitePipeline::GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat)
 {
-    int3_t bytesPerSecond = static_cast<int32_t>(nodeFormat.rate) *
+    int32_t bytesPerSecond = static_cast<int32_t>(nodeFormat.rate) *
                             static_cast<int32_t>(nodeFormat.audioChannelInfo.numChannels) *
                             static_cast<int32_t>(AudioSuiteUtil::GetSampleSize(nodeFormat.format));
 
