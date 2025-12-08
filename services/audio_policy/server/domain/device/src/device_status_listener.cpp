@@ -150,6 +150,7 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         }
 
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
+        DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
         ReceiveRemoteOffloadInfo(info, statusInfo);
         ParseDeviceExtraInfo(info, statusInfo);
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
@@ -228,6 +229,31 @@ DeviceStatusListener::DeviceStatusListener(IDeviceStatusObserver &observer)
     : deviceObserver_(observer), hdiServiceManager_(nullptr), listener_(nullptr) {}
 
 DeviceStatusListener::~DeviceStatusListener() = default;
+
+void DeviceStatusListener::ParseModelFromProtocol(const std::string &info, DStatusInfo &statusInfo)
+{
+    static const std::string key = "PROTOCOL=";
+
+    size_t pos = info.find(key);
+    if (pos == std::string::npos) {
+        return;
+    }
+
+    pos += key.length();
+    size_t end = info.find(';', pos);
+
+    std::string protocol;
+    if (end == std::string::npos) {
+        protocol = info.substr(pos);
+    } else {
+        protocol = info.substr(pos, end - pos);
+    }
+    if (protocol == "0") {
+        statusInfo.model = "hiplay";
+    } else if (protocol == "1") {
+        statusInfo.model = "hicar";
+    }
+}
 
 int32_t DeviceStatusListener::RegisterDeviceStatusListener()
 {

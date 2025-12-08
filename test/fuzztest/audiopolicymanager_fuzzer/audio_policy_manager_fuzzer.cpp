@@ -568,6 +568,7 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     bool isConnected = GetData<bool>();
     DeviceInfoUpdateCommand command = GetData<DeviceInfoUpdateCommand>();
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
+    std::shared_ptr<PreferredDeviceSetCallback> preferredDeviceSetCallback;
 
     AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId, deviceChangeWithInfoCallback);
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
@@ -585,6 +586,8 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
     AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
     AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);
+    AudioPolicyManager::GetInstance().RegisterPreferredDeviceSetCallback(preferredDeviceSetCallback);
+    AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(preferredDeviceSetCallback);
 }
 
 void AudioPolicyManagerIsDeviceActiveFuzzTest()

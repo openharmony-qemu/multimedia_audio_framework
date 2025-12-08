@@ -480,5 +480,19 @@ int32_t AudioGeneralManager::RestoreDistributedDeviceInfo()
 {
     return AudioPolicyManager::GetInstance().RestoreDistributedDeviceInfo();
 }
+
+int32_t AudioGeneralManager::RegisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().RegisterPreferredDeviceSetCallback(callback);
+}
+
+int32_t AudioGeneralManager::UnregisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(callback);
+}
 } // namespace AudioStandard
 } // namespace OHOS

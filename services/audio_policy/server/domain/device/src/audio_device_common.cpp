@@ -278,6 +278,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
     deviceInfo.channelMasks_ = desc->channelMasks_;
     deviceInfo.channelIndexMasks_ = desc->channelIndexMasks_;
     deviceInfo.displayName_ = desc->displayName_;
+    deviceInfo.model_ = desc->model_;
     deviceInfo.connectState_ = desc->connectState_;
 
     if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -307,6 +308,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         deviceInfo.interruptGroupId_ = GROUP_ID_NONE;
     }
     deviceInfo.audioStreamInfo_ = desc->audioStreamInfo_;
+    deviceInfo.capabilities_ = desc->capabilities_;
 }
 
 int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,

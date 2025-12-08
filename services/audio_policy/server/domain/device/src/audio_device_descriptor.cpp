@@ -58,6 +58,8 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
 
 const DeviceStreamInfo DEFAULT_DEVICE_STREAM_INFO(SAMPLE_RATE_44100, ENCODING_PCM, AudioSampleFormat::INVALID_WIDTH,
     CH_LAYOUT_STEREO);
+const AudioStreamInfo DEFAULT_AUDIO_STREAM_INFO(AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
+    AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
 
 static const char *DeviceTypeToString(DeviceType type)
 {
@@ -97,6 +99,30 @@ static void UnmarshallingDeviceStreamInfoList(Parcel &parcel, std::list<DeviceSt
     }
 }
 
+static bool MarshallingAudioStreamInfoList(const std::list<AudioStreamInfo> &audioStreamInfos, Parcel &parcel)
+{
+    size_t size = audioStreamInfos.size();
+    CHECK_AND_RETURN_RET(parcel.WriteUint64(size), false);
+
+    for (const auto &audioStreamInfo : audioStreamInfos) {
+        CHECK_AND_RETURN_RET(audioStreamInfo.Marshalling(parcel), false);
+    }
+    return true;
+}
+
+static void UnmarshallingAudioStreamInfoList(Parcel &parcel, std::list<AudioStreamInfo> &audioStreamInfos)
+{
+    size_t size = parcel.ReadUint64();
+    // due to security concerns, sizelimit has been imposed
+    CheckDeviceInfoSize(size);
+
+    for (size_t i = 0; i < size; i++) {
+        AudioStreamInfo audioStreamInfo;
+        audioStreamInfo.UnmarshallingSelf(parcel);
+        audioStreamInfos.push_back(audioStreamInfo);
+    }
+}
+
 static void SetDefaultStreamInfoIfEmpty(std::list<DeviceStreamInfo> &streamInfo)
 {
     if (streamInfo.empty()) {
@@ -131,6 +157,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
 {
     deviceId_ = 0;
     audioStreamInfo_ = {};
+    capabilities_ = {};
     channelMasks_ = 0;
     channelIndexMasks_ = 0;
     deviceName_ = "";
@@ -139,6 +166,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     interruptGroupId_ = 0;
     networkId_ = LOCAL_NETWORK_ID;
     displayName_ = "";
+    model_ = "unknown";
     deviceCategory_ = CATEGORY_DEFAULT;
     connectTimeStamp_ = 0;
     connectState_ = CONNECTED;
@@ -168,11 +196,13 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
 {
     deviceId_ = 0;
     audioStreamInfo_ = {};
+    capabilities_ = {};
     channelMasks_ = 0;
     channelIndexMasks_ = 0;
     deviceName_ = "";
     macAddress_ = "";
     displayName_ = "";
+    model_ = "unknown";
     deviceCategory_ = CATEGORY_DEFAULT;
     connectTimeStamp_ = 0;
     connectState_ = CONNECTED;
@@ -198,6 +228,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     deviceType_ = deviceDescriptor.deviceType_;
     deviceRole_ = deviceDescriptor.deviceRole_;
     audioStreamInfo_ = deviceDescriptor.audioStreamInfo_;
+    capabilities_ = deviceDescriptor.capabilities_;
     channelMasks_ = deviceDescriptor.channelMasks_;
     channelIndexMasks_ = deviceDescriptor.channelIndexMasks_;
     volumeGroupId_ = deviceDescriptor.volumeGroupId_;
@@ -205,6 +236,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     networkId_ = deviceDescriptor.networkId_;
     dmDeviceType_ = deviceDescriptor.dmDeviceType_;
     displayName_ = deviceDescriptor.displayName_;
+    model_ = deviceDescriptor.model_;
     deviceCategory_ = deviceDescriptor.deviceCategory_;
     connectTimeStamp_ = deviceDescriptor.connectTimeStamp_;
     connectState_ = deviceDescriptor.connectState_;
@@ -236,6 +268,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     deviceType_ = deviceDescriptor->deviceType_;
     deviceRole_ = deviceDescriptor->deviceRole_;
     audioStreamInfo_ = deviceDescriptor->audioStreamInfo_;
+    capabilities_ = deviceDescriptor->capabilities_;
     channelMasks_ = deviceDescriptor->channelMasks_;
     channelIndexMasks_ = deviceDescriptor->channelIndexMasks_;
     volumeGroupId_ = deviceDescriptor->volumeGroupId_;
@@ -243,6 +276,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     networkId_ = deviceDescriptor->networkId_;
     dmDeviceType_ = deviceDescriptor->dmDeviceType_;
     displayName_ = deviceDescriptor->displayName_;
+    model_ = deviceDescriptor->model_;
     deviceCategory_ = deviceDescriptor->deviceCategory_;
     connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
     connectState_ = deviceDescriptor->connectState_;
@@ -311,10 +345,11 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         apiVersion = clientInfo_.value().apiVersion_;
         isSupportedNearlink = clientInfo_.value().isSupportedNearlink_;
     }
-    int32_t devType = deviceType_;
-    if (IsAudioDeviceDescriptor()) {
-        devType = MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
-    }
+    int32_t devType = IsAudioDeviceDescriptor() ?
+        MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink) : deviceType_;
+
+    std::list<AudioStreamInfo> capabilities = capabilities_.empty() ?
+        std::list<AudioStreamInfo>{DEFAULT_AUDIO_STREAM_INFO} : capabilities_;
 
     return  parcel.WriteInt32(devType) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
@@ -327,8 +362,9 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteInt32(volumeGroupId_) &&
         parcel.WriteString(networkId_) &&
         parcel.WriteUint16(dmDeviceType_) &&
-        parcel.WriteString(displayName_) &&
+        parcel.WriteString(displayName_) && parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(audioStreamInfo_, parcel) &&
+        MarshallingAudioStreamInfoList(capabilities_, parcel) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
         parcel.WriteBool(exceptionFlag_) &&
@@ -377,6 +413,9 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
 
     FixApiCompatibility(apiVersion, deviceRole_, devType, devId, streamInfo);
 
+    std::list<AudioStreamInfo> capabilities = capabilities_.empty() ?
+        std::list<AudioStreamInfo>{DEFAULT_AUDIO_STREAM_INFO} : capabilities_;
+
     return parcel.WriteInt32(static_cast<int32_t>(devType)) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
         parcel.WriteInt32(devId) &&
@@ -391,7 +430,9 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteString(hasSystemPermission ? networkId_ : "") &&
         parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) &&
+        parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(streamInfo, parcel) &&
+        MarshallingAudioStreamInfoList(capabilities_, parcel) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
         parcel.WriteBool(exceptionFlag_) &&
@@ -427,7 +468,9 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     networkId_ = parcel.ReadString();
     dmDeviceType_ = parcel.ReadUint16();
     displayName_ = parcel.ReadString();
+    model_ = parcel.ReadString();
     UnmarshallingDeviceStreamInfoList(parcel, audioStreamInfo_);
+    UnmarshallingAudioStreamInfoList(parcel, capabilities_);
     deviceCategory_ = static_cast<DeviceCategory>(parcel.ReadInt32());
     connectState_ = static_cast<ConnectState>(parcel.ReadInt32());
     exceptionFlag_ = parcel.ReadBool();
@@ -505,6 +548,8 @@ void AudioDeviceDescriptor::SetDeviceCapability(const std::list<DeviceStreamInfo
 
 void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission)
 {
+    networkId_ = statusInfo.networkId;
+    model_ = statusInfo.model;
     dmDeviceType_ = statusInfo.dmDeviceType;
     dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }
@@ -629,6 +674,34 @@ DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
     DeviceStreamInfo streamInfo;
     CHECK_AND_RETURN_RET_LOG(!audioStreamInfo_.empty(), streamInfo, "streamInfo empty");
     return *audioStreamInfo_.rbegin();
+}
+
+void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
+{
+    capabilities_.clear();
+    if (deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID) {
+        for (const auto &deviceStreamInfo : audioStreamInfo_) {
+            AudioStreamInfo cap;
+            AudioChannelLayout channelLayout = !deviceStreamInfo.channelLayout.empty() ?
+                *deviceStreamInfo.channelLayout.begin() : AudioChannelLayout::CH_LAYOUT_STEREO;
+            AudioSamplingRate samplingRate = !deviceStreamInfo.samplingRate.empty() ?
+                *deviceStreamInfo.samplingRate.begin() : AudioSamplingRate::SAMPLE_RATE_48000;
+            cap.samplingRate = samplingRate;
+            cap.encoding = deviceStreamInfo.encoding;
+            cap.format = deviceStreamInfo.format;
+            cap.channels = ConvertLayoutToAudioChannel(channelLayout);
+            cap.channelLayout = channelLayout;
+            capabilities_.push_back(cap);
+        }
+    } else if (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        AudioStreamInfo cap(AudioSamplingRate::SAMPLE_RATE_16000, AudioEncodingType::ENCODING_PCM,
+            AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
+        capabilities_.push_back(cap);
+    } else {
+        AudioStreamInfo cap(AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
+            AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
+        capabilities_.push_back(cap);
+    }
 }
 } // AudioStandard
 } // namespace OHOS

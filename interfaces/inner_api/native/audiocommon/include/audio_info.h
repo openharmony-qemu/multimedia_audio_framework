@@ -355,6 +355,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
@@ -416,6 +417,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
 };
 
@@ -1678,6 +1680,7 @@ struct DStatusInfo {
     int32_t deviceId;
     int32_t channelMasks;
     std::string deviceName = "";
+    std::string model = "unknown";
     bool isConnected = false;
     std::string macAddress;
     std::list<DeviceStreamInfo> streamInfo = {};

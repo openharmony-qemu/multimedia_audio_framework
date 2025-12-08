@@ -106,6 +106,9 @@ public:
             (const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnCollaborationEnabledChangeForCurrentDevice,
             (const bool enabled), (override));
+    MOCK_METHOD(ErrCode, OnPreferredDeviceSet,
+        (int32_t preferredType, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        int32_t uid, const std::string &caller), (override));
     MOCK_METHOD(ErrCode, OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice,
             (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
 };

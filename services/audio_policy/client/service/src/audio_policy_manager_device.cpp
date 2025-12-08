@@ -465,7 +465,6 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback(
     return SUCCESS;
 }
 
-
 int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
     const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback)
 {
@@ -750,6 +749,46 @@ int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<S
     }
 
     return gsp->SetSleAudioOperationCallback(object);
+}
+
+int32_t AudioPolicyManager::RegisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddPreferredDeviceSetCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetPreferredDeviceSetCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemovePreferredDeviceSetCallback(callback);
+        if (audioPolicyClientStubCB_->GetPreferredDeviceSetCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, false);
+        }
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
