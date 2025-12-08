@@ -192,12 +192,6 @@ int32_t AudioSuitePipeline::Stop()
             return;
         }
 
-        if (!outputNode_->GetAudioNodeDataFinishedFlag()) {
-            AUDIO_INFO_LOG("Current pipeline being rendered, id is %{public}d", id_);
-            TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
-            return;
-        }
-
         for (const auto& [nodeId, node] : nodeMap_) {
             if (node != nullptr) {
                 node->Flush();
@@ -829,7 +823,7 @@ int32_t AudioSuitePipeline::RenderFrame(
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not RenderFrame.");
 
     auto request = [this, audioData, requestFrameSize, responseSize, finishedFlag]() {
-        AUDIO_INFO_LOG("AudioSuitePipeline::RenderFrame enter request");
+        AUDIO_DEBUG_LOG("AudioSuitePipeline::RenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
             TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
@@ -868,7 +862,7 @@ int32_t AudioSuitePipeline::MultiRenderFrame(
     uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
-    AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter");
+    AUDIO_DEBUG_LOG("AudioSuitePipeline::MultiRenderFrame enter");
     auto request = [this, audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag]() {
         AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
@@ -1048,8 +1042,8 @@ bool AudioSuitePipeline::IsDirectConnected(uint32_t srcNodeId, uint32_t destNode
 
 int32_t AudioSuitePipeline::GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat)
 {
-    int32_t bytesPerSecond = nodeFormat.rate * nodeFormat.audioChannelInfo.numChannels *
-                             AudioSuiteUtil::GetSampleSize(nodeFormat.format);
+    int32_t bytesPerSecond = static_cast<int32_t>(nodeFormat.rate) * static_cast<int32_t>(nodeFormat.audioChannelInfo.numChannels) *
+                             static_cast<int32_t>(AudioSuiteUtil::GetSampleSize(nodeFormat.format));
 
     CHECK_AND_RETURN_RET_LOG(bytesPerSecond != 0, 0, "Invalid AudioFormat.");
     double frameDurationMS = std::ceil(static_cast<double>(frameSize) * SECONDS_TO_MS / bytesPerSecond); // round up
