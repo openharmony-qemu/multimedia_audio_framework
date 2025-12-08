@@ -183,6 +183,7 @@ public:
     }
 
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    bool isHWDecodingType_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;

@@ -2048,16 +2048,6 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     return id;
 }
 
-bool AudioCoreService::IsPaRoute(uint32_t routeFlag)
-{
-    if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
-        return false;
-    }
-    return true;
-}
-
 bool AudioCoreService::RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     for (auto &streamDesc : streamDescs) {

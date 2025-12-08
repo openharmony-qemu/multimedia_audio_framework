@@ -2222,6 +2222,11 @@ std::string AudioDump::GetVersionType()
     return versionType_;
 }
 
+bool IsHWDecodingType(AudioEncodingType type)
+{
+    return HWDECODING_TYPES.count(type);
+}
+
 int32_t CheckSupportedParams(const AudioStreamInfo &info)
 {
     CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, info.samplingRate),

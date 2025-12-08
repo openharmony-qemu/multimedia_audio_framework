@@ -1217,6 +1217,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
         return false;
@@ -1411,6 +1412,11 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
 void AudioAdapterManager::GetSinkIdInfoAndIdType(
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType)
 {
+    if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_HWDECODING) {
+        idType = HDI_ID_TYPE_HWDECODE;
+        idInfo = HDI_ID_INFO_DP;
+    }
+
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;

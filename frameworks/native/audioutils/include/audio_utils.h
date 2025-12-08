@@ -616,6 +616,8 @@ uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
 
+bool IsHWDecodingType(AudioEncodingType type);
+
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
 
 std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
