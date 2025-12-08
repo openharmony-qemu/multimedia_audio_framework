@@ -90,7 +90,7 @@ public:
         const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
     void SetAudioSceneOwnerUid(const int32_t uid);
-    
+    int32_t GetAudioSceneOwnerUid();
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     
     int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
