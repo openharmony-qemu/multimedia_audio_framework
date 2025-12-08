@@ -851,6 +851,7 @@ void AudioStreamCollectorHandleStartStreamMuteStateFuzzTest(const uint8_t *rawDa
     int32_t clientPid = randIntValue;
     uint32_t index = static_cast<uint32_t>(size);
     bool mute = static_cast<bool>(index % NUM_2);
+    bool silentControl = false;
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
     changeInfo->createrUID = createrUID;
@@ -859,7 +860,7 @@ void AudioStreamCollectorHandleStartStreamMuteStateFuzzTest(const uint8_t *rawDa
     changeInfo->sessionId = randIntValue / NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, mute, mute);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, mute, mute, silentControl);
 }
 
 void AudioStreamCollectorIsStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
