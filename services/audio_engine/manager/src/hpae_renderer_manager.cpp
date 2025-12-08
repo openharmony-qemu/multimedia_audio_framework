@@ -44,6 +44,7 @@ namespace {
     const std::string REMOTE_DEVICE_CLASS = "remote";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
 }
+
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
@@ -107,7 +108,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
-    
+
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
@@ -121,6 +122,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
 
     node->OnStreamInfoChange(false);
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
 }
 
 void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect)
@@ -321,6 +323,7 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -343,6 +346,7 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         DeleteInputSession(sessionId);
         isNeedInitEffectBufferFlagMap_.erase(sessionId);
         UpdateClusterStreamInfo(sceneType);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_INVALID);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -563,6 +567,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     } else {
         TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
     }
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE_ALL, 0, RENDERER_RELEASED);
 }
 
 int32_t HpaeRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -609,6 +614,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     UpdateClusterStreamInfo(sceneType);
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_RELEASED);
 }
 
 int32_t HpaeRendererManager::MoveStream(uint32_t sessionId, const std::string &sinkName)
@@ -641,6 +647,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -668,6 +675,7 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
             HandleSyncId(sessionId, syncId);
         }
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -795,6 +803,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -856,6 +865,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = false;
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1220,6 +1230,17 @@ void HpaeRendererManager::UpdateAppsUid()
         }
     }
     outputCluster_->UpdateAppsUid(appsUid_);
+}
+
+void HpaeRendererManager::NotifyStreamChangeToSink(
+    StreamChangeType change, uint32_t sessionId, RendererState state)
+{
+    CHECK_AND_RETURN(outputCluster_ != nullptr);
+    StreamUsage usage = STREAM_USAGE_UNKNOWN;
+    if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
+        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+    }
+    outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state);
 }
 
 size_t HpaeRendererManager::GetWritableSize(uint32_t sessionId)

@@ -73,8 +73,11 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -94,6 +97,14 @@ private:
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *data, uint64_t len);
     void UpdateSinkState(bool started);
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -149,6 +160,10 @@ private:
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
+
+    // For sink info notify
+    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

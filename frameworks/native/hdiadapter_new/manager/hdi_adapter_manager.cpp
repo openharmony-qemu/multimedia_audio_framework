@@ -437,5 +437,31 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
     IncRefCount(id);
 }
 
+int32_t HdiAdapterManager::GetCurrentOutputPipeChangeInfos(
+    std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos)
+{
+    std::lock_guard<std::mutex> lock(renderSinkMtx_);
+    for (auto &sinkInfoItr : renderSinks_) {
+        CHECK_AND_CONTINUE(sinkInfoItr.second.sink_ != nullptr && sinkInfoItr.second.sink_->IsInited());
+        auto pipeInfo = sinkInfoItr.second.sink_->GetOutputPipeInfo();
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        pipeChangeInfos.push_back(pipeInfo);
+    }
+    return SUCCESS;
+}
+
+int32_t HdiAdapterManager::GetCurrentInputPipeChangeInfos(
+    std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos)
+{
+    std::lock_guard<std::mutex> lock(captureSourceMtx_);
+    for (auto &sourceInfoItr : captureSources_) {
+        CHECK_AND_CONTINUE(sourceInfoItr.second.source_ != nullptr && sourceInfoItr.second.source_->IsInited());
+        auto pipeInfo = sourceInfoItr.second.source_->GetInputPipeInfo();
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        pipeChangeInfos.push_back(pipeInfo);
+    }
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

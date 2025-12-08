@@ -71,10 +71,13 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state) override;
 
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -90,6 +93,13 @@ private:
     void CheckUpdateState(char *frame, size_t replyBytes);
     int32_t DoStop(void);
     bool IsValidState(void);
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -140,6 +150,10 @@ private:
     bool muteState_ = false;
 
     std::shared_ptr<AudioSourceClock> audioSrcClock_ = nullptr;
+
+    // For source info notify
+    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

@@ -135,6 +135,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
 #endif
     if (!isConnect || node->GetState() != HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u not need connect session", sessionId);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
         return;
     }
 
@@ -143,6 +144,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
         ConnectInputSession();
     }
     node->OnStreamInfoChange(false);
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
 }
 
 int32_t HpaeOffloadRendererManager::AddAllNodesToSink(
@@ -169,6 +171,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     auto request = [this, streamInfo]() {
         auto node = CreateInputSession(streamInfo);
         node->SetState(HPAE_SESSION_PREPARED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -199,6 +202,7 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
         } else {
             RemoveNodeFromMap(sessionId);
         }
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_INVALID);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -273,6 +277,7 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
             ConnectInputSession();
         }
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -306,6 +311,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             }
         }
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -363,6 +369,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
             }
         }
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -404,6 +411,7 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
     } else {
         TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
     }
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE_ALL, 0, RENDERER_RELEASED);
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -453,6 +461,7 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
         }
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, node, name);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_RELEASED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -706,6 +715,17 @@ void HpaeOffloadRendererManager::UpdateAppsUid()
         appsUid_.emplace_back(curNode_->GetAppUid());
     }
     sinkOutputNode_->UpdateAppsUid(appsUid_);
+}
+
+void HpaeOffloadRendererManager::NotifyStreamChangeToSink(
+    StreamChangeType change, uint32_t sessionId, RendererState state)
+{
+    CHECK_AND_RETURN(sinkOutputNode_ != nullptr);
+    StreamUsage usage = STREAM_USAGE_UNKNOWN;
+    if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
+        usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
+    }
+    sinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state);
 }
 
 int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)

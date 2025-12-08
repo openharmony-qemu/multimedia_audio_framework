@@ -30,6 +30,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "adapter/i_device_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace OHOS::HDI::Audio_Bluetooth;
 
@@ -73,6 +74,7 @@ int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     if (audioSrcClock_ != nullptr) {
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     }
+    InitPipeInfo();
     return SUCCESS;
 }
 
@@ -92,6 +94,7 @@ void BluetoothAudioCaptureSource::DeInit(void)
     audioCapture_ = nullptr;
     AUDIO_INFO_LOG("update validState:true");
     validState_ = true;
+    DeinitPipeInfo();
 }
 
 bool BluetoothAudioCaptureSource::IsInited(void)
@@ -143,6 +146,7 @@ int32_t BluetoothAudioCaptureSource::Start(void)
         return ERR_NOT_STARTED;
     }
     started_ = true;
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     return SUCCESS;
 }
 
@@ -571,6 +575,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     if (!started_) {
         AUDIO_ERR_LOG("not start, invalid state");
         callback_.OnCaptureState(false);
+        ChangePipeStatus(PIPE_STATUS_STANDBY);
         return ERR_OPERATION_FAILED;
     }
     int32_t ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
@@ -578,6 +583,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     started_ = false;
     paused_ = false;
     callback_.OnCaptureState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     return SUCCESS;
 }
 
@@ -592,6 +598,80 @@ bool BluetoothAudioCaptureSource::IsValidState(void)
 void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
+}
+
+void BluetoothAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
+    uint32_t streamId, SourceType source, CapturerState state)
+{
+    ChangePipeStream(change, streamId, source, state);
+}
+
+std::shared_ptr<AudioInputPipeInfo> BluetoothAudioCaptureSource::GetInputPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    return copyPipe;
+}
+
+void BluetoothAudioCaptureSource::InitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    pipeInfo_ = std::make_shared<AudioInputPipeInfo>(
+        hdiCaptureId_, HDI_ADAPTER_TYPE_A2DP, AUDIO_INPUT_FLAG_NORMAL);
+    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
+    pipeInfo_->SetDevice(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void BluetoothAudioCaptureSource::ChangePipeStatus(AudioPipeStatus state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetStatus(state);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void BluetoothAudioCaptureSource::ChangePipeStream(StreamChangeType change,
+    uint32_t streamId, SourceType source, CapturerState state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+
+    switch (change) {
+        case STREAM_CHANGE_TYPE_ADD:
+            pipeInfo_->AddStream(streamId, source, state);
+            break;
+        case STREAM_CHANGE_TYPE_REMOVE:
+            pipeInfo_->RemoveStream(streamId);
+            break;
+        case STREAM_CHANGE_TYPE_STATE_CHANGE:
+            pipeInfo_->UpdateStream(streamId, state);
+            break;
+        default:
+            return;
+    }
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
+}
+
+void BluetoothAudioCaptureSource::DeinitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->RemoveAllStreams();
+    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+
+    // clear pipe for get func
+    pipeInfo_ = nullptr;
 }
 
 } // namespace AudioStandard

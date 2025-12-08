@@ -34,6 +34,7 @@
 #include <audio_stream_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
+#include "audio_pipe_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -98,7 +99,13 @@ const char* OFFLOAD_CAPTURER_SOURCE = "InnerCapturerSource";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
+
+// For ipc
+constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
 }
+
+// For common stream
+constexpr uint32_t STREAM_ID_INVALID = 0;
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
@@ -2139,6 +2146,22 @@ struct FetchDeviceInfo : public Parcelable {
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         caller = parcel.ReadString();
     }
+};
+
+struct RendererStreamInfo {
+    uint32_t streamId_ = STREAM_ID_INVALID;
+
+    StreamUsage usage_ = STREAM_USAGE_INVALID;
+
+    RendererState state_ = RENDERER_INVALID;
+};
+
+struct CapturerStreamInfo {
+    uint32_t streamId_ = STREAM_ID_INVALID;
+
+    SourceType source_ = SOURCE_TYPE_INVALID;
+
+    CapturerState state_ = CAPTURER_INVALID;
 };
 
 /**

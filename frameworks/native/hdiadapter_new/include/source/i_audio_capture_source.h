@@ -20,6 +20,7 @@
 #include <string>
 #include "audio_info.h"
 #include "audio_errors.h"
+#include "audio_engine_callback_types.h"
 #include "common/hdi_adapter_info.h"
 #include "common/hdi_adapter_type.h"
 
@@ -35,6 +36,8 @@ public:
         const std::string &condition, const std::string &value) {}
     virtual void OnCaptureState(bool isActive) {}
     virtual void OnWakeupClose(void) {}
+    virtual void OnInputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) {};
 };
 
 class IAudioCaptureSource {
@@ -76,11 +79,14 @@ public:
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+    virtual void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state) {};
 
     virtual void SetAddress(const std::string &address) {}
     virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
+    virtual std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() { return nullptr; }
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
     virtual bool IsCaptureInvalid(void) NOT_SUPPORT_RET

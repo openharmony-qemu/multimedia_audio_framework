@@ -85,6 +85,12 @@ public:
         uint32_t sampleRate, uint32_t bytesPerSample);
 };
 
+class AudioTypeUtils {
+public:
+    static StreamUsage GetStreamUsageByStreamType(AudioStreamType streamType);
+    static HdiAdapterType HalNameToType(std::string halName);
+};
+
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count);

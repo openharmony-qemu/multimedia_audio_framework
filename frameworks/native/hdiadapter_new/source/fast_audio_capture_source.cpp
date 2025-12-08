@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,6 +47,7 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
     sourceInited_ = true;
+    InitPipeInfo();
     return SUCCESS;
 }
 
@@ -66,6 +68,7 @@ void FastAudioCaptureSource::DeInit(void)
     audioCapture_ = nullptr;
 
     callback_.OnCaptureState(false);
+    DeinitPipeInfo();
 }
 
 bool FastAudioCaptureSource::IsInited(void)
@@ -106,6 +109,8 @@ int32_t FastAudioCaptureSource::Start(void)
     }
     isCheckPositionSuccess_ = true;
     started_ = true;
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
+
     return SUCCESS;
 
 ERR_RET:
@@ -139,6 +144,7 @@ int32_t FastAudioCaptureSource::StopInner()
         CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
         int32_t ret = audioCapture_->Stop(audioCapture_);
         callback_.OnCaptureState(false);
+        ChangePipeStatus(PIPE_STATUS_STANDBY);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail, ret: %{public}d", ret);
     }
     started_ = false;
@@ -532,6 +538,7 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, input :%{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(attr_.adapterName, inputDevice, streamId, inputType);
+    ChangePipeDevice({ inputDevice });
     return ret;
 }
 
@@ -609,5 +616,88 @@ void FastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType d
     AUDIO_INFO_LOG("not support");
 }
 
+void FastAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
+    uint32_t streamId, SourceType source, CapturerState state)
+{
+    ChangePipeStream(change, streamId, source, state);
+}
+
+std::shared_ptr<AudioInputPipeInfo> FastAudioCaptureSource::GetInputPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    return copyPipe;
+}
+
+void FastAudioCaptureSource::InitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    pipeInfo_ = std::make_shared<AudioInputPipeInfo>(
+        hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST);
+    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
+    pipeInfo_->SetDevice(static_cast<DeviceType>(attr_.deviceType));
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void FastAudioCaptureSource::ChangePipeStatus(AudioPipeStatus state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetStatus(state);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void FastAudioCaptureSource::ChangePipeDevice(const std::vector<DeviceType> &devices)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetDevices(devices);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
+}
+
+void FastAudioCaptureSource::ChangePipeStream(StreamChangeType change,
+    uint32_t streamId, SourceType source, CapturerState state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+
+    switch (change) {
+        case STREAM_CHANGE_TYPE_ADD:
+            pipeInfo_->AddStream(streamId, source, state);
+            break;
+        case STREAM_CHANGE_TYPE_REMOVE:
+            pipeInfo_->RemoveStream(streamId);
+            break;
+        case STREAM_CHANGE_TYPE_STATE_CHANGE:
+            pipeInfo_->UpdateStream(streamId, state);
+            break;
+        default:
+            return;
+    }
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
+}
+
+void FastAudioCaptureSource::DeinitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->RemoveAllStreams();
+    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
+
+    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
+    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+
+    // clear pipe for get func
+    pipeInfo_ = nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

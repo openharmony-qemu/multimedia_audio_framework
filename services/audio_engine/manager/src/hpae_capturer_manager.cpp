@@ -212,6 +212,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     auto request = [this, streamInfo]() {
         CreateOutputSession(streamInfo);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -226,6 +227,7 @@ int32_t HpaeCapturerManager::DestroyStream(uint32_t sessionId)
     auto request = [this, sessionId]() {
         // map check in DeleteOutputSession
         DeleteOutputSession(sessionId);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_INVALID);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -331,6 +333,7 @@ int32_t HpaeCapturerManager::Start(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(ConnectOutputSession(sessionId) == SUCCESS, "Connect node error.");
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_RUNNING);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -369,6 +372,7 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
         SetSessionState(sessionId, HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -450,6 +454,7 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -513,6 +518,17 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
         sourceInputClusterMap_[mainMicType_]->UpdateAppsUidAndSessionId(appsUid_, sessionsId_);
+    }
+}
+void HpaeCapturerManager::NotifyStreamChangeToSource(
+    StreamChangeType change, uint32_t sessionId, CapturerState state)
+{
+    SourceType source = SOURCE_TYPE_INVALID;
+    if (sourceOutputNodeMap_.find(sessionId) != sourceOutputNodeMap_.end()) {
+        source = sourceOutputNodeMap_[sessionId]->GetSourceType();
+    }
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
+        sourceInputClusterMap_[mainMicType_]->NotifyStreamChangeToSource(change, sessionId, source, state);
     }
 }
 
@@ -919,6 +935,8 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         ConnectOutputSession(sessionId);
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
     }
+    NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, sessionId,
+        ConvertHpaeToCapturerState(moveInfo.sessionInfo.state));
 }
 
 int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& sessionIds,
@@ -966,6 +984,7 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     } else {
         TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
     }
+    NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE_ALL, 0, CAPTURER_RELEASED);
 }
 
 int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)
@@ -1000,6 +1019,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
         DeleteOutputSession(sessionId);
         std::string name = sourceName;
         TriggerCallback(MOVE_SOURCE_OUTPUT, moveInfo, name);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_RELEASED);
     };
     SendRequest(request, __func__);
     return SUCCESS;

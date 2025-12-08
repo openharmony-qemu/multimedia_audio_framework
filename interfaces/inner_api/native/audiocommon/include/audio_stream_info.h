@@ -663,6 +663,13 @@ struct AudioBasicFormat {
     AudioSampleFormat format = INVALID_WIDTH;
     AudioSamplingRate rate = SAMPLE_RATE_48000;
 };
+
+enum StreamChangeType : int32_t {
+    STREAM_CHANGE_TYPE_ADD = 0,
+    STREAM_CHANGE_TYPE_REMOVE,
+    STREAM_CHANGE_TYPE_REMOVE_ALL,
+    STREAM_CHANGE_TYPE_STATE_CHANGE,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

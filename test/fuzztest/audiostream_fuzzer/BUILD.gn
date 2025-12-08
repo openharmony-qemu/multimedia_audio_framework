@@ -55,6 +55,7 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",

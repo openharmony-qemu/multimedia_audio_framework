@@ -27,6 +27,7 @@
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
+#include "audio_engine_callback_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -86,6 +87,9 @@ public:
     }
 
     void DumpInfo(std::string &dumpString);
+
+    int32_t GetCurrentOutputPipeChangeInfos(std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos);
+    int32_t GetCurrentInputPipeChangeInfos(std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos);
 
 private:
     HdiAdapterManager() = default;

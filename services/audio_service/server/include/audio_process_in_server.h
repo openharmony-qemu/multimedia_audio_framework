@@ -115,6 +115,8 @@ public:
     AudioStreamInfo GetStreamInfo() override;
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
+    StreamUsage GetUsage() override;
+    SourceType GetSource() override;
     AudioProcessConfig GetAudioProcessConfig() override;
     void EnableStandby() override;
 

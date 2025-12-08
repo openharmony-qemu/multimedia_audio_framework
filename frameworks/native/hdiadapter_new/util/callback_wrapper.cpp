@@ -107,6 +107,20 @@ void SinkCallbackWrapper::OnRenderSinkStateChange(uint32_t uniqueId, bool starte
     }
 }
 
+void SinkCallbackWrapper::OnOutputPipeChange(AudioPipeChangeType changeType,
+    std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnOutputPipeChange(changeType, changedPipeInfo);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnOutputPipeChange(changeType, changedPipeInfo);
+    }
+}
+
 void SourceCallbackWrapper::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> cb)
 {
     CHECK_AND_RETURN_LOG(type < HDI_CB_TYPE_NUM, "invalid type %{public}u", type);
@@ -203,6 +217,20 @@ void SourceCallbackWrapper::OnWakeupClose(void)
             continue;
         }
         cb.second->OnWakeupClose();
+    }
+}
+
+void SourceCallbackWrapper::OnInputPipeChange(AudioPipeChangeType changeType,
+    std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnInputPipeChange(changeType, changedPipeInfo);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnInputPipeChange(changeType, changedPipeInfo);
     }
 }
 

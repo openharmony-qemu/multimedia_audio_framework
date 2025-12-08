@@ -85,13 +85,13 @@ ohos_unittest("audio_balance_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
   ]
@@ -382,6 +382,7 @@ ohos_unittest("audio_service_unit_test") {
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
     "googletest:gmock",
     "hilog:libhilog",
@@ -390,7 +391,6 @@ ohos_unittest("audio_service_unit_test") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "eventhandler:libeventhandler",
     "access_token:libtokensetproc_shared", 
   ]
 

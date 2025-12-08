@@ -21,6 +21,7 @@
 #include <functional>
 #include "audio_info.h"
 #include "audio_errors.h"
+#include "audio_engine_callback_types.h"
 #include "common/hdi_adapter_info.h"
 #include "common/hdi_adapter_type.h"
 
@@ -34,8 +35,12 @@ public:
     virtual ~IAudioSinkCallback() = default;
 
     virtual void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
-        const std::string &condition, const std::string &value) {}
-    virtual void OnRenderSinkStateChange(uint32_t uniqueId, bool started) {}
+        const std::string &condition, const std::string &value) {};
+
+    virtual void OnRenderSinkStateChange(uint32_t uniqueId, bool started) {};
+
+    virtual void OnOutputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) {};
 };
 
 class IAudioRenderSink {
@@ -86,6 +91,8 @@ public:
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
+    virtual void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state) {};
 
     virtual int32_t SetRenderEmpty(int32_t durationUs) SUCCESS_RET
     virtual void SetAddress(const std::string &address) {}
@@ -93,6 +100,7 @@ public:
 
     virtual void DumpInfo(std::string &dumpString) = 0;
     virtual bool IsSinkInited(void) NOT_SUPPORT_RET
+    virtual std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() { return nullptr; }
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

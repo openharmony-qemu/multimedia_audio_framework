@@ -46,6 +46,8 @@ public:
     MOCK_METHOD(AudioStreamInfo, GetStreamInfo, (), (override));
     MOCK_METHOD(uint32_t, GetAudioSessionId, (), (override));
     MOCK_METHOD(AudioStreamType, GetAudioStreamType, (), (override));
+    MOCK_METHOD(StreamUsage, GetUsage, (), (override));
+    MOCK_METHOD(SourceType, GetSource, (), (override));
 
     MOCK_METHOD(void, SetInnerCapState, (bool isInnerCapped, int32_t innerCapId), (override));
     MOCK_METHOD(bool, GetInnerCapState, (int32_t innerCapId), (override));
@@ -1805,6 +1807,38 @@ HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Leve
         .Times(1)
         .WillOnce(Return());
     audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamChange_001
+ * @tc.desc  : Test AudioEndpointInner::NotifyStreamChange() for playback
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
+{
+    auto testEndpoint = std::make_shared<AudioEndpointInner>(
+        AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_PLAYBACK);
+
+    MockAudioProcessStream mockProcessStream;
+    EXPECT_CALL(mockProcessStream, GetUsage()).WillOnce(Return(StreamUsage::STREAM_USAGE_MUSIC));
+    testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamChange_002
+ * @tc.desc  : Test AudioEndpointInner::NotifyStreamChange() for record
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
+{
+    auto testEndpoint = std::make_shared<AudioEndpointInner>(
+        AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_RECORD);
+
+    MockAudioProcessStream mockProcessStream;
+    EXPECT_CALL(mockProcessStream, GetSource()).WillOnce(Return(SourceType::SOURCE_TYPE_MIC));
+    testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

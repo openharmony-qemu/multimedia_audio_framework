@@ -611,6 +611,14 @@ int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &app
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
+void HpaeOffloadSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t sessionId, StreamUsage usage, RendererState state)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+}
+
 void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
 {
     if (retType == OFFLOAD_FULL) {
