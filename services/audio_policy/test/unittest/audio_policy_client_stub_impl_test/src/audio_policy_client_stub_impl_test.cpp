@@ -609,6 +609,40 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
 
 /**
 * @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: AudioDeviceDescriptor_002
+* @tc.desc  : Test AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo().
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_002, TestSize.Level1)
+{
+    AudioDeviceDescriptor deviceDesc;
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    audioStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    DeviceStreamInfo deviceStreamInfo(audioStreamInfo);
+    deviceDesc.audioStreamInfo_.push_back(deviceStreamInfo);
+
+    // Test1
+    deviceDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc.networkId_ = REMOTE_NETWORK_ID;
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
+    EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
+
+    // Test2
+    deviceDesc.networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
+    EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
+
+    // Test3
+    deviceDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
+    EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_16000);
+}
+
+/**
+* @tc.name  : Test AudioDeviceDescriptor.
 * @tc.number: GetDeviceCategory_001
 * @tc.desc  : Test AudioDeviceDescriptor/GetDeviceCategory.
 */

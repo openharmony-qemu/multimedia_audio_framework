@@ -313,6 +313,13 @@ void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
     }
 }
 
+void AudioDeviceStatus::NotifyPreferredDeviceSet(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
+    audioPolicyServerHandler_->SendPreferredDeviceSetEvent(preferredType, deviceDesc, uid, caller);
+}
+
 void AudioDeviceStatus::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
@@ -323,6 +330,7 @@ void AudioDeviceStatus::UpdateLocalGroupInfo(bool isConnected, const std::string
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_,
         LOCAL_NETWORK_ID, isConnected, NO_REMOTE_ID);
     deviceDesc.networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
 }
 
 int32_t AudioDeviceStatus::RehandlePnpDevice(DeviceType deviceType, DeviceRole deviceRole, const std::string &address)
@@ -893,14 +901,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(
         std::list<DeviceStreamInfo>{ streamInfo } : statusInfo.streamInfo;
     deviceDesc.SetDeviceCapability(streamInfoList, 0);
     deviceDesc.networkId_ = statusInfo.networkId;
+    deviceDesc.model_ = statusInfo.model;
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
     return std::make_shared<AudioDeviceDescriptor>(deviceDesc);
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     HILOG_COMM_INFO("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
-        "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
-        GetEncryptStr(statusInfo.networkId).c_str());
+        "networkId[%{public}s] model[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
+        GetEncryptStr(statusInfo.networkId).c_str(), statusInfo.model.c_str());
     if (isStop) {
         std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
         AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
@@ -988,8 +998,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     std::list<DeviceStreamInfo> streamInfoList = statusInfo.streamInfo.empty() ?
         std::list<DeviceStreamInfo>{ streamInfo } : statusInfo.streamInfo;
     deviceDesc.SetDeviceCapability(streamInfoList, 0);
-    deviceDesc.networkId_ = networkId;
     deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
+    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
     audioVolumeManager_.UpdateGroupInfo(VOLUME_TYPE, GROUP_NAME_DEFAULT, deviceDesc.volumeGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingVolumeId);
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,

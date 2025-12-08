@@ -153,6 +153,42 @@ HWTEST_F(AudioPolicyClientHolderUnitTest, OnHeadTrackingEnabledChangeForAnyDevic
 }
 
 /**
+ * @tc.name  : Test OnPreferredDeviceSet.
+ * @tc.number: AudioPolicyClientHolderTest_OnPreferredDeviceSet_001
+ * @tc.desc  : Verify that hasSystemPermission_ == true.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnPreferredDeviceSet_001, TestSize.Level4)
+{
+    EXPECT_CALL(*mockClient_, OnPreferredDeviceSet(_, _, _, _)).WillOnce(Return(SUCCESS));
+    clientHolder_->audioPolicyClient_ = mockClient_;
+    clientHolder_->hasSystemPermission_ = true;
+    bool enabled = true;
+    PreferredType preferredType = AUDIO_MEDIA_RENDER;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t uid = 10000;
+    std::string caller = "ext";
+    clientHolder_->OnPreferredDeviceSet(preferredType, deviceDesc, uid, caller);
+}
+
+/**
+ * @tc.name  : Test OnPreferredDeviceSet.
+ * @tc.number: AudioPolicyClientHolderTest_OnPreferredDeviceSet_002
+ * @tc.desc  : Verify that hasSystemPermission_ == false.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnPreferredDeviceSet_002, TestSize.Level4)
+{
+    EXPECT_CALL(*mockClient_, OnPreferredDeviceSet(_, _, _, _)).WillOnce(Return(SUCCESS));
+    clientHolder_->audioPolicyClient_ = mockClient_;
+    clientHolder_->hasSystemPermission_ = false;
+    bool enabled = true;
+    PreferredType preferredType = AUDIO_MEDIA_RENDER;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t uid = 10000;
+    std::string caller = "ext";
+    clientHolder_->OnPreferredDeviceSet(preferredType, deviceDesc, uid, caller);
+}
+
+/**
  * @tc.name  : Test OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
  * @tc.number: AudioPolicyClientHolderTest_OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice_001
  * @tc.desc  : Verify that hasSystemPermission_ == true.

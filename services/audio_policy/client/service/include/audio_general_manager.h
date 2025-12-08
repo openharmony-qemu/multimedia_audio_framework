@@ -123,6 +123,8 @@ public:
     int32_t SetActiveHfpDevice(const std::string &macAddress);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RestoreDistributedDeviceInfo();
+    int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     int32_t volumeChangeClientPid_ = -1;

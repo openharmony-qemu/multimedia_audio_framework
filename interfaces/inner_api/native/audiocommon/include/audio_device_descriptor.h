@@ -120,6 +120,8 @@ public:
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
 
+    void BuildCapabilitiesFromDeviceStreamInfo();
+
     void Dump(std::string &dumpString);
 
     std::string GetDeviceTypeString();
@@ -186,7 +188,9 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
+    std::string model_ = "unknown";
     std::list<DeviceStreamInfo> audioStreamInfo_;
+    std::list<AudioStreamInfo> capabilities_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     DeviceUsage deviceUsage_ = ALL_USAGE;

@@ -150,6 +150,11 @@ class ConcreteStreamVolumeChangeCallback : public StreamVolumeChangeCallback {
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override {};
 };
 
+class ConcretePreferredDeviceSetCallback : public PreferredDeviceSetCallback {
+    void OnPreferredDeviceSet(PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        int32_t uid, const std::string &caller) override {};
+};
+
 class ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback :
     public AudioAdaptiveSpatialRenderingEnabledChangeCallback {
     void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
