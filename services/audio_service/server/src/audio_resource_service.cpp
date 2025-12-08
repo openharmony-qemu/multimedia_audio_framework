@@ -148,8 +148,8 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
     if (groups.empty()) {
         audioWorkgroupMap_.erase(pidIt);
         allowWorkgroupPidSet_.erase(pid);
-        AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d release all groups "
-            "allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
+        AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d release all groups"
+            " allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
     }
 
     DumpAudioWorkgroupMap();
@@ -263,7 +263,7 @@ void AudioResourceService::OnWorkgroupRemoteDied(const std::shared_ptr<AudioWork
         audioWorkgroupMap_.erase(pid);
         allowWorkgroupPidSet_.erase(pid);
         AUDIO_INFO_LOG("[WorkgroupInServer] All workgroups for pid:%{public}d released"
-                        " allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
+            " allowWorkgroupPidSet size:%{public}zu", pid, allowWorkgroupPidSet_.size());
     }
     DumpAudioWorkgroupMap();
 }
@@ -353,7 +353,7 @@ void AudioResourceService::WorkgroupRendererMonitor(int32_t pid, const bool isAl
         allowWorkgroupPidSet_.erase(pid);
     } else {
         AUDIO_INFO_LOG("[WorkgroupInServer]pid:%{public}d not allow, allowWorkgroupPidSet size:%{public}zu",
-                        pid, allowWorkgroupPidSet_.size());
+            pid, allowWorkgroupPidSet_.size());
     }
 
     struct AudioWorkgroupChangeInfo info = {
