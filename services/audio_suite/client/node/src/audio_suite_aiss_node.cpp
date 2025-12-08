@@ -46,11 +46,7 @@ int32_t AudioSuiteAissNode::DoProcess()
     CHECK_AND_RETURN_RET_LOG(GetAudioNodeDataFinishedFlag() != true, SUCCESS, "AudioSuiteProcessNode"
         "DoProcess:Current node type = %{public}d does not have more data to process.", GetNodeType());
     CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "AudioSuiteAissNode init failed");
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
+    CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "outputStream_ is nullptr");
 
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
@@ -97,13 +93,10 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
     }
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     if (!aissAlgo_) {
         aissAlgo_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
-    }
-    
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
 
     if (aissAlgo_->Init() != SUCCESS) {
