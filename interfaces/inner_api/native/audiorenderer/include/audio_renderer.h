@@ -292,7 +292,7 @@ public:
      * after played once. Setting it to -1 indicates continuous looping.
      * @since 22
      */
-    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) = 0;
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) { return -1; }
 
     /**
      * @brief Sets audio privacy type.
@@ -1181,7 +1181,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 23
      */
-    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const = 0;
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const { return -1; }
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

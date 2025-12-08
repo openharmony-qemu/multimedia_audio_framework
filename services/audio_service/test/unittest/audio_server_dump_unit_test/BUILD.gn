@@ -91,6 +91,14 @@ ohos_unittest("audio_server_dump_unit_test") {
 
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("audio_server_hpae_dump_unit_test") {

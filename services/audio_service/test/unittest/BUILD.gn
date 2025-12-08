@@ -103,6 +103,14 @@ ohos_unittest("audio_balance_unit_test") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("none_mix_engine_unit_test") {
@@ -396,6 +404,14 @@ ohos_unittest("audio_service_unit_test") {
         [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
@@ -663,6 +679,14 @@ ohos_unittest("audio_process_in_server_unit_test") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("capturer_in_client_unit_test") {
@@ -905,8 +929,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
-    "call_manager:tel_call_manager_api",
-    "ability_base:want",
   ]
 
   defines = []
@@ -924,6 +946,14 @@ ohos_unittest("audio_process_in_client_unit_test") {
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
+  }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
   }
 
   if (audio_framework_feature_low_latency) {
@@ -1048,14 +1078,20 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
     "googletest:gmock",
-    "call_manager:tel_call_manager_api",
-    "ability_base:want",
   ]
 
   defines = []
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
+  }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
   }
 
   if (audio_framework_feature_low_latency) {
@@ -1175,8 +1211,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
-    "call_manager:tel_call_manager_api",
-    "ability_base:want",
   ]
 
   defines = []
@@ -1192,6 +1226,15 @@ ohos_unittest("capturer_in_server_unit_test") {
     ]
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
+
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
