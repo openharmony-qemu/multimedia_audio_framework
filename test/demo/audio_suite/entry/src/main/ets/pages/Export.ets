@@ -302,20 +302,31 @@ export struct Export {
           'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
         let filePath = documentSaveResult;
         // documentSaveResult数组中只有一个路径
-        let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
-        if (this.audioFormate === '.wav') {
-          // 处理wav
-          let wavBuffer = this.writeWavFileHeader(pcmBuffer);
-          let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
-        } else {
-          // 处理pcm
-          let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+        try {
+          let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+          Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
+          try {
+            if (this.audioFormate === '.wav') {
+              // 处理wav
+              let wavBuffer = this.writeWavFileHeader(pcmBuffer);
+              let writeLen = fs.writeSync(file.fd, wavBuffer);
+              Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
+              fs.closeSync(file);
+            } else {
+              // 处理pcm
+              let writeLen = fs.writeSync(file.fd, pcmBuffer);
+              Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+              fs.closeSync(file);
+            }
+          } catch (e) {
+            Logger.error(TAG, `SavePcmBuffer writeLen error: ${error}`);
+          }
+        } catch (e) {
+          Logger.error(TAG, `SaveBuffer filePath error: ${error}`);
+        } finally {
           fs.closeSync(file);
         }
+        
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
@@ -348,20 +359,29 @@ export struct Export {
           'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
         let filePath = documentSaveResult;
         // documentSaveResult数组中只有一个路径
-        let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
-        if (this.audioFormate === '.wav') {
-          // 处理wav
-          let wavBuffer = this.writeWavFileHeader(pcmBuffer);
-          let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
-        } else {
-          // 处理pcm
-          let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+        try {
+          let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+          Logger.info(TAG, `SaveTapBuffer filePath : ${filePath}`);
+          try {
+            if (this.audioFormate === '.wav') {
+              // 处理wav
+              let wavBuffer = this.writeWavFileHeader(pcmBuffer);
+              let writeLen = fs.writeSync(file.fd, wavBuffer);
+              Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
+            } else {
+              // 处理pcm
+              let writeLen = fs.writeSync(file.fd, pcmBuffer);
+              Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+            }
+          } catch (e) {
+            Logger.error(TAG, `SaveWavBuffer writeLen error: ${error}`);
+          }
+        } catch (e) {
+          Logger.error(TAG, `SaveTapBuffer filePath error: ${error}`);
+        } finally {
           fs.closeSync(file);
         }
+        
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
