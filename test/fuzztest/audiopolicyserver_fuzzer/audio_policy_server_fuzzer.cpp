@@ -1888,14 +1888,6 @@ void AudioPolicyServerUpdateTrackerFuzzTest()
     server->UpdateTracker(modeIn, streamChangeInfoIn);
 }
 
-void AudioPolicyServerFetchInputDeviceForTrackFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioStreamChangeInfo streamChangeInfoIn;
-    server->FetchInputDeviceForTrack(streamChangeInfoIn);
-}
-
 void AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2217,7 +2209,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerCreateCapturerClientFuzzTest,
     AudioPolicyServerRegisterTrackerFuzzTest,
     AudioPolicyServerUpdateTrackerFuzzTest,
-    AudioPolicyServerFetchInputDeviceForTrackFuzzTest,
     AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest,
     AudioPolicyServerGetCurrentCapturerChangeInfosFuzzTest,
     AudioPolicyServerRegisteredTrackerClientDiedFuzzTest,

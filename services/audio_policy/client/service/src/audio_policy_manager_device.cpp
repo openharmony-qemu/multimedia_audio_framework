@@ -622,16 +622,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
     return descs;
 }
 
-void AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp != nullptr) {
-        gsp->FetchInputDeviceForTrack(streamChangeInfo);
-    } else {
-        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-    }
-}
-
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
