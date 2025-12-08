@@ -41,7 +41,7 @@ static constexpr float EPSILON = 1e-6f;
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
     isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
-        GetDeviceName() == VIRTUAL_INJECTOR;
+        GetDeviceClass() == VIRTUAL_INJECTOR;
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
     if (isInnerCapturerOrInjector_) {
