@@ -1730,7 +1730,8 @@ void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
         ", timeInNano_: %{public}" PRId64" ", currentNanoTime, timeInNano_.load());
     int64_t increasedTime = currentNanoTime - timeInNano_;
     // Calculate the frame position increment based on the current and previous time, and update the frame position
-    uint64_t increasedFrame = static_cast<uint64_t>(increasedTime) * dstStreamInfo_.samplingRate / AUDIO_NS_PER_SECOND;
+    uint64_t increasedFrame = static_cast<uint64_t>(increasedTime) / AUDIO_MS_PER_SECOND
+        * dstStreamInfo_.samplingRate / AUDIO_US_PER_SECOND;
     posInFrame_ += increasedFrame;
     // Calculate the new time in nanoseconds based on the updated frame position
     timeInNano_ += increasedFrame * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
