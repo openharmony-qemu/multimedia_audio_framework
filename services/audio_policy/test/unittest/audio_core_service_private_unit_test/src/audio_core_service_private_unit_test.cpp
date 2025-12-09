@@ -25,6 +25,8 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
 static const uint32_t TEST_STREAM_2_SESSION_ID = 100002;
+inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
+inline static const std::string NULL_ADDRESS{""};
 
 void AudioCoreServicePrivateTest::SetUp(void)
 {
@@ -3721,6 +3723,22 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, 
     stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
     testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_DeactivateBluetoothDevice_001
+ * @tc.number : DeactivateBluetoothDevice_001
+ * @tc.desc   : Test DeactivateBluetoothDevice for empty A2dpdevice MAC address and empty hfpdevice MAC address
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateBluetoothDevice_001, TestSize.Level3)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool isRunning = true;
+    audioCoreService->DeactivateBluetoothDevice(isRunning);
+    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal(), EMPTY_ADDRESS);
+    EXPECT_EQ(Bluetooth::AudioHfpManager::GetActiveHfpDeviceLocal(), EMPTY_ADDRESS);
 }
 
 /**
