@@ -3889,8 +3889,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_121, TestSize.Level1)
 */
 HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_129, TestSize.Level1)
 {
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_EQ(audioCoreService, nullptr);
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
     audioInterruptService->Init(GetPolicyServerTest());
