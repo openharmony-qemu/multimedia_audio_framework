@@ -73,6 +73,8 @@ namespace {
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
+    // Dual tone substream starts forwarding on the main stream's second frame
+    constexpr size_t DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT = 2;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -331,6 +333,7 @@ void RendererInServer::HandleOperationStarted()
     CHECK_AND_RETURN_LOG(playerDfx_ != nullptr, "nullptr");
     CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
         "stream status is nullptr");
+    writeCount_.store(0);
     if (standByEnable_) {
         standByEnable_ = false;
         AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
@@ -727,7 +730,6 @@ int32_t RendererInServer::WriteData()
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }
-
         OtherStreamEnqueue(bufferDesc);
 
         WriteMuteDataSysEvent(bufferDesc);
@@ -873,6 +875,8 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            CHECK_AND_RETURN(writeCount_.load() >= DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT);
+            dualToneStream_->SetSendDataEnabled(true);
         }
     }
 }
@@ -930,6 +934,7 @@ void RendererInServer::WriteEmptyData()
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
+    writeCount_.fetch_add(1);
     bool mayNeedForceWrite = false;
     std::unique_lock lock(writeLock_, std::defer_lock);
     if (lock.try_lock()) {
@@ -1142,6 +1147,7 @@ void RendererInServer::dualToneStreamInStart()
         if (dualToneStream_ != nullptr) {
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
+            dualToneStream_->SetSendDataEnabled(false);
             dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
@@ -1331,6 +1337,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
+            dualToneStream_->SetSendDataEnabled(true);
             dualToneStream_->Drain(stopFlag);
         }
     }
@@ -1782,6 +1789,7 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
+        dualToneStream_->SetSendDataEnabled(false);
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
@@ -2709,6 +2717,7 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
+    writeCount_.fetch_add(1);
     int32_t ret = SelectModeAndWriteData(inputData, requestDataLen);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     DetectLatency(reinterpret_cast<uint8_t*>(inputData), requestDataLen);

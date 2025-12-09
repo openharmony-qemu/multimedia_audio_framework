@@ -535,6 +535,9 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
 {
     Trace trace("ProRendererStreamImpl::Peek::" + std::to_string(streamIndex_));
     int32_t result = SUCCESS;
+    bool sendDataEnabled = sendDataEnabled_.load();
+    CHECK_AND_RETURN_RET_LOG(sendDataEnabled, ERR_OPERATION_FAILED,
+        "Send data disabled, sessionId %{public}u", streamIndex_);
     if (isBlock_) {
         return ERR_WRITE_BUFFER;
     }
@@ -711,6 +714,11 @@ void ProRendererStreamImpl::BlockStream() noexcept
 {
     isBlock_ = true;
     AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
+}
+
+void ProRendererStreamImpl::SetSendDataEnabled(bool enabled)
+{
+    sendDataEnabled_.store(enabled);
 }
 
 int32_t ProRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
