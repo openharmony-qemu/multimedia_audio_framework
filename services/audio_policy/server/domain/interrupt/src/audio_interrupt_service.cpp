@@ -151,6 +151,9 @@ AudioInterruptService::AudioInterruptService()
 
 AudioInterruptService::~AudioInterruptService()
 {
+    if (stopThread_.joinable()) {
+        stopThread_.join();
+    }
     AUDIO_ERR_LOG("should not happen");
 }
 
@@ -2963,10 +2966,9 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP: {
             SetNonInterruptMute(streamId, muteFlag);
-            std::thread stopThread([this, streamId] {
+            stopThread_ = std::thread([this, streamId] {
                 policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
             });
-            stopThread.detach();
             break;
         }
         default:
