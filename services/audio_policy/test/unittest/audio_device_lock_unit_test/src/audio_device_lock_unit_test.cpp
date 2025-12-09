@@ -180,7 +180,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_028, TestSize.Level1)
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     EXPECT_NE(audioDeviceLock, nullptr);
     AudioRendererInfo newRendererInfo;
-    AudioDeviceLock& deviceLock(audioDeviceLock::GetInstance());
+    AudioDeviceLock& deviceLock(AudioDeviceLock::GetInstance());
     devicelock.audioStateManager_.SetAudioSceneOwnerUid(0);
     EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
 }
@@ -194,7 +194,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     EXPECT_NE(audioDeviceLock, nullptr);
     AudioRendererInfo newRendererInfo;
-    AudioDeviceLock& deviceLock(audioDeviceLock::GetInstance());
+    AudioDeviceLock& deviceLock(AudioDeviceLock::GetInstance());
     devicelock.audioStateManager_.SetAudioSceneOwnerUid(1);
     EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
 }
