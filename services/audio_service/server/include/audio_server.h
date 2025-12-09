@@ -452,6 +452,8 @@ private:
     int32_t ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads) override;
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
+    int32_t SetAudioBalanceStatus();
+    int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
@@ -466,6 +468,9 @@ private:
 
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    bool isEarpiece_ = false;
+    float audioBalanceValue_ = 0.0f;
 
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.
