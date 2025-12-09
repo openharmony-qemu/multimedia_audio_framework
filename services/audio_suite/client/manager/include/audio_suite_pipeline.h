@@ -41,6 +41,7 @@ static const uint32_t MAX_INPUT_NODE_NUM = 5;
 static const uint32_t MAX_OUTPUT_NODE_NUM = 1;
 static const uint32_t MAX_EFFECT_NODE_NUM = 5;
 static const uint32_t MAX_MIX_NODE_NUM = 3;
+static const uint32_t MAX_AUDIO_SEPARATION_NODE_NUM = 1;
 }
 
 struct AudioEdiPipelineCfg {
@@ -48,6 +49,7 @@ struct AudioEdiPipelineCfg {
     uint32_t maxOutputNodeNum_ = MAX_OUTPUT_NODE_NUM;
     uint32_t maxEffectNodeNum_ = MAX_EFFECT_NODE_NUM;
     uint32_t maxMixNodeNum_ = MAX_MIX_NODE_NUM;
+    uint32_t maxAudioSeparationNodeNum_ = MAX_AUDIO_SEPARATION_NODE_NUM;
 };
 
 class AudioSuitePipeline : public IAudioSuitePipeline,
