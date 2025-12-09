@@ -55,6 +55,7 @@ static PureVoiceChangeInfo g_info[] = {
 };
 
 static std::string g_outfile002 = "/data/audiosuite/pure/out2.pcm";
+static const int32_t g_ExpectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 
 class MockInputNode : public AudioNode {
 public:
@@ -112,7 +113,7 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(2).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_ExpectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
     std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," +
                         std::to_string(static_cast<int32_t>(changeType)) + "," +
                         std::to_string(static_cast<float>(pitch));
@@ -327,7 +328,7 @@ HWTEST_F(AudioSuitePureVoiceChangeNodeTest, DoProcessTest_002, TestSize.Level0)
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(2).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_ExpectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
 
     node->Connect(mockInputNode_);
     EXPECT_EQ(1, inputNodeOutputPort->GetInputNum());
