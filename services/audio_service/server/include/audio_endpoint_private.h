@@ -250,6 +250,9 @@ private:
     void AddEndpointStreamVolume(IAudioProcessStream *processStream);
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
+    void NotifyStreamChange(StreamChangeType change,
+        IAudioProcessStream *processStream, RendererState state);
+
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms

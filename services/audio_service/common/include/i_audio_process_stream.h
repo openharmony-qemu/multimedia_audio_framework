@@ -55,6 +55,10 @@ public:
 
     virtual AudioStreamType GetAudioStreamType() = 0;
 
+    virtual StreamUsage GetUsage() = 0;
+
+    virtual SourceType GetSource() = 0;
+
     virtual void SetInnerCapState(bool isInnerCapped, int32_t innerCapId) = 0;
     virtual bool GetInnerCapState(int32_t innerCapId) = 0;
     virtual std::unordered_map<int32_t, bool> GetInnerCapState() = 0;

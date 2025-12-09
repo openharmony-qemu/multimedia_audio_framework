@@ -77,10 +77,14 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     void SetAddress(const std::string &address) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
+
     // for a2dp_offload connection state
     int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
 
@@ -120,6 +124,14 @@ private:
     void UpdateSinkState(bool started);
     void WaitForDataLinkConnected();
     void UpdateNearlinkOutputRoute();
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -201,6 +213,10 @@ private:
     bool isDataLinkConnected_ = false;
     std::condition_variable dataConnectionCV_;
     std::function<void(bool)> deviceCallback_ = nullptr;
+
+    // For sink info notify
+    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

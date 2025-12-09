@@ -110,6 +110,8 @@ private:
         HpaeSourceInputNodeType &ecNodeType);
     bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
     void StopOuputNode();
+    void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state);
+
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

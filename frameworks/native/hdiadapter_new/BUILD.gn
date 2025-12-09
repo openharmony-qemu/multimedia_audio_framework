@@ -41,6 +41,7 @@ ohos_shared_library("hdiadapter_new") {
     "../../../services/audio_policy/server/infra/datashare/include",
     "../../../services/audio_service/common/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../audiodefinitions/include",
     "../audioutils/include",
     "../audioeffect/include",
     "../audioschedule/include",

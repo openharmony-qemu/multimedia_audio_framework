@@ -63,6 +63,7 @@ ohos_unittest("audio_server_unit_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

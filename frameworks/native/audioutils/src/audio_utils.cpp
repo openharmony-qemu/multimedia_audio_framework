@@ -1950,6 +1950,39 @@ std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
     STREAM_ALL,
 };
 
+static const std::map<AudioStreamType, StreamUsage> STREAMTYPE_TO_USAGE_MAP = {
+    {STREAM_MUSIC, STREAM_USAGE_MUSIC},
+    {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_USAGE_VOICE_CALL_ASSISTANT},
+    {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_USAGE_ALARM},
+    {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
+    {STREAM_RING, STREAM_USAGE_RINGTONE},
+    {STREAM_NOTIFICATION, STREAM_USAGE_NOTIFICATION},
+    {STREAM_ACCESSIBILITY, STREAM_USAGE_ACCESSIBILITY},
+    {STREAM_SYSTEM, STREAM_USAGE_SYSTEM},
+    {STREAM_MOVIE, STREAM_USAGE_MOVIE},
+    {STREAM_GAME, STREAM_USAGE_GAME},
+    {STREAM_SPEECH, STREAM_USAGE_AUDIOBOOK},
+    {STREAM_NAVIGATION, STREAM_USAGE_NAVIGATION},
+    {STREAM_DTMF, STREAM_USAGE_DTMF},
+    {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
+    {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
+    {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+};
+
+static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
+    {"primary", HDI_ADAPTER_TYPE_PRIMARY},
+    {"a2dp", HDI_ADAPTER_TYPE_A2DP},
+    {"usb", HDI_ADAPTER_TYPE_USB},
+    {"dp", HDI_ADAPTER_TYPE_DP},
+    {"remote", HDI_ADAPTER_TYPE_REMOTE},
+    {"hearing_aid", HDI_ADAPTER_TYPE_HEARING_AID},
+    {"accessory", HDI_ADAPTER_TYPE_ACCESSORY},
+    {"sle", HDI_ADAPTER_TYPE_SLE},
+    {"va", HDI_ADAPTER_TYPE_VA},
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -2107,6 +2140,24 @@ int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
     int32_t ceiling = level * quotient;
 
     return ceiling;
+}
+
+StreamUsage AudioTypeUtils::GetStreamUsageByStreamType(AudioStreamType streamType)
+{
+    auto it = STREAMTYPE_TO_USAGE_MAP.find(streamType);
+    if (it != STREAMTYPE_TO_USAGE_MAP.end()) {
+        return it->second;
+    }
+    return STREAM_USAGE_UNKNOWN;
+}
+
+HdiAdapterType AudioTypeUtils::HalNameToType(std::string halName)
+{
+    auto it = HALNAME_TO_TYPE_MAP.find(halName);
+    if (it != HALNAME_TO_TYPE_MAP.end()) {
+        return it->second;
+    }
+    return HDI_ADAPTER_TYPE_PRIMARY;
 }
 
 std::string GetEncryptStr(const std::string &src)

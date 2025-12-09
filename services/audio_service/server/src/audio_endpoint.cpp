@@ -1019,6 +1019,11 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 {
     InitLatencyMeasurement();
     AUDIO_PRERELEASE_LOGI("OnStart endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+
+    if (processStream != nullptr) {
+        NotifyStreamChange(STREAM_CHANGE_TYPE_STATE_CHANGE, processStream, RENDERER_RUNNING);
+    }
+
     if (endpointStatus_ == RUNNING) {
         AUDIO_INFO_LOG("OnStart find endpoint already in RUNNING.");
         return SUCCESS;
@@ -1040,6 +1045,11 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
 {
     AUDIO_PRERELEASE_LOGI("OnPause endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
+
+    if (processStream != nullptr) {
+        NotifyStreamChange(STREAM_CHANGE_TYPE_STATE_CHANGE, processStream, RENDERER_PAUSED);
+    }
+
     if (endpointStatus_ == RUNNING) {
         UpdateEndpointStatus(IsAnyProcessRunning() ? RUNNING : IDEL);
     }
@@ -1051,7 +1061,6 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
             ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
     }
-    // todo
     return SUCCESS;
 }
 
@@ -1061,6 +1070,7 @@ void AudioEndpointInner::AddProcessStreamToList(IAudioProcessStream *processStre
     std::lock_guard<std::mutex> lock(listLock_);
     processList_.push_back(processStream);
     processBufferList_.push_back(processBuffer);
+    NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, processStream, RENDERER_PREPARED);
 }
 
 int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking)
@@ -1162,6 +1172,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
             processList_.erase(processItr);
             processBufferList_.erase(bufferItr);
             isFind = true;
+            NotifyStreamChange(STREAM_CHANGE_TYPE_REMOVE, processStream, RENDERER_RELEASED);
             break;
         } else {
             processItr++;
@@ -2432,6 +2443,24 @@ void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
         std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
         CHECK_AND_RETURN_LOG(sink != nullptr, "sink is null");
         sink->Stop();
+    }
+}
+
+void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
+    IAudioProcessStream *processStream, RendererState state)
+{
+    CHECK_AND_RETURN(processStream != nullptr);
+
+    if (audioMode_ == AUDIO_MODE_PLAYBACK) {
+        auto sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        CHECK_AND_RETURN_LOG(sink, "sink is invalid");
+        sink->NotifyStreamChangeToSink(change,
+            processStream->GetAudioSessionId(), processStream->GetUsage(), state);
+    } else {
+        auto source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
+        CHECK_AND_RETURN_LOG(source, "source is invalid");
+        source->NotifyStreamChangeToSource(change,
+            processStream->GetAudioSessionId(), processStream->GetSource(), static_cast<CapturerState>(state));
     }
 }
 } // namespace AudioStandard

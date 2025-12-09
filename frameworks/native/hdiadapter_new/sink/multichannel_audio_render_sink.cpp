@@ -27,6 +27,7 @@
 #include "audio_performance_monitor.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 namespace {
 const std::string DEFAULT_NAME = "multichannel";
@@ -61,6 +62,8 @@ int32_t MultichannelAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
 
     sinkInited_ = true;
+    InitPipeInfo();
+
     return SUCCESS;
 }
 
@@ -77,6 +80,7 @@ void MultichannelAudioRenderSink::DeInit(void)
     renderInited_ = false;
     deviceManager->DestroyRender(adapterNameCase_, hdiRenderId_);
     audioRender_ = nullptr;
+    DeinitPipeInfo();
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -112,6 +116,7 @@ int32_t MultichannelAudioRenderSink::Start(void)
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     started_ = true;
 
     uint64_t frameSize = 0;
@@ -147,6 +152,7 @@ int32_t MultichannelAudioRenderSink::Stop(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     started_ = false;
     return SUCCESS;
@@ -749,6 +755,89 @@ int32_t MultichannelAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     }
 
     return SUCCESS;
+}
+
+void MultichannelAudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    ChangePipeStream(change, streamId, usage, state);
+}
+
+std::shared_ptr<AudioOutputPipeInfo> MultichannelAudioRenderSink::GetOutputPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    return copyPipe;
+}
+
+void MultichannelAudioRenderSink::InitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
+        hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void MultichannelAudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetStatus(state);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void MultichannelAudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetDevices(devices);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
+}
+
+void MultichannelAudioRenderSink::ChangePipeStream(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+
+    switch (change) {
+        case STREAM_CHANGE_TYPE_ADD:
+            pipeInfo_->AddStream(streamId, usage, state);
+            break;
+        case STREAM_CHANGE_TYPE_REMOVE:
+            pipeInfo_->RemoveStream(streamId);
+            break;
+        case STREAM_CHANGE_TYPE_STATE_CHANGE:
+            pipeInfo_->UpdateStream(streamId, state);
+            break;
+        default:
+            return;
+    }
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
+}
+
+void MultichannelAudioRenderSink::DeinitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->RemoveAllStreams();
+    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+
+    // clear pipe for get func
+    pipeInfo_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

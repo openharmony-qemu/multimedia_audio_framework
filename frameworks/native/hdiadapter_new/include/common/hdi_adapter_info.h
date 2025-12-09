@@ -77,6 +77,7 @@ enum HdiAdapterCallbackType : uint32_t {
     HDI_CB_CAPTURE_STATE,
     HDI_CB_CAPTURE_PARAM,
     HDI_CB_CAPTURE_WAKEUP,
+    HDI_CB_CAPTURE_STATE_ALL,
     HDI_CB_TYPE_NUM,
 };
 

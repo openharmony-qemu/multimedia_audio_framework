@@ -43,6 +43,7 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",

@@ -104,12 +104,6 @@ enum ClassType {
     TYPE_INVALID
 };
 
-enum AudioPipeRole {
-    PIPE_ROLE_OUTPUT = 0,
-    PIPE_ROLE_INPUT,
-    PIPE_ROLE_NONE,
-};
-
 struct AudioModuleInfo {
     std::string className;
     std::string name;

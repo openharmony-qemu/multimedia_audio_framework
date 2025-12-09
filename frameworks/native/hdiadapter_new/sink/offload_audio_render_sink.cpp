@@ -27,6 +27,7 @@
 #include "media_monitor_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +51,7 @@ int32_t OffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
 
     sinkInited_ = true;
+    InitPipeInfo();
     return SUCCESS;
 }
 
@@ -69,6 +71,7 @@ void OffloadAudioRenderSink::DeInit(void)
     hdiCallback_ = {};
     muteCount_ = 0;
     switchDeviceMute_ = false;
+    DeinitPipeInfo();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -102,6 +105,7 @@ int32_t OffloadAudioRenderSink::Start(void)
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     UpdateSinkState(true);
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     dumpFileName_ = "offload_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
@@ -128,6 +132,7 @@ int32_t OffloadAudioRenderSink::Stop(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     started_ = false;
 
@@ -885,6 +890,89 @@ void OffloadAudioRenderSink::SetSpeed(float speed)
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
     std::string parameters = "pcm_offload_play_speed=" + std::to_string(hdiSpeed) + ";";
     deviceManager->SetAudioParameter(attr_.adapterName, NONE, "pcm_offload_play_speed", parameters);
+}
+
+void OffloadAudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    ChangePipeStream(change, streamId, usage, state);
+}
+
+std::shared_ptr<AudioOutputPipeInfo> OffloadAudioRenderSink::GetOutputPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    return copyPipe;
+}
+
+void OffloadAudioRenderSink::InitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
+        hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_LOWPOWER);
+    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void OffloadAudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetStatus(state);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void OffloadAudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetDevices(devices);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
+}
+
+void OffloadAudioRenderSink::ChangePipeStream(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+
+    switch (change) {
+        case STREAM_CHANGE_TYPE_ADD:
+            pipeInfo_->AddStream(streamId, usage, state);
+            break;
+        case STREAM_CHANGE_TYPE_REMOVE:
+            pipeInfo_->RemoveStream(streamId);
+            break;
+        case STREAM_CHANGE_TYPE_STATE_CHANGE:
+            pipeInfo_->UpdateStream(streamId, state);
+            break;
+        default:
+            return;
+    }
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
+}
+
+void OffloadAudioRenderSink::DeinitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->RemoveAllStreams();
+    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+
+    // clear pipe for get func
+    pipeInfo_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

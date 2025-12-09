@@ -34,34 +34,39 @@
 #include "system_ability_definition.h"
 #include "hisysevent.h"
 #include "parameters.h"
+#include "media_monitor_manager.h"
+#include "app_bundle_manager.h"
 
+#include "audio_errors.h"
+#include "audio_common_log.h"
+#include "audio_info.h"
+#include "audio_schedule.h"
+#include "audio_utils.h"
+#include "async_action_handler.h"
+#include "audio_asr.h"
+
+#include "audio_service.h"
 #include "core_service_handler.h"
 #include "icore_service_provider_ipc.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
 #include "util/id_handler.h"
-#include "audio_errors.h"
-#include "audio_common_log.h"
-#include "audio_asr.h"
-#include "audio_service.h"
-#include "audio_schedule.h"
-#include "audio_utils.h"
+
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
 #endif
 #include "config/audio_param_parser.h"
-#include "media_monitor_manager.h"
 #include "offline_stream_in_server.h"
 #include "audio_dump_pcm.h"
-#include "audio_info.h"
+
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
 #include "audio_resource_service.h"
 #include "audio_manager_listener.h"
-#include "app_bundle_manager.h"
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
+
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
 #ifdef PA
@@ -642,6 +647,9 @@ void AudioServer::OnStart()
     DlopenUtils::Init();
     InitMaxRendererStreamCntPerUid();
     AudioInnerCall::GetInstance()->RegisterAudioServer(this);
+    asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
+
+    // After publish, other process can call audioserver functions through ipc
     bool res = Publish(this);
     if (!res) {
         AUDIO_ERR_LOG("start err");
@@ -2513,6 +2521,12 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
     HdiAdapterManager::GetInstance().RegistSourceCallback(HDI_CB_CAPTURE_WAKEUP, this, limitFunc);
 
     limitFunc = [&idHandler] (uint32_t id) -> bool {
+        // Register for all sources except wakeup
+        return idHandler.ParseType(id) != HDI_ID_TYPE_WAKEUP;
+    };
+    HdiAdapterManager::GetInstance().RegistSourceCallback(HDI_CB_CAPTURE_STATE_ALL, this, limitFunc);
+
+    limitFunc = [&idHandler] (uint32_t id) -> bool {
         uint32_t type = idHandler.ParseType(id);
         std::string info = idHandler.ParseInfo(id);
         if (type == HDI_ID_TYPE_PRIMARY) {
@@ -2550,32 +2564,8 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     // Only watch primary and fast sink for now, watch other sinks later.
     IdHandler &idHandler = IdHandler::GetInstance();
     std::function<bool(uint32_t)> limitFunc = [&idHandler] (uint32_t id) -> bool {
-        uint32_t type = idHandler.ParseType(id);
-        std::string info = idHandler.ParseInfo(id);
-        if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
-                info == HDI_ID_INFO_DIRECT || info == HDI_ID_INFO_DP ||
-                info == HDI_ID_INFO_VOIP;
-        }
-        if (type == HDI_ID_TYPE_OFFLOAD) {
-            return info == HDI_ID_INFO_DEFAULT;
-        }
-        if (type == HDI_ID_TYPE_MULTICHANNEL) {
-            return info == HDI_ID_INFO_DEFAULT;
-        }
-        if (type == HDI_ID_TYPE_BLUETOOTH) {
-#ifdef SUPPORT_LOW_LATENCY
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_MMAP;
-#else
-            return info == HDI_ID_INFO_DEFAULT;
-#endif
-        }
-#ifdef SUPPORT_LOW_LATENCY
-        if (type == HDI_ID_TYPE_FAST) {
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_VOIP;
-        }
-#endif
-        return false;
+        // Register for all sinks
+        return true;
     };
     HdiAdapterManager::GetInstance().RegistSinkCallback(HDI_CB_RENDER_STATE, this, limitFunc);
 }

@@ -124,6 +124,11 @@ public:
         return nodeInfo_.sceneType;
     }
 
+    virtual SourceType GetSourceType()
+    {
+        return nodeInfo_.sourceType;
+    }
+
     virtual std::string GetDeviceClass()
     {
         return nodeInfo_.deviceClass;

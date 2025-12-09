@@ -61,6 +61,9 @@ public:
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
     void SetInjectState(bool isInjecting);
+    void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t sessionId, SourceType source, CapturerState state);
+
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);

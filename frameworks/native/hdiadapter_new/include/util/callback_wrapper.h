@@ -39,6 +39,8 @@ public:
     void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
     void OnRenderSinkStateChange(uint32_t uniqueId, bool started) override;
+    void OnOutputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
 
 private:
     std::unordered_map<uint32_t, std::shared_ptr<IAudioSinkCallback> > cbs_;
@@ -65,6 +67,8 @@ public:
         const std::string &condition, const std::string &value) override;
     void OnCaptureState(bool isActive) override;
     void OnWakeupClose(void) override;
+    void OnInputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) override;
 
 private:
     std::unordered_map<uint32_t, std::shared_ptr<IAudioSourceCallback> > cbs_;

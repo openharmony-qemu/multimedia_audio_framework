@@ -726,6 +726,16 @@ AudioStreamType AudioProcessInServer::GetAudioStreamType()
     return processConfig_.streamType;
 }
 
+StreamUsage AudioProcessInServer::GetUsage()
+{
+    return processConfig_.rendererInfo.streamUsage;
+}
+
+SourceType AudioProcessInServer::GetSource()
+{
+    return processConfig_.capturerInfo.sourceType;
+}
+
 AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
 {
     return processConfig_;
