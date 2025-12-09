@@ -3,7 +3,6 @@
  */
 
 #include "Output.h"
-#include "./Input.h"
 #include "../utils/Utils.h"
 #include "hilog/log.h"
 
@@ -50,25 +49,52 @@ OH_AudioSuite_Result RenDerFrame()
     return result;
 }
 
-OH_AudioSuite_Result StartPipelineAndCheckState()
+OH_AudioSuite_Result StartPipelineAndCheckState(OH_AudioSuitePipeline *audioSuitePipeline)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest StartPipelineAndCheckState start");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest renDerFrame start-"
+                                                               "audioSuitePipeline:%{public}p", audioSuitePipeline);
 
     // 启动管线
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_StartPipeline(g_audioSuitePipeline);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_StartPipeline(audioSuitePipeline);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,
-        "audioEditTest OH_audioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
+                 "audioEditTest OH_audioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
 
     // 获取管线状态
     OH_AudioSuite_PipelineState pipeLineState;
-    result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
+    result = OH_AudioSuiteEngine_GetPipelineState(audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,
-        "audioEditTest OH_audioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
-        static_cast<int>(result), static_cast<int>(pipeLineState));
+                 "audioEditTest OH_audioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
+                 static_cast<int>(result), static_cast<int>(pipeLineState));
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return result;
+    }
+
     return result;
+}
+
+void DeleteOHAudioDataArray(OH_AudioDataArray* ohAudioDataArray)
+{
+    if (ohAudioDataArray == nullptr) {
+        return;
+    }
+    if (ohAudioDataArray->audioDataArray == nullptr) {
+        delete ohAudioDataArray;
+        ohAudioDataArray = nullptr;
+        return;
+    }
+    for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
+        if (ohAudioDataArray->arraySize > i && ohAudioDataArray->audioDataArray[i] != nullptr) {
+            free(ohAudioDataArray->audioDataArray[i]);
+            ohAudioDataArray->audioDataArray[i] = nullptr;
+        }
+    }
+    free(ohAudioDataArray->audioDataArray);
+    ohAudioDataArray->audioDataArray = nullptr;
+    delete ohAudioDataArray;
+    ohAudioDataArray = nullptr;
 }
 
 OH_AudioSuite_Result AudioRenderFrame(
@@ -116,7 +142,7 @@ OH_AudioSuite_Result AudioRenderFrame(
             break;
         }
     } while (!finishedFlag);
-    delete ohAudioDataArray;
+    DeleteOHAudioDataArray(ohAudioDataArray);
     AudioRenderContext context = {
         totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize
     };

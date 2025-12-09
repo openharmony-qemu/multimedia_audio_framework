@@ -430,17 +430,9 @@ export struct MixingConsole {
                                                                 });
                                                                 return;
                                                             }
-                                                            if (audioNapi.multiAudioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
-                                                                this.getUIContext().showAlertDialog({
-                                                                    title: '提示',
-                                                                    message: '创建input节点失败'
-                                                                });
-                                                                return;
-                                                            }
-                                                        } else {
-                                                            audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
-                                                            Logger.error(TAG, `fd: ${this.fd}`);
                                                         }
+                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                        Logger.error(TAG, `fd: ${this.fd}`);
                                                     }
                                                     fs.closeSync(this.fd);
                                                     setTimeout(() => {
@@ -632,17 +624,9 @@ export struct MixingConsole {
                                     });
                                     return;
                                 }
-                                if (audioNapi.multiAudioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength) !== 0) {
-                                    this.getUIContext().showAlertDialog({
-                                        title: '提示',
-                                        message: '创建input节点失败'
-                                    });
-                                    return;
-                                }
-                            } else {
-                                audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
-                                Logger.error(TAG, `fd: ${this.fd}`);
                             }
+                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                            Logger.error(TAG, `fd: ${this.fd}`);
                             setTimeout(() => {
                                 if (songInfo) {
                                     songInfo.sampleRate = this.sampleRate;
@@ -687,6 +671,8 @@ export struct MixingConsole {
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .borderRadius(5)
+                    .maxLines(isLeft ? 1 : 2)
+                    .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
             }
         } else if (type) {
             Text(type)
@@ -696,6 +682,8 @@ export struct MixingConsole {
                 .textAlign(TextAlign.Center)
                 .backgroundColor(ColorMap.get(type))
                 .borderRadius(5)
+                .maxLines(isLeft ? 1 : 2)
+                .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
         }   else{
             Text("+")
                 .height(isLeft ? '80%' : '20%')

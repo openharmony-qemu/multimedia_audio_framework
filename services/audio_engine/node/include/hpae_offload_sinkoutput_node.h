@@ -65,6 +65,8 @@ public:
     void SetSpeed(float speed);
 
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state);
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);

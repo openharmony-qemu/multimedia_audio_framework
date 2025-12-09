@@ -60,6 +60,7 @@ static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 }
 
 class ProcessCbImpl;
@@ -160,6 +161,15 @@ public:
 
     bool IsRestoreNeeded() override;
 
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
+
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+
+    int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -168,6 +178,8 @@ private:
     bool InitAudioBuffer();
 
     void CallClientHandleCurrent();
+    void CheckOperations();
+
     int32_t ReadFromProcessClient() const;
     int32_t RecordReSyncServicePos();
     int32_t RecordFinishHandleCurrent(uint64_t &curReadPos, int64_t &clientReadCost);
@@ -207,6 +219,8 @@ private:
     void ExitStandByIfNeed();
 
     void WaitForReadableSpace() const;
+
+    bool CheckStaticAndOperate();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -286,8 +300,12 @@ private:
     };
 
     std::atomic<HandleInfo> lastHandleInfo_;
-
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
+
+    // for static audio renderer
+    std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::function<void()> sendStaticRecreateFunc_ = nullptr;
+    std::mutex staticBufferMutex_;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -358,7 +376,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
 */
 void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
-    AUDIO_INFO_LOG("audio server died, will restore proxy in next call");
+    HILOG_COMM_INFO("audio server died, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
     gAudioServerProxy = nullptr;
 }
@@ -401,7 +419,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
-    AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
+    HILOG_COMM_INFO("AudioProcessInClient deconstruct.");
 
     JoinCallbackLoop();
     if (isInited_) {
@@ -632,6 +650,9 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
     AUDIO_INFO_LOG("CallbackBufferSize is %{public}zu", clientSpanSizeInByte_);
 
+    if (processConfig_.rendererInfo.isStatic) {
+        audioBuffer_->SetStaticMode(true);
+    }
     return true;
 }
 
@@ -1291,6 +1312,7 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
 // client should call GetBufferDesc and Enqueue in OnHandleData
 void AudioProcessInClientInner::CallClientHandleCurrent()
 {
+    CHECK_AND_RETURN(!processConfig_.rendererInfo.isStatic);
     Trace trace("AudioProcessInClient::CallClientHandleCurrent");
     std::shared_ptr<AudioDataCallback> cb = audioDataCallback_.lock();
     CHECK_AND_RETURN_LOG(cb != nullptr, "audio data callback is null.");
@@ -1367,7 +1389,7 @@ void AudioProcessInClientInner::CallExitStandBy()
     int32_t result = processProxy_->Start();
     StreamStatus targetStatus = StreamStatus::STREAM_STARTING;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_RUNNING);
-    AUDIO_INFO_LOG("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
+    HILOG_COMM_INFO("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
     UpdateHandleInfo();
 }
 
@@ -1585,7 +1607,14 @@ bool AudioProcessInClientInner::IsRestoreNeeded()
 
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
 {
-    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
+    if (processConfig_.rendererInfo.isStatic && audioBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        ExitStandByIfNeed();
+    }
+
+    FutexCode ret = audioBuffer_->WaitFor(
+        (processConfig_.rendererInfo.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : FAST_WRITE_CACHE_TIMEOUT_IN_MS) *
+        AUDIO_US_PER_SECOND,
+        [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
             return true;
         }
@@ -1594,11 +1623,7 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
             return true;
         }
 
-        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
-        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
-            return true;
-        }
-        return false;
+        return CheckStaticAndOperate();
     });
 
     return (ret == FUTEX_SUCCESS);
@@ -1644,6 +1669,8 @@ bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
     if (status != StreamStatus::STREAM_RUNNING && status != StreamStatus::STREAM_STAND_BY) {
         return true;
     }
+
+    CheckOperations();
     // call client write
     CallClientHandleCurrent();
     // client write done, check if time out
@@ -1770,5 +1797,85 @@ void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHaptic
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
     processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
+
+void AudioProcessInClientInner::CheckOperations()
+{
+    if (processConfig_.rendererInfo.isStatic) {
+        Trace trace("AudioProcessInClient::HandleStaticOperation");
+
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
+        while (audioBuffer_->IsNeedSendBufferEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            audioBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (audioBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            audioBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
+        return;
+    }
+}
+
+int32_t AudioProcessInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    audioStaticBufferEventCallback_ = callback;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(sendStaticRecreateFunc != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    sendStaticRecreateFunc_ = sendStaticRecreateFunc;
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "SetLoopTimes processProxy_ is nullptr");
+    processProxy_->PreSetLoopTimes(bufferLoopTimes);
+    return SUCCESS;
+}
+
+bool AudioProcessInClientInner::CheckStaticAndOperate()
+{
+    if (processConfig_.rendererInfo.isStatic) {
+        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
+    } else {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
+        ERR_NULL_POINTER, "GetStaticBufferInfo processProxy_ is nullptr");
+    return processProxy_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderRate)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
+        ERR_NULL_POINTER, "SetStaticRenderRate processProxy_ is nullptr");
+    return processProxy_->SetStaticRenderRate(renderRate);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

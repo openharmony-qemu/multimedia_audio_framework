@@ -58,6 +58,7 @@ public:
     int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    int32_t CapturerMutedFlagChange(const uint32_t sessionId, bool muteFlag);
     int32_t GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos);
     void RegisteredTrackerClientDied(int32_t uid, int32_t pid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
@@ -66,7 +67,7 @@ public:
     void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia);
+    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();

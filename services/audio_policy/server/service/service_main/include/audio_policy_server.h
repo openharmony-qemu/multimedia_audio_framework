@@ -319,7 +319,7 @@ public:
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
-    int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
 
     int32_t CreateCapturerClient(
@@ -544,11 +544,6 @@ public:
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
-    int32_t FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt &reason) override;
-
-    int32_t FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo) override;
-
     int32_t GetSpatializationSceneType(int32_t &type) override;
 
     int32_t SetSpatializationSceneType(int32_t spatializationSceneType) override;
@@ -641,11 +636,11 @@ public:
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0);
+        int32_t zoneId = 0, int32_t previousVolume = -1);
     void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr);
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);

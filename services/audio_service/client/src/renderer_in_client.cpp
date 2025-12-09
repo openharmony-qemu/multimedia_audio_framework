@@ -76,6 +76,7 @@ static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; //1s
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -218,6 +219,8 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.privacyType = privacyType_;
 
+    config.staticBufferInfo = staticBufferInfo_;
+
     clientConfig_ = config;
 
     return config;
@@ -245,6 +248,9 @@ int32_t RendererInClientInner::InitSharedBuffer()
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
+    if (rendererInfo_.isStatic) {
+        clientBuffer_->SetStaticMode(true);
+    }
 
     return SUCCESS;
 }
@@ -452,12 +458,14 @@ bool RendererInClientInner::IsRestoreNeeded()
     return false;
 }
 
-void RendererInClientInner::WaitForBufferNeedWrite()
+void RendererInClientInner::WaitForBufferNeedOperate()
 {
-    Trace trace("WaitForBufferNeedWrite");
+    Trace trace("WaitForBufferNeedOperate");
+    CheckFrozenStateInStaticMode();
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
-        static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        (rendererInfo_.isStatic ? STATIC_HEARTBEAT_INTERVAL_IN_MS : static_cast<int64_t>(timeout)) *
+        AUDIO_US_PER_SECOND,
         [this] () {
             if (state_ != RUNNING) {
                 return true;
@@ -467,7 +475,7 @@ void RendererInClientInner::WaitForBufferNeedWrite()
                 return true;
             }
 
-            return CheckBufferNeedWrite();
+            return CheckStaticAndOperate();
         });
     if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
@@ -476,6 +484,7 @@ void RendererInClientInner::WaitForBufferNeedWrite()
 
 void RendererInClientInner::CallClientHandle()
 {
+    CHECK_AND_RETURN(!rendererInfo_.isStatic);
     // call client write
     std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
     {
@@ -498,7 +507,7 @@ bool RendererInClientInner::WriteCallbackFunc()
         return true;
     }
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
-        AUDIO_WARNING_LOG("The queue is too long, reducing data through loops");
+        HILOG_COMM_WARN("The queue is too long, reducing data through loops");
     }
     BufferDesc temp;
     while (cbBufferQueue_.PopNotWait(temp)) {
@@ -522,7 +531,9 @@ bool RendererInClientInner::WriteCallbackFunc()
         }
     }
 
-    WaitForBufferNeedWrite();
+    WaitForBufferNeedOperate();
+
+    CheckOperations();
 
     if (state_ != RUNNING) {
         return true;
@@ -549,11 +560,11 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         int32_t outBufferSize = 0;
         if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
             bufferSize = 0;
-            AUDIO_ERR_LOG("process speed error");
+            HILOG_COMM_ERROR("process speed error");
             return false;
         }
         if (outBufferSize == 0) {
-            AUDIO_DEBUG_LOG("speed buffer is not full");
+            HILOG_COMM_ERROR("speed buffer is not full");
             return false;
         }
         buffer = speedBuffer_.get();
@@ -684,14 +695,14 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
         // calculate wait time by buffer size, 10e6 is converting seconds to microseconds
         uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
-        AUDIO_ERR_LOG("server is died! wait %{public}d us", waitTimeUs);
+        HILOG_COMM_ERROR("server is died! wait %{public}d us", waitTimeUs);
         usleep(waitTimeUs);
         return ERR_WRITE_BUFFER;
     }
 
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     if (clientBuffer_->GetStreamStatus() == nullptr) {
-        AUDIO_ERR_LOG("The stream status is null!");
+        HILOG_COMM_ERROR("The stream status is null!");
         return ERR_INVALID_PARAM;
     }
 
@@ -830,7 +841,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
-            AUDIO_WARNING_LOG("write silent data for some time");
+            HILOG_COMM_WARN("write silent data for some time");
             isUpEvent_ = true;
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,
@@ -1041,5 +1052,92 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
+
+int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    audioStaticBufferEventCallback_ = callback;
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(sendStaticRecreateFunc != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    sendStaticRecreateFunc_ = sendStaticRecreateFunc;
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    ipcStream_->PreSetLoopTimes(bufferLoopTimes);
+    return SUCCESS;
+}
+
+bool RendererInClientInner::CheckStaticAndOperate()
+{
+    if (rendererInfo_.isStatic) {
+        return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
+    } else {
+        return CheckBufferNeedWrite();
+    }
+}
+
+void RendererInClientInner::CheckOperations()
+{
+    if (rendererInfo_.isStatic) {
+        Trace trace("RendererInClientInner::ProcessStaticOperations");
+        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+            sendStaticRecreateFunc_();
+        }
+        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
+        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+            Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+        }
+        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
+            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
+        }
+    }
+}
+
+void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
+    staticBufferInfo_ = staticBufferInfo;
+}
+
+int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    return ipcStream_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+void RendererInClientInner::CheckFrozenStateInStaticMode()
+{
+    if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
+        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+            Trace trace2(traceTag_ + "call start to exit stand-by");
+            CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+            int32_t ret = ipcStream_->Start();
+            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+        }
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

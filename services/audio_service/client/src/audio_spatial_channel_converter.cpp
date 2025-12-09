@@ -79,7 +79,8 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
     CHECK_AND_RETURN_RET_LOG(bps_ > 0, false, "channel converter: Unsupported sample format");
 
     Library library = cfg.library;
-    outChannelLayout_ = cfg.outChannelLayout;
+    outChannelLayout_ = (std::find(cfg.supportOutChannelLayout.begin(), cfg.supportOutChannelLayout.end(),
+        cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ? cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
 
     loadSuccess_ = false;
     if (externalLoader_.AddAlgoHandle(library)) {
@@ -260,7 +261,8 @@ bool LibLoader::Init()
     uint32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry is null");
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
+    CHECK_AND_RETURN_RET_LOG(handle_, false, "handle_ is null");
     ret = (*handle_)->command(handle_, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_INIT fail", libEntry_->libraryName.c_str());
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
@@ -292,7 +294,8 @@ bool LibLoader::FlushAlgo()
     int32_t replyData = 0;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry is null");
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "libEntry_ is null");
+    CHECK_AND_RETURN_RET_LOG(handle_, false, "handle_ is null");
     ret = (*handle_)->command(handle_, EFFECT_CMD_ENABLE, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, false, "[%{public}s] lib EFFECT_CMD_ENABLE fail",
         libEntry_->libraryName.c_str());

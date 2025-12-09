@@ -138,7 +138,7 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
 int32_t MockPolicyProvider::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
 {
     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-    policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "MockVolumeMap");
+    policyVolumeMap_ = AudioSharedMemory::CreateFromLocal(mapSize, "MockVolumeMap");
     buffer = policyVolumeMap_;
     return SUCCESS;
 }

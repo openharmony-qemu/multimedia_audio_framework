@@ -254,6 +254,7 @@ enum AudioPipeType {
     PIPE_TYPE_IN_NORMAL_AI = 12,
     PIPE_TYPE_IN_NORMAL_UNPROCESS = 13,
     PIPE_TYPE_IN_NORMAL_ULTRASONIC = 14,
+    PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION = 15,
 };
 
 enum AudioPreloadType {
@@ -271,6 +272,8 @@ struct AudioStreamParams {
     uint32_t originalSessionId = 0;
     // Add customSampleRate
     uint32_t customSampleRate = 0;
+    bool isRemoteSpatialChannel = false;
+    uint64_t remoteChannelLayout = 0ULL;
 };
 
 // sampling rate
@@ -296,7 +299,12 @@ enum AudioEncodingType {
     ENCODING_INVALID = -1,
     ENCODING_PCM = 0,
     ENCODING_AUDIOVIVID = 1,
-    ENCODING_EAC3 = 2
+    ENCODING_EAC3 = 2,
+    ENCODING_AC3 = 3,
+    ENCODING_TRUE_HD = 4,
+    ENCODING_DTS_HD = 5,
+    ENCODING_DTS_X = 6,
+    ENCODING_AUDIOVIVID_DIRECT = 7
 };
 
 enum DirectPlaybackMode {
@@ -510,7 +518,12 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
     ENCODING_AUDIOVIVID,
-    ENCODING_EAC3
+    ENCODING_EAC3,
+    ENCODING_AC3,
+    ENCODING_TRUE_HD,
+    ENCODING_DTS_HD,
+    ENCODING_DTS_X,
+    ENCODING_AUDIOVIVID_DIRECT
 };
 
 const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
@@ -659,6 +672,13 @@ struct AudioBasicFormat {
     AudioChannelInfo audioChannelInfo;
     AudioSampleFormat format = INVALID_WIDTH;
     AudioSamplingRate rate = SAMPLE_RATE_48000;
+};
+
+enum StreamChangeType : int32_t {
+    STREAM_CHANGE_TYPE_ADD = 0,
+    STREAM_CHANGE_TYPE_REMOVE,
+    STREAM_CHANGE_TYPE_REMOVE_ALL,
+    STREAM_CHANGE_TYPE_STATE_CHANGE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

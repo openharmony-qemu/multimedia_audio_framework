@@ -61,7 +61,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+        HILOG_COMM_ERROR("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
             ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
@@ -574,6 +574,33 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
         return ERR_OPERATION_FAILED;
     }
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
+
+int32_t IpcStreamInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->PreSetLoopTimes(bufferLoopTimes);
+}
+
+int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
 }
 } // namespace AudioStandard
 } // namespace OHOS

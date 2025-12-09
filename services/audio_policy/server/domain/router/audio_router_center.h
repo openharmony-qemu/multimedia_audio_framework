@@ -129,6 +129,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     RouterType GetBypassWithSco(AudioScene audioScene);
     bool IsMediaFollowCallStrategy(AudioScene audioScene);
+    bool IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo info,

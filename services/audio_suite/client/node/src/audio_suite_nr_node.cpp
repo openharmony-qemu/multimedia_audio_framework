@@ -46,6 +46,7 @@ AudioSuiteNrNode::~AudioSuiteNrNode()
 int32_t AudioSuiteNrNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init begin");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
 
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nodeCapability);

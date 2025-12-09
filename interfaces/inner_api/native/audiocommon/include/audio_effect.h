@@ -885,12 +885,20 @@ struct ConverterConfig : public Parcelable {
     std::string version;
     Library library;
     uint64_t outChannelLayout = 0;
+    std::vector<uint64_t> supportOutChannelLayout;
+    static constexpr int32_t MAX_OUT_CHANNEL_LAYOUT_SIZE = 1000;
 
     bool Marshalling(Parcel &parcel) const override
     {
-        return parcel.WriteString(version) &&
-            library.Marshalling(parcel) &&
-            parcel.WriteUint64(outChannelLayout);
+        parcel.WriteString(version);
+        library.Marshalling(parcel);
+        parcel.WriteUint64(outChannelLayout);
+        int32_t size = static_cast<int32_t>(supportOutChannelLayout.size());
+        parcel.WriteInt32(size);
+        for (auto &pOutChannelLayout : supportOutChannelLayout) {
+            parcel.WriteUint64(pOutChannelLayout);
+        }
+        return true;
     }
 
     static ConverterConfig *Unmarshalling(Parcel &parcel)
@@ -902,6 +910,14 @@ struct ConverterConfig : public Parcelable {
         config->version = parcel.ReadString();
         config->library.UnmarshallingSelf(parcel);
         config->outChannelLayout = parcel.ReadUint64();
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > MAX_OUT_CHANNEL_LAYOUT_SIZE) {
+            delete config;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; i++) {
+            config->supportOutChannelLayout.push_back(parcel.ReadUint64());
+        }
         return config;
     }
 };

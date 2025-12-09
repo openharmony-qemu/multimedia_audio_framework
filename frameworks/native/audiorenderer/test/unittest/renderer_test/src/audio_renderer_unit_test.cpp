@@ -4692,5 +4692,101 @@ HWTEST(AudioRendererUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
     audioRendererPrivate->SetInSwitchingFlag(false);
     EXPECT_FALSE(audioRendererPrivate->inSwitchingFlag_);
 }
+
+/**
+ * @tc.name  : Test IsRendererFlagsSupportStatic.
+ * @tc.number: IsRendererFlagsSupportStatic.
+ * @tc.desc  : Test IsRendererFlagsSupportStatic.
+ */
+HWTEST(AudioRendererUnitTest, IsRendererFlagsSupportStatic_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_NORMAL));
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_MMAP));
+    EXPECT_TRUE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_FORCED_NORMAL));
+    EXPECT_FALSE(audioRendererPrivate->IsRendererFlagsSupportStatic(AUDIO_FLAG_DIRECT));
+}
+
+/**
+ * @tc.name  : Test SetStaticBufferCallback.
+ * @tc.number: SetStaticBufferCallback.
+ * @tc.desc  : Test SetStaticBufferCallback.
+ */
+HWTEST(AudioRendererUnitTest, SetStaticBufferCallback_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+    audioRendererPrivate->audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    EXPECT_NE(audioRendererPrivate->SetStaticBufferCallback(callback), SUCCESS);
+}
+
+
+/**
+ * @tc.name  : Test StaticCreate.
+ * @tc.number: StaticCreate.
+ * @tc.desc  : Test StaticCreate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_001, TestSize.Level0)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
+
+    auto sharedMemory = AudioSharedMemory::CreateFromLocal(100, "test");
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+
+    shared_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, sharedMemory, callback);
+    EXPECT_EQ(nullptr, audioRenderer);
+}
+
+
+/**
+ * @tc.name  : Test StaticCreate.
+ * @tc.number: StaticCreate.
+ * @tc.desc  : Test StaticCreate.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_002, TestSize.Level0)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
+
+    auto sharedMemory = AudioSharedMemory::CreateFromLocal(100, "test");
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+
+    shared_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, sharedMemory, callback);
+    EXPECT_EQ(nullptr, audioRenderer);
+}
+
+/**
+ * @tc.name  : AudioRenderer_IsStartWaitFor_001
+ * @tc.number: IsStartWaitFor_001
+ * @tc.desc  : Test IsStartWaitFor() for different cases
+ */
+HWTEST(AudioRendererUnitTest, IsStartWaitFor_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+
+    bool res = testRendererInner->IsStartWaitFor(true);
+    EXPECT_EQ(true, res);
+    res = testRendererInner->IsStartWaitFor(false);
+    EXPECT_EQ(true, res);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

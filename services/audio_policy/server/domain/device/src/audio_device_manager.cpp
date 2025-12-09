@@ -25,6 +25,7 @@
 #include "audio_bluetooth_manager.h"
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
+#include "audio_pipe_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -231,6 +232,10 @@ void AudioDeviceManager::MakePairedDefaultDeviceDescriptor(const shared_ptr<Audi
     if (it != connectedDevices_.end()) {
         MakePairedDefaultDeviceImpl(devDesc, *it);
     }
+
+    if (!AudioPipeManager::GetPipeManager()->HasPrimarySink()) {
+        MakePairedDPDeviceDescriptor(devDesc, devRole);
+    }
 }
 
 void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
@@ -254,6 +259,44 @@ void AudioDeviceManager::MakePairedDefaultDeviceImpl(const shared_ptr<AudioDevic
         }
         if (speaker_->networkId_ == devDesc->networkId_) {
             speaker_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
+    }
+}
+
+void AudioDeviceManager::MakePairedDPDeviceDescriptor(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    DeviceRole devRole)
+{
+    // DP -> MIC ; MIC -> DP
+    auto isPresent = [&devDesc, &devRole] (const shared_ptr<AudioDeviceDescriptor> &desc) {
+        if (devDesc->deviceType_ == DEVICE_TYPE_DP && devRole == INPUT_DEVICE &&
+            desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == devDesc->networkId_) {
+            return true;
+        } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && devRole == OUTPUT_DEVICE &&
+            desc->deviceType_ == DEVICE_TYPE_DP && desc->networkId_ == devDesc->networkId_) {
+            return true;
+        }
+        return false;
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        MakePairedDPDeviceImpl(devDesc, *it);
+    }
+}
+
+void AudioDeviceManager::MakePairedDPDeviceImpl(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    const shared_ptr<AudioDeviceDescriptor> &connectedDesc)
+{
+    devDesc->pairDeviceDescriptor_ = connectedDesc;
+    if (devDesc->deviceType_ == DEVICE_TYPE_DP && defalutMic_ != NULL) {
+        if (defalutMic_->networkId_ == devDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = devDesc;
+        }
+        connectedDesc->pairDeviceDescriptor_ = devDesc;
+    } else if (devDesc->deviceType_ == DEVICE_TYPE_MIC && defalutMic_ != NULL) {
+        if (defalutMic_->networkId_ == connectedDesc->networkId_) {
+            defalutMic_->pairDeviceDescriptor_ = connectedDesc;
         }
         connectedDesc->pairDeviceDescriptor_ = devDesc;
     }
@@ -943,8 +986,7 @@ void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage
 
 VolumeBehavior AudioDeviceManager::GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
-        networkId.c_str(), deviceType);
+    AUDIO_INFO_LOG("deviceType [%{public}d]", deviceType);
     VolumeBehavior volumeBehavior;
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ != deviceType || desc->networkId_ != networkId) {

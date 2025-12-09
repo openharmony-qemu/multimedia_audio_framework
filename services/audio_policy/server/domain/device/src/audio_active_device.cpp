@@ -391,14 +391,13 @@ void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFla
     const std::string &deviceName, std::string networkId)
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
-    CHECK_AND_RETURN_LOG(networkId == LOCAL_NETWORK_ID, "distributed device, do not update route");
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
-    UpdateActiveDevicesRoute(activeDevices, deviceName);
+    UpdateActiveDevicesRoute(activeDevices, deviceName, networkId);
 }
 
 void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>>
-    &activeDevices, const std::string &deviceName)
+    &activeDevices, const std::string &deviceName, const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
 
@@ -410,7 +409,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
-        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName);
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName, networkId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 

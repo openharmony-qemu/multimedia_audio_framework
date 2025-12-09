@@ -37,7 +37,8 @@ public:
     explicit TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> obj);
     ~TonePlayerImpl() = default;
 
-    static TonePlayer CreateTonePlayerWrapper(std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> rendererInfo);
+    static TonePlayerOrNull CreateTonePlayerWrapper(std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo>
+        rendererInfo);
 
     void LoadSync(ToneType type);
     void ReleaseSync();

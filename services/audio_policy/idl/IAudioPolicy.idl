@@ -109,7 +109,7 @@ interface IAudioPolicy {
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-    void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId, [out] String networkId);
+    void CreateRendererClient([inout] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId, [out] String networkId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId);
     void RegisterTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);
     void UpdateTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo);
@@ -192,8 +192,6 @@ interface IAudioPolicy {
     void SetCallDeviceActive([in] int deviceType, [in] boolean active, [in] String address, [in] int uid);
     void GetConverterConfig([out] ConverterConfig retCnf);
     void GetActiveBluetoothDevice([out] sharedptr<AudioDeviceDescriptor> descs);
-    void FetchOutputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo);
     void IsHighResolutionExist([out] boolean ret);
     void SetHighResolutionExist([in] boolean highResExist);
     void GetSpatializationSceneType([out] int type);

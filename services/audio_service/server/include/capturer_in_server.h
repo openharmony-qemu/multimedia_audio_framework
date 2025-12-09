@@ -23,6 +23,8 @@
 #include "audio_ring_cache.h"
 #include "recorder_dfx_writer.h"
 #include "capturer_clock_manager.h"
+#include "audio_stream_monitor.h"
+#include "audio_stream_checker.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -83,6 +85,7 @@ private:
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
+    void RecordOverflowStatus(bool currentStatus);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -130,6 +133,8 @@ private:
     std::shared_ptr<CapturerClock> capturerClock_ = nullptr;
 
     std::atomic<IStatus> lastStatus_ = I_STATUS_IDLE;
+    std::atomic<bool> lastOverflowStatus_ = false;
+    std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

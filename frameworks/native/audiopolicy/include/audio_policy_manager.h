@@ -314,8 +314,8 @@ public:
 
     int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
-    int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId);
+    int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        uint32_t &flag, uint32_t &sessionId, std::string &networkId);
 
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
@@ -578,11 +578,6 @@ public:
 
     ConverterConfig GetConverterConfig();
 
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-
     bool IsHighResolutionExist();
 
     int32_t SetHighResolutionExist(bool highResExist);
@@ -716,6 +711,8 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     bool IsCollaborativePlaybackSupported();
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);

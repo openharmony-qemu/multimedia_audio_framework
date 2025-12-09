@@ -545,6 +545,26 @@ typedef void (*OH_AudioRenderer_OnFastStatusChange)(
     OH_AudioStream_FastStatus status
 );
 
+/**
+ * @brief Gets the estimated audio latency in milliseconds for current audio route. For remote connection audio
+ * devices cases, the latency result may not be very accurate, system just provides it for reference only.
+ * It is still recommended to use {@link #OH_AudioRenderer_GetAudioTimestampInfo} to handle A/V sync.
+ *
+ * @param renderer AudioRenderer created by OH_AudioStreamBuilder_GenerateRenderer().
+ * @param type Type of audio latency to get.
+ * @param latencyMs Pointer to a variable to receive the latency in milliseconds.
+ * @return Function result code:
+ *         {@link #AUDIOSTREAM_SUCCESS} If the execution is successful.
+ *         {@link #AUDIOSTREAM_ERROR_INVALID_PARAM}
+ *             1.The param of renderer is nullptr.
+ *             2.The param of latencyMs is nullptr.
+ *             3.The param of type is invalid value.
+ *         {@link #AUDIOSTREAM_ERROR_SYSTEM} System internal error, like audio service error.
+ * @since 23
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetLatency(OH_AudioRenderer* renderer,
+    OH_AudioStream_LatencyType type, int32_t* latencyMs);
+
 #ifdef __cplusplus
 }
 #endif

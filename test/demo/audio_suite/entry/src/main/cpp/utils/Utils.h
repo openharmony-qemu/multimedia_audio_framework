@@ -11,6 +11,14 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
 
+extern const char* STR_0;
+extern const char* STR_1;
+extern const char* STR_2;
+extern const char* STR_3;
+extern const char* STR_4;
+extern const char* STR_5;
+extern const char* STR_6;
+
 enum {
     ARG_0 = 0,
     ARG_1 = 1,
@@ -71,5 +79,7 @@ OH_EnvironmentType GetEnvEnumByNumber(int num);
 
 napi_value ReturnResult(napi_env env, AudioSuiteResult result);
 
-void FreeBuffer(void *buffer);
+void FreeBuffer(char **buffer);
+
+void FreeBufferOfVoid(void **buffer);
 #endif //#define AUDIOEDITTESTAPP_UTILS_H

@@ -17,12 +17,21 @@
 #define HPAE_RENDERER_STREAM_IMPL_H
 
 #include <mutex>
+#include <condition_variable>
 #include <shared_mutex>
+#include <atomic>
 #include "i_renderer_stream.h"
 #include "audio_ring_cache.h"
 
 namespace OHOS {
 namespace AudioStandard {
+enum HpaeRendererStreamTimestampTag {
+    GET_REMOTE_OFFLOAD_SPEED_POSITION,
+    GET_CURRENT_POSITION,
+    GET_LATENCY,
+    ON_DEVICE_CLASS_CHANGE,
+    TIMESTAMP_TAG_NUM,
+};
 
 struct PositionData {
     uint64_t framePosition = 0;
@@ -90,6 +99,8 @@ public:
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 
     bool OnQueryUnderrun() override;
+
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
@@ -97,9 +108,16 @@ private:
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
     uint32_t GetSinkLatency(); // unit ms
+    int32_t GetSinkLatencyInner(uint32_t &sinkLatency);
+    static int32_t GetSinkLatencyInner(const std::string &deviceClass, const std::string &deviceNetId,
+        uint32_t &sinkLatency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
+    bool WaitFirstStreamData();
+    void NotifyFirstStreamData();
+    int32_t FetchSinkLatency(uint32_t &sinkLatency);
+    void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -134,6 +152,10 @@ private:
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
+    std::atomic<int64_t> lastLogTimestampArr_[TIMESTAMP_TAG_NUM];
+
+    std::mutex sinkLatencyFetcherMutex_;
+    std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
 
     std::string deviceClass_;
     std::string deviceNetId_;
@@ -153,6 +175,10 @@ private:
     std::unordered_map<int32_t, PositionData> speedPositionData;
 
     uint32_t usedSampleRate_ = 0;
+
+    std::mutex firstStreamDataMutex_;
+    std::condition_variable firstStreamDataCv_;
+    std::atomic<bool> firstStreamDataReceived_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

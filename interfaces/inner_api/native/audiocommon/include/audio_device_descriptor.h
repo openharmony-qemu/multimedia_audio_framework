@@ -96,6 +96,8 @@ public:
     void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
 
+    void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
+
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
@@ -117,6 +119,8 @@ public:
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
+
+    void BuildCapabilitiesFromDeviceStreamInfo();
 
     void Dump(std::string &dumpString);
 
@@ -184,7 +188,9 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
+    std::string model_ = "unknown";
     std::list<DeviceStreamInfo> audioStreamInfo_;
+    std::list<AudioStreamInfo> capabilities_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     DeviceUsage deviceUsage_ = ALL_USAGE;
@@ -209,6 +215,7 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    std::string dmDeviceInfo_ = "";
 
 private:
     bool IsOutput()

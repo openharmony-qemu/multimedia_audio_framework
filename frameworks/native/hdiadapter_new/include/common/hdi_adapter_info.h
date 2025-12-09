@@ -60,6 +60,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_VA "va"
 #define HDI_ID_INFO_UNPROCESS "unprocess"
 #define HDI_ID_INFO_ULTRASONIC "ultrasonic"
+#define HDI_ID_INFO_VOICE_RECOGNITION "voice_recognition"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {
@@ -76,6 +77,7 @@ enum HdiAdapterCallbackType : uint32_t {
     HDI_CB_CAPTURE_STATE,
     HDI_CB_CAPTURE_PARAM,
     HDI_CB_CAPTURE_WAKEUP,
+    HDI_CB_CAPTURE_STATE_ALL,
     HDI_CB_TYPE_NUM,
 };
 

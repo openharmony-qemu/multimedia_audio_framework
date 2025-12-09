@@ -139,6 +139,7 @@ public:
     }
 
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
@@ -203,6 +204,10 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
+
+    virtual int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {

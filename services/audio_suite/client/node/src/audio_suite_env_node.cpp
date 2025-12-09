@@ -50,6 +50,7 @@ int32_t AudioSuiteEnvNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
     }
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
@@ -79,10 +80,10 @@ AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSui
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEnvNode SignalProcess inputs[0] is nullptr");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
 
-    tmpin_[0] = inputs[0]->GetPcmData();
-    tmpout_[0] = outPcmBuffer_.GetPcmData();
+    tmpIn_[0] = inputs[0]->GetPcmData();
+    tmpOut_[0] = outPcmBuffer_.GetPcmData();
     CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, nullptr, "envAlgoInterfaceImpl_ is nullptr");
-    int32_t ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    int32_t ret = envAlgoInterfaceImpl_->Apply(tmpIn_, tmpOut_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEnvNode SignalProcess Apply failed");
 
     return &outPcmBuffer_;

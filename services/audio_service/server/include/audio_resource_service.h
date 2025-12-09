@@ -94,6 +94,7 @@ private:
     std::unordered_map<int32_t, struct AudioWorkgroupPerProcess> audioWorkgroupMap_;
     std::unordered_map<std::shared_ptr<AudioWorkgroup>,
         std::pair<sptr<IRemoteObject>, sptr<AudioWorkgroupDeathRecipient>>> deathRecipientMap_;
+    std::set<int32_t> allowWorkgroupPidSet_;
 };
 
 } // namespace AudioStandard

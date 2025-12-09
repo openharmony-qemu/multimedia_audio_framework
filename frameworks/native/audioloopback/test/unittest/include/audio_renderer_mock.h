@@ -36,6 +36,7 @@ public:
     MOCK_METHOD(bool, GetAudioTime, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(bool, GetAudioPosition, (Timestamp &timestamp, Timestamp::Timestampbase base), (override));
     MOCK_METHOD(int32_t, GetLatency, (uint64_t &latency), (const, override));
+    MOCK_METHOD(int32_t, GetLatencyWithFlag, (uint64_t &latency, LatencyFlag flag), (const, override));
     MOCK_METHOD(bool, Drain, (), (const, override));
     MOCK_METHOD(bool, Flush, (), (const, override));
     MOCK_METHOD(bool, PauseTransitent, (StateChangeCmdType cmdType), (override));
@@ -127,6 +128,7 @@ public:
     MOCK_METHOD(int32_t, SetTarget, (RenderTarget target), (override));
     MOCK_METHOD(RenderTarget, GetTarget, (), (const, override));
     MOCK_METHOD(int32_t, GetKeepRunning, (bool &keepRunning), (const, override));
+    MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
 };
 
 } // namespace AudioStandard

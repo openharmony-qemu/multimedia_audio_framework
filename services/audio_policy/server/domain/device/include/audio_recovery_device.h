@@ -59,6 +59,7 @@ public:
     void SelectOutputDeviceLog(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
+    void SelectOutputDeviceForRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,

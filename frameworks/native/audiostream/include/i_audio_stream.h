@@ -114,6 +114,9 @@ public:
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
         RenderTarget target = NORMAL_PLAYBACK;
+
+        StaticBufferInfo staticBufferInfo{};
+        std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
     };
 
     virtual ~IAudioStream() = default;
@@ -169,6 +172,7 @@ public:
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
     virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) = 0;
     virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
@@ -345,6 +349,14 @@ public:
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 
     virtual bool IsRestoreNeeded() { return false; }
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;
+
+    virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

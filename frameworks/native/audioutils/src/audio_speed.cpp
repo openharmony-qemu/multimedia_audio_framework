@@ -20,13 +20,15 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
+#include "sonic.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static constexpr float SLOW_PLAY_1_8_SPEED = 0.125f;
 
-AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels):rate_(rate), format_(format), channels_(channels)
+AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels, int32_t maxSpeedBufferSize)
+    :rate_(rate), format_(format), channels_(channels),  maxSpeedBufferSize_(maxSpeedBufferSize)
 {
     AUDIO_INFO_LOG("AudioSpeed construct");
     Init();
@@ -146,7 +148,7 @@ int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write unsigned char to stream failed.");
 
     int32_t outSamples = sonicReadUnsignedCharFromStream(sonicStream_,
-        static_cast<unsigned char*>(outBuffer.get()), MAX_SPEED_BUFFER_SIZE);
+        static_cast<unsigned char*>(outBuffer.get()), maxSpeedBufferSize_);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
@@ -162,7 +164,7 @@ int32_t AudioSpeed::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write short to stream failed.");
 
     int32_t outSamples = sonicReadShortFromStream(sonicStream_, reinterpret_cast<short*>(outBuffer.get()),
-        MAX_SPEED_BUFFER_SIZE);
+        maxSpeedBufferSize_);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
@@ -173,7 +175,7 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {
     Trace trace("AudioSpeed::ChangeSpeedFor24Bit");
-    if (bufferSize <= 0 || bufferSize > MAX_SPEED_BUFFER_SIZE) {
+    if (bufferSize <= 0 || bufferSize > maxSpeedBufferSize_) {
         AUDIO_ERR_LOG("BufferSize is illegal:%{public}d", bufferSize);
         return ERR_MEMORY_ALLOC_FAILED;
     }
@@ -184,7 +186,7 @@ int32_t AudioSpeed::ChangeSpeedFor24Bit(uint8_t *buffer, int32_t bufferSize,
     }
     ConvertFrom24BitToFloat(bufferSize / formatSize_, buffer, bitTofloat);
 
-    float *speedBuf = new (std::nothrow) float[MAX_SPEED_BUFFER_SIZE];
+    float *speedBuf = new (std::nothrow) float[maxSpeedBufferSize_];
     if (speedBuf == nullptr) {
         AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
@@ -203,7 +205,7 @@ int32_t AudioSpeed::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
     std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize)
 {
     Trace trace("AudioSpeed::ChangeSpeedFor32Bit");
-    if (bufferSize <= 0 || bufferSize > MAX_SPEED_BUFFER_SIZE) {
+    if (bufferSize <= 0 || bufferSize > maxSpeedBufferSize_) {
         AUDIO_ERR_LOG("BufferSize is illegal:%{public}d", bufferSize);
         return ERR_MEMORY_ALLOC_FAILED;
     }
@@ -214,7 +216,7 @@ int32_t AudioSpeed::ChangeSpeedFor32Bit(uint8_t *buffer, int32_t bufferSize,
     }
     ConvertFrom32BitToFloat(bufferSize / formatSize_, reinterpret_cast<int32_t *>(buffer), bitTofloat);
 
-    float *speedBuf = new (std::nothrow) float[MAX_SPEED_BUFFER_SIZE];
+    float *speedBuf = new (std::nothrow) float[maxSpeedBufferSize_];
     if (speedBuf == nullptr) {
         AUDIO_ERR_LOG("speedBuf nullptr, No memory");
         delete [] bitTofloat;
@@ -236,7 +238,7 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     int32_t numSamples = bufferSize / static_cast<int32_t>(formatSize_ * channels_);
     int32_t res = static_cast<int32_t>(sonicWriteFloatToStream(sonicStream_, buffer, numSamples));
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
-    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, MAX_SPEED_BUFFER_SIZE);
+    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, maxSpeedBufferSize_);
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
@@ -245,7 +247,7 @@ int32_t AudioSpeed::Flush()
 {
     Trace trace("AudioSpeed::Flush");
     sonicFlushStream(sonicStream_);
-    std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
+    std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(maxSpeedBufferSize_);
 
     int samplesWritten = 0;
     const size_t channelMultiplier = static_cast<size_t>(channels_);
@@ -254,19 +256,19 @@ int32_t AudioSpeed::Flush()
             case SAMPLE_U8:
                 samplesWritten = sonicReadUnsignedCharFromStream(sonicStream_,
                     reinterpret_cast<uint8_t*>(tmpBuffer.get()),
-                    MAX_SPEED_BUFFER_SIZE / channelMultiplier);
+                    maxSpeedBufferSize_ / channelMultiplier);
                 break;
             case SAMPLE_S24LE:
             case SAMPLE_S32LE:
             case SAMPLE_F32LE:
                 samplesWritten = sonicReadFloatFromStream(sonicStream_,
                     reinterpret_cast<float*>(tmpBuffer.get()),
-                    MAX_SPEED_BUFFER_SIZE / (channelMultiplier * sizeof(float)));
+                    maxSpeedBufferSize_ / (channelMultiplier * sizeof(float)));
                 break;
             case SAMPLE_S16LE:
                 samplesWritten = sonicReadShortFromStream(sonicStream_,
                     reinterpret_cast<short*>(tmpBuffer.get()),
-                    MAX_SPEED_BUFFER_SIZE / (channelMultiplier * sizeof(short)));
+                    maxSpeedBufferSize_ / (channelMultiplier * sizeof(short)));
                 break;
             default:
                 AUDIO_ERR_LOG("invalid format_");

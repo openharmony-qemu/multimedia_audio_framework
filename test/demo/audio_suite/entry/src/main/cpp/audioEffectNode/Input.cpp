@@ -33,8 +33,11 @@ OH_AudioFormat g_audioFormatInput = {
 // 创造 output builder 构造器
 OH_AudioNodeBuilder *builderOut = nullptr;
 
-napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params)
+napi_status ParseArguments(napi_env env, napi_callback_info info, AudioParams &params)
 {
+    size_t argc = 5;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
     status = ParseNapiString(env, argv[ARG_1], params.outputId);
     status = ParseNapiString(env, argv[ARG_2], params.mixerId);
@@ -46,6 +49,7 @@ napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params)
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
         "fd: %{public}d, fileLength: %{public}d, status: %{public}d",
         params.fd, params.fileLength, status);
+    delete[] argv;
     return status;
 }
 
@@ -105,9 +109,14 @@ void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize
         return;
     }
     OH_AVBuffer *pcmBuffer = OH_AVBuffer_Create(bufferSize);
-    char *totalBuffer = (char *)malloc(bufferSize);
     if (pcmBuffer == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "create pcmBuffer failed");
+        return;
+    }
+    char *totalBuffer = (char *)malloc(bufferSize);
+    if (totalBuffer == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "create totalBuffer failed");
+        return;
     }
     OH_AVCodecBufferAttr info;
     int32_t ret;
@@ -264,6 +273,12 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
     // 处理音频数据 此处如果是nullptr，是demo获取音频数据的问题，非底层接口问题
     std::string inputId = static_cast<UserData *>(userData)->id;
     auto usetDataIt = g_userDataMap.find(inputId);
+    if (usetDataIt == g_userDataMap.end()) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG,
+                     "audioEditTest WriteDataCallBack: inputId '%s' not found in g_userDataMap", inputId.c_str());
+        *finished = true;
+        return 0;
+    }
     if (usetDataIt->second->isResetTotalWriteAudioDataSize) {
         usetDataIt->second->isResetTotalWriteAudioDataSize = false;
         static_cast<UserData *>(userData)->totalWriteAudioDataSize = 0;

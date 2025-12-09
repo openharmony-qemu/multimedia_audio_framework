@@ -129,10 +129,12 @@ private:
     std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(const AudioSampleFormat &format,
         uint32_t sampleRate, std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        const AudioStreamInfo &streamInfo);
+        AudioStreamInfo matchStreamInfo);
     AudioSampleFormat ParseFormat(const std::string format);
     void CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<PipeStreamPropInfo> &info);
+    std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipeForViVid(
+        std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo);
 
     bool xmlHasLoaded_ = false;
 

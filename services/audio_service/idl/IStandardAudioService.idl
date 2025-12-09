@@ -33,6 +33,8 @@ sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSinkAttr;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
 sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
 sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEventInternal;
+sequenceable audio_engine_callback_types..OHOS.AudioStandard.AudioOutputPipeInfo;
+sequenceable audio_engine_callback_types..OHOS.AudioStandard.AudioInputPipeInfo;
 
 interface IStandardAudioService {
     [ipccode 0] void GetAudioParameter([in] String key, [out] String value);
@@ -42,7 +44,7 @@ interface IStandardAudioService {
     void SetMicrophoneMute([in] boolean isMute);
     void SetAudioScene([in] int audioScene, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
     void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
-    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName);
+    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName, [in] String networkId);
     void UpdateDualToneState([in] boolean enable, [in] int sessionId, [in] String dupSinkName);
     void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
     void SetParameterCallback([in] IRemoteObject object);
@@ -142,6 +144,10 @@ interface IStandardAudioService {
     void AddCaptureInjector([in] unsigned int sinkPortidx, [out] String rate, [out] String format,
         [out] String channels, [out] String bufferSize);
     void RemoveCaptureInjector([in] unsigned int sinkPortidx);
+    void RegisterCallbackHandle([in] IRemoteObject object);
+    void GetCurrentOutputPipeChangeInfos([out] List<sharedptr<AudioOutputPipeInfo>> pipeChangeInfos);
+    void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
+    void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

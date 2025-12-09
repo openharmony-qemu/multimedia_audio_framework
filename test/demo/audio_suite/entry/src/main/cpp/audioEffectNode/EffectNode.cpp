@@ -11,6 +11,7 @@ const int GLOBAL_RESMGR = 0xFF00;
 const char *EFFECT_NODE_TAG = "[AudioEditTestApp_EffectNode_cpp]";
 
 std::shared_ptr<NodeManager> g_nodeManager = nullptr;
+std::shared_ptr<NodeManager> g_singlePipelineNodeManager = nullptr;
 
 // 创建效果节点后调用该方法将效果节点加入到nodeManager中
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId)
@@ -43,7 +44,11 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
     } else {
         const std::vector<Node> outPutNodes =
             g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
-        result = g_nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
+        if (outPutNodes.size() > 0) {
+            result = g_nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
+        } else {
+            result = AUDIOSUITE_ERROR_NODE_NOT_EXIST;
+        }
     }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EFFECT_NODE_TAG,

@@ -50,11 +50,17 @@ struct AudioParams {
     unsigned int fileLength;
 };
 
-struct UpdateInputNodeParams {
+class UpdateInputNodeParams {
+public:
     std::string inputId;
     unsigned int channels;
     unsigned int sampleRate;
     unsigned int bitsPerSample;
+
+    UpdateInputNodeParams() {}
+    UpdateInputNodeParams(std::string inputId, unsigned int channels, unsigned int sampleRate,
+        unsigned int bitsPerSample) : inputId(inputId), channels(channels), sampleRate(sampleRate),
+        bitsPerSample(bitsPerSample) {}
 };
 
 struct AudioParamsByCascad {
@@ -67,7 +73,7 @@ struct AudioParamsByCascad {
     int32_t pcmBufferSize;
 };
 
-napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params);
+napi_status ParseArguments(napi_env env, napi_callback_info info, AudioParams &params);
 
 void ResetAllIsResetTotalWriteAudioDataSize();
 

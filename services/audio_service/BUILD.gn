@@ -80,10 +80,13 @@ ohos_shared_library("audio_common") {
     "common/src/limiter/audio_limiter.cpp",
     "common/src/limiter/audio_limiter_adapter.cpp",
     "common/src/limiter/audio_limiter_manager.cpp",
+    "common/src/audio_static_buffer_processor.cpp",
+    "common/src/audio_static_buffer_provider.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/audio_tool_calculate.cpp",
     "common/src/app_bundle_manager.cpp",
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
@@ -142,7 +145,7 @@ ohos_shared_library("audio_common") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
-  if (is_ohos && is_clang && target_cpu == "arm64") {
+  if (is_ohos && is_clang && target_cpu == "arm64"  && defined(build_ext_path)) {
     ldflags = [ 
         "-Wl,--emit-relocs", 
         "-Wl,--no-relax", 
@@ -214,6 +217,7 @@ ohos_shared_library("audio_client") {
     "client/src/audio_collaborative_manager.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
+    "client/src/audio_engine_client_manager.cpp",
     "client/src/audio_group_manager.cpp",
     "client/src/audio_manager_listener_stub_impl.cpp",
     "client/src/audio_manager_util.cpp",
@@ -497,6 +501,14 @@ audio_ohos_library("audio_process_service") {
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
 
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
+
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
@@ -548,6 +560,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_manager_listener.cpp",
     "server/src/audio_resource_service.cpp",
     "server/src/audio_server.cpp",
+    "server/src/audio_server_callback.cpp",
     "server/src/audio_server_asr.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/audio_server_hpae_dump.cpp",
@@ -582,6 +595,7 @@ audio_ohos_library("audio_service") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
+    "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -610,6 +624,13 @@ audio_ohos_library("audio_service") {
       "../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
     ]
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
   }
 
   if (audio_framework_config_policy_enable) {
@@ -706,6 +727,7 @@ ohos_shared_library("audio_sasdk") {
 group("audio_service_test_packages") {
   deps = [
     ":audio_hdi_device_test",
+    ":audio_engine_client_manager_test",
     "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
   ]
 
@@ -753,6 +775,7 @@ ohos_executable("audio_hdi_device_test") {
     "../../frameworks/native/audioutils/include",
     "../../frameworks/native/hdiadapter_new/include",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags = [ "-DDEBUG_DIRECT_USE_HDI" ]
@@ -784,6 +807,40 @@ ohos_executable("audio_faststream_playback_test") {
     ":audio_client",
     "../../frameworks/native/audiocapturer:audio_capturer",
     "../../frameworks/native/audiorenderer:audio_renderer",
+    "../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
+ohos_executable("audio_engine_client_manager_test") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+  install_enable = false
+
+  sources = [ "test/example/audio_engine_client_manager_test.cpp" ]
+
+  configs = [ ":audio_client_public_config" ]
+
+  deps = [
+    ":audio_client",
     "../../frameworks/native/audioutils:audio_utils",
   ]
 

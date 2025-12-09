@@ -1370,5 +1370,11 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
 }
+
+int32_t PaRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

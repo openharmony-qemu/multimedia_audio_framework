@@ -957,9 +957,7 @@ HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002, TestSize.Leve
  */
 HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceName = "test_device";
-    sinkInfo.deviceClass = "test_class";
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
 
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
 
@@ -977,8 +975,7 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceClass = "offload";
+    HpaeSinkInfo sinkInfo  = GetSinkInfo();
     auto hpaeRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     hpaeRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
     hpaeRendererManager->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
@@ -1014,8 +1011,7 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_003, TestSize.Level1)
 {
     HpaeNodeInfo nodeInfo;
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceClass = "offload";
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
     auto hpaeRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     hpaeRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
     hpaeRendererManager->sinkOutputNode_->SetSinkState(STREAM_MANAGER_SUSPENDED);
@@ -1538,7 +1534,7 @@ HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
  */
 HWTEST_F(HpaeRendererManagerTest, MoveAllStreamToNewSinkInner_001, TestSize.Level0)
 {
-    HpaeSinkInfo info;
+    HpaeSinkInfo info = GetSinkInfo();
     auto hpaeOffloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(info);
     auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(info);
     auto mockCallback = std::make_shared<MockSendMsgCallback>();

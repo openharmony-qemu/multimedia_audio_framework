@@ -78,10 +78,13 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -114,6 +117,13 @@ private:
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
     int32_t CheckBluetoothScenario(void);
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -199,6 +209,11 @@ private:
     };
 
     A2dpParam a2dpParam_;
+    DeviceType device_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    // For sink info notify
+    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

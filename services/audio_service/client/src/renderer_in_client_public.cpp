@@ -123,10 +123,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     if (operation == RESTORE_SESSION) {
         // fix it when restoreAudioStream work right
-        if (audioStreamTracker_ && audioStreamTracker_.get()) {
-            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
-                state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-        }
         return SUCCESS;
     }
 
@@ -217,9 +213,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
-        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
+        "remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
-        info.channels, info.format, eStreamType_, info.encoding);
+        info.channels, info.format, eStreamType_, info.encoding,
+        static_cast<unsigned long long>(info.remoteChannelLayout), info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -227,6 +225,11 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
+        if (info.isRemoteSpatialChannel) {
+            cfg.outChannelLayout = info.remoteChannelLayout;
+            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx",
+                static_cast<unsigned long long>(cfg.outChannelLayout));
+        }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
             AUDIO_ERR_LOG("AudioStream: converter construct error");
@@ -239,7 +242,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
-        AUDIO_ERR_LOG("State is not new, release existing stream and recreate, state %{public}d", state_.load());
+        HILOG_COMM_ERROR("State is not new, release existing stream and recreate, state %{public}d", state_.load());
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
@@ -439,6 +442,12 @@ int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     return ipcStream_->GetLatency(latency);
+}
+
+int32_t RendererInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->GetLatencyWithFlag(latency, flag);
 }
 
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
@@ -708,14 +717,14 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+            HILOG_COMM_WARN("Strong ref is nullptr, could cause error");
         }
         strongRef = nullptr;
         // start loop
         while (keepRunning) {
             strongRef = weakRef.lock();
             if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("RendererInClientInner destroyed");
+                HILOG_COMM_INFO("RendererInClientInner destroyed");
                 break;
             }
             keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop
@@ -729,13 +738,12 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
-        "RENDER_MODE_CALLBACK");
+    AUDIO_INFO_LOG("to %{public}d", renderMode);
     if (renderMode_ == renderMode) {
         return SUCCESS;
     }
 
-    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK.
+    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK or RENDER_MODE_STATIC.
     if (renderMode_ == RENDER_MODE_CALLBACK && renderMode == RENDER_MODE_NORMAL) {
         AUDIO_ERR_LOG("SetRenderMode from callback to normal is not supported.");
         return ERR_INCORRECT_MODE;
@@ -987,9 +995,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
-    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
@@ -1088,7 +1093,7 @@ bool RendererInClientInner::StopAudioStream()
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !rendererInfo_.isStatic) {
         lock.lock();
         DrainAudioStreamInner(true);
     }
@@ -1485,6 +1490,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
+
+    if (rendererInfo_.isStatic) {
+        GetStaticBufferInfo(info.staticBufferInfo);
+    }
+    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1934,12 +1944,6 @@ RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatu
 void RendererInClientInner::FetchDeviceForSplitStream()
 {
     AUDIO_INFO_LOG("Fetch output device for split stream %{public}u", sessionId_);
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
-            state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    } else {
-        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
-    }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 

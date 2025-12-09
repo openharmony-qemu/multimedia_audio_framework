@@ -31,6 +31,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "manager/hdi_monitor.h"
 #include "adapter/i_device_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -78,6 +79,8 @@ int32_t AudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
 
     sinkInited_ = true;
+    InitPipeInfo();
+
     return SUCCESS;
 }
 
@@ -94,6 +97,7 @@ void AudioRenderSink::DeInit(void)
     renderInited_ = false;
     deviceManager->DestroyRender(adapterNameCase_, hdiRenderId_);
     audioRender_ = nullptr;
+    DeinitPipeInfo();
 }
 
 bool AudioRenderSink::IsInited(void)
@@ -138,6 +142,7 @@ int32_t AudioRenderSink::Start(void)
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
     isDataLinkConnected_ = false;
@@ -147,7 +152,7 @@ int32_t AudioRenderSink::Start(void)
 int32_t AudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_WARNING_LOG("halName: %{public}s", halName_.c_str());
+    HILOG_COMM_WARN("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Stop");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -171,6 +176,7 @@ int32_t AudioRenderSink::Stop(void)
     }
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     started_ = false;
 
@@ -213,7 +219,7 @@ int32_t AudioRenderSink::Pause(void)
 
 int32_t AudioRenderSink::Flush(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    HILOG_COMM_INFO("[AudioRenderSink::Flush]halName: %{public}s", halName_.c_str());
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
@@ -270,7 +276,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     if (stamp >= RENDER_FRAME_LIMIT) {
-        AUDIO_WARNING_LOG("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
+        HILOG_COMM_WARN("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
     }
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_) {
@@ -320,7 +326,7 @@ void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::stri
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
+    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
         halName_.c_str());
     if (condition.starts_with("get_usb_info#C") && halName_ == HDI_ID_INFO_USB) {
         // init adapter to get parameter before load sink module (need fix)
@@ -591,7 +597,7 @@ int32_t AudioRenderSink::SetPaPower(int32_t flag)
     std::string param;
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    AUDIO_INFO_LOG("flag: %{public}d, paStatus: %{public}d", flag, paStatus_.load());
+    HILOG_COMM_INFO("flag: %{public}d, paStatus: %{public}d", flag, paStatus_.load());
     if (flag == 0 && paStatus_ == 1) {
         param = "zero_volume=true;routing=0";
         AUDIO_INFO_LOG("param: %{public}s", param.c_str());
@@ -924,7 +930,7 @@ int32_t AudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
+    HILOG_COMM_INFO("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
         "devicePin: %{public}u, desc: %{public}s", halName_.c_str(), param.sampleRate, param.channelCount, param.format,
         deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -941,6 +947,7 @@ int32_t AudioRenderSink::CreateRender(void)
 
 int32_t AudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
 {
+    ChangePipeDevice(outputDevices);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -1277,6 +1284,90 @@ void AudioRenderSink::WaitForDataLinkConnected()
         isDataLinkConnected_ = true;
     }
     dataConnectionWaitLock.unlock();
+}
+
+void AudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    ChangePipeStream(change, streamId, usage, state);
+}
+
+std::shared_ptr<AudioOutputPipeInfo> AudioRenderSink::GetOutputPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    return copyPipe;
+}
+
+void AudioRenderSink::InitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
+        hdiRenderId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
+    pipeInfo_->SetDevice(currentActiveDevice_);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void AudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetStatus(state);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+}
+
+void AudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->SetDevices(devices);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
+}
+
+void AudioRenderSink::ChangePipeStream(StreamChangeType change,
+    uint32_t streamId, StreamUsage usage, RendererState state)
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+
+    switch (change) {
+        case STREAM_CHANGE_TYPE_ADD:
+            pipeInfo_->AddStream(streamId, usage, state);
+            break;
+        case STREAM_CHANGE_TYPE_REMOVE:
+            pipeInfo_->RemoveStream(streamId);
+            break;
+        case STREAM_CHANGE_TYPE_STATE_CHANGE:
+            pipeInfo_->UpdateStream(streamId, state);
+            break;
+        default:
+            return;
+    }
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
+}
+
+void AudioRenderSink::DeinitPipeInfo()
+{
+    std::lock_guard<std::mutex> lock(pipeLock_);
+    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
+    pipeInfo_->RemoveAllStreams();
+    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
+
+    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
+    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
+
+    // clear pipe for get func
+    pipeInfo_ = nullptr;
 }
 
 } // namespace AudioStandard

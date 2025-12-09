@@ -85,6 +85,12 @@ public:
         uint32_t sampleRate, uint32_t bytesPerSample);
 };
 
+class AudioTypeUtils {
+public:
+    static StreamUsage GetStreamUsageByStreamType(AudioStreamType streamType);
+    static HdiAdapterType HalNameToType(std::string halName);
+};
+
 class Trace {
 public:
     static void Count(const std::string &value, int64_t count);
@@ -124,6 +130,8 @@ public:
     static std::string NanoTimeToString(int64_t nanoTime);
 
     static void GetAllTimeStamp(std::vector<uint64_t> &timestamps);
+
+    static bool CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval);
 };
 
 /**
@@ -433,6 +441,7 @@ public:
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
+    void UpdateRendererInServerTime(std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
 
@@ -444,6 +453,7 @@ private:
     LatencyMonitor() = default;
 
     std::string rendererMockTime_ = "";
+    std::string rendererInServerDetectedTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
     std::string capturerDetectedTime_ = "";
@@ -581,6 +591,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_OFFLOAD_CAPTURE = 12,
     HDI_CAPTURE_OFFSET_UNPROCESS = 13,
     HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
+    HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -623,6 +634,8 @@ std::string ConvertToStringForChannel(const AudioChannel channel);
 uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
 
 std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
+
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 
 } // namespace AudioStandard
 } // namespace OHOS

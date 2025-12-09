@@ -977,6 +977,8 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, 
     interruptServiceTest->zonesMap_[1] = audioInterruptZone;
     interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
 }
 
 /**
@@ -1825,7 +1827,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
+    EXPECT_NE(audioInterruptService->ownerUid_, formerUid_);
 }
 
 /**
@@ -1859,7 +1861,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
+    EXPECT_NE(audioInterruptService->ownerUid_, formerUid_);
 }
 
 /**
@@ -3887,8 +3889,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_121, TestSize.Level1)
 */
 HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_129, TestSize.Level1)
 {
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_EQ(audioCoreService, nullptr);
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
     audioInterruptService->Init(GetPolicyServerTest());

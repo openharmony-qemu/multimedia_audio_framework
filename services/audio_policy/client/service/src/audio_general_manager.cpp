@@ -325,12 +325,6 @@ int32_t AudioGeneralManager::SelectOutputDevice(
         ERR_INVALID_PARAM, "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
-    size_t validSize = 64;
-    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
-        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
-        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
-        return ERR_INVALID_PARAM;
-    }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "audioRendererFilter is nullptr.");
@@ -457,12 +451,6 @@ int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         ERR_INVALID_PARAM, "invalid parameter");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
-    size_t validSize = 64; // Size of remote network ID
-    if (audioDeviceDescriptors[0]->networkId_ != LOCAL_NETWORK_ID &&
-        audioDeviceDescriptors[0]->networkId_.size() != validSize) {
-        AUDIO_ERR_LOG("SelectOutputDevice: invalid networkId.");
-        return ERR_INVALID_PARAM;
-    }
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
@@ -491,6 +479,20 @@ int32_t AudioGeneralManager::SetSleAudioOperationCallback(const std::shared_ptr<
 int32_t AudioGeneralManager::RestoreDistributedDeviceInfo()
 {
     return AudioPolicyManager::GetInstance().RestoreDistributedDeviceInfo();
+}
+
+int32_t AudioGeneralManager::RegisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().RegisterPreferredDeviceSetCallback(callback);
+}
+
+int32_t AudioGeneralManager::UnregisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(callback);
 }
 } // namespace AudioStandard
 } // namespace OHOS

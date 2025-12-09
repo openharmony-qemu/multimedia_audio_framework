@@ -94,8 +94,8 @@ unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(
 {
     sptr<IpcOfflineStreamMock> mockProxy = new IpcOfflineStreamMock();
     EXPECT_CALL(*mockProxy, PrepareOfflineEffectChain(_, _)).WillOnce(DoAll(
-        SetArgReferee<0>(AudioSharedMemory::CreateFormLocal(1, "testEffect")),
-        SetArgReferee<1>(AudioSharedMemory::CreateFormLocal(1, "testEffect")),
+        SetArgReferee<0>(AudioSharedMemory::CreateFromLocal(1, "testEffect")),
+        SetArgReferee<1>(AudioSharedMemory::CreateFromLocal(1, "testEffect")),
         Return(0)
     ));
     unique_ptr<OfflineAudioEffectChainImpl> chain = std::make_unique<OfflineAudioEffectChainImpl>();

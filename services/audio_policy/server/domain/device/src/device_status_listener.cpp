@@ -48,6 +48,8 @@ const uint8_t EVENT_NUM_TYPE = 2;
 const uint8_t EVENT_PARAMS = 4;
 const uint8_t D_EVENT_PARAMS = 5;
 const std::string DEVICE_STREAM_INFO_PREFIX = "CAPS=";
+const std::string DEVICE_EXTRA_INFO_PREFIX = "INFO=";
+const uint32_t HEX_BASE = 16;
 
 static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
 {
@@ -113,6 +115,21 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
     }
 }
 
+static void ParseDeviceExtraInfo(std::string &info, DStatusInfo &statusInfo)
+{
+    std::string deviceExtraInfoStr;
+    auto pos = info.find(DEVICE_EXTRA_INFO_PREFIX);
+    CHECK_AND_RETURN_LOG(pos != std::string::npos, "invalid info");
+    pos += DEVICE_EXTRA_INFO_PREFIX.length();
+    auto endPos = info.find(";", pos);
+    deviceExtraInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
+
+    std::vector<std::string> strList = SplitStr(deviceExtraInfoStr, ',');
+    CHECK_AND_RETURN_LOG(strList.size() == 3, "invalid extra info num"); // 3:member num
+    statusInfo.dmDeviceInfo = deviceExtraInfoStr; // str: deviceSN,dmDeviceType,isStereo
+    statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul(strList[1], nullptr, HEX_BASE)); // 1: dmDeviceType
+}
+
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
@@ -133,7 +150,9 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         }
 
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
+        DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
         ReceiveRemoteOffloadInfo(info, statusInfo);
+        ParseDeviceExtraInfo(info, statusInfo);
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
         devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
@@ -210,6 +229,31 @@ DeviceStatusListener::DeviceStatusListener(IDeviceStatusObserver &observer)
     : deviceObserver_(observer), hdiServiceManager_(nullptr), listener_(nullptr) {}
 
 DeviceStatusListener::~DeviceStatusListener() = default;
+
+void DeviceStatusListener::ParseModelFromProtocol(const std::string &info, DStatusInfo &statusInfo)
+{
+    static const std::string key = "PROTOCOL=";
+
+    size_t pos = info.find(key);
+    if (pos == std::string::npos) {
+        return;
+    }
+
+    pos += key.length();
+    size_t end = info.find(';', pos);
+
+    std::string protocol;
+    if (end == std::string::npos) {
+        protocol = info.substr(pos);
+    } else {
+        protocol = info.substr(pos, end - pos);
+    }
+    if (protocol == "0") {
+        statusInfo.model = "hiplay";
+    } else if (protocol == "1") {
+        statusInfo.model = "hicar";
+    }
+}
 
 int32_t DeviceStatusListener::RegisterDeviceStatusListener()
 {

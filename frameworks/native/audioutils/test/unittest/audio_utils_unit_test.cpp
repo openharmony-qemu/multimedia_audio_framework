@@ -3503,5 +3503,31 @@ HWTEST(AudioUtilsUnitTest, GenerateAppsUidStr_001, TestSize.Level1)
     ret = GenerateAppsUidStr(appsUid);
     EXPECT_NE(ret, "");
 }
+
+/**
+ * @tc.name  : Test ConvertAudioRenderRateToSpeed API with normal rate
+ * @tc.type  : FUNC
+ * @tc.number: ConvertAudioRenderRateToSpeed_001
+ * @tc.desc  : Test ConvertAudioRenderRateToSpeed API with RENDER_RATE_NORMAL
+ */
+HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
+{
+    AudioRendererRate renderRate = RENDER_RATE_NORMAL;
+    float ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 1.0f);
+
+    renderRate = RENDER_RATE_DOUBLE;
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 2.0f);
+
+    renderRate = RENDER_RATE_HALF;
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 0.5f);
+
+    renderRate = static_cast<AudioRendererRate>(999);
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 1.0f);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

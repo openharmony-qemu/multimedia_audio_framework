@@ -121,6 +121,11 @@ public:
     static napi_status SetTimeStampInfo(const napi_env &env, const Timestamp &timestamp, napi_value &result);
     static napi_status SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
         const std::vector<int32_t> &values, napi_value &result);
+    static napi_status CreateJsAudioStreamInfo(const napi_env &env, const AudioStreamInfo &info, napi_value &result);
+    static napi_status CreateJsAudioStreamInfosArray(const napi_env &env,
+        const std::list<AudioStreamInfo> &capabilities, napi_value &result);
+    static napi_status SetJsAudioStreamInfos(const napi_env &env,
+        const std::list<AudioStreamInfo> &capabilities, napi_value &result);
     static napi_status SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
         napi_value &result);
     static napi_status SetDeviceDescriptors(const napi_env &env,

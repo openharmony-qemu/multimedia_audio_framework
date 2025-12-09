@@ -951,6 +951,12 @@ enum RenderTarget: i32 {
   INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 }
 
+enum AudioLatencyType: i32 {
+  LATENCY_TYPE_ALL = 0,
+  LATENCY_TYPE_SOFTWARE = 1,
+  LATENCY_TYPE_HARDWARE = 2,
+}
+
 struct AudioTimestampInfo {
   @readonly framePos: i64;
   @readonly timestamp: i64;
@@ -1064,6 +1070,8 @@ interface AudioRenderer {
 
   GetLoudnessGain(): f64;
 
+  GetLatency(type: AudioLatencyType): i32;
+
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
   OnOutputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
@@ -1163,17 +1171,29 @@ enum AudioChannelLayout: i64 {
 
 function GetAudioManager(): AudioManager;
 
+union AudioCapturerOrNull {
+  type_audioCapturer: AudioCapturer;
+  @null type_null;
+}
 @gen_async("createAudioCapturer")
 @gen_promise("createAudioCapturer")
-function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturer;
+function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
 
+union AudioRendererOrNull {
+  type_audioRenderer: AudioRenderer;
+  @null type_null;
+}
 @gen_async("createAudioRenderer")
 @gen_promise("createAudioRenderer")
-function CreateAudioRendererSync(options: AudioRendererOptions): AudioRenderer;
+function CreateAudioRendererSync(options: AudioRendererOptions): AudioRendererOrNull;
 
+union TonePlayerOrNull {
+  type_tonePlayer: TonePlayer;
+  @null type_null;
+}
 @gen_async("createTonePlayer")
 @gen_promise("createTonePlayer")
-function CreateTonePlayerSync(options: AudioRendererInfo): TonePlayer;
+function CreateTonePlayerSync(options: AudioRendererInfo): TonePlayerOrNull;
 
 struct AudioSpatialEnabledStateForDevice {
   deviceDescriptor: AudioDeviceDescriptor;
@@ -1256,7 +1276,11 @@ interface AsrProcessingController {
   GetAsrWhisperDetectionMode(): AsrWhisperDetectionMode;
 }
 
-function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingController;
+union AsrProcessingControllerOrNull {
+  type_asrProcessingController: AsrProcessingController;
+  @null type_null;
+}
+function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingControllerOrNull;
 
 interface AudioLoopback {
   @gen_promise("getStatus")

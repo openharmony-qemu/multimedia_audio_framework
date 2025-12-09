@@ -28,6 +28,8 @@ public:
 private:
     void UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);
+    void CeliaCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        AudioFocuState &incomingState, InterruptEventInternal &interruptEvent, const std::string &appName);
 };
 
 } // namespace AudioStandard

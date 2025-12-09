@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,9 +57,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Init()
 
     // load algorithm so
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-        soPath.c_str(), dlerror());
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     // load functions in SoundField algorithm so
     algoApi_.getSize = reinterpret_cast<Fun_iMedia_Surround_GetSize>(dlsym(libHandle_, "iMedia_Surround_GetSize"));
@@ -70,7 +70,11 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Init()
     bool loadAlgoApiFail =
         algoApi_.getSize == nullptr || algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr ||
         algoApi_.setPara == nullptr || algoApi_.getPara == nullptr;
-    CHECK_AND_RETURN_RET_LOG(!loadAlgoApiFail, ERROR, "load SoundField algorithm function fail");
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("Error loading symbol: %{public}s", dlerror());
+        Deinit();
+        return ERROR;
+    }
 
     // allocate memory for SoundField algorithm
     int32_t ret = algoApi_.getSize(&stSize_);
@@ -119,7 +123,12 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
         algoRunBuf_ != nullptr && algoScratchBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
 
     // set SoundField mode
-    iMedia_Surround_PARA surroundType = static_cast<iMedia_Surround_PARA>(std::stoi(paramValue));
+    iMedia_Surround_PARA surroundType = IMEDIA_SWS_SOUROUND_BROAD;
+    int32_t value = 0;
+    CHECK_AND_RETURN_RET_LOG(
+        StringConverter(paramValue, value), ERROR, "convert invalid string: %{public}s", paramValue.c_str());
+    surroundType = static_cast<iMedia_Surround_PARA>(value);
+
     int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, surroundType);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "set parameter fail, ret: %{public}d", ret);
 

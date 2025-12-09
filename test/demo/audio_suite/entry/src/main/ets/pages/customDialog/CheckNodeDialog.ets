@@ -15,10 +15,20 @@ import {
     VoiceBeautifierMap,
     AudioSeparationType,
     AudioSeparationMap,
-    NumberToNodeTypeMap
+    NumberToNodeTypeMap,
+    GeneralVoiceChangeType,
+    PureVoiceChangeGenderOption,
+    PureVoiceChangeType,
+    ClockWise,
+    SpaceRender,
+    SpaceRenderMode,
+    SpaceRenderModeMap,
+    ClockWiseMap,
+    SpacePosition
 } from "../../utils/importSongs/InterfaceInfo";
 import { JSON, util } from '@kit.ArkTS';
 import { Logger } from '../../utils/Logger';
+import { SpaceRenderPositionView } from '../common/SpaceRender';
 import { AlertDialog } from '@kit.ArkUI';
 import audioNapi from 'libentry.so';
 
@@ -26,7 +36,7 @@ const TAG: string = 'AudioEditTestApp_CheckNodeDialog';
 
 // 均衡
 @Component
-struct EquailizerComponent {
+struct EqualizerComponent {
     // 均衡频带
     @Link balanceBandGains: number[];
     onCancel?: () => void;
@@ -455,6 +465,337 @@ struct AudioSeparationComponent {
     }
 }
 
+//空间渲染
+@Component
+struct SpaceRenderComponent {
+  @Prop spaceRenderPara: SpaceRender;
+  onCancel?: () => void;
+  onAgree?: (spaceRenderState: SpaceRender) => void;
+
+  // 每行独立的状态
+  @State fixedPositionOpen: boolean = false
+  @State dynamicRenderOpen: boolean = false
+  @State extensionOpen: boolean = false
+  @State spaceRenderState: SpaceRender = {
+    mode: this.spaceRenderPara.mode ?? SpaceRenderMode.CLOSE,
+    fixedPosition: {
+      x: this.spaceRenderPara.fixedPosition?.x ?? 0,
+      y: this.spaceRenderPara.fixedPosition?.y ?? 0,
+      z: this.spaceRenderPara.fixedPosition?.z ?? 0
+    },
+    dynamicPosition: {
+      x: this.spaceRenderPara.dynamicPosition?.x ?? 0,
+      y: this.spaceRenderPara.dynamicPosition?.y ?? 0,
+      z: this.spaceRenderPara.dynamicPosition?.z ?? 0
+    },
+    singleWeekCycleTime: this.spaceRenderPara.singleWeekCycleTime ?? 2,
+    clockWise: this.spaceRenderPara.clockWise ?? ClockWise.CLOCK_WISE,
+    expansionRadius: this.spaceRenderPara.expansionRadius ?? 1,
+    expansionAngle: this.spaceRenderPara.expansionAngle ?? 1
+  };
+
+  scroller: Scroller = new Scroller();
+
+  private getFormattedCoords(): string {
+    let x = 0, y = 0, z = 0;
+
+    if (this.spaceRenderState.mode === SpaceRenderMode.FIXED_POSITION && this.spaceRenderState.fixedPosition) {
+      x = this.spaceRenderState.fixedPosition.x;
+      y = this.spaceRenderState.fixedPosition.y;
+      z = this.spaceRenderState.fixedPosition.z;
+    } else if (this.spaceRenderState.mode === SpaceRenderMode.DYNAMIC_RENDER && this.spaceRenderState.dynamicPosition) {
+      x = this.spaceRenderState.dynamicPosition.x;
+      y = this.spaceRenderState.dynamicPosition.y;
+      z = this.spaceRenderState.dynamicPosition.z;
+    }
+
+    return `x=${x.toFixed(2)}, y=${y.toFixed(2)}, z=${z.toFixed(2)}`;
+  }
+
+  build() {
+    Scroll(this.scroller) {
+      Column() {
+        // 第一行：固定摆位
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("固定摆位")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 0 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 0) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 0;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        // 仅当按钮打开时，才显示本行内容
+        if (this.spaceRenderState.mode === 0) {
+          this.RenderView()
+        }
+
+        // 第二行：动态渲染
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("动态渲染")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 1 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 1) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 1;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        if (this.spaceRenderState.mode === 1) {
+          this.RenderView()
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('单周环绕时间')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.singleWeekCycleTime}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.singleWeekCycleTime,
+                min: 2,
+                max: 40,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  this.spaceRenderState.singleWeekCycleTime = value;
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+
+          Row() {
+            Radio({
+              value: 'Radio1',
+              group: 'radioGroup',
+              indicatorType: RadioIndicatorType.DOT
+            })
+              .margin({ left: $r('app.float.margin_10') })
+              .checked(this.spaceRenderState.clockWise === undefined ||
+                this.spaceRenderState.clockWise === ClockWise.CLOCK_WISE)
+              .onChange((isChecked: boolean) => {
+                if (isChecked) {
+                  this.spaceRenderState.clockWise = ClockWise.CLOCK_WISE;
+                }
+              })
+            Text('顺时针')
+              .fontSize(14)
+            Radio({
+              value: 'Radio2',
+              group: 'radioGroup',
+              indicatorType: RadioIndicatorType.DOT
+            })
+              .margin({ left: $r('app.float.margin_10') })
+              .checked(this.spaceRenderState.clockWise === ClockWise.Counter_Clock_Wise)
+              .onChange((isChecked: boolean) => {
+                if (isChecked) {
+                  this.spaceRenderState.clockWise = ClockWise.Counter_Clock_Wise;
+                }
+              })
+            Text('逆时针')
+              .fontSize(14)
+          }
+          .width('100%')
+          .margin({ bottom: $r('app.float.margin_10') })
+          .justifyContent(FlexAlign.Start)
+        }
+
+        // 第三行：扩展
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("扩展")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 2 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 2) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 2;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        if (this.spaceRenderState.mode === 2) {
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('扩展半径')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.expansionRadius}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.expansionRadius,
+                min: 1.0,
+                max: 5.0,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  if (parseInt(value.toFixed(1)) === 0) {
+                    this.spaceRenderState.expansionRadius = 0.1;
+                  } else {
+                    this.spaceRenderState.expansionRadius = Math.round(value);
+                  }
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('扩展角度')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.expansionAngle}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.expansionAngle,
+                min: 1,
+                max: 360,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  this.spaceRenderState.expansionAngle = value;
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+        }
+
+        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+          Button('取消')
+            .margin({ left: $r('app.float.margin_10') })
+            .backgroundColor(0xFFFFFF)
+            .fontColor(Color.Black)
+            .onClick(() => {
+              if (this.onCancel) {
+                this.onCancel()
+              }
+            })
+          Button('确定')
+            .margin({ right: $r('app.float.margin_10') })
+            .backgroundColor(0xFFFFFF)
+            .fontColor(Color.Black)
+            .onClick(() => {
+              if (this.onAgree) {
+                this.onAgree(this.spaceRenderState);
+              }
+            })
+        }.margin({ top: $r('app.float.margin_10') })
+      }
+      .padding($r('app.float.padding_10'))
+    }
+  }
+
+  @Builder
+  RenderView() {
+    Column() {
+      Row() {
+        Column() {
+          Text('正视图')
+            .fontSize(14)
+        }
+        .width('50%')
+        Column() {
+          Text('俯视图')
+            .fontSize(14)
+        }
+        .width('50%')
+      }
+      .margin({ top: $r('app.float.margin_10'), bottom: $r('app.float.margin_10') })
+      Row() {
+        Column() {
+          Text(this.getFormattedCoords())
+            .fontSize(14)
+            .fontColor('#ffffff')
+            .fontWeight(FontWeight.Bold)
+            .background('#2C3E50')  // 深蓝灰，现代感强
+            .borderRadius(8)
+            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+            .width('auto')
+            .textAlign(TextAlign.Center)
+            .shadow({ color: '#00000020', radius: 4, offsetX: 0, offsetY: 2 })
+            .margin({ bottom: 8 })
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      }
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .width('100%')
+
+      Row() {
+        SpaceRenderPositionView({
+          spaceRender: this.spaceRenderState
+        })
+      }
+      .margin({ bottom: $r('app.float.margin_10') })
+    }
+  }
+}
+
 // 音速音调
 @Component
 struct SoundSpeedToneComponent {
@@ -540,6 +881,378 @@ struct SoundSpeedToneComponent {
   }
 }
 
+@Component
+struct GeneralVoiceChangeComponent {
+    private scrollerIndex: Scroller = new Scroller();
+    @Link generalVoiceChangeType: GeneralVoiceChangeType;
+    onCancel?: () => void;
+    onAgree?: () => void;
+
+    build() {
+        Scroll(this.scrollerIndex) {
+            Column() {
+                Row() {
+                    Text(`${NodeType.GENERAL_VOICE_CHANGE}`)
+                        .margin({ bottom: $r('app.float.margin_10') })
+                }
+                .margin({ top: $r('app.float.margin_10') })
+
+                Column() {
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE
+                                    })
+                                Text('可爱').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cyberpunk', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK
+                                    })
+                                Text('赛博朋克').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'female', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE
+                                    })
+                                Text('女声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'male', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE
+                                    })
+                                Text('男声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'mix', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX
+                                    })
+                                Text('混响').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'monster', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER
+                                    })
+                                Text('怪物').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'seasoned', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED
+                                    })
+                                Text('沉稳').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'synth', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH
+                                    })
+                                Text('合成器').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'trill', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL
+                                    })
+                                Text('颤音').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'war', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.generalVoiceChangeType == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR)
+                                    .onChange(() => {
+                                        this.generalVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR
+                                    })
+                                Text('战争').fontSize(20)
+                            }.width(80)
+                        }
+                    }.rowsTemplate('1fr 1fr').height('80%')
+                }
+                .margin({ right: 20 })
+                .padding({ left: '10%', right: '10%' })
+
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Button('取消')
+                        .onClick(() => {
+                            if (this.onCancel) {
+                                this.onCancel()
+                            }
+                        })
+                    Button('确定')
+                        .onClick(() => {
+                            if (this.onAgree) {
+                                this.onAgree();
+                            }
+                        })
+                }.margin({ top: $r('app.float.margin_10') })
+                .padding(20)
+            }
+        }
+    }
+}
+
+@Component
+struct PureVoiceChangeComponent {
+    private scrollerIndex: Scroller = new Scroller();
+    @Link pureVoiceGender: PureVoiceChangeGenderOption;
+    @Link pureVoiceChangeType: PureVoiceChangeType;
+    @Link soundTone: number;
+    @State needSoundTone: boolean = false;
+    onCancel?: () => void;
+    onAgree?: () => void;
+
+    build() {
+        Scroll(this.scrollerIndex) {
+            Column() {
+                Row() {
+                    Text(`${NodeType.GENERAL_VOICE_CHANGE}`)
+                        .margin({ bottom: $r('app.float.margin_10') })
+                }
+                .margin({ top: $r('app.float.margin_10') })
+
+                Column() {
+                    Row() {
+                        Text("性别")
+                    }
+
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE
+                                    })
+                                Text('女性').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'PureVoiceGender' })
+                                    .checked(this.pureVoiceGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE)
+                                    .onChange(() => {
+                                        this.pureVoiceGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE
+                                    })
+                                Text('男性').fontSize(20)
+                            }.width(80)
+                        }
+                    }
+
+                    Row() {
+                        Text("变声类型")
+                    }
+
+                    Grid() {
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'close', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE
+                                    })
+                                Text('无').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON
+                                    })
+                                Text('卡通').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'cute', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE
+                                    })
+                                Text('可爱').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'female', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE
+                                    })
+                                Text('女声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'male', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE
+                                    })
+                                Text('男声').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'monster', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER
+                                    })
+                                Text('怪物').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'robot', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS
+                                    })
+                                Text('机器人').fontSize(20)
+                            }.width(80)
+                        }
+
+                        GridItem() {
+                            Column() {
+                                Radio({ value: 'seasoned', group: 'PureVoiceChangeType' })
+                                    .checked(this.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED)
+                                    .onChange(() => {
+                                        this.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED
+                                    })
+                                Text('沉稳').fontSize(20)
+                            }.width(80)
+                        }
+                    }.rowsTemplate('1fr 1fr').height('80%')
+                    Column() {
+                        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                        Text('音调')
+                        Checkbox({ name: 'pureSoundTone', group: 'pureSoundTone' })
+                            .select(false)
+                            .selectedColor('app.color.index_audio_clip_card')
+                            .shape(CheckBoxShape.CIRCLE)
+                            .onChange((value: boolean) => {
+                            this.needSoundTone = value;
+                            if (!value) {
+                                this.soundTone = 0;
+                            }
+                            })
+                        Text(`+${this.soundTone.toFixed(1)}`)
+                        }.padding('10px')
+                        if (this.needSoundTone) {
+                        Slider({
+                            value: this.soundTone,
+                            step: 0.1,
+                            style: SliderStyle.OutSet,
+                            min: 0.3,
+                            max: 3,
+                        })
+                            .selectedColor($r('app.color.index_audio_clip_card'))
+                            .onChange((value: number) => {
+                            this.soundTone = value;
+                            })
+                        }
+                    }
+                    .height(50)
+                    .padding('10px')
+                    .backgroundColor($r('app.color.sound_speed_tone_backgroundColor'))
+                    .borderRadius(10)
+                }
+                .margin({ right: 20 })
+                .padding({ left: '10%', right: '10%' })
+
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+                    Button('取消')
+                        .onClick(() => {
+                            if (this.onCancel) {
+                                this.onCancel()
+                            }
+                        })
+                    Button('确定')
+                        .onClick(() => {
+                            if (this.onAgree) {
+                                this.onAgree();
+                            }
+                        })
+                }.margin({ top: $r('app.float.margin_10') })
+                .padding(20)
+            }
+        }
+    }
+}
+
 @CustomDialog
 struct EffectNodeDialog {
     @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
@@ -563,33 +1276,45 @@ struct EffectNodeDialog {
     @State selectedNoiseReduction: number = -1;
     //音源分离，默认为人声
     @State selectedAudioSeparation: AudioSeparationType = AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
+    // 空间渲染
+    @State spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
     // 音速
     @State soundSpeed: number = 1.0;
     // 音调
     @State soundTone: number = 1.0;
     // 实时播放（音源分离）
     @Consume isSeparation: boolean = false;
+    @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
+    @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     controllerTwo?: CustomDialogController;
 
     build() {
         Column() {
             if (this.selectedEffectNode === NodeType.EQ) {
-                EquailizerComponent({
+                EqualizerComponent({
                     balanceBandGains: this.balanceBandGains,
                     onCancel: () => {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        let equailizerId = util.generateRandomUUID(true);
+                        let equalizerId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result = audioNapi.multiSetEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId);
-                        } else {
-                            result =
-                                audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equailizerId, this.currentInputId,
-                                this.selectedNode);
                         }
+                        result =
+                            audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, equalizerId, this.currentInputId,
+                            this.selectedNode);
                         if (result !== 0) {
                             Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                             this.getUIContext().showAlertDialog({
@@ -601,7 +1326,7 @@ struct EffectNodeDialog {
 
                         //添加效果节点到混音台---数据处理
                         let node: Node = {
-                            id: equailizerId,
+                            id: equalizerId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
                             balanceBandGains: this.balanceBandGains
@@ -623,12 +1348,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startFieldEffect(this.currentInputId, this.selectedSoundFiled, nodeId, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
@@ -660,12 +1382,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startEnvEffect(this.currentInputId, nodeId, this.selectedEnvironment, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加环境节点失败',
@@ -698,16 +1417,12 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiAddNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
-                        } else {
-                            //预留编辑降噪功能方法
-                            result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
                         }
+                        result = audioNapi.addNoiseReduction(nodeId, this.currentInputId, this.selectedNode);
             
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
-                                message: '添加声场节点失败',
+                                message: '添加降噪节点失败',
                                 autoCancel: true
                             });
                             return;
@@ -735,12 +1450,10 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiStartVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
-                        } else {
-                            result =
-                                audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId, this.selectedNode);
                         }
+                        result =
+                            audioNapi.startVBEffect(this.currentInputId, this.selectedVoiceBeautifier, voiceBeautifierId,
+                                this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: '添加美化节点失败',
@@ -772,11 +1485,9 @@ struct EffectNodeDialog {
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
                             result = audioNapi.multiPipelineEnvPrepare(this.currentPipelineId);
-                            result =
-                                audioNapi.multiAddAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
-                        } else {
-                            result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId, this.selectedNode);
                         }
+                        result = audioNapi.addAudioSeparation(this.selectedAudioSeparation, nodeId, this.currentInputId,
+                            this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
                                 message: `添加${AudioSeparationMap.get(this.selectedAudioSeparation)}失败`,
@@ -796,6 +1507,89 @@ struct EffectNodeDialog {
 
                         this.controllerTwo?.close();
                         this.isSeparation = true;
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.SPACE_RENDER) {
+                SpaceRenderComponent({
+                    spaceRenderPara: this.spaceRenderPara,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: (spaceRenderState: SpaceRender) => {
+                        // 调用napi的底层效果节点
+                        const nodeId = util.generateRandomUUID(true);
+                        if (spaceRenderState.mode === -1) {
+                        this.getUIContext().showAlertDialog({
+                            message: `请选择一种模式`,
+                            autoCancel: true
+                        });
+                        return;
+                        }
+                        if (spaceRenderState.mode === 0) {
+                        let result = audioNapi.startFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                            spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, nodeId,
+                            this.currentInputId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: `添加空间渲染节点失败`,
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        }
+                        if (spaceRenderState.mode === 1) {
+                            let result = audioNapi.startDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                                spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
+                                spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise), nodeId,
+                                this.currentInputId, this.selectedNode);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: `添加空间渲染节点失败`,
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                        }
+                        if (spaceRenderState.mode === 2) {
+                        let result =
+                            audioNapi.startExpandEffect(spaceRenderState.expansionRadius, spaceRenderState.expansionAngle,
+                            nodeId, this.currentInputId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: `添加空间渲染节点失败`,
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        }
+
+                        this.spaceRenderPara = {
+                        mode: spaceRenderState.mode ?? SpaceRenderMode.CLOSE,
+                        fixedPosition: {
+                            x: spaceRenderState.fixedPosition?.x ?? 0,
+                            y: spaceRenderState.fixedPosition?.y ?? 0,
+                            z: spaceRenderState.fixedPosition?.z ?? 0
+                        },
+                        dynamicPosition: {
+                            x: spaceRenderState.dynamicPosition?.x ?? 0,
+                            y: spaceRenderState.dynamicPosition?.y ?? 0,
+                            z: spaceRenderState.dynamicPosition?.z ?? 0
+                        },
+                        singleWeekCycleTime: spaceRenderState.singleWeekCycleTime ?? 2,
+                        clockWise: spaceRenderState.clockWise ?? ClockWise.CLOCK_WISE,
+                        expansionRadius: spaceRenderState.expansionRadius ?? 1,
+                        expansionAngle: spaceRenderState.expansionAngle ?? 1
+                        };
+
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            spaceRender: this.spaceRenderPara
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
+                        this.controllerTwo?.close();
                     }
                 })
             } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
@@ -831,6 +1625,62 @@ struct EffectNodeDialog {
                             soundTone: this.soundTone,
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+                        this.controllerTwo?.close();
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.GENERAL_VOICE_CHANGE) {
+                GeneralVoiceChangeComponent({
+                    generalVoiceChangeType: this.generalVoiceChangeType,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: () => {
+                        const nodeId = util.generateRandomUUID(true);
+                        let result = audioNapi.startGeneralVoiceChange(this.currentInputId, this.generalVoiceChangeType, nodeId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: '添加通用变声节点失败',
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            environmentType: this.selectedEnvironment
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
+                        this.controllerTwo?.close();
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.PURE_VOICE_CHANGE) {
+                PureVoiceChangeComponent({
+                    pureVoiceGender : this.pureVoiceGender,
+                    pureVoiceChangeType : this.pureVoiceChangeType,
+                    soundTone : this.pureVoiceSoundTone,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: () => {
+                        const nodeId = util.generateRandomUUID(true);
+                        let result = audioNapi.startPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: '添加传统变声节点失败',
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            environmentType: this.selectedEnvironment
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
                         this.controllerTwo?.close();
                     }
                 })
@@ -893,6 +1743,16 @@ struct NodeDetailDialog {
     private environmentType = '-';
     private voiceBeautifierType = '-';
     private audioSeparation = '-';
+    private spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
+
     //input节点参数
     private songName = '';
     private singerName = '';
@@ -901,9 +1761,9 @@ struct NodeDetailDialog {
     private bitsPerSample = -1;
 
     aboutToAppear(): void {
-        let mixerNode: Node | undefined = this.mixerList.find(node => node.id === this.selectedNode) || undefined;
+        let mixerNode: Node | undefined = this.mixerList.find(node => node.id === this.selectedNode);
         let leftNode: SongInfo | undefined =
-            this.inputList.find(node => node?.nodeId === this.selectedNode) || undefined;
+            this.inputList.find(node => node?.nodeId === this.selectedNode);
         if (this.isLeft) {
             //当前是输入节点
             if (leftNode) {
@@ -922,9 +1782,12 @@ struct NodeDetailDialog {
                 //在这里添加getOption的逻辑,入参仅为nodeId
                 if (leftEffectNode) {
                     let type = audioNapi.getOptions(leftEffectNode.id)
-                    Logger.warn(TAG, `type is ${parseInt(type)}---}`)
                     if (leftEffectNode?.type === NodeType.EQ) {
-                        this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                        try {
+                            this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                        } catch (err) {
+                            this.balanceBandGains = [];
+                        }
                     } else if (leftEffectNode?.type === NodeType.FIELD) {
                         this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
                     } else if (leftEffectNode?.type === NodeType.ENV) {
@@ -933,6 +1796,33 @@ struct NodeDetailDialog {
                         this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
                     } else if (leftEffectNode?.type === NodeType.SEPARATION) {
                         this.audioSeparation = AudioSeparationMap.get(leftEffectNode.audioSeparationType) ?? '-';
+                    } else if (leftEffectNode?.type === NodeType.SPACE_RENDER) {
+                        this.spaceRenderPara = leftEffectNode.spaceRender ?? this.spaceRenderPara;
+                        if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
+                            let result = audioNapi.getFixedPositionParams(leftEffectNode.id);
+                            Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
+                            this.spaceRenderPara.fixedPosition = {
+                                x: result.x,
+                                y: result.y,
+                                z: result.z
+                            }
+                        } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                            let result = audioNapi.getDynamicRenderParams(leftEffectNode.id);
+                            Logger.info(TAG,
+                                `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
+                            this.spaceRenderPara.dynamicPosition = {
+                                x: result.x,
+                                y: result.y,
+                                z: result.z
+                            }
+                            this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
+                            this.spaceRenderPara.clockWise = result.surroundDirection;
+                        } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
+                            let result = audioNapi.getExpandParams(leftEffectNode.id);
+                            Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
+                            this.spaceRenderPara.expansionRadius = result.extRadius;
+                            this.spaceRenderPara.expansionAngle = result.extAngle;
+                        }
                     }
                 }
             }
@@ -940,7 +1830,11 @@ struct NodeDetailDialog {
             //右侧初始化赋值
             let type = audioNapi.getOptions(mixerNode?.id)
             if (mixerNode?.type === NodeType.EQ) {
-                this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                try {
+                    this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+                } catch (err) {
+                    this.balanceBandGains = [];
+                }
             } else if (mixerNode?.type === NodeType.FIELD) {
                 this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
             } else if (mixerNode?.type === NodeType.ENV) {
@@ -949,6 +1843,33 @@ struct NodeDetailDialog {
                 this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
             } else if (mixerNode?.type === NodeType.SEPARATION) {
                 this.audioSeparation = AudioSeparationMap.get(mixerNode.audioSeparationType) ?? '-';
+            } else if (mixerNode?.type === NodeType.SPACE_RENDER) {
+                this.spaceRenderPara = mixerNode.spaceRender ?? this.spaceRenderPara;
+                if (mixerNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
+                    let result = audioNapi.getFixedPositionParams(mixerNode.id);
+                    Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
+                    this.spaceRenderPara.fixedPosition = {
+                        x: result.x,
+                        y: result.y,
+                        z: result.z
+                    }
+                } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                    let result = audioNapi.getDynamicRenderParams(mixerNode.id);
+                    Logger.info(TAG,
+                        `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
+                    this.spaceRenderPara.dynamicPosition = {
+                        x: result.x,
+                        y: result.y,
+                        z: result.z
+                    }
+                    this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
+                    this.spaceRenderPara.clockWise = result.surroundDirection;
+                } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
+                    let result = audioNapi.getExpandParams(mixerNode.id);
+                    Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
+                    this.spaceRenderPara.expansionRadius = result.extRadius;
+                    this.spaceRenderPara.expansionAngle = result.extAngle;
+                }
             }
         }
     }
@@ -1059,6 +1980,50 @@ struct NodeDetailDialog {
                     }
                 }.padding({ top: $r('app.float.padding_20') })
             }
+            if (this.nodeType === NodeType.SPACE_RENDER) {
+                Column() {
+                    Text('空间渲染参数：')
+                        .fontWeight(FontWeight.Bold)
+                    Row() {
+                        Text(`模式: ${SpaceRenderModeMap.get(this.spaceRenderPara.mode)}`)
+                    }
+
+                    if (this.spaceRenderPara.mode === SpaceRenderMode.FIXED_POSITION) {
+                        Row() {
+                            Text(`x: ${this.spaceRenderPara.fixedPosition?.x ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`y: ${this.spaceRenderPara.fixedPosition?.y ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`z: ${this.spaceRenderPara.fixedPosition?.z ?? '-'}`)
+                        }
+                    } else if (this.spaceRenderPara.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                        Row() {
+                            Text(`x: ${this.spaceRenderPara.dynamicPosition?.x ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`y: ${this.spaceRenderPara.dynamicPosition?.y ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`z: ${this.spaceRenderPara.dynamicPosition?.z ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`单周环绕时间: ${this.spaceRenderPara.singleWeekCycleTime ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`旋转方向: ${ClockWiseMap.get(this.spaceRenderPara.clockWise) ?? '-'}`)
+                        }
+                    } else if (this.spaceRenderPara.mode === SpaceRenderMode.EXPAND) {
+                        Row() {
+                            Text(`扩展半径: ${this.spaceRenderPara.expansionRadius ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`扩展角度: ${this.spaceRenderPara.expansionAngle ?? '-'}`)
+                        }
+                    }
+                }
+            }
             Button('确定')
                 .onClick(() => {
                     if (this.nodeDetailController != undefined) {
@@ -1094,6 +2059,20 @@ struct SetNodeDialog {
     @State soundSpeed: number = 1.0;
     // 音调
     @State soundTone: number = 1.0;
+    // 空间渲染
+    @State spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
+    @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
+    @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
+    @State pureVoiceSoundTone: number = 0;
     setNodeController?: CustomDialogController;
 
     aboutToAppear(): void {
@@ -1128,6 +2107,7 @@ struct SetNodeDialog {
                     if (leftEffectNode?.soundTone !== undefined) {
                         this.soundTone = leftEffectNode.soundTone;
                     }
+                    this.spaceRenderPara = leftEffectNode?.spaceRender ?? this.spaceRenderPara;
                 }
             }
         } else {
@@ -1148,6 +2128,7 @@ struct SetNodeDialog {
             if (node?.audioSeparationType !== undefined) {
                 this.selectedAudioSeparation = node.audioSeparationType;
             }
+            this.spaceRenderPara = node?.spaceRender ?? this.spaceRenderPara;
         }
     }
 
@@ -1155,7 +2136,7 @@ struct SetNodeDialog {
         Column() {
             Row() {
                 if (this.nodeType === NodeType.EQ) {
-                    EquailizerComponent({
+                    EqualizerComponent({
                         balanceBandGains: this.balanceBandGains,
                         onCancel: () => {
                             this.setNodeController?.close();
@@ -1337,6 +2318,126 @@ struct SetNodeDialog {
                         this.setNodeController?.close();
                         }
                     })
+                } else if (this.nodeType === NodeType.SPACE_RENDER) {
+                    SpaceRenderComponent({
+                        spaceRenderPara: this.spaceRenderPara,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: (spaceRenderState: SpaceRender) => {
+                            if (spaceRenderState.mode === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    message: `请选择一种模式`,
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            const node = this.isLeft ?
+                                this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode) :
+                                this.mixerList.find(node => node.id === this.selectedNode);
+                            if (node) {
+                                if (spaceRenderState.mode === 0) {
+                                    let result = audioNapi.resetFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                                        spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                } else if (spaceRenderState.mode === 1) {
+                                    let result = audioNapi.resetDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                                        spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
+                                        spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise),
+                                        this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                } else if (spaceRenderState.mode === 2) {
+                                    let result =
+                                        audioNapi.resetExpandEffect(spaceRenderState.expansionRadius,
+                                        spaceRenderState.expansionAngle, this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                }
+                                node.spaceRender = {
+                                    mode: spaceRenderState.mode ?? SpaceRenderMode.CLOSE,
+                                    fixedPosition: {
+                                        x: spaceRenderState.fixedPosition?.x ?? 0,
+                                        y: spaceRenderState.fixedPosition?.y ?? 0,
+                                        z: spaceRenderState.fixedPosition?.z ?? 0
+                                    },
+                                    dynamicPosition: {
+                                        x: spaceRenderState.dynamicPosition?.x ?? 0,
+                                        y: spaceRenderState.dynamicPosition?.y ?? 0,
+                                        z: spaceRenderState.dynamicPosition?.z ?? 0
+                                    },
+                                    singleWeekCycleTime: spaceRenderState.singleWeekCycleTime ?? 2,
+                                    clockWise: spaceRenderState.clockWise ?? ClockWise.CLOCK_WISE,
+                                    expansionRadius: spaceRenderState.expansionRadius ?? 1,
+                                    expansionAngle: spaceRenderState.expansionAngle ?? 1
+                                };
+                            } else {
+                                this.getUIContext().showAlertDialog({
+                                    message: 'not find node in nodeList or mixerList',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+
+                            this.setNodeController?.close();
+                        }
+                    })
+                } else if (this.nodeType === NodeType.GENERAL_VOICE_CHANGE) {
+                    GeneralVoiceChangeComponent({
+                        generalVoiceChangeType: this.generalVoiceChangeType,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: () => {
+                            const nodeId = util.generateRandomUUID(true);
+                            let result = audioNapi.resetGeneralVoiceChange(this.currentInputId, this.generalVoiceChangeType, nodeId);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: '设置通用变声节点失败',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            this.setNodeController?.close();
+                        }
+                    })
+                } else if (this.nodeType === NodeType.PURE_VOICE_CHANGE) {
+                    PureVoiceChangeComponent({
+                        pureVoiceGender : this.pureVoiceGender,
+                        pureVoiceChangeType : this.pureVoiceChangeType,
+                        soundTone : this.pureVoiceSoundTone,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: () => {
+                            const nodeId = util.generateRandomUUID(true);
+                            let result = audioNapi.resetPureVoiceChange(this.currentInputId, nodeId, this.pureVoiceGender, this.pureVoiceSoundTone, this.pureVoiceChangeType);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: '设置传统变声节点失败',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            this.setNodeController?.close();
+                        }
+                    })
                 }
             }
         }
@@ -1505,11 +2606,11 @@ export struct CheckNodeDialog {
                                     });
                                     return;
                                 }
-                                //如果点击输入节点的-号，则把inputList和nodeList都要处理
+                                //如果点击输入节点的-号,则把inputList和nodeList都要处理
                                 this.nodeList.delete(this.selectedNode);
                                 const index = this.inputList.findIndex(item => item?.nodeId === this.selectedNode);
                                 if (index !== -1) {
-                                    this.inputList[index] = undefined;
+                                    this.inputList[index] = null;
                                 }
                             } else {
                                 const inputId = this.findInputId();

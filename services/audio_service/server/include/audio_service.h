@@ -33,6 +33,9 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
+#ifdef FEATURE_CALL_MANAGER
+#include "call_manager_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +100,7 @@ public:
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     std::shared_ptr<AudioEndpoint> GetEndPointByType(AudioEndpoint::EndpointType type);
+    void SetEndpointMuteForSwitchDevice(bool isMmap, bool mute);
 #endif
 
     void Dump(std::string &dumpString);
@@ -143,6 +147,7 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -249,6 +254,11 @@ private:
     float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
+
+#ifdef FEATURE_CALL_MANAGER
+    std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
+    std::mutex callManagerMutex_;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

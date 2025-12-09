@@ -63,8 +63,11 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -87,6 +90,14 @@ private:
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
     int32_t StopInner();
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -120,6 +131,10 @@ private:
     uint32_t eachReadFrameSize_ = 0;
     size_t bufferSize_ = 0;
     uint32_t syncInfoSize_ = 0;
+
+    // For source info notify
+    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

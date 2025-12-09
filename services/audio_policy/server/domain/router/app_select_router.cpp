@@ -129,6 +129,11 @@ void AppSelectRouter::ConfigureDeviceForSpecialScenario(
         device = scoDevice;
     }
 
+    if (device != nullptr && device->isVrSupported_ == false) {
+        AUDIO_INFO_LOG("Device is not vr supported.");
+        device = nullptr;
+    }
+
     DeviceType afterType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_NONE;
     WriteModifyCaptureDeviceSpecially(sourceType, beforeType, afterType);
 }

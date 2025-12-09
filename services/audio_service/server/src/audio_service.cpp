@@ -55,6 +55,9 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -86,6 +89,12 @@ AudioService::AudioService()
 
 AudioService::~AudioService()
 {
+#ifdef FEATURE_CALL_MANAGER
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ != nullptr) {
+        callManager_->UnInit();
+    }
+#endif
     AUDIO_INFO_LOG("~AudioService()");
 }
 
@@ -185,6 +194,17 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     // The delay for destruction and reconstruction cannot be set to 0, otherwise there may be a problem:
     // An endpoint exists at check process, but it may be destroyed immediately - during the re-create process
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
+}
+
+void AudioService::SetEndpointMuteForSwitchDevice(bool isMmap, bool mute)
+{
+    std::lock_guard<std::mutex> lockEndpoint(processListMutex_);
+    // mmap sink can't mute, must mut endpoint
+    CHECK_AND_RETURN(isMmap);
+    for (auto item : endpointList_) {
+        CHECK_AND_CONTINUE(item.second != nullptr);
+        item.second->SetMuteForSwitchDevice(mute);
+    }
 }
 #endif
 
@@ -1063,7 +1083,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
             break;
         }
         default:
-            AUDIO_ERR_LOG("Create mmap AudioEndpoint failed.");
+            HILOG_COMM_ERROR("Create mmap AudioEndpoint failed.");
             break;
     }
 
@@ -1480,7 +1500,7 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
+        HILOG_COMM_WARN("Current audio renderer stream num is greater than the renderer stream num limit per uid");
     }
 
     if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
@@ -1867,6 +1887,21 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
+}
+
+void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+#ifdef FEATURE_CALL_MANAGER
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ == nullptr) {
+        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+        callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+    }
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+    }
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

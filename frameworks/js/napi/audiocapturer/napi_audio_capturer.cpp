@@ -796,7 +796,7 @@ napi_value NapiAudioCapturer::GetBufferSizeSync(napi_env env, napi_callback_info
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
 
-    size_t bufferSize;
+    size_t bufferSize = 0;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetBufferSize(bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetBufferSize failure!");
 

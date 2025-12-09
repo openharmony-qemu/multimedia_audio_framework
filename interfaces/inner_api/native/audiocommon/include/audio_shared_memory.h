@@ -17,9 +17,8 @@
 #define AUDIO_SHARED_MEMORY_H
 
 #include <string>
-#include "stdint.h"
-
-#include "message_parcel.h"
+#include <stdint.h>
+#include <parcel.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +31,7 @@ public:
     virtual int GetFd() = 0;
     virtual std::string GetName() = 0;
 
-    static std::shared_ptr<AudioSharedMemory> CreateFormLocal(size_t size, const std::string &name);
+    static std::shared_ptr<AudioSharedMemory> CreateFromLocal(size_t size, const std::string &name);
     static std::shared_ptr<AudioSharedMemory> CreateFromRemote(int fd, size_t size, const std::string &name);
 
     bool Marshalling(Parcel &parcel) const override;

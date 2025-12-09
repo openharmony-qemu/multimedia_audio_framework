@@ -488,28 +488,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Leve
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_017
- * @tc.desc  : Test AudioCoreService::BluetoothDeviceFetchOutputHandle()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->newDeviceDescs_.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    std::string encryptMacAddr = "abc";
-
-    auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
-    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_DEFAULT);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_018
  * @tc.desc  : Test AudioCoreService::ActivateA2dpDeviceWhenDescEnabled()
  */
@@ -3055,7 +3033,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.
 
     audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
     EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
-    
+
     // Test3
     audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
     streamDesc->oldRouteFlag_ = (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
@@ -3094,7 +3072,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_002, TestSize.
     EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
     streamDesc->newDeviceDescs_.clear();
 
-    
+
     // Test5
     newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE);
@@ -3360,6 +3338,44 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_004, 
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_005
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test7
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: SleepForSwitchDevice_001
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
@@ -3369,6 +3385,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3399,6 +3416,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3431,6 +3449,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3531,7 +3550,7 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3550,11 +3569,11 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_003, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     oldDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+    streamDesc->oldDupDeviceDescs_.push_back(oldDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3573,11 +3592,11 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_004, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    streamDesc->newDupDeviceDescs_.push_back(newDeviceDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     oldDeviceDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+    streamDesc->oldDupDeviceDescs_.push_back(oldDeviceDesc);
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3594,8 +3613,8 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_005, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->oldDeviceDescs_.clear();
-    streamDesc->newDeviceDescs_.clear();
+    streamDesc->oldDupDeviceDescs_.clear();
+    streamDesc->newDupDeviceDescs_.clear();
 
     bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
 
@@ -3856,6 +3875,35 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipesAndExecute_001, TestSize
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     configData.deviceInfoMap.erase(deviceKey);
     AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output");
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_HandleRingToDefaultSceneChange_001
+ * @tc.number : HandleRingToDefaultSceneChange_001
+ * @tc.desc   : Test HandleRingToDefaultSceneChange() for audioscene change.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleRingToDefaultSceneChange_001, TestSize.Level3)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_DEFAULT);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_DEFAULT);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_DEFAULT);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_PHONE_CALL);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_PHONE_CALL);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_PHONE_CALL);
+    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -60,10 +60,6 @@ public:
         }
         return nullptr;
     }
-    std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> GetInputPort()
-    {
-        return inputStream_;
-    }
 };
 class TestReadTapCallBack : public SuiteNodeReadTapDataCallback {
 public:
@@ -101,7 +97,6 @@ public:
 
 HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
-    EXPECT_NE(node_->GetInputPort(), nullptr);
     EXPECT_NE(node_->GetOutputPort(), nullptr);
     EXPECT_EQ(node_->GetNodeBypassStatus(), false);
 }
@@ -240,4 +235,64 @@ HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
     node.DeInit();
 }
 
+HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSize.Level0)
+{
+    AudioFormat audioFormat = {
+            {CH_LAYOUT_STEREO, STEREO},
+            SAMPLE_S16LE,
+            SAMPLE_RATE_48000};
+
+    auto node = TestAudioSuiteProcessNode(NODE_TYPE_EQUALIZER, audioFormat);
+
+    int32_t dataDurationMS = 20;  // 20 ms pcmbuf duration for example
+    // processDurationBase is for compare use, dataduration * rtfBase(0.15 for eq node)
+    uint64_t processDurationBase = dataDurationMS * MILLISECONDS_TO_MICROSECONDS * node.nodeCapability.realtimeFactor;
+    uint64_t testDurationNormal = 1;  // 1 microsecond
+    uint64_t testDurationBase = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_BASE];
+    uint64_t testDuration110Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_110BASE];
+    uint64_t testDuration120Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_120BASE];
+    uint64_t testDurationOver120Base = testDuration120Base + 1;
+    uint64_t testDuration100 = dataDurationMS * MILLISECONDS_TO_MICROSECONDS + 1;
+    uint64_t testDurationOver100 = testDuration100 + 1;
+
+    // expected OvertimeCounters
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayEmpty = {0, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayBase = {1, 0, 0};
+    std::array<int32_t, RTF_OVERTIME_LEVELS> expectedArrayMultiple = {6, 5, 4};
+
+    std::array<PipelineWorkMode, 2> workModeArray = {PIPELINE_REALTIME_MODE, PIPELINE_EDIT_MODE};
+    for (PipelineWorkMode testWorkMode : workModeArray) {
+        node.SetAudioNodeWorkMode(testWorkMode);
+
+        // rtf equal baseline
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationBase);
+        EXPECT_EQ(node.rtfOvertimeCounters_, expectedArrayBase);
+        EXPECT_EQ(node.rtfOver100Count_, 0);
+        EXPECT_EQ(node.signalProcessTotalCount_, 1);
+        node.CheckEffectNodeOvertimeCount();
+        EXPECT_EQ(node.rtfOvertimeCounters_, expectedArrayEmpty);
+        EXPECT_EQ(node.rtfOver100Count_, 0);
+        EXPECT_EQ(node.signalProcessTotalCount_, 0);
+
+        // check multiple times
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationNormal);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationNormal);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationBase);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDuration110Base);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDuration120Base);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationOver120Base);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDuration100);
+        node.CheckEffectNodeProcessTime(dataDurationMS, testDurationOver100);
+        node.CheckEffectNodeProcessTime(0, 1);  // invalid data duration, ignore.
+        EXPECT_EQ(node.signalProcessTotalCount_, 8);
+        EXPECT_EQ(node.rtfOvertimeCounters_, expectedArrayMultiple);
+        EXPECT_EQ(node.rtfOver100Count_, 2);
+
+        node.CheckEffectNodeOvertimeCount();
+        EXPECT_EQ(node.signalProcessTotalCount_, 0);
+        EXPECT_EQ(node.rtfOvertimeCounters_, expectedArrayEmpty);
+        EXPECT_EQ(node.rtfOver100Count_, 0);
+    }
 }
+
+}  // namespace

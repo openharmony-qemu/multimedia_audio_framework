@@ -17,6 +17,7 @@
 #endif
 
 #include "taihe_audio_renderer.h"
+#include <limits>
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 #include "errors.h"
 #else
@@ -129,21 +130,22 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
     return audioRendererImpl;
 }
 
-AudioRenderer AudioRendererImpl::CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions)
+AudioRendererOrNull AudioRendererImpl::CreateAudioRendererWrapper(
+    OHOS::AudioStandard::AudioRendererOptions rendererOptions)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
     sRendererOptions_ = std::make_unique<OHOS::AudioStandard::AudioRendererOptions>();
     if (sRendererOptions_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "sRendererOptions_ create failed");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
     *sRendererOptions_ = rendererOptions;
     std::shared_ptr<AudioRendererImpl> impl = AudioRendererImpl::CreateAudioRendererNativeObject();
     if (impl == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "failed to CreateAudioRendererNativeObject");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
-    return make_holder<AudioRendererImpl, AudioRenderer>(impl);
+    return AudioRendererOrNull::make_type_audioRenderer(make_holder<AudioRendererImpl, AudioRenderer>(impl));
 }
 
 void AudioRendererImpl::StartSync()
@@ -679,6 +681,56 @@ double AudioRendererImpl::GetLoudnessGain()
     return loudnessGain;
 }
 
+int32_t AudioRendererImpl::GetLatency(AudioLatencyType type)
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return 0;
+    }
+    if (!type.is_valid()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of type must be enum AudioLatencyType");
+        return 0;
+    }
+
+    OHOS::AudioStandard::LatencyFlag flag = OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_ALL;
+    switch (type.get_key()) {
+        case AudioLatencyType::key_t::LATENCY_TYPE_ALL:
+            flag = static_cast<OHOS::AudioStandard::LatencyFlag>(
+                OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_ENGINE |
+                OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_HARDWARE);
+            break;
+        case AudioLatencyType::key_t::LATENCY_TYPE_SOFTWARE:
+            flag = OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_ENGINE;
+            break;
+        case AudioLatencyType::key_t::LATENCY_TYPE_HARDWARE:
+            flag = OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_HARDWARE;
+            break;
+        default:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+                "parameter verification failed: The param of type must be enum AudioLatencyType");
+            return 0;
+    }
+
+    uint64_t latencyUs = 0;
+    int32_t ret = audioRenderer_->GetLatencyWithFlag(latencyUs, flag);
+    if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetLatencyWithFlag illegal state");
+        return 0;
+    }
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetLatencyWithFlag failure!");
+        return 0;
+    }
+
+    int64_t latencyMs = static_cast<int64_t>(latencyUs / OHOS::AudioStandard::AUDIO_US_PER_MS);
+    if (latencyMs > std::numeric_limits<int32_t>::max()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "latency exceeds int32 range");
+        return 0;
+    }
+    return static_cast<int32_t>(latencyMs);
+}
+
 void AudioRendererImpl::RegisterRendererCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioRendererImpl *taiheRenderer)
 {
@@ -1128,14 +1180,14 @@ void AudioRendererImpl::DestroyTaiheCallbacks()
     }
 }
 
-AudioRenderer CreateAudioRendererSync(AudioRendererOptions const &options)
+AudioRendererOrNull CreateAudioRendererSync(AudioRendererOptions const &options)
 {
     OHOS::AudioStandard::AudioRendererOptions rendererOptions;
     if (TaiheParamUtils::GetRendererOptions(&rendererOptions, options) != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
             "parameter verification failed: The param of options must be interface AudioRendererOptions");
         AUDIO_ERR_LOG("get rendererOptions failed");
-        return make_holder<AudioRendererImpl, AudioRenderer>(nullptr);
+        return AudioRendererOrNull::make_type_null();
     }
     return AudioRendererImpl::CreateAudioRendererWrapper(rendererOptions);
 }

@@ -1015,8 +1015,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_003, TestSize.
 
     int32_t uid = 1001;
     int32_t pid = 2001;
-    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, true));
-    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, false));
+    bool silentControl = false;
+    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, true, silentControl));
+    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, false, silentControl));
 }
 
 /**
@@ -1059,15 +1060,16 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_004, TestSize.
 
     int32_t uid = 1001;
     int32_t pid = 2001;
+    bool silentControl = false;
     auto mockAudioClientTracker = std::make_shared<MockAudioClientTracker>();
     EXPECT_CALL(*mockAudioClientTracker, MuteStreamImpl(_)).Times(1);
     EXPECT_CALL(*mockAudioClientTracker, UnmuteStreamImpl(_)).Times(2);
     collector.clientTracker_.insert(std::make_pair(sessionId, mockAudioClientTracker));
-    collector.HandleStartStreamMuteState(uid, pid, true, false);
+    collector.HandleStartStreamMuteState(uid, pid, true, false, silentControl);
     EXPECT_TRUE(rendererChangeInfo1->backMute);
     rendererChangeInfo1->backMute = false;
 
-    collector.HandleStartStreamMuteState(uid, pid, false, false);
+    collector.HandleStartStreamMuteState(uid, pid, false, false, silentControl);
     EXPECT_FALSE(rendererChangeInfo2->backMute);
 }
 

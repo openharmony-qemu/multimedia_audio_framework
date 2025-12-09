@@ -59,7 +59,6 @@ private:
     void *libHandle_{nullptr};
     SpaceRenderParam spaceRenderParam_ = {SPACE_RENDER_MODE_STATIC,
         {0.0f, 0.0f, 0.0f}, 0.0f, SPACE_RENDER_ROTATION_MODE_CW, 0.0f, 0};
-    SpaceRenderSpeces applySpeces_ = {0};
     std::vector<char> spaceRenderHandle_;
 
     int SetPositionParameter(const std::string &paramValue);

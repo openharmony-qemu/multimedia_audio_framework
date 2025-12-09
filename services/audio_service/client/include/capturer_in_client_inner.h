@@ -78,6 +78,7 @@ public:
     int32_t GetBufferSize(size_t &bufferSize) override;
     int32_t GetFrameCount(uint32_t &frameCount) override;
     int32_t GetLatency(uint64_t &latency) override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     float GetVolume() override;
     float GetLoudnessGain() override;
@@ -218,6 +219,11 @@ public:
     bool GetStopFlag() const override;
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
+
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

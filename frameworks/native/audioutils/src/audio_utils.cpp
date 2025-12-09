@@ -380,6 +380,14 @@ void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
     }
 }
 
+bool ClockTime::CheckTimeInterval(std::atomic<int64_t> &lastRecordTimestamp, const int64_t timeInterval)
+{
+    int64_t curTimestamp = GetCurNano();
+    CHECK_AND_RETURN_RET(lastRecordTimestamp.load() + timeInterval < curTimestamp, false);
+    lastRecordTimestamp.store(curTimestamp);
+    return true;
+}
+
 void Trace::Count(const std::string &value, int64_t count)
 {
 #ifdef FEATURE_HITRACE_METER
@@ -574,7 +582,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        AUDIO_ERR_LOG("failed: not allowed!");
+        HILOG_COMM_ERROR("failed: not allowed!");
     }
     return ret;
 }
@@ -1597,6 +1605,12 @@ void LatencyMonitor::UpdateClientTime(bool isRenderer, std::string &timestamp)
     }
 }
 
+void LatencyMonitor::UpdateRendererInServerTime(std::string &timestamp)
+{
+    std::lock_guard lock(mutex_);
+    rendererInServerDetectedTime_ = timestamp;
+}
+
 void LatencyMonitor::UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp)
 {
     std::lock_guard lock(mutex_);
@@ -1622,21 +1636,24 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
     if (isRenderer) {
         if (dspDetectedTime_.length() == 0) {
             AUDIO_ERR_LOG("LatencyMeas GetExtraParameter failed!");
-            AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s",
-                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
-            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s",
-                rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+            AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                           "SinkDetectedTime:%{public}s", rendererMockTime_.c_str(),
+                rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
+            AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, SinkDetectedTime:%s",
+                rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
             return;
         }
         dspBeforeSmartPa_ = dspDetectedTime_.substr(extraStrLen_, DATE_LENGTH);
         dspAfterSmartPa_ = dspDetectedTime_.substr(extraStrLen_ + DATE_LENGTH + 1 +
             extraStrLen_, DATE_LENGTH);
-        AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, SinkDetectedTime:%{public}s, "
-                       "DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s", rendererMockTime_.c_str(),
-                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
-        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, SinkDetectedTime:%s, "
+        AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                       "SinkDetectedTime:%{public}s, DspBeforeSmartPa:%{public}s, DspAfterSmartPa:%{public}s",
+            rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str(),
+            dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+        AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, SinkDetectedTime:%s, "
                        "DspBeforeSmartPa:%s, DspAfterSmartPa:%s", rendererMockTime_.c_str(),
-                       sinkDetectedTime_.c_str(), dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
+            rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str(),
+            dspBeforeSmartPa_.c_str(), dspAfterSmartPa_.c_str());
     } else {
         AUDIO_INFO_LOG("renderer mock time %{public}s", rendererMockTime_.c_str());
         if (dspDetectedTime_.length() == 0) {
@@ -1933,6 +1950,39 @@ std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
     STREAM_ALL,
 };
 
+static const std::map<AudioStreamType, StreamUsage> STREAMTYPE_TO_USAGE_MAP = {
+    {STREAM_MUSIC, STREAM_USAGE_MUSIC},
+    {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
+    {STREAM_VOICE_CALL_ASSISTANT, STREAM_USAGE_VOICE_CALL_ASSISTANT},
+    {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
+    {STREAM_ALARM, STREAM_USAGE_ALARM},
+    {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
+    {STREAM_RING, STREAM_USAGE_RINGTONE},
+    {STREAM_NOTIFICATION, STREAM_USAGE_NOTIFICATION},
+    {STREAM_ACCESSIBILITY, STREAM_USAGE_ACCESSIBILITY},
+    {STREAM_SYSTEM, STREAM_USAGE_SYSTEM},
+    {STREAM_MOVIE, STREAM_USAGE_MOVIE},
+    {STREAM_GAME, STREAM_USAGE_GAME},
+    {STREAM_SPEECH, STREAM_USAGE_AUDIOBOOK},
+    {STREAM_NAVIGATION, STREAM_USAGE_NAVIGATION},
+    {STREAM_DTMF, STREAM_USAGE_DTMF},
+    {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
+    {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
+    {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+};
+
+static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
+    {"primary", HDI_ADAPTER_TYPE_PRIMARY},
+    {"a2dp", HDI_ADAPTER_TYPE_A2DP},
+    {"usb", HDI_ADAPTER_TYPE_USB},
+    {"dp", HDI_ADAPTER_TYPE_DP},
+    {"remote", HDI_ADAPTER_TYPE_REMOTE},
+    {"hearing_aid", HDI_ADAPTER_TYPE_HEARING_AID},
+    {"accessory", HDI_ADAPTER_TYPE_ACCESSORY},
+    {"sle", HDI_ADAPTER_TYPE_SLE},
+    {"va", HDI_ADAPTER_TYPE_VA},
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -2090,6 +2140,24 @@ int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
     int32_t ceiling = level * quotient;
 
     return ceiling;
+}
+
+StreamUsage AudioTypeUtils::GetStreamUsageByStreamType(AudioStreamType streamType)
+{
+    auto it = STREAMTYPE_TO_USAGE_MAP.find(streamType);
+    if (it != STREAMTYPE_TO_USAGE_MAP.end()) {
+        return it->second;
+    }
+    return STREAM_USAGE_UNKNOWN;
+}
+
+HdiAdapterType AudioTypeUtils::HalNameToType(std::string halName)
+{
+    auto it = HALNAME_TO_TYPE_MAP.find(halName);
+    if (it != HALNAME_TO_TYPE_MAP.end()) {
+        return it->second;
+    }
+    return HDI_ADAPTER_TYPE_PRIMARY;
 }
 
 std::string GetEncryptStr(const std::string &src)
@@ -2277,6 +2345,25 @@ std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid)
         first = false;
     }
     return uidStream.str();
+}
+
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)
+{
+    float speed = 1.0f;
+    switch (renderRate) {
+        case RENDER_RATE_NORMAL:
+            speed = 1.0f;
+            break;
+        case RENDER_RATE_DOUBLE:
+            speed = 2.0f;
+            break;
+        case RENDER_RATE_HALF:
+            speed = 0.5f;
+            break;
+        default:
+            speed = 1.0f;
+    }
+    return speed;
 }
 
 } // namespace AudioStandard

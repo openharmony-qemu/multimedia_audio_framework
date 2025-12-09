@@ -167,6 +167,17 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
     return false;
 }
 
+bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage)
+{
+    auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    const bool isRingScene = (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
+    const bool isAlarmUsage = (streamUsage == STREAM_USAGE_ALARM);
+    const bool isRingtoneRunning =
+        (streamCollector.IsStreamRunning(STREAM_USAGE_RINGTONE) ||
+        streamCollector.IsStreamRunning(STREAM_USAGE_VOICE_RINGTONE));
+    return isRingScene && isAlarmUsage && isRingtoneRunning;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(
     FetchDeviceInfo info, RouterType &routerType, const RouterType &bypassType,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
@@ -174,7 +185,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     FetchDeviceInfo bak = {
-        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, info.privacyType
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
@@ -289,8 +300,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
             desc = FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType);
         }
         descs.push_back(move(desc));
-    } else if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
-        info.streamUsage == STREAM_USAGE_ALARM) {
+    } else if (IsAlarmFollowRingStrategy(audioScene, info.streamUsage)) {
         AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
         descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType);
     } else {

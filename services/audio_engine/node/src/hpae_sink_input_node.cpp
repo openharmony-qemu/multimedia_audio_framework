@@ -215,6 +215,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSinkInputNode::GetOutputPort()
 bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallback> &callback)
 {
     writeCallback_ = callback;
+    OnStreamInfoChange(false);
     return true;
 }
 // reset historyBuffer

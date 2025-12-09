@@ -38,7 +38,7 @@ public:
 
     static void CreateRendererFailed();
     static std::shared_ptr<AudioRendererImpl> CreateAudioRendererNativeObject();
-    static AudioRenderer CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
+    static AudioRendererOrNull CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
 
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     std::shared_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer_;
@@ -80,6 +80,7 @@ public:
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
     void SetLoudnessGainSync(double loudnessGain);
     double GetLoudnessGain();
+    int32_t GetLatency(AudioLatencyType type);
     void SetTargetSync(RenderTarget target);
     RenderTarget GetTarget();
 

@@ -34,7 +34,7 @@ using namespace std;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 280000; //4.66min
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
 constexpr const char *RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
@@ -800,7 +800,7 @@ void AudioStreamCollector::PostReclaimMemoryTask()
             ReclaimMem();
             isActivatedMemReclaiTask_.store(false);
         };
-        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
         isActivatedMemReclaiTask_.store(true);
     }
 }
@@ -971,6 +971,20 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
+int32_t AudioStreamCollector::CapturerMutedFlagChange(const uint32_t sessionId, bool muteFlag)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+
+    for (auto info : audioCapturerChangeInfos_) {
+        if (info->sessionId == static_cast<int32_t>(sessionId) && info->muted != muteFlag) {
+            info->muted = muteFlag;
+        }
+    }
+    if (!audioCapturerChangeInfos_.empty()) {
+        audioPolicyServerHandler_->SendCapturerInfoEvent(audioCapturerChangeInfos_);
+    }
+    return SUCCESS;
+}
 void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid)
 {
     int32_t sessionID = -1;
@@ -1271,7 +1285,8 @@ void AudioStreamCollector::HandleBackTaskStateChange(int32_t uid, bool hasSessio
     }
 }
 
-void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia)
+void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute,
+    bool skipMedia, bool &silentControl)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
@@ -1294,6 +1309,7 @@ void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, 
                 setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
                 callback->MuteStreamImpl(setStateEvent);
                 changeInfo->backMute = true;
+                silentControl = true;
             } else if (!mute && changeInfo->backMute) {
                 AUDIO_INFO_LOG("Unmute the stream in uid=%{public}d", uid);
                 setStateEvent.streamSetState = StreamSetState::STREAM_UNMUTE;

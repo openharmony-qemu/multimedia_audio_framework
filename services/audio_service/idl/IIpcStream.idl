@@ -19,6 +19,7 @@ sequenceable OHOS.IRemoteObject;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBuffer;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
 sequenceable audio_info..OHOS.AudioStandard.AudioPlaybackCaptureConfig;
+sequenceable audio_info..OHOS.AudioStandard.StaticBufferInfo;
 
 interface IIpcStream {
     [ipccode 0] void RegisterStreamListener([in] IRemoteObject object);
@@ -67,4 +68,7 @@ interface IIpcStream {
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetTarget([in] int target, [out] int ret); //SetRenderTarget
     void SetRebuildFlag();
+    void PreSetLoopTimes([in] long bufferLoopTimes);
+    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
+    void GetLatencyWithFlag([out] unsigned long latency, [in] unsigned int flag);
 }

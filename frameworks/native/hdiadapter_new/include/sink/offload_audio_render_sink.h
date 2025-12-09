@@ -80,6 +80,8 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     int32_t Drain(AudioDrainType type) override;
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
@@ -89,6 +91,7 @@ public:
     int32_t UnLockOffloadRunningLock(void) override;
 
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -112,6 +115,14 @@ private:
 #ifdef SUPPORT_OLD_ENGINE
     void CheckFlushThread();
 #endif
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -173,6 +184,10 @@ private:
 #ifdef SUPPORT_OLD_ENGINE
     std::shared_ptr<std::thread> flushThread_;
 #endif
+
+    // For sink info notify
+    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

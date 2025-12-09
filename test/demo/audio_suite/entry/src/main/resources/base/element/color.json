@@ -35,6 +35,10 @@
     {
       "name": "selected_button",
       "value": "#FF44ccff"
+    },
+    {
+      "name": "selected_node_info_background_color",
+      "value": "#999"
     }
   ]
 }

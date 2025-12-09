@@ -2098,16 +2098,17 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_001, TestSize.
     changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     changeInfo->sessionId = 1;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true);
+    bool silentControl = false;
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->createrUID = 1013;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
 }
 
@@ -2129,20 +2130,21 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_002, TestSize.
     changeInfo->clientPid = clientPid;
     changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     changeInfo->sessionId = 1;
+    bool silentControl = false;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, true, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, true, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->createrUID = 1013;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->clientPid = 2002;
-    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false, silentControl);
     EXPECT_FALSE(changeInfo->backMute);
 }
 
@@ -2196,6 +2198,74 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_003, TestSize.Lev
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(infos.size(), 1);
     EXPECT_EQ(infos[0]->rendererState, RENDERER_RUNNING);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_100
+* @tc.desc  : Test CapturerMutedFlagChange with matching session ID and different mute flag.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_100, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 123;
+    changeInfo->muted = false;
+    collector.audioCapturerChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(123, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(changeInfo->muted);
+    EXPECT_FALSE(collector.audioCapturerChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_101
+* @tc.desc  : Test CapturerMutedFlagChange with matching session ID and same mute flag.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_101, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 456;
+    changeInfo->muted = true;
+    collector.audioCapturerChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(456, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(changeInfo->muted);
+    EXPECT_TRUE(collector.audioCapturerChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_102
+* @tc.desc  : Test CapturerMutedFlagChange with non-matching session ID.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_102, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto changeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    changeInfo->sessionId = 789;
+    collector.audioCapturerChangeInfos_.push_back(changeInfo);
+
+    int32_t ret = collector.CapturerMutedFlagChange(999, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(changeInfo->muted);
+    EXPECT_TRUE(collector.audioCapturerChangeInfos_.empty());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_103
+* @tc.desc  : Test CapturerMutedFlagChange with empty audioCapturerChangerInfos_.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_103, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    int32_t ret = collector.CapturerMutedFlagChange(1, true);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

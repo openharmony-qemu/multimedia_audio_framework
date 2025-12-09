@@ -563,6 +563,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
     {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioLatencyTypeMap = {
+    {"LATENCY_TYPE_ALL", LATENCY_TYPE_ALL},
+    {"LATENCY_TYPE_SOFTWARE", LATENCY_TYPE_SOFTWARE},
+    {"LATENCY_TYPE_HARDWARE", LATENCY_TYPE_HARDWARE},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferredRecordCategoryMap = {
     {"PREFERRED_NONE", PREFERRED_NONE},
     {"PREFERRED_DEFAULT", PREFERRED_DEFAULT},
@@ -739,6 +745,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
         DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
+        DECLARE_NAPI_PROPERTY("AudioLatencyType", CreateEnumObject(env, audioLatencyTypeMap)),
         DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
             CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
     };
@@ -1217,6 +1224,36 @@ bool NapiAudioEnum::IsLegalRenderTarget(int32_t target)
             break;
     }
     return result;
+}
+
+bool NapiAudioEnum::IsLegalAudioLatencyType(int32_t latencyType)
+{
+    bool result = false;
+    switch (latencyType) {
+        case LATENCY_TYPE_ALL:
+        case LATENCY_TYPE_SOFTWARE:
+        case LATENCY_TYPE_HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+LatencyFlag NapiAudioEnum::ConvertLatencyTypeToFlag(int32_t latencyType)
+{
+    switch (latencyType) {
+        case LATENCY_TYPE_ALL:
+            return static_cast<LatencyFlag>(LatencyFlag::LATENCY_FLAG_ENGINE | LatencyFlag::LATENCY_FLAG_HARDWARE);
+        case LATENCY_TYPE_SOFTWARE:
+            return LatencyFlag::LATENCY_FLAG_ENGINE;
+        case LATENCY_TYPE_HARDWARE:
+            return LatencyFlag::LATENCY_FLAG_HARDWARE;
+        default:
+            return LatencyFlag::LATENCY_FLAG_ALL;
+    }
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)

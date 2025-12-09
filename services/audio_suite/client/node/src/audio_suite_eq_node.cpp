@@ -50,6 +50,7 @@ int32_t AudioSuiteEqNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     eqAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nodeCapability);
     eqAlgoInterfaceImpl_->Init();
     isEqNodeInit_ = true;
@@ -78,10 +79,10 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEqNode SignalProcess inputs[0] is nullptr");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
 
-    tmpin_[0] = inputs[0]->GetPcmData();
-    tmpout_[0] = outPcmBuffer_.GetPcmData();
+    tmpIn_[0] = inputs[0]->GetPcmData();
+    tmpOut_[0] = outPcmBuffer_.GetPcmData();
     CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, nullptr, "eqAlgoInterfaceImpl_ is nullptr");
-    int32_t ret = eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    int32_t ret = eqAlgoInterfaceImpl_->Apply(tmpIn_, tmpOut_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess Apply failed");
     return &outPcmBuffer_;
 }

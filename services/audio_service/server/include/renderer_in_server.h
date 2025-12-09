@@ -24,9 +24,12 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 #include "audio_ring_cache.h"
+#include "audio_utils.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
+#include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -158,6 +161,11 @@ public:
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
     void RemoveIdForInjector();
     int32_t SetTarget(RenderTarget target, int32_t &ret);
+
+    int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
+    int32_t PreSetLoopTimes(int64_t bufferLoopTimes);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -205,6 +213,8 @@ private:
     void UpdateStreamInfo();
     void RemoveStreamInfo();
     void OnWriteDataFinish();
+    void InitLatencyMeasurement();
+    void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
@@ -216,6 +226,10 @@ private:
 
     int32_t WriteData(int8_t *inputData, size_t requestDataLen);
     void PauseDirectStream();
+
+    int32_t CreateServerBuffer();
+    int32_t ProcessAndSetStaticBuffer();
+    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -266,7 +280,6 @@ private:
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
     int64_t pausedTime_ = 0;
-    int64_t stopedTime_ = 0;
     int64_t flushedTime_ = 0;
     int64_t drainedTime_ = 0;
     uint32_t underrunCount_ = 0;
@@ -319,6 +332,11 @@ private:
     bool isDataLinkConnected_ = true;
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
+
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

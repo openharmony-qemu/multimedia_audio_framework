@@ -77,6 +77,12 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 group("fuzztest") {

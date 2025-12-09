@@ -355,6 +355,14 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
+void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t sessionId, StreamUsage usage, RendererState state)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+}
+
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
     if (GetDeviceClass() != "primary") {

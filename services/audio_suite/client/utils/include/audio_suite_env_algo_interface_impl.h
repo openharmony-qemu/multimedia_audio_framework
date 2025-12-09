@@ -21,11 +21,12 @@
 #define TWO_BYTES_WIDTH (16)
 #define AUDIO_DURATION (2)      // Duration of input audio, in units of 10ms
 
+#include <charconv>
+#include <utility>
+#include <dlfcn.h>
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
 #include "audio_suite_log.h"
-#include <utility>
-#include <dlfcn.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,7 +63,7 @@ private:
     std::vector<char> scratchBuf_;
 
     void *libHandle_{nullptr};
-    EnvAlgoApi algoApi_{0};
+    EnvAlgoApi algoApi_;
     iMedia_SWS_DATA stData_;
     std::vector<uint32_t> dataIn_;
     std::vector<uint32_t> dataOut_;
@@ -70,6 +71,7 @@ private:
     iMedia_SWS_MEM_SIZE stSize_;
     size_t frameLen_;
     size_t inputSamples_;
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

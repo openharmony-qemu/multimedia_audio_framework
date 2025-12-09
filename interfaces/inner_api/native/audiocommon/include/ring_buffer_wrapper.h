@@ -15,13 +15,6 @@
 #ifndef RING_BUFFER_WRAPPER_H
 #define RING_BUFFER_WRAPPER_H
 
-#include <map>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <parcel.h>
-
-#include "audio_buffer_desc.h"
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "securec.h"

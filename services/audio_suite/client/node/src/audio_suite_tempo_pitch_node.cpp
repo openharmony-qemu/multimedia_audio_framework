@@ -58,6 +58,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
@@ -163,11 +164,20 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         Trace trace("AudioSuiteTempoPitchNode::SignalProcess Start");
+
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
         if (SignalProcess(preOutputs) == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
         }
         trace.End();
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
@@ -205,8 +215,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
             "node type = %{public}d outputStream is null!", GetNodeType());
     }
-    CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data

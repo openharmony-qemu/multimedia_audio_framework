@@ -71,10 +71,13 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+    void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state) override;
 
     void SetAddress(const std::string &address) override;
     int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
+    std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
     int32_t GetArmUsbDeviceStatus() override;
@@ -103,6 +106,11 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
     void CheckUpdateState(char *frame, size_t replyBytes);
     bool IsNonblockingSource(const std::string &adapterName);
+    int32_t ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc) const;
+    void SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc, const AudioCaptureFrameInfo &frameInfo);
+    int32_t ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
     int32_t NonblockingStart(void);
     int32_t NonblockingStop(void);
     int32_t NonblockingCaptureFrameWithEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
@@ -115,6 +123,14 @@ private:
     bool IsCaptureInvalid(void) override;
     static AudioInputType MappingAudioInputType(std::string hdiSourceType);
     uint32_t GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const;
+
+    // Funcs to handle pipe info
+    void InitPipeInfo();
+    void ChangePipeStatus(AudioPipeStatus state);
+    void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state);
+    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -180,6 +196,10 @@ private:
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
     static const std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
+
+    // For source info notify
+    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

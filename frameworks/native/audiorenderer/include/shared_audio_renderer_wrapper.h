@@ -94,6 +94,11 @@ public:
         return sharedAudioRenderer_->GetLatency(latency);
     }
 
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override
+    {
+        return sharedAudioRenderer_->GetLatencyWithFlag(latency, flag);
+    }
+
     bool Drain() const override
     {
         return sharedAudioRenderer_->Drain();
@@ -495,6 +500,11 @@ public:
     int32_t GetKeepRunning(bool &keepRunning) const override
     {
         return sharedAudioRenderer_->GetKeepRunning(keepRunning);
+    }
+
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override
+    {
+        return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);
     }
 
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)

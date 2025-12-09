@@ -568,6 +568,7 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     bool isConnected = GetData<bool>();
     DeviceInfoUpdateCommand command = GetData<DeviceInfoUpdateCommand>();
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
+    std::shared_ptr<PreferredDeviceSetCallback> preferredDeviceSetCallback;
 
     AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId, deviceChangeWithInfoCallback);
     AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
@@ -576,8 +577,6 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, audioDevUsage);
     AudioPolicyManager::GetInstance().SetCallDeviceActive(DEVICE_TYPE_SPEAKER, active, address, uid);
     AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
-    AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo, reason);
-    AudioPolicyManager::GetInstance().FetchInputDeviceForTrack(streamChangeInfo);
     AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
     AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
     AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);
@@ -585,6 +584,8 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
     AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
     AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);
+    AudioPolicyManager::GetInstance().RegisterPreferredDeviceSetCallback(preferredDeviceSetCallback);
+    AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(preferredDeviceSetCallback);
 }
 
 void AudioPolicyManagerIsDeviceActiveFuzzTest()
