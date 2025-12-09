@@ -294,6 +294,10 @@ uint32_t AudioSuitePipeline::GetMaxNodeNumsForType(AudioNodeType type)
         return pipelineCfg_.maxMixNodeNum_;
     }
 
+    if (type == NODE_TYPE_AUDIO_SEPARATION) {
+        return pipelineCfg_.maxAudioSeparationNodeNum_;
+    }
+
     return pipelineCfg_.maxEffectNodeNum_;
 }
 
