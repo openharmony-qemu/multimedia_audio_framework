@@ -170,5 +170,33 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_027, TestSize.Level1)
 
     EXPECT_NO_THROW(audioDeviceLock->OnDeviceInfoUpdated(updatedDesc, command));
 }
+
+/**
+* @tc.name  :  AudioDeviceLock_028
+* @tc.desc  : Test AudioDeviceLock interface.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_028, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+    AudioRendererInfo newRendererInfo;
+    AudioDeviceLock& deviceLock(audioDeviceLock::GetInstance());
+    devicelock.audioStateManager_.SetAudioSceneOwnerUid(0);
+    EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
+}
+
+/**
+* @tc.name  :  AudioDeviceLock_029
+* @tc.desc  : Test AudioDeviceLock interface.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+    AudioRendererInfo newRendererInfo;
+    AudioDeviceLock& deviceLock(audioDeviceLock::GetInstance());
+    devicelock.audioStateManager_.SetAudioSceneOwnerUid(1);
+    EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
+}
 } // namespace AudioStandard
 } // namespace OHOS
