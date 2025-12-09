@@ -4772,5 +4772,21 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_002, TestSize.Level0)
     EXPECT_EQ(nullptr, audioRenderer);
 }
 
+/**
+ * @tc.name  : AudioRenderer_IsStartWaitFor_001
+ * @tc.number: IsStartWaitFor_001
+ * @tc.desc  : Test IsStartWaitFor() for different cases
+ */
+HWTEST(AudioRendererUnitTest, IsStartWaitFor_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+
+    bool res = testRendererInner->IsStartWaitFor(true);
+    EXPECT_EQ(true, res);
+    res = testRendererInner->IsStartWaitFor(false);
+    EXPECT_EQ(true, res);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

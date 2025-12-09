@@ -1099,7 +1099,7 @@ void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
     }
 }
 
-int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
+int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, bool isStartStateWaitFor)
 {
     // Check first to avoid redundant instructions consumption in thread switching
     if (!IsRestoreOrStopNeeded()) {
@@ -1127,17 +1127,25 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         sharedRenderer->isSwitchStreamSt_ = true;
         sharedRenderer->switchStreamSt_.notify_all();
     });
-    std::unique_lock<std::mutex> lock(switchStreamMt_);
-    switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
-        return isSwitchStreamSt_;
-    });
+    IsStartWaitFor(isStartStateWaitFor);
     return SUCCESS;
+}
+
+bool AudioRendererPrivate::IsStartWaitFor(bool isStartStateWaitFor)
+{
+    if (isStartStateWaitFor) {
+        std::unique_lock<std::mutex> lock(switchStreamMt_);
+        return switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
+            return isSwitchStreamSt_;
+        });
+    }
+    return true;
 }
 
 bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
-    AsyncCheckAudioRenderer("Start");
+    AsyncCheckAudioRenderer("Start", true);
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
@@ -1196,7 +1204,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
-    AsyncCheckAudioRenderer("Write");
+    AsyncCheckAudioRenderer("Write", false);
 
     std::unique_lock<std::mutex> lock(inSwitchingMtx_);
     taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
@@ -1215,7 +1223,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
 {
     Trace trace("Write");
-    AsyncCheckAudioRenderer("Write");
+    AsyncCheckAudioRenderer("Write", false);
 
     std::unique_lock<std::mutex> lock(inSwitchingMtx_);
     taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
@@ -1249,7 +1257,7 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    AsyncCheckAudioRenderer("GetAudioPosition");
+    AsyncCheckAudioRenderer("GetAudioPosition", false);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioPosition(timestamp, base);
@@ -1875,7 +1883,7 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AsyncCheckAudioRenderer("GetBufferDesc");
+    AsyncCheckAudioRenderer("GetBufferDesc", false);
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
@@ -1887,7 +1895,7 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
     // if dataLength = 0, this buffer will be discard.
     Trace trace("AudioRenderer::Enqueue dataLength:" + std::to_string(bufDesc.dataLength) + " bufLength:" +
         std::to_string(bufDesc.bufLength));
-    AsyncCheckAudioRenderer("Enqueue");
+    AsyncCheckAudioRenderer("Enqueue", false);
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
@@ -3108,7 +3116,7 @@ int32_t AudioRendererPrivate::SetStaticBufferCallback(std::shared_ptr<StaticBuff
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG(state != RENDERER_NEW && state != RENDERER_RELEASED, ERR_ILLEGAL_STATE,
         "incorrect state:%{public}d to register cb", state);
-    audioStream_->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate");});
+    audioStream_->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate", false);});
     return audioStream_->SetStaticBufferEventCallback(callback);
 }
 

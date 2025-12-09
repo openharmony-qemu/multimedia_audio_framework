@@ -202,9 +202,10 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t AsyncCheckAudioRenderer(std::string callingFunc);
+    int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool isStartStateWaitFor = false);
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
+    bool IsStartWaitFor(bool isStartStateWaitFor = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
