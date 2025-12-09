@@ -52,8 +52,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferre
     const int32_t ownerUid = audioStateManager_.GetAudioSceneOwnerUid();
     const int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (ownerUid == 0) {
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, callingUid);
-    } else return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, ownerUid);
+        return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, callingUid);
+    } else {
+        return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, ownerUid);
+    }
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredInputDeviceDescriptors(
