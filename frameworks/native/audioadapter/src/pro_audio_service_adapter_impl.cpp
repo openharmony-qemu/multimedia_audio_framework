@@ -192,7 +192,7 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
     Trace trace("SetDefaultSource:" + name);
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().SetDefaultSource(name);
-    AUDIO_INFO_LOG("[%{public}s]", name.c_str());
+    AUDIO_INFO_LOG("[%s]", name.c_str());
     return SUCCESS;
 }
 
@@ -241,7 +241,7 @@ int32_t ProAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
     uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
+    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %s",
         sinkInputId,
         sinkIndex,
         sinkName.c_str());

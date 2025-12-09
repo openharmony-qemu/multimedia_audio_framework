@@ -315,13 +315,13 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
     if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
-        AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
+        AUDIO_ERR_LOG("openaudioport failed,format:%s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
     sinkInfo.deviceNetId = audioModuleInfo.networkId;
     sinkInfo.deviceClass = audioModuleInfo.className;
     sinkInfo.suspendTime = audioModuleInfo.suspendIdleTimeout;
-    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %{public}s, deviceClass: %{public}s, suspend_time: %{public}u",
+    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %s, deviceClass: %s, suspend_time: %{public}u",
         sinkInfo.deviceNetId.c_str(),
         sinkInfo.deviceClass.c_str(),
         sinkInfo.suspendTime);
