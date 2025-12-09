@@ -96,7 +96,7 @@ public:
     PcmBufferFormat outFormat_ = {SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE};
 };
 
-static const int32_t g_ExpectedGetOutputPortCalls = 2;         // Times of GetOutputPort called in DoProcess
+static int32_t g_ExpectedGetOutputPortCalls = 2;         // Times of GetOutputPort called in DoProcess
 
 HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
