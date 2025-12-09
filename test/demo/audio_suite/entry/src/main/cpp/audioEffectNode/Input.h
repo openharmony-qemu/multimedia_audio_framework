@@ -30,7 +30,8 @@ extern std::map<std::string, std::vector<uint8_t>> g_writeDataBufferMap;
 
 // Define a structure to store ID and number
 struct UserData {
-    std::string id;                        // Retrieve the corresponding audio data from g_writeDataBufferMap based on the ID
+    // Retrieve the corresponding audio data from g_writeDataBufferMap based on the ID
+    std::string id;                        
     int32_t bufferSize;                    // Total audio data size
     int32_t totalWriteAudioDataSize;       // Size of audio data already written
     bool isResetTotalWriteAudioDataSize;   // If the audio written from the beginning

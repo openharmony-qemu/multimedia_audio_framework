@@ -270,7 +270,8 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
     if (!CheckParameters(audioNode, audioData, finished)) {
         return 0;
     }
-    // Processing audio is nullptr here, it is an issue with the demo's method of obtaining audio data, not a problem with the underlying interface
+    // Processing audio is nullptr here, it is an issue with the demo's method of obtaining audio data, 
+    // not a problem with the underlying interface
     std::string inputId = static_cast<UserData *>(userData)->id;
     auto usetDataIt = g_userDataMap.find(inputId);
     if (usetDataIt == g_userDataMap.end()) {

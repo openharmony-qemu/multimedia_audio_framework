@@ -19,8 +19,10 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EFFECT_NODE_TAG,
         "audioEditTest AddEffectNodeToNodeManager start and inputNodeId is: %{public}s, effectNodeId is %{public}s",
         inputNodeId.c_str(), effectNodeId.c_str());
-    // Add effect nodes, check if there is a mixer node. If there is no mixer node, add the effect nodes before the output node; 
-    // if there is a mixer node, obtain the corresponding input node ID and insert the effect nodes sequentially before the mixer node
+    // Add effect nodes, check if there is a mixer node. 
+    // If there is no mixer node, add the effect nodes before the output node; 
+    // If there is a mixer node, 
+    // obtain the corresponding input node ID and insert the effect nodes sequentially before the mixer node
     const std::vector<Node> mixerNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
     OH_AudioSuite_Result result;
     Node currentNode  = g_nodeManager->GetNodeById(effectNodeId);
