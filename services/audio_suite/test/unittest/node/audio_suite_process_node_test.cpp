@@ -96,6 +96,8 @@ public:
     PcmBufferFormat outFormat_ = {SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE};
 };
 
+static const int32_t g_ExpectedGetOutputPortCalls = 2;         // Times of GetOutputPort called in DoProcess
+
 HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
     EXPECT_NE(node_->GetOutputPort(), nullptr);
@@ -111,7 +113,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
     inputNodeOutputPort->WriteDataToOutput(buffer.get());
     EXPECT_CALL(*mockInputNode_, DoProcess()).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(2).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_ExpectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
     node_->Connect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 1);
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
@@ -135,7 +137,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithEnableProcessFalseTest, TestSiz
     inputNodeOutputPort->WriteDataToOutput(buffer.get());
     EXPECT_CALL(*mockInputNode_, DoProcess()).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(2).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_ExpectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
     node_->Connect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 1);
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
@@ -193,7 +195,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     inputNodeOutputPort->WriteDataToOutput(buffer.get());
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(2).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_ExpectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
     node_->Connect(mockInputNode_);
 
     ret = node_->DoProcess();
