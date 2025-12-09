@@ -77,7 +77,7 @@ napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取uuid
+    // get uuid
     std::string uuidStr;
     ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid==%{public}s", uuidStr.c_str());

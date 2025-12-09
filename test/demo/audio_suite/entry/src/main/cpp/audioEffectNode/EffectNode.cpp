@@ -13,13 +13,14 @@ const char *EFFECT_NODE_TAG = "[AudioEditTestApp_EffectNode_cpp]";
 std::shared_ptr<NodeManager> g_nodeManager = nullptr;
 std::shared_ptr<NodeManager> g_singlePipelineNodeManager = nullptr;
 
-// 创建效果节点后调用该方法将效果节点加入到nodeManager中
+// After creating an effect node, call this method to add the effect node to the nodeManager
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EFFECT_NODE_TAG,
         "audioEditTest AddEffectNodeToNodeManager start and inputNodeId is: %{public}s, effectNodeId is %{public}s",
         inputNodeId.c_str(), effectNodeId.c_str());
-    // 添加效果节点，检查是否有混音节点，没有混音节点就将效果节点添加到output节点之前；有混音节点，获取到对应input节点id，按序插入到混音节点之前
+    // Add effect nodes, check if there is a mixer node. If there is no mixer node, add the effect nodes before the output node; 
+    // if there is a mixer node, obtain the corresponding input node ID and insert the effect nodes sequentially before the mixer node
     const std::vector<Node> mixerNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
     OH_AudioSuite_Result result;
     Node currentNode  = g_nodeManager->GetNodeById(effectNodeId);
@@ -68,8 +69,8 @@ Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType)
 }
 
 /**
- * @brief 遍历所有 OH_AudioNode_Type 枚举值，检查是否支持。
- * @return napi_value 所有支持的节点类型。
+ * @brief Traverse all OH_AudioNode_Type enumeration values to check for support.
+ * @return napi_value All supported node types.
  */
 napi_value GetSupportedAudioNodeTypes(napi_env env)
 {
@@ -86,7 +87,7 @@ napi_value GetSupportedAudioNodeTypes(napi_env env)
         OH_AudioNode_Type nodeType = static_cast<OH_AudioNode_Type>(value);
         bool isSupported = false;
         OH_AudioSuite_Result result = OH_AudioSuiteEngine_IsNodeTypeSupported(nodeType, &isSupported);
-        // 调用接口检查支持状态
+        // Invoke interface to check support status
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, EFFECT_NODE_TAG,
                          "audioEditTest---OH_AudioSuiteEngine_IsNodeTypeSupported Failed");
@@ -102,7 +103,7 @@ napi_value GetSupportedAudioNodeTypes(napi_env env)
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EFFECT_NODE_TAG, "Failed to create type array");
         return nullptr;
     }
-    // 将每个支持的数值添加到 JS 数组中
+    // Add each supported value to the JS array
     for (size_t i = 0; i < supportedTypes.size(); ++i) {
         napi_value jsValue;
         status = napi_create_int32(env, supportedTypes[i], &jsValue);

@@ -10,7 +10,7 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *EQUALIZER_TAG = "[AudioEditTestApp_Equalizer_cpp]";
 
-// 封装入参 OH_EqualizerMode
+// Encapsulated Parameters OH_EqualizerMode
 OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equalizerMode)
 {
     OH_EqualizerFrequencyBandGains eqMode;
@@ -71,7 +71,7 @@ napi_status GetEqBandGainsParameters(napi_env env, napi_callback_info info,
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 遍历数组并打印每个元素
+    // Traverse the array and print each element
     for (uint32_t i = 0; i < EQUALIZER_BAND_NUM; ++i) {
         napi_value element;
         napi_get_element(env, argv[ARG_0], i, &element);
@@ -107,7 +107,7 @@ Node GetOrCreateEqualizerNodeByMode(std::string& equalizerId, std::string& input
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUALIZER_TAG,
             "audioEditTest addEffectNodeManager result: %{public}d", result);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-            eqNode.physicalNode = nullptr; // 标记为失败
+            eqNode.physicalNode = nullptr; // Marked as failed
         }
     }
     return eqNode;
@@ -117,13 +117,13 @@ Node GetOrCreateEqualizerNodeByGains(std::string& equalizerId, std::string& inpu
 {
     Node eqNode = g_nodeManager->GetNodeById(equalizerId);
     if (!eqNode.physicalNode) {
-        // 创建均衡器节点
+        // Creating a Balancer Node
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUALIZER_TAG,
             "audioEditTest GetOrCreateEqualizerNodeByGains create");
         eqNode.id = equalizerId;
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         g_nodeManager->createNode(equalizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
-        // 获取效果节点
+        // Obtaining the Effect Node
         eqNode = g_nodeManager->GetNodeById(equalizerId);
         if (selectedNodeId.empty()) {
             int result = AddEffectNodeToNodeManager(inputId, equalizerId);
@@ -131,14 +131,14 @@ Node GetOrCreateEqualizerNodeByGains(std::string& equalizerId, std::string& inpu
                 "audioEditTest AddEffectNodeToNodeManager AddEffectNodeToNodeManager result: %{public}d",
                 result);
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-                eqNode.physicalNode = nullptr; // 标记为失败
+                eqNode.physicalNode = nullptr; // Marked as failed
             }
         } else {
             int result = g_nodeManager->insertNode(equalizerId, selectedNodeId, Direction::LATER);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUALIZER_TAG,
                 "audioEditTest AddEffectNodeToNodeManager insertNode result: %{public}d", result);
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-                eqNode.physicalNode = nullptr; // 标记为失败
+                eqNode.physicalNode = nullptr; // Marked as failed
             }
         }
     }

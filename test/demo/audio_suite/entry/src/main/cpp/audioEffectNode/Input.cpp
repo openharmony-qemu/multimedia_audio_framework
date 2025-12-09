@@ -30,7 +30,7 @@ OH_AudioFormat g_audioFormatInput = {
     .encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW
 };
 
-// 创造 output builder 构造器
+// Create output builder constructor
 OH_AudioNodeBuilder *builderOut = nullptr;
 
 napi_status ParseArguments(napi_env env, napi_callback_info info, AudioParams &params)
@@ -76,14 +76,14 @@ bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &
     }
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
         "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
-    // 设置采样率
+    // Set Sampling Rate
     g_audioFormatInput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
+    // Set audio channels
     g_audioFormatInput.channelCount = channels;
     g_audioFormatInput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
+    // Set bit depth
     g_audioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
     g_audioFormatOutput.samplingRate = g_audioFormatInput.samplingRate;
@@ -100,11 +100,11 @@ void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize
 {
     g_totalSize = 0;
     g_totalBuff = nullptr;
-    // 添加解封装轨道
+    // Add Decapsulation Track
     if (OH_AVDemuxer_SelectTrackByID(demuxer, trackIndex) != AV_ERR_OK) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "select audio track failed: %{public}d", trackIndex);
     }
-    // 创建缓冲区
+    // Create Buffer
     if (bufferSize <= 0) {
         return;
     }
@@ -125,7 +125,7 @@ void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize
         ret = OH_AVDemuxer_ReadSampleBuffer(demuxer, trackIndex, pcmBuffer);
         if (ret == AV_ERR_OK) {
             OH_AVBuffer_GetBufferAttr(pcmBuffer, &info);
-            // 将当前样本的数据复制到 totalBuff 中
+            // Copy the data of the current sample into totalBuff
             std::copy(reinterpret_cast<char *>(OH_AVBuffer_GetAddr(pcmBuffer)),
                 reinterpret_cast<char *>(OH_AVBuffer_GetAddr(pcmBuffer)) + info.size, totalBuffer + g_totalSize);
             g_totalSize += info.size;
@@ -139,7 +139,7 @@ void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize
     }
     g_totalBuff = (char *)malloc(g_totalSize);
     std::copy(totalBuffer, totalBuffer + g_totalSize, g_totalBuff);
-    // 销毁缓冲区
+    // Destroy buffer
     free(totalBuffer);
     OH_AVBuffer_Destroy(pcmBuffer);
     threadFinished.store(true);
@@ -168,12 +168,12 @@ void StoreTotalBuffToMap(const char *totalBuff, int32_t size, const std::string 
 void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiValue, OH_AudioSuite_Result &result)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, "audioEditTest CreateInputNode start");
-    // 添加音频，将音频的buffer出存储到map中
+    // Add audio and store the audio buffer in the map
     StoreTotalBuffToMap(g_totalBuff, g_totalSize, inputId);
     auto it = g_writeDataBufferMap.find(inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest AudioInAndOutInit g_writeDataBufferMap[inputId] length: %{public}d", it->second.size());
-    // 创造 builder 构造器
+    // Creating a builder constructor
     OH_AudioNodeBuilder *builderIn;
     result = OH_AudioSuiteNodeBuilder_Create(&builderIn);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
@@ -182,7 +182,7 @@ void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiV
         napi_create_int64(env, static_cast<int>(result), &napiValue);
         return;
     }
-    // 透传节点类型
+    // Transparent transmission node type
     result = OH_AudioSuiteNodeBuilder_SetNodeType(builderIn, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "NodeManagerTest createNode OH_AudioSuiteNodeBuilder_SetNodeType result: %{public}d",
@@ -192,7 +192,7 @@ void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiV
         return;
     }
 
-    // 封装方法，设置 音频文件的 参数 以及 写入音频文件到缓冲区
+    // Packaging method, setting parameters for audio files, and writing audio files to a buffer
     result = SetParamsAndWriteData(builderIn, inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest SetParamsAndWriteData result: %{public}d", static_cast<int>(result));
@@ -201,7 +201,7 @@ void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiV
         return;
     }
 
-    // 创建input节点
+    // Creating an input node
     g_nodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
 }
 
@@ -218,7 +218,7 @@ OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::st
     }
     UserData *data = new UserData();
     data->id = inputId;
-    // 后面可以考虑去掉g_totalSize, 用入参形式传入
+    // Later, we can consider removing g_totalSize and pass it as an input parameter
     data->bufferSize = g_totalSize;
     data->totalWriteAudioDataSize = 0;
     data->isResetTotalWriteAudioDataSize = false;
@@ -228,7 +228,7 @@ OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::st
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest OH_AudioNodeBuilder_SetFormat userData inputId is %{public}s",
         static_cast<UserData *>(userData)->id.c_str());
-    // 设置OH_AudioSuiteNodeBuilder_SetRequestDataCallback回调，创建节点之前
+    // Set the OH_AudioSuiteNodeBuilder_SetRequestDataCallback callback before creating the node
     result = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, WriteDataCallBack, userData);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest OH_AudioSuiteNodeBuilder_SetRequestDataCallback result is %{public}d",
@@ -236,7 +236,7 @@ OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::st
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
-    // 将UserData实例存入映射表中
+    // Store the UserData instance in the mapping table
     g_userDataMap[inputId] = data;
     return result;
 }
@@ -270,7 +270,7 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
     if (!CheckParameters(audioNode, audioData, finished)) {
         return 0;
     }
-    // 处理音频数据 此处如果是nullptr，是demo获取音频数据的问题，非底层接口问题
+    // Processing audio is nullptr here, it is an issue with the demo's method of obtaining audio data, not a problem with the underlying interface
     std::string inputId = static_cast<UserData *>(userData)->id;
     auto usetDataIt = g_userDataMap.find(inputId);
     if (usetDataIt == g_userDataMap.end()) {
@@ -289,23 +289,23 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
         inputId.c_str());
     auto it = g_writeDataBufferMap.find(inputId);
     if (it == g_writeDataBufferMap.end()) {
-        // map没有找到对应的音频buffer
+        // The map did not find the corresponding audio buffer
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG,
             "audioEditTest WriteDataCallBack g_writeDataBufferMap is end");
         *finished = true;
         return 0;
     }
-    // 计算剩余数据量
+    // Calculate the remaining data volume
     int32_t remainingDataSize = totalSize - totalWriteAudioDataSize;
-    // 确定本次写入的实际数据量
+    // Determine the actual amount of data written this time
     int32_t actualDataSize = std::min(audioDataSize, remainingDataSize);
-    // 将数据从totalBuff_复制到audioData
+    // Copy data from totalBuff_ to audioData
     std::copy(it->second.data() + totalWriteAudioDataSize,
         it->second.data() + totalWriteAudioDataSize + actualDataSize, static_cast<char *>(audioData));
-    // 跟新已写入的数据量
+    // Amount of data written and updated
     totalWriteAudioDataSize += actualDataSize;
     usetDataIt->second->totalWriteAudioDataSize = totalWriteAudioDataSize;
-    // 如果不够，则补0
+    // If not enough, add 0s.
     int32_t padSize = audioDataSize - remainingDataSize;
     if (padSize > 0) {
         std::fill_n(static_cast<char *>(audioData) + actualDataSize, padSize, 0);
@@ -314,28 +314,28 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
         "audioEditTest WriteDataCallBack totalSize: %{public}d, totalWriteAudioDataSize: %{public}d, "
         "audioDataSize: %{public}d, actualDataSize:%{public}d, padSize: %{public}d",
         totalSize, totalWriteAudioDataSize, audioDataSize, actualDataSize, padSize);
-    // 如果所有数据都写入完毕
+    // If all data has been written.
     if (totalWriteAudioDataSize >= totalSize) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, "audioEditTest WriteDataCallBack is finished");
         g_totalSize = 0;
         totalWriteAudioDataSize = 0;
         *finished = true;
     }
-    // 返回写入的数据数据量
+    // Return the amount of data written
     return actualDataSize;
 }
 
 void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const UpdateInputNodeParams &params)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, "audioEditTest UpdateInputNode start");
-    // 设置采样率
+    // Set Sampling Rate
     g_audioFormatInput.samplingRate = SetSamplingRate(params.sampleRate);
-    // 设置声道
+    // Set audio channels
     g_audioFormatInput.channelCount = params.channels;
     g_audioFormatInput.channelLayout = SetChannelLayout(params.channels);
-    // 设置位深
+    // Set bit depth
     g_audioFormatInput.sampleFormat = SetSampleFormat(params.bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
 
     g_audioFormatOutput.samplingRate = g_audioFormatInput.samplingRate;
@@ -348,9 +348,9 @@ void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const 
     result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &g_audioFormatInput);
     const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &g_audioFormatOutput);
-    // 添加音频，将音频的buffer出存储到map中，，上一行中的memcpy可以考虑删除了
+    // Add audio, store the audio buffer in the map. The memcpy in the previous line can be considered for removal
     if (g_writeDataBufferMap.find(params.inputId) != g_writeDataBufferMap.end()) {
-        // 键存在，执行删除操作
+        // Key exists, proceed with deletion
         g_writeDataBufferMap.erase(params.inputId);
     }
     StoreTotalBuffToMap(g_totalBuff, g_totalSize, params.inputId);
@@ -359,13 +359,13 @@ void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const 
         "audioEditTest AudioInAndOutInit g_writeDataBufferMap[inputId] length: %{public}d", it->second.size());
     UserData *data = new UserData();
     data->id = params.inputId;
-    // 后面可以考虑去掉g_totalSize，用入参形式传入
+    // Later, we can consider removing g_totalSize and pass it as an input parameter
     data->bufferSize = g_totalSize;
     data->totalWriteAudioDataSize = 0;
     data->isResetTotalWriteAudioDataSize = false;
-    // 将UserData实例存入映射表中
+    // Store the UserData instance in the mapping table
     if (g_userDataMap.find(params.inputId) != g_userDataMap.end()) {
-        // 键存在，执行删除操作
+        // Key exists, proceed with deletion.
         g_userDataMap.erase(params.inputId);
     }
     g_userDataMap[params.inputId] = data;
@@ -422,7 +422,7 @@ void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return;
     }
-    // 封装方法，设置 音频文件的 参数 以及 写入音频文件到缓冲区
+    // Packaging method, setting parameters for audio files, and writing audio files to a buffer
     result = SetParamsAndWriteData(builderOut, inputId, OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest SetParamsAndWriteData result: %{public}d", static_cast<int>(result));
@@ -449,14 +449,14 @@ napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsBy
     std::istringstream iss(audioFormat);
     iss >> params.sampleRate >> params.channels >> params.bitsPerSample >> params.pcmBufferSize;
  
-    // 设置采样率
+    // Set Sampling Rate
     g_audioFormatInput.samplingRate = SetSamplingRate(params.sampleRate);
-    // 设置声道
+    // Set audio channels
     g_audioFormatInput.channelCount = params.channels;
     g_audioFormatInput.channelLayout = SetChannelLayout(params.channels);
-     // 设置位深
+    // Set bit depth
     g_audioFormatInput.sampleFormat = SetSampleFormat(params.bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
     g_audioFormatOutput.samplingRate = g_audioFormatInput.samplingRate;

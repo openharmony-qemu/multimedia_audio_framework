@@ -42,14 +42,14 @@ Node GetOrCreateSpeedToneNode(std::string& soundSpeedToneId, std::string& inputI
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SOUND_SPEED_TONE_TAG,
                          "audioEditTest addEffectNodeToNodeManager result: %{public}d", resultInt);
             if (resultInt != 0) {
-                eqNode.physicalNode = nullptr; // 标记为失败
+                eqNode.physicalNode = nullptr; // Marked as failed
             }
         } else {
             int resultInt = g_nodeManager->insertNode(soundSpeedToneId, selectedNodeId, Direction::LATER);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SOUND_SPEED_TONE_TAG,
                          "audioEditTest insertNode insertNode result: %{public}d", resultInt);
             if (resultInt != 0) {
-                eqNode.physicalNode = nullptr; // 标记为失败
+                eqNode.physicalNode = nullptr; // Marked as failed
             }
         }
     }

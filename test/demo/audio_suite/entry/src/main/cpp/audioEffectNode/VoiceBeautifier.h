@@ -15,7 +15,7 @@ struct StartVBParameters {
     std::string inputId;
     int mode = -1;
     std::string voiceBeautifierId;
-    std::string selectNodeId; // 可选参数，为空表示不指定节点
+    std::string selectNodeId; // Optional parameter; leaving it empty means no node is specified
 };
  
 constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
