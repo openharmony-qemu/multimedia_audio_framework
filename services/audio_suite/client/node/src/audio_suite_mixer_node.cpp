@@ -79,6 +79,7 @@ int32_t AudioSuiteMixerNode::InitAudioLimiter()
 int32_t AudioSuiteMixerNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init begin");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
 
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
