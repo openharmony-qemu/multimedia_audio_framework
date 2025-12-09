@@ -28,6 +28,7 @@
 #include "audio_bundle_manager.h"
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -672,7 +673,14 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+
+    HandleRingToDefaultSceneChange(lastAudioScene, audioScene);
     FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
+        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
 
     if (!isSameScene) {
         SetSleVoiceStatusFlag(audioScene);

@@ -3535,5 +3535,14 @@ void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<A
         GetEventEntry()->OnDeviceInfoUpdated(*devDesc, EXCEPTION_FLAG_UPDATE);
     }
 }
+
+void AudioCoreService::HandleRingToDefaultSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
+{
+    if ((lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING) &&
+        audioScene == AUDIO_SCENE_DEFAULT) {
+        AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to default");
+        isRingDualToneOnPrimarySpeaker_ = false;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
