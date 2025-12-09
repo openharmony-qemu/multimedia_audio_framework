@@ -192,8 +192,6 @@ interface IAudioPolicy {
     void SetCallDeviceActive([in] int deviceType, [in] boolean active, [in] String address, [in] int uid);
     void GetConverterConfig([out] ConverterConfig retCnf);
     void GetActiveBluetoothDevice([out] sharedptr<AudioDeviceDescriptor> descs);
-    void FetchOutputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo);
     void IsHighResolutionExist([out] boolean ret);
     void SetHighResolutionExist([in] boolean highResExist);
     void GetSpatializationSceneType([out] int type);

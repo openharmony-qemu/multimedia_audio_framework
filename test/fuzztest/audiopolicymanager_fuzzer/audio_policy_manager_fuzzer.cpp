@@ -577,8 +577,6 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, audioDevUsage);
     AudioPolicyManager::GetInstance().SetCallDeviceActive(DEVICE_TYPE_SPEAKER, active, address, uid);
     AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
-    AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo, reason);
-    AudioPolicyManager::GetInstance().FetchInputDeviceForTrack(streamChangeInfo);
     AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
     AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
     AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);

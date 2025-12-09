@@ -110,9 +110,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        if (audioStreamTracker_ && audioStreamTracker_.get()) {
-            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
-        }
         return SUCCESS;
     }
 
@@ -1112,10 +1109,6 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
         return false;
     }
 
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
-    }
-
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
@@ -1832,11 +1825,6 @@ RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatu
 void CapturerInClientInner::FetchDeviceForSplitStream()
 {
     AUDIO_INFO_LOG("Fetch input device for split stream %{public}u", sessionId_);
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
-    } else {
-        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
-    }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 

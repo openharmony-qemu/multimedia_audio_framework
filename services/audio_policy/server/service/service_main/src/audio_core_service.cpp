@@ -992,17 +992,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExclude
     return audioStateManager_.GetExcludedDevices(audioDevUsage);
 }
 
-void AudioCoreService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_WARNING_LOG("Not Supported");
-}
-
-void AudioCoreService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    AUDIO_WARNING_LOG("Not Supported");
-}
-
 int32_t AudioCoreService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {

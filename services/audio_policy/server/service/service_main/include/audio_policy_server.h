@@ -544,11 +544,6 @@ public:
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
-    int32_t FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt &reason) override;
-
-    int32_t FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo) override;
-
     int32_t GetSpatializationSceneType(int32_t &type) override;
 
     int32_t SetSpatializationSceneType(int32_t spatializationSceneType) override;

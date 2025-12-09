@@ -725,10 +725,6 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
-    if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
-    }
     int32_t ret = ERROR;
     if (state_ == PAUSED || state_ == STOPPED) {
         ret = processClient_->Resume();
