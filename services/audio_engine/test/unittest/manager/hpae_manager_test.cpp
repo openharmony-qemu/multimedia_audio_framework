@@ -2114,7 +2114,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink005, TestSize.Level1)
     EXPECT_EQ(sessionIds.size(), 0);
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
     
-    hpaeManager_->rendererIdStreamInfoMap_[TEST_STREAM_SESSION_ID].isMoveAble = true;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_STREAM_SESSION_ID].streamInfo.isMoveAble = true;
     std::vector<uint32_t> sessionIds = hpaeManager_->GetAllRenderSession("Speaker_File");
     EXPECT_EQ(sessionIds.size(), 1);
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 1);
