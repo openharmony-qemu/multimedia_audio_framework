@@ -660,6 +660,8 @@ struct AudioDeviceDescriptor {
   @readonly encodingTypes: Optional<Array<AudioEncodingType>>;
   @readonly spatializationSupported: Optional<bool>;
   @readonly dmDeviceType: Optional<i32>;
+  @readonly model: Optional<String>;
+  @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
 
 struct VolumeEvent {
