@@ -2743,7 +2743,8 @@ std::vector<uint32_t> HpaeManager::GetAllRenderSession(const std::string &name)
     sessionIds.reserve(rendererIdSinkNameMap_.size());
     for (const auto &renderIdMap : rendererIdSinkNameMap_) {
         if (renderIdMap.second == name &&
-            rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end()) {
+            rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end() &&
+            rendererIdStreamInfoMap_[renderIdMap.first].streamInfo.isMoveAble) {
             sessionIds.emplace_back(renderIdMap.first);
             movingIds_.emplace(renderIdMap.first, rendererIdStreamInfoMap_[renderIdMap.first].state);
         }
