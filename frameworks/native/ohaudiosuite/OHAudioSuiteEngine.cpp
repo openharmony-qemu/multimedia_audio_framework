@@ -699,7 +699,7 @@ static const float SPACE_RENDER_MIN_CART_POINT_DISTANCE = -5.0f;
 static const float SPACE_RENDER_MAX_CART_POINT_DISTANCE = 5.0f;
 static const float SPACE_RENDER_MIN_TIME = 2.0f;
 static const float SPACE_RENDER_MAX_TIME = 40.0f;
-static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 1;
+static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
 static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
 static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
@@ -1219,8 +1219,8 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
         extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
         ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
     CHECK_AND_RETURN_RET_LOG(
-        extension.extAngle >= SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle <= SPACE_RENDER_MAX_EXPAND_ANGLE,
-        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the 1~360");
+        extension.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
+        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the (1, 360).");
 
     uint32_t nodeId = node->GetNodeId();
     AudioSpaceRenderExtensionParams extensionParams;
