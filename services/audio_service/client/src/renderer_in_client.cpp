@@ -161,6 +161,18 @@ bool RendererInClientInner::IsHighResolution() const noexcept
            curStreamParams_.format >= SAMPLE_S24LE;
 }
 
+void RendererInClientInner::InitDFXOperaiton()
+{
+    // eg: 100005_44100_2_1_client_out.pcm
+    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.customSampleRate == 0 ?
+        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
+        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out." +
+        (isHWDecodingType_ ? EncodingTypeStr(static_cast<AudioEncodingType>(tempInfo.encoding)) : "pcm");
+
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
+}
+
 void RendererInClientInner::InitDirectPipeType()
 {
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {

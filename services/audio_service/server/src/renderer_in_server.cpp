@@ -67,6 +67,7 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
+    constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128Kb
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
@@ -115,11 +116,29 @@ void RendererInServer::RemoveStreamInfo()
     checkCount_ = 0;
 }
 
+int32_t RendererInServer::ConfigFixedSizeBuffer()
+{
+    stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_OPERATION_FAILED, "falied: byteSizePerFrame is 0");
+    bufferTotalSizeInFrame_ = FIXED_BUFFER_SIZE / byteSizePerFrame_;
+    engineTotalSizeInFrame_ = bufferTotalSizeInFrame_;
+    audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
+
+    // we need to clear data buffer to avoid dirty data.
+    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+        audioServerBuffer_->GetDataSize());
+    return SUCCESS;
+}
+
 int32_t RendererInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
+    }
+    if (isHWDecodingType_) {
+        return ConfigFixedSizeBuffer();
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     // default to 2, 40ms cache size for write mode
@@ -163,15 +182,6 @@ int32_t RendererInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void RendererInServer::GetEAC3ControlParam()
-{
-    int32_t eac3TestFlag = 0;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    if (eac3TestFlag == 1) {
-        managerType_ = EAC3_PLAYBACK;
-    }
-}
-
 void RendererInServer::ProcessManagerType()
 {
     if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
@@ -179,9 +189,10 @@ void RendererInServer::ProcessManagerType()
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
-    if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
-        managerType_ = EAC3_PLAYBACK;
-        AUDIO_INFO_LOG("current stream marked as eac3 direct stream");
+    if (IsHWDecodingType(processConfig_.streamInfo.encoding)) {
+        managerType_ = HWDECODING_PLAYBACK;
+        isHWDecodingType_ = true;
+        AUDIO_INFO_LOG("current stream marked as HWDecoding stream");
     }
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
@@ -196,7 +207,7 @@ void RendererInServer::ProcessManagerType()
 int32_t RendererInServer::Init()
 {
     ProcessManagerType();
-    GetEAC3ControlParam();
+    // remove eac3 param check
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
 
@@ -226,7 +237,8 @@ int32_t RendererInServer::Init()
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_renderer_server_in_"
         + std::to_string(tempInfo.customSampleRate == 0 ? tempInfo.samplingRate : tempInfo.customSampleRate) + "_"
-        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
+        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "." + (isHWDecodingType_ ?
+        EncodingTypeStr(tempInfo.encoding) : "pcm");
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, streamIndex_);
 
@@ -1192,10 +1204,10 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
-    GetEAC3ControlParam();
 
     MarkStaticFadeOut(false);
 
+    // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
 
@@ -1387,7 +1399,7 @@ int32_t RendererInServer::StopInner()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    GetEAC3ControlParam();
+    // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 

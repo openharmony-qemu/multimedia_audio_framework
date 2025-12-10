@@ -240,6 +240,8 @@ private:
 
     int32_t InitIpcStream();
 
+    void InitDFXOperaiton();
+
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
@@ -337,6 +339,8 @@ private:
     RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
+
+    bool isHWDecodingType_ = false;
 
     // for data process
     bool isBlendSet_ = false;

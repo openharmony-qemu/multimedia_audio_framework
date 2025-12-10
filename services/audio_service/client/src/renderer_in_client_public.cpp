@@ -223,6 +223,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
+    isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
@@ -251,14 +252,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
 
-    // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" +
-        std::to_string(curStreamParams_.customSampleRate == 0 ?
-        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
-        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
-
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
+    InitDFXOperaiton();
     InitDirectPipeType();
 
     proxyObj_ = proxyObj;

@@ -618,6 +618,8 @@ void CloseFd(int fd);
 
 bool IsHWDecodingType(AudioEncodingType type);
 
+std::string EncodingTypeStr(AudioEncodingType type);
+
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
 
 std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(

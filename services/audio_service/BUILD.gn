@@ -413,6 +413,8 @@ audio_ohos_library("audio_process_service") {
     "server/src/hpae_adapter_manager.cpp",
     "server/src/hpae_capturer_stream_impl.cpp",
     "server/src/hpae_renderer_stream_impl.cpp",
+    "server/src/hw_decoding_adapter_manager.cpp",
+    "server/src/hw_decoding_renderer_impl.cpp",
     "server/src/i_stream_manager.cpp",
     "server/src/ipc_stream_in_server.cpp",
     "server/src/none_mix_engine.cpp",
