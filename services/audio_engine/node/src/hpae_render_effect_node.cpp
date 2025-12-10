@@ -470,8 +470,9 @@ void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
     audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
 }
 
-void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
+void HpaeRenderEffectNode::InitEffectBufferFromDisConnect(const bool isNeedInitEffectBuffer)
 {
+    CHECK_AND_RETURN_LOG(isNeedInitEffectBuffer != false, "no need InitEffectBuffer");
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);

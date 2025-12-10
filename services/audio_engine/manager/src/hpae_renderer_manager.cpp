@@ -400,7 +400,7 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
     DereferenceInputCluster(sessionId);
-    DisConnectOutputCluster(sceneType);
+    DisConnectOutputCluster(sceneType, true);
     
     HpaeProcessorType sceneTypeToDestroyNodes = GetProcessorType(sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
@@ -699,7 +699,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
     auto request = [this, sceneType]() {
         AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            DisConnectOutputCluster(sceneType);
+            DisConnectOutputCluster(sceneType, false);
             // for collaboration
             if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
                 hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
@@ -743,11 +743,11 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     }
 }
 
-void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)
+void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType, const bool isNeedInitEffectBuffer)
 {
     if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0 &&
         sceneClusterMap_[sceneType]->GetConnectedFlag()) {
-        sceneClusterMap_[sceneType]->DisConnectMixerNode();
+        sceneClusterMap_[sceneType]->DisConnectMixerNode(isNeedInitEffectBuffer);
         if (outputCluster_ != nullptr) {
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         }

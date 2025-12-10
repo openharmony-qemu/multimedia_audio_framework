@@ -51,7 +51,7 @@ public:
     bool GetConnectedFlag() const;
     int32_t SetupAudioLimiter();
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
-    void DisConnectMixerNode();
+    void DisConnectMixerNode(const bool isNeedInitEffectBuffer = false);
     void InitEffectBuffer(const uint32_t sessionId);
     uint64_t GetLatency(uint32_t sessionId);
     int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);

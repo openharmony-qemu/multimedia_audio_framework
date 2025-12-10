@@ -40,7 +40,7 @@ public:
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
     int32_t GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat);
     void InitEffectBuffer(const uint32_t sessionId);
-    void InitEffectBufferFromDisConnect();
+    void InitEffectBufferFromDisConnect(const bool isNeedInitEffectBuffer);
     uint64_t GetLatency(uint32_t sessionId = 0) override;
     int32_t AudioOffloadRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
