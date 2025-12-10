@@ -294,6 +294,10 @@ uint32_t AudioSuitePipeline::GetMaxNodeNumsForType(AudioNodeType type)
         return pipelineCfg_.maxMixNodeNum_;
     }
 
+    if (type == NODE_TYPE_AUDIO_SEPARATION) {
+        return pipelineCfg_.maxAudioSeparationNodeNum_;
+    }
+
     return pipelineCfg_.maxEffectNodeNum_;
 }
 
@@ -864,7 +868,6 @@ int32_t AudioSuitePipeline::MultiRenderFrame(
 {
     AUDIO_DEBUG_LOG("AudioSuitePipeline::MultiRenderFrame enter");
     auto request = [this, audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag]() {
-        AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("MultiRenderFrame failed, pipelineState state is not running.");
             TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE, id_);

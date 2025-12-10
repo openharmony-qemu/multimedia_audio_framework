@@ -34,6 +34,7 @@ static std::string g_outfile003 = "/data/audiosuite/tempo_pitch/out_48000_1_s16l
 static std::string g_targetfile001 = "/data/audiosuite/tempo_pitch/target_48000_1_s16le_0.8_0.8.pcm";
 static std::string g_targetfile002 = "/data/audiosuite/tempo_pitch/target_48000_1_s16le_1.0_0.8.pcm";
 static std::string g_targetfile003 = "/data/audiosuite/tempo_pitch/target_48000_1_s16le_0.8_1.0.pcm";
+static int32_t g_expectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 
 class MockInputNode : public AudioNode {
 public:
@@ -91,7 +92,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(1).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
 
     std::string option_value = std::to_string(speed) + "," + std::to_string(pitch);
     int32_t ret = node->SetOptions("speedAndPitch", option_value);
@@ -203,7 +204,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(1).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
 
     node->Connect(mockInputNode_);
     EXPECT_EQ(1, inputNodeOutputPort->GetInputNum());

@@ -81,11 +81,11 @@ public:
 static bool RunGeneralVoiceChangeTest(
     const GeneralVoiceChangeInfo &info, const std::string &inputFilePath, const std::string &outputFilePath)
 {
-    AudioSuiteGeneralVoiceChangeNode vb;
-    vb.Init();
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->Init();
     std::string value = std::to_string(static_cast<int32_t>(info.gnerralVoiceType));
     std::string name = "AudioGeneralVoiceChangeType";
-    int32_t ret = vb.SetOptions(name, value);
+    int32_t ret = node->SetOptions(name, value);
     EXPECT_EQ(ret, SUCCESS);
 
     std::vector<AudioSuitePcmBuffer *> inputs;
@@ -113,7 +113,7 @@ static bool RunGeneralVoiceChangeTest(
         inputs.clear();
         inputs.push_back(buffer);
         AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = vb.SignalProcess(inputs);
+        outPcmbuffer = node->SignalProcess(inputs);
         EXPECT_TRUE(outPcmbuffer != nullptr);
         uint8_t *data = outPcmbuffer->GetPcmData();
         if (data != nullptr) {
@@ -123,13 +123,13 @@ static bool RunGeneralVoiceChangeTest(
             }
         }
     }
-    ret = vb.SetOptions(name, value);
+    ret = node->SetOptions(name, value);
     EXPECT_EQ(ret, SUCCESS);
 
     file.close();
     outFile.close();
     delete buffer;
-    vb.DeInit();
+    node->DeInit();
     return true;
 }
 
@@ -159,9 +159,9 @@ HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, testAudioSuiteGeneralVoiceChangeN
 
 HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, testAudioSuiteGeneralVoiceChangeNodeDeInit001, TestSize.Level0)
 {
-    AudioSuiteGeneralVoiceChangeNode vb;
-    vb.algoInterface_ = nullptr;
-    int32_t ret = vb.DeInit();
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->algoInterface_ = nullptr;
+    int32_t ret = node->DeInit();
     EXPECT_EQ(ret, SUCCESS);
 }
 
