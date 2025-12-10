@@ -68,6 +68,12 @@ const sptr<IStandardAudioService> AudioEngineClientManager::InitAndGetAudioServi
             sptr<IRemoteObject> proxyObject = proxy->AsObject();
             proxyObject->AddDeathRecipient(gCallbackHandle);
             proxy->RegisterCallbackHandle(gCallbackHandle->AsObject());
+            if (gCallbackHandle->IsOutputPipeChangeEnable()) {
+                proxy->SetCallbackHandleEnable(CALLBACK_OUTPUT_PIPE_CHANGE, true);
+            }
+            if (gCallbackHandle->IsInputPipeChangeEnable()) {
+                proxy->SetCallbackHandleEnable(CALLBACK_INPUT_PIPE_CHANGE, true);
+            }
 
             // Update global variable after all error cases
             gServerProxy = proxy;
@@ -212,6 +218,12 @@ bool AudioEngineClientManager::CallbackHandle::RemoveOutputPipeChangeCallback(
     return (outputPipeCbs_.size() == 0);
 }
 
+bool AudioEngineClientManager::CallbackHandle::IsOutputPipeChangeEnable()
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    return (outputPipeCbs_.size() > 0);
+}
+
 int32_t AudioEngineClientManager::CallbackHandle::OnOutputPipeChange(
     int32_t changeType, const std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo)
 {
@@ -267,6 +279,12 @@ bool AudioEngineClientManager::CallbackHandle::RemoveInputPipeChangeCallback(
     inputPipeCbs_.erase(inputPipeCbs_.begin() + i);
     // Should update enable for 1 to 0 case.
     return (inputPipeCbs_.size() == 0);
+}
+
+bool AudioEngineClientManager::CallbackHandle::IsInputPipeChangeEnable()
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    return (inputPipeCbs_.size() > 0);
 }
 
 int32_t AudioEngineClientManager::CallbackHandle::OnInputPipeChange(

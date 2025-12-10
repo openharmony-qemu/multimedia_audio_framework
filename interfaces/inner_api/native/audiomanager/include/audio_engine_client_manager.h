@@ -61,8 +61,10 @@ private:
         // Self funcs
         bool AddOutputPipeChangeCallback(std::shared_ptr<AudioOutputPipeCallback> &callback);
         bool RemoveOutputPipeChangeCallback(std::shared_ptr<AudioOutputPipeCallback> &callback);
+        bool IsOutputPipeChangeEnable();
         bool AddInputPipeChangeCallback(std::shared_ptr<AudioInputPipeCallback> &callback);
         bool RemoveInputPipeChangeCallback(std::shared_ptr<AudioInputPipeCallback> &callback);
+        bool IsInputPipeChangeEnable();
 
     private:
         std::mutex lock_;

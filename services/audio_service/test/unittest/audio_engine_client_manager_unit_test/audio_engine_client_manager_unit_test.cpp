@@ -185,5 +185,26 @@ HWTEST_F(AudioEngineClientManagerUnitTest, UnregisterInputPipeChangeCallback_001
     EXPECT_EQ(SUCCESS, status);
 }
 
+/**
+ * @tc.name   : AudioEngineClientManagerUnitTest_InitAndGetAudioServiceProxy_001
+ * @tc.number : InitAndGetAudioServiceProxy_001
+ * @tc.desc   : Test InitAndGetAudioServiceProxy() restore enable flags
+ */
+HWTEST_F(AudioEngineClientManagerUnitTest, InitAndGetAudioServiceProxy_001, TestSize.Level4)
+{
+    std::shared_ptr<AudioOutputPipeCallback> outputCb = std::make_shared<TestAudioOutputPipeCallback>();
+    int32_t status = testClient_->RegisterOutputPipeChangeCallback(outputCb);
+    EXPECT_EQ(SUCCESS, status);
+    std::shared_ptr<AudioInputPipeCallback> inputCb = std::make_shared<TestAudioInputPipeCallback>();
+    status = testClient_->RegisterInputPipeChangeCallback(inputCb);
+    EXPECT_EQ(SUCCESS, status);
+
+    // Simluate audio server die
+    AudioEngineClientManager::gServerProxy = nullptr;
+    std::shared_ptr<AudioOutputPipeCallback> outputCb2 = std::make_shared<TestAudioOutputPipeCallback>();
+    status = testClient_->RegisterOutputPipeChangeCallback(outputCb2);
+    EXPECT_EQ(SUCCESS, status);
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
