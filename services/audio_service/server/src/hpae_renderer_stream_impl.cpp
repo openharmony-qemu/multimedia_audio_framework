@@ -321,8 +321,10 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const std::string &deviceCla
     CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION,
         "audioRendererSink is null, deviceClass %{public}s", deviceClass.c_str());
     int32_t ret = audioRendererSink->GetLatency(sinkLatency);
-    if (deviceClass == DEVICE_CLASS_A2DP) {
-        sinkLatency -= FIXED_LATENCY_IN_MS;
+    if (ret == SUCCESS) {
+        if (deviceClass == DEVICE_CLASS_A2DP) {
+            sinkLatency -= FIXED_LATENCY_IN_MS;
+        }
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "audioRendererSink GetLatency failed");
     return SUCCESS;
