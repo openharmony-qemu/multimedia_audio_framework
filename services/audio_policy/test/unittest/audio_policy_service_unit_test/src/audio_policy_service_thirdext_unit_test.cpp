@@ -1668,9 +1668,9 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level
     pipeInfo->name_ = "multichannel_output";
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
-    deviceInfo->supportPipeMap_.insert({routerFlag, pipeInfo});\
+    deviceInfo->supportPipeMap_.insert({routerFlag, pipeInfo});
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = std::make_shared<PolicyAdapterInfo>();
-    adapterInfo->adapterName_ = "primary";
+    adapterInfo->adapterName = "primary";
     deviceInfo->adapterInfo_ = adapterInfo;
     std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
     auto devicekey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
