@@ -108,6 +108,8 @@ public:
     static AudioChannel ToTaiheAudioChannel(OHOS::AudioStandard::AudioChannel audioChannel);
     static AudioSampleFormat ToTaiheAudioSampleFormat(OHOS::AudioStandard::AudioSampleFormat audioSampleFormat);
     static AudioStreamInfo ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::AudioStandard::AudioStreamInfo> &src);
+    static taihe::array<AudioStreamInfo> ToTaiheAudioStreamInfosArray(
+        const std::list<OHOS::AudioStandard::AudioStreamInfo> &audioStreamInfos);
     static AudioTimestampInfo ToTaiheAudioTimestampInfo(OHOS::AudioStandard::Timestamp &src);
     static AudioRendererChangeInfo ToTaiheAudioRendererChangeInfo(
         const std::shared_ptr<OHOS::AudioStandard::AudioRendererChangeInfo> &src);

@@ -53,7 +53,6 @@ struct CDeviceDescriptor {
     int32_t deviceRole;
     int32_t deviceType;
     char* displayName;
-    char* model;
     COptionArr encodingTypes;
     int32_t id;
     char* name;

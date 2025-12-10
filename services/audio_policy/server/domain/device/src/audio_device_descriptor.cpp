@@ -364,7 +364,7 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteUint16(dmDeviceType_) &&
         parcel.WriteString(displayName_) && parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(audioStreamInfo_, parcel) &&
-        MarshallingAudioStreamInfoList(capabilities_, parcel) &&
+        MarshallingAudioStreamInfoList(capabilities, parcel) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
         parcel.WriteBool(exceptionFlag_) &&
@@ -432,7 +432,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteString(displayName_) &&
         parcel.WriteString(model_) &&
         MarshallingDeviceStreamInfoList(streamInfo, parcel) &&
-        MarshallingAudioStreamInfoList(capabilities_, parcel) &&
+        MarshallingAudioStreamInfoList(capabilities, parcel) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceCategory_)) &&
         parcel.WriteInt32(static_cast<int32_t>(connectState_)) &&
         parcel.WriteBool(exceptionFlag_) &&
@@ -548,8 +548,8 @@ void AudioDeviceDescriptor::SetDeviceCapability(const std::list<DeviceStreamInfo
 
 void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission)
 {
+    if (statusInfo.model == "hiplay") { model_ = "hiplay"; }
     networkId_ = statusInfo.networkId;
-    model_ = statusInfo.model;
     dmDeviceType_ = statusInfo.dmDeviceType;
     dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }

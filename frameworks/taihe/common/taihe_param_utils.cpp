@@ -637,6 +637,17 @@ AudioCapturerChangeInfo TaiheParamUtils::SetAudioCapturerChangeInfoDescriptors(
     return audioCapturerChangeInfo;
 }
 
+taihe::array<AudioStreamInfo> TaiheParamUtils::ToTaiheAudioStreamInfosArray(
+    const std::list<OHOS::AudioStandard::AudioStreamInfo> &audioStreamInfos)
+{
+    std::vector<AudioStreamInfo> result;
+    for (const auto &audioStreamInfo : audioStreamInfos) {
+        auto audioStreamInfoPtr = std::make_shared<OHOS::AudioStandard::AudioStreamInfo>(audioStreamInfo);
+        result.emplace_back(ToTaiheAudioStreamInfo(audioStreamInfoPtr));
+    }
+    return taihe::array<AudioStreamInfo>(result);
+}
+
 AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
     const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo)
 {
@@ -657,6 +668,7 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
         TaiheAudioEnum::ToTaiheAudioEncodingType(deviceInfo.GetDeviceStreamInfo().encoding)
     };
     taihe::array<AudioEncodingType> encodingArray = taihe::array<AudioEncodingType>(encodingVec);
+    taihe::array<AudioStreamInfo> audioStreamInfosArray = ToTaiheAudioStreamInfosArray(deviceInfo.capabilities_);
     AudioDeviceDescriptor taiheDescriptor {
         .deviceRole = TaiheAudioEnum::ToTaiheDeviceRole(deviceInfo.deviceRole_),
         .deviceType = TaiheAudioEnum::ToTaiheDeviceType(deviceInfo.deviceType_),
@@ -673,6 +685,8 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
         .encodingTypes = optional<taihe::array<AudioEncodingType>>(std::in_place_t{}, encodingArray),
         .spatializationSupported = optional<bool>(std::in_place_t{}, deviceInfo.spatializationSupported_),
         .dmDeviceType = optional<int32_t>(std::in_place_t{}, static_cast<int32_t>(deviceInfo.dmDeviceType_)),
+        .model = optional<taihe::string>(std::in_place_t{}, deviceInfo.model_),
+        .capabilities = optional<taihe::array<AudioStreamInfo>>(std::in_place_t{}, audioStreamInfosArray),
     };
     return taiheDescriptor;
 }

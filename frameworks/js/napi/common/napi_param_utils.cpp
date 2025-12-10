@@ -491,11 +491,11 @@ napi_status NapiParamUtils::SetValueInt32Element(const napi_env &env, const std:
     return status;
 }
 
-napi_status NapiParamUtils::CreateJsAudioStreamInfo(const napi_env &env,
+napi_status NapiParamUtils::ToJsAudioStreamInfo(const napi_env &env,
     const AudioStreamInfo &info, napi_value &result)
 {
     napi_status status = napi_create_object(env, &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "CreateJsAudioStreamInfo napi_create_object failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ToJsAudioStreamInfo napi_create_object failed");
 
     napi_value value = nullptr;
 
@@ -529,16 +529,10 @@ napi_status NapiParamUtils::CreateJsAudioStreamInfo(const napi_env &env,
     status = napi_set_named_property(env, result, "channelLayout", value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set channelLayout failed");
 
-    // customSampleRate
-    status = napi_create_uint32(env, info.customSampleRate, &value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create customSampleRate failed");
-    status = napi_set_named_property(env, result, "customSampleRate", value);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set customSampleRate failed");
-
     return napi_ok;
 }
 
-napi_status NapiParamUtils::CreateJsAudioStreamInfosArray(const napi_env &env,
+napi_status NapiParamUtils::ToJsAudioStreamInfosArray(const napi_env &env,
     const std::list<AudioStreamInfo> &capabilities, napi_value &result)
 {
     napi_status status = napi_create_array_with_length(env, capabilities.size(), &result);
@@ -547,8 +541,8 @@ napi_status NapiParamUtils::CreateJsAudioStreamInfosArray(const napi_env &env,
     uint32_t index = 0;
     for (const auto &audioStreamInfo : capabilities) {
         napi_value jsAudioStreamInfo = nullptr;
-        status = CreateJsAudioStreamInfo(env, audioStreamInfo, jsAudioStreamInfo);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "CreateJsAudioStreamInfo failed");
+        status = ToJsAudioStreamInfo(env, audioStreamInfo, jsAudioStreamInfo);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ToJsAudioStreamInfo failed");
 
         status = napi_set_element(env, result, index++, jsAudioStreamInfo);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set capabilities element failed");
@@ -561,8 +555,8 @@ napi_status NapiParamUtils::SetJsAudioStreamInfos(const napi_env &env,
     const std::list<AudioStreamInfo> &capabilities, napi_value &result)
 {
     napi_value jsAudioStreamInfos = nullptr;
-    napi_status status = CreateJsAudioStreamInfosArray(env, capabilities, jsAudioStreamInfos);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "CreateJsAudioStreamInfosArrya failed");
+    napi_status status = ToJsAudioStreamInfosArray(env, capabilities, jsAudioStreamInfos);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ToJsAudioStreamInfosArray failed");
 
     status = napi_set_named_property(env, result, "capabilities", jsAudioStreamInfos);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set capabilities property failed");

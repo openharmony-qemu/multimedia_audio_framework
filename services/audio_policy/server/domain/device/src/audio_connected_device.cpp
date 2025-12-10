@@ -28,6 +28,9 @@
 #include "media_monitor_manager.h"
 
 #include "audio_policy_utils.h"
+#ifdef FEATURE_DEVICE_MANAGER
+#include "device_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -269,6 +272,9 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
             (*it)->displayName_ = dmDevice.deviceName_;
             (*it)->deviceName_ = dmDevice.deviceName_;
             (*it)->dmDeviceType_ = dmDevice.dmDeviceType_;
+            if (dmDevice.dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR) {
+                (*it)->model_ = "hicar";
+            }
         }
     } else {
         dmDeviceMap_.erase(dmDevice.networkId_);
@@ -298,6 +304,9 @@ void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &devi
             deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
             deviceDesc.deviceName_ = it->second.deviceName_;
             deviceDesc.displayName_ = it->second.deviceName_;
+            if (it->second.dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR) {
+                deviceDesc.model_ = "hicar";
+            }
         }
     }
 }

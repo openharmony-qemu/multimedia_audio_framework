@@ -226,7 +226,6 @@ void Convert2CDeviceDescriptor(CDeviceDescriptor* device, const AudioDeviceDescr
     device->deviceRole = static_cast<int32_t>(deviceInfo.deviceRole_);
     device->deviceType = static_cast<int32_t>(deviceInfo.deviceType_);
     device->displayName = MallocCString(deviceInfo.displayName_);
-    device->model = MallocCString(deviceInfo.model_);
     device->address = MallocCString(deviceInfo.macAddress_);
     device->name = MallocCString(deviceInfo.deviceName_);
     device->id = deviceInfo.deviceId_;
@@ -324,9 +323,7 @@ void ConvertAudioDeviceDescriptor2DeviceInfo(
     deviceInfo.volumeGroupId_ = audioDeviceDescriptor->volumeGroupId_;
     deviceInfo.networkId_ = audioDeviceDescriptor->networkId_;
     deviceInfo.displayName_ = audioDeviceDescriptor->displayName_;
-    deviceInfo.model_ = audioDeviceDescriptor->model_;
     deviceInfo.audioStreamInfo_ = audioDeviceDescriptor->audioStreamInfo_;
-    deviceInfo.capabilities_ = audioDeviceDescriptor->capabilities_;
 }
 
 void FreeCDeviceDescriptor(CDeviceDescriptor& device)
@@ -335,8 +332,6 @@ void FreeCDeviceDescriptor(CDeviceDescriptor& device)
     device.address = nullptr;
     free(device.displayName);
     device.displayName = nullptr;
-    free(device.model);
-    device.model = nullptr;
     free(device.name);
     device.name = nullptr;
     if (device.channelCounts.size != 0) {
