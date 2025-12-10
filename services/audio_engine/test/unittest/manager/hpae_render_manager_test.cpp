@@ -2158,6 +2158,40 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
 }
 
 /**
+ * @tc.name  : Test HpaeOffloadRendererManagerSetCurrentNode_00
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerSetCurrentNode_003
+ * @tc.desc  : Test SetCurrentNode when stream is not running but SetCurrentNode.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+  
+    CreateTwoStreamInOffload(offloadManager);
+
+    offloadManager->DestroyStream(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_NE(offloadManager->curNode_->GetState(), HPAE_SESSION_RUNNING);
+    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
+    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
+    EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+
+    offloadManager->Start(DEFAULT_SESSIONID_NUM_FIRST);
+    WaitForMsgProcessing(offloadManager);
+}
+
+/**
  * @tc.name  : Test HpaeRendererGetLatency_001
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererGetLatency_001

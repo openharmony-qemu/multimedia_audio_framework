@@ -174,6 +174,8 @@ private:
     std::unordered_map<int32_t, PositionData> currentPositionData;
     std::unordered_map<int32_t, PositionData> speedPositionData;
 
+    uint32_t usedSampleRate_ = 0;
+
     std::mutex firstStreamDataMutex_;
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
