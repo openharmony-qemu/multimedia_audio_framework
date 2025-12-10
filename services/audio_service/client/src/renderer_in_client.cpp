@@ -1136,7 +1136,7 @@ void RendererInClientInner::CheckFrozenStateInStaticMode()
 
 int32_t RendererInClientInner::CallStartWhenInStandby()
 {
-    CHECK_AND_RETURN_RET_LOG(clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY, 
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_->GetStreamStatus()->load() != STREAM_STAND_BY, 
         ERROR, "Client is not Stand-by!");
     Trace trace2(traceTag_+ " call start to exit stand-by");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
