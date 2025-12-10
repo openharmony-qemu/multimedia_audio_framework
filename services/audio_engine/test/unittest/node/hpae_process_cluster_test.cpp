@@ -467,11 +467,7 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
     EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
     EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
-    if (hpaeProcessCluster->renderEffectNode_ != nullptr) {
-        EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_48000);
-    } else {
-        EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_96000);
-    }
+    EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_96000);
 }
 } // AudioStandard
 } // OHOS
