@@ -1055,17 +1055,17 @@ void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
 // LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationEnabledToChains()
 {
+    bool enabled = btOffloadEnabled_ ? false : IsSpatializationEnabledForChains();
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
 
-        if (btOffloadEnabled_ == false) {
-            bool enabled = IsSpatializationEnabledForChains();
-            audioEffectChain->SetSpatializationEnabledForFading(enabled);
+        if (sessionIDToEffectInfoMap_.size() == 0) {
+            audioEffectChain->SetSpatializationEnabled(enabled);
         } else {
-            audioEffectChain->SetSpatializationEnabledForFading(false);
+            audioEffectChain->SetSpatializationEnabledForFading(enabled);
         }
     }
 }

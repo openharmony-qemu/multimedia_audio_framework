@@ -2542,10 +2542,10 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainStop_001, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetSpatializationEnabledToChains API
-* @tc.number : SetSpatializationEnabledToChains_003
+* @tc.number : SetSpatializationEnabledToChains_001
 * @tc.desc   : Test SetSpatializationEnabledToChains interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_003, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_001, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->ResetInfo();
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"test", nullptr});
@@ -2560,6 +2560,40 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_003, Te
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
 
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    string sessionID1 = "123456";
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
+
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(!AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetSpatializationEnabledToChains API
+* @tc.number : SetSpatializationEnabledToChains_002
+* @tc.desc   : Test SetSpatializationEnabledToChains interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+
+    SessionEffectInfo sessionEffectInfo;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"test", sessionEffectInfo});
     string sessionID1 = "123456";
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
