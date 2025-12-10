@@ -49,11 +49,13 @@ static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
+static constexpr uint64_t FIXED_LATENCY_IN_MS = 40;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 // to judge whether customSampleRate is multiples of 50
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+static const std::string DEVICE_CLASS_A2DP = "a2dp";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 static constexpr int64_t TIME_INTERVAL_NS = 200 * 1000000LL;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
@@ -319,6 +321,9 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const std::string &deviceCla
     CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION,
         "audioRendererSink is null, deviceClass %{public}s", deviceClass.c_str());
     int32_t ret = audioRendererSink->GetLatency(sinkLatency);
+    if (deviceClass == DEVICE_CLASS_A2DP) {
+        sinkLatency += FIXED_LATENCY_IN_MS;
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "audioRendererSink GetLatency failed");
     return SUCCESS;
 }
