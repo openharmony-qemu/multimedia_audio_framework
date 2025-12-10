@@ -455,6 +455,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         volumeEvent.updateUi = true;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
+        volumeEvent.previousVolume = volLevel;
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, false, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
@@ -3760,6 +3761,8 @@ int32_t AudioPolicyServer::IsAbsVolumeScene(bool &ret)
 int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, int32_t volume,
     bool updateUi)
 {
+    VolumeEvent volumeEvent;
+    volumeEvent.previousVolume = GetSystemVolumeLevelInternal(STREAM_MUSIC, 0);
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_BLUETOOTH_SA) {
         AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
@@ -3774,7 +3777,6 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t ret = audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volume);
 
-    VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamInFocus;
     volumeEvent.volume = volume;
 
