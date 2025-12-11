@@ -317,7 +317,6 @@ void AudioBackgroundManager::RecoryAppState()
 void AudioBackgroundManager::DeleteFromMap(int32_t pid)
 {
     if (FindKeyInMap(pid)) {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         AppState appState = appStatesMap_[pid];
         appStatesMap_.erase(pid);
         WriteAppStateChangeSysEvent(pid, appState, false);
