@@ -111,6 +111,7 @@ bool AppSelectRouter::IsCurrentOutPutDevicePublic()
 void AppSelectRouter::ConfigureDeviceForSpecialScenario(
     SourceType sourceType, shared_ptr<AudioDeviceDescriptor> &device)
 {
+    CHECK_AND_RETURN(device != nullptr && device->deviceType_ == DEVICE_TYPE_BT_SPP);
     AUDIO_INFO_LOG("configure input device for special scenario");
     DeviceType beforeType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_NONE;
 
