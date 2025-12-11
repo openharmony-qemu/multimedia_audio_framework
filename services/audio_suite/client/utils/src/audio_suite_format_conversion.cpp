@@ -63,7 +63,7 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
     uint32_t outRate = out->GetSampleRate();
     uint32_t inChannelCount = in->GetChannelCount();
 
-    AUDIO_INFO_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u ", inRate, outRate);
+    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u ", inRate, outRate);
     if ((inRate != resampleCfg_.inRate) ||
         (outRate != resampleCfg_.outRate) ||
         (inChannelCount != resampleCfg_.channels)) {
@@ -85,7 +85,7 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
     uint32_t inFrameSize = in->GetFrameLen();
     float *outputData = reinterpret_cast<float *>(out->GetPcmData());
     uint32_t outFrameSize = out->GetFrameLen();
-    AUDIO_INFO_LOG("DoResample: inFrameSize: %{public}u, outFrameSize: %{public}u ", inFrameSize, outFrameSize);
+    AUDIO_DEBUG_LOG("DoResample: inFrameSize: %{public}u, outFrameSize: %{public}u ", inFrameSize, outFrameSize);
 
     CHECK_AND_RETURN_RET_LOG(proResampler_ != nullptr, ERROR, "ProResampler_ is nullptr");
     int32_t ret = proResampler_->Process(inputData, inFrameSize, outputData, outFrameSize);
@@ -115,7 +115,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *in
 
     AudioSuitePcmBuffer *in = inPcmBuffer;
     if (in->GetSampleFormat() != SAMPLE_F32LE) {
-        AUDIO_INFO_LOG("ConvertToFloat, informat:%{public}u", in->GetSampleFormat());
+        AUDIO_DEBUG_LOG("ConvertToFloat, informat:%{public}u", in->GetSampleFormat());
         formatFloatOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),
             in->GetChannelCount(), in->GetChannelLayout(), SAMPLE_F32LE), duration);
         HPAE::ConvertToFloat(in->GetSampleFormat(), formatFloatOut_.GetSampleCount(),
@@ -125,7 +125,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *in
 
     int32_t ret = SUCCESS;
     if (in->GetSampleRate() != outFormat.sampleRate) {
-        AUDIO_INFO_LOG("ConvertRate, inrate:%{public}u, outrate: %{public}u ",
+        AUDIO_DEBUG_LOG("ConvertRate, inrate:%{public}u, outrate: %{public}u ",
             in->GetSampleRate(), outFormat.sampleRate);
         rateOut_.ResizePcmBuffer(PcmBufferFormat(outFormat.sampleRate, in->GetChannelCount(),
             in->GetChannelLayout(), SAMPLE_F32LE), duration);
@@ -135,7 +135,8 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *in
     }
 
     if (in->GetChannelCount() != outFormat.channelCount) {
-        AUDIO_INFO_LOG("ConvertChannel in:%{public}u, out: %{public}u ", in->GetChannelCount(), outFormat.channelCount);
+        AUDIO_DEBUG_LOG("ConvertRate, inrate:%{public}u, outrate: %{public}u ",
+            in->GetSampleRate(), outFormat.sampleRate);
         channelOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),
             outFormat.channelCount, outFormat.channelLayout, SAMPLE_F32LE), duration);
         ret = ChannelConvert(in, &channelOut_);
@@ -144,7 +145,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *in
     }
 
     if (outFormat.sampleFormat != SAMPLE_F32LE) {
-        AUDIO_INFO_LOG("ConvertFromFloat, in: %{public}u, out: %{public}u.",
+        AUDIO_DEBUG_LOG("ConvertFromFloat, in: %{public}u, out: %{public}u.",
             in->GetSampleFormat(), outFormat.sampleFormat);
         formatOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),
             in->GetChannelCount(), in->GetChannelLayout(), outFormat.sampleFormat), duration);
