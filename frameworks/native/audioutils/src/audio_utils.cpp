@@ -2265,14 +2265,14 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     using namespace Security::AccessToken;
     AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
     AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(tokenId);
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
     CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
         "invalid token type %{public}u", tokenType);
     if (tokenType == TOKEN_HAP) {
-        HapTokenInfoExt tokenInfo = {};
-        int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
+        HapTokenInfo tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
         CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-hap", "hap %{public}u failed: %{public}d", tokenIdNum, ret);
-        return tokenInfo.baseInfo.bundleName;
+        return tokenInfo.bundleName;
     } else {
         NativeTokenInfo tokenInfo = {};
         int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
