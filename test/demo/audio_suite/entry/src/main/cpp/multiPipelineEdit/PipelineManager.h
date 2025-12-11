@@ -11,15 +11,15 @@
 
 class MultiUserData {
 public:
-    // 根据pipelineId去获取对应的pipelineManager
+    // Retrieve the corresponding pipelineManager based on the pipelineId
     std::string pipelineId;
-    // 根据inputId去writeDataBufferMap_获取对应的音频数据
+    // Retrieve the corresponding audio data from writeDataBufferMap_ based on inputId
     std::string inputId;
-    // 音频总数据大小
+    // Total audio data size
     int32_t bufferSize;
-    // 已经写入的音频数据大小
+    // Size of audio data already written
     size_t totalWriteAudioDataSize;
-     // 音频是否从头开始写入
+    // Is the audio written from the beginning?
     bool isResetTotalWriteAudioDataSize;
 
     MultiUserData();

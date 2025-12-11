@@ -10,58 +10,58 @@ const TAG: string = 'AudioEditTestApp_SpaceRender';
 // SpaceRenderPositionView.ets
 @Component
 export struct SpaceRenderPositionView {
-  // ==================== 属性定义 ====================
+  // ==================== property definition ====================
 
-  // 外部传入的参数
+  // Parameters passed from external sources
   @Link spaceRender: SpaceRender;
 
-  // 是否激活（高亮）
+  // Activate (Highlight)
   @State isActive: boolean = false;
 
-  // 用于记录当前拖拽的点位置
+  // Used to record the current position of the dragged point
   @State currentX: number = 0;
   @State currentY: number = 0;
 
-  // 画布尺寸
+  // Canvas Size
   @State viewSize: number = 450;
 
-  // 图标资源（可替换为实际图标）
+  // Icon resources (can be replaced with actual icons)
   @Prop centerBitmapId: number = -1;
 
-  // 点半径、线宽
+  // Radius, line width
   private pointRadius: number = 8;
   private lineWidth: number = 1.5;
 
-  // 最大空间范围（5.0f）
+  // Maximum spatial range (5.0f)
   private MAX_DEST: number = 5.0;
 
-  // 网格数量
+  // Number of grids
   private AREA_COUNT: number = 4;
 
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   private contextFront: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
   private contextTop: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
 
-  // ==================== 事件处理 ====================
+  // ==================== event handling ====================
 
-  // 将像素坐标 (0 ~ canvasSize) 映射到 [-5, 5]
+  // Map pixel coordinates (0 ~ canvasSize) to [-5, 5]
   private pixelToReal(pixel: number, canvasSize: number): number {
     const usableWidth = canvasSize - 2 * this.pointRadius;
     const normalizedPixel = (pixel - this.pointRadius) / usableWidth; // [0, 1]
-    // 映射到 [-5, 5]
+    // Mapped to [-5, 5]
     return normalizedPixel * 10 - 5;
   }
 
-  // 将真实坐标 [-5,5] 映射为像素坐标 [0, canvasSize]
+  // Map the real coordinates [-5, 5] to pixel coordinates [0, canvasSize]
   private realToPixel(real: number, canvasSize: number): number {
     const usableWidth = canvasSize - 2 * this.pointRadius;
     const normalized = (real + 5) / 10; // [-5,5] → [0,1]
-    // 映射到 [margin, canvasSize - margin]
+    // Mapped to [Margin, Canvas Size - Margin]
     return normalized * usableWidth + this.pointRadius;
   }
 
 
-  // 正视图修改
+  // Front View Modification
   onTouchOfSpaceRenderFront(event: TouchEvent) {
     if (event.touches.length === 1) {
       const touch = event.touches[0];
@@ -70,7 +70,7 @@ export struct SpaceRenderPositionView {
         const canvasWidth = this.contextFront.width;
         const canvasHeight = this.contextFront.height;
 
-        //限制touch坐标，让点的中心不越界
+        // Limit the touch coordinates to ensure the center of the point does not go out of bounds
         const constrainedX = Math.max(this.pointRadius, Math.min(canvasWidth - this.pointRadius, touch.x));
         const constrainedY = Math.max(this.pointRadius, Math.min(canvasHeight - this.pointRadius, touch.y));
 
@@ -101,10 +101,10 @@ export struct SpaceRenderPositionView {
       }
     }
 
-    // 防止父容器拦截事件
+    // Prevent parent container from intercepting events
     // event.preventDefault();
   }
-  // 俯视图修改
+  // Top view modification
   onTouchOfSpaceRenderTop(event: TouchEvent) {
     if (event.touches.length === 1) {
       const touch = event.touches[0];
@@ -113,7 +113,7 @@ export struct SpaceRenderPositionView {
         const canvasWidth = this.contextFront.width;
         const canvasHeight = this.contextFront.height;
 
-        //限制touch坐标，让点的中心不越界
+        // Limit the touch coordinates to ensure the center of the point does not go out of bounds
         const constrainedX = Math.max(this.pointRadius, Math.min(canvasWidth - this.pointRadius, touch.x));
         const constrainedY = Math.max(this.pointRadius, Math.min(canvasHeight - this.pointRadius, touch.y));
 
@@ -146,9 +146,9 @@ export struct SpaceRenderPositionView {
     // event.stopPropagation();
   }
 
-  // ==================== 逻辑方法 ====================
+  // ==================== Logical Method ====================
 
-  // 限制点不能超出边界
+  // Restriction points must not exceed the boundaries.
   private limitPointPosition() {
     const min = this.pointRadius + this.lineWidth;
     const max = this.viewSize - this.pointRadius - this.lineWidth;
@@ -157,32 +157,32 @@ export struct SpaceRenderPositionView {
     this.currentY = Math.max(min, Math.min(max, this.currentY));
   }
 
-  // 绘画视图
+  // Painting View
   private drawCanvas(ctx: CanvasRenderingContext2D): void {
     const width = ctx.width;
     const height = ctx.height;
     Logger.error(TAG, `width is ${width} height is ${height}`)
 
-    // 计算每条线的间距（5条线 → 4段）
-    const lineSpacingX = width / 4; // 竖线间距
-    const lineSpacingY = height / 4; // 横线间距
+    // Calculate the spacing between each line (5 lines → 4 segments)
+    const lineSpacingX = width / 4; // Vertical line spacing
+    const lineSpacingY = height / 4; // Line spacing
 
-    // 颜色定义
-    const borderAndMiddleColor = '#000';     // 深色：边框 + 中线
-    const regularLineColor = '#999';           // 浅色：普通网格线
+    // Color Definition
+    const borderAndMiddleColor = '#000';     // Dark: Border + Center Line
+    const regularLineColor = '#999';           // Light color: normal grid lines
 
-    // 线宽
+    // line width
     const lineWidth = 2;
 
-    // 绘制竖线（共5条）
+    // Draw vertical lines (a total of 5)
     for (let i = 0; i <= this.AREA_COUNT; i++) {
       const x = i * lineSpacingX;
 
-      // 判断是否为边框线（i=0 或 i=4）或中线（i=2）
+      // Determine whether it is a border line (i=0 or i=4) or a center line (i=2)
       const isBorderOrMiddle = i === 0 || i === 2 || i === 4;
 
       ctx.strokeStyle = isBorderOrMiddle ? borderAndMiddleColor : regularLineColor;
-      ctx.lineWidth = isBorderOrMiddle ? lineWidth : 1; // 中线/边框可稍粗
+      ctx.lineWidth = isBorderOrMiddle ? lineWidth : 1; // The centerline/border can be slightly thicker
 
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -190,7 +190,7 @@ export struct SpaceRenderPositionView {
       ctx.stroke();
     }
 
-    // 绘制横线（共5条）
+    // Draw horizontal lines (a total of 5)
     for (let i = 0; i <= this.AREA_COUNT; i++) {
       const y = i * lineSpacingY;
 
@@ -205,10 +205,10 @@ export struct SpaceRenderPositionView {
       ctx.stroke();
     }
 
-    // 绘制中心图标（如果存在）
+    // Draw the central icon (if present)
     if (this.centerBitmapId > 0) {
-      // 在真实项目中，这里应加载图片资源
-      // 本例中用一个白色圆形代替
+      // In a real project, image resources should be loaded here.
+      // In this example, a white circle is used as a substitute.
       // ctx.fillStyle = '#FFFFFF';
       // ctx.beginPath();
       // ctx.arc(
@@ -224,11 +224,11 @@ export struct SpaceRenderPositionView {
     Logger.error(TAG, `width: ${ctx.width} ${ctx.height}`);
   }
 
-  // ==================== Canvas 绘制 ====================
+  // ==================== Canvas draw ====================
   private drawCanvasFront(ctx: CanvasRenderingContext2D): void {
     this.drawCanvas(ctx);
 
-    // 绘制可拖动的点
+    // Draw Dragable Points
     const pointColor = '#ff076ab1';
     ctx.fillStyle = pointColor;
     ctx.beginPath();
@@ -239,7 +239,7 @@ export struct SpaceRenderPositionView {
       const realX = this.spaceRender.fixedPosition?.x ?? 0;
       const realZ = this.spaceRender.fixedPosition?.z ?? 0;
 
-      // 注意：我们不改 this.spaceRender，只确保映射值在 [-5,5] 内
+      // Note: We do not modify this.spaceRender; we only ensure that the mapped values are within the range of [-5, 5]
       const clampedRealX = Math.max(-5, Math.min(5, realX));
       const clampedRealZ = Math.max(-5, Math.min(5, realZ));
 
@@ -263,7 +263,7 @@ export struct SpaceRenderPositionView {
   private drawCanvasTop(ctx: CanvasRenderingContext2D): void {
     this.drawCanvas(ctx);
 
-    // 绘制可拖动的点
+    // Draw Dragable Points
     const pointColor = '#ff076ab1';
     ctx.fillStyle = pointColor;
     ctx.beginPath();
@@ -294,12 +294,12 @@ export struct SpaceRenderPositionView {
     ctx.fill();
   }
 
-  // ==================== 模板渲染 ====================
+  // ==================== Template Rendering ====================
 
   build() {
     Row() {
       Column() {
-        // 正视图
+        // front view
         Canvas(this.contextFront)
           .width(`${this.viewSize}px`)
           .height(`${this.viewSize}px`)
@@ -311,7 +311,7 @@ export struct SpaceRenderPositionView {
       .width('50%')
 
       Column() {
-        // 俯视图
+        // top view
         Canvas(this.contextTop)
           .width(`${this.viewSize}px`)
           .height(`${this.viewSize}px`)
