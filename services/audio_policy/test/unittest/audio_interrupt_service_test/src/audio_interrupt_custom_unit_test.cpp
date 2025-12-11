@@ -182,7 +182,7 @@ HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_01, TestSize.Le
     AudioInterrupt activeInterrupt;
     activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
     AudioInterrupt incomingInterrupt;
-    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
 
     AudioFocusEntry focusEntry = {INTERRUPT_FORCE, INTERRUPT_HINT_STOP, INCOMING, false};
 
