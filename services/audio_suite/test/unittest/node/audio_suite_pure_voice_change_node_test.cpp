@@ -43,6 +43,11 @@ struct PureVoiceChangeInfo {
     float pitch;
 };
 
+struct PureVoiceParameter {
+    std::string value;
+    std::string name;
+};
+
 static std::string g_outputNodeTestDir = "/data/audiosuite/pure/";
 
 static PureVoiceChangeInfo g_info[] = {
@@ -54,6 +59,25 @@ static PureVoiceChangeInfo g_info[] = {
         3.0f},
 };
 
+static PureVoiceParameter g_setparameter[] = {
+    {std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_MALE)) + "," +
+            std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED)) + "," +
+            std::to_string(static_cast<float>(3.0f)),
+        "AudioGeneralVoiceChangeOption"},
+    {std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED)) + "," +
+            std::to_string(static_cast<float>(0.3f)),
+        "AudioPureVoiceChangeOption"},
+    {std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_MALE)) + "," +
+            std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED) +
+                           static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED)) +
+            "," + std::to_string(static_cast<float>(0)),
+        "AudioPureVoiceChangeOption"},
+    {std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_MALE)) + "," +
+            std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED)) + "," +
+            std::to_string(static_cast<float>(0.1f)),
+        "AudioPureVoiceChangeOption"},
+};
+ 
 static std::string g_outfile002 = "/data/audiosuite/pure/out2.pcm";
 static int32_t g_expectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 
@@ -352,4 +376,40 @@ HWTEST_F(AudioSuitePureVoiceChangeNodeTest, DoProcessTest_002, TestSize.Level0)
     inputNodeOutputPort.reset();
 }
 
+HWTEST_F(AudioSuitePureVoiceChangeNodeTest, AudioSuitePurelVoiceChangeNodeSetOptionTest001, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuitePureVoiceChangeNode>();
+    node->Init();
+    int32_t ret;
+ 
+    size_t count = sizeof(g_setparameter) / sizeof(g_setparameter[0]);
+    for (size_t idx = 0; idx < count; idx++) {
+        ret = node->SetOptions(g_setparameter[idx].name, g_setparameter[idx].value);
+        EXPECT_EQ(ret, ERROR);
+    }
+}
+ 
+HWTEST_F(AudioSuitePureVoiceChangeNodeTest, AudioSuitePurelVoiceChangeNodeGetOptionTest001, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuitePureVoiceChangeNode>();
+    node->Init();
+    std::string value = std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_MALE)) + "," +
+                        std::to_string(static_cast<int32_t>(PURE_VOICE_CHANGE_TYPE_SEASONED)) + "," +
+                        std::to_string(static_cast<float>(0));
+    std::string name = "AudioPureVoiceChangeOption";
+    int32_t ret = node->GetOptions(name, value);
+    EXPECT_EQ(ret, ERROR);
+ 
+    ret = node->SetOptions(name, value);
+    EXPECT_EQ(ret, SUCCESS);
+ 
+    std::string getValue;
+    ret = node->GetOptions(name, getValue);
+    EXPECT_EQ(getValue, value);
+ 
+    std::string getName = "AudioGeneralVoiceChangeOption";
+    ret = node->GetOptions(getName, getValue);
+    EXPECT_EQ(ret, ERROR);
+}
+ 
 }  // namespace

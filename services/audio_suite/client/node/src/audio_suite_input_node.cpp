@@ -173,7 +173,7 @@ int32_t AudioInputNode::GetDataFromUser()
             CHECK_AND_RETURN_RET_LOG(ConverPcmData != nullptr, ERR_INVALID_PARAM, "convert pcm format fail");
 
             int32_t ret = cachedBuffer_.PushData(ConverPcmData->GetPcmData(), ConverPcmData->GetDataSize());
-            AUDIO_INFO_LOG("222 GetDataFromUser needSize:%{public}u, inPcmDataSize:%{public}u, times:%{public}u.",
+            AUDIO_DEBUG_LOG("GetDataFromUser needSize:%{public}u, inPcmDataSize:%{public}u, times:%{public}u.",
                 needSize, ConverPcmData->GetDataSize(), times);
 
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Push data to cache fail, ret = %{public}d", ret);
