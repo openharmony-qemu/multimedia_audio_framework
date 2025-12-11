@@ -146,7 +146,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
 
 bool AudioCollaborativeService::GetRealCollaborativeState()
 {
-    AUDIO_INFO_LOG("GetRealCollaborativeState Entered!");
+    AUDIO_DEBUG_LOG("GetRealCollaborativeState Entered!");
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     return isCollaborativeStateEnabled_;
 }

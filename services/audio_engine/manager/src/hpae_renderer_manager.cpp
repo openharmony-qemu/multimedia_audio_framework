@@ -270,7 +270,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
         (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass)) {
         if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
             processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-            AUDIO_INFO_LOG("no need to refresh");
+            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
             CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
                 "could not find processorType %{public}d", nodeInfo.sceneType);
             sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
@@ -284,8 +284,14 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
             }
             DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
             CreateProcessCluster(nodeInfo);
+        } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+            processClusterDecision != USE_NONE_PROCESSCLUSTER &&
+            GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
+            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
+            CreateProcessCluster(nodeInfo);
+            AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
         } else {
-            AUDIO_INFO_LOG("refresh to %{public}d", processClusterDecision);
+            AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
             TriggerStreamState(nodeInfo.sessionId, node);
             DeleteProcessCluster(nodeInfo.sessionId);
             CreateProcessClusterAndConnect(nodeInfo);
@@ -373,7 +379,8 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
         return ERROR;
     }
     if (sceneTypeToProcessClusterCountMap_.count(sceneType) && sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-        if (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT] || IsClusterDisConnected(sceneType)) {
+        if (sceneClusterMap_[sceneType] == SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT) ||
+            IsClusterDisConnected(sceneType)) {
             sceneClusterMap_.erase(sceneType);
             sceneTypeToProcessClusterCountMap_.erase(sceneType);
             AUDIO_INFO_LOG("sessionId %{public}u, processCluster %{public}d has been erased", sessionId, sceneType);
@@ -381,12 +388,10 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
     }
 
     if (sceneTypeToProcessClusterCountMap_.count(HPAE_SCENE_DEFAULT) &&
-        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-        if (IsClusterDisConnected(HPAE_SCENE_DEFAULT)) {
-            sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-            sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-            AUDIO_INFO_LOG("processCluster default has been erased");
-        }
+        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0 && IsClusterDisConnected(HPAE_SCENE_DEFAULT)) {
+        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
+        AUDIO_INFO_LOG("processCluster default has been erased");
     }
     return SUCCESS;
 }
@@ -712,6 +717,12 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
                         sinkInfo_);
             }
             toBeStoppedSceneTypeToSessionMap_.erase(sceneType);
+            if (sceneTypeToProcessClusterCountMap_.count(sceneType) &&
+                sceneTypeToProcessClusterCountMap_[sceneType] == 0 && IsClusterDisConnected(sceneType)) {
+                sceneClusterMap_.erase(sceneType);
+                sceneTypeToProcessClusterCountMap_.erase(sceneType);
+                AUDIO_INFO_LOG("processCluster %{public}d has been erased", sceneType);
+            }
         }
     };
     SendRequest(request, __func__);
