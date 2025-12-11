@@ -417,18 +417,38 @@ void AudioCaptureSource::SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyByte
     }
 }
 
-int32_t AudioCaptureSource::ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo)
+void AudioCaptureSource::ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo)
 {
+    CHECK_AND_RETURN(frameInfo.frameEc != nullptr);
     if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
         AUDIO_ERR_LOG("copy desc ec fail");
     } else {
-        SetReplyBytesEc(fdesc, replyBytesEc, frameInfo);
+        SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
     }
+}
 
-    CheckUpdateState(fdesc->frame, replyBytes);
-    AudioCaptureFrameInfoFree(&frameInfo, false);
+int32_t AudioCaptureSource::CheckFrameInfoLen(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    AudioCaptureFrameInfo &frameInfo)
+{
+    CHECK_AND_RETURN_RET(frameInfo.frame != nullptr, ERR_INVALID_READ);
+    if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
+        replyBytes = 0;
+        return ERR_INVALID_READ;
+    }
     return SUCCESS;
+}
+
+void AudioCaptureSource::ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+    AudioCaptureFrameInfo &frameInfo)
+{
+    CHECK_AND_RETURN(frameInfo.frame != nullptr);
+    if (memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
+        AUDIO_ERR_LOG("copy desc fail");
+    } else {
+        replyBytes = fdesc->frameLen;
+        HdiDfxUtils::PrintVolumeInfo(fdesc->frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
+        HdiDfxUtils::DumpData(fdesc->frame, replyBytes, dumpFile_, dumpFileName_);
+    }
 }
 
 int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
@@ -452,31 +472,26 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
     if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
         audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
     }
-
-    if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
-        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
-    }
-
-    if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
-        if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
-            replyBytes = 0;
-            return ERR_INVALID_READ;
-        }
-        if (memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
-            AUDIO_ERR_LOG("copy desc fail");
-        } else {
-            replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
-            HdiDfxUtils::PrintVolumeInfo(fdesc->frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
-            HdiDfxUtils::DumpData(fdesc->frame, replyBytes, dumpFile_, dumpFileName_);
-        }
-    }
-    if (frameInfo.frameEc != nullptr) {
-        return ProcessECFrame(fdesc, replyBytes, fdescEc, replyBytesEc, frameInfo);
+    int32_t status = SUCCESS;
+    switch (attr_.sourceType) {
+        // cap&ec in different hal
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+        case SOURCE_TYPE_EC:
+            ProcessEcFrame(fdescEc, replyBytesEc, frameInfo);
+            break;
+        default:
+            // cap&ec in the same hal
+            // check frameinfo`s frame and len
+            status = CheckFrameInfoLen(fdesc, replyBytes, fdescEc, frameInfo);
+            CHECK_AND_BREAK_LOG(status == SUCCESS, "frameInfo`s replyBytes are not enough.");
+            ProcessCapFrame(fdesc, replyBytes, fdescEc, frameInfo);
+            ProcessEcFrame(fdescEc, replyBytesEc, frameInfo);
+            break;
     }
     CheckUpdateState(fdesc->frame, replyBytes);
     AudioCaptureFrameInfoFree(&frameInfo, false);
 
-    return SUCCESS;
+    return status;
 }
 
 std::string AudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
