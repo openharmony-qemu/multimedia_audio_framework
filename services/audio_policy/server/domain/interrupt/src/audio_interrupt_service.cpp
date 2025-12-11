@@ -1933,6 +1933,9 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     }
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    if (interruptCustom_ != nullptr) {
+        interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    }
 }
 
 void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,

@@ -170,5 +170,89 @@ HWTEST_F(AudioInterruptCustomUnitTest, CeliaCustomFocus_02, TestSize.Level1)
     EXPECT_NE(incomingState, ACTIVE);
 }
 
+/**
+* @tc.name  : Test UpdateCustomFocusStrategy
+* @tc.number: UpdateCustomFocusStrategy_01
+* @tc.desc  : Test UpdateCustomFocusStrategy_02
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_01, TestSize.Level1)
+{
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_ULTRASONIC, 100, "SOURCE_TYPE_ULTRASONIC");
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
+
+    AudioFocusEntry focusEntry = {INTERRUPT_FORCE, INTERRUPT_HINT_STOP, INCOMING, false};
+
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UpdateCustomFocusStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_STOP);
+}
+
+/**
+* @tc.name  : Test UpdateCustomFocusStrategy
+* @tc.number: UpdateCustomFocusStrategy_02
+* @tc.desc  : Test UpdateCustomFocusStrategy_02
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_02, TestSize.Level1)
+{
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_ULTRASONIC, 100, "SOURCE_TYPE_ULTRASONIC");
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_ULTRASONIC;
+
+    AudioFocusEntry focusEntry = {INTERRUPT_FORCE, INTERRUPT_HINT_NONE, INCOMING, false};
+
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UpdateCustomFocusStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_NONE);
+}
+
+/**
+* @tc.name  : Test UpdateCustomFocusStrategy
+* @tc.number: UpdateCustomFocusStrategy_03
+* @tc.desc  : Test UpdateCustomFocusStrategy_03
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_03, TestSize.Level1)
+{
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_ULTRASONIC, 100, "SOURCE_TYPE_ULTRASONIC");
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    AudioFocusEntry focusEntry = {INTERRUPT_FORCE, INTERRUPT_HINT_STOP, INCOMING, false};
+
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UpdateCustomFocusStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_STOP);
+}
+
+/**
+* @tc.name  : Test UpdateCustomFocusStrategy
+* @tc.number: UpdateCustomFocusStrategy_04
+* @tc.desc  : Test UpdateCustomFocusStrategy_04
+*/
+HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_04, TestSize.Level1)
+{
+    SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_ULTRASONIC, 100, "SOURCE_TYPE_ULTRASONIC");
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_ULTRASONIC;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    AudioFocusEntry focusEntry = {INTERRUPT_FORCE, INTERRUPT_HINT_STOP, INCOMING, false};
+
+    AudioInterruptCustom interruptCustom;
+    interruptCustom.UpdateCustomFocusStrategy(activeInterrupt, incomingInterrupt, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_NONE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
