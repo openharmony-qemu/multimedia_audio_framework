@@ -525,6 +525,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     }
     for (const auto &desc : audioDeviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
+        ClearActiveHfpDevice(desc);
         if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
                 make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ExcludeOutputDevices");
@@ -675,6 +676,14 @@ void AudioRecoveryDevice::WriteUnexcludeOutputSysEvents(const AudioDeviceUsage a
     bean->Add("DEVICE_NAME", desc->deviceName_);
     bean->Add("BT_TYPE", desc->deviceCategory_);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+int32_t AudioRecoveryDevice::ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        return Bluetooth::AudioHfpManager::ClearActiveHfpDevice(desc->macAddress_);
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -538,9 +538,6 @@ int32_t AudioHfpManager::ClearActiveHfpDevice(const std::string &macAddress)
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
         return SUCCESS;
     }
-    HILOG_COMM_WARN("Current hfp device is cleared, need to DisconnectSco for current activeHfpDevice.");
-    int32_t ret = DisconnectScoWrapper();
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     activeHfpDevice_ = BluetoothRemoteDevice();
     return SUCCESS;
 }

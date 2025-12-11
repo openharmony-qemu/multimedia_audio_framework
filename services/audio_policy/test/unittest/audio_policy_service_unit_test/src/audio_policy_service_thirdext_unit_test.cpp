@@ -2396,5 +2396,24 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectOutputDevice_004, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
 }
+
+/**
+* @tc.name  : Test ClearActiveHfpDevice.
+* @tc.number: ClearActiveHfpDevice_001.
+* @tc.desc  : Test ClearActiveHfpDevice interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
+    EXPECT_EQ(ret, SUCCESS);
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
