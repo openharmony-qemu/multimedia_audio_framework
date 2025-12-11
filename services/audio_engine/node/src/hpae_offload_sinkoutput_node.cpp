@@ -450,6 +450,7 @@ void HpaeOffloadSinkOutputNode::SetBufferSize()
         bufferSize = hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND ?
             OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
     }
+    needUnLock_ = bufferSize > OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
     audioRendererSink_->SetBufferSize(bufferSize);
 }
 
@@ -615,7 +616,7 @@ int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &app
 void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
 {
     if (retType == OFFLOAD_FULL) {
-        if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
+        if (needUnLock_ || GetStreamType() == STREAM_MOVIE) {
             RunningLock(false);
         }
         isHdiFull_.store(true);

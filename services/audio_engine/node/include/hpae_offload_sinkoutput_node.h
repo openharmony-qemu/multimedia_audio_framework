@@ -125,6 +125,8 @@ private:
     uint64_t hdiRealPos_ = 0;
 
     HpaeBackoffController backoffController_;
+
+    bool needUnLock_ = false;
 };
 
 }  // namespace HPAE
