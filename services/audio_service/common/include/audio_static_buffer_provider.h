@@ -55,7 +55,8 @@ private:
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
-    bool needRefreshLoopTimes_ = false;
+    bool delayRefreshLoopTimes_ = false;
+    bool playFinished_ = false;
 
     std::mutex fadeMutex_;
     bool needFadeIn_ = false;

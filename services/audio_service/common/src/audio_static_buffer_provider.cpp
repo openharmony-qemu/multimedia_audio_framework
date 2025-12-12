@@ -73,7 +73,7 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
                 offset += remainSize;
                 remainSize = 0;
                 needFadeOut_ = true;
-                sharedBuffer_->GetStreamStatus()->store(STREAM_IDEL);
+                playFinished_ = true;
             }
             sharedBuffer_->WakeFutex();
         }
@@ -98,7 +98,7 @@ int32_t AudioStaticBufferProvider::ProcessFadeInOutIfNeed(int8_t *inputData, siz
     }
 
     // if refreshloopTimes before fadeout, the beginning data will be processed as fadeout
-    if (needRefreshLoopTimes_) {
+    if (delayRefreshLoopTimes_) {
         RefreshLoopTimes();
     }
     return ret;
@@ -149,9 +149,10 @@ void AudioStaticBufferProvider::PreSetLoopTimes(int64_t times)
 
 void AudioStaticBufferProvider::RefreshLoopTimes()
 {
+    // fadeout needs to be done before resfresh bufferStatus
     if (needFadeOut_ && !IsLoopEnd()) {
         Trace trace1("RefreshLoopTimes need delay Refresh");
-        needRefreshLoopTimes_ = true;
+        delayRefreshLoopTimes_ = true;
         return;
     }
     Trace trace("RefreshLoopTimes");
@@ -161,7 +162,7 @@ void AudioStaticBufferProvider::RefreshLoopTimes()
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
     AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
-    needRefreshLoopTimes_ = false;
+    delayRefreshLoopTimes_ = false;
 }
 
 int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
@@ -186,6 +187,7 @@ void AudioStaticBufferProvider::NeedProcessFadeIn()
     Trace trace("NeedProcessFadeIn");
     std::unique_lock<std::mutex> lock(fadeMutex_);
     needFadeIn_ = true;
+    playFinished_ = false;
 }
 
 void AudioStaticBufferProvider::NeedProcessFadeOut()
@@ -202,8 +204,8 @@ bool AudioStaticBufferProvider::IsLoopEnd()
 
 bool AudioStaticBufferProvider::NeedProvideData()
 {
-    if (IsLoopEnd()) {
-        Trace tracezero("GetDataFromStaticBuffer ZeroData IsLoopEnd");
+    if (IsLoopEnd() || playFinished_) {
+        Trace tracezero("GetDataFromStaticBuffer ZeroData LoopEnd");
         return false;
     }
 

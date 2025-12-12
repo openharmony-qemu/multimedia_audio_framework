@@ -2829,7 +2829,7 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
         staticBufferProvider_->NeedProcessFadeOut();
     }
     // Refresh needs to be called after fadeout
-    if (isRefresh) {
+    if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->RefreshLoopTimes();
     }
 }
