@@ -230,7 +230,7 @@ private:
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
-    void MarkStaticFadeOut(bool isRefresh)
+    void MarkStaticFadeOut(bool isRefresh);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

@@ -140,7 +140,7 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead,
         processTmpBuffer_.resize(spanSizeInByte);
         int32_t ret = staticBufferProvider_->GetDataFromStaticBuffer(
             reinterpret_cast<int8_t*>(processTmpBuffer_.data()), spanSizeInByte);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, false);
         processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     } else {
         int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
@@ -512,14 +512,6 @@ int32_t AudioProcessInServer::Resume()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", sessionId_);
-    }
-
-    if (processConfig_.rendererInfo.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
-        if (staticBufferProvider_->NeedRefreshLoopTimes()) {
-            staticBufferProvider_->RefreshLoopTimes();
-            staticBufferProvider_->ResetLoopStatus();
-        }
     }
 
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(needRefreshBufferStatus_) == SUCCESS,
@@ -1440,7 +1432,7 @@ int32_t AudioProcessInServer::CreateServerBuffer()
 void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr");
+    CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
 
     if (!staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->NeedProcessFadeOut();

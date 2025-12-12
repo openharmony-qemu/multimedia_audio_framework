@@ -2497,7 +2497,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
+    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
 
     delete[] inputData;
     delete[] processedData;

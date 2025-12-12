@@ -101,7 +101,7 @@ int32_t AudioStaticBufferProvider::ProcessFadeInOutIfNeed(int8_t *inputData, siz
     if (needRefreshLoopTimes_) {
         RefreshLoopTimes();
     }
-    return SUCCESS;
+    return ret;
 }
 
 int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,

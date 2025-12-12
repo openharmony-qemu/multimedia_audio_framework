@@ -2823,7 +2823,7 @@ int32_t RendererInServer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag
 void RendererInServer::MarkStaticFadeOut(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr");
+    CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
 
     if (!staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->NeedProcessFadeOut();
