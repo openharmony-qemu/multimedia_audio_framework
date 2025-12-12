@@ -9,7 +9,7 @@
 #include <map>
 #include "ohaudio/native_audio_suite_base.h"
 
-// 定义错误码枚举
+// Define error code enumeration
 enum class AudioSuiteResult {
     NODE_MANAGER_OPERATION_ERROR = -1,
     AUDIOSUITE_SUCCESS = 0,
@@ -36,10 +36,10 @@ enum class AudioSuiteResult {
     DEMO_CREATE_NODE_ERROR = 107,
 };
 
-// 错误信息映射表
+// Error Message Mapping Table
 extern const std::map<AudioSuiteResult, std::string> errorMessages;
 
-// 获取错误码对应的错误信息
+// Get the error message corresponding to the error code
 std::string GetErrorMessage(AudioSuiteResult result);
 
 #endif //AUDIOEDITTESTAPP_AUDIOSUITEERROR_H
