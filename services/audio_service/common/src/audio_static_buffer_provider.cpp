@@ -224,8 +224,7 @@ bool AudioStaticBufferProvider::NeedProvideData()
         Trace tracezero("GetDataFromStaticBuffer ZeroData IncorrectStreamStatus" +
             std::to_string(sharedBuffer_->GetStreamStatus()->load()));
         return false;
-        }
-
+    }
     return true;
 }
 
