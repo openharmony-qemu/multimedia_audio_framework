@@ -29,7 +29,7 @@ const TAG: string = 'AudioEditTestApp_PipelineCascad';
 @Component
 export struct PipelineCascad {
   pageInfos: NavPathStack = new NavPathStack();
-  // 主标题样式修改器
+  // Main Title Style Modifier
   @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
   private symbolModifier: SymbolGlyphModifier =
     new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')]);
@@ -39,7 +39,7 @@ export struct PipelineCascad {
   @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
   @StorageLink('currentPipelineId') currentPipelineId: string = '';
 
-  // 是否显示第三个+号
+  // Whether to display the third plus sign
   @State isShow: boolean = false;
 
   @State outputName_1: string = '+';
@@ -53,7 +53,7 @@ export struct PipelineCascad {
     Logger.info(TAG, 'aboutToAppear start');
     let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
     window.getLastWindow(context).then((windowClass) => {
-      // 设置屏幕横屏
+      // Set screen to landscape mode
       windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION_LANDSCAPE);
     });
     if (!this.initAllPipeline()) {
@@ -172,7 +172,7 @@ export struct PipelineCascad {
                       temp.isRendererFinished = true;
                       this.preparedPipelineList[i] = temp;
 
-                      // 判断是否全部渲染完成了
+                      // Determine whether all rendering is completed
                       this.isShow = this.preparedPipelineList.every((item => ((item.isRenderer === true &&
                         item.isRendererFinished === true) || (item.isRenderer === undefined))));
                     }

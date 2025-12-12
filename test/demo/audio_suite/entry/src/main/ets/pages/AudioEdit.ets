@@ -63,7 +63,7 @@ export struct AudioEdit {
     
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
-        // 创建引擎， 创建管线
+        // Create engine, create pipeline
         try {
             let result = audioNapi.audioEditNodeInit(1);
             Logger.info(TAG, `audioEditNodeInit result: ${result}`);
@@ -74,7 +74,7 @@ export struct AudioEdit {
 
     aboutToDisappear(): void {
         Logger.info(TAG, 'aboutToDisappear');
-        // 销毁引擎， 销毁管线
+        // Destroy the engine, destroy the pipeline
         try {
             let result = audioNapi.audioEditDestory();
             Logger.info(TAG, `audioEditDestory result: ${result}`);
@@ -99,7 +99,7 @@ export struct AudioEdit {
 
                             const inputId: string = util.generateRandomUUID(true);
 
-                            // 添加音频， 创建input和output节点， 设置音频的文件格式
+                            // Add audio, create input and output nodes, and set the audio file format
                             this.selectedAudio(this.playList.get(popInfo.result['uri']) as SongInfo, inputId, this.outPutId,
                              this.mixerId);
 
@@ -339,7 +339,7 @@ export struct AudioEdit {
                     let fieldEffectId = this.fieldEffectIdMap.get(this.pitchSong);
                     if(fieldEffectId === '' || fieldEffectId === undefined) {
                         let fieldId = util.generateRandomUUID(true);
-                        //新增节点
+                        // New Node
                         if (this.fieldEffectNumMap.get(this.pitchSong) === SoundFiledType.SOUND_FIELD_CLOSE) {
                             this.fieldEffectShow = false;
                             return;
@@ -348,7 +348,7 @@ export struct AudioEdit {
 
                         let result = audioNapi.startFieldEffect(this.pitchSong, this.fieldEffectNumMap.get(this.pitchSong), fieldId);
                         if (result !== 0) {
-                            // 效果节点设置失败
+                            // Effect node setup failed
                             this.getUIContext().showAlertDialog({
                                 message: '添加声场节点失败',
                                 autoCancel: true
@@ -363,7 +363,7 @@ export struct AudioEdit {
                         this.fieldEffectShow = false;
                         this.forceRenderByEffectBtn();
                     } else {
-                        //修改节点
+                        // Modify Node
                         let result = audioNapi.resetFieldEffect(this.pitchSong, this.fieldEffectNumMap.get(this.pitchSong), fieldEffectId);
                         if(result !== 0) {
                             this.getUIContext().showAlertDialog({
@@ -590,12 +590,12 @@ export struct AudioEdit {
                     let voiceBeautifierId = this.voiceBeautifierIdMap.get(this.pitchSong);
                     if(voiceBeautifierId === '') {
                         let VBId = util.generateRandomUUID(true);
-                        //选择普通则无美化效果
+                        // Choosing the ordinary has no beautifying effect.
                         if (this.voiceBeautifierNumMap.get(this.pitchSong) === 0) {
                             this.voiceBeautifierShow = false;
                             return;
                         }
-                        //新增节点
+                        // New Node
                         this.voiceBeautifierIdMap.set(this.pitchSong, VBId);
                         let ret = audioNapi.startVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), VBId);
                         if (ret !== 0) {
@@ -614,7 +614,7 @@ export struct AudioEdit {
                         this.voiceBeautifierShow = false;
                         this.forceRenderByEffectBtn();
                     } else {
-                        //修改节点
+                        // Modify Node
                         let ret = audioNapi.resetVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), voiceBeautifierId);
                         if (ret !== 0) {
                           Logger.error(TAG, `resetVoiceBeautify error number is ${ret}`);
@@ -808,14 +808,14 @@ export struct AudioEdit {
                     }
 
                     if (this.equalizerMode !== 10) {
-                        // 判断效果节点是否设置成功
+                        // Determine whether the effect node is set up successfully.
                         let result = audioNapi.setEqualizerMode(this.equalizerMode, this.equalizerId, this.pitchSong);
                         if (this.equalizerMode === 1){
                             this.deleteEffectLabel(NodeType.EQ);
                         }
                         Logger.info(TAG, `setEqualizerMode result: ${result}, equalizerMode: ${this.equalizerMode}`);
                         if (result !== 0) {
-                            // 效果节点设置失败
+                            // Effect node setup failed
                             this.getUIContext().showAlertDialog({
                                 message: '设置均衡器模式失败',
                                 confirm: {
@@ -835,12 +835,12 @@ export struct AudioEdit {
                             nodeId: this.equalizerId
                         });
                     } else {
-                        // 均衡器模式为自定义类型
+                        // Equalizer mode is set to custom type.
                         let result =
                             audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.equalizerId, this.pitchSong);
                         Logger.info(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
                         if (result !== 0) {
-                            // 效果节点设置失败
+                            // Effect node setup failed
                             this.getUIContext().showAlertDialog({
                                 message: '设置均衡器模式失败',
                                 confirm: {
@@ -919,7 +919,7 @@ export struct AudioEdit {
                             .blockColor(Color.White)
                             .onChange((value: number, mode: SliderChangeMode) => {
                                 this.balanceBandGains[index] = value;
-                                // 均衡器模式为自定义模式
+                                // Equalizer mode is set to custom mode.
                                 this.equalizerMode = 10;
                                 this.balanceModeScroller.scrollToIndex(this.equalizerMode, true);
                             })
@@ -1095,7 +1095,7 @@ export struct AudioEdit {
                     let result =
                         audioNapi.setSoundSpeedTone(this.pitchSong, this.soundSpeedToneId, this.soundSpeed, this.soundTone);
                     if (result !== 0) {
-                        // 音速音调效果节点设置失败
+                        // Sonic pitch effect node setup failed.
                         this.getUIContext().showAlertDialog({
                         message: '设置音速音调失败',
                         confirm: {
@@ -1396,8 +1396,8 @@ export struct AudioEdit {
     }
 
     /**
-     * 歌曲栏
-     * @param info 歌曲信息
+     * Song Bar
+     * @param info song information
      */
     @Builder
     songItem(nodeId: string, info: SongInfo) {
@@ -1451,7 +1451,7 @@ export struct AudioEdit {
         Logger.info(TAG, 
             `songType: ${info.songType},  wavBuffer length : ${info.wavBuffer?.byteLength}`);
         if (info.songType === 'wav' && info.wavBuffer) {
-            // 调用napi接口
+            // Invoke the NAPI interface.
             try {
                 let result =
                     audioNapi.audioInAndOutInit(inputId, outPutId, mixerId, info.fd, info.wavBuffer.byteLength);
@@ -1471,7 +1471,7 @@ export struct AudioEdit {
         }
     }
 
-    // 强制渲染的cheat方式
+    // Forced rendering cheat method
     forceRenderByEffectBtn() {
         this.effectBtnState = false;
     }
