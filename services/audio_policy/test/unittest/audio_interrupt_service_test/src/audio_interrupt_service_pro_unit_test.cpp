@@ -821,8 +821,9 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_008, TestSize.Lev
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService_, nullptr);
 
-    audioInterruptService->stopThread_ = std::thread(&AudioInterruptServiceUnitTest::ThreadRun, this);
-    bool ret = audioInterruptService->stopThread_.joinable();
+    audioInterruptService->stopFuture_ = std::async(std::launch::async,
+        &AudioInterruptServiceUnitTest::ThreadRun, this);
+    bool ret = audioInterruptService->stopFuture_.valid();
     EXPECT_EQ(ret, true);
 }
 

@@ -22,6 +22,7 @@
 #include <functional>
 #include <unordered_map>
 #include <atomic>
+#include <future>
 #include "iremote_object.h"
 
 #include "i_audio_interrupt_event_dispatcher.h"
@@ -145,7 +146,7 @@ public:
         int32_t zoneId = ZONEID_DEFAULT);
     void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
-    std::thread stopThread_;
+    std::future<void> stopFuture_;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
