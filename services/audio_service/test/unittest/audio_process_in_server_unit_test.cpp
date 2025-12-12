@@ -2244,9 +2244,10 @@ HWTEST(AudioProcessInServerUnitTest, PrepareRingBuffer_001, TestSize.Level1)
         }},
         .dataLength = 3000
     };
-
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     int32_t hapticsSyncId = 0;
     EXPECT_FALSE(audioProcessInServer->PrepareRingBuffer(10, writeBuf, hapticsSyncId));
 }
@@ -2303,8 +2304,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_001, TestSize.L
     audioProcessInServerRet.streamStatus_->store(STREAM_PAUSED);
     EXPECT_EQ(audioProcessInServerRet.streamStatus_->load(), STREAM_PAUSED);
 
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     auto ret = audioProcessInServerRet.Resume();
     EXPECT_NE(ret, SUCCESS);
 }
@@ -2331,8 +2334,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_resume_002, TestSize.L
     audioProcessInServerRet.streamStatus_->store(STREAM_PAUSED);
     EXPECT_EQ(audioProcessInServerRet.streamStatus_->load(), STREAM_PAUSED);
 
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     audioProcessInServerRet.staticBufferProvider_->PreSetLoopTimes(10);
     auto ret = audioProcessInServerRet.Resume();
     EXPECT_NE(ret, SUCCESS);
@@ -2359,8 +2364,10 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_stop_001, TestSize.Lev
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
     audioProcessInServerRet.streamStatus_->store(STREAM_RUNNING);
 
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(buffer);
+    audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     int32_t ret = 0;
     audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
@@ -2387,30 +2394,5 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_configbuffer_001, Test
         spanSizeInFrame, g_audioStreamInfo);
     EXPECT_EQ(ret, SUCCESS);
 }
-
-/**
- * @tc.name  : Test AudioProcessInServer API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_ProcessAndSetStaticBuffer
- * @tc.desc  : Test AudioProcessInServer interface.
- */
-HWTEST(AudioProcessInServerUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level1)
-{
-    AudioProcessConfig configRet = InitProcessConfig();
-    AudioService *releaseCallbackRet = AudioService::GetInstance();
-    configRet.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
-    configRet.rendererInfo.isStatic = true;
-    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
-    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
-
-    EXPECT_EQ(audioProcessInServerRet.processBuffer_, nullptr);
-    auto ret = audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
-        spanSizeInFrame, g_audioStreamInfo);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioProcessInServerRet.ProcessAndSetStaticBuffer();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

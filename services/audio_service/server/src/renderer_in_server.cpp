@@ -285,12 +285,14 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
             OnCheckActiveMusicTime("Paused");
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             OnCheckActiveMusicTime("Stopped");
             break;
@@ -1086,8 +1088,11 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS,
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(needRefreshBufferStatus_) == SUCCESS,
         ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
+    needRefreshBufferStatus_ = false;
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -1190,6 +1195,9 @@ int32_t RendererInServer::Pause()
     }
     standByCounter_ = 0;
     GetEAC3ControlParam();
+
+    MarkStaticFadeOut(false);
+
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
 
@@ -1384,10 +1392,7 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
-    if (processConfig_.rendererInfo.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr!");
-        staticBufferProvider_->ResetLoopStatus();
-    }
+    MarkStaticFadeOut(true);
 
     if (IsMovieOffloadStream()) {
         SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
@@ -1546,6 +1551,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 int32_t RendererInServer::SetRate(int32_t rate)
 {
     audioRenderRate_ = static_cast<AudioRendererRate>(rate);
+    needRefreshBufferStatus_ = true;
     return stream_->SetRate(rate);
 }
 
@@ -2735,6 +2741,7 @@ int32_t RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
     staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
+    needRefreshBufferStatus_ = true;
     return SUCCESS;
 }
 
@@ -2744,14 +2751,14 @@ int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo
     return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
 }
 
-int32_t RendererInServer::ProcessAndSetStaticBuffer()
+int32_t RendererInServer::ProcessAndSetStaticBuffer(bool needRefreshBufferStatus)
 {
-    if (!processConfig_.rendererInfo.isStatic) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
+        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
+    staticBufferProvider_->NeedProcessFadeIn();
 
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr!");
-    CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr, ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
+    CHECK_AND_RETURN_RET(needRefreshBufferStatus, SUCCESS);
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
 
@@ -2760,7 +2767,6 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
     staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
-
     staticBufferProvider_->RefreshLoopTimes();
     return SUCCESS;
 }
@@ -2785,7 +2791,8 @@ int32_t RendererInServer::CreateServerBuffer()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
 
-        staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(audioServerBuffer_);
+        staticBufferProvider_ =
+            AudioStaticBufferProvider::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProvider_ is nullptr!");
         staticBufferProvider_->SetStaticBufferInfo(processConfig_.staticBufferInfo);
@@ -2811,6 +2818,20 @@ int32_t RendererInServer::CreateServerBuffer()
 int32_t RendererInServer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
     return stream_->GetLatencyWithFlag(latency, flag);
+}
+
+void RendererInServer::MarkStaticFadeOut(bool isRefresh)
+{
+    CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr");
+
+    if (!staticBufferProvider_->IsLoopEnd()) {
+        staticBufferProvider_->NeedProcessFadeOut();
+    }
+    // Refresh needs to be called after fadeout
+    if (isRefresh) {
+        staticBufferProvider_->RefreshLoopTimes();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

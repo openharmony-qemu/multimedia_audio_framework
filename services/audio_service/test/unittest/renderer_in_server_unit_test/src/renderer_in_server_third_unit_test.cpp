@@ -2399,8 +2399,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2444,8 +2446,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2476,8 +2480,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2507,8 +2513,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
     int8_t *inputData = nullptr;
 
@@ -2546,8 +2554,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_005, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     staticBufferProviderTest->currentLoopTimes_ = LLONG_MAX;
@@ -2626,30 +2636,6 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerConfigServerBuffer_001, 
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test ProcessAndSetStaticBuffer API
- * @tc.type  : FUNC
- * @tc.number: ProcessAndSetStaticBuffer_001
- * @tc.desc  : Test ProcessAndSetStaticBuffer_001
- */
-HWTEST_F(RendererInServerThirdUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
-    processConfig.rendererInfo.isStatic = true;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = rendererInServer->ProcessAndSetStaticBuffer();
     EXPECT_EQ(SUCCESS, ret);
 }
 

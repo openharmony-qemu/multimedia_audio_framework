@@ -25,9 +25,10 @@ namespace AudioStandard {
 
 class AudioStaticBufferProvider {
 public:
-    static std::shared_ptr<AudioStaticBufferProvider> CreateInstance(std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+    static std::shared_ptr<AudioStaticBufferProvider> CreateInstance(AudioStreamInfo streamInfo,
+        std::shared_ptr<OHAudioBufferBase> sharedBuffer);
 
-    AudioStaticBufferProvider(std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+    AudioStaticBufferProvider(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
     int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
     void SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
@@ -35,21 +36,30 @@ public:
 
     void PreSetLoopTimes(int64_t times);
     void RefreshLoopTimes();
-    bool NeedRefreshLoopTimes();
-    int32_t ResetLoopStatus();
     int32_t IncreaseCurrentLoopTimes();
+    void NeedProcessFadeIn();
+    void NeedProcessFadeOut();
+    bool IsLoopEnd();
 
 private:
     int32_t CheckIsValid(int8_t *inputData, size_t offset, size_t requestDataLen, size_t remainSize);
+    bool NeedProvideData();
+    int32_t ProcessFadeInOutIfNeed(int8_t *inputData, size_t requestDataLen);
+
+private:
     std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
+    AudioStreamInfo streamInfo_;
     uint8_t *processedBuffer_ = nullptr;
     size_t processedBufferSize_ = 0;
-
-    bool needRefreshLoopTimes_ = false;
     int64_t preSetTotalLoopTimes_ = 0;
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
+    bool needRefreshLoopTimes_ = false;
+
+    std::mutex fadeMutex_;
+    bool needFadeIn_ = false;
+    bool needFadeOut_ = false;
 };
 
 } // namespace AudioStandard
