@@ -18,6 +18,7 @@
 #include <atomic>
 #include <mutex>
 #include "i_renderer_stream.h"
+#include "sink/i_audio_render_sink.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,9 +77,13 @@ public:
     int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher) override;
 private:
     int32_t InitSink(AudioStreamInfo streamInfo);
+    int32_t InitBuffer();
+    void NotifyOperation(IOperation operation);
 private:
     // sink values
     uint32_t renderId_ = 0;
+    std::mutex sinkMutex_;
+    std::shared_ptr<IAudioRenderSink> sink_ = nullptr;
 
     // stream values
     AudioProcessConfig processConfig_;
@@ -89,6 +94,10 @@ private:
     uint64_t writtenFrameCount_ = 0;
     std::mutex sinkLatencyFetcherMutex_;
     std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
+
+    // buffer values
+    std::unique_ptr<uint8_t []> rawBuffer_ = nullptr;
+    size_t bufferSize_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

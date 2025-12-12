@@ -242,6 +242,10 @@ private:
 
     void InitDFXOperaiton();
 
+    int32_t GetRawBuffer(BufferDesc &bufDesc);
+
+    int32_t WriteRawBuffer(BufferDesc &bufferDesc);
+
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();

@@ -67,7 +67,6 @@ namespace {
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
-    constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128Kb
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
@@ -119,6 +118,7 @@ void RendererInServer::RemoveStreamInfo()
 int32_t RendererInServer::ConfigFixedSizeBuffer()
 {
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_OPERATION_FAILED, "falied: byteSizePerFrame is 0");
     bufferTotalSizeInFrame_ = FIXED_BUFFER_SIZE / byteSizePerFrame_;
     engineTotalSizeInFrame_ = bufferTotalSizeInFrame_;
@@ -982,6 +982,23 @@ int32_t RendererInServer::OnWriteData(size_t length)
     UpdateStreamInfo();
 
     return SUCCESS;
+}
+
+int32_t RendererInServer::RequestHandleData(uint64_t syncFramePts, uint32_t size)
+{
+    Trace trace("RendererInServer::RequestHandleData pts:" + std::to_string(syncFramePts) + " size:" +
+        std::to_string(size));
+    RETURN_RET_IF(managerType_ != HWDECODING_PLAYBACK, SUCCESS);
+
+    CHECK_AND_RETURN_RET_LOG(size <= FIXED_BUFFER_SIZE, ERR_INVALID_PARAM, "invalid size:%{public}d", size);
+    BufferDesc bufferDesc = {};
+    int32_t ret = audioServerBuffer_->GetRawBuffer(size, bufferDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed to get raw buffer");
+    bufferDesc.dataLength = size;
+    bufferDesc.syncFramePts = syncFramePts;
+
+    ret = stream_->EnqueueBuffer(bufferDesc);
+    return ret;
 }
 
 // Call WriteData will hold mainloop lock in EnqueueBuffer, we should not lock a mutex in WriteData while OnWriteData is

@@ -799,12 +799,26 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return ERROR;
 }
 
+int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
+{
+    if (clientBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("buffer is not inited");
+        return ERR_OPERATION_FAILED;
+    }
+    size_t bufferSize = clientBuffer_->GetDataSize();
+    int32_t ret = clientBuffer_->GetRawBuffer(bufferSize, bufDesc);
+    return ret;
+}
+
 int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::GetBufferDesc");
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("GetBufferDesc is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
+    }
+    if (isHWDecodingType_) {
+        return GetRawBuffer(bufDesc);
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     bufDesc.buffer = cbBuffer_.get();
@@ -1286,6 +1300,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
+    CHECK_AND_RETURN_LOG(isHWDecodingType_ == false, "not support HWDecoding");
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,

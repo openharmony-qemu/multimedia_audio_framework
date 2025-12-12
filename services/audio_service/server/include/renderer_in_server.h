@@ -109,6 +109,7 @@ public:
     int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size);
     int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
     void VolumeHandle(BufferDesc &desc);

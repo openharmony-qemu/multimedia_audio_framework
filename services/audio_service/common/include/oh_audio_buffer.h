@@ -225,6 +225,8 @@ public:
     int32_t GetAllWritableBuffer(RingBufferWrapper &buffer);
     int32_t GetAllReadableBuffer(RingBufferWrapper &buffer);
 
+    int32_t GetRawBuffer(uint32_t size, BufferDesc &bufferDesc);
+
     int64_t GetLastWrittenTime();
     void SetLastWrittenTime(int64_t time);
 

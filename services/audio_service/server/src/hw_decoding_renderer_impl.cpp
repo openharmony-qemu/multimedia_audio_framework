@@ -54,15 +54,18 @@ int32_t HWDecodingRendererStream::Init()
     AUDIO_INFO_LOG("encoding:%{public}s rate:%{public}d channels:%{public}u, formats:%{public}d",
         EncodingTypeStr(streamInfo.encoding).c_str(), streamInfo.samplingRate, streamInfo.channels, streamInfo.format);
     int32_t ret = InitSink(streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init sink fail: %{public}d", ret);
+    ret = InitBuffer();
     return ret;
 }
 
 int32_t HWDecodingRendererStream::InitSink(AudioStreamInfo streamInfo)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     std::string sinkName = HW_DECODING_SINK;
     renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, sinkName, true);
-    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
-    if (sink == nullptr) {
+    sink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
+    if (sink_ == nullptr) {
         AUDIO_ERR_LOG("get render fail, sinkName: %{public}s", sinkName.c_str());
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERR_INVALID_HANDLE;
@@ -79,14 +82,31 @@ int32_t HWDecodingRendererStream::InitSink(AudioStreamInfo streamInfo)
     attr.openMicSpeaker = 1;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
-    int32_t ret = sink->Init(attr);
+    int32_t ret = sink_->Init(attr);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init sink fail, sinkName: %{public}s", sinkName.c_str());
 
     float volume = 1.0f;
-    sink->SetVolume(volume, volume);
+    sink_->SetVolume(volume, volume);
 
     return ret;
+}
+
+int32_t HWDecodingRendererStream::InitBuffer()
+{
+    // in plan: use different size for each encoding type
+    rawBuffer_ = std::make_unique<uint8_t []>(FIXED_BUFFER_SIZE);
+    bufferSize_ = FIXED_BUFFER_SIZE;
+    CHECK_AND_RETURN_RET_LOG(rawBuffer_ != nullptr, ERR_OPERATION_FAILED, "failed.");
+    return SUCCESS;
+}
+
+void HWDecodingRendererStream::NotifyOperation(IOperation operation)
+{
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr) {
+        statusCallback->OnStatusUpdate(operation);
+    }
 }
 
 int32_t HWDecodingRendererStream::Start()
@@ -94,10 +114,15 @@ int32_t HWDecodingRendererStream::Start()
     Trace trace("HWDecodingRendererStream::Start::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_STARTED);
-    }
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int32_t ret = sink_->Start();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start falied");
+    lock.unlock();
+
+    // call with out lock
+    NotifyOperation(OPERATION_STARTED);
+
     return SUCCESS;
 }
 
@@ -106,10 +131,15 @@ int32_t HWDecodingRendererStream::Pause(bool isStandby)
     Trace trace("HWDecodingRendererStream::Pause::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_PAUSED);
-    }
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int32_t ret = sink_->Pause();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause falied");
+    lock.unlock();
+
+    // call with out lock
+    NotifyOperation(OPERATION_PAUSED);
+
     return SUCCESS;
 }
 
@@ -117,11 +147,15 @@ int32_t HWDecodingRendererStream::Flush()
 {
     Trace trace("HWDecodingRendererStream::Flush::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int32_t ret = sink_->Flush();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Flush falied");
+    lock.unlock();
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_FLUSHED);
-    }
+    // call with out lock
+    NotifyOperation(OPERATION_FLUSHED);
+
     return SUCCESS;
 }
 
@@ -129,11 +163,13 @@ int32_t HWDecodingRendererStream::Drain(bool stopFlag)
 {
     Trace trace("HWDecodingRendererStream::Drain::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int32_t ret = sink_->Drain();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain falied");
+    lock.unlock();
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_DRAINED);
-    }
+    NotifyOperation(OPERATION_DRAINED);
     return SUCCESS;
 }
 
@@ -141,11 +177,13 @@ int32_t HWDecodingRendererStream::Stop()
 {
     Trace trace("HWDecodingRendererStream::Stop::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int32_t ret = sink_->Stop();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop falied");
+    lock.unlock();
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_STOPPED);
-    }
+    NotifyOperation(OPERATION_STOPPED);
     return SUCCESS;
 }
 
@@ -154,10 +192,15 @@ int32_t HWDecodingRendererStream::Release()
     Trace trace("HWDecodingRendererStream::Release::" + std::to_string(streamIndex_));
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
 
-    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(OPERATION_RELEASED);
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (sink_ != nullptr) {
+        sink_->Stop();
+        sink_->DeInit();
+        sink_ = nullptr;
     }
+    HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+
+    NotifyOperation(OPERATION_RELEASED);
     return SUCCESS;
 }
 
@@ -231,15 +274,46 @@ void HWDecodingRendererStream::RegisterWriteCallback(const std::weak_ptr<IWriteC
 BufferDesc HWDecodingRendererStream::DequeueBuffer(size_t length)
 {
     Trace trace("HWDecodingRendererStream::DequeueBuffer");
-    BufferDesc bufferDesc = {nullptr, 0, 0};
+
+    BufferDesc bufferDesc = {};
+    bufferDesc.buffer = rawBuffer_.get() + sizeof(HWDecodingInfo);
+    bufferDesc.dataLength = 0;
+    bufferDesc.bufLength = bufferSize_ - sizeof(HWDecodingInfo);
+    bufferDesc.syncFramePts = 0;
+
     return bufferDesc;
 }
 
 int32_t HWDecodingRendererStream::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
-    Trace trace("HWDecodingRendererStream::EnqueueBuffer::" + std::to_string(streamIndex_));
+    Trace trace("HWDecodingRendererStream::EnqueueBuffer[" + std::to_string(streamIndex_) + "]length:" +
+        std::to_string(bufferDesc.dataLength));
+    // prepare buffer
+    size_t length = bufferDesc.dataLength + sizeof(HWDecodingInfo);
+    CHECK_AND_RETURN_RET_LOG(length <= bufferSize_ && bufferDesc.dataLength != 0, ERR_INVALID_PARAM,
+        "faied with length:%{public}zu", bufferDesc.dataLength);
+
+    // fill HWDecodingInfo info
+    HWDecodingInfo *info = reinterpret_cast<HWDecodingInfo *>(rawBuffer_.get());
+    info->pts = bufferDesc.syncFramePts;
+    info->size = bufferDesc.dataLength;
+    info->optCode = 0;
+
+    // fill buffer data
+    auto ret = memcpy_s(reinterpret_cast<void *>(rawBuffer_.get() + sizeof(HWDecodingInfo)),
+        (bufferSize_ - sizeof(HWDecodingInfo)), static_cast<void *>(bufferDesc.buffer), bufferDesc.dataLength);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail length: %{public}zu", bufferDesc.dataLength);
+
+    // call write data
+    WatchTimeout guard("call write hdi RenderFrame", AUDIO_NS_PER_SECOND); // timeout: 1s
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    uint64_t written = 0;
+    int32_t result = sink_->RenderFrame(*reinterpret_cast<char *>(rawBuffer_.get()), length, written);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ret, "RenderFrame falied");
+
     writtenFrameCount_++;
-    // in plan
+
     return SUCCESS;
 }
 
@@ -256,7 +330,12 @@ void HWDecodingRendererStream::GetByteSizePerFrame(size_t &byteSizePerFrame) con
 
 void HWDecodingRendererStream::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
 {
-    spanSizeInFrame = 1; // mock value
+    AudioStreamInfo streamInfo = processConfig_.streamInfo;
+    size_t byteSizePerFrame = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
+    byteSizePerFrame = byteSizePerFrame == 0 ? 1 : byteSizePerFrame;
+    // use buffer size
+    spanSizeInFrame = bufferSize_ / byteSizePerFrame;
+    AUDIO_INFO_LOG("spanSizeInFrame is %{public}zu", spanSizeInFrame);
 }
 
 void HWDecodingRendererStream::SetStreamIndex(uint32_t index)
@@ -300,10 +379,10 @@ int32_t HWDecodingRendererStream::SetOffloadDataCallbackState(int32_t state)
 
 size_t HWDecodingRendererStream::GetWritableSize()
 {
-    // in plan
-    return 1;
+    size_t availSize = bufferSize_ - sizeof(HWDecodingInfo);
+    return availSize;
 }
-// offload end
+
 int32_t HWDecodingRendererStream::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
 {
     return SUCCESS;
@@ -328,6 +407,7 @@ int32_t HWDecodingRendererStream::ReturnIndex(int32_t index)
 int32_t HWDecodingRendererStream::SetClientVolume(float clientVolume)
 {
     AUDIO_INFO_LOG("clientVolume: %{public}f", clientVolume);
+    // in plan
     return SUCCESS;
 }
 
