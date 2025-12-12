@@ -194,7 +194,7 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
 }
 
 function getMD5OfFile(filePath: string): string {
-  // 获取文件内容
+  // get the File Content
   let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
   let buf = new ArrayBuffer(40960);
   fs.readSync(file.fd, buf);
@@ -314,7 +314,7 @@ export struct AutoTest {
 
   aboutToDisappear(): void {
     Logger.info(TAG, 'aboutToDisappear');
-    // 销毁管线，销毁引擎
+    // Destroy the pipelines, destroy the engines.
     this.destroyPipeline();
   }
 
@@ -1023,14 +1023,14 @@ export struct AutoTest {
         let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
         Logger.info(TAG, `SaveBuffer filePath : ${path}`);
         if (audioFormate === '.wav') {
-          // 处理wav
+          // Processing WAV
           let wavBuffer =
             writeWavFileHeader(pcmBuffer[index], outputInfo.sampleRate, outputInfo.channels, outputInfo.bitDepth);
           let writeLen = fs.writeSync(file.fd, wavBuffer);
           Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
         } else {
-          // 处理pcm
+          // Processing PCM
           let writeLen = fs.writeSync(file.fd, pcmBuffer[0]);
           Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
           fs.closeSync(file);
@@ -1190,16 +1190,16 @@ export struct AutoTest {
       const wavView = new Uint8Array(buffer);
       let wavHeaderBuffer = wavView.slice(0, 44).buffer;
       const dataView = new DataView(wavHeaderBuffer);
-      // 获取通道数, 通道数位于22字节
+      // Get the number of channels; the number of channels is located at byte 22.
       const channels: number = dataView.getUint16(22, true);
-      // 获取采样率, 采样率位于第 24 到28 字节
+      // Get the sampling rate, which is located at bytes 24 to 28.
       const sampleRate: number = dataView.getUint32(24, true);
-      // 获取位深，位深位于 34字节
+      // Get bit depth, bit depth is located at byte 34.
       const bitsPerSample: number = dataView.getUint16(34, true);
       return media.createAVMetadataExtractor().then(async (avMetadataExtractor) => {
-        // 设置fdSrc
+        // Set fdSrc.
         avMetadataExtractor.fdSrc = fs.openSync(inputFilePath);
-        // 获取元数据（promise模式）
+        // Get Metadata (Promise Mode)
         let metadata = await avMetadataExtractor.fetchMetadata();
         let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
         console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);
@@ -1234,17 +1234,17 @@ export struct AutoTest {
       const wavView = new Uint8Array(buffer);
       let wavHeaderBuffer = wavView.slice(0, 44).buffer;
       const dataView = new DataView(wavHeaderBuffer);
-      // 获取通道数, 通道数位于22字节
+      // Get the number of channels; the number of channels is located at byte 22
       const channels: number = dataView.getUint16(22, true);
-      // 获取采样率, 采样率位于第 24 到28 字节
+      // Get the sampling rate, which is located at bytes 24 to 28
       const sampleRate: number = dataView.getUint32(24, true);
-      // 获取位深，位深位于 34字节
+      // Get bit depth, bit depth is located at byte 34
       const bitsPerSample: number = dataView.getUint16(34, true);
 
       let avMetadataExtractor = await media.createAVMetadataExtractor();
-      // 设置fdSrc
+      // Set fdSrc
       avMetadataExtractor.fdSrc = fs.openSync(outputPath);
-      // 获取元数据（promise模式）
+      // Get Metadata (Promise Mode)
       let metadata = await avMetadataExtractor.fetchMetadata();
       let fileLen = new Decimal(fsStat.size / 1024 / 1024 * 100).ceil();
       console.info(TAG, `get meta data, media length: ${Number(metadata.duration) / 1000} s`);

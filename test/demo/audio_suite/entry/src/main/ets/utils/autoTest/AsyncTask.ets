@@ -8,7 +8,7 @@ import fs from '@ohos.file.fs';
 import { SceneInfo, NodeInfo, PipelineInfo, JsonFileInfo } from './Interface'
 import audioNapi from 'libentry.so';
 
-// 初始化pipeline任务子线程向主线程同步消息类
+// Initialize the message class of the subthread of the pipeline task to synchronize the message to the main thread.
 export class MultiInitPipelineSonMsg {
   sceneInfoId: string = "";
   pipelineId: string = "";
@@ -42,7 +42,7 @@ export async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToS
       return FAILED;
     }
     for (const inputFile of sceneInfo.inputFiles) {
-      // 获取文件内容
+      // Obtaining the File Content
       let inputPath = `${inputDir}/${inputFile.path}`;
       let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
       let fsStat = fs.statSync(inputPath);
@@ -85,7 +85,7 @@ export async function multiInitInput(inputId: string, outputId: string, mixerId:
   Logger.info(TAG, ` AutoTest multiInitInput start, inputId:${inputId}, pipelineId:${pipelineId}`);
   const inputDir = `/storage/Users/currentUser/Download/src.main.audiodemo/input_files`;
 
-  // 获取文件内容
+  // Obtaining the File Content
   let inputPath = `${inputDir}/${audioFile}`;
   let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
   let fsStat = fs.statSync(inputPath);
@@ -97,13 +97,13 @@ export async function multiInitInput(inputId: string, outputId: string, mixerId:
   const wavView = new Uint8Array(buffer);
   let wavHeaderBuffer = wavView.slice(0, 44).buffer;
   const dataView = new DataView(wavHeaderBuffer);
-  // 获取通道数, 通道数位于22字节
+  // Get the number of channels; the number of channels is located at byte 22.
   const channels: number = dataView.getUint16(22, true);
-  // 获取采样率, 采样率位于第 24 到28 字节
+  // Get the sampling rate, which is located at bytes 24 to 28.
   const sampleRate: number = dataView.getUint32(24, true);
-  // 获取位深，位深位于 34字节
+  // Get bit depth, bit depth is located at byte 34.
   const bitsPerSample: number = dataView.getUint16(34, true);
-  // 获取音频的长度
+  // Get the length of the audio.
   const fmtSize = dataView.getUint32(16, true); // fmt chunk size
   let offset = 20 + fmtSize;
   let pcmLength = 0;
@@ -112,9 +112,9 @@ export async function multiInitInput(inputId: string, outputId: string, mixerId:
     offset += 4;
     const chunkSize = dataView.getUint32(offset, true);
     offset += 4;
-    // 'data' 在 ASCII 小端字节
+    // 'data' In ASCII little-endian byte order
     if (chunkId === 0x61746164) {
-      // 找到了 data 块，返回其大小
+      // Found the data block, returned its size
       pcmLength = chunkSize;
       break;
     }
