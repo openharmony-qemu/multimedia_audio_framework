@@ -358,6 +358,15 @@ SUITE_ENGINE_UTILIZATION_STATS:
   APP_NAME: {type: STRING, arrsize: 20, desc: application name}
   AUDIO_NODE_TYPE: {type: STRING, desc: audio node type}
   AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
 
 SUITE_ENGINE_EXCEPTION:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio suite engine exception}
