@@ -357,6 +357,7 @@ SUITE_ENGINE_UTILIZATION_STATS:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: audio suite engine utilization statistic}
   APP_NAME: {type: STRING, arrsize: 20, desc: application name}
   AUDIO_NODE_TYPE: {type: STRING, desc: audio node type}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
   RT_MODE_RENDER_COUNT: {type: UINT32, arrsize: 20, desc: total render count of overtime scenarios in realtime mode}
   RT_MODE_RTF_OVER_BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline in realtime mode}
   RT_MODE_RTF_OVER_110BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline 110 percent in realtime mode}
