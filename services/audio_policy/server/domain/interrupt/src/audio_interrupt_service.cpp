@@ -124,6 +124,8 @@ static const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
     {STREAM_RING, 4},
     {STREAM_VOICE_RING, 4},
     {STREAM_ALARM, 5},
+    {STREAM_ANNOUNCEMENT, 5},
+    {STREAM_EMERGENCY, 5},
     {STREAM_NAVIGATION, 6},
     {STREAM_MUSIC, 7},
     {STREAM_MOVIE, 7},

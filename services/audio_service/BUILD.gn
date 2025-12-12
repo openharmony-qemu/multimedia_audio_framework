@@ -137,6 +137,10 @@ ohos_shared_library("audio_common") {
     defines += [ "TEST_COVERAGE" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   public_configs = [
     "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
     "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
@@ -317,6 +321,10 @@ ohos_shared_library("audio_client") {
 
   if (factory == true) {
     defines += [ "CONFIG_FACTORY_VERSION" ]
+  }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
   version_script = "../../audio_framework.versionscript"

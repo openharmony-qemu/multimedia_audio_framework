@@ -52,7 +52,9 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"ultrasonic", STREAM_ULTRASONIC},
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
-    {"navigation", STREAM_NAVIGATION}
+    {"navigation", STREAM_NAVIGATION},
+    {"announcement", STREAM_ANNOUNCEMENT},
+    {"emergency", STREAM_EMERGENCY},
 };
 
 uint64_t DURATION_TIME_DEFAULT = 40;
@@ -502,6 +504,12 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 {
     auto volumeType = systemVolume.GetVolumeType();
     auto deviceClass = systemVolume.GetDeviceClass();
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     systemVolume.totalVolume_ = systemVolume.isMuted_ ? 0.0f : systemVolume.volume_;
     std::string key = std::to_string(volumeType) + deviceClass;
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
@@ -524,6 +532,12 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceClass,
     float volume, int32_t volumeLevel)
 {
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     std::string key = std::to_string(volumeType) + deviceClass;
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = systemVolume_.find(key);
@@ -544,6 +558,12 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
 
 void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted)
 {
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolumeMute system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s, isMuted:%{public}d",
         volumeType, deviceClass.c_str(), isMuted);
     std::string key = std::to_string(volumeType) + deviceClass;

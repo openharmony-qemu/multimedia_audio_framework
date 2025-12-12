@@ -633,7 +633,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         STREAM_USAGE_GAME,
         STREAM_USAGE_DTMF,
         STREAM_USAGE_SYSTEM,
-        STREAM_USAGE_ENFORCED_TONE
+        STREAM_USAGE_ENFORCED_TONE,
+        STREAM_USAGE_ANNOUNCEMENT,
+        STREAM_USAGE_EMERGENCY
     };
     {
         std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);

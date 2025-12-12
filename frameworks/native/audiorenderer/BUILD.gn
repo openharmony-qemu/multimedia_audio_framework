@@ -51,6 +51,10 @@ ohos_shared_library("audio_renderer") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",

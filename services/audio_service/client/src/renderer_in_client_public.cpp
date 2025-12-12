@@ -474,6 +474,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
     AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d volume:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, volume);
+#ifdef MULTI_ALARM_LEVEL
+    if (eStreamType_ == STREAM_ANNOUNCEMENT || eStreamType_ == STREAM_EMERGENCY) {
+        AUDIO_INFO_LOG("streamType:%{public}d not support to set volume", eStreamType_);
+        return SUCCESS;
+    }
+#endif
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;

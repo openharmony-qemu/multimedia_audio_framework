@@ -120,6 +120,10 @@ ohos_shared_library("audio") {
     deps += [ "../../native/toneplayer:audio_toneplayer" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
