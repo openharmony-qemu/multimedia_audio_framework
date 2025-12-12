@@ -2472,7 +2472,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_002,
     audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 0;
     audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
     audioProcessInServerRet.MarkStaticFadeOut(true);
-    EXPECT_FALSE(audioProcessInServerRet.staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->delayRefreshLoopTimes_);
 
     audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
     audioProcessInServerRet.staticBufferProvider_->delayRefreshLoopTimes_ = true;

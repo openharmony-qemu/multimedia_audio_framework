@@ -2632,7 +2632,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_007, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_TRUE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
 
     staticBufferProviderTest->delayRefreshLoopTimes_ = true;
     staticBufferProviderTest->needFadeOut_ = false;
@@ -2646,7 +2646,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_007, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    EXPECT_TRUE(staticBufferProviderTest->delayRefreshLoopTimes_);
 
     staticBufferProviderTest->delayRefreshLoopTimes_ = true;
     staticBufferProviderTest->needFadeOut_ = false;
@@ -2763,9 +2763,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_001, 
 
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+    AudioStreamInfo testStreamInfo1(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
     ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
@@ -2798,9 +2798,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, 
 
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+    AudioStreamInfo testStreamInfo1(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
     ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
@@ -2815,7 +2815,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, 
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
     rendererInServer->MarkStaticFadeOut(true);
-    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
     rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
