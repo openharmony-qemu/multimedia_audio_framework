@@ -5116,6 +5116,16 @@ int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
     return interruptService_->SetAudioSessionScene(callerPid, static_cast<AudioSessionScene>(audioSessionScene));
 }
 
+int32_t AudioPolicyServer::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    return interruptService_->EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
+}
+
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
 {
     if (eventEntry_ == nullptr) {

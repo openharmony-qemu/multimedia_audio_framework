@@ -316,5 +316,11 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     return SUCCESS;
 }
+
+int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t callerPid, bool enable)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return sessionService_.EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
+}
 }
 } // namespace OHOS

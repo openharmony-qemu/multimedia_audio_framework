@@ -754,5 +754,31 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test IsMuteSuggestionWhenMixEnabled
+* @tc.number: IsMuteSuggestionWhenMixEnabledTest_001
+* @tc.desc  : Test IsMuteSuggestionWhenMixEnabled
+*/
+HWTEST_F(AudioSessionServiceUnitTest, IsMuteSuggestionWhenMixEnabledTest_001, TestSize.Level1)
+{
+    int32_t callerPid = 9999;
+    bool ret = true;
+
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_FALSE(ret);
+    audioSessionService_.sessionMap_[callerPid] = nullptr;
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_FALSE(ret);
+
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    ASSERT_NE(nullptr, audioSession);
+    audioSession->EnableMuteSuggestionWhenMixWithOthers(true);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_TRUE(ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

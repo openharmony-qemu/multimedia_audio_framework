@@ -191,6 +191,7 @@ public:
         OH_AudioSession_CurrentOutputDeviceChangedCallback callback);
     OH_AudioCommon_Result UnsetAudioSessionCurrentDeviceChangeCallback(
         OH_AudioSession_CurrentOutputDeviceChangedCallback callback);
+    OH_AudioCommon_Result EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
 private:
     OHAudioSessionManager();

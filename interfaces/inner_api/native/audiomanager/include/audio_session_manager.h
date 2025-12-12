@@ -28,6 +28,7 @@ public:
     enum class OperationType {
         AUDIO_SESSION_ACTIVATE,
         AUDIO_SESSION_SET_SCENE,
+        AUDIO_SESSION_MUTE_SUGGESTION,
     };
 
     struct AudioSessionAction {
@@ -48,6 +49,10 @@ public:
     void OnAudioSessionStateChanged(AudioSessionStateChangeHint audioSessionStateChangeHint);
     void RecordAudioSessionOpt(const OperationType type, const int32_t value);
     bool RestoreParams(void);
+    void MoveMuteAfterSceneIfBefore();
+
+private:
+    void DeduplicateLastOperation(OperationType type);
 
 private:
     std::mutex actionsMutex_;
@@ -344,6 +349,8 @@ public:
     int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
+
+    int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;
