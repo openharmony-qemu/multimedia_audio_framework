@@ -699,7 +699,8 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     bool useSpeaker = Util::IsDualToneStreamType(streamType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
-    float volumeDb = CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree);
+    float volumeDb = volumeAdjustZoneId_ == 0 ? CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree) :
+        CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel);
     // Set voice call assistant stream to full volume
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         volumeDb = 1.0f;
