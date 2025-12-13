@@ -665,6 +665,11 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
+    if (isHWDecodingType_) {
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_INVALID_HANDLE, "ipcStream is not inited!");
+        ipcStream_->SetSpeed(speed);
+        return SUCCESS;
+    }
     std::lock_guard lock(speedMutex_);
     realSpeed_ = speed;
     if (isHdiSpeed_.load()) {

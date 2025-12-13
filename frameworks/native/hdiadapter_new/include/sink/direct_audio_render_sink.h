@@ -57,6 +57,7 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
+    void SetSpeed(float speed) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -110,6 +111,7 @@ private:
     bool sinkInited_ = false;
     bool started_ = false;
     int32_t testFlag_ = 0;
+    uint64_t mockPts_ = 0;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;

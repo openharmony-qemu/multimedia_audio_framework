@@ -47,9 +47,9 @@ int32_t DirectAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("DirectAudioRenderSink::Init");
+    attr_ = attr;
     testFlag_ = system::GetIntParameter("persist.multimedia.eac3test", 0);
     if (!testFlag_) {
-        attr_ = attr;
         int32_t ret = CreateRender();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     }
@@ -90,12 +90,11 @@ int32_t DirectAudioRenderSink::Start(void)
         return SUCCESS;
     }
     dumpFileName_ = EncodingTypeStr(attr_.encodingType) + "_" + GetTime() + "_" + std::to_string(attr_.sampleRate)
-        + "_" + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".nopcm";
+        + "_" + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".not.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (testFlag_) {
         started_ = true;
         lock.unlock();
-        StartTestThread();
         return SUCCESS;
     }
     AudioXCollie audioXCollie("DirectAudioRenderSink::Start", TIMEOUT_SECONDS_10,
@@ -186,7 +185,16 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     if (testFlag_) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        Trace trace("DirectAudioRenderSink::MockRenderFrame");
+        int8_t *ptr = reinterpret_cast<int8_t *>(&data) + sizeof(HWDecodingInfo);
+        CHECK_AND_RETURN_RET_LOG(len > sizeof(HWDecodingInfo), ERR_OPERATION_FAILED, "mock write failed");
+        size_t dataLen = len - sizeof(HWDecodingInfo);
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(ptr), dataLen);
+        uint64_t temp = *reinterpret_cast<uint64_t *>(&data);
+        CHECK_AND_RETURN_RET_LOG(temp >= mockPts_, ERR_OPERATION_FAILED, "mock write failed");
+        usleep(temp - mockPts_);
+        mockPts_ = temp;
+        return SUCCESS;
     } else {
         int64_t stamp = ClockTime::GetCurNano();
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
@@ -237,6 +245,14 @@ void DirectAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std
 std::string DirectAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     return "";
+}
+
+void DirectAudioRenderSink::SetSpeed(float speed)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetRenderSpeed(audioRender_, speed);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "failed:%{public}d", ret);
 }
 
 int32_t DirectAudioRenderSink::SetVolume(float left, float right)

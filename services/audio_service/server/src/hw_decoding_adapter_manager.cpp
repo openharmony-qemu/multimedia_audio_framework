@@ -45,11 +45,10 @@ int32_t HWDecodingStreamManager::CreateRender(AudioProcessConfig processConfig,
 
     auto rendererStream = std::make_shared<HWDecodingRendererStream>(processConfig);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_OPERATION_FAILED, "Failed to init stream!");
+
     int32_t ret = rendererStream->Init();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed!");
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Create rendererStream Failed!");
+
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -114,7 +113,8 @@ int32_t HWDecodingStreamManager::GetStreamCount() const noexcept
     return rendererStreamMap_.size();
 }
 
-int32_t HWDecodingStreamManager::CreateCapturer(AudioProcessConfig processConfig, std::shared_ptr<ICapturerStream> &stream)
+int32_t HWDecodingStreamManager::CreateCapturer(AudioProcessConfig processConfig,
+    std::shared_ptr<ICapturerStream> &stream)
 {
     AUDIO_WARNING_LOG("Not supported");
     return ERR_OPERATION_FAILED;

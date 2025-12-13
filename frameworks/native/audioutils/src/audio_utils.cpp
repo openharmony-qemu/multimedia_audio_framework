@@ -2229,12 +2229,12 @@ bool IsHWDecodingType(AudioEncodingType type)
 
 const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringMap = {
     {ENCODING_PCM, "PCM"},
-    {ENCODING_AUDIOVIVID,"AUDIOVIVID"},
-    {ENCODING_EAC3,"EAC3"},
-    {ENCODING_AC3,"AC3"},
-    {ENCODING_TRUE_HD,"TRUE_HD"},
-    {ENCODING_DTS_HD,"DTS_HD"},
-    {ENCODING_DTS_X,"DTS_X"},
+    {ENCODING_AUDIOVIVID, "AUDIOVIVID"},
+    {ENCODING_EAC3, "EAC3"},
+    {ENCODING_AC3, "AC3"},
+    {ENCODING_TRUE_HD, "TRUE_HD"},
+    {ENCODING_DTS_HD, "DTS_HD"},
+    {ENCODING_DTS_X, "DTS_X"},
     {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
 };
 

@@ -167,7 +167,7 @@ void RendererInClientInner::InitDFXOperaiton()
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.customSampleRate == 0 ?
         curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out." +
-        (isHWDecodingType_ ? EncodingTypeStr(static_cast<AudioEncodingType>(tempInfo.encoding)) : "pcm");
+        (isHWDecodingType_ ? EncodingTypeStr(static_cast<AudioEncodingType>(curStreamParams_.encoding)) : "pcm");
 
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";

@@ -72,6 +72,7 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
+    void SetSendDataEnabled(bool enabled) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher) override;

@@ -30,9 +30,6 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         case DIRECT_PLAYBACK:
             static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
             return directManager;
-        case EAC3_PLAYBACK:
-            static ProAudioStreamManager eac3Manager(EAC3_PLAYBACK);
-            return eac3Manager;
         case VOIP_PLAYBACK:
             static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
             return voipManager;

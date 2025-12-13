@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -104,9 +104,8 @@ int32_t HWDecodingRendererStream::InitBuffer()
 void HWDecodingRendererStream::NotifyOperation(IOperation operation)
 {
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(operation);
-    }
+    CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null");
+    statusCallback->OnStatusUpdate(operation);
 }
 
 int32_t HWDecodingRendererStream::Start()
@@ -165,7 +164,7 @@ int32_t HWDecodingRendererStream::Drain(bool stopFlag)
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
     std::unique_lock<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
-    int32_t ret = sink_->Drain();
+    int32_t ret = sink_->Drain(AUDIO_DRAIN_ALL);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain falied");
     lock.unlock();
 
@@ -258,6 +257,11 @@ int32_t HWDecodingRendererStream::GetPrivacyType(int32_t &privacyType)
 int32_t HWDecodingRendererStream::SetSpeed(float speed)
 {
     AUDIO_INFO_LOG("set speed to %{public}f", speed);
+    Trace trace("HWDecodingRendererStream::SetSpeed::" + std::to_string(speed));
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    sink_->SetSpeed(speed);
+    lock.unlock();
     return SUCCESS;
 }
 
@@ -423,6 +427,10 @@ int32_t HWDecodingRendererStream::UpdateMaxLength(uint32_t maxLength)
 }
 
 void HWDecodingRendererStream::BlockStream() noexcept
+{
+}
+
+void HWDecodingRendererStream::SetSendDataEnabled(bool enabled)
 {
 }
 

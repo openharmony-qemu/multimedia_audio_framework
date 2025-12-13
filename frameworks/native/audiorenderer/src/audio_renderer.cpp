@@ -732,7 +732,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     std::string dumpFileName = std::to_string(sessionID_) + "_" +
         std::to_string(params.customSampleRate == 0 ? params.sampleRate : params.customSampleRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in." +
-        (isHWDecodingType_ ? EncodingTypeStr(params.encodingType) : "pcm");
+        (isHWDecodingType_ ? EncodingTypeStr(params.encodingType) + ".not": "") + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
@@ -1905,7 +1905,8 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
         std::to_string(bufDesc.bufLength));
     AsyncCheckAudioRenderer("Enqueue", false);
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+    size_t length = isHWDecodingType_ ? bufDesc.dataLength : bufDesc.bufLength;
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), length);
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->Enqueue(bufDesc);
