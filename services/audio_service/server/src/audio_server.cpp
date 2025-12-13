@@ -1410,8 +1410,8 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
 
     SetAudioSceneForAllSource(audioScene);
     SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
-
     audioScene_ = audioScene;
+    SetAudioBalanceStatus();
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -1455,6 +1455,8 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         ERR_INVALID_PARAM, "SetIORoutes failed for null instance!");
 
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    isEarpiece_ = (type == DEVICE_TYPE_EARPIECE);
+    SetAudioBalanceStatus();
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
@@ -1476,6 +1478,8 @@ int32_t AudioServer::SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std:
     const std::string &networkId)
 {
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    isEarpiece_ = (type == DEVICE_TYPE_EARPIECE);
+    SetAudioBalanceStatus();
     CHECK_AND_RETURN_RET(flag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, ERR_INVALID_PARAM);
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId, true);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "sink is nullptr");
@@ -1562,6 +1566,14 @@ int32_t AudioServer::SetAudioMonoState(bool audioMono)
     return SUCCESS;
 }
 
+int32_t AudioServer::SetAudioBalanceStatus()
+{
+    bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
+    bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
+    AUDIO_INFO_LOG("isAudioBalanceEnabled: %{public}d", isAudioBalanceEnabled);
+    return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalanceValue_);
+}
+
 int32_t AudioServer::SetAudioBalanceValue(float audioBalance)
 {
     AUDIO_INFO_LOG("AudioBalanceValue = [%{public}f]", audioBalance);
@@ -1570,7 +1582,15 @@ int32_t AudioServer::SetAudioBalanceValue(float audioBalance)
         "refused for %{public}d", callingUid);
     CHECK_AND_RETURN_RET_LOG(audioBalance >= -1.0f && audioBalance <= 1.0f, ERR_INVALID_PARAM,
         "audioBalance value %{public}f is out of range [-1.0, 1.0]", audioBalance);
+    std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
+    bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
+    return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalance);
+}
 
+
+int32_t AudioServer::SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance)
+{
     auto limitFunc = [](uint32_t renderId) -> bool {
         uint32_t type = IdHandler::GetInstance().ParseType(renderId);
         std::string info = IdHandler::GetInstance().ParseInfo(renderId);
@@ -1585,15 +1605,17 @@ int32_t AudioServer::SetAudioBalanceValue(float audioBalance)
         }
         return false;
     };
-    auto processFunc = [audioBalance, limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+    auto processFunc = [isAudioBalanceEnable, audioBalance, limitFunc](
+        uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
         CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
         CHECK_AND_RETURN_RET(sink != nullptr, SUCCESS);
-
-        sink->SetAudioBalanceValue(audioBalance);
+        sink->SetAudioBalanceValue(isAudioBalanceEnable ? audioBalance : 0.0f);
         return SUCCESS;
     };
+
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
     HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo<float>(PRESTORE_INFO_AUDIO_BALANCE, audioBalance);
+    audioBalanceValue_ = audioBalance;
     return SUCCESS;
 }
 
