@@ -2399,8 +2399,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_001, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(100, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2444,8 +2446,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2476,8 +2480,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     int8_t *inputData = new int8_t[10];
@@ -2491,7 +2497,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
+    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
 
     delete[] inputData;
     delete[] processedData;
@@ -2507,8 +2513,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_004, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
     int8_t *inputData = nullptr;
 
@@ -2546,8 +2554,10 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_005, TestSize.
 {
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(buffer);
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
     staticBufferProviderTest->currentLoopTimes_ = LLONG_MAX;
@@ -2564,6 +2574,262 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_005, TestSize.
     staticBufferProviderTest->currentLoopTimes_ = 10;
     staticBufferProviderTest->totalLoopTimes_ = 99;
     EXPECT_EQ(staticBufferProviderTest->IncreaseCurrentLoopTimes(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProvider API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProvider_006
+ * @tc.desc  : Test AudioStaticBufferProvider ProcessFadeInOutIfNeed
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_006, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(staticBufferProviderTest != nullptr);
+
+    int8_t *inputData = new int8_t[10];
+    size_t dataSize = 10;
+    staticBufferProviderTest->processedBufferSize_ = dataSize;
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->needFadeOut_ = true;
+    staticBufferProviderTest->needFadeIn_ = false;
+    staticBufferProviderTest->ProcessFadeInOutIfNeed(inputData, dataSize);
+    EXPECT_FALSE(staticBufferProviderTest->needFadeOut_);
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = false;
+    staticBufferProviderTest->needFadeOut_ = false;
+    staticBufferProviderTest->needFadeIn_ = true;
+    staticBufferProviderTest->ProcessFadeInOutIfNeed(inputData, dataSize);
+    EXPECT_FALSE(staticBufferProviderTest->needFadeIn_);
+
+    delete[] inputData;
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProvider API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProvider_007
+ * @tc.desc  : Test AudioStaticBufferProvider RefreshLoopTimes
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_007, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(staticBufferProviderTest != nullptr);
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = false;
+    staticBufferProviderTest->needFadeOut_ = true;
+    staticBufferProviderTest->currentLoopTimes_ = 1;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->RefreshLoopTimes();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->needFadeOut_ = false;
+    staticBufferProviderTest->currentLoopTimes_ = 1;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->RefreshLoopTimes();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->needFadeOut_ = true;
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->RefreshLoopTimes();
+    EXPECT_TRUE(staticBufferProviderTest->delayRefreshLoopTimes_);
+
+    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->needFadeOut_ = false;
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->RefreshLoopTimes();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProvider API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProvider_008
+ * @tc.desc  : Test AudioStaticBufferProvider needProvideData
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_008, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(staticBufferProviderTest != nullptr);
+
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = false;
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = true;
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->currentLoopTimes_ = 1;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = false;
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->currentLoopTimes_ = 1;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = true;
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = false;
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_IDEL);
+    staticBufferProviderTest->sharedBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+}
+
+/**
+ * @tc.name  : Test AudioStaticBufferProvider API
+ * @tc.type  : FUNC
+ * @tc.number: AudioStaticBufferProvider_009
+ * @tc.desc  : Test AudioStaticBufferProvider needProvideData
+ */
+HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_009, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
+        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
+    ASSERT_TRUE(staticBufferProviderTest != nullptr);
+
+    staticBufferProviderTest->currentLoopTimes_ = 0;
+    staticBufferProviderTest->totalLoopTimes_ = 1;
+    staticBufferProviderTest->playFinished_ = false;
+    staticBufferProviderTest->sharedBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
+
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+    staticBufferProviderTest->needFadeOut_ = false;
+    EXPECT_TRUE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
+    staticBufferProviderTest->needFadeOut_ = true;
+    EXPECT_TRUE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_IDEL);
+    staticBufferProviderTest->needFadeOut_ = false;
+    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_IDEL);
+    staticBufferProviderTest->needFadeOut_ = true;
+    EXPECT_TRUE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->needFadeOut_ = false;
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_PAUSING);
+    EXPECT_TRUE(staticBufferProviderTest->NeedProvideData());
+
+    staticBufferProviderTest->needFadeOut_ = false;
+    staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_STOPPING);
+    EXPECT_TRUE(staticBufferProviderTest->NeedProvideData());
+}
+
+/**
+ * @tc.name  : Test Stop API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_MarkStaticFadeOut_001
+ * @tc.desc  : Test RendererInServer_MarkStaticFadeOut_001.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isStatic = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo1(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
+    ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(false);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->needFadeOut_);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(false);
+    EXPECT_FALSE(rendererInServer->staticBufferProvider_->needFadeOut_);
+}
+
+/**
+ * @tc.name  : Test Stop API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServer_MarkStaticFadeOut_002
+ * @tc.desc  : Test RendererInServer_MarkStaticFadeOut_002.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    processConfig.rendererInfo.isStatic = true;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
+    buffer->SetStaticMode(true);
+    AudioStreamInfo testStreamInfo1(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
+    ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(false);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(true);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(false);
+    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+
+    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
+    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
+    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
+    rendererInServer->MarkStaticFadeOut(true);
+    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
 }
 
 /**
@@ -2626,30 +2892,6 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerConfigServerBuffer_001, 
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test ProcessAndSetStaticBuffer API
- * @tc.type  : FUNC
- * @tc.number: ProcessAndSetStaticBuffer_001
- * @tc.desc  : Test ProcessAndSetStaticBuffer_001
- */
-HWTEST_F(RendererInServerThirdUnitTest, ProcessAndSetStaticBuffer_001, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    processConfig.staticBufferInfo.sharedMemory_ = AudioSharedMemory::CreateFromLocal(10, "test");
-    processConfig.rendererInfo.isStatic = true;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = rendererInServer->ProcessAndSetStaticBuffer();
     EXPECT_EQ(SUCCESS, ret);
 }
 

@@ -191,6 +191,7 @@ private:
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
+    int32_t PauseDuringStandby();
     void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
     int32_t FlushOhAudioBuffer();
@@ -228,8 +229,9 @@ private:
     void PauseDirectStream();
 
     int32_t CreateServerBuffer();
-    int32_t ProcessAndSetStaticBuffer();
+    int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
+    void MarkStaticFadeOut(bool isRefresh);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -333,6 +335,7 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    bool needRefreshBufferStatus_ = true;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;

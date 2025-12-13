@@ -18,6 +18,8 @@
 
 #include "audio_static_buffer_processor.h"
 #include "audio_errors.h"
+#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,6 +29,20 @@ std::shared_ptr<AudioStaticBufferProcessor> AudioStaticBufferProcessor::CreateIn
 {
     CHECK_AND_RETURN_RET_LOG(sharedBuffer != nullptr, nullptr, "sharedBuffer is nullptr");
     return std::make_shared<AudioStaticBufferProcessor>(streamInfo, sharedBuffer);
+}
+
+int32_t AudioStaticBufferProcessor::ProcessFadeInOut(int8_t *bufferBase, size_t bufferSize,
+    AudioStreamInfo streamInfo, bool isFadeOut)
+{
+    ChannelVolumes mapVols = isFadeOut ? VolumeTools::GetChannelVolumes(streamInfo.channels, 1.0f, 0.0f) :
+        VolumeTools::GetChannelVolumes(streamInfo.channels, 0.0f, 1.0f);
+    BufferDesc fadeBufferDesc{};
+    fadeBufferDesc.buffer = reinterpret_cast<uint8_t *>(bufferBase);
+    fadeBufferDesc.bufLength = bufferSize;
+    fadeBufferDesc.dataLength = bufferSize;
+    int32_t ret = VolumeTools::Process(fadeBufferDesc, streamInfo.format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "VolumeTools::Process failed: %{public}d", ret);
+    return SUCCESS;
 }
 
 AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInfo,
@@ -41,6 +57,8 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
 {
     float speed = ConvertAudioRenderRateToSpeed(renderRate);
     if (isEqual(speed, SPEED_NORMAL)) {
+        speedBuffer_ = nullptr;
+        speedBufferSize_ = 0;
         curSpeed_ = speed;
         return SUCCESS;
     }

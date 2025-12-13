@@ -214,7 +214,8 @@ private:
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 
     int32_t CreateServerBuffer();
-    int32_t ProcessAndSetStaticBuffer();
+    int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
+    void MarkStaticFadeOut(bool isRefresh);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -289,6 +290,7 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
 
+    bool needRefreshBufferStatus_ = true;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
