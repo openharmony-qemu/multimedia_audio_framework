@@ -90,6 +90,7 @@ public:
         int32_t streamId) override;
     int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) override;
+    void ReleaseOutputRoute(const std::string &adapterName) override;
     void SetMicMute(const std::string &adapterName, bool isMute) override;
     int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value, void *reserved) override;

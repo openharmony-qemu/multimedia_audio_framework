@@ -148,6 +148,7 @@ interface IStandardAudioService {
     void GetCurrentOutputPipeChangeInfos([out] List<sharedptr<AudioOutputPipeInfo>> pipeChangeInfos);
     void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
     void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
+    void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

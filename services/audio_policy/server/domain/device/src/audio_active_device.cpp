@@ -238,6 +238,21 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
 #endif
 }
 
+void AudioActiveDevice::NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
+    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->deviceName_,
+        desc->networkId_);
+}
+
+void AudioActiveDevice::NotifyUserDisSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
+    ReleaseActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->networkId_);
+}
+
 void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {
@@ -411,6 +426,14 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
         audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName, networkId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
+}
+
+void AudioActiveDevice::ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+    const std::string &networkId)
+{
+    Trace trace("KeyAction AudioActiveDevice::ReleaseActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
+    auto ret = AudioServerProxy::GetInstance().ReleaseActiveDeviceRouteProxy(deviceType, deviceFlag, networkId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to release the route for %{public}d", deviceType);
 }
 
 bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
