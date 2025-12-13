@@ -136,6 +136,8 @@ int32_t RemoteAudioRenderSink::Start(void)
 
     CHECK_AND_RETURN_RET_LOG(sinkInited_.load(), ERR_ILLEGAL_STATE, "not inited");
 
+    InitLatencyMeasurement();
+
     if (isThreadRunning_.load()) {
         AUDIO_INFO_LOG("SubThread is already running");
         return SUCCESS;
@@ -709,6 +711,39 @@ int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
     return ret;
 }
 
+void RemoteAudioRenderSink::InitLatencyMeasurement(void)
+{
+    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("in");
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "signalDetectAgent is nullptr");
+    signalDetectAgent_->sampleFormat_ = attr_.format;
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
+    signalDetected_ = false;
+}
+
+void RemoteAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    CHECK_AND_RETURN(signalDetectAgent_ != nullptr);
+    uint32_t byteSize = static_cast<uint32_t>(GetFormatByteSize(attr_.format));
+    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+        (byteSize * sizeof(uint8_t) * attr_.channel);
+    signalDetectedTime_ += newlyCheckedTime;
+    if (signalDetectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_) {
+        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true, signalDetectAgent_->lastPeakBufferTime_);
+        LatencyMonitor::GetInstance().ShowTimestamp(true);
+        signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = signalDetectAgent_->CheckAudioData(data, len);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("signal detected");
+        signalDetectedTime_ = 0;
+    }
+}
+
 void RemoteAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
 {
     if (startUpdate_) {
@@ -737,6 +772,8 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     if (!started_.load()) {
         AUDIO_WARNING_LOG("not start, invalid state");
     }
+
+    CheckLatencySignal(reinterpret_cast<uint8_t *>(&data), len);
 
     std::vector<int8_t> bufferVec(len);
     int32_t ret = memcpy_s(bufferVec.data(), len, &data, len);
