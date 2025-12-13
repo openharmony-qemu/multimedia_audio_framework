@@ -16,6 +16,9 @@
 #define AUDIO_SECURE_HASH_H
 #include <cstddef>
 #include <cstdint>
+
+#define SHA256_DIGEST_LENGTH 32
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioSecureHash {
