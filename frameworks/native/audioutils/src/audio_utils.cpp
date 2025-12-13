@@ -1678,10 +1678,11 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
     std::lock_guard lock(mutex_);
-    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
-    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                   "BTSinkDetectedTime:%{public}s", rendererMockTime_.c_str(),
+        rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
+    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, BTSinkDetectedTime:%s",
+        rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
 }
 
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)

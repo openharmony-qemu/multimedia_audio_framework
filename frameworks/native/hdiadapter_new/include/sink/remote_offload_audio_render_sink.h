@@ -143,7 +143,6 @@ private:
     void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void CheckUpdateState(char *data, uint64_t len);
     int32_t SetVolumeInner(float left, float right);

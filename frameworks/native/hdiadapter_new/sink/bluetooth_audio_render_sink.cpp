@@ -80,6 +80,7 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     }
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    InitLatencyMeasurement();
     if (!a2dpParam_.empty()) {
         SetAudioParameterInner(a2dpParam_.value);
         AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
@@ -168,7 +169,6 @@ int32_t BluetoothAudioRenderSink::Start(void)
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
-    InitLatencyMeasurement();
     CHECK_AND_RETURN_RET(!started_, SUCCESS);
     int32_t tryCount = 3;
     while (tryCount-- > 0) {
@@ -203,7 +203,6 @@ int32_t BluetoothAudioRenderSink::Stop(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Stop");
     HILOG_COMM_INFO("[BluetoothAudioRenderSink::Stop]%{public}s in", logTypeTag_.c_str());
-    DeInitLatencyMeasurement();
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
         AUDIO_INFO_LOG("running lock unlock");
@@ -749,11 +748,6 @@ void BluetoothAudioRenderSink::InitLatencyMeasurement(void)
     signalDetectAgent_->sampleFormat_ = attr_.format;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
     signalDetected_ = false;
-}
-
-void BluetoothAudioRenderSink::DeInitLatencyMeasurement(void)
-{
-    signalDetectAgent_ = nullptr;
 }
 
 void BluetoothAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)

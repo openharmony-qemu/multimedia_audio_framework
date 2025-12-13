@@ -86,6 +86,7 @@ int32_t RemoteOffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
 
+    InitLatencyMeasurement();
     renderInited_.store(true);
     sinkInited_.store(true);
     return SUCCESS;
@@ -126,7 +127,6 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
         renderInited_.store(true);
     }
-    InitLatencyMeasurement();
 
     if (started_.load()) {
         if (isFlushing_.load()) {
@@ -160,7 +160,6 @@ int32_t RemoteOffloadAudioRenderSink::Stop(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
     Trace trace("RemoteOffloadAudioRenderSink::Stop");
-    DeInitLatencyMeasurement();
 
     if (!started_.load()) {
         UnLockOffloadRunningLock();
@@ -1038,11 +1037,6 @@ void RemoteOffloadAudioRenderSink::InitLatencyMeasurement(void)
     signalDetectAgent_->sampleFormat_ = attr_.format;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
     signalDetected_ = false;
-}
-
-void RemoteOffloadAudioRenderSink::DeInitLatencyMeasurement(void)
-{
-    signalDetectAgent_ = nullptr;
 }
 
 void RemoteOffloadAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)
