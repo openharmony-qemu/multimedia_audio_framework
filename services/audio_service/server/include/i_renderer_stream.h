@@ -77,6 +77,7 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
     virtual void BlockStream() noexcept = 0;
+    virtual void SetSendDataEnabled(bool enabled) = 0;
 
     virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) = 0;
     virtual int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher)

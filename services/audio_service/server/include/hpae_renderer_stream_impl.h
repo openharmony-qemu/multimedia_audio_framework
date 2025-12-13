@@ -99,6 +99,7 @@ public:
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 
     bool OnQueryUnderrun() override;
+    void SetSendDataEnabled(bool enabled) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
 private:
@@ -179,6 +180,7 @@ private:
     std::mutex firstStreamDataMutex_;
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
+    std::atomic<bool> sendDataEnabled_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

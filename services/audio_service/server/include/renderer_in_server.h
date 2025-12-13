@@ -263,6 +263,7 @@ private:
     std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
+    std::atomic<size_t> writeCount_ = 0;
 
     std::weak_ptr<IStreamListener> streamListener_;
     size_t engineTotalSizeInFrame_ = 0;
