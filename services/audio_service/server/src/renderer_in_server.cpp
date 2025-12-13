@@ -1182,15 +1182,7 @@ int32_t RendererInServer::Pause()
     status_ = I_STATUS_PAUSING;
     bool isStandbyTmp = false;
     if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
-            ERR_OPERATION_FAILED, "stream status is nullptr");
-        standByEnable_ = false;
-        enterStandbyTime_ = 0;
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
-        if (playerDfx_) {
-            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
-        }
+        CHECK_AND_RETURN_RET_LOG(PauseDuringStandby() == SUCCESS, ERR_OPERATION_FAILED, "PauseDuringStandby Fail");
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
@@ -2818,6 +2810,19 @@ int32_t RendererInServer::CreateServerBuffer()
 int32_t RendererInServer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
     return stream_->GetLatencyWithFlag(latency, flag);
+}
+
+int32_t RendererInServer::PauseDuringStandby()
+{
+    AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+        ERR_OPERATION_FAILED, "stream status is nullptr");
+    standByEnable_ = false;
+    enterStandbyTime_ = 0;
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    CHECK_AND_RETURN_RET_LOG(playerDfx_ != nullptr, ERR_OPERATION_FAILED, "playerDfx_ is nullptr");
+    playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+    return SUCCESS;
 }
 
 void RendererInServer::MarkStaticFadeOut(bool isRefresh)
