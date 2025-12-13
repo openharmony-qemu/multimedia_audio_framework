@@ -50,6 +50,7 @@ int32_t OffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
 
+    InitLatencyMeasurement();
     sinkInited_ = true;
     InitPipeInfo();
     return SUCCESS;
@@ -85,7 +86,6 @@ int32_t OffloadAudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
     Trace trace("OffloadAudioRenderSink::Start");
-    InitLatencyMeasurement();
 
     if (started_) {
         if (isFlushing_) {
@@ -120,7 +120,6 @@ int32_t OffloadAudioRenderSink::Stop(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::Stop");
-    DeInitLatencyMeasurement();
     if (!started_) {
         UnLockOffloadRunningLock();
         return SUCCESS;
@@ -741,11 +740,6 @@ void OffloadAudioRenderSink::InitLatencyMeasurement(void)
     signalDetectAgent_->sampleFormat_ = attr_.format;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
     signalDetected_ = false;
-}
-
-void OffloadAudioRenderSink::DeInitLatencyMeasurement(void)
-{
-    signalDetectAgent_ = nullptr;
 }
 
 void OffloadAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)

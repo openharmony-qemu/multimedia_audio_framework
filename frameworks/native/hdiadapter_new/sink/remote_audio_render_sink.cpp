@@ -71,6 +71,7 @@ int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
     for (auto &splitStream : splitStreamVector) {
         audioRenderWrapperMap_[splitStream] = {};
     }
+    InitLatencyMeasurement();
     sinkInited_.store(true);
     return SUCCESS;
 }
@@ -135,8 +136,6 @@ int32_t RemoteAudioRenderSink::Start(void)
     wrapperLock.unlock();
 
     CHECK_AND_RETURN_RET_LOG(sinkInited_.load(), ERR_ILLEGAL_STATE, "not inited");
-
-    InitLatencyMeasurement();
 
     if (isThreadRunning_.load()) {
         AUDIO_INFO_LOG("SubThread is already running");
