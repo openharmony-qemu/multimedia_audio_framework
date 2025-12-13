@@ -937,8 +937,8 @@ bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &si
     }
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr || !rendererManager->IsInit()) {
-        HILOG_COMM_INFO("move session:%{public}u failed, can not find sink:%s or sink is not open.",
-            sinkInputId, sinkName.c_str());
+        HILOG_COMM_INFO("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
+            sinkInputId, GetEncryptStr(sinkName).c_str());
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             rendererIdSinkNameMap_[sinkInputId], sinkName, "dest sink is not open");
         return false;
@@ -1300,7 +1300,7 @@ void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpS
 
 void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t result)
 {
-    HILOG_COMM_INFO("deviceName:%s result:%{public}d", deviceName.c_str(), result);
+    HILOG_COMM_INFO("deviceName:%{public}s result:%{public}d", GetEncryptStr(deviceName).c_str(), result);
     auto serviceCallback = serviceCallback_.lock();
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
