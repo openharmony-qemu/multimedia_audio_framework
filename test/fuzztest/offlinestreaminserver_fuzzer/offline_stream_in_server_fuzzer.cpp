@@ -22,6 +22,7 @@
 #include "token_setproc.h"
 #include "../fuzz_utils.h"
 
+static int32_t NUM_32 = 32;
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -50,7 +51,7 @@ void ProcessOfflineEffectChain(FuzzedDataProvider& fdp)
 {
     uint32_t inSize = fdp.ConsumeIntegral<uint32_t>();
     uint32_t outSize = fdp.ConsumeIntegral<uint32_t>();
-    offlineStreamInServer_->ProcessOfflineEffectChain(inSize, outSize); 
+    offlineStreamInServer_->ProcessOfflineEffectChain(inSize, outSize);
 }
 
 void ReleaseOfflineEffectChain(FuzzedDataProvider& fdp)
@@ -111,7 +112,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    if (SetSelfTokenID(718336240ull | (1ull << 32)) < 0) {
+    if (SetSelfTokenID(718336240uLL | (1uLL << NUM_32)) < 0) {
         return -1;
     }
     OHOS::AudioStandard::OfflineEffectChainInit();
