@@ -174,6 +174,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "-Werror",
     "-fno-access-control",
   ]
+  defines = []
 
   include_dirs = [
     "include",
@@ -194,16 +195,11 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/sink/file_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/multichannel_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/offload_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
     "test/unittest/source/audio_capture_source_unit_test.cpp",
     "test/unittest/source/va_capture_source_unit_test.cpp",
     "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/file_audio_capture_source_unit_test.cpp",
-    "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
-    "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/wakeup_audio_capture_source_unit_test.cpp",
     "test/unittest/util_unit_test.cpp",
   ]
@@ -220,6 +216,18 @@ ohos_unittest("hdiadapter_unit_test") {
     "googletest:gmock",
     "googletest:gtest",
   ]
+
+  if (audio_framework_feature_distributed_audio) {
+    sources += [
+      "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
+      "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
+      "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
+      "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
+      "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
+    ]
+    external_deps += [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
