@@ -282,7 +282,7 @@ int32_t AudioSpatializationService::SetAdaptiveSpatialRenderingEnabled(
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     int32_t ret = UpdateSpatializationStateReal(false);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
-    WriteSpatializationStateToDb(WRITE_DEVICESPATIAL_INFO, address);
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
 }
 
