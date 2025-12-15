@@ -53,7 +53,7 @@ bool LoudVolumeManager::IsSkipCloseLoudVolType(AudioStreamType streamType)
 std::map<AudioVolumeType, LoudVolumeHoldType>& LoudVolumeManager::GetLoudVolumeEnableMap()
 {
     if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT_ONLY_MUSIC) {
-        return LOUD_VOLUME_STREAM_TYPE_ENABLE_ONLY_MUSIC;
+        return LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC;
     } else {
         return LOUD_VOL_STREAM_TYPE_ENABLE;
     }
