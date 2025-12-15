@@ -411,6 +411,7 @@ HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_004, TestSize.Level1)
     bool isConnected = true;
 
     eventEntry->OnDeviceStatusUpdated(desc, isConnected);
+    
 }
 
 /**
