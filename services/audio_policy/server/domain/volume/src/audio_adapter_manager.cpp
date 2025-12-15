@@ -3106,6 +3106,8 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     }
     LoadMuteStatusMap();
     UpdateVolumeForStreams();
+    DealDoNotDisturbStatus();
+    DealDoNotDisturbStatusWhiteList();
 }
 
 void AudioAdapterManager::MuteMediaWhenAccountsChanged()
@@ -3234,13 +3236,7 @@ void AudioAdapterManager::RegisterDoNotDisturbStatus()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
-        int32_t isDoNotDisturb = 0;
-        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
-        AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
-        auto audioVolume = AudioVolume::GetInstance();
-        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, set DoNotDisturbStatus failed");
-        audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
+        DealDoNotDisturbStatus();
     };
     sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
     ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
@@ -3255,15 +3251,7 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
-        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
-        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
-            doNotDisturbWhiteList, "secure");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
-        AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
-        auto audioVolume = AudioVolume::GetInstance();
-        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, \
-            set doNotDisturbStatusWhiteList failed");
-        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbWhiteList);
+        DealDoNotDisturbStatusWhiteList();
     };
     sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
         updateFuncDoNotDisturbWhiteList);
@@ -3273,6 +3261,32 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
     }
+}
+
+void AudioAdapterManager::DealDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t isDoNotDisturb = 0;
+    int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "get doNotDisturbStatus failed");
+    AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, set DoNotDisturbStatus failed");
+    audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
+}
+
+void AudioAdapterManager::DealDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+    int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        doNotDisturbWhiteList, "secure");
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "get doNotDisturbStatus WhiteList failed");
+    AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, \
+        set doNotDisturbStatusWhiteList failed");
+    audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbWhiteList);
 }
 
 void AudioAdapterManager::RegisterMdmMuteSwitchCallback()

@@ -470,6 +470,8 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetPrimarySinkExist(bool isPrimarySinkExist);
     int32_t StopAudioPort(std::string oldSinkName);
+    void DealDoNotDisturbStatus();
+    void DealDoNotDisturbStatusWhiteList();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
