@@ -712,9 +712,7 @@ int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
 
 void RemoteAudioRenderSink::InitLatencyMeasurement(void)
 {
-    if (!AudioLatencyMeasurement::CheckIfEnabled()) {
-        return;
-    }
+    CHECK_AND_RETURN(AudioLatencyMeasurement::CheckIfEnabled());
 
     AUDIO_INFO_LOG("in");
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
