@@ -1427,6 +1427,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_051, TestSize.Level1
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     float speed = 2.0f;
     auto ret = ptrRendererInClientInner->SetSpeed(speed);
@@ -1450,6 +1451,7 @@ HWTEST(RendererInClientInnerUnitTest, WriteRawBuffer_001, TestSize.Level1)
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     BufferDesc bufferDesc;
     bufferDesc.buffer = nullptr;

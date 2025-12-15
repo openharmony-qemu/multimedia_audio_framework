@@ -354,11 +354,29 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     }
 }
 
+// time base is not used by hdi
+bool RendererInClientInner::GetHWDecodingTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    uint64_t readIdx = 0;
+    uint64_t timestampVal = 0;
+    uint64_t latency = 0;
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "failed to get time:%{public}d", ret);
+
+    timestamp.framePosition = readIdx;
+    timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
+    Trace trace("GetHWDecodingTime::ReadIndex:" + std::to_string(readIdx) + ",time:" + std::to_string(timestampVal));
+    return true;
+}
+
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
         ERR_INVALID_PARAM, "Timestampbase is not allowed");
+    RETURN_RET_IF(isHWDecodingType_, GetHWDecodingTime(timestamp, base));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
@@ -667,6 +685,8 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 {
     if (isHWDecodingType_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_INVALID_HANDLE, "ipcStream is not inited!");
+        std::lock_guard lock(speedMutex_);
+        realSpeed_ = speed;
         ipcStream_->SetSpeed(speed);
         return SUCCESS;
     }
@@ -683,6 +703,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 
 int32_t RendererInClientInner::SetPitch(float pitch)
 {
+    RETURN_RET_IF(isHWDecodingType_, SUCCESS);
     std::lock_guard lock(speedMutex_);
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
