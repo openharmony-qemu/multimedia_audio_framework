@@ -31,6 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
+
 enum LoudVolumeSupportType {
     LOUD_VOLUME_NOT_SUPPORT = 0,
     LOUD_VOLUME_SUPPORT,
