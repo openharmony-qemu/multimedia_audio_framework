@@ -698,19 +698,19 @@ int32_t AudioSpatializationService::InitOldSpatialInfo()
 {
     std::string deviceSpatialInfo;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "device1", deviceSpatialInfo);
+    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device1", deviceSpatialInfo);
     CHECK_AND_RETURN_RET_LOG(ret != ERR_NO_INIT, ERROR, "database not initialized");
     if (ret != SUCCESS || deviceSpatialInfo == "nulldata") {
         AUDIO_WARNING_LOG("Failed to read spatialization_state_device1 from setting db! Err: %{public}d", ret);
         return ERROR;
     } else {
         UpdateDeviceSpatialInfo(deviceSpatialInfo);
-        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "device1", "nulldata");
+        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device1", "nulldata");
     }
 
     uint32_t num = 2;
     for (uint32_t i = 2; i < MAX_DEVICE_NUM; ++i) {
-        ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "device" + std::to_string(i),
+        ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i),
             deviceSpatialInfo);
         if (ret != SUCCESS || deviceSpatialInfo == "nulldata") {
             AUDIO_WARNING_LOG("Failed to read spatialization_state_device%{public}d from setting db! Err: %{public}d",
@@ -718,7 +718,7 @@ int32_t AudioSpatializationService::InitOldSpatialInfo()
             break;
         }
         UpdateDeviceSpatialInfo(deviceSpatialInfo);
-        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "device" + std::to_string(i), "nulldata");
+        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i), "nulldata");
     }
     WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SUCCESS;
@@ -728,7 +728,7 @@ int32_t AudioSpatializationService::InitNewSpatialInfo()
 {
     std::string allDeviceSpatialInfo;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "device", allDeviceSpatialInfo);
+    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device", allDeviceSpatialInfo);
     CHECK_AND_RETURN_RET_LOG(ret != ERR_NO_INIT, ERROR, "database not initialized");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to read spatialization_state_device from setting db!"
         "Err: %{public}d", ret);
