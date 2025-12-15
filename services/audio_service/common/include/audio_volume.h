@@ -57,6 +57,7 @@ public:
     void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor);
     void SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPowerFactor);
     void SetStreamVolumeMute(uint32_t sessionId, bool isMuted);
+    void SetNonInterruptMute(uint32_t sessionId, bool muteFlag);
 
     // system volume
     void SetSystemVolume(SystemVolume &systemVolume);
@@ -146,6 +147,7 @@ public:
     float duckFactor_ = 1.0f;
     float lowPowerFactor_ = 1.0f;
     bool isMuted_ = false;
+    bool nonInterruptMute_ = false;
 
     // Indicates whether the stream is muted by SetAppRingMuted API.
     // This flag is only applicable to ring stream.

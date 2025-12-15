@@ -1763,5 +1763,34 @@ HWTEST_F(AudioVolumeUnitTest, GetCurrentActiveDevice_001, TestSize.Level1)
     DeviceType ret = AudioVolume::GetInstance()->GetCurrentActiveDevice();
     EXPECT_EQ(ret, deviceType);
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetNonInterruptMute_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_GAME;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    AudioVolume::GetInstance()->SetNonInterruptMute(sessionId, isMuted);
+    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(retVolume, 0);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
