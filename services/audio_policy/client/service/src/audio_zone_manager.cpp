@@ -59,6 +59,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) override;
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) override;
+
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) override;
 
     int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) override;
@@ -266,6 +270,31 @@ int32_t AudioZoneManagerInner::RemoveUidFromAudioZone(int32_t zoneId, int32_t ui
     int32_t result = AudioPolicyManager::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "RemoveUidFromAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(usages.size() > 0, ERR_INVALID_PARAM, "usages is empty");
+
+    int32_t result = AudioPolicyManager::GetInstance().AddUidUsagesToAudioZone(zoneId, uid, usages);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "AddUidUsagesToAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid,
+    const std::set<StreamUsage> &usages)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(usages.size() > 0, ERR_INVALID_PARAM, "usages is empty");
+
+    int32_t result = AudioPolicyManager::GetInstance().RemoveUidUsagesFromAudioZone(zoneId, uid, usages);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "RemoveUidUsagesFromAudioZone result:%{public}d", result);
     return result;
 }
 

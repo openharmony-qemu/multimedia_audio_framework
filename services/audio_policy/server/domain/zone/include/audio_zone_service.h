@@ -56,6 +56,8 @@ public:
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
     int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
@@ -115,8 +117,7 @@ private:
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
         const std::string &streamTag, const StreamUsage &usage);
-    int32_t RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage);
+    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
         const StreamUsage &usage);
     bool CheckIsZoneValid(int32_t zoneId);

@@ -97,6 +97,10 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
+    virtual int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) = 0;
+
+    virtual int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages) = 0;
+
     virtual int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
 
     virtual int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) = 0;
