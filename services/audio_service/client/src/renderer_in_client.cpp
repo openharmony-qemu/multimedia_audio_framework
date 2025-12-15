@@ -742,12 +742,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         return ERR_INVALID_PARAM;
     }
 
-    if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
-        Trace trace2(traceTag_+ " call start to exit stand-by");
-        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
-        int32_t ret = ipcStream_->Start();
-        AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
-    }
+    CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
 
     FirstFrameProcess();
 
@@ -1175,5 +1170,17 @@ void RendererInClientInner::CheckFrozenStateInStaticMode()
     }
 }
 
+int32_t RendererInClientInner::CallStartWhenInStandby()
+{
+    CHECK_AND_RETURN_RET(clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY, SUCCESS);
+    Trace trace2(traceTag_+ " call start to exit stand-by");
+    std::unique_lock<std::mutex> stateLock(statusMutex_);
+    // The Client is still in RUNNING state when been frozen.
+    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->Start();
+    AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
