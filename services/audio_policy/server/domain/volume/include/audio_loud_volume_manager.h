@@ -36,6 +36,7 @@ enum LoudVolumeSupportType {
     LOUD_VOLUME_NOT_SUPPORT = 0,
     LOUD_VOLUME_SUPPORT,
     LOUD_VOLUME_SUPPORT_ONLY_MUSIC,
+    LOUD_VOLUME_SUPPORT_ONLY_VOICE,
 };
 
 class LoudVolumeManager {
@@ -66,6 +67,10 @@ private:
     };
     std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC = {
         {STREAM_MUSIC, LOUD_VOLUME_MODE_MUSIC},
+    };
+    std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_VOICE = {
+        {STREAM_VOICE_CALL, LOUD_VOLUME_MODE_VOICE},
+        {STREAM_VOICE_CALL_ASSISTANT, LOUD_VOLUME_MODE_VOICE},
     };
     const std::map<AudioVolumeType, AudioVolumeType> CONCURRENCY_KSIP_CLOSE_LOUD_VOL_TYPE = {
         {STREAM_RING, STREAM_RING},
