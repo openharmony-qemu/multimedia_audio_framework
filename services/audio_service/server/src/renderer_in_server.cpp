@@ -2345,6 +2345,8 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     muteFlag_ = muteFlag;
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
 
+    AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
+
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
     {
