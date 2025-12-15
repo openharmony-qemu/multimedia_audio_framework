@@ -112,6 +112,7 @@ private:
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void WriteUnexcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioStreamCollector& streamCollector_;
     AudioDeviceManager &audioDeviceManager_;

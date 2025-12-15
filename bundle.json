@@ -310,6 +310,18 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
               }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_engine:audio_engine_plugins",
+              "header": {
+                "header_files": [
+                  "audio_proresampler_process.h",
+                  "audio_proresampler.h",
+                  "resampler.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
+              }
             }
           ],
           "test": [

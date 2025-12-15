@@ -32,6 +32,7 @@ namespace AudioStandard {
 class AudioZoneBindKey {
 public:
     explicit AudioZoneBindKey(int32_t uid);
+    AudioZoneBindKey(int32_t uid, StreamUsage streamUsage);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,

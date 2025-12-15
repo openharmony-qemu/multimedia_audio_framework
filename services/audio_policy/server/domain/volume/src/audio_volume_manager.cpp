@@ -182,8 +182,8 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, \
         volume:%{public}d, volumeDegree:%{public}d",
         streamType, deviceType, vol.volumeInt, vol.volumeDegree);
-    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    float volumeActual = mdmMute ? 0.0f : vol.volumeFloat;
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float volumeActual = vol.volumeFloat * mdmMuteFactor;
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeActual);
     return true;
 }

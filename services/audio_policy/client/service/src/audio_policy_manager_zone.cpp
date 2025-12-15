@@ -133,6 +133,37 @@ int32_t AudioPolicyManager::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return gsp->RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyManager::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    std::set<int32_t> usageSet;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "usage is invalid");
+        usageSet.insert(static_cast<int32_t>(usage));
+    }
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->AddUidUsagesToAudioZone(zoneId, uid, usageSet);
+}
+
+int32_t AudioPolicyManager::RemoveUidUsagesFromAudioZone(
+    int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    std::set<int32_t> usageSet;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "usage is invalid");
+        usageSet.insert(static_cast<int32_t>(usage));
+    }
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->RemoveUidUsagesFromAudioZone(zoneId, uid, usageSet);
+}
+
 int32_t AudioPolicyManager::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

@@ -847,6 +847,19 @@ int32_t OHAudioBufferBase::GetAllReadableBuffer(RingBufferWrapper &buffer)
     return GetAllReadableBufferFromPosFrame(readPosInFrame, buffer);
 }
 
+int32_t OHAudioBufferBase::GetRawBuffer(uint32_t size, BufferDesc &bufferDesc)
+{
+    if (size > totalSizeInByte_) {
+        AUDIO_ERR_LOG("invalid size:%{public}d", size);
+        return AUDIO_INVALID_PARAM;
+    }
+    bufferDesc.buffer = dataBase_;
+    bufferDesc.bufLength = size;
+    bufferDesc.dataLength = 0;
+    bufferDesc.syncFramePts = 0;
+    return SUCCESS;
+}
+
 int64_t OHAudioBufferBase::GetLastWrittenTime()
 {
     return lastWrittenTime_;

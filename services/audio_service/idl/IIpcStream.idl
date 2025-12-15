@@ -33,6 +33,7 @@ interface IIpcStream {
     void Flush();
     void Drain([in] boolean stopFlag); // stopFlag = false
     void UpdatePlaybackCaptureConfig([in] AudioPlaybackCaptureConfig config);
+    void RequestHandleData([in] unsigned long syncFramePts, [in] unsigned int size);
     void GetAudioTime([out] unsigned long framePos, [out] unsigned long timestamp);
     void GetAudioPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
         [in] int base);

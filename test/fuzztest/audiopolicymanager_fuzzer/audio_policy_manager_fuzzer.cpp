@@ -688,7 +688,35 @@ void AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest()
     audioPolicyManager.SetSleAudioOperationCallback(callback);
 }
 
-typedef void (*TestFuncs[21])();
+void AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t zoneId = GetData<int32_t>();
+    const auto count = GetData<uint8_t>();
+    std::set<StreamUsage> usages;
+    for (uint8_t i = 0; i < count; ++i) {
+        StreamUsage usage = GetData<StreamUsage>();
+        usages.insert(usage);
+    }
+
+    audioPolicyManager.AddUidUsagesToAudioZone(zoneId, GetData<int32_t>(), usages);
+}
+
+void AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t zoneId = GetData<int32_t>();
+    const auto count = GetData<uint8_t>();
+    std::set<StreamUsage> usages;
+    for (uint8_t i = 0; i < count; ++i) {
+        StreamUsage usage = GetData<StreamUsage>();
+        usages.insert(usage);
+    }
+
+    audioPolicyManager.RemoveUidUsagesFromAudioZone(zoneId, GetData<int32_t>(), usages);
+}
+
+typedef void (*TestFuncs[23])();
 
 TestFuncs g_testFuncs = {
     AudioPolicyManagerOneFuzzTest,
@@ -712,6 +740,8 @@ TestFuncs g_testFuncs = {
     AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest,
     AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest,
     AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest,
+    AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest,
+    AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

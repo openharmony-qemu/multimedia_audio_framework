@@ -699,7 +699,8 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     bool useSpeaker = Util::IsDualToneStreamType(streamType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
     int32_t volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * muteFactor;
-    float volumeDb = CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree);
+    float volumeDb = volumeAdjustZoneId_ == 0 ? CalculateVolumeDbByDegree(deviceType, streamType, volumeDegree) :
+        CalculateVolumeDbNonlinear(streamType, deviceType, volumeLevel);
     // Set voice call assistant stream to full volume
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         volumeDb = 1.0f;
@@ -1216,6 +1217,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
 bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
         return false;
@@ -1410,6 +1412,11 @@ AudioIOHandle AudioAdapterManager::OpenNotPaAudioPort(std::shared_ptr<AudioPipeI
 void AudioAdapterManager::GetSinkIdInfoAndIdType(
     std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType)
 {
+    if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_HWDECODING) {
+        idType = HDI_ID_TYPE_HWDECODE;
+        idInfo = HDI_ID_INFO_DP;
+    }
+
     if (pipeInfo->adapterName_ == "primary") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;

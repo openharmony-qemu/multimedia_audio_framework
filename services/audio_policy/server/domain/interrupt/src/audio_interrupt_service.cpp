@@ -151,8 +151,8 @@ AudioInterruptService::AudioInterruptService()
 
 AudioInterruptService::~AudioInterruptService()
 {
-    if (stopThread_.joinable()) {
-        stopThread_.join();
+    if (stopFuture_.valid()) {
+        stopFuture_.wait();
     }
     AUDIO_ERR_LOG("should not happen");
 }
@@ -1933,6 +1933,9 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     }
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    if (interruptCustom_ != nullptr) {
+        interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    }
 }
 
 void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,
@@ -2966,7 +2969,7 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP: {
             SetNonInterruptMute(streamId, muteFlag);
-            stopThread_ = std::thread([this, streamId] {
+            stopFuture_ = std::async(std::launch::async, [this, streamId] {
                 policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
             });
             break;

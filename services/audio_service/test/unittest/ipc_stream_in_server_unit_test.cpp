@@ -2205,6 +2205,33 @@ HWTEST(IpcStreamInServerUnitTest, UpdatePlaybackCaptureConfig_001, TestSize.Leve
 }
 
 /**
+ * @tc.name  : Test RequestHandleData API
+ * @tc.type  : FUNC
+ * @tc.number: RequestHandleData_001
+ * @tc.desc  : Test RequestHandleData interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, RequestHandleData_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    uint64_t syncFramePts = 0;
+    uint32_t size = 0;
+    int32_t ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test GetSpeedPosition API
  * @tc.type  : FUNC
  * @tc.number: GetSpeedPosition_001

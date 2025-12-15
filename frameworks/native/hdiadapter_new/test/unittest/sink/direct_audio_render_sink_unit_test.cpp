@@ -43,7 +43,7 @@ IAudioSinkAttr DirectAudioRenderSinkUnitTest::attr_ = {};
 
 void DirectAudioRenderSinkUnitTest::SetUpTestCase()
 {
-    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3, HDI_ID_INFO_DEFAULT, true);
+    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, HDI_ID_INFO_DEFAULT, true);
 }
 
 void DirectAudioRenderSinkUnitTest::TearDownTestCase()

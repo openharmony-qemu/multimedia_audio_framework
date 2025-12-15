@@ -2648,5 +2648,42 @@ HWTEST_F(AudioServerUnitTest, AudioWorkgroupIPC_001, TestSize.Level1)
     result = audioServer->StopGroup(1234);
     EXPECT_NE(result, 0);
 }
+
+/**
+ * @tc.name  : Test SetAudioBalanceStatus API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioBalanceStatus_001
+ * @tc.desc  : Test SetAudioBalanceStatus interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetAudioBalanceStatus_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    audioServer->isEarpiece_ = false;
+    audioServer->audioScene_ = AUDIO_SCENE_PHONE_CHAT;
+    int ret = audioServer->SetAudioBalanceStatus();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetAudioBalanceValueInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioBalanceValueInner_001
+ * @tc.desc  : Test SetAudioBalanceValueInner interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetAudioBalanceValueInner_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    bool isAudioBalanceEnable = false;
+    float audioBalance = 0.8f;
+    audioServer->SetAudioBalanceValueInner(isAudioBalanceEnable, audioBalance);
+    EXPECT_TRUE(std::abs(audioServer->audioBalanceValue_ - 0.8f) <= std::numeric_limits<float>::epsilon());
+    
+    isAudioBalanceEnable = true;
+    audioBalance = -0.8f;
+    audioServer->SetAudioBalanceValueInner(isAudioBalanceEnable, audioBalance);
+    EXPECT_TRUE(std::abs(audioServer->audioBalanceValue_ - (-0.8f)) <= std::numeric_limits<float>::epsilon());
+}
 } // namespace AudioStandard
 } // namespace OHOS

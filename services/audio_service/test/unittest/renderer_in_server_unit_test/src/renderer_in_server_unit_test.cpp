@@ -3383,6 +3383,10 @@ HWTEST_F(RendererInServerUnitTest, HandleOperationStarted_001, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
     rendererInServer->HandleOperationStarted();
     EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+
+    rendererInServer->isHWDecodingType_ = true;
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

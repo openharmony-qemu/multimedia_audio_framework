@@ -24,7 +24,7 @@ export function SongBoxBuilder() {
 @Component
 export struct SongBox {
   pageInfos: NavPathStack = new NavPathStack();
-  @StorageLink('playList') playList: Map<string, SongInfo> = new Map(); // 播放列表，使用 Map 去重
+  @StorageLink('playList') playList: Map<string, SongInfo> = new Map(); // Playlist, using Map for deduplication
   @State fileSize: number = 0;
   @State fileBuffer: ArrayBuffer = new ArrayBuffer(0);
 
@@ -79,8 +79,8 @@ export struct SongBox {
   }
 
   /**
-   * 歌曲栏
-   * @param info  歌曲信息
+   * Song Bar
+   * @param info  Song Information
    */
   @Builder
   songItem(info: SongInfo) {
@@ -108,7 +108,7 @@ export struct SongBox {
             }
           });
         } else {
-          // 添加音频，创建input和output节点，设置音频的文件格式
+          // Add audio, create input and output nodes, and set the audio file format
           this.pageInfos.pop(this.playList.get(info.uri));
         }
       })
@@ -140,8 +140,8 @@ export struct SongBox {
       Logger.info(TAG, `fileSize : ${fsStat.size}`);
       let buffer = new ArrayBuffer(fsStat.size);
       let readOption: ReadOptions = {
-        offset: 0, // 期望读取文件的位置。可选，默认从当前位置开始读
-        length: fsStat.size // 每次期望读取数据的长度。可选，默认缓冲区长度
+        offset: 0, // The expected position to read the file from. Optional, defaults to reading from the current position
+        length: fsStat.size // The length of data expected to be read each time. Optional, default buffer length
       }
       fs.readSync(file.fd, buffer, readOption);
       Logger.info(TAG, `getPcmFileBuffer buffer length: ${buffer.byteLength}`);

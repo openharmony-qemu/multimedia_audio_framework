@@ -109,6 +109,7 @@ public:
     int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size);
     int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
     void VolumeHandle(BufferDesc &desc);
@@ -127,7 +128,6 @@ public:
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
 
-    void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
@@ -173,6 +173,7 @@ private:
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
+    int32_t ConfigFixedSizeBuffer();
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(RingBufferWrapper& bufferDesc);
@@ -191,6 +192,7 @@ private:
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
+    int32_t PauseDuringStandby();
     void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
     int32_t FlushOhAudioBuffer();
@@ -228,8 +230,9 @@ private:
     void PauseDirectStream();
 
     int32_t CreateServerBuffer();
-    int32_t ProcessAndSetStaticBuffer();
+    int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
+    void MarkStaticFadeOut(bool isRefresh);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -261,6 +264,7 @@ private:
     std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
+    std::atomic<size_t> writeCount_ = 0;
 
     std::weak_ptr<IStreamListener> streamListener_;
     size_t engineTotalSizeInFrame_ = 0;
@@ -292,6 +296,7 @@ private:
     FILE *dumpC2S_ = nullptr; // client to server dump file
     std::string dumpFileName_ = "";
     ManagerType managerType_;
+    bool isHWDecodingType_ = false;
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
@@ -333,6 +338,7 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
+    bool needRefreshBufferStatus_ = true;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;

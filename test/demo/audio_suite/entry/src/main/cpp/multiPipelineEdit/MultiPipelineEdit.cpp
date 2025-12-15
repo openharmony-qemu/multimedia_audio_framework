@@ -64,20 +64,20 @@ const int BITSPERSAMPLE_MULTI = 8;
 const int CONSTANT_0 = 0;
 const char *MULTI_PIPELINE_TAG = "[AudioEditTestApp_multiPipelineEdit_cpp]";
 
-// 多线程共享锁
+// Multi-thread shared lock
 std::mutex g_threadLock;
-// 线程私有pipelineManager
+// Thread private pipelineManager
 thread_local std::shared_ptr<PipelineManager> threadPipelineManager;
-// pipeline最大并行数设置为10
+// Set the maximum number of parallel pipelines to 10
 int g_maxPipelineSize = 10;
 OH_AudioSuitePipeline **g_multiAudioSuitePipeline =
     (OH_AudioSuitePipeline **)malloc(g_maxPipelineSize * sizeof(OH_AudioSuitePipeline *));
 std::atomic<int> g_initedPipelineNum {0};
-// engine全局唯一,不可重复创建
+// The engine is globally unique and cannot be created repeatedly
 std::atomic<bool> g_engineInitedFlag {false};
 std::atomic<bool> g_startMultiProcess {true};
 OH_AudioSuiteEngine *g_multiAudioSuiteEngine;
-// 创造 output builder 构造器
+// Create output builder constructor
 OH_AudioNodeBuilder *g_multiBuilderOut;
 std::unordered_map<std::string, std::shared_ptr<PipelineManager>> pipelineIdToPipelineManagerMap;
 std::vector<std::string> initedPipelineIdArray = {};
@@ -124,7 +124,7 @@ OH_AudioSuite_Result GetMultiRenderFrameOutput(char *&firData, char *&secData, s
             continue;
         }
 
-        // 每次保存一次获取的buffer值 ...
+        // Save the obtained buffer value each time
         std::copy(static_cast<const char*>(ohAudioDataArray->audioDataArray[0]),
             static_cast<const char*>(ohAudioDataArray->audioDataArray[0]) + writeSize,
             static_cast<char*>(firData) + firDataSize);
@@ -155,7 +155,7 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
         return AUDIOSUITE_ERROR_INVALID_PARAM;
     }
     char *audioData = (char *)malloc(frameSize);
-    // 获取管线状态
+    // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     result = OH_AudioSuiteEngine_GetPipelineState(threadPipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -175,7 +175,7 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
                          static_cast<int>(result));
             continue;
         }
-        // 每次保存一次获取的buffer值 ...
+        // Save the obtained buffer value each time
         std::copy(static_cast<const char*>(audioData),
             static_cast<const char*>(audioData) + writeSize,
             static_cast<char*>(firData) + firDataSize);
@@ -368,7 +368,7 @@ OH_AudioSuite_Result GetRenderFrameOutputAsync(char *&firData, size_t frameSize,
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioData malloc failed");
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
     }
-    // 获取管线状态
+    // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     result = OH_AudioSuiteEngine_GetPipelineState(threadPipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -446,19 +446,19 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest AudioEditNodeInitMultiPipeline pipelineId:%{public}s", pipelineId.c_str());
 
-    // 创建引擎
+    // Create Engine
     if (!g_engineInitedFlag) {
         g_engineInitedFlag = true;
         result = OH_AudioSuiteEngine_Create(&g_multiAudioSuiteEngine);
     }
     OH_AudioSuite_PipelineWorkMode workMode;
 
-    // 创建管线
+    // Create Pipeline
     result = OH_AudioSuiteEngine_CreatePipeline(g_multiAudioSuiteEngine,
         &g_multiAudioSuitePipeline[g_initedPipelineNum], workMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
-    // 实例化PipelineManager
+    // Instantiate PipelineManager
     std::shared_ptr<NodeManager> nodeManager =
         std::make_shared<NodeManager>(g_multiAudioSuitePipeline[g_initedPipelineNum]);
     std::shared_ptr<PipelineManager> pipelineManager =
@@ -526,7 +526,7 @@ napi_value MultiSetFormat(napi_env env, napi_callback_info info)
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取通道数
+    // Get Number of Channels
     unsigned int channels;
     unsigned int sampleRate;
     unsigned int bitsPerSample;
@@ -555,14 +555,14 @@ napi_value MultiSetFormat(napi_env env, napi_callback_info info)
                  channels, sampleRate, bitsPerSample);
     OH_AudioFormat &threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
     const std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
-    // 设置采样率
+    // Set Sampling Rate
     threadAudioFormatOutput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
+    // Set audio channels
     threadAudioFormatOutput.channelCount = channels;
     threadAudioFormatOutput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
+    // Set bit depth
     threadAudioFormatOutput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     threadAudioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetFormat threadAudioFormatOutput is %{public}p", &threadAudioFormatOutput);
@@ -642,7 +642,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
     }
     std::shared_ptr<MultiUserData> userData =
         std::make_shared<MultiUserData>(threadPipelineManager->pipelineId, inputId);
-    // 后面可以考虑去掉totalInputDataSize，用入参形式传入
+    // Later, we can consider removing totalInputDataSize and pass it as an input parameter
     userData->inputId = inputId;
     userData->pipelineId = threadPipelineManager->pipelineId;
     userData->bufferSize = threadPipelineManager->totalInputDataSize;
@@ -656,7 +656,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
         "audioEditTest OH_AudioNodeBuilder_SetFormat MultiUserData inputId is %{public}s, pipelineId is %{public}s",
         userData->inputId.c_str(), userData->pipelineId.c_str());
-    // 设置OH_AudioSuiteNodeBuilder_SetRequestDataCallback回调, 创建节点之前
+    // Set the OH_AudioSuiteNodeBuilder_SetRequestDataCallback callback before creating the node
     result = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, MultiWriteDataCallBack, (void *)userData.get());
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioSuiteNodeBuilder_SetRequestDataCallback result is %{public}d",
@@ -665,7 +665,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
-    // 将MultiUserData实例存入映射表中
+    // Store the MultiUserData instance into the mapping table
     threadPipelineManager->userDataMap[inputId] = userData;
     return result;
 }
@@ -677,7 +677,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
     char *threadinputBuffer = threadPipelineManager->inputBuffer;
     size_t threadtotalInputDataSize = threadPipelineManager->totalInputDataSize;
     MultiStoreTotalBuffToMap(threadinputBuffer, threadtotalInputDataSize, inputId);
-    // 创造 builder 构造器
+    // Creating a builder constructor
     OH_AudioNodeBuilder *builderIn;
     result = OH_AudioSuiteNodeBuilder_Create(&builderIn);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -686,7 +686,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
         napi_create_int64(env, static_cast<int>(result), &napiValue);
         return;
     }
-    // 透传节点类型
+    // Transparent transmission node type
     result = OH_AudioSuiteNodeBuilder_SetNodeType(builderIn, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "NodeManagerTest createNode OH_AudioSuiteNodeBuilder_SetNodeType result: %{public}d",
@@ -696,7 +696,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
         return;
     }
 
-    // 封装方法，设置 音频文件的 参数 以及 写入音频文件到缓冲区
+    // Packaging method, setting parameters for audio files, and writing audio files to a buffer
     result = MultiSetParamsAndWriteData(builderIn, inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetParamsAndWriteData result: %{public}d", static_cast<int>(result));
@@ -705,7 +705,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
         return;
     }
 
-    // 创建input节点
+    // Creating an input node
     std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest CreateInputNode threadNodeManager: %{public}p , inputId:%{public}s",
@@ -718,14 +718,14 @@ void MultiUpdateInputNode(OH_AudioSuite_Result &result, UpdateInputNodeParams &p
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest MultiUpdateInputNode start");
     OH_AudioFormat &audioFormatInput = threadPipelineManager->audioFormatInput;
     OH_AudioFormat &audioFormatOutput = threadPipelineManager->audioFormatOutput;
-    // 设置采样率
+    // Set Sampling Rate
     audioFormatInput.samplingRate = SetSamplingRate(params.sampleRate);
-    // 设置声道
+    // Set audio channels
     audioFormatInput.channelCount = params.channels;
     audioFormatInput.channelLayout = SetChannelLayout(params.channels);
-    // 设置位深
+    // Set bit depth
     audioFormatInput.sampleFormat = SetSampleFormat(params.bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
     audioFormatOutput.samplingRate = audioFormatInput.samplingRate;
@@ -761,14 +761,14 @@ bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int3
     }
     OH_AudioFormat &threadAudioFormatInput = threadPipelineManager->audioFormatInput;
     OH_AudioFormat &threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
-    // 设置采样率
+    // Set Sampling Rate
     threadAudioFormatInput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
+    // Set audio channels
     threadAudioFormatInput.channelCount = channels;
     threadAudioFormatInput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
+    // Set bit depth
     threadAudioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     threadAudioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
 
     threadAudioFormatOutput.samplingRate = threadAudioFormatInput.samplingRate;
@@ -1071,7 +1071,7 @@ napi_value MultiSaveFileBuffer(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest OH_AudioSuiteEngine_RenderFrame status: %{public}d", static_cast<int>(status));
         FreeBuffer(&threadBuffer);
-        // 创建 ArrayBuffer 失败， 返回一个大小为 0 的 ArrayBuffer
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
@@ -1108,7 +1108,7 @@ napi_value MultiGetSecondOutputAudio(napi_env env, napi_callback_info info)
 OH_AudioSuite_Result MultiProcessPipeline(OH_AudioSuitePipeline *audioSuitePipeline)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest ProcessPipeline start");
-    // 获取管线状态
+    // Obtains pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetPipelineState(audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1118,7 +1118,7 @@ OH_AudioSuite_Result MultiProcessPipeline(OH_AudioSuitePipeline *audioSuitePipel
         return result;
     }
 
-    // 启动管线
+    // Start the pipeline
     if (pipeLineState != OH_AudioSuite_PipelineState::AUDIOSUITE_PIPELINE_RUNNING) {
         result = OH_AudioSuiteEngine_StartPipeline(audioSuitePipeline);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1200,9 +1200,9 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
         std::copy(firstAudioBuffer, firstAudioBuffer + copySize, static_cast<char *>(audioData));
     }
     if (finishedFlag) {
-        // 停止播放
+        // Stop playing
         OH_AudioRenderer_Stop(audioRenderer);
-        // 停止管线
+        // Stop pipeline
         OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
         ResetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest "
@@ -1281,7 +1281,7 @@ napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
             free(playAudioBuffer);
             playAudioBuffer = nullptr;
         }
-        // 创建 ArrayBuffer 失败， 返回一个大小为 0 的 ArrayBuffer
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {

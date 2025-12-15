@@ -104,7 +104,6 @@ private:
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);

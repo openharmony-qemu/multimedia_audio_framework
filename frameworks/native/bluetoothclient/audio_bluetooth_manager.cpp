@@ -180,10 +180,6 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
         }
     } else {
         AUDIO_INFO_LOG("Deactive A2DP device");
-        activeA2dpDevice_ = device;
-    }
-    if (macAddress == activeA2dpDevice_.GetDeviceAddr()) {
-        return SUCCESS;
     }
     int32_t ret = a2dpInstance_->SetActiveSinkDevice(device);
     if (ret != 0) {
@@ -200,6 +196,11 @@ std::string AudioA2dpManager::GetActiveA2dpDevice()
     CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, "", "A2DP profile instance is null");
     BluetoothRemoteDevice device = a2dpInstance_->GetActiveSinkDevice();
     return device.GetDeviceAddr();
+}
+
+std::string AudioA2dpManager::GetActiveA2dpDeviceLocal()
+{
+    return activeA2dpDevice_.GetDeviceAddr();
 }
 
 int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int32_t volume)
@@ -509,11 +510,6 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
             HILOG_COMM_ERROR("DisconnectSco failed, result: %{public}d", ret);
             return ERROR;
         }
-    } else {
-        if (macAddress == "") {
-            activeHfpDevice_ = device;
-        }
-        return SUCCESS;
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
     if (res != SUCCESS) {
@@ -561,6 +557,12 @@ std::string AudioHfpManager::GetActiveHfpDevice()
 {
     BluetoothRemoteDevice device = BluetoothHfpInterface::GetInstance().GetActiveDevice();
     return device.GetDeviceAddr();
+}
+
+std::string AudioHfpManager::GetActiveHfpDeviceLocal()
+{
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    return activeHfpDevice_.GetDeviceAddr();
 }
 
 int32_t AudioHfpManager::DisconnectSco()

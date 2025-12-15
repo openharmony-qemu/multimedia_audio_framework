@@ -74,11 +74,11 @@ export function concatArrayBuffer(wavHeaderBuffer: ArrayBuffer, pcmBuffer: Array
     const viewWavHeader = new Uint8Array(wavHeaderBuffer);
     const viewPcm = new Uint8Array(pcmBuffer);
 
-    // 创建一个新的 ArrayBuffer, 大小为两个原始缓冲区之和
+    // Create a new ArrayBuffer with a size equal to the sum of the two raw buffers.
     const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
     const resultView = new Uint8Array(resultBuffer);
 
-    // 将两个视图的数据复制到新的视图中
+    // Copy the data from two views into a new view
     resultView.set(viewWavHeader);
     resultView.set(viewPcm, viewWavHeader.length);
 
@@ -90,36 +90,36 @@ export function writeWavFileHeader(pcmBuffer: ArrayBuffer, sampleRate: number, c
         `writeWavFileHeader sampleRate : ${sampleRate} --- channels : ${channels} --- bitsPerSample : ${bitsPerSample}`);
     const header = new ArrayBuffer(44);
     const dv = new DataView(header);
-    // 写入RIFF快
+    // Write to RIFF block
     writeString(dv, 0, 'RIFF');
     let totalDataLen = pcmBuffer.byteLength + 44;
     dv.setUint32(4, totalDataLen, true);
     writeString(dv, 8, 'WAVE');
-    // 写入 fmt 快
+    // Write to fmt block
     writeString(dv, 12, 'fmt ');
-    // fmt快大小
+    // fmt block size
     dv.setUint32(16, 16, true);
-    // 格式类别（1 - PCM， 3 - IEEE 浮点数）
+    // Format Category (1 - PCM, 3 - IEEE Floating Point)
     dv.setUint16(20, 3, true);
     if (bitsPerSample === 32) {
         dv.setUint16(20, 3, true);
     } else {
         dv.setUint16(20, 1, true);
     }
-    // 声道数
+    // Number of audio channels
     dv.setUint16(22, channels, true);
-    // 采样率
+    // Sampling rate
     dv.setUint32(24, sampleRate, true);
-    // 比特率
+    // Bitrate
     let byteRate = bitsPerSample * sampleRate * channels / 8;
     dv.setUint32(28, byteRate, true);
-    // 每个采样点的字节数
+    // Number of bytes per sampling point
     dv.setUint16(32, channels * bitsPerSample / 8, true);
-    // 位深
+    // Bit depth
     dv.setUint16(34, bitsPerSample, true);
-    // 写入data 快
+    // Write to data block
     writeString(dv, 36, 'data');
-    // 数据快大小
+    // Data block size
     dv.setUint32(40, pcmBuffer.byteLength, true);
 
     let resultBuffer = concatArrayBuffer(header, pcmBuffer);

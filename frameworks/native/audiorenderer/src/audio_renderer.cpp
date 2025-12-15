@@ -712,7 +712,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
 
-    rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    isHWDecodingType_ = IsHWDecodingType(params.encodingType);
+    rendererInfo_.audioFlag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
     ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
@@ -730,7 +731,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     // eg: 100005_44100_2_1_client_in.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" +
         std::to_string(params.customSampleRate == 0 ? params.sampleRate : params.customSampleRate) + "_" +
-        std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
+        std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in." +
+        (isHWDecodingType_ ? EncodingTypeStr(params.encodingType) + ".not": "") + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     ret = InitOutputDeviceChangeCallback();
@@ -752,7 +754,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
-    flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    flag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
 
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
@@ -760,6 +762,9 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
+
+    // force using AUDIO_OUTPUT_FLAG_HWDECODING. In plan:get true flag
+    flag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : flag;
     UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
     streamClass = DecideStreamClassAndUpdateRendererInfo(flag);
@@ -827,6 +832,9 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
+    } else if (flag & AUDIO_OUTPUT_FLAG_HWDECODING) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_HWDECODING;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
@@ -1897,7 +1905,8 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
         std::to_string(bufDesc.bufLength));
     AsyncCheckAudioRenderer("Enqueue", false);
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);
+    size_t length = isHWDecodingType_ ? bufDesc.dataLength : bufDesc.bufLength;
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), length);
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->Enqueue(bufDesc);
@@ -2362,7 +2371,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(switchInfo.params);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
 
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t flag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
     ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);

@@ -23,7 +23,7 @@ void CallStringArrayThread(napi_env env, napi_value js_callback, void *context, 
         napi_set_element(env, resultArray, i, stringValue);
     }
 
-    delete strings; // 释放字符串数组
+    delete strings; // Releasing String Array
 
     napi_call_function(env, NULL, js_callback, 1, &resultArray, NULL);
 }
@@ -35,7 +35,7 @@ void CallStringArrayCallback(const std::vector<std::string>& strings)
     if (tsfnStringArray == nullptr) {
         return;
     }
-    // 创建一个新的副本
+    // Create a new copy
     std::vector<std::string> *stringsCopy = new std::vector<std::string>(strings);
     if (napi_call_threadsafe_function(tsfnStringArray, stringsCopy, napi_tsfn_blocking) != napi_ok) {
         delete stringsCopy;

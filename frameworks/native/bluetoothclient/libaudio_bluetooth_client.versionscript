@@ -26,11 +26,14 @@
     *A2dpOffloadSessionRequest*;
     *OffloadStartPlaying*;
     *GetActiveA2dpDevice*;
+    *GetActiveA2dpDeviceLocal*;
     *activeA2dpDevice_*;
     *IsRecognitionStatus*;
     *SendUserSelectionEvent*;
     *SetActiveHfpDevice*;
     *ClearActiveHfpDevice*;
+    *GetActiveHfpDevice*;
+    *GetActiveHfpDeviceLocal*;
     *RegisterA2dpPlayingStateChangedListener*;
     *Connect*;
     *DisconnectBluetoothHfpSink*;

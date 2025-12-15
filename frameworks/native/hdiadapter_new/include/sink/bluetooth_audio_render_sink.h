@@ -102,7 +102,6 @@ private:
     int32_t CreateRender(void);
     int32_t InitRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);

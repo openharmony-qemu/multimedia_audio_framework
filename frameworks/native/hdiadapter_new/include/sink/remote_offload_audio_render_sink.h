@@ -143,7 +143,6 @@ private:
     void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void CheckUpdateState(char *data, uint64_t len);
     int32_t SetVolumeInner(float left, float right);
@@ -157,7 +156,6 @@ private:
     void FlushResetPosition();
     int32_t EstimateRenderPosition();
     int32_t FlushInner(void);
-    void CheckFlushThread();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -183,7 +181,6 @@ private:
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
     std::atomic<bool> isFlushing_ = false;
-    bool isNeedRestart_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -199,7 +196,6 @@ private:
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
     // for device switch
-    std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
     // for dfx log
@@ -236,7 +232,6 @@ private:
     int64_t lastSystemTimeNS_ = 0;
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
-    std::shared_ptr<std::thread> flushThread_;
     bool appInfoNeedReset_ = false;
     std::unordered_set<int32_t> appsUid_;
 };

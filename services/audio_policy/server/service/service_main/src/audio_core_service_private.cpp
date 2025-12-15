@@ -76,6 +76,8 @@ static const uint32_t VOICE_CALL_DEVICE_SET_DELAY_US = 120000; // 120ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
+inline static const std::string NULL_ADDRESS{""};
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
     SOURCE_TYPE_WAKEUP,
@@ -2046,16 +2048,6 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     return id;
 }
 
-bool AudioCoreService::IsPaRoute(uint32_t routeFlag)
-{
-    if ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_INPUT_FLAG_FAST)) {
-        return false;
-    }
-    return true;
-}
-
 bool AudioCoreService::RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     for (auto &streamDesc : streamDescs) {
@@ -3112,8 +3104,12 @@ void AudioCoreService::DeactivateBluetoothDevice(bool isRunning)
 {
     CHECK_AND_RETURN(isRunning);
     audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
-    Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-    Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() != EMPTY_ADDRESS) {
+        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(NULL_ADDRESS);
+    }
+    if (Bluetooth::AudioHfpManager::GetActiveHfpDeviceLocal() != EMPTY_ADDRESS) {
+        Bluetooth::AudioHfpManager::SetActiveHfpDevice(NULL_ADDRESS);
+    }
 }
 
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -3478,10 +3474,10 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
     const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
 {
     for (auto &desc : outputDescs) {
-    CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-    desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
-        GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
-        streamDesc->rendererInfo_.privacyType);
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
+            GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
+            streamDesc->rendererInfo_.privacyType);
     }
 }
 
@@ -3498,8 +3494,7 @@ void AudioCoreService::ActivateNearlinkDeviceAsync(const std::shared_ptr<AudioSt
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
-        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
-        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
+        DeactivateBluetoothDevice(isRunning);
 
         int32_t ret = sleAudioDeviceManager_.SetActiveDevice(*deviceDesc, audioStreamConfig);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Activating Nearlink device fails, ret: %{public}d", ret);

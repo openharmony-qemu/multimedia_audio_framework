@@ -30,6 +30,9 @@ class AudioStaticBufferProcessor {
 public:
     static std::shared_ptr<AudioStaticBufferProcessor> CreateInstance(AudioStreamInfo streamInfo,
         std::shared_ptr<OHAudioBufferBase> sharedBuffer);
+    static int32_t ProcessFadeInOut(int8_t *bufferBase, size_t bufferSize,
+        AudioStreamInfo streamInfo, bool isFadeOut);
+
     AudioStaticBufferProcessor(AudioStreamInfo streamInfo, std::shared_ptr<OHAudioBufferBase> sharedBuffer);
 
     int32_t ProcessBuffer(AudioRendererRate renderRate);

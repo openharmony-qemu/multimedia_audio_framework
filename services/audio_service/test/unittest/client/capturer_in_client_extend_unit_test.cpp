@@ -128,6 +128,8 @@ public:
 
     virtual int32_t Drain(bool stopFlag) override { return 0; }
 
+    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return 0; }
+
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }

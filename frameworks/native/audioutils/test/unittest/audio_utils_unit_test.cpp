@@ -108,6 +108,23 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test EncodingTypeStr  API
+* @tc.type  : FUNC
+* @tc.number: EncodingTypeStr_001
+* @tc.desc  : Test EncodingTypeStr API
+*/
+HWTEST(AudioUtilsUnitTest, EncodingTypeStr_001, TestSize.Level1)
+{
+    AudioEncodingType type = ENCODING_PCM;
+    std::string result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "PCM");
+
+    type = ENCODING_INVALID;
+    result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "INVALID");
+}
+
+/**
 * @tc.name  : Test PermissionUtil API
 * @tc.type  : FUNC
 * @tc.number: PermissionUtil_001

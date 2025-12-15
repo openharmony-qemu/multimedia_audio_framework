@@ -1616,7 +1616,9 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
         AUDIO_US_PER_SECOND,
         [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
-            return true;
+            CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic &&
+                streamStatus_->load() == StreamStatus::STREAM_STAND_BY, true);
+            return false;
         }
 
         if (IsRestoreNeeded()) {

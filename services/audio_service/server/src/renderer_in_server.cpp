@@ -73,6 +73,8 @@ namespace {
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
+    // Dual tone substream starts forwarding on the main stream's second frame
+    constexpr size_t DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT = 2;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -113,11 +115,30 @@ void RendererInServer::RemoveStreamInfo()
     checkCount_ = 0;
 }
 
+int32_t RendererInServer::ConfigFixedSizeBuffer()
+{
+    stream_->GetByteSizePerFrame(byteSizePerFrame_);
+    stream_->GetSpanSizePerFrame(spanSizeInFrame_);
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_OPERATION_FAILED, "falied: byteSizePerFrame is 0");
+    bufferTotalSizeInFrame_ = FIXED_BUFFER_SIZE / byteSizePerFrame_;
+    engineTotalSizeInFrame_ = bufferTotalSizeInFrame_;
+    audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
+
+    // we need to clear data buffer to avoid dirty data.
+    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+        audioServerBuffer_->GetDataSize());
+    return SUCCESS;
+}
+
 int32_t RendererInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
+    }
+    if (isHWDecodingType_) {
+        return ConfigFixedSizeBuffer();
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     // default to 2, 40ms cache size for write mode
@@ -161,15 +182,6 @@ int32_t RendererInServer::InitBufferStatus()
     return SUCCESS;
 }
 
-void RendererInServer::GetEAC3ControlParam()
-{
-    int32_t eac3TestFlag = 0;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    if (eac3TestFlag == 1) {
-        managerType_ = EAC3_PLAYBACK;
-    }
-}
-
 void RendererInServer::ProcessManagerType()
 {
     if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
@@ -177,9 +189,10 @@ void RendererInServer::ProcessManagerType()
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
     }
-    if (processConfig_.streamInfo.encoding == ENCODING_EAC3) {
-        managerType_ = EAC3_PLAYBACK;
-        AUDIO_INFO_LOG("current stream marked as eac3 direct stream");
+    if (IsHWDecodingType(processConfig_.streamInfo.encoding)) {
+        managerType_ = HWDECODING_PLAYBACK;
+        isHWDecodingType_ = true;
+        AUDIO_INFO_LOG("current stream marked as HWDecoding stream");
     }
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
@@ -194,7 +207,7 @@ void RendererInServer::ProcessManagerType()
 int32_t RendererInServer::Init()
 {
     ProcessManagerType();
-    GetEAC3ControlParam();
+    // remove eac3 param check
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
 
@@ -224,7 +237,8 @@ int32_t RendererInServer::Init()
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
         + "_renderer_server_in_"
         + std::to_string(tempInfo.customSampleRate == 0 ? tempInfo.samplingRate : tempInfo.customSampleRate) + "_"
-        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
+        + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + "." + (isHWDecodingType_ ?
+        EncodingTypeStr(tempInfo.encoding) + ".not" : "") + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, streamIndex_);
 
@@ -285,12 +299,14 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             }
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
             OnCheckActiveMusicTime("Paused");
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
+            audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
             OnCheckActiveMusicTime("Stopped");
             break;
@@ -331,6 +347,7 @@ void RendererInServer::HandleOperationStarted()
     CHECK_AND_RETURN_LOG(playerDfx_ != nullptr, "nullptr");
     CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
         "stream status is nullptr");
+    writeCount_.store(0);
     if (standByEnable_) {
         standByEnable_ = false;
         AUDIO_INFO_LOG("%{public}u recv stand-by started", streamIndex_);
@@ -727,7 +744,6 @@ int32_t RendererInServer::WriteData()
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }
-
         OtherStreamEnqueue(bufferDesc);
 
         WriteMuteDataSysEvent(bufferDesc);
@@ -873,6 +889,8 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+            CHECK_AND_RETURN(writeCount_.load() >= DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT);
+            dualToneStream_->SetSendDataEnabled(true);
         }
     }
 }
@@ -930,6 +948,7 @@ void RendererInServer::WriteEmptyData()
 int32_t RendererInServer::OnWriteData(size_t length)
 {
     Trace trace("RendererInServer::OnWriteData length " + std::to_string(length));
+    writeCount_.fetch_add(1);
     bool mayNeedForceWrite = false;
     std::unique_lock lock(writeLock_, std::defer_lock);
     if (lock.try_lock()) {
@@ -963,6 +982,23 @@ int32_t RendererInServer::OnWriteData(size_t length)
     UpdateStreamInfo();
 
     return SUCCESS;
+}
+
+int32_t RendererInServer::RequestHandleData(uint64_t syncFramePts, uint32_t size)
+{
+    Trace trace("RendererInServer::RequestHandleData pts:" + std::to_string(syncFramePts) + " size:" +
+        std::to_string(size));
+    RETURN_RET_IF(managerType_ != HWDECODING_PLAYBACK, SUCCESS);
+
+    CHECK_AND_RETURN_RET_LOG(size <= FIXED_BUFFER_SIZE, ERR_INVALID_PARAM, "invalid size:%{public}d", size);
+    BufferDesc bufferDesc = {};
+    int32_t ret = audioServerBuffer_->GetRawBuffer(size, bufferDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed to get raw buffer");
+    bufferDesc.dataLength = size;
+    bufferDesc.syncFramePts = syncFramePts;
+
+    ret = stream_->EnqueueBuffer(bufferDesc);
+    return ret;
 }
 
 // Call WriteData will hold mainloop lock in EnqueueBuffer, we should not lock a mutex in WriteData while OnWriteData is
@@ -1086,8 +1122,11 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS,
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(needRefreshBufferStatus_) == SUCCESS,
         ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
+    needRefreshBufferStatus_ = false;
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -1142,6 +1181,7 @@ void RendererInServer::dualToneStreamInStart()
         if (dualToneStream_ != nullptr) {
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
+            dualToneStream_->SetSendDataEnabled(false);
             dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
@@ -1177,19 +1217,14 @@ int32_t RendererInServer::Pause()
     status_ = I_STATUS_PAUSING;
     bool isStandbyTmp = false;
     if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
-            ERR_OPERATION_FAILED, "stream status is nullptr");
-        standByEnable_ = false;
-        enterStandbyTime_ = 0;
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
-        if (playerDfx_) {
-            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
-        }
+        CHECK_AND_RETURN_RET_LOG(PauseDuringStandby() == SUCCESS, ERR_OPERATION_FAILED, "PauseDuringStandby Fail");
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
-    GetEAC3ControlParam();
+
+    MarkStaticFadeOut(false);
+
+    // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
 
@@ -1331,6 +1366,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
+            dualToneStream_->SetSendDataEnabled(true);
             dualToneStream_->Drain(stopFlag);
         }
     }
@@ -1380,14 +1416,11 @@ int32_t RendererInServer::StopInner()
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
         fadeoutFlag_ = NO_FADING;
     }
-    GetEAC3ControlParam();
+    // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
-    if (processConfig_.rendererInfo.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "BufferProvider_ is nullptr!");
-        staticBufferProvider_->ResetLoopStatus();
-    }
+    MarkStaticFadeOut(true);
 
     if (IsMovieOffloadStream()) {
         SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
@@ -1546,6 +1579,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 int32_t RendererInServer::SetRate(int32_t rate)
 {
     audioRenderRate_ = static_cast<AudioRendererRate>(rate);
+    needRefreshBufferStatus_ = true;
     return stream_->SetRate(rate);
 }
 
@@ -1782,6 +1816,7 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
+        dualToneStream_->SetSendDataEnabled(false);
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
@@ -2709,6 +2744,7 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
+    writeCount_.fetch_add(1);
     int32_t ret = SelectModeAndWriteData(inputData, requestDataLen);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     DetectLatency(reinterpret_cast<uint8_t*>(inputData), requestDataLen);
@@ -2735,6 +2771,7 @@ int32_t RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
     staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
+    needRefreshBufferStatus_ = true;
     return SUCCESS;
 }
 
@@ -2744,14 +2781,14 @@ int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo
     return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
 }
 
-int32_t RendererInServer::ProcessAndSetStaticBuffer()
+int32_t RendererInServer::ProcessAndSetStaticBuffer(bool needRefreshBufferStatus)
 {
-    if (!processConfig_.rendererInfo.isStatic) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
+        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
+    staticBufferProvider_->NeedProcessFadeIn();
 
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr!");
-    CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr, ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
+    CHECK_AND_RETURN_RET(needRefreshBufferStatus, SUCCESS);
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
 
@@ -2760,7 +2797,6 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer()
     ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
     staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
-
     staticBufferProvider_->RefreshLoopTimes();
     return SUCCESS;
 }
@@ -2785,7 +2821,8 @@ int32_t RendererInServer::CreateServerBuffer()
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
 
-        staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(audioServerBuffer_);
+        staticBufferProvider_ =
+            AudioStaticBufferProvider::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProvider_ is nullptr!");
         staticBufferProvider_->SetStaticBufferInfo(processConfig_.staticBufferInfo);
@@ -2811,6 +2848,33 @@ int32_t RendererInServer::CreateServerBuffer()
 int32_t RendererInServer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
     return stream_->GetLatencyWithFlag(latency, flag);
+}
+
+int32_t RendererInServer::PauseDuringStandby()
+{
+    AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
+        ERR_OPERATION_FAILED, "stream status is nullptr");
+    standByEnable_ = false;
+    enterStandbyTime_ = 0;
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_PAUSED);
+    CHECK_AND_RETURN_RET_LOG(playerDfx_ != nullptr, ERR_OPERATION_FAILED, "playerDfx_ is nullptr");
+    playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+    return SUCCESS;
+}
+
+void RendererInServer::MarkStaticFadeOut(bool isRefresh)
+{
+    CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
+    CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
+
+    if (!staticBufferProvider_->IsLoopEnd()) {
+        staticBufferProvider_->NeedProcessFadeOut();
+    }
+    // Refresh needs to be called after fadeout
+    if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
+        staticBufferProvider_->RefreshLoopTimes();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

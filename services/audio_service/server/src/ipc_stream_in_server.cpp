@@ -282,6 +282,15 @@ int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptur
 #endif
 }
 
+int32_t IpcStreamInServer::RequestHandleData(uint64_t syncFramePts, uint32_t size)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->RequestHandleData(syncFramePts, size);
+    }
+    AUDIO_ERR_LOG("failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {

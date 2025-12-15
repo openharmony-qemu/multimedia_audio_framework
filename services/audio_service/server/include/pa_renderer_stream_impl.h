@@ -18,6 +18,7 @@
 
 #ifdef SUPPORT_OLD_ENGINE
 #include <pulse/pulseaudio.h>
+#include <atomic>
 #include <mutex>
 #include "i_renderer_stream.h"
 
@@ -73,6 +74,7 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
+    void SetSendDataEnabled(bool enabled) override;
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
@@ -149,6 +151,7 @@ private:
     bool initEffectFlag_ = true;
     bool isDoFadeOut = false;
     std::atomic<bool> isReleased_ = false;
+    std::atomic<bool> sendDataEnabled_ = true;
 
     static inline std::atomic<int32_t> bufferNullCount_ = 0;
 

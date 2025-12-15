@@ -78,6 +78,7 @@ int32_t AudioRenderSink::Init(const IAudioSinkAttr &attr)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
 
+    InitLatencyMeasurement();
     sinkInited_ = true;
     InitPipeInfo();
 
@@ -130,7 +131,6 @@ int32_t AudioRenderSink::Start(void)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSink" + halName_;
 
-    InitLatencyMeasurement();
     if (started_) {
         return SUCCESS;
     }
@@ -163,7 +163,6 @@ int32_t AudioRenderSink::Stop(void)
     }
 #endif
 
-    DeInitLatencyMeasurement();
     if (!started_) {
         return SUCCESS;
     }
@@ -1007,11 +1006,6 @@ void AudioRenderSink::InitLatencyMeasurement(void)
     signalDetectAgent_->sampleFormat_ = attr_.format;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
     signalDetected_ = false;
-}
-
-void AudioRenderSink::DeInitLatencyMeasurement(void)
-{
-    signalDetectAgent_ = nullptr;
 }
 
 void AudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)

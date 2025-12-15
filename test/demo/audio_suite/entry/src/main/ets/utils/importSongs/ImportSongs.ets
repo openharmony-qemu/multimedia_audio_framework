@@ -10,11 +10,11 @@ import { Logger } from '../Logger';
 
 const TAG: string = 'AudioEditTestApp_ImportSongs';
 
-// 导入歌曲
+// Import Song
 export async function importSongs(playList: Map<string, SongInfo>): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
     try {
-        let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
+        let context = getContext() as common.Context; // Please ensure that getContext(this) returns a result of UIAbilityContext.
         let documentPicker = new picker.DocumentViewPicker(context);
         let selectResult: string[] =
             await documentPicker.select({fileSuffixFilters: ['.wav'], maxSelectNumber: 500});
@@ -45,7 +45,7 @@ export async function importSongs(playList: Map<string, SongInfo>): Promise<Map<
     return newMap;
 }
 
-// 导入歌曲（修改为单文件导入）
+// Import Songs (Modified to Single File Import)
 export async function importSingleSong(nodeList: Map<string, SongInfo>,
     nodeId: string): Promise<Map<string, SongInfo>> {
     let newMap: Map<string, SongInfo> = new Map();
@@ -53,20 +53,20 @@ export async function importSingleSong(nodeList: Map<string, SongInfo>,
         let context = getContext() as common.Context;
         let documentPicker = new picker.DocumentViewPicker(context);
 
-        // 修改：设置 maxSelectNumber 为 1，限制只能选择一个文件
+        // Modification: Set maxSelectNumber to 1 to restrict selecting only one file.
         let selectResult: string[] =
             await documentPicker.select({
                 fileSuffixFilters: ['.pcm', '.wav'],
-                maxSelectNumber: 1 // 限制只能选择1个文件
+                maxSelectNumber: 1 // Limitation: Only one file can be selected.
         });
         Logger.info(TAG, `DocumentViewPicker.select successfully, documentSelectResult uri: ${JSON.stringify(selectResult)}`);
 
-        // 复制原始播放列表
+        // Copy original playlist
         let tempMap: Map<string, SongInfo> = new Map(nodeList);
 
-        // 只处理第一个文件（如果有）
+        // Process only the first file (if any)
         if (selectResult.length > 0) {
-            let uri = selectResult[0]; //只取第一个文件
+            let uri = selectResult[0]; // Take only the first file
             let index = uri.lastIndexOf('/') + 1;
             let fileName = decodeURIComponent(uri.slice(index));
             let fileType = fileName.substring(fileName.lastIndexOf('.') + 1);
@@ -78,7 +78,7 @@ export async function importSingleSong(nodeList: Map<string, SongInfo>,
                 songType: fileType,
                 nodeId: nodeId
             };
-            // 检查是否已存在
+            // Check if it already exists
             await addToList(uri, info, tempMap, true);
         }
         Logger.warn(TAG, `File ${tempMap.size} ***************`);
@@ -91,10 +91,10 @@ export async function importSingleSong(nodeList: Map<string, SongInfo>,
 }
 
 /**
- * 导入非重复歌曲
- * @param uri      导入文件的uri
- * @param info     已有歌曲信息
- * @param tempMap  所有歌曲集合的 map
+ * Import non-repetitive songs
+ * @param uri      URI of the imported file
+ * @param info     Existing song information
+ * @param tempMap  Collection of all songs map
  */
 export async function addToList(
     uri: string,

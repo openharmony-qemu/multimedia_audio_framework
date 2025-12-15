@@ -1678,10 +1678,11 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
     std::lock_guard lock(mutex_);
-    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
-    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                   "BTSinkDetectedTime:%{public}s", rendererMockTime_.c_str(),
+        rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
+    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, BTSinkDetectedTime:%s",
+        rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
 }
 
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
@@ -2221,6 +2222,31 @@ std::string AudioDump::GetVersionType()
     return versionType_;
 }
 
+bool IsHWDecodingType(AudioEncodingType type)
+{
+    return HWDECODING_TYPES.count(type);
+}
+
+const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringMap = {
+    {ENCODING_PCM, "PCM"},
+    {ENCODING_AUDIOVIVID, "AUDIOVIVID"},
+    {ENCODING_EAC3, "EAC3"},
+    {ENCODING_AC3, "AC3"},
+    {ENCODING_TRUE_HD, "TRUE_HD"},
+    {ENCODING_DTS_HD, "DTS_HD"},
+    {ENCODING_DTS_X, "DTS_X"},
+    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
+};
+
+std::string EncodingTypeStr(AudioEncodingType type)
+{
+    auto it = g_EncodingTypeToStringMap.find(type);
+    if (it == g_EncodingTypeToStringMap.end()) {
+        return "INVALID";
+    }
+    return it->second;
+}
+
 int32_t CheckSupportedParams(const AudioStreamInfo &info)
 {
     CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLING_RATES, info.samplingRate),
@@ -2265,14 +2291,14 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     using namespace Security::AccessToken;
     AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
     AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(tokenId);
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
     CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
         "invalid token type %{public}u", tokenType);
     if (tokenType == TOKEN_HAP) {
-        HapTokenInfoExt tokenInfo = {};
-        int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
+        HapTokenInfo tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
         CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-hap", "hap %{public}u failed: %{public}d", tokenIdNum, ret);
-        return tokenInfo.baseInfo.bundleName;
+        return tokenInfo.bundleName;
     } else {
         NativeTokenInfo tokenInfo = {};
         int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);

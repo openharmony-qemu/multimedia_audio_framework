@@ -23,6 +23,7 @@
 #include <v1_0/iaudio_manager.h>
 #include <thread>
 #include <shared_mutex>
+#include "audio_utils.h"
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 
@@ -111,6 +112,8 @@ private:
     void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(RemoteAudioCategory type);
     int32_t DoSetOutputRoute(void);
+    void InitLatencyMeasurement(void);
+    void CheckLatencySignal(uint8_t *data, size_t len);
     void CheckUpdateState(char *data, uint64_t len);
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen, RemoteAudioCategory type);
 
@@ -151,6 +154,10 @@ private:
     std::mutex createRenderMutex_;
     std::mutex threadMutex_;
     std::unordered_map<RemoteAudioCategory, struct RenderWrapper> audioRenderWrapperMap_;
+    // for signal detect
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    bool signalDetected_ = false;
+    size_t signalDetectedTime_ = 0;
     // for get amplitude
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;

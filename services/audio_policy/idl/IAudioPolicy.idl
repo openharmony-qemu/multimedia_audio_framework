@@ -180,6 +180,8 @@ interface IAudioPolicy {
     void EnableAudioZoneChangeReport([in] int zoneId, [in] boolean enable);
     void AddUidToAudioZone([in] int zoneId, [in]  int uid);
     void RemoveUidFromAudioZone([in] int zoneId, [in] int uid);
+    void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
+    void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void AddStreamToAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void RemoveStreamFromAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void SetZoneDeviceVisible([in] boolean visible);

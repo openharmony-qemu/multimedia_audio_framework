@@ -607,7 +607,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_DP = 10,
     HDI_RENDER_OFFSET_USB = 11,
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
-    HDI_RENDER_OFFSET_EAC3 = 13,
+    HDI_RENDER_OFFSET_HWDECODING = 13,
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
 };
@@ -615,6 +615,10 @@ enum HdiRenderOffset : uint32_t {
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
+
+bool IsHWDecodingType(AudioEncodingType type);
+
+std::string EncodingTypeStr(AudioEncodingType type);
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
 

@@ -71,6 +71,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullInBackground_Should
 {
     // Set background inactive state
     offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+    offloadNode_->SetBufferSize(); // setbuffersize to realy set unlock_
 
     // Expect unlock method called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(1);

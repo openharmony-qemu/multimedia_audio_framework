@@ -78,7 +78,8 @@ export class Logger {
     }
 
     /**
-     * debug级别格式化日志： 字符串、数字、布尔值用原始打印，Error类型只打印名称与描述、其他的用JSON.stringify转换为字符串后打印
+     * Debug-level formatted logs: Strings, numbers, and booleans are printed in their original form;
+     * Error types only print the name and description; others are converted to strings using JSON.stringify before being printed.
      * @param logs
      */
     private static getPrintArg(log: Object | undefined): string {
@@ -96,7 +97,8 @@ export class Logger {
     }
 
     /**
-     * info、warn、error级别格式化日志：Error类型只打印名称与描述、禁止打印对象、禁止打印json对象
+     * Formatted logs for info, warn, and error levels: Error type only prints the name and description;
+     * printing objects and JSON objects is prohibited.
      * @param logs
      */
     private static getSafetyPrintArg(log: Object | undefined | null): string {
@@ -104,15 +106,15 @@ export class Logger {
             if (log === null || log === undefined) {
                 return 'undefined';
             }
-            // 规则1： Error类型只打印名称与描述
+            // Rule 1: Only print the name and description for Error types
             if (log instanceof Error) {
                 return `errorName: ${log.name}. errorMessage: ${log.message}`;
             }
-            // 规则2： 禁止打印对象
+            // Rule 2: Prohibition of Printing Objects
             if (typeof log === 'object') {
                 return '{print.obj}';
             }
-            // 规则3： 禁止打印json对象
+            // Rule 3: Printing JSON objects is prohibited
             if (typeof log === 'string') {
                 return Logger.replaceBracesWithLength(log);
             }
@@ -123,9 +125,9 @@ export class Logger {
     }
 
     /**
-     * 替换{}内容为长度， 防止打印json对象
-     * @param input 输入字符串
-     * @returns 替换后的字符串
+     * Replace {} with length to prevent printing JSON objects
+     * @param input Input string
+     * @returns Character string after replacement
      */
     private static replaceBracesWithLength(input: string): string {
         return input.replace(/\{.*\}/, (match) => {

@@ -4443,6 +4443,40 @@ int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyServer::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+
+    const size_t size = usages.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit");
+    std::set<StreamUsage> streamUsages;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "invalid stream usage: %{public}d", usage);
+        streamUsages.insert(static_cast<StreamUsage>(usage));
+    }
+
+    return AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, uid, streamUsages);
+}
+
+int32_t AudioPolicyServer::RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+
+    const size_t size = usages.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= MAX_STREAM_USAGE_COUNT, ERR_INVALID_PARAM, "size upper limit");
+    std::set<StreamUsage> streamUsages;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "invalid stream usage: %{public}d", usage);
+        streamUsages.insert(static_cast<StreamUsage>(usage));
+    }
+
+    return AudioZoneService::GetInstance().RemoveUidUsagesFromAudioZone(zoneId, uid, streamUsages);
+}
+
 int32_t AudioPolicyServer::AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
