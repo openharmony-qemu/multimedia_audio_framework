@@ -3365,7 +3365,6 @@ void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<Concurr
     size_t count = result->existingAppName.size();
     for (size_t i = 0; i < count; ++i) {
         AUDIO_INFO_LOG("------------------APP%{public}zu begin---------------------", i);
-        AUDIO_INFO_LOG("AppName:          %{public}s", result->existingAppName[i].c_str());
         AUDIO_INFO_LOG("AppState:         %{public}d", result->existingAppState[i]);
         AUDIO_INFO_LOG("SourceType:       %{public}d", result->existingSourceType[i]);
         AUDIO_INFO_LOG("CaptureState:     %{public}d", result->existingCaptureState[i]);
