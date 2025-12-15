@@ -118,8 +118,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    float mdmMuteStatus = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus() ? 0.0f : 1.0f;
-    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteStatus;
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
@@ -128,7 +128,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType,
             deviceClass.c_str(), volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp,
             it->second.IsVirtualKeyboard(), itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null",
-            doNotDisturbStatusVolume, mdmMuteStatus);
+            doNotDisturbStatusVolume, mdmMuteFactor);
     }
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
