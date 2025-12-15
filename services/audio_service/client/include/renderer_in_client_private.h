@@ -503,6 +503,7 @@ private:
         LOUD_VOLUME_NOT_SUPPORT = 0,
         LOUD_VOLUME_SUPPORT,
         LOUD_VOLUME_SUPPORT_ONLY_MUSIC,
+        LOUD_VOLUME_SUPPORT_ONLY_VOICE,
     };
 
     enum {
