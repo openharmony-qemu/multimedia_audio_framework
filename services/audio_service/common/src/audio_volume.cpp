@@ -117,7 +117,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
-    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType, appUid, sessionId));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
     volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
@@ -135,6 +135,12 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
 }
 
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    return GetDoNotDisturbStatusVolumeInternal(volumeType, appUid, sessionId);
+}
+
+uint32_t AudioVolume::GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, int32_t appUid, uint32_t sessionId)
 {
     if (!isDoNotDisturbStatus_) {
         return DISTURB_STATE_VOLUME_UNMUTE;
