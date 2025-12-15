@@ -314,6 +314,8 @@ private:
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 
     void CheckFrozenStateInStaticMode();
+
+    int32_t CallStartWhenInStandby();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
