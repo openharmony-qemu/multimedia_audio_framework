@@ -178,7 +178,7 @@ static void AlgoTransform(AlgoCTX* ctx, const unsigned char *block)
 // update
 static bool AlgoUpdate(AlgoCTX* c, const unsigned char *data, size_t len)
 {
-    if (len == 0) return true;
+    CHECK_AND_RETURN_RET(len != 0, true); // len == 0, return true directly
     // update bit count (message bits only)
     unsigned long long add = static_cast<unsigned long long>(len) * 8ULL; // 8, convert bytes to bits
     c->nbits += add;
@@ -256,10 +256,10 @@ static bool AlgoFinal(unsigned char *md, AlgoCTX* c)
 
     // produce digest (big-endian)
     for (size_t i = 0; i < STATE_WORDS_COUNT; ++i) {
-        md[BYTES_PER_WORD * i    ] = static_cast<unsigned char>((c->h[i] >> 24) & 0xFFU); // byte 3, bits[24~31]
-        md[BYTES_PER_WORD * i + 1] = static_cast<unsigned char>((c->h[i] >> 16) & 0xFFU); // byte 2, bits[16~23]
-        md[BYTES_PER_WORD * i + 2] = static_cast<unsigned char>((c->h[i] >> 8) & 0xFFU);  // byte 1, bits[8~15]
-        md[BYTES_PER_WORD * i + 3] = static_cast<unsigned char>(c->h[i] & 0xFFU);         // byte 0, bits[0~7]
+        md[BYTES_PER_WORD * i    ] = static_cast<unsigned char>((c->h[i] >> 24) & 0xFFU); // byte 0, bits[24~31]
+        md[BYTES_PER_WORD * i + 1] = static_cast<unsigned char>((c->h[i] >> 16) & 0xFFU); // byte 1, bits[16~23]
+        md[BYTES_PER_WORD * i + 2] = static_cast<unsigned char>((c->h[i] >> 8) & 0xFFU);  // byte 2, bits[8~15]
+        md[BYTES_PER_WORD * i + 3] = static_cast<unsigned char>(c->h[i] & 0xFFU);         // byte 3, bits[0~7]
     }
 
     // clear sensitive data
