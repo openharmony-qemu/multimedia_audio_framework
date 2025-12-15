@@ -135,8 +135,8 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *in
     }
 
     if (in->GetChannelCount() != outFormat.channelCount) {
-        AUDIO_DEBUG_LOG("ConvertRate, inrate:%{public}u, outrate: %{public}u ",
-            in->GetSampleRate(), outFormat.sampleRate);
+        AUDIO_DEBUG_LOG("ConvertChannel, inchannel:%{public}u, outchannel: %{public}u ",
+            in->GetChannelCount(), outFormat.channelCount);
         channelOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),
             outFormat.channelCount, outFormat.channelLayout, SAMPLE_F32LE), duration);
         ret = ChannelConvert(in, &channelOut_);
