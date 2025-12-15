@@ -41,7 +41,7 @@ class LoudVolumeManager {
 public:
     explicit LoudVolumeManager();
     virtual ~LoudVolumeManager();
-    bool loudVolumeModeEnable_ = 0;
+    int32_t loudVolumeSupportMode_ = 0;
     bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
     bool ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode);
     void SetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool state);
