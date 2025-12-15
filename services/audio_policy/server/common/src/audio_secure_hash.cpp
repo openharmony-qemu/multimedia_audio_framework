@@ -21,11 +21,11 @@
 #include "audio_log.h"
 
 // bit operations
-#define ROTR(x,n) (((x) >> (n)) | ((x) << (32 - (n)))) // rotate right
-#define SHR(x,n) ((x) >> (n)) // shfit right
+#define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n)))) // rotate right
+#define SHR(x, n) ((x) >> (n)) // shfit right
 
-#define Ch(x,y,z) (((x) & (y)) ^ (~(x) & (z))) // choose bits from y or z based on x
-#define Maj(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z))) // majority of bits among x, y, z
+#define Ch(x, y, z) (((x) & (y)) ^ (~(x) & (z))) // choose bits from y or z based on x
+#define Maj(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z))) // majority of bits among x, y, z
 
 #define Sigma0(x) (ROTR((x), 2) ^ ROTR((x), 13) ^ ROTR((x), 22)) // uppercase sigma0, rotates 2,13,22
 #define Sigma1(x) (ROTR((x), 6) ^ ROTR((x), 11) ^ ROTR((x), 25)) // uppercase sigma1, rotates 6,11,25
@@ -94,7 +94,7 @@ unsigned char* AudioSecureHash::AudioSecureHashAlgo(const unsigned char *d, size
     // illegal state, d == nullptr && n > 0
     CHECK_AND_RETURN_RET_LOG(d != nullptr || n == 0, nullptr, "illegal parameter");
 
-    static unsigned char staticBuffer[32];
+    static unsigned char staticBuffer[SHA256_DIGEST_LENGTH];
     if (md == nullptr) {
         md = staticBuffer;
     }
@@ -129,10 +129,10 @@ static void AlgoTransform(AlgoCTX* ctx, const unsigned char *block)
     uint32_t W[BLOCK_SIZE];
     // load big-endian
     for (size_t t = 0; t < 16; ++t) { // load first 16 works from input block, big-endian
-        W[t] = (static_cast<uint32_t>(block[BYTES_PER_WORD * t]) << 24) |     // shift 24
-               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 1]) << 16) | // shift 16
-               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 2]) << 8) |  // shift 8
-               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 3]));        // lowest byte
+        W[t] = (static_cast<uint32_t>(block[BYTES_PER_WORD * t]) << 24) |     // byte 0, shift 24, bits[24~31]
+               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 1]) << 16) | // byte 1, shift 16, bits[16~23]
+               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 2]) << 8) |  // byte 2, shift 8, bits[8~15]
+               (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 3]));        // byte 3, lowest byte, bits[0~7]
     }
     for (size_t t = 16; t < BLOCK_SIZE; ++t) { // extend W[16~63]
         W[t] = static_cast<uint32_t>(
@@ -241,25 +241,25 @@ static bool AlgoFinal(unsigned char *md, AlgoCTX* c)
     // append length in bits as big-endian 8-byte value
     unsigned long long bits = c->nbits;
     // define bytes 56~63 to store message length
-    // 56 is first byte of the 8-byte length field, highest bytes
+    // 56 is first byte of the 8-byte length field, highest bytes, bits bits[56~63]
     tmp[56] = static_cast<unsigned char>((bits >> 56) & 0xFFULL);
-    tmp[57] = static_cast<unsigned char>((bits >> 48) & 0xFFULL); // 57 is the second
-    tmp[58] = static_cast<unsigned char>((bits >> 40) & 0xFFULL); // 58 is the third
-    tmp[59] = static_cast<unsigned char>((bits >> 32) & 0xFFULL); // 59 is the fourth
-    tmp[60] = static_cast<unsigned char>((bits >> 24) & 0xFFULL); // 60 is the fifth
-    tmp[61] = static_cast<unsigned char>((bits >> 16) & 0xFFULL); // 61 is the sixth
-    tmp[62] = static_cast<unsigned char>((bits >> 8) & 0xFFULL);  // 62 is the seventh
-    tmp[63] = static_cast<unsigned char>(bits & 0xFFULL);         // 63 is the eighth, lowest byte
+    tmp[57] = static_cast<unsigned char>((bits >> 48) & 0xFFULL); // 57 is the second, bits[48~55]
+    tmp[58] = static_cast<unsigned char>((bits >> 40) & 0xFFULL); // 58 is the third, bits[40~47]
+    tmp[59] = static_cast<unsigned char>((bits >> 32) & 0xFFULL); // 59 is the fourth, bits[32~39]
+    tmp[60] = static_cast<unsigned char>((bits >> 24) & 0xFFULL); // 60 is the fifth, bits[24~31]
+    tmp[61] = static_cast<unsigned char>((bits >> 16) & 0xFFULL); // 61 is the sixth, bits[16~23]
+    tmp[62] = static_cast<unsigned char>((bits >> 8) & 0xFFULL);  // 62 is the seventh, bits[8~15]
+    tmp[63] = static_cast<unsigned char>(bits & 0xFFULL);         // 63 is the eighth, lowest byte, bits[0~7]
 
     // final transform for last block
     AlgoTransform(c, tmp);
 
     // produce digest (big-endian)
     for (size_t i = 0; i < STATE_WORDS_COUNT; ++i) {
-        md[BYTES_PER_WORD * i    ] = static_cast<unsigned char>((c->h[i] >> 24) & 0xFFU); // extract byte 3
-        md[BYTES_PER_WORD * i + 1] = static_cast<unsigned char>((c->h[i] >> 16) & 0xFFU); // extract byte 2
-        md[BYTES_PER_WORD * i + 2] = static_cast<unsigned char>((c->h[i] >> 8) & 0xFFU);  // extract byte 1
-        md[BYTES_PER_WORD * i + 3] = static_cast<unsigned char>(c->h[i] & 0xFFU);         // extract byte 0
+        md[BYTES_PER_WORD * i    ] = static_cast<unsigned char>((c->h[i] >> 24) & 0xFFU); // byte 3, bits[24~31]
+        md[BYTES_PER_WORD * i + 1] = static_cast<unsigned char>((c->h[i] >> 16) & 0xFFU); // byte 2, bits[16~23]
+        md[BYTES_PER_WORD * i + 2] = static_cast<unsigned char>((c->h[i] >> 8) & 0xFFU);  // byte 1, bits[8~15]
+        md[BYTES_PER_WORD * i + 3] = static_cast<unsigned char>(c->h[i] & 0xFFU);         // byte 0, bits[0~7]
     }
 
     // clear sensitive data
