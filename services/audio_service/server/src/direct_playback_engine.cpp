@@ -278,7 +278,7 @@ int32_t DirectPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat forma
     AudioChannelLayout layout)
 {
     std::string sinkName = EAC3_SINK_NAME;
-    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3, sinkName, true);
+    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, sinkName, true);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (sink == nullptr) {
         AUDIO_ERR_LOG("get render fail, sinkName: %{public}s", sinkName.c_str());

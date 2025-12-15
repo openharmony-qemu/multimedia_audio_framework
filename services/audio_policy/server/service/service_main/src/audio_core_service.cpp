@@ -401,6 +401,16 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
     return false;
 }
 
+bool AudioCoreService::IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "invalid streamDesc!");
+    AudioStreamInfo streamInfo = streamDesc->streamInfo_;
+    RETURN_RET_IF(!IsHWDecodingType(streamInfo.encoding), false);
+
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_HWDECODING;
+    return true;
+}
+
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
@@ -410,6 +420,8 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return;
     }
+
+    CHECK_AND_RETURN_LOG(IsHWDecoding(streamDesc) == false, "HWDecoding streams");
 
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");

@@ -161,6 +161,18 @@ bool RendererInClientInner::IsHighResolution() const noexcept
            curStreamParams_.format >= SAMPLE_S24LE;
 }
 
+void RendererInClientInner::InitDFXOperaiton()
+{
+    // eg: 100005_44100_2_1_client_out.pcm
+    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.customSampleRate == 0 ?
+        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
+        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out." +
+        (isHWDecodingType_ ? EncodingTypeStr(static_cast<AudioEncodingType>(curStreamParams_.encoding)) : "pcm");
+
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
+    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
+}
+
 void RendererInClientInner::InitDirectPipeType()
 {
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT || IsHighResolution()) {
@@ -371,7 +383,7 @@ bool RendererInClientInner::WaitForRunning()
 
 void RendererInClientInner::RecordDropPosition(size_t bufLength)
 {
-    CHECK_AND_RETURN_LOG(isHdiSpeed_.load(), "record drop position only when is hdi speed ");
+    CHECK_AND_RETURN_LOG(isHdiSpeed_.load() && !isHWDecodingType_, "record drop position only when is hdi speed ");
     uint32_t channels = clientConfig_.streamInfo.channels;
     uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
     // calculate samples by dropped buffer size
@@ -382,9 +394,32 @@ void RendererInClientInner::RecordDropPosition(size_t bufLength)
         ",dropHdiPosition_:%{public}" PRIu64, dropPosition_.load(), dropHdiPosition_.load());
 }
 
+int32_t RendererInClientInner::WriteRawBuffer(BufferDesc &bufferDesc)
+{
+    if (bufferDesc.dataLength == 0) {
+        if (sleepCount_++ == LOG_COUNT_LIMIT) {
+            sleepCount_ = 0;
+            AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
+        }
+        usleep(WAIT_FOR_NEXT_CB);
+        return SUCCESS;
+    }
+    FirstFrameProcess();
+    sleepCount_ = LOG_COUNT_LIMIT;
+    std::unique_lock<std::mutex> statusLock(statusMutex_);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_WRITE_FAILED, "ipc stream is null");
+    int32_t ret = ipcStream_->RequestHandleData(bufferDesc.syncFramePts, bufferDesc.dataLength);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RequestHandleData failed:%{public}d", ret);
+    return ret;
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
+    if (isHWDecodingType_) {
+        result = WriteRawBuffer(bufferDesc);
+        return result;
+    }
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         if (bufferDesc.dataLength != 0) {
             result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
@@ -494,7 +529,8 @@ void RendererInClientInner::CallClientHandle()
     if (cb != nullptr) {
         Trace traceCb("RendererInClientInner::OnWriteData");
         WatchTimeout guard("write interval too long"); // default time out 40ms
-        cb->OnWriteData(cbBufferSize_);
+        size_t length = isHWDecodingType_ ? FIXED_BUFFER_SIZE : cbBufferSize_;
+        cb->OnWriteData(length);
         guard.CheckCurrTimeout();
     }
 }

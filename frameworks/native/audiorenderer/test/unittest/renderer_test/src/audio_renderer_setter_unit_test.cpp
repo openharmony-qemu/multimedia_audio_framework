@@ -2663,6 +2663,10 @@ HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSi
     flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+
+    flag = AUDIO_OUTPUT_FLAG_HWDECODING;
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -223,6 +223,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
+    isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
@@ -251,14 +252,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
     state_ = PREPARED;
 
-    // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" +
-        std::to_string(curStreamParams_.customSampleRate == 0 ?
-        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
-        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
-
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
+    InitDFXOperaiton();
     InitDirectPipeType();
 
     proxyObj_ = proxyObj;
@@ -671,6 +665,11 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
+    if (isHWDecodingType_) {
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_INVALID_HANDLE, "ipcStream is not inited!");
+        ipcStream_->SetSpeed(speed);
+        return SUCCESS;
+    }
     std::lock_guard lock(speedMutex_);
     realSpeed_ = speed;
     if (isHdiSpeed_.load()) {
@@ -805,12 +804,26 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return ERROR;
 }
 
+int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
+{
+    if (clientBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("buffer is not inited");
+        return ERR_OPERATION_FAILED;
+    }
+    size_t bufferSize = clientBuffer_->GetDataSize();
+    int32_t ret = clientBuffer_->GetRawBuffer(bufferSize, bufDesc);
+    return ret;
+}
+
 int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::GetBufferDesc");
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("GetBufferDesc is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
+    }
+    if (isHWDecodingType_) {
+        return GetRawBuffer(bufDesc);
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     bufDesc.buffer = cbBuffer_.get();
@@ -1292,6 +1305,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
+    CHECK_AND_RETURN_LOG(isHWDecodingType_ == false, "not support HWDecoding");
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,

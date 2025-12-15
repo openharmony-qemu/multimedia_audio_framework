@@ -74,6 +74,8 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
 
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override;
+
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;

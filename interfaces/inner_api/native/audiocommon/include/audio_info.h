@@ -80,6 +80,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
+constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128K
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
 
@@ -1694,6 +1695,12 @@ struct DStatusInfo {
     ConnectType connectType = CONNECT_TYPE_LOCAL;
     uint16_t dmDeviceType = 0;
     std::string dmDeviceInfo = "";
+};
+
+struct HWDecodingInfo {
+    uint64_t pts = 0;
+    uint32_t size = 0;
+    int32_t optCode = 0;
 };
 
 struct AudioRendererDataInfo {

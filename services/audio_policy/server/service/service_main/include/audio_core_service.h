@@ -459,6 +459,7 @@ private:
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
@@ -489,7 +490,6 @@ private:
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
 
-    bool IsPaRoute(uint32_t routeFlag);
     bool RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
