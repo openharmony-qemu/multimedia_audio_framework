@@ -126,20 +126,20 @@ static void AlgoInit(AlgoCTX* c)
 // transform using full W[64] schedule (clear and explicit)
 static void AlgoTransform(AlgoCTX* ctx, const unsigned char *block)
 {
-    uint32_t W[BLOCK_SIZE];
+    uint32_t w[BLOCK_SIZE];
     // load big-endian
     for (size_t t = 0; t < 16; ++t) { // load first 16 works from input block, big-endian
-        W[t] = (static_cast<uint32_t>(block[BYTES_PER_WORD * t]) << 24) |     // byte 0, shift 24, bits[24~31]
+        w[t] = (static_cast<uint32_t>(block[BYTES_PER_WORD * t]) << 24) |     // byte 0, shift 24, bits[24~31]
                (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 1]) << 16) | // byte 1, shift 16, bits[16~23]
                (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 2]) << 8) |  // byte 2, shift 8, bits[8~15]
                (static_cast<uint32_t>(block[BYTES_PER_WORD * t + 3]));        // byte 3, lowest byte, bits[0~7]
     }
     for (size_t t = 16; t < BLOCK_SIZE; ++t) { // extend W[16~63]
-        W[t] = static_cast<uint32_t>(
-            static_cast<uint64_t>(sigma1(W[t - 2])) + // t-2: second previous word, used in sigma1
-                                  W[t - 7] +          // t-7: seventh previous word, add directly
-                                  sigma0(W[t - 15]) + // t-15: fifteenth previous word, used in sigma0
-                                  W[t - 16]           // t-16: sixteenth previous word, earliest word in schedule
+        w[t] = static_cast<uint32_t>(
+            static_cast<uint64_t>(sigma1(w[t - 2])) + // t-2: second previous word, used in sigma1
+                                  w[t - 7] +          // t-7: seventh previous word, add directly
+                                  sigma0(w[t - 15]) + // t-15: fifteenth previous word, used in sigma0
+                                  w[t - 16]           // t-16: sixteenth previous word, earliest word in schedule
         );
     }
 
@@ -153,16 +153,16 @@ static void AlgoTransform(AlgoCTX* ctx, const unsigned char *block)
     uint32_t h = ctx->h[STATE_WORD_H7];
 
     for (size_t t = 0; t < BLOCK_SIZE; ++t) {
-        uint32_t T1 = static_cast<uint32_t>(static_cast<uint64_t>(h) + Sigma1(e) + Ch(e, f, g) + K256[t] + W[t]);
-        uint32_t T2 = static_cast<uint32_t>(static_cast<uint64_t>(Sigma0(a)) + Maj(a, b, c));
+        uint32_t t1 = static_cast<uint32_t>(static_cast<uint64_t>(h) + Sigma1(e) + Ch(e, f, g) + K256[t] + w[t]);
+        uint32_t t2 = static_cast<uint32_t>(static_cast<uint64_t>(Sigma0(a)) + Maj(a, b, c));
         h = g;
         g = f;
         f = e;
-        e = static_cast<uint32_t>(static_cast<uint64_t>(d) + T1);
+        e = static_cast<uint32_t>(static_cast<uint64_t>(d) + t1);
         d = c;
         c = b;
         b = a;
-        a = static_cast<uint32_t>(static_cast<uint64_t>(T1) + T2);
+        a = static_cast<uint32_t>(static_cast<uint64_t>(t1) + t2);
     }
 
     ctx->h[STATE_WORD_H0] = static_cast<uint32_t>(static_cast<uint64_t>(ctx->h[STATE_WORD_H0]) + a);
