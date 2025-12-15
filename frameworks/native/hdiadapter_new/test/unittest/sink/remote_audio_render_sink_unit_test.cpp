@@ -164,7 +164,7 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_006, TestSize.Level1)
     EXPECT_TRUE(sink_ && sink_->IsInited());
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
