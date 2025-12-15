@@ -26,7 +26,6 @@
 #include <dlfcn.h>
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
-#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
