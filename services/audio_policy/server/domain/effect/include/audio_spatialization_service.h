@@ -102,7 +102,7 @@ private:
         WRITE_SPATIALIZATION_SCENE = 1,
         WRITE_ALLDEVICESPATIAL_INFO = 2,
     };
-    static constexpr uint32_t MAX_DEVICE_NUM = 10;
+    static constexpr uint32_t MAX_DEVICE_NUM = 20;
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
     int32_t UpdateSpatializationSceneType();

@@ -619,7 +619,7 @@ void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string devic
     std::string address;
     int32_t convertValue = 0;
     std::getline(ss, address, '|');
-    CHECK_AND_RETURN_LOG(!addressToDeviceSpatialInfoMap_.count(address), "device still exist");
+    CHECK_AND_RETURN_LOG(!addressToDeviceSpatialInfoMap_.count(address), "device already exists");
     addressToDeviceSpatialInfoMap_[address] = deviceSpatialInfo;
     std::getline(ss, token, '|');
     CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid spatializationEnabled");
@@ -708,7 +708,6 @@ int32_t AudioSpatializationService::InitOldSpatialInfo()
         settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device1", "nulldata");
     }
 
-    uint32_t num = 2;
     for (uint32_t i = 2; i < MAX_DEVICE_NUM; ++i) {
         ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i),
             deviceSpatialInfo);
