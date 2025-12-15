@@ -99,6 +99,11 @@ public:
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
 
+    bool IsNotRunning() const
+    {
+        return (streamStatus_ == STREAM_STATUS_PAUSED || streamStatus_ == STREAM_STATUS_STOPPED);
+    }
+
     StreamUsage GetRenderUsage() const
     {
         return rendererInfo_.streamUsage;
