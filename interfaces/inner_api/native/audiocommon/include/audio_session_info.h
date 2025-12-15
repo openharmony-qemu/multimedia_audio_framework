@@ -50,6 +50,7 @@ enum class AudioSessionType {
     NOTIFICATION = 6,
     DTMF = 7,
     VOICE_ASSISTANT = 8,
+    NAVIGATION = 9,
 };
 
 /**
