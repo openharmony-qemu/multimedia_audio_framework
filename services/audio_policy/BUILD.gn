@@ -209,6 +209,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
+    "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
@@ -395,10 +396,6 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]

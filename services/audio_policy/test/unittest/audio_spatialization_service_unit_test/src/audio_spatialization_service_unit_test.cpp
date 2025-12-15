@@ -19,7 +19,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "standard_spatialization_state_change_listener_proxy.h"
-#include <openssl/sha.h>
 #include <thread>
 #include <string>
 #include <memory>
