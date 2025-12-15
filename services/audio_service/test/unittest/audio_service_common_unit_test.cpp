@@ -2263,9 +2263,11 @@ HWTEST(AudioServiceCommonUnitTest, CheckFrozenAndSetLastProcessTime_001, TestSiz
     ohAudioBuffer->SetStaticMode(true);
 
     ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    ohAudioBuffer->GetStreamStatus()->store(STREAM_RUNNING);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), true);
 
     ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    ohAudioBuffer->GetStreamStatus()->store(STREAM_STAND_BY);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT), true);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), false);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT), false);

@@ -29,6 +29,7 @@
 #include "message_parcel.h"
 #include "parcel.h"
 #include "audio_stream_enum.h"
+#include "oh_audio_buffer.h"
 
 using namespace testing::ext;
 
@@ -1772,6 +1773,7 @@ HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
  
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.rendererInServer_->audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(10,10);
     auto ret = ipcStreamInServerRet.Start();
     EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
