@@ -706,7 +706,12 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         return ERR_INVALID_PARAM;
     }
 
-    CallStartWhenInStandby();
+    if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
+        Trace trace2(traceTag_+ " call start to exit stand-by");
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+        int32_t ret = ipcStream_->Start();
+        AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
+    }
 
     FirstFrameProcess();
 
@@ -1134,6 +1139,7 @@ void RendererInClientInner::CheckFrozenStateInStaticMode()
     }
 }
 
+<<<<<<< HEAD
 int32_t RendererInClientInner::CallStartWhenInStandby()
 {
     CHECK_AND_RETURN_RET(clientBuffer_->GetStreamStatus()->load() != STREAM_STAND_BY, ERROR);
@@ -1145,5 +1151,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return ret;
 }
+=======
+>>>>>>> parent of 940eca45f7 (add lock)
 } // namespace AudioStandard
 } // namespace OHOS
