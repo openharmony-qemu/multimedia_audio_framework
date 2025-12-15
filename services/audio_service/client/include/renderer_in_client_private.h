@@ -494,7 +494,7 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
-    bool loudVolumeSupportMode_ = 0;
+    int32_t loudVolumeSupportMode_ = 0;
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
