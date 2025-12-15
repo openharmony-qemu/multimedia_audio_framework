@@ -54,6 +54,10 @@ std::map<AudioVolumeType, LoudVolumeHoldType>& LoudVolumeManager::GetLoudVolumeE
 {
     if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT_ONLY_MUSIC) {
         return LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC;
+    } else if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT_ONLY_VOICE){
+        return LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_VOICE;
+    } else if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT){
+        return LOUD_VOL_STREAM_TYPE_ENABLE;
     } else {
         return LOUD_VOL_STREAM_TYPE_ENABLE;
     }
