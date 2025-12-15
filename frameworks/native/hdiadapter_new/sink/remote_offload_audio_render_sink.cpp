@@ -73,7 +73,6 @@ RemoteOffloadAudioRenderSink::~RemoteOffloadAudioRenderSink()
     if (sinkInited_.load()) {
         DeInit();
     }
-    CheckFlushThread();
     AUDIO_INFO_LOG("volumeDataCount: %{public}" PRId64, volumeDataCount_);
 }
 
@@ -130,12 +129,7 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
 
     if (started_.load()) {
         if (isFlushing_.load()) {
-#ifdef SUPPORT_OLD_ENGINE
-            isNeedRestart_ = true;
-            AUDIO_ERR_LOG("start fail, will restart after flush");
-#else
             AUDIO_ERR_LOG("start fail, during flush");
-#endif
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -221,39 +215,12 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
     AUDIO_INFO_LOG("in");
 
-#ifdef SUPPORT_OLD_ENGINE
-    CheckFlushThread();
-    isFlushing_.store(true);
-    flushThread_ = std::make_shared<std::thread>([&] {
-        auto future = async(std::launch::async, [&] {
-            std::lock_guard<std::mutex> lock(sinkMutex_);
-            CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-            return audioRender_->Flush();
-        });
-        if (future.wait_for(std::chrono::milliseconds(250)) == std::future_status::timeout) { // 250: max wait 250ms
-            AUDIO_ERR_LOG("flush fail, timeout of 250ms");
-        } else {
-            int32_t ret = future.get();
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
-            }
-        }
-        isFlushing_.store(false);
-        if (isNeedRestart_) {
-            isNeedRestart_ = false;
-            Start();
-        }
-    });
-    FlushResetPosition();
-    renderPos_ = 0;
-#else
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     isFlushing_.store(true);
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush();
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
     isFlushing_.store(false);
-#endif
     return SUCCESS;
 }
 
@@ -264,30 +231,14 @@ int32_t RemoteOffloadAudioRenderSink::Flush(void)
     return FlushInner();
 }
 
-void RemoteOffloadAudioRenderSink::CheckFlushThread()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    if (flushThread_ != nullptr && flushThread_->joinable()) {
-        flushThread_->join();
-    }
-    flushThread_.reset();
-#endif
-}
-
 int32_t RemoteOffloadAudioRenderSink::Reset(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
-#ifdef SUPPORT_OLD_ENGINE
-    isNeedRestart_ = true;
-#endif
     int32_t ret = FlushInner();
     if (ret != SUCCESS) {
-#ifdef SUPPORT_OLD_ENGINE
-        isNeedRestart_ = false;
-#endif
         AUDIO_ERR_LOG("reset fail");
         return ERR_OPERATION_FAILED;
     }

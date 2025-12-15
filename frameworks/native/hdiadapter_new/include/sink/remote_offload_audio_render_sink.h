@@ -156,7 +156,6 @@ private:
     void FlushResetPosition();
     int32_t EstimateRenderPosition();
     int32_t FlushInner(void);
-    void CheckFlushThread();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -182,10 +181,6 @@ private:
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
     std::atomic<bool> isFlushing_ = false;
-#ifdef SUPPORT_OLD_ENGINE
-    std::shared_ptr<std::thread> flushThread_;
-    bool isNeedRestart_ = false;
-#endif
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
