@@ -108,9 +108,12 @@ private:
     bool IsNonblockingSource(const std::string &adapterName);
     int32_t ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
         uint64_t &replyBytesEc) const;
+    void ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
     void SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc, const AudioCaptureFrameInfo &frameInfo);
-    int32_t ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
+    int32_t CheckFrameInfoLen(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
+    void ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
     int32_t NonblockingStart(void);
     int32_t NonblockingStop(void);
     int32_t NonblockingCaptureFrameWithEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
