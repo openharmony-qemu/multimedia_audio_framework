@@ -64,7 +64,7 @@ private:
         {STREAM_VOICE_CALL, LOUD_VOLUME_MODE_VOICE},
         {STREAM_VOICE_CALL_ASSISTANT, LOUD_VOLUME_MODE_VOICE},
     };
-    std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOLUME_STREAM_TYPE_ENABLE_ONLY_MUSIC = {
+    std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC = {
         {STREAM_MUSIC, LOUD_VOLUME_MODE_MUSIC},
     };
     const std::map<AudioVolumeType, AudioVolumeType> CONCURRENCY_KSIP_CLOSE_LOUD_VOL_TYPE = {
