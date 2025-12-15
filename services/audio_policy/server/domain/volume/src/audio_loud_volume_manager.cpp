@@ -32,7 +32,7 @@ LoudVolumeManager::LoudVolumeManager()
       audioActiveDevice_(AudioActiveDevice::GetInstance())
 
 {
-    loudVolumeModeEnable_ = system::GetIntParameter("const.audio.loudvolume", 0);
+    loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
     AUDIO_INFO_LOG("create LoudVolumeManager");
 };
 
@@ -146,7 +146,7 @@ bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldTy
 bool LoudVolumeManager::ReloadLoudVolumeMode(
     const AudioStreamType streamInFocus, SetLoudVolMode setVolMode)
 {
-    if (loudVolumeModeEnable_ == LOUD_VOLUME_NOT_SUPPORT) {
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
         return false;
     }
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_INVALID;
@@ -169,7 +169,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
     const int32_t keyType, const AudioStreamType &streamInFocus)
 {
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_INVALID;
-    if (loudVolumeModeEnable_ == LOUD_VOLUME_NOT_SUPPORT ||
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT ||
         !FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType)) {
         return false;
     }
