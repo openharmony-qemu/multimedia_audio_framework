@@ -117,8 +117,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
 
-    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%s, sceneType is %{public}d",
-        sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+        sessionId, GetEncryptStr(sinkInfo_.deviceClass).c_str(), nodeInfo.sceneType);
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
 
     node->OnStreamInfoChange(false);
@@ -565,8 +565,8 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         TriggerStreamState(it, sinkInputNodeMap_[it]);
         DeleteInputSession(it);
     }
-    HILOG_COMM_INFO("[StartMove] session:%s to sink name:%s, move type:%{public}d",
-        idStr.c_str(), name.c_str(), moveType);
+    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+        GetEncryptStr(idStr).c_str(), GetEncryptStr(name).c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
     } else {
