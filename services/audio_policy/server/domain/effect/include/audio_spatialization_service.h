@@ -100,19 +100,19 @@ private:
     enum WriteToDbOperation {
         WRITE_SPATIALIZATION_STATE = 0,
         WRITE_SPATIALIZATION_SCENE = 1,
-        WRITE_DEVICESPATIAL_INFO = 2,
+        WRITE_ALLDEVICESPATIAL_INFO = 2,
     };
-    static constexpr uint32_t MAX_DEVICE_NUM = 10;
+    static constexpr uint32_t MAX_DEVICE_NUM = 20;
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
     int32_t UpdateSpatializationSceneType();
     void UpdateSpatialDeviceType(AudioSpatialDeviceType audioSpatialDeviceType);
     void HandleSpatializationStateChange(bool outputDeviceChange);
-    void WriteSpatializationStateToDb(WriteToDbOperation operation, std::string address = "");
+    void WriteSpatializationStateToDb(WriteToDbOperation operation);
     bool IsHeadTrackingDataRequestedForCurrentDevice();
     void UpdateHeadTrackingDeviceState(bool outputDeviceChange, std::string preDeviceAddress = "");
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
-    void UpdateDeviceSpatialInfo(const uint32_t deviceID, const std::string deviceSpatialInfo);
+    void UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
     std::string RemoveOldestDevice();
     std::string GetCurrTimestamp();
@@ -120,8 +120,9 @@ private:
     std::string ExtractTimestamp(const std::string deviceSpatialInfo);
     std::string GetSha256EncryptAddress(const std::string& address);
     int32_t InitSpatializationScene();
+    int32_t InitOldSpatialInfo();
+    int32_t InitNewSpatialInfo();
     std::map<std::string, std::string> addressToDeviceSpatialInfoMap_;
-    std::map<std::string, uint32_t> addressToDeviceIDMap_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::string currentDeviceAddress_ = "";
     std::string preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
