@@ -117,7 +117,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
-    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType, appUid, sessionId));
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
+        appUid, sessionId));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
     volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
