@@ -32,6 +32,7 @@
 #include "media_monitor_manager.h"
 #include "client_type_manager.h"
 #include "dfx_msg_manager.h"
+#include "config_policy_utils.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -108,6 +109,16 @@ constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONEID = 0;
 constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
+
+// system sound path
+constexpr int32_t PHOTO_SHUTTER = 0;
+constexpr int32_t VIDEO_RECORDING_START = 1;
+constexpr int32_t VIDEO_RECORDING_END = 2;
+const std::string SYSTEM_SOUND_PATH = "resource/media/sound/";
+const std::string SYSTEM_SOUND_DEFAULT_PATH = "system/resource/media/sound/";
+const std::string PHOTO_SHUTTER_FILE = "capture.ogg";
+const std::string VIDEO_RECORDING_START_FILE = "video_record.ogg";
+const std::string VIDEO_RECORDING_END_FILE = "video_record_end.ogg";
 
 constexpr int32_t UID_BOOTUP_MUSIC = 1003;
 constexpr int32_t UID_MEDIA = 1013;
@@ -3672,6 +3683,39 @@ int32_t AudioPolicyServer::GetSystemSoundUri(const std::string &key, std::string
     uri = audioPolicyManager_.GetSystemSoundUri(key);
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::GetSystemSoundPath(const int32_t systemSoundType, std::string &path)
+{
+    AUDIO_INFO_LOG("systemSoundType: %{public}d", systemSoundType);
+    std::string fileName = "";
+    switch (systemSoundType) {
+        case PHOTO_SHUTTER:
+            fileName = PHOTO_SHUTTER_FILE;
+            break;
+        case VIDEO_RECORDING_START:
+            fileName = VIDEO_RECORDING_START_FILE;
+            break;
+        case VIDEO_RECORDING_END:
+            fileName = VIDEO_RECORDING_END_FILE;
+            break;
+        default:
+            AUDIO_ERR_LOG("Invalid systemSoundType: %{public}d", systemSoundType);
+            break;
+    }
+
+#ifdef USE_CONFIG_POLICY
+    char buf[MAX_PATH_LEN];
+    char *filePath = GetOneCfgFile(SYSTEM_SOUND_PATH.c_str(), buf, MAX_PATH_LEN);
+#else
+    const char *filePath = SYSTEM_SOUND_DEFAULT_PATH.c_str();
+#endif
+    CHECK_AND_RETURN_RET_LOG(filePath != nullptr && *filePath != '\0', ERROR, "invalid path!");
+
+    path = filePath + fileName;
+    AUDIO_INFO_LOG("The system sound path is [%{public}s]", path.c_str());
+    return SUCCESS;
+}
+
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetMinStreamVolume(float &volume)

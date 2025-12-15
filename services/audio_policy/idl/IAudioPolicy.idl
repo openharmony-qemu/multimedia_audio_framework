@@ -129,6 +129,7 @@ interface IAudioPolicy {
     void GetAudioFocusInfoList([out] List<OrderedMap<AudioInterrupt, int>> focusInfoList, [in] int zoneId); /*  zoneID default value: 0 -- local device */
     void SetSystemSoundUri([in] String key, [in] String uri);
     void GetSystemSoundUri([in] String key, [out] String retUri);
+    void GetSystemSoundPath([in] int systemSoundType, [out] String retUri);
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
     void GetMaxRendererInstances([out] int ret);

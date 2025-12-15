@@ -3726,5 +3726,32 @@ HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
     constexpr int32_t UID_MCU = 7500;
     EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MCU));
 }
+
+/**
+* @tc.name  : Test GetSystemSoundPath.
+* @tc.number: GetSystemSoundPath_001
+* @tc.desc  : Test GetSystemSoundPath.
+*/
+HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string ret = "";
+    server->GetSystemSoundPath(0, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(1, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(2, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(-1, ret);
+    EXPECT_EQ(ret, "");
+}
 } // AudioStandard
 } // OHOS
