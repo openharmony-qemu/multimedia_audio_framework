@@ -511,6 +511,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
+
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
     int32_t AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
