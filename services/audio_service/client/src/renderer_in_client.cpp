@@ -1144,7 +1144,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
-    return ret;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
