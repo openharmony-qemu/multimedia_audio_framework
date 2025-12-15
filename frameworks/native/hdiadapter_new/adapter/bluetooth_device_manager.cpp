@@ -57,6 +57,7 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET(index >= 0, ERR_NOT_STARTED);
 
     struct AudioAdapter *adapter = nullptr;
+    std::lock_guard<std::mutex> lock(adapterMtx_);
     ret = audioManager_->LoadAdapter(audioManager_, &(descs[index]), &adapter);
     if (ret != SUCCESS) {
         HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
@@ -65,7 +66,6 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts(adapter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName] = std::make_shared<BluetoothAdapterWrapper>();
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
