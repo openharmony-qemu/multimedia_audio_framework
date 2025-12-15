@@ -1139,19 +1139,5 @@ void RendererInClientInner::CheckFrozenStateInStaticMode()
     }
 }
 
-<<<<<<< HEAD
-int32_t RendererInClientInner::CallStartWhenInStandby()
-{
-    CHECK_AND_RETURN_RET(clientBuffer_->GetStreamStatus()->load() != STREAM_STAND_BY, ERROR);
-    Trace trace2(traceTag_+ " call start to exit stand-by");
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
-    std::unique_lock<std::mutex> stateLock(statusMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERROR, "Client is not RUNNING!");
-    int32_t ret = ipcStream_->Start();
-    AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
-    return ret;
-}
-=======
->>>>>>> parent of 940eca45f7 (add lock)
 } // namespace AudioStandard
 } // namespace OHOS
