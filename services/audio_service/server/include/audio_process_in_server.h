@@ -56,7 +56,7 @@ private:
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
 
-    enum HandleRendererDataType {
+    enum HandleRendererDataType : uint32_t {
         NONE_ACTION = 0,
         CONVERT_TO_F32_ACTION = 0x1,
         RESAMPLE_ACTION = 0x10,
@@ -252,9 +252,9 @@ private:
     std::unique_ptr<uint8_t []> f32BufferNew_ = nullptr;
     std::unique_ptr<uint8_t []> convertedBufferNew_ = nullptr;
 
-    FormatKey dataToServerKey_;
-    FormatKey clientToResampleKey_;
-    int32_t handleRendererDataType_ = NONE_ACTION;
+    FormatKey dataToServerKey_ = {};
+    FormatKey clientToResampleKey_ = {};
+    uint32_t handleRendererDataType_ = NONE_ACTION;
     
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
