@@ -233,10 +233,13 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_001, TestSize.Level0)
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler.channels_, STEREO);
     EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
 
     resampler.UpdateChannels(INVALID_CHANNELS);
     EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
     EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 }
 
 /*
@@ -250,6 +253,8 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_002, TestSize.Level0)
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, INVALID_CHANNELS, QUALITY_ONE);
     EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
     EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
@@ -268,6 +273,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_003, TestSize.Level0)
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler.channels_, STEREO);
     EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
 
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
@@ -277,10 +283,12 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_003, TestSize.Level0)
     ProResampler resampler1(SAMPLE_RATE_48000, SAMPLE_RATE_96000, INVALID_CHANNELS, QUALITY_ONE);
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS);
     EXPECT_EQ(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 
     resampler1.UpdateChannels(INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 }
 
 /*
@@ -296,6 +304,7 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_004, TestSize.Level0)
     EXPECT_NE(resampler.state_, nullptr);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
 
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
@@ -303,12 +312,28 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_004, TestSize.Level0)
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
     EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_5);
+    // invalid channel, release memory
+    resampler.UpdateChannels(INVALID_CHANNELS);
+    EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
+    EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.bufFor100ms_.capacity(), 0);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+}
 
+/*
+ * @tc.name  : Test UpdateChannels API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateChannelsTest_005.
+ * @tc.desc  : Test UpdateChannels, when customSampleRate is valid buffsize will update.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_005, TestSize.Level0)
+{
     ProResampler resampler1(SAMPLE_RATE_11025, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler1.channels_, STEREO);
     EXPECT_NE(resampler1.state_, nullptr);
     EXPECT_EQ(resampler1.buf11025_.capacity(),
         resampler1.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2);
 
     resampler1.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler1.channels_, CHANNEL_6);
@@ -316,6 +341,31 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_004, TestSize.Level0)
     EXPECT_EQ(resampler1.buf11025_.capacity(),
         resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
     EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2);
+    // invalid channel, release memory
+    resampler.UpdateChannels(INVALID_CHANNELS);
+    EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
+    EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.bufFor100ms_.capacity(), 0);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+}
+
+/*
+ * @tc.name  : Test UpdateChannels API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateChannelsTest_006.
+ * @tc.desc  : Test UpdateChannels, when inRate = outRate.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_006, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    resampler.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler.channels_, CHANNEL_6);
+    EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 }
 
 /*
@@ -332,6 +382,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRates_001, TestSize.Level0)
     EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.buf11025_.capacity(), 0);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
 
     resampler.UpdateRates(SAMPLE_RATE_11025, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_11025);
@@ -358,6 +409,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_002, TestSize.Level0)
     EXPECT_NE(resampler.state_, nullptr);
     EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
 
     // update resampler to invalid state
     int32_t ret = resampler.UpdateRates(INVALID_SAMPLE_RATE, SAMPLE_RATE_48000);
@@ -365,6 +417,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_002, TestSize.Level0)
     EXPECT_EQ(resampler.inRate_, INVALID_SAMPLE_RATE);
     EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
 }
 
 /*
@@ -381,6 +434,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_003, TestSize.Level0)
     EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(), 0);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO);
     
     resampler.UpdateRates(SAMPLE_RATE_48010, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48010);
@@ -405,6 +459,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_004, TestSize.Level0)
     EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
     
     resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_96000);
     EXPECT_NE(resampler.state_, nullptr);
@@ -430,6 +485,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_005, TestSize.Level0)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_44100 * FRAME_LEN_20MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
     
     resampler.UpdateRates(SAMPLE_RATE_48010, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48010);
@@ -439,6 +495,26 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_005, TestSize.Level0)
     EXPECT_EQ(resampler.bufFor100ms_.capacity(),
         resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
     EXPECT_EQ(resampler.tmpOutBuf_.size(), resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5);
+}
+
+/*
+ * @tc.name  : Test UpdateRates API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateRatesTest_006.
+ * @tc.desc  : Test UpdateRates, when channel_ is invalid
+ */
+HWTEST_F(AudioProResamplerTest, UpdateRatesTest_006, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, INVALID_CHANNELS, QUALITY_ONE);
+    EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
+    EXPECT_EQ(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_44100);
+    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
 }
 
 /*
