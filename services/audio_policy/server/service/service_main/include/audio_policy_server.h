@@ -928,7 +928,7 @@ private:
     bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool loudVolumeModeEnable_ = false;
+    bool loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;

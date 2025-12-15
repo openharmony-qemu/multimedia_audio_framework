@@ -180,7 +180,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     screenOffAdjustVolumeEnable_ = system::GetBoolParameter("const.audio.screenoff_adjust_volume_enable", false);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    loudVolumeModeEnable_ = system::GetBoolParameter("const.audio.loudvolume", false);
+    loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
 #endif
     if (volumeApplyToAll_) {
         audioPolicyConfigManager_.SetNormalVoipFlag(true);
@@ -242,7 +242,7 @@ void AudioPolicyServer::OnDump()
 void AudioPolicyServer::Init()
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         loudVolumeManager_ = std::make_shared<LoudVolumeManager>();
         if (loudVolumeManager_ == nullptr) {
             AUDIO_ERR_LOG("loudVolumeManager_ is nullptr");
@@ -470,7 +470,7 @@ int32_t AudioPolicyServer::ReloadLoudVolumeMode(
     int32_t streamInFocus, int32_t setVolMode, bool &ret)
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (!loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
         ret = false;
         return AUDIO_INVALID_PARAM;
     }
@@ -492,7 +492,7 @@ int32_t AudioPolicyServer::ReloadLoudVolumeMode(
 bool AudioPolicyServer::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType)
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (!loudVolumeModeEnable_ || loudVolumeManager_ == nullptr) {
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT || loudVolumeManager_ == nullptr) {
         return false;
     }
     int32_t volumeLevelMax = -1;
@@ -670,7 +670,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
 {
     int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, zoneId);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         if (loudVolumeManager_ == nullptr) {
             AUDIO_ERR_LOG("loudVolumeManager_ is nullptr!");
         } else if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
@@ -1662,7 +1662,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     }
     bool mute = GetStreamMuteInternal(streamType, zoneId);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeModeEnable_ && !isUpdateUi) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT && !isUpdateUi) {
         CheckLoudVolumeMode(mute, volumeLevel, streamType);
     }
 #endif
