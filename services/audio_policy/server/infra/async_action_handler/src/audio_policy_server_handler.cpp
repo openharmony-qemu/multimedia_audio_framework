@@ -236,12 +236,6 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
         return false;
     }
     eventContextObj->volumeEvent = volumeEvent;
-    AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
-        static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-        eventContextObj->volumeEvent.volume,
-        static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-        static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_KEY_EVENT, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendVolumeKeyEventCallback event failed");
