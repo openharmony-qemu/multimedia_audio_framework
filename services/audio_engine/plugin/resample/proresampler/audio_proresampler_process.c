@@ -226,8 +226,8 @@ static void MultiplyFilterMono(SingleStagePolyphaseResamplerState* state, const 
         // acc += coeff * input
         acc = vmlaq_f32(acc, coeff, input);
         
-        coeffs += 4;
-        inputs += 4;
+        coeffs += FOUR_STEPS;
+        inputs += FOUR_STEPS;
     }
     // horizontal add acc[0...3]
     float32x2_t accHoriz = vadd_f32(vget_high_f32(acc), vget_low_f32(acc));
@@ -263,12 +263,12 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
         accL = vmlaq_f32(accL, h, x.val[0]);
         accR = vmlaq_f32(accR, h, x.val[1]);
 
-        coeffs += 4;
-        inputs += 8;
+        coeffs += FOUR_STEPS;
+        inputs += FOUR_STEPS * 2;
     }
 
     // horizontal add L
-    float32x2_t accHorizL= vadd_f32(vget_low_f32(accL), vget_high_f32(accL));
+    float32x2_t accHorizL = vadd_f32(vget_low_f32(accL), vget_high_f32(accL));
     sumL = vget_lane_f32(vpadd_f32(accHorizL, accHorizL), 0);
 
     // horizontal add R
