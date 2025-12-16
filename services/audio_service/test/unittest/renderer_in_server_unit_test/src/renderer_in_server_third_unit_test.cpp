@@ -1495,7 +1495,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerPause_001, TestSize.Leve
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = true;
-    rendererInServer->playerDfx_ = 0;
+    AppInfo appInfo;
+    uint32_t index = 0;
+    rendererInServer->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
     
     ret = rendererInServer->Pause();
@@ -1519,7 +1521,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerPause_002, TestSize.Leve
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = true;
-    rendererInServer->playerDfx_ = 0;
+    AppInfo appInfo;
+    uint32_t index = 0;
+    rendererInServer->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
     rendererInServer->managerType_ = VOIP_PLAYBACK;
     
     ret = rendererInServer->Pause();
@@ -1543,7 +1547,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerPause_003, TestSize.Leve
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = true;
-    rendererInServer->playerDfx_ = 0;
+    AppInfo appInfo;
+    uint32_t index = 0;
+    rendererInServer->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
     rendererInServer->managerType_ = EAC3_PLAYBACK;
     
     ret = rendererInServer->Pause();
@@ -1567,7 +1573,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerPause_004, TestSize.Leve
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = true;
-    rendererInServer->playerDfx_ = 0;
+    AppInfo appInfo;
+    uint32_t index = 0;
+    rendererInServer->playerDfx_ = std::make_unique<PlayerDfxWriter>(appInfo, index);
     rendererInServer->managerType_ = RECORDER;
     
     ret = rendererInServer->Pause();
