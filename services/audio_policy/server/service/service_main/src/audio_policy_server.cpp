@@ -1548,10 +1548,10 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
         " volume : %{public}d, updateUi : %{public}d ",
-        static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-        eventContextObj->volumeEvent.volume,
-        static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-        static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+        static_cast<int32_t>(volumeEvent.volumeType),
+        volumeEvent.volume,
+        static_cast<int32_t>(volumeEvent.updateUi),
+        static_cast<int32_t>(volumeEvent.deviceType));
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
@@ -1731,10 +1731,10 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
         " volume : %{public}d, updateUi : %{public}d ",
-        static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-        eventContextObj->volumeEvent.volume,
-        static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-        static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+        static_cast<int32_t>(volumeEvent.volumeType),
+        volumeEvent.volume,
+        static_cast<int32_t>(volumeEvent.updateUi),
+        static_cast<int32_t>(volumeEvent.deviceType));
     bool ringerModeMute = audioVolumeManager_.IsRingerModeMute();
     if (audioPolicyServerHandler_ != nullptr && ringerModeMute) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -3847,10 +3847,10 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
         " volume : %{public}d, updateUi : %{public}d ",
-        static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-        eventContextObj->volumeEvent.volume,
-        static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-        static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+        static_cast<int32_t>(volumeEvent.volumeType),
+        volumeEvent.volume,
+        static_cast<int32_t>(volumeEvent.updateUi),
+        static_cast<int32_t>(volumeEvent.deviceType));
     if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr &&
         audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -3882,10 +3882,10 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
             " volume : %{public}d, updateUi : %{public}d ",
-            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-            eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-            static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+            static_cast<int32_t>(volumeEvent.volumeType),
+           volumeEvent.volume,
+            static_cast<int32_t>(volumeEvent.updateUi),
+            static_cast<int32_t>(volumeEvent.deviceType));
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
         if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -4876,10 +4876,10 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
         " volume : %{public}d, updateUi : %{public}d ",
-        static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-        eventContextObj->volumeEvent.volume,
-        static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-        static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+        static_cast<int32_t>(volumeEvent.volumeType),
+        volumeEvent.volume,
+        static_cast<int32_t>(volumeEvent.updateUi),
+        static_cast<int32_t>(volumeEvent.deviceType));
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
