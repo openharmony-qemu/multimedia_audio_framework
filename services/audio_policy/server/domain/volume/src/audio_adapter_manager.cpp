@@ -516,7 +516,7 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
 
-    volumeDataMaintainer_.SaveVolumeToMap(devices[0], streamType, volumeLevel);
+    SaveVolumeData(devices[0], streamType, volumeLevel, false, true);
     return SetVolumeDbForDeviceInPipe(devices[0], streamType);
 }
 
