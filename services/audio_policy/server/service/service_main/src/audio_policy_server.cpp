@@ -1545,6 +1545,7 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.previousVolume = previousVolume;
+    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
@@ -1721,6 +1722,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
     volumeEvent.networkId = deviceDesc == nullptr ? LOCAL_NETWORK_ID : deviceDesc->networkId_;
     volumeEvent.deviceType = deviceDesc == nullptr ? DEVICE_TYPE_NONE : deviceDesc->deviceType_;
     volumeEvent.previousVolume = previousVolume;
+    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     bool ringerModeMute = audioVolumeManager_.IsRingerModeMute();
     if (audioPolicyServerHandler_ != nullptr && ringerModeMute) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -3830,6 +3832,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     volumeEvent.updateUi = updateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr &&
         audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -3858,7 +3861,8 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         int32_t volumeLevelMax = -1;
         GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
         volumeEvent.volumeDegree = VolumeUtils::VolumeLevelToDegree(volume, volumeLevelMax);
-
+        volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
         if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -4846,6 +4850,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
     volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(STREAM_MUSIC);
     volumeEvent.updateUi = false;
     volumeEvent.notifyRssWhenAccountsChange = true;
+    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);

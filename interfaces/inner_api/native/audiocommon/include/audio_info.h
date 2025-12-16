@@ -491,6 +491,7 @@ struct StreamVolumeEvent : public Parcelable {
     int32_t volumeGroupId = -1;
     int32_t previousVolume = -1;
     std::string networkId = "";
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const override
     {

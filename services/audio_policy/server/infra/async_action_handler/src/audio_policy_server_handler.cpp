@@ -845,6 +845,7 @@ void AudioPolicyServerHandler::HandleVolumeChangeCallback(int32_t clientId,
         streamVolumeEvent.networkId = volumeEvent.networkId;
         streamVolumeEvent.volumeMode = volumeEvent.volumeMode;
         streamVolumeEvent.previousVolume = volumeEvent.previousVolume;
+        streamVolumeEvent.deviceType = volumeEvent.deviceType;
         audioPolicyClient->OnStreamVolumeChange(streamVolumeEvent);
     }
 }
@@ -860,9 +861,12 @@ void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
             return;
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d ", it->first,
-            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+            " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
+            it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
+            eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
+            static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
@@ -924,9 +928,13 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             continue;
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d, previousVolume : %{public}d ", it->first,
-            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi), eventContextObj->volumeEvent.previousVolume);
+            " volume : %{public}d, updateUi : %{public}d, previousVolume : %{public}d, deviceType : %{public}d",
+            it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
+            eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
+            eventContextObj->volumeEvent.previousVolume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
         CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
@@ -959,9 +967,12 @@ void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEv
             continue;
         }
         AUDIO_PRERELEASE_LOGI("clientPid : %{public}d, volumeType : %{public}d," \
-            " volumeDegree : %{public}d, updateUi : %{public}d ", it->first,
-            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volumeDegree,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+            " volumeDegree : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
+            it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
+            eventContextObj->volumeEvent.volumeDegree,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
+            static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
