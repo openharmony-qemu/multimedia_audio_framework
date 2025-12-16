@@ -3883,7 +3883,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
             " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
             static_cast<int32_t>(volumeEvent.volumeType),
-           volumeEvent.volume,
+            volumeEvent.volume,
             static_cast<int32_t>(volumeEvent.updateUi),
             static_cast<int32_t>(volumeEvent.deviceType));
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
