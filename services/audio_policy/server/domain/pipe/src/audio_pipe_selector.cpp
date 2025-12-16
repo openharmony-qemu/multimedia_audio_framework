@@ -722,6 +722,7 @@ void AudioPipeSelector::SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioS
 bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
+    CHECK_AND_RETURN_RET(!streamDesc->IsRunning(), false);
     CHECK_AND_RETURN_RET_LOG(streamDescToOldPipeInfo.size() != 0, false, "streamDescToOldPipeInfo is empty!");
     return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
         streamDesc->IsRenderStreamNeedRecreate());
