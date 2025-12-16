@@ -686,9 +686,13 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
                 *deviceStreamInfo.channelLayout.begin() : AudioChannelLayout::CH_LAYOUT_STEREO;
             AudioSamplingRate samplingRate = !deviceStreamInfo.samplingRate.empty() ?
                 *deviceStreamInfo.samplingRate.begin() : AudioSamplingRate::SAMPLE_RATE_48000;
+            AudioSampleFormat sampleFormat = deviceStreamInfo.format == AudioSampleFormat::INVALID_WIDTH ?
+                AudioSampleFormat::SAMPLE_S16LE : deviceStreamInfo.format;
+            AudioEncodingType encodingType = deviceStreamInfo.encoding == AudioEncodingType::ENCODING_INVALID ?
+                AudioEncodingType::ENCODING_PCM : deviceStreamInfo.encoding;
             cap.samplingRate = samplingRate;
-            cap.encoding = deviceStreamInfo.encoding;
-            cap.format = deviceStreamInfo.format;
+            cap.encoding = encodingType;
+            cap.format = sampleFormat;
             cap.channels = ConvertLayoutToAudioChannel(channelLayout);
             cap.channelLayout = channelLayout;
             capabilities_.push_back(cap);
