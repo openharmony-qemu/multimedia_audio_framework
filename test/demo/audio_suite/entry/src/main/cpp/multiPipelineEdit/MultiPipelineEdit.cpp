@@ -931,7 +931,7 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     if (inputNode.id.empty()) {
         MultiCreateInputNode(env, params.inputId, napiValue, result);
     } else {
-        UpdateInputNodeParams *updateParams = 
+        UpdateInputNodeParams *updateParams =
             new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
         MultiUpdateInputNode(result, *updateParams);
         delete updateParams;
