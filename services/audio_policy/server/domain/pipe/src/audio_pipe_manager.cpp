@@ -82,7 +82,6 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(newPipe, *iter)) {
-            AUDIO_INFO_LOG("Update id:%{public}u, name %{public}s", (*iter)->id_, (*iter)->name_.c_str());
             Assign(*iter, newPipe);
             // Action is only used in pipe execution, while pipeManager can only store default action
             (*iter)->pipeAction_ = PIPE_ACTION_DEFAULT;

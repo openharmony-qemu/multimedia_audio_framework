@@ -348,6 +348,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     if (streamDesc->streamInfo_.channels <= STEREO ||
         (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_MOVIE &&
          streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD)) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because of streaminfos");
         return false;
     }
     // The multi-channel algorithm needs to be supported in the dsp
@@ -362,14 +363,16 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-            return false;
-        }
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because device %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
+        return false;
+    }
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
         streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
         streamDesc->streamInfo_.format < SAMPLE_S24LE) {
-            JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
-            return false;
-        }
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
+        return false;
+    }
     if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
         return false;

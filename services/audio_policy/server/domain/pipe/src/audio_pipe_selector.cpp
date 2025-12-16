@@ -260,7 +260,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
                 sessionIdForLog.push_back(streamDesc->GetSessionId());
                 continue;
             }
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d --> %{public}d, "
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d -> %{public}d, "
                 "sAction %{public}d", streamDesc->GetSessionId(),
                 streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
                 newPipeInfo->GetRoute(), streamDesc->GetAction());
@@ -273,10 +273,10 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             std::string result = logstream.str();
             result.pop_back();
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}s", result.c_str());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Empty");
         }
     }
 }
@@ -347,7 +347,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-    AUDIO_INFO_LOG("Route flag: %{public}u", streamDesc->routeFlag_);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     for (auto &pipeInfo : pipeInfoList) {
