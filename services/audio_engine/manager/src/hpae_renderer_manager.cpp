@@ -43,10 +43,11 @@ namespace {
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
+    constexpr size_t RENDERER_REQUEST_COUNT = 5000;
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
-    : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
+    : hpaeNoLockQueue_(RENDERER_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
 
 HpaeRendererManager::~HpaeRendererManager()
