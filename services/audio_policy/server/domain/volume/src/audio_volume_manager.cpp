@@ -739,15 +739,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
 int32_t AudioVolumeManager::SetNearlinkDeviceVolumeEx(AudioVolumeType streamType, int32_t volumeLevel)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (curOutputDeviceType != DEVICE_TYPE_NEARLINK) {
-        return SaveSpecifiedDeviceVolume(streamType, volumeLevel, DEVICE_TYPE_NEARLINK);
-    } else {
-        SetSystemVolumeDegreeByLevel(streamType, volumeLevel);
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-        return audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
-            volumeLevel, deviceDesc);
-    }
+    return audioPolicyManager_.SetNearlinkDeviceVolume(streamType, volumeLevel);
 }
 
 void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)

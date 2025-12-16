@@ -165,6 +165,8 @@ public:
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
 
+    virtual int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume) = 0;
+
     virtual void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume) = 0;
 
     virtual bool IsAbsVolumeScene() const = 0;
