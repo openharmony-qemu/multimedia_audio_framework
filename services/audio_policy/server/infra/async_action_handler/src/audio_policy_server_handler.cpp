@@ -236,7 +236,7 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
         return false;
     }
     eventContextObj->volumeEvent = volumeEvent;
-    ("volumeType : %{public}d," \
+    AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
         " volume : %{public}d, updateUi : %{public}d ",
         static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
         eventContextObj->volumeEvent.volume,
