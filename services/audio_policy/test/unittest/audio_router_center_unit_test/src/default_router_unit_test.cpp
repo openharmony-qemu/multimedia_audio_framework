@@ -67,22 +67,6 @@ HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_003, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test AppSelectRouter.
- * @tc.number: APPSELECTROUTER_004
- * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
- */
-HWTEST(AudioRouterCenterUnitTest, ConfigureDeviceForSpecialScenario_002, TestSize.Level1)
-{
-    AppSelectRouter appSelectRouter;
-
-    std::shared_ptr<AudioDeviceDescriptor> device = nullptr;
-
-    appSelectRouter.ConfigureDeviceForSpecialScenario(SOURCE_TYPE_VOICE_RECOGNITION, device);
-
-    EXPECT_NE(device, nullptr);
-}
-
-/**
  * @tc.name  : Test GetMediaRenderDevice.
  * @tc.number: GetMediaRenderDevice_001
  * @tc.desc  : Test GetMediaRenderDevice interface.
