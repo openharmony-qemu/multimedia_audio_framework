@@ -237,7 +237,7 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     }
     eventContextObj->volumeEvent = volumeEvent;
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d ",
+        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
         static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
         eventContextObj->volumeEvent.volume,
         static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
@@ -867,11 +867,12 @@ void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
             return;
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d ",
+            " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
             it->first,
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
             eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
+            eventContextObj->volumeEvent.deviceType);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
@@ -972,11 +973,12 @@ void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEv
             continue;
         }
         AUDIO_PRERELEASE_LOGI("clientPid : %{public}d, volumeType : %{public}d," \
-            " volumeDegree : %{public}d, updateUi : %{public}d ",
+            " volumeDegree : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
             it->first,
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
             eventContextObj->volumeEvent.volumeDegree,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
+            eventContextObj->volumeEvent.deviceType);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
