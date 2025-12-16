@@ -3050,6 +3050,15 @@ DeviceType AudioAdapterManager::GetActiveDevice()
     return audioActiveDevice_.GetDeviceForVolume()->deviceType_;
 }
 
+int32_t AudioAdapterManager::SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume)
+{
+    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
+    CHECK_AND_RETURN_RET_LOG(desc, ERROR, "DEVICE_TYPE_NEARLINK device is null");
+    SaveVolumeData(desc, volumeType, volume, true, true);
+    SetVolumeDbForDeviceInPipe(desc, volumeType);
+    return SUCCESS;
+}
+
 void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d, volume: %{public}d", isAbsVolumeScene, volume);

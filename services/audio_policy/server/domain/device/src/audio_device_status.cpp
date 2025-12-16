@@ -1417,6 +1417,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
 #endif
         } else {
+            if (desc.deviceCategory_ == BT_HEADPHONE && desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+                UpdateNearlinkDeviceVolume(desc);
+            }
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             auto usage = audioDeviceManager_.GetDeviceUsage(desc);
             auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);

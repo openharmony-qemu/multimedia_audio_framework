@@ -208,6 +208,8 @@ public:
 
     void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
 
+    int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume);
+
     bool IsAbsVolumeScene() const;
 
     void SetAbsVolumeMute(bool mute);
