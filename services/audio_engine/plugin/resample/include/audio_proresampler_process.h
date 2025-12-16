@@ -15,6 +15,16 @@
 #ifndef AUDIO_PRORESAMPLER_PROCESS_H
 #define AUDIO_PRORESAMPLER_PROCESS_H
 
+#if !defined(DISABLE_SIMD) && \
+    (defined(__aarch64__) || (defined(__arm__) && defined(__ARM_NEON__)))
+// enable arm Simd
+#include <arm_neon.h>
+#define USE_ARM_NEON 1
+#else
+// disable SIMD.
+#define USE_ARM_NEON 0
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus

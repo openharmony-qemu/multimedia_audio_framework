@@ -216,12 +216,30 @@ static void MultiplyFilterMono(SingleStagePolyphaseResamplerState* state, const 
 {
     float sum = 0;
 
+#if USE_ARM_NEON == 1
+    float32x4_t acc = vdupq_n_f32(0.0f);
+    for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
+        // load 4 coeffs and 4 inputs
+        float32x4_t coeff = vld1q_f32(coeffs);
+        float32x4_t input = vld1q_f32(inputs);
+        
+        // acc += coeff * input
+        acc = vmlaq_f32(acc, coeff, input);
+        
+        coeffs += 4;
+        inputs += 4;
+    }
+    // horizontal add acc[0...3]
+    float32x2_t accHoriz = vadd_f32(vget_high_f32(acc), vget_low_f32(acc));
+    sum = vget_lane_f32(vpadd_f32(accHoriz, accHoriz), 0);
+#else
     for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
         sum += (*coeffs++) * (*inputs++);
         sum += (*coeffs++) * (*inputs++);
         sum += (*coeffs++) * (*inputs++);
         sum += (*coeffs++) * (*inputs++);
     }
+#endif
     *outputs = sum;
 }
 
@@ -230,6 +248,33 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
 {
     float sumL = 0;
     float sumR = 0;
+#if USE_ARM_NEON == 1
+    float32x4_t accL = vdupq_n_f32(0.0f);
+    float32x4_t accR = vdupq_n_f32(0.0f);
+
+    for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
+        // load 4 coeffs: h0 h1 h2 h3
+        float32x4_t h = vld1q_f32(coeffs);
+
+        // load 4 stereo frames (8 floats)
+        float32x4x2_t x = vld2q_f32(inputs);
+        // x.val[0] = L0 L1 L2 L3
+        // x.val[1] = R0 R1 R2 R3
+        accL = vmlaq_f32(accL, h, x.val[0]);
+        accR = vmlaq_f32(accR, h, x.val[1]);
+
+        coeffs += 4;
+        inputs += 8;
+    }
+
+    // horizontal add L
+    float32x2_t accHorizL= vadd_f32(vget_low_f32(accL), vget_high_f32(accL));
+    sumL = vget_lane_f32(vpadd_f32(accHorizL, accHorizL), 0);
+
+    // horizontal add R
+    float32x2_t accHorizR = vadd_f32(vget_low_f32(accR), vget_high_f32(accR));
+    sumR = vget_lane_f32(vpadd_f32(accHorizR, accHorizR), 0);
+#else
     float h;
 
     for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
@@ -249,6 +294,7 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
         sumL += h * (*inputs++);
         sumR += h * (*inputs++);
     }
+#endif
     *outputs++ = sumL;
     *outputs = sumR;
 }
