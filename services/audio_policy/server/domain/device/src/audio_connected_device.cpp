@@ -260,8 +260,7 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
 void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
-    AUDIO_INFO_LOG("Entry. deviceName_=%{public}s, dmDeviceType_=%{public}d",
-        dmDevice.deviceName_.c_str(), dmDevice.dmDeviceType_);
+    AUDIO_INFO_LOG("Entry. dmDeviceType_=%{public}d", dmDevice.dmDeviceType_);
     lock_guard<mutex> lg(dmDeviceMtx_);
     if (isConnect) {
         dmDeviceMap_[dmDevice.networkId_] = dmDevice;
@@ -521,7 +520,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceTy
     CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
     std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
     CHECK_AND_RETURN_RET(device == nullptr, device);
-    
+
     device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);
     device->networkId_ = networkId;
     AUDIO_ERR_LOG("Get device failed, make new %{public}s", device->GetName().c_str());
