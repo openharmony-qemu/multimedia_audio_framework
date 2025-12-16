@@ -342,11 +342,11 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_005, TestSize.Level0)
         resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
     EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2);
     // invalid channel, release memory
-    resampler.UpdateChannels(INVALID_CHANNELS);
-    EXPECT_EQ(resampler.channels_, INVALID_CHANNELS);
-    EXPECT_EQ(resampler.state_, nullptr);
-    EXPECT_EQ(resampler.bufFor100ms_.capacity(), 0);
-    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    resampler1.UpdateChannels(INVALID_CHANNELS);
+    EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS);
+    EXPECT_EQ(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler1.buf11025_.capacity(), 0);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), 0);
 }
 
 /*
