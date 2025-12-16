@@ -2395,13 +2395,6 @@ void AudioAdapterManager::SetVolumeCallbackAfterClone()
         volumeEvent.updateUi = false;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
-        volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
-            static_cast<int32_t>(volumeEvent.volumeType),
-            volumeEvent.volume,
-            static_cast<int32_t>(volumeEvent.updateUi),
-            static_cast<int32_t>(volumeEvent.deviceType));
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
             audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
