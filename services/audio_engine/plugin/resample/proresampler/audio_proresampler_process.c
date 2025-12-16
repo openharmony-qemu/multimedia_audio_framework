@@ -264,7 +264,7 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
         accR = vmlaq_f32(accR, h, x.val[1]);
 
         coeffs += FOUR_STEPS;
-        inputs += FOUR_STEPS * 2;
+        inputs += FOUR_STEPS * 2; // 2 is channel STEREO
     }
 
     // horizontal add L
