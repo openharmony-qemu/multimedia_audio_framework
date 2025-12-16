@@ -1777,7 +1777,7 @@ HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
     int32_t sessionId = 10001;
     int32_t pid = 1;
     AudioStreamType streamType = STREAM_GAME;
-    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    StreamUsage streamUsage = STREAM_USAGE_GAME;
 
     AppVolume appVolume(appUid, 1.0f, 0, true);
     audioVolumeTest->appVolume_.emplace(appUid, appVolume);
