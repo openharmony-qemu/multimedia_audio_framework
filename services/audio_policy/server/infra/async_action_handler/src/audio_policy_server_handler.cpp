@@ -872,7 +872,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
             eventContextObj->volumeEvent.volume,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-            eventContextObj->volumeEvent.deviceType);
+            static_cast<int32_t>eventContextObj->volumeEvent.deviceType);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
@@ -940,7 +940,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             eventContextObj->volumeEvent.volume,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
             eventContextObj->volumeEvent.previousVolume,
-            eventContextObj->volumeEvent.deviceType);
+            static_cast<int32_t>eventContextObj->volumeEvent.deviceType);
         CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
@@ -978,7 +978,7 @@ void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEv
             static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
             eventContextObj->volumeEvent.volumeDegree,
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-            eventContextObj->volumeEvent.deviceType);
+            static_cast<int32_t>eventContextObj->volumeEvent.deviceType);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
