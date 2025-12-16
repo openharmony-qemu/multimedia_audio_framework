@@ -3862,6 +3862,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
         volumeEvent.volumeDegree = VolumeUtils::VolumeLevelToDegree(volume, volumeLevelMax);
         volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
         if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
