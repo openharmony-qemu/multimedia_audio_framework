@@ -85,7 +85,6 @@ AudioVolume::~AudioVolume()
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
     VolumeValues *volumes)
 {
-    Trace trace("AudioVolume::GetVolume");
     // read or write volume must be called AudioVolume::volumeMutex_
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
@@ -131,6 +130,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             it->second.IsVirtualKeyboard(), itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null",
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
+    Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }

@@ -362,14 +362,14 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-            return false;
-        }
+        return false;
+    }
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
         streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
         streamDesc->streamInfo_.format < SAMPLE_S24LE) {
-            JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
-            return false;
-        }
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
+        return false;
+    }
     if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
         return false;
