@@ -947,7 +947,7 @@ bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
         HpaeProcessorType sceneType = it->second->GetSceneType();
         AudioChannel channels = it->second->GetNodeInfo().channels;
         AudioEncodingType encoding = it->second->GetNodeInfo().encoding;
-        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&   // 如果满足判断条件，则 continue
+        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&
             (sceneType == HPAE_SCENE_MUSIC || sceneType == HPAE_SCENE_MOVIE || sceneType == HPAE_SCENE_SPEECH) &&
             (channels > STEREO || encoding == ENCODING_AUDIOVIVID));
         bypass = false;
