@@ -1547,7 +1547,7 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
     volumeEvent.previousVolume = previousVolume;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d ",
+        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
         static_cast<int32_t>(volumeEvent.volumeType),
         volumeEvent.volume,
         static_cast<int32_t>(volumeEvent.updateUi),
@@ -1730,7 +1730,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
     volumeEvent.previousVolume = previousVolume;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d ",
+        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
         static_cast<int32_t>(volumeEvent.volumeType),
         volumeEvent.volume,
         static_cast<int32_t>(volumeEvent.updateUi),
@@ -3846,7 +3846,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d ",
+        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
         static_cast<int32_t>(volumeEvent.volumeType),
         volumeEvent.volume,
         static_cast<int32_t>(volumeEvent.updateUi),
@@ -3881,7 +3881,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         volumeEvent.volumeDegree = VolumeUtils::VolumeLevelToDegree(volume, volumeLevelMax);
         volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
         AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-            " volume : %{public}d, updateUi : %{public}d ",
+            " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
             static_cast<int32_t>(volumeEvent.volumeType),
            volumeEvent.volume,
             static_cast<int32_t>(volumeEvent.updateUi),
@@ -4875,7 +4875,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
     volumeEvent.notifyRssWhenAccountsChange = true;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     AUDIO_PRERELEASE_LOGI("volumeType : %{public}d," \
-        " volume : %{public}d, updateUi : %{public}d ",
+        " volume : %{public}d, updateUi : %{public}d, deviceType : %{public}d",
         static_cast<int32_t>(volumeEvent.volumeType),
         volumeEvent.volume,
         static_cast<int32_t>(volumeEvent.updateUi),
