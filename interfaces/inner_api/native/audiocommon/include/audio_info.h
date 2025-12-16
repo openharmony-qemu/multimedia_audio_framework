@@ -443,7 +443,6 @@ struct VolumeEvent : public Parcelable {
     DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool notifyRssWhenAccountsChange = false;
-    DeviceType deviceType = DEVICE_TYPE_INVALID;
 
     VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
         volume(volLevel), updateUi(isUiUpdated) {}
@@ -492,7 +491,7 @@ struct StreamVolumeEvent : public Parcelable {
     int32_t volumeGroupId = -1;
     int32_t previousVolume = -1;
     std::string networkId = "";
-    DeviceType deviceType = DEVICE_TYPE_INVALID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const override
     {
