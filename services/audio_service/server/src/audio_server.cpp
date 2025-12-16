@@ -956,11 +956,6 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;
         char param[128] = {0};
-        if (value.length() > sizeof(param)) {
-            AUDIO_ERR_LOG("LOUD_VOLUMN_MODE value length %{public}zu exceeds buffer size %{public}zu",
-                value.length(), sizeof(param));
-            return false;
-        }
         errno_t ret = memcpy_s(param, sizeof(param), value.c_str(), value.length());
         if (ret != 0) {
             AUDIO_ERR_LOG("LOUD_VOLUMN_MODE key and value is error");
