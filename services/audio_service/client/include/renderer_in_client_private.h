@@ -502,10 +502,17 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
-    bool loudVolumeModeEnable_ = false;
+    int32_t loudVolumeSupportMode_ = 0;
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
+
+    enum LoudVolumeSupportType {
+        LOUD_VOLUME_NOT_SUPPORT = 0,
+        LOUD_VOLUME_SUPPORT,
+        LOUD_VOLUME_SUPPORT_ONLY_MUSIC,
+        LOUD_VOLUME_SUPPORT_ONLY_VOICE,
+    };
 
     enum {
         STATE_CHANGE_EVENT = 0,

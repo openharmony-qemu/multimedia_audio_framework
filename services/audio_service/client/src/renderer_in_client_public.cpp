@@ -87,7 +87,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
-    loudVolumeModeEnable_ = OHOS::system::GetBoolParameter("const.audio.loudvolume", false);
+    loudVolumeSupportMode_ = OHOS::system::GetIntParameter("const.audio.loudvolume", 0);
     state_ = NEW;
 }
 
@@ -1022,7 +1022,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
 
     waitLock.unlock();
-    if (loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
     }
 
