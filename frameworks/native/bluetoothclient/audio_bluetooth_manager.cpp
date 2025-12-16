@@ -682,7 +682,10 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
     }
 
     HILOG_COMM_INFO("set virtual call %{public}d by service %{public}d", isVirtual, uid);
-    return TryUpdateScoCategory();
+    if (!isVirtual) {
+        return TryUpdateScoCategory();
+    }
+    return SUCCESS;
 }
 
 bool AudioHfpManager::IsVirtualCall()
