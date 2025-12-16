@@ -22,6 +22,7 @@ class AudioPolicyDataShareListener {
 public:
     static void RegisterAccessiblilityBalance();
     static void RegisterAccessiblilityMono();
+    static void RegisterAccessiblilityBroadcast();
 };
 
 } // namespace AudioStandard

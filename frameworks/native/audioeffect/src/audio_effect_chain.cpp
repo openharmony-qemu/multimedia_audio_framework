@@ -191,13 +191,14 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
     BuildEffectParamData(data);
-    AUDIO_INFO_LOG("set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
+    AUDIO_INFO_LOG("outdoor set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
-        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d"
-        "earphoneProduct: %{public}d",
+        "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
+        "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
-        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT]);
+        data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
+        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
@@ -237,6 +238,8 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     data[ABS_VOLUME_STATE] = static_cast<int32_t>(absVolumeState_);
     data[EARPHONE_PRODUCT] = static_cast<int32_t>(earphoneProduct_);
+    data[OUTDOOR_MODE] = static_cast<int32_t>(outdoorModle_);
+    data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
@@ -720,6 +723,21 @@ void AudioEffectChain::SetEarphoneProduct(AudioEarphoneProduct earphoneProduct)
 bool AudioEffectChain::IsEffectChainFading()
 {
     return fadingCounts_ != 0;
+}
+
+void AudioEffectChain::SetOutdoorMode(const std::string &outdoorModle)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(outdoorModle, outdoorModle_),
+        "convert invalid outdoorModle: %{public}s", outdoorModle.c_str());
+}
+
+void AudioEffectChain::SetSuperLoudnessMode(const std::string &superLoudnessMode)
+{
+    if (superLoudnessMode == "music_on") {
+        superLoudnessMode_ = 1;
+    } else if (superLoudnessMode == "music_off") {
+        superLoudnessMode_ = 0;
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

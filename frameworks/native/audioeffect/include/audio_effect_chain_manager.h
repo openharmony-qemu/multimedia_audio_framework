@@ -242,6 +242,8 @@ private:
     std::string lidState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
+    std::string outdoorModle_ = "0";
+    std::string superLoudnessMode_ = "music_off";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;

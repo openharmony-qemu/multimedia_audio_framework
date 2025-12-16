@@ -400,6 +400,7 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     AudioPolicyDataShareListener::RegisterAccessiblilityBalance();
     AudioPolicyDataShareListener::RegisterAccessiblilityMono();
+    AudioPolicyDataShareListener::RegisterAccessiblilityBroadcast();
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
