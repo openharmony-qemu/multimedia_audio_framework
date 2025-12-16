@@ -1678,7 +1678,7 @@ HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_002, TestSize.Level1)
 
     ipcStreamInServerRet.ConfigRenderer();
     ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
-    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, EAC3_PLAYBACK);
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, HWDECODING_PLAYBACK);
 }
 
 /**

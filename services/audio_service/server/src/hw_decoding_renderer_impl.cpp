@@ -217,6 +217,14 @@ int32_t HWDecodingRendererStream::GetCurrentTimeStamp(uint64_t &timestamp)
 int32_t HWDecodingRendererStream::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency,
     int32_t base)
 {
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
+    int64_t timeSec = 0;
+    int64_t timeNanoSec = 0;
+    int32_t ret = sink_->GetPresentationPosition(framePosition, timeSec, timeNanoSec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed");
+    timestamp = timeSec * SECOND_TO_NANOSECOND + timeNanoSec;
+    lock.unlock();
     return SUCCESS;
 }
 
@@ -314,7 +322,7 @@ int32_t HWDecodingRendererStream::EnqueueBuffer(const BufferDesc &bufferDesc)
     CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
     uint64_t written = 0;
     int32_t result = sink_->RenderFrame(*reinterpret_cast<char *>(rawBuffer_.get()), length, written);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ret, "RenderFrame falied");
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "RenderFrame falied");
 
     writtenFrameCount_++;
 

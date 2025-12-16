@@ -242,6 +242,8 @@ private:
 
     void InitDFXOperaiton();
 
+    bool GetHWDecodingTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+
     int32_t GetRawBuffer(BufferDesc &bufDesc);
 
     int32_t WriteRawBuffer(BufferDesc &bufferDesc);
