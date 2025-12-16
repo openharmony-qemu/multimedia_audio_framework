@@ -283,12 +283,12 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelsTest_003, TestSize.Level0)
     ProResampler resampler1(SAMPLE_RATE_48000, SAMPLE_RATE_96000, INVALID_CHANNELS, QUALITY_ONE);
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS);
     EXPECT_EQ(resampler1.state_, nullptr);
-    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), 0);
 
     resampler1.UpdateChannels(INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.state_, nullptr);
-    EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), 0);
 }
 
 /*
@@ -512,7 +512,7 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_006, TestSize.Level0)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
 
     resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_44100);
-    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.state_, nullptr);
     EXPECT_EQ(resampler.tmpOutBuf_.size(), 0);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
 }

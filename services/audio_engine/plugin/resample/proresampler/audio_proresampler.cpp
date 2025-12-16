@@ -221,8 +221,9 @@ int32_t ProResampler::CheckRateAndChannelParam()
     // resampler change from valid state to invalid state
     if ((inRate_ < MIN_SAMPLE_RATE) || (inRate_ > MAX_SAMPLE_RATE) || (outRate_ < MIN_SAMPLE_RATE) ||
         (outRate_ > MAX_SAMPLE_RATE) || (inRate_ == outRate_) || (channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
-        AUDIO_ERR_LOG("resampler set to invalid state, because input and output sample rate should be within "
-            "[8000, 384000] and be different, or channel number should be within [1, 16]");
+        AUDIO_ERR_LOG("resampler set to invalid state, because inRate %{public}u Hz and outRate %{public}u Hz "
+            "should be within [8000, 384000] and be different, or channel number should be within [1, 16]",
+            inRate_, outRate_);
         CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
         SingleStagePolyphaseResamplerFree(state_);
         state_ = nullptr;
