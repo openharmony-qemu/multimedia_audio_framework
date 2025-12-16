@@ -357,6 +357,7 @@ void AudioAdapterManager::SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceD
 void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
 {
     volumeDataMaintainer_.SetDataShareReady(std::atomic_load(&isDataShareReady));
+    isDataShareReady_ = isDataShareReady.load();
 
     CHECK_AND_RETURN_LOG(isDataShareReady, "isDataShareReady is false");
     char firstboot[3] = {0};
@@ -2182,11 +2183,16 @@ void AudioAdapterManager::DeleteAudioPolicyKvStore()
 
 void AudioAdapterManager::UpdateUsbSafeVolume(std::shared_ptr<AudioDeviceDescriptor> &device)
 {
+    if (!isDataShareReady_) {
+        AUDIO_INFO_LOG("DataShare is not ready, return");
+        return;
+    }
     if (GetStreamVolumeInternal(device, STREAM_MUSIC) <= safeVolume_) {
         AUDIO_INFO_LOG("1st connect bt device volume is safe");
         isWiredBoot_ = false;
         return;
     }
+    AUDIO_INFO_LOG("isWiredBoot_:%{public}d, safeStatus_:%{public}d", isWiredBoot_, safeStatus_);
     if (isWiredBoot_ || safeStatus_) {
         AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
             device->deviceType_);
@@ -2198,6 +2204,7 @@ void AudioAdapterManager::UpdateUsbSafeVolume(std::shared_ptr<AudioDeviceDescrip
 void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    AUDIO_INFO_LOG("current device type:%{public}d", device->deviceType_);
     switch (device->deviceType_) {
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
