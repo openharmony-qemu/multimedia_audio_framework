@@ -974,15 +974,15 @@ const std::vector<napi_property_descriptor> voiceChangeDescriptors = {
 };
 
 const std::vector<napi_property_descriptor> spaceRenderDescriptors = {
-    {"startFixedPositionEffect", nullptr, startFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"startDynamicRenderEffect", nullptr, startDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"startExpandEffect", nullptr, startExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"resetFixedPositionEffect", nullptr, resetFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"resetDynamicRenderEffect", nullptr, resetDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"resetExpandEffect", nullptr, resetExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"getFixedPositionParams", nullptr, getFixedPositionParams, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"getDynamicRenderParams", nullptr, getDynamicRenderParams, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"getExpandParams", nullptr, getExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
+    {"StartFixedPositionEffect", nullptr, StartFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartDynamicRenderEffect", nullptr, StartDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartExpandEffect", nullptr, StartExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetFixedPositionEffect", nullptr, ResetFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetDynamicRenderEffect", nullptr, ResetDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetExpandEffect", nullptr, ResetExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetFixedPositionParams", nullptr, GetFixedPositionParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetDynamicRenderParams", nullptr, GetDynamicRenderParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetExpandParams", nullptr, GetExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
 };
 
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)

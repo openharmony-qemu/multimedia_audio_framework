@@ -47,6 +47,9 @@ napi_value getDynamicRenderParams(napi_env env, napi_callback_info info);
 
 napi_value getExpandParams(napi_env env, napi_callback_info info);
 
+bool AddNodeToPipeline(napi_env env, std::string inputId, std::string effectNodeId, std::string selectedNodeId,
+    napi_value ret);
+
 OH_AudioSuite_Result createRenderNodeAndSetPosition(OH_AudioSuite_SpaceRenderPositionParams &positionPara,
                                                     std::string effectNodeId, Node &node);
 

@@ -1526,7 +1526,7 @@ struct EffectNodeDialog {
                         return;
                         }
                         if (spaceRenderState.mode === 0) {
-                        let result = audioNapi.startFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                        let result = audioNapi.StartFixedPositionEffect(spaceRenderState.fixedPosition?.x,
                             spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, nodeId,
                             this.currentInputId, this.selectedNode);
                         if (result !== 0) {
@@ -1538,7 +1538,7 @@ struct EffectNodeDialog {
                         }
                         }
                         if (spaceRenderState.mode === 1) {
-                            let result = audioNapi.startDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                            let result = audioNapi.StartDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
                                 spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
                                 spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise), nodeId,
                                 this.currentInputId, this.selectedNode);
@@ -1552,7 +1552,7 @@ struct EffectNodeDialog {
                         }
                         if (spaceRenderState.mode === 2) {
                         let result =
-                            audioNapi.startExpandEffect(spaceRenderState.expansionRadius, spaceRenderState.expansionAngle,
+                            audioNapi.StartExpandEffect(spaceRenderState.expansionRadius, spaceRenderState.expansionAngle,
                             nodeId, this.currentInputId, this.selectedNode);
                         if (result !== 0) {
                             this.getUIContext().showAlertDialog({
@@ -1648,7 +1648,7 @@ struct EffectNodeDialog {
                             id: nodeId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
-                            environmentType: this.selectedEnvironment
+                            generalVoiceChangeType: this.generalVoiceChangeType
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
@@ -1677,7 +1677,9 @@ struct EffectNodeDialog {
                             id: nodeId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
-                            environmentType: this.selectedEnvironment
+                            pureVoiceChangeGender : this.pureVoiceGender,
+                            pureVoiceChangeType : this.pureVoiceChangeType,
+                            pureVoiceChangePitch : this.pureVoiceSoundTone,
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
@@ -1799,7 +1801,7 @@ struct NodeDetailDialog {
                     } else if (leftEffectNode?.type === NodeType.SPACE_RENDER) {
                         this.spaceRenderPara = leftEffectNode.spaceRender ?? this.spaceRenderPara;
                         if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
-                            let result = audioNapi.getFixedPositionParams(leftEffectNode.id);
+                            let result = audioNapi.GetFixedPositionParams(leftEffectNode.id);
                             Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
                             this.spaceRenderPara.fixedPosition = {
                                 x: result.x,
@@ -1807,7 +1809,7 @@ struct NodeDetailDialog {
                                 z: result.z
                             }
                         } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
-                            let result = audioNapi.getDynamicRenderParams(leftEffectNode.id);
+                            let result = audioNapi.GetDynamicRenderParams(leftEffectNode.id);
                             Logger.info(TAG,
                                 `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
                             this.spaceRenderPara.dynamicPosition = {
@@ -1818,7 +1820,7 @@ struct NodeDetailDialog {
                             this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
                             this.spaceRenderPara.clockWise = result.surroundDirection;
                         } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
-                            let result = audioNapi.getExpandParams(leftEffectNode.id);
+                            let result = audioNapi.GetExpandParams(leftEffectNode.id);
                             Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
                             this.spaceRenderPara.expansionRadius = result.extRadius;
                             this.spaceRenderPara.expansionAngle = result.extAngle;
@@ -1846,7 +1848,7 @@ struct NodeDetailDialog {
             } else if (mixerNode?.type === NodeType.SPACE_RENDER) {
                 this.spaceRenderPara = mixerNode.spaceRender ?? this.spaceRenderPara;
                 if (mixerNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
-                    let result = audioNapi.getFixedPositionParams(mixerNode.id);
+                    let result = audioNapi.GetFixedPositionParams(mixerNode.id);
                     Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
                     this.spaceRenderPara.fixedPosition = {
                         x: result.x,
@@ -1854,7 +1856,7 @@ struct NodeDetailDialog {
                         z: result.z
                     }
                 } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
-                    let result = audioNapi.getDynamicRenderParams(mixerNode.id);
+                    let result = audioNapi.GetDynamicRenderParams(mixerNode.id);
                     Logger.info(TAG,
                         `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
                     this.spaceRenderPara.dynamicPosition = {
@@ -1865,7 +1867,7 @@ struct NodeDetailDialog {
                     this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
                     this.spaceRenderPara.clockWise = result.surroundDirection;
                 } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
-                    let result = audioNapi.getExpandParams(mixerNode.id);
+                    let result = audioNapi.GetExpandParams(mixerNode.id);
                     Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
                     this.spaceRenderPara.expansionRadius = result.extRadius;
                     this.spaceRenderPara.expansionAngle = result.extAngle;
@@ -2337,7 +2339,7 @@ struct SetNodeDialog {
                                 this.mixerList.find(node => node.id === this.selectedNode);
                             if (node) {
                                 if (spaceRenderState.mode === 0) {
-                                    let result = audioNapi.resetFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                                    let result = audioNapi.ResetFixedPositionEffect(spaceRenderState.fixedPosition?.x,
                                         spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, this.selectedNode);
                                     if (result !== 0) {
                                         this.getUIContext().showAlertDialog({
@@ -2347,7 +2349,7 @@ struct SetNodeDialog {
                                         return;
                                     }
                                 } else if (spaceRenderState.mode === 1) {
-                                    let result = audioNapi.resetDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                                    let result = audioNapi.ResetDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
                                         spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
                                         spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise),
                                         this.selectedNode);
@@ -2360,7 +2362,7 @@ struct SetNodeDialog {
                                     }
                                 } else if (spaceRenderState.mode === 2) {
                                     let result =
-                                        audioNapi.resetExpandEffect(spaceRenderState.expansionRadius,
+                                        audioNapi.ResetExpandEffect(spaceRenderState.expansionRadius,
                                         spaceRenderState.expansionAngle, this.selectedNode);
                                     if (result !== 0) {
                                         this.getUIContext().showAlertDialog({

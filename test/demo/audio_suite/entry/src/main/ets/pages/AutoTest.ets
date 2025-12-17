@@ -193,23 +193,6 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
   return sceneInfo;
 }
 
-function getMD5OfFile(filePath: string): string {
-  // get the File Content
-  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let buf = new ArrayBuffer(40960);
-  fs.readSync(file.fd, buf);
-  fs.closeSync(file);
-
-  let mdAlgName = 'MD5';
-  let md = cryptoFramework.createMd(mdAlgName);
-  md.updateSync({ data: new Uint8Array(buf) });
-  let mdResult = md.digestSync();
-  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
-  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
-  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
-  return md5Str;
-}
-
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
   if (outputFileMd5.length != expectedFileMd5.length) {
     return false;
@@ -956,17 +939,17 @@ export struct AutoTest {
             //   const z:number = Object(effectObj)["z"];
             //   status = FAILED;
             //   if (spaceRenderMode === 0) {
-            //     status = audioNapi.startFixedPositionEffect(x, y, z, spaceRenderId, inputId);
+            //     status = audioNapi.StartFixedPositionEffect(x, y, z, spaceRenderId, inputId);
             //   }
             //   if (spaceRenderMode === 1) {
             //     const surroundTime:number = Object(effectObj)["surroundTime"];
             //     const surroundDirection:number = Object(effectObj)["surroundDirection"];
-            //     status = audioNapi.startDynamicRenderEffect(x,  y, z, surroundTime, surroundDirection, spaceRenderId, inputId);
+            //     status = audioNapi.StartDynamicRenderEffect(x,  y, z, surroundTime, surroundDirection, spaceRenderId, inputId);
             //   }
             //   if (spaceRenderMode === 2) {
             //     const extRadius:number = Object(effectObj)["extRadius"];
             //     const extAngle:number = Object(effectObj)["extAngle"];
-            //     status = audioNapi.startExpandEffect(extRadius, extAngle, spaceRenderId, inputId);
+            //     status = audioNapi.StartExpandEffect(extRadius, extAngle, spaceRenderId, inputId);
             //   }
             //   if (status != SUCCESS) {
             //     Logger.error(TAG, `SPACE_RENDER error number is ${status}`);
