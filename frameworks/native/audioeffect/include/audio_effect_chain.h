@@ -81,6 +81,8 @@ public:
     void updateDumpName();
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
     void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    void SetOutdoorMode(const std::string &outdoorModle);
+    void SetSuperLoudnessMode(const std::string &superLoudnessMode);
     bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
@@ -125,6 +127,8 @@ private:
     std::vector<float> effectBuffer_;
     bool absVolumeState_ = true;
     AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    int32_t outdoorModle_ = 0;
+    int32_t superLoudnessMode_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
