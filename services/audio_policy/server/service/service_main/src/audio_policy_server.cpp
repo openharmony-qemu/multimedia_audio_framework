@@ -3703,7 +3703,8 @@ int32_t AudioPolicyServer::GetSystemSoundPath(const int32_t systemSoundType, std
             break;
         default:
             AUDIO_ERR_LOG("Invalid systemSoundType: %{public}d", systemSoundType);
-            break;
+            path = "";
+            return SUCCESS;
     }
 
 #ifdef USE_CONFIG_POLICY
