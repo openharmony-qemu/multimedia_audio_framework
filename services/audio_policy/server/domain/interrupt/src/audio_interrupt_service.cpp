@@ -3157,7 +3157,7 @@ void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, i
     EventFwk::CommonEventPublishInfo publishInfo;
     publishInfo.SetSubscriberUid({RSS_UID});
     int32_t ret = EventFwk::CommonEventManager::NewPublishCommonEvent(data, publishInfo);
-    AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:{public}d",
+    AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:%{public}d",
         ret, hintType, uid, streamId);
 }
 // LCOV_EXCL_STOP
