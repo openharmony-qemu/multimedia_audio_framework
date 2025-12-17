@@ -1531,6 +1531,18 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
         networkId);
 }
 
+int32_t AudioServer::ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET(deviceFlag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, ERR_INVALID_PARAM);
+    std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId, true);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "sink is nullptr");
+    sink->ReleaseActiveDevice(static_cast<DeviceType>(deviceType));
+    return SUCCESS;
+}
+
 // LCOV_EXCL_START
 int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {

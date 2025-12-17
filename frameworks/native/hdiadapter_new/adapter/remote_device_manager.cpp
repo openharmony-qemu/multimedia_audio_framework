@@ -80,6 +80,7 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
 
     if (wrapper->routeHandle_ != -1) {
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+        wrapper->routeHandle_ = -1;
     }
     audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
     wrapper->adapter_ = nullptr;
@@ -168,7 +169,8 @@ int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, cons
     route.sources.push_back(source);
     route.sinks.push_back(sink);
 
-    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
         "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     ret = wrapper->adapter_->UpdateAudioRoute(route, wrapper->routeHandle_);
@@ -208,6 +210,17 @@ int32_t RemoteDeviceManager::SetInputRoute(const std::string &adapterName, Devic
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
     return SUCCESS;
+}
+
+void RemoteDeviceManager::ReleaseOutputRoute(const std::string &adapterName)
+{
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    if (wrapper->routeHandle_ != -1) {
+        wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+        wrapper->routeHandle_ = -1;
+    }
 }
 
 void RemoteDeviceManager::SetMicMute(const std::string &adapterName, bool isMute)

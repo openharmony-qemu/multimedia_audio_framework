@@ -1708,6 +1708,14 @@ void AudioCoreService::HandleDeviceConfigChanged(const std::shared_ptr<AudioDevi
     }
 }
 
+void AudioCoreService::DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType)
+{
+    CHECK_AND_RETURN(networkId != LOCAL_NETWORK_ID);
+    std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
+        AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType));
+    audioPolicyManager_.StopAudioPort(moduleName);
+}
+
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {

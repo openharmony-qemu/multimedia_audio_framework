@@ -112,6 +112,7 @@ public:
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName,
         const std::string &networkId = LOCAL_NETWORK_ID) override;
+    int32_t ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;

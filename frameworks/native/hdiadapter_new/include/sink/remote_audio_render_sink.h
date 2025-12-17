@@ -97,6 +97,8 @@ public:
     void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
         const StreamUsage usage) override;
 
+    void ReleaseActiveDevice(DeviceType type) override;
+
     void DumpInfo(std::string &dumpString) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
@@ -111,7 +113,9 @@ private:
     void InitAudioSampleAttr(RemoteAudioSampleAttributes &param, RemoteAudioCategory type);
     void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(RemoteAudioCategory type);
+    void DestroyRender();
     int32_t DoSetOutputRoute(void);
+    void ReleaseOutputRoute();
     void InitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void CheckUpdateState(char *data, uint64_t len);

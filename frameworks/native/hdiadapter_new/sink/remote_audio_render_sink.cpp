@@ -89,14 +89,9 @@ void RemoteAudioRenderSink::DeInit(void)
     started_.store(false);
     paused_.store(false);
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN(deviceManager != nullptr);
+    DestroyRender();
     std::unique_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
-        deviceManager->DestroyRender(deviceNetworkId_, it.second.hdiRenderId_);
-        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, it.second.hdiRenderId_);
-        it.second.audioRender_.ForceSetRefPtr(nullptr);
         DumpFileUtil::CloseDumpFile(&it.second.dumpFile_);
     }
     audioRenderWrapperMap_.clear();
@@ -536,6 +531,17 @@ void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamT
     this->streamUsageMap_[splitStreamType] = usage;
 }
 
+void RemoteAudioRenderSink::ReleaseActiveDevice(DeviceType type)
+{
+    AUDIO_INFO_LOG("device: %{public}d", type);
+    if (renderInited_.load()) {
+        DestroyRender();
+        renderInited_.store(false);
+        started_.store(false);
+    }
+    ReleaseOutputRoute();
+}
+
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: RemoteSink\tstarted: " + std::string(started_.load() ? "true" : "false") +
@@ -695,6 +701,20 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
     return SUCCESS;
 }
 
+void RemoteAudioRenderSink::DestroyRender()
+{
+    AUDIO_INFO_LOG("destroy render");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
+    for (auto &it : audioRenderWrapperMap_) {
+        deviceManager->DestroyRender(deviceNetworkId_, it.second.hdiRenderId_);
+        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, it.second.hdiRenderId_);
+        it.second.audioRender_.ForceSetRefPtr(nullptr);
+    }
+}
+
 int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
 {
     std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
@@ -708,6 +728,14 @@ int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
     int32_t ret = deviceManager->SetOutputRoute(deviceNetworkId_, { DEVICE_TYPE_SPEAKER }, static_cast<int32_t>(
         GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE)));
     return ret;
+}
+
+void RemoteAudioRenderSink::ReleaseOutputRoute()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->ReleaseOutputRoute(deviceNetworkId_);
 }
 
 void RemoteAudioRenderSink::InitLatencyMeasurement(void)

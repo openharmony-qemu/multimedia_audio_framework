@@ -132,6 +132,8 @@ public:
     virtual void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
         const StreamUsage usage) {};
 
+    virtual void ReleaseActiveDevice(DeviceType type) {}
+
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
     // for a2dp_offload connection state

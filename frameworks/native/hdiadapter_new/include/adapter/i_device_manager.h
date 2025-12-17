@@ -51,6 +51,7 @@ public:
         int32_t streamId) = 0;
     virtual int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) = 0;
+    virtual void ReleaseOutputRoute(const std::string &adapterName) {}
     virtual void SetMicMute(const std::string &adapterName, bool isMute) = 0;
     virtual int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value, void *reserved) { return ERR_NOT_SUPPORTED; }
