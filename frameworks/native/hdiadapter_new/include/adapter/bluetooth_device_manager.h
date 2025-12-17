@@ -89,6 +89,7 @@ private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 8;
 
     BtAudioProxyManager *audioManager_ = nullptr;
+    std::mutex managerMtx_;
     void *handle_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<BluetoothAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;

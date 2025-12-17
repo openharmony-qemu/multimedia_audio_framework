@@ -77,7 +77,7 @@ export struct SpaceRenderPositionView {
         const realX = parseFloat(this.pixelToReal(constrainedX, canvasWidth).toFixed(2));
         const realZ = parseFloat(this.pixelToReal(constrainedY, canvasHeight).toFixed(2));
 
-        Logger.error(TAG, `The position is ${realX} ${realZ} ${this.spaceRender.fixedPosition?.y}`)
+        Logger.info(TAG, `The position is ${realX} ${realZ} ${this.spaceRender.fixedPosition?.y}`)
         if (this.spaceRender.mode === SpaceRenderMode.FIXED_POSITION) {
           let fixedPosition: SpacePosition = {
             x: realX,

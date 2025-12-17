@@ -955,10 +955,27 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         valueNew = key + "=" + value;
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;
+        char param[128] = {0};
+        errno_t ret = memcpy_s(param, sizeof(param), value.c_str(), value.length());
+        if (ret != 0) {
+            AUDIO_ERR_LOG("LOUD_VOLUMN_MODE key and value is error");
+            return false;
+        }
+        char *subkey = std::strtok(param, "=");
+        char *strvalue = std::strtok(NULL, "=");
+        RecognizeAudioEffectType(key, (std::string)subkey, (std::string)strvalue);
+        AUDIO_INFO_LOG("LOUD_VOLUMN_MODE mainkey = %{public}s, key = %{public}s, value = %{public}s",
+            key.c_str(), subkey, strvalue);
     } else if ((key == "pm_kara") || (key == "pm_kara_code")) {
         parmKey = AudioParamKey::USB_DEVICE;
         halName = "usb";
         valueNew = key + "=" +value;
+    } else if (key == "outdoor_mode") {
+        parmKey = AudioParamKey::NONE;
+        valueNew = key + "=" + value;
+        std::string newmainkey = "audio_effect";
+        AUDIO_INFO_LOG("outdoor_mode key = %{public}s, value = %{public}s", key.c_str(), value.c_str());
+        RecognizeAudioEffectType(newmainkey, key, value);
     } else {
         return false;
     }

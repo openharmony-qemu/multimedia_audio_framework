@@ -7,8 +7,6 @@
 #include "napi/native_api.h"
 #include "audioEffectNode/Input.h"
 #include "callback/RegisterCallback.h"
-#include <./utils/Utils.h>
-
 struct InputAudioParams {
     std::string inputId;
     std::string outputId;

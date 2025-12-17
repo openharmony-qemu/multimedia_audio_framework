@@ -44,7 +44,7 @@ export async function initAllInputNode(jsonFileInfo:JsonFileInfo, sceneInfoIdToS
     for (const inputFile of sceneInfo.inputFiles) {
       // Obtaining the File Content
       let inputPath = `${inputDir}/${inputFile.path}`;
-      let file = fs.openSync(inputPath, fs.OpenMode.READ_WRITE);
+      let file = fs.openSync(inputPath, fs.OpenMode.READ_ONLY);
       let fsStat = fs.statSync(inputPath);
       let buffer = new ArrayBuffer(fsStat.size);
       fs.readSync(file.fd, buffer);

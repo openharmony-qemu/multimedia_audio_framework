@@ -319,14 +319,12 @@ export struct Export {
               fs.closeSync(file);
             }
           } catch (e) {
-            Logger.error(TAG, `SavePcmBuffer writeLen error: ${error}`);
+            fs.closeSync(file);
+            Logger.error(TAG, `SavePcmBuffer writeLen error: ${e}`);
           }
         } catch (e) {
-          Logger.error(TAG, `SaveBuffer filePath error: ${error}`);
-        } finally {
-          fs.closeSync(file);
-        }
-        
+          Logger.error(TAG, `SaveBuffer filePath error: ${e}`);
+        } 
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
@@ -374,14 +372,12 @@ export struct Export {
               Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
             }
           } catch (e) {
-            Logger.error(TAG, `SaveWavBuffer writeLen error: ${error}`);
+            fs.closeSync(file);
+            Logger.error(TAG, `SaveWavBuffer writeLen error: ${e}`);
           }
         } catch (e) {
-          Logger.error(TAG, `SaveTapBuffer filePath error: ${error}`);
-        } finally {
-          fs.closeSync(file);
-        }
-        
+          Logger.error(TAG, `SaveTapBuffer filePath error: ${e}`);
+        }   
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)

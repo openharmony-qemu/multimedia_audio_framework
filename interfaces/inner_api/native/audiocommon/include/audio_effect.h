@@ -54,6 +54,8 @@ enum HdiSetParamCommandCode {
     HDI_LID_STATE = 13,
     HDI_QUERY_CHANNELLAYOUT = 14,
     HDI_ABS_VOLUME_STATE = 15,
+    HDI_OUTDOOR_MODE = 16,
+    HDI_SUPER_LOUDNESS_MODE = 17,
 };
 
 enum AudioSpatialDeviceType {
@@ -739,6 +741,8 @@ enum AudioEffectChainSetParamIndex {
     LOUDNESS_GAIN_INDEX = 12,
     ABS_VOLUME_STATE = 13,
     EARPHONE_PRODUCT = 14,
+    OUTDOOR_MODE = 15,
+    SUPER_LOUDNESS_MODE = 16,
     MAX_PARAM_INDEX,
 };
 
