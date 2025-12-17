@@ -94,9 +94,8 @@ int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inF
 {
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
     uint32_t expectedOutFrameLen = outFrameLen;
-    std::vector<float> tmpOutBuf(expectedOutFrameLen * channels_, 0.0f);
     int32_t ret =
-        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &outFrameLen);
+        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf_.data(), &outFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
     
@@ -104,9 +103,8 @@ int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inF
     ret = memset_s(outBuffer, fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
-    ret = memcpy_s(outBuffer + fillSize * channels_,
-        (expectedOutFrameLen - fillSize) * channels_ * sizeof(float),
-        tmpOutBuf.data(), outFrameLen * channels_ * sizeof(float));
+    ret = memcpy_s(outBuffer + fillSize * channels_, (expectedOutFrameLen - fillSize) * channels_ * sizeof(float),
+        tmpOutBuf_.data(), outFrameLen * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
     return ret;
 }
@@ -139,10 +137,9 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     }
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
 
-    std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_2;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
-    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &tmpOutFrameLen);
+    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf_.data(), &tmpOutFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "Process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
     uint32_t fillSize = reserveOutFrameLen > tmpOutFrameLen ? reserveOutFrameLen - tmpOutFrameLen : 0;
@@ -152,9 +149,8 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     CHECK_AND_RETURN_RET_LOG(static_cast<uint64_t>(tmpOutFrameLen) * channels_ <= buf11025_.capacity(),
         RESAMPLER_ERR_OVERFLOW, "buf11025 overflow detected, required %{public}u, available %{public}zu",
         tmpOutFrameLen * channels_, buf11025_.capacity());
-    ret = memcpy_s(buf11025_.data() + fillSize * channels_,
-        (reserveOutFrameLen - fillSize) * channels_ * sizeof(float),
-        tmpOutBuf.data(), tmpOutFrameLen * channels_ * sizeof(float));
+    ret = memcpy_s(buf11025_.data() + fillSize * channels_, (reserveOutFrameLen - fillSize) * channels_ * sizeof(float),
+        tmpOutBuf_.data(), tmpOutFrameLen * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
 
     // output first half of data
@@ -195,10 +191,9 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
     }
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
 
-    std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_5;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
-    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &tmpOutFrameLen);
+    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf_.data(), &tmpOutFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "Process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
 
@@ -211,7 +206,7 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
         tmpOutFrameLen * channels_, bufFor100ms_.capacity());
     ret = memcpy_s(bufFor100ms_.data() + fillSize * channels_,
         (reserveOutFrameLen - fillSize) * channels_ * sizeof(float),
-        tmpOutBuf.data(), tmpOutFrameLen * channels_ * sizeof(float));
+        tmpOutBuf_.data(), tmpOutFrameLen * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
 
     // output 1st part of data
@@ -221,24 +216,40 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
     return ret;
 }
 
+int32_t ProResampler::CheckRateAndChannelParam()
+{
+    // resampler change from valid state to invalid state
+    if ((inRate_ < MIN_SAMPLE_RATE) || (inRate_ > MAX_SAMPLE_RATE) || (outRate_ < MIN_SAMPLE_RATE) ||
+        (outRate_ > MAX_SAMPLE_RATE) || (inRate_ == outRate_) || (channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
+        AUDIO_ERR_LOG("resampler set to invalid state, because inRate %{public}u Hz and outRate %{public}u Hz "
+            "should be within [8000, 384000] and be different, or channel number %{public}u should be within [1, 16]",
+            inRate_, outRate_, channels_);
+        CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
+        SingleStagePolyphaseResamplerFree(state_);
+        state_ = nullptr;
+        tmpOutBuf_.resize(0);
+        buf11025_.clear();
+        buf11025_.shrink_to_fit();
+        bufFor100ms_.clear();
+        bufFor100ms_.shrink_to_fit();
+        return RESAMPLER_ERR_INVALID_ARG;
+    }
+    return RESAMPLER_ERR_SUCCESS;
+}
+
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
     AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d -> %{public}d",
         inRate_, inRate, outRate_, outRate);
     inRate_ = inRate;
     outRate_ = outRate;
-    // resampler change from valid state to invalid state
-    if ((inRate < MIN_SAMPLE_RATE) || (inRate > MAX_SAMPLE_RATE) || (outRate < MIN_SAMPLE_RATE) ||
-        (outRate > MAX_SAMPLE_RATE) || (inRate_ == outRate_)) {
-        AUDIO_ERR_LOG("resampler set to invalid state, input and output sample rate should be within [8000, 384000]"
-            "and be different");
-        CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
-        SingleStagePolyphaseResamplerFree(state_);
-        state_ = nullptr;
-        return RESAMPLER_ERR_INVALID_ARG;
-    }
+
+    int32_t ret = CheckRateAndChannelParam();
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
+        "ProResampler updateRates error code %{public}s", ErrCodeToString(ret).c_str());
+
     expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
-    int32_t ret = ConfigBufferSizeAndExpectedInFrameLen();
+    ret = ConfigBufferSizeAndExpectedInFrameLen();
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
         "ProResampler updateRates reserve buff error code %{public}s", ErrCodeToString(ret).c_str());
     if (state_ == nullptr) { // resampler can be updated from an invalid state to valid state
@@ -258,17 +269,14 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
     AUDIO_INFO_LOG("update work channel %{public}d -> %{public}d", channels_, channels);
     channels_ = channels;
-    if ((channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
-        AUDIO_ERR_LOG("resampler set to invalid state, channel number should within [1, 16]");
-        CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
-        SingleStagePolyphaseResamplerFree(state_);
-        state_ = nullptr;
-        return RESAMPLER_ERR_INVALID_ARG;
-    }
+
+    int32_t errRet = CheckRateAndChannelParam();
+    CHECK_AND_RETURN_RET(errRet == RESAMPLER_ERR_SUCCESS, errRet,
+        "ProResampler updateChannels error code %{public}s", ErrCodeToString(errRet).c_str());
+
     if (state_ != nullptr) {
         SingleStagePolyphaseResamplerFree(state_);
     }
-    int32_t errRet = RESAMPLER_ERR_SUCCESS;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
         "error code %{public}s", ErrCodeToString(errRet).c_str());
@@ -362,27 +370,30 @@ std::string ProResampler::ErrCodeToString(int32_t errCode)
 
 int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
 {
+    size_t sizeNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_;
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
-        size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE;
-        buf11025_.reserve(capacityNeed);
-        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}u, buf11025_ size %{public}zu",
-            outRate_, buf11025_.capacity());
-        CHECK_AND_RETURN_RET_LOG(buf11025_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
+        sizeNeed *= BUFFER_EXPAND_SIZE_2;
+        buf11025_.reserve(sizeNeed + ADD_SIZE);
+        CHECK_AND_RETURN_RET_LOG(buf11025_.capacity() >= sizeNeed + ADD_SIZE, RESAMPLER_ERR_ALLOC_FAILED,
             "buf11025_ size error, should be above %{public}zu, actually %{public}zu",
-            capacityNeed, buf11025_.capacity());
+            sizeNeed + ADD_SIZE, buf11025_.capacity());
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_2 / MS_PER_SECOND;
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {   // not multiples of 50
-        size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE;
-        bufFor100ms_.reserve(capacityNeed);
-        AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}u, bufFor100ms_ size %{public}zu",
-            inRate_, outRate_, bufFor100ms_.capacity());
-        CHECK_AND_RETURN_RET_LOG(bufFor100ms_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
+        sizeNeed *= BUFFER_EXPAND_SIZE_5;
+        bufFor100ms_.reserve(sizeNeed + ADD_SIZE);
+        CHECK_AND_RETURN_RET_LOG(bufFor100ms_.capacity() >= sizeNeed + ADD_SIZE, RESAMPLER_ERR_ALLOC_FAILED,
             "bufFor100ms_ size error, should be above %{public}zu, actually %{public}zu",
-            capacityNeed, bufFor100ms_.capacity());
+            sizeNeed + ADD_SIZE, bufFor100ms_.capacity());
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
     } else {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     }
+    tmpOutBuf_.resize(sizeNeed, 0.0f);
+    CHECK_AND_RETURN_RET_LOG(tmpOutBuf_.size() >= sizeNeed, RESAMPLER_ERR_ALLOC_FAILED,
+        "tmpOutBuf_ size error, should be above %{public}zu, actually %{public}zu", sizeNeed, tmpOutBuf_.size());
+    AUDIO_INFO_LOG("input %{public}u Hz, output %{public}u Hz, outChannel: %{public}u, buf11025 size %{public}zu, "
+        "bufFor100ms size %{public}zu, tmpOutBuf size %{public}zu",
+        inRate_, outRate_, channels_, buf11025_.capacity(), bufFor100ms_.capacity(), tmpOutBuf_.size());
     return RESAMPLER_ERR_SUCCESS;
 }
 

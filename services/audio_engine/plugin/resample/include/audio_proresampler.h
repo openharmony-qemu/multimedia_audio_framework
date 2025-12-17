@@ -51,6 +51,8 @@ private:
         uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
     int32_t ConfigBufferSizeAndExpectedInFrameLen();
+    int32_t CheckRateAndChannelParam();
+
     std::vector<float> buf11025_;
     std::vector<float> bufFor100ms_;
     uint32_t buf11025Index_ = 0;
@@ -62,6 +64,7 @@ private:
     uint32_t expectedOutFrameLen_ = 0;
     uint32_t expectedInFrameLen_ = 0;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
+    std::vector<float> tmpOutBuf_;
 };
 } // HPAE
 } // AudioStandard
