@@ -330,6 +330,185 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_014, TestSize.Leve
     EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
 }
+
+/**
+* @tc.name  : Test IsRepeatedPreferredCallRenderer.
+* @tc.number: IsRepeatedPreferredCallRenderer_001
+* @tc.desc  : Test IsRepeatedPreferredCallRenderer clear by CLEAR_UID.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsRepeatedPreferredCallRenderer_001, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
+    const int32_t callerUid = CLEAR_UID;
+    const int32_t ownerUid = 123;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedList = {
+        {
+            { ownerUid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    forcedList = {
+    };
+    EXPECT_TRUE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+}
+
+/**
+* @tc.name  : Test IsRepeatedPreferredCallRenderer.
+* @tc.number: IsRepeatedPreferredCallRenderer_002
+* @tc.desc  : Test IsRepeatedPreferredCallRenderer clear by SYSTEM_UID or ownerUid.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsRepeatedPreferredCallRenderer_002, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
+    int32_t callerUid = SYSTEM_UID;
+    const int32_t ownerUid = 123;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedList = {
+        {
+            { 456, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+
+    EXPECT_TRUE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    callerUid = ownerUid;
+    EXPECT_TRUE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    forcedList = {
+        {
+            { SYSTEM_UID, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    callerUid = SYSTEM_UID;
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+}
+
+/**
+* @tc.name  : Test IsRepeatedPreferredCallRenderer.
+* @tc.number: IsRepeatedPreferredCallRenderer_003
+* @tc.desc  : Test IsRepeatedPreferredCallRenderer clear by callerUid.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsRepeatedPreferredCallRenderer_003, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
+    const int32_t callerUid = 123;
+    const int32_t ownerUid = 456;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedList = {
+        {
+            { ownerUid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+
+    EXPECT_TRUE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    forcedList = {
+        {
+            { callerUid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+}
+
+/**
+* @tc.name  : Test IsRepeatedPreferredCallRenderer.
+* @tc.number: IsRepeatedPreferredCallRenderer_004
+* @tc.desc  : Test IsRepeatedPreferredCallRenderer first set.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsRepeatedPreferredCallRenderer_004, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    const int32_t callerUid = 123;
+    const int32_t ownerUid = 456;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedList = {
+    };
+
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+}
+
+/**
+* @tc.name  : Test IsRepeatedPreferredCallRenderer.
+* @tc.number: IsRepeatedPreferredCallRenderer_005
+* @tc.desc  : Test IsRepeatedPreferredCallRenderer not first set.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsRepeatedPreferredCallRenderer_005, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    const int32_t callerUid = 123;
+    const int32_t ownerUid = 456;
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedList = {
+        {
+            { ownerUid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+
+    EXPECT_FALSE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+
+    forcedList = {
+        {
+            { callerUid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+        }
+    };
+    EXPECT_TRUE(stateManager.IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid, forcedList));
+}
+
+/**
+* @tc.name  : Test IsSamePreferred.
+* @tc.number: IsSamePreferred_001
+* @tc.desc  : Test IsSamePreferred uid.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsSamePreferred_001, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const int32_t uid = 123;
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> recordMap = {
+            { 456, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+    };
+
+    EXPECT_FALSE(stateManager.IsSamePreferred(uid, preferred, recordMap));
+}
+
+/**
+* @tc.name  : Test IsSamePreferred.
+* @tc.number: IsSamePreferred_002
+* @tc.desc  : Test IsSamePreferred device.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsSamePreferred_002, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const int32_t uid = 123;
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> recordMap = {
+        { uid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE) }
+    };
+
+    EXPECT_FALSE(stateManager.IsSamePreferred(uid, preferred, recordMap));
+}
+
+/**
+* @tc.name  : Test IsSamePreferred.
+* @tc.number: IsSamePreferred_003
+* @tc.desc  : Test IsSamePreferred uid and device.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsSamePreferred_003, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    const int32_t uid = 123;
+    const auto preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> recordMap = {
+        { uid, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE) }
+    };
+
+    EXPECT_TRUE(stateManager.IsSamePreferred(uid, preferred, recordMap));
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
