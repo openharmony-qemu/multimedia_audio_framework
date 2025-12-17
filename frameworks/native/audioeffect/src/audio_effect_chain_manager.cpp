@@ -1053,19 +1053,35 @@ void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
+bool AudioEffectChainManager::HasRunningSessionForEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain)
+{
+    for (const auto& [sessionId, effectInfo] : sessionIDToEffectInfoMap_) {
+        CHECK_AND_CONTINUE(effectInfo.sceneMode != "EFFECT_NONE");
+        std::string sceneTypeTemp = effectInfo.sceneType;
+        std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        CHECK_AND_CONTINUE_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, "null audioEffectChain");
+        auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
+        if (audioEffectChainTemp == audioEffectChain) {
+            return true;
+        }
+    }
+    return false;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationEnabledToChains()
 {
     bool enabled = btOffloadEnabled_ ? false : IsSpatializationEnabledForChains();
-    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        auto audioEffectChain = it->second;
+    for (const auto& [key, audioEffectChain] : sceneTypeToEffectChainMap_) {
         if (audioEffectChain == nullptr) {
             continue;
         }
-
-        if (sessionIDToEffectInfoMap_.size() == 0) {
-            audioEffectChain->SetSpatializationEnabled(enabled);
-        } else {
+        if (HasRunningSessionForEffectChain(audioEffectChain)) {
             audioEffectChain->SetSpatializationEnabledForFading(enabled);
+        } else {
+            audioEffectChain->SetSpatializationEnabled(enabled);
         }
     }
 }

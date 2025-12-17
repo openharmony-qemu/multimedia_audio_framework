@@ -172,6 +172,7 @@ private:
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     int32_t SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     void SetSpatializationSceneTypeToChains();
+    bool HasRunningSessionForEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain);
     void SetSpatializationEnabledToChains();
     void SetSpkOffloadState();
     void UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType);
