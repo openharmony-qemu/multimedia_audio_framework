@@ -386,6 +386,7 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
             if (routeFlag == AUDIO_INPUT_FLAG_AI) {
                 portName = PRIMARY_AI_MIC;

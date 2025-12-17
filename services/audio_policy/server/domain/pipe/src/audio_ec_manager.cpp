@@ -389,6 +389,8 @@ std::string AudioEcManager::GetPipeNameByDeviceForEc(const std::string &role, co
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
+        case DEVICE_TYPE_NEARLINK_IN:
             if (role == ROLE_SOURCE) {
                 return PIPE_PRIMARY_INPUT;
             }
