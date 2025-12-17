@@ -366,15 +366,16 @@ int32_t AudioPolicyManager::UnsetDeviceInfoUpdateCallback(const int32_t clientId
     std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetDeviceInfoUpdateCallback");
+    int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveDeviceInfoUpdateCallback(cb);
         if (audioPolicyClientStubCB_->GetDeviceInfoUpdateCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, false);
+            ret = SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, false);
         }
     }
-    return SUCCESS;
+    return ret;
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
