@@ -40,6 +40,7 @@ BluetoothDeviceManager::~BluetoothDeviceManager()
 
 int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 {
+    std::lock_guard<std::mutex> lockManager(managerMtx_);
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
         "adapter %{public}s already loaded", adapterName.c_str());
     if (audioManager_ == nullptr || adapters_.size() == 0) {
@@ -75,6 +76,7 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 
 void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool force)
 {
+    std::lock_guard<std::mutex> lockManager(managerMtx_);
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
