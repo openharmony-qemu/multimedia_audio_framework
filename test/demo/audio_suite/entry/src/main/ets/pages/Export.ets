@@ -377,7 +377,7 @@ export struct Export {
           }
         } catch (e) {
           Logger.error(TAG, `SaveTapBuffer filePath error: ${e}`);
-        }   
+        }
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
