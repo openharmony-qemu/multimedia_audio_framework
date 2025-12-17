@@ -1169,7 +1169,7 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
     audioData = nullptr;
     return result;
 }
- 
+
 OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
     void *userData, void *audioData, int32_t audioDataSize)
 {
@@ -1220,7 +1220,7 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
         "g_play_resultTotalSize: %{public}zu, writeSize: %{public}d", firstBufferSize, writeSize);
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
- 
+
 napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
 {
     OH_AudioStream_Type type = OH_AudioStream_Type::AUDIOSTREAM_TYPE_RENDERER;
@@ -1230,7 +1230,7 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     OH_AudioStreamBuilder_Create(&rendererBuilder, type);
     int32_t bitsPerSample = 0;
     OH_AudioStream_SampleFormat streamSampleFormat;
- 
+
     GetBitsPerSampleAndStreamFormat(g_audioFormatOutput, &bitsPerSample, &streamSampleFormat);
     
     OH_AudioStreamBuilder_SetSamplingRate(rendererBuilder, g_audioFormatOutput.samplingRate);
@@ -1252,7 +1252,7 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     OH_AudioStreamBuilder_GenerateRenderer(rendererBuilder, &audioRenderer);
     return nullptr;
 }
- 
+
 napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioRendererStart start");
@@ -1263,7 +1263,7 @@ napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info)
     OH_AudioRenderer_Start(audioRenderer);
     return nullptr;
 }
- 
+
 napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 {
     char *&playAudioBuffer = threadPipelineManager->playAudioBuffer;
@@ -1297,7 +1297,7 @@ napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
         return napiValue;
     }
 }
- 
+
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info)
 {
     std::lock_guard<std::mutex> lock(g_threadLock);
