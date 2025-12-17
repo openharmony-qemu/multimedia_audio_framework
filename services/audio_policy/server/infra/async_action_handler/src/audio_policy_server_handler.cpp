@@ -1472,6 +1472,7 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
 
 void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
+    CHECK_AND_RETURN_LOG(event != nullptr, "event get nullptr");
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
