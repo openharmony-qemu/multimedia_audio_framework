@@ -246,6 +246,5 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_011, TestSize.Le
     EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
 }
 
-
 } // namespace AudioStandard
 } // namespace OHOS
