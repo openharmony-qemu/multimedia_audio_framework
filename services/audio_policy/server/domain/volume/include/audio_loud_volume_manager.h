@@ -62,6 +62,8 @@ private:
     std::unordered_map<LoudVolumeHoldType, bool> loudVolumeHoldMap_;
     std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOL_STREAM_TYPE_ENABLE = {
         {STREAM_MUSIC, LOUD_VOLUME_MODE_MUSIC},
+        {STREAM_VOICE_CALL, LOUD_VOLUME_MODE_VOICE},
+        {STREAM_VOICE_CALL_ASSISTANT, LOUD_VOLUME_MODE_VOICE},
     };
     std::map<AudioVolumeType, LoudVolumeHoldType> LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC = {
         {STREAM_MUSIC, LOUD_VOLUME_MODE_MUSIC},
