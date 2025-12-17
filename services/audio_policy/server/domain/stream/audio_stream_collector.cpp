@@ -306,7 +306,9 @@ int32_t AudioStreamCollector::RegisterTracker(AudioMode &mode, AudioStreamChange
     int32_t clientId;
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     if (mode == AUDIO_MODE_PLAYBACK) {
-        AddRendererStream(streamChangeInfo);
+        bool rel = AddRendererStream(streamChangeInfo);
+        CHECK_AND_RETURN_RET_LOG(rel == true,
+            ERR_INVALID_PARAM, "AddRendererStream streamChangeInfo is fail");
         clientId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     } else {
         // mode = AUDIO_MODE_RECORD
