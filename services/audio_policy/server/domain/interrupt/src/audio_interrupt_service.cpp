@@ -2886,6 +2886,7 @@ void AudioInterruptService::DispatchInterruptEventWithStreamId(uint32_t streamId
 #else
         interruptClients_[streamId]->OnInterrupt(interruptEvent);
 #endif
+        PublishCtrlCmdEvent(interruptEvent.hintType, interruptClients_[streamId]->GetCallingUid(), streamId);
     }
 }
 
@@ -3143,6 +3144,21 @@ void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioS
     if (asyncHandler_ != nullptr) {
         asyncHandler_->PostAsyncAction(desc);
     }
+}
+
+void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId)
+{
+    OHOS::AAFwk::Want Want;
+    want.SetAction("usual.event.AUDIO_FOCUS_CHANGE_EVENT");
+    want.SetParam("hintType");
+    want.SetParam("uid", uid);
+    want.SetParam("streamId", streamId);
+    EventFwk::CommonEventData data { want};
+    EventFwk::CommonEventPublishInfo publishInfo;
+    publishInfo.SetSubscriberUid({RSS_UID});
+    int32_t ret = EventFwk::CommonEventManager::NewPublishCommonEvent(data, publishInfo);
+    AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:{public}d",
+        ret, hintType, uid, streamId);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
