@@ -585,14 +585,14 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
-int32_t IpcStreamInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
         AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
             static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->PreSetLoopTimes(bufferLoopTimes);
+    return rendererInServer_->SetLoopTimes(bufferLoopTimes);
 }
 
 int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)

@@ -1124,9 +1124,7 @@ int32_t RendererInServer::StartInner()
 
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer(needRefreshBufferStatus_) == SUCCESS,
-        ERR_OPERATION_FAILED, "ProcessAndSetStaticBuffer fail!");
-    needRefreshBufferStatus_ = false;
+    MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
@@ -1579,7 +1577,8 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 int32_t RendererInServer::SetRate(int32_t rate)
 {
     audioRenderRate_ = static_cast<AudioRendererRate>(rate);
-    needRefreshBufferStatus_ = true;
+    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
+        "ProcessAndSetStaticBuffer fail!");
     return stream_->SetRate(rate);
 }
 
@@ -2769,11 +2768,10 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     return SUCCESS;
 }
 
-int32_t RendererInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+int32_t RendererInServer::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    staticBufferProvider_->PreSetLoopTimes(bufferLoopTimes);
-    needRefreshBufferStatus_ = true;
+    staticBufferProvider_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
 
@@ -2783,14 +2781,8 @@ int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo
     return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
 }
 
-int32_t RendererInServer::ProcessAndSetStaticBuffer(bool needRefreshBufferStatus)
+int32_t RendererInServer::ProcessAndSetStaticBuffer()
 {
-    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
-        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
-    staticBufferProvider_->NeedProcessFadeIn();
-
-    CHECK_AND_RETURN_RET(needRefreshBufferStatus, SUCCESS);
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
 
@@ -2799,7 +2791,7 @@ int32_t RendererInServer::ProcessAndSetStaticBuffer(bool needRefreshBufferStatus
     ret = staticBufferProcessor_->GetProcessedBuffer(&bufferBase, bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessedBuffer fail!");
     staticBufferProvider_->SetProcessedBuffer(&bufferBase, bufferSize);
-    staticBufferProvider_->RefreshLoopTimes();
+    staticBufferProcessor_->SaveProcessBuffer();
     return SUCCESS;
 }
 
@@ -2875,8 +2867,17 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
     }
     // Refresh needs to be called after fadeout
     if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->RefreshLoopTimes();
+        staticBufferProvider_->RefreshBufferStatus();
     }
 }
+
+void RendererInServer::MarkStaticFadeIn()
+{
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
+        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
+    staticBufferProvider_->NeedProcessFadeIn();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

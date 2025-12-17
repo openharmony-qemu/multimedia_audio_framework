@@ -37,10 +37,12 @@ public:
 
     int32_t ProcessBuffer(AudioRendererRate renderRate);
     int32_t GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize);
+    void SaveProcessBuffer();
 
 private:
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
     std::unique_ptr<uint8_t[]> speedBuffer_ = nullptr;
+    std::unique_ptr<uint8_t[]> processBuffer_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> sharedBuffer_ = nullptr;
     size_t speedBufferSize_ = 0;
     float curSpeed_ = 1.0f;

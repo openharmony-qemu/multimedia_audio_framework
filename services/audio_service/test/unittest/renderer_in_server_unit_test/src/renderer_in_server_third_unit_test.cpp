@@ -2604,13 +2604,13 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_006, TestSize.
     size_t dataSize = 10;
     staticBufferProviderTest->processedBufferSize_ = dataSize;
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = true;
     staticBufferProviderTest->needFadeOut_ = true;
     staticBufferProviderTest->needFadeIn_ = false;
     staticBufferProviderTest->ProcessFadeInOutIfNeed(inputData, dataSize);
     EXPECT_FALSE(staticBufferProviderTest->needFadeOut_);
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = false;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = false;
     staticBufferProviderTest->needFadeOut_ = false;
     staticBufferProviderTest->needFadeIn_ = true;
     staticBufferProviderTest->ProcessFadeInOutIfNeed(inputData, dataSize);
@@ -2623,7 +2623,7 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_006, TestSize.
  * @tc.name  : Test AudioStaticBufferProvider API
  * @tc.type  : FUNC
  * @tc.number: AudioStaticBufferProvider_007
- * @tc.desc  : Test AudioStaticBufferProvider RefreshLoopTimes
+ * @tc.desc  : Test AudioStaticBufferProvider RefreshBufferStatus
  */
 HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_007, TestSize.Level1)
 {
@@ -2635,33 +2635,33 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_007, TestSize.
         AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
     ASSERT_TRUE(staticBufferProviderTest != nullptr);
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = false;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = false;
     staticBufferProviderTest->needFadeOut_ = true;
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    staticBufferProviderTest->RefreshBufferStatus();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshBufferStatus_);
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = true;
     staticBufferProviderTest->needFadeOut_ = false;
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    staticBufferProviderTest->RefreshBufferStatus();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshBufferStatus_);
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = true;
     staticBufferProviderTest->needFadeOut_ = true;
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_TRUE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    staticBufferProviderTest->RefreshBufferStatus();
+    EXPECT_TRUE(staticBufferProviderTest->delayRefreshBufferStatus_);
 
-    staticBufferProviderTest->delayRefreshLoopTimes_ = true;
+    staticBufferProviderTest->delayRefreshBufferStatus_ = true;
     staticBufferProviderTest->needFadeOut_ = false;
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->RefreshLoopTimes();
-    EXPECT_FALSE(staticBufferProviderTest->delayRefreshLoopTimes_);
+    staticBufferProviderTest->RefreshBufferStatus();
+    EXPECT_FALSE(staticBufferProviderTest->delayRefreshBufferStatus_);
 }
 
 /**
@@ -2812,32 +2812,32 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, 
     ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
     rendererInServer->MarkStaticFadeOut(false);
-    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
     rendererInServer->MarkStaticFadeOut(true);
-    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
     rendererInServer->MarkStaticFadeOut(false);
-    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_ = true;
+    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
     rendererInServer->MarkStaticFadeOut(true);
-    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshLoopTimes_);
+    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
 }
 
 /**

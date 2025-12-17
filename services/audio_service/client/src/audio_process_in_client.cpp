@@ -1846,7 +1846,7 @@ int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "SetLoopTimes processProxy_ is nullptr");
-    processProxy_->PreSetLoopTimes(bufferLoopTimes);
+    processProxy_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
 

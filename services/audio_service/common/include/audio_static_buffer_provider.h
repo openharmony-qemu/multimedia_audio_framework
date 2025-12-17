@@ -34,8 +34,8 @@ public:
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     void SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize);
 
-    void PreSetLoopTimes(int64_t times);
-    void RefreshLoopTimes();
+    void SetLoopTimes(int64_t times);
+    void RefreshBufferStatus();
     int32_t IncreaseCurrentLoopTimes();
     void NeedProcessFadeIn();
     void NeedProcessFadeOut();
@@ -51,12 +51,13 @@ private:
     AudioStreamInfo streamInfo_;
     uint8_t *processedBuffer_ = nullptr;
     size_t processedBufferSize_ = 0;
-    int64_t preSetTotalLoopTimes_ = 0;
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
-    bool delayRefreshLoopTimes_ = false;
+    bool delayRefreshBufferStatus_ = false;
     bool playFinished_ = false;
+
+    std::mutex eventMutex_;
 
     std::mutex fadeMutex_;
     bool needFadeIn_ = false;
