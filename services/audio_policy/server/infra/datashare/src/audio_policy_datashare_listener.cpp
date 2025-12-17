@@ -75,21 +75,22 @@ void AudioPolicyDataShareListener::RegisterAccessiblilityMono()
     updateFuncMono(CONFIG_AUDIO_MONO_KEY);
 }
 
-void AudioPolicyDataShareListener::RegisterAccessiblilityBroadcast()
+void AudioPolicyDataShareListener::RegisterBroadcast()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncBroadcast = [&](const std::string &key) {
         std::string value = "0";
+        std::string newvalue = "0";
         ErrCode ret = settingProvider.GetStringValue(CONFIG_AUDIO_BROADCAST_KEY, value, "broadcast");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "get Broadcast value failed");
         if (value == "true") {
-            value = "1";
+            newvalue = "1";
         } else if (value == "false") {
-            value = "2";
+            newvalue = "2";
         }
-        AUDIO_INFO_LOG("RegisterAccessiblilityBroadcast = %{public}s", value.c_str());
+        AUDIO_INFO_LOG("RegisterBroadcast = %{public}s", newvalue.c_str());
         std::string newkey = "outdoor_mode";
-        AudioServerProxy::GetInstance().SetAudioParameterProxy(newkey, value);
+        AudioServerProxy::GetInstance().SetAudioParameterProxy(newkey, newvalue);
     };
     sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BROADCAST_KEY, updateFuncBroadcast);
     ErrCode ret = settingProvider.RegisterObserver(observer, "broadcast");
