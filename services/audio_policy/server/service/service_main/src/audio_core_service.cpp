@@ -1400,7 +1400,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     HILOG_COMM_INFO("[DeviceFetchStart] by %{public}s for %{public}zu output streams, in devices %{public}s",
         caller.c_str(), outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
 
-    if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist()) {
+    if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() && !CheckRingAndVoipStreamRunning()) {
         audioActiveDevice_.UpdateStreamDeviceMap("NoStreamInPipe");
         return HandleFetchOutputWhenNoRunningStream(reason);
     }

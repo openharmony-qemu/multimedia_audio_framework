@@ -378,6 +378,11 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     }
 }
 
+bool AudioCoreService::CheckRingAndVoipStreamRunning()
+{
+    return pipeManager_->CheckRingAndVoipStreamRunning();
+}
+
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {

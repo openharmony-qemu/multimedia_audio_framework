@@ -543,6 +543,17 @@ void AudioPipeManager::UpdateRingAndVoipStreamDevice(
     ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_ = voipDeviceDescs;
 }
 
+bool AudioPipeManager::CheckRingAndVoipStreamRunning()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    CHECK_AND_RETURN_RET(ringAndVoipDescMap_.find(RING_SESSIONID) != ringAndVoipDescMap_.end(), false);
+    CHECK_AND_RETURN_RET(ringAndVoipDescMap_.find(VOIP_SESSIONID) != ringAndVoipDescMap_.end(), false);
+
+    return ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ == STREAM_STATUS_STARTED ||
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ == STREAM_STATUS_STARTED;
+}
+
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescForAudioScene(const AudioScene audioScene)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
