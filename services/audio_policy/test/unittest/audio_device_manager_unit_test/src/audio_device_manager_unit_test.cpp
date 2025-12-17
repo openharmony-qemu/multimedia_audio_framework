@@ -246,5 +246,133 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_011, TestSize.Le
     EXPECT_EQ(adm.UpdateExistDeviceDescriptor(desc2), true);
 }
 
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_012, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    desc1->networkId_ = "444455556666abcdef";
+    audioDeviceManager.AddConnectedDevices(desc1);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc2->networkId_ = "444455556666abcdef";
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc2, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(desc2->pairDeviceDescriptor_, desc1);
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc2, DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(desc2->pairDeviceDescriptor_, desc1);
+    audioDeviceManager.RemoveConnectedDevices(desc1);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_013, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc1->networkId_ = "444455556666abcdef";
+    audioDeviceManager.AddConnectedDevices(desc1);
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::INPUT_DEVICE);
+    EXPECT_NE(desc1->pairDeviceDescriptor_, desc1);
+    audioDeviceManager.RemoveConnectedDevices(desc1);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_014, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    desc1->networkId_ = "444455556666123456";
+    audioDeviceManager.AddConnectedDevices(desc1);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc2->networkId_ = "444455556666abcdef";
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc2, DeviceRole::INPUT_DEVICE);
+    EXPECT_NE(desc2->pairDeviceDescriptor_, desc1);
+    audioDeviceManager.RemoveConnectedDevices(desc1);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_015, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    desc1->networkId_ = "444455556666abcdef";
+    
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc2->networkId_ = "444455556666abcdef";
+    audioDeviceManager.AddConnectedDevices(desc2);
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::INPUT_DEVICE);
+    EXPECT_NE(desc1->pairDeviceDescriptor_, desc2);
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(desc1->pairDeviceDescriptor_, desc2);
+    audioDeviceManager.RemoveConnectedDevices(desc2);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_016, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::OUTPUT_DEVICE);
+    desc1->networkId_ = "444455556666abcdef";
+    audioDeviceManager.AddConnectedDevices(desc1);
+
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(desc1->pairDeviceDescriptor_, desc1);
+    audioDeviceManager.RemoveConnectedDevices(desc1);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDPDeviceDescriptor.
+* @tc.desc  : Test MakePairedDPDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_017, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    desc1->networkId_ = "444455556666abcdef";
+
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc2->macAddress_ = "444455556666123456";
+    audioDeviceManager.AddConnectedDevices(desc2);
+
+    audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(desc1->pairDeviceDescriptor_, desc2);
+    audioDeviceManager.RemoveConnectedDevices(desc2);
+}
 } // namespace AudioStandard
 } // namespace OHOS
