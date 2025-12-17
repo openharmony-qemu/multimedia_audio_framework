@@ -3148,7 +3148,7 @@ void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioS
 
 void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId)
 {
-    OHOS::AAFwk::Want Want;
+    OHOS::AAFwk::Want want;
     want.SetAction("usual.event.AUDIO_FOCUS_CHANGE_EVENT");
     want.SetParam("hintType");
     want.SetParam("uid", uid);
