@@ -973,9 +973,9 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
     } else if (key == "outdoor_mode") {
         parmKey = AudioParamKey::NONE;
         valueNew = key + "=" + value;
-        std::string mainkey1 = "audio_effect";
+        std::string newmainkey = "audio_effect";
         AUDIO_INFO_LOG("outdoor_mode key = %{public}s, value = %{public}s", key.c_str(), value.c_str());
-        RecognizeAudioEffectType(mainkey1, key, value);
+        RecognizeAudioEffectType(newmainkey, key, value);
     } else {
         return false;
     }
