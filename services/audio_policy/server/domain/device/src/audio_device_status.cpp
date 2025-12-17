@@ -309,7 +309,8 @@ void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendDeviceInfoUpdatedCallback(desc);
+        bool ret = audioPolicyServerHandler_->SendDeviceInfoUpdatedCallback(desc);
+        CHECK_AND_RETURN_LOG(ret, "send device info updated callback fail");
     }
 }
 
