@@ -82,7 +82,7 @@ public:
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
     void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
     void SetOutdoorMode(const std::string &outdoorModle);
-    void SetSuperLoudnessMode(const std::string &superLoudnessMode_);
+    void SetSuperLoudnessMode(const std::string &superLoudnessMode);
     bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
