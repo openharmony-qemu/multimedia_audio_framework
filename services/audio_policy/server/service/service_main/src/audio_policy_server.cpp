@@ -976,6 +976,7 @@ void AudioPolicyServer::HandleDataShareReadyEvent()
         std::thread([&]() { CallRingtoneLibrary(); }).detach();
         isInitRingtoneReady_ = true;
     }
+    AUDIO_INFO_LOG("DATA_SHARE_READY event received");
     audioPolicyManager_.SetDataShareReady(true);
     RegisterDataObserver();
     if (isInitMuteState_ == false) {

@@ -545,6 +545,7 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+    bool isDataShareReady_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
     std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
