@@ -40,6 +40,7 @@ BluetoothDeviceManager::~BluetoothDeviceManager()
 
 int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 {
+    std::lock_guard<std::mutex> lock(managerMtx_);
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
         "adapter %{public}s already loaded", adapterName.c_str());
     if (audioManager_ == nullptr || adapters_.size() == 0) {
@@ -57,7 +58,6 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
     CHECK_AND_RETURN_RET(index >= 0, ERR_NOT_STARTED);
 
     struct AudioAdapter *adapter = nullptr;
-    std::lock_guard<std::mutex> lock(managerMtx_);
     ret = audioManager_->LoadAdapter(audioManager_, &(descs[index]), &adapter);
     if (ret != SUCCESS) {
         HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
@@ -76,6 +76,7 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 
 void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool force)
 {
+    std::lock_guard<std::mutex> lock(managerMtx_);
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<BluetoothAdapterWrapper> wrapper = GetAdapter(adapterName);
@@ -86,7 +87,6 @@ void BluetoothDeviceManager::UnloadAdapter(const std::string &adapterName, bool 
         "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
         wrapper->renders_.size(), wrapper->captures_.size());
 
-    std::lock_guard<std::mutex> lock(managerMtx_);
     audioManager_->UnloadAdapter(audioManager_, wrapper->adapter_);
     wrapper->adapter_ = nullptr;
     innerLock.unlock();
