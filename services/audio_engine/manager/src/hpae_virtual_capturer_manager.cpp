@@ -152,7 +152,7 @@ int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName,
     }
     AUDIO_INFO_LOG("[StartMove] session: %{public}s to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
-    TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name, moveType);
     return SUCCESS;
 }
 
