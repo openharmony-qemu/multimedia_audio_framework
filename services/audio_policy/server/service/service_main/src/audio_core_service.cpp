@@ -1413,6 +1413,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
 
+    HandleA2dpSuspendWhenFetch(reason, audioActiveDevice_.GetCurrentOutputDevice(), outputStreamDescs);
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     // here will update volume must after UpdateStreamDeviceMap
@@ -1424,6 +1425,39 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         HandleFetchOutputWhenNoRunningStream(reason);
     }
     return ret;
+}
+
+bool AudioCoreService::HandleA2dpSuspendWhenLoad()
+{
+    if (a2dpNeedSuspend_.load(std::memory_order_acquire)) {
+        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+        if (a2dpNeedSuspend_) {
+            AUDIO_INFO_LOG("keep suspend a2dp");
+            AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void AudioCoreService::HandleA2dpRestore()
+{
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+
+    if (!a2dpNeedSuspend_) {
+        return;
+    }
+
+    if (std::chrono::steady_clock::now() < a2dpSuspendUntil_) {
+        return;
+    }
+
+    a2dpNeedSuspend_ = false;
+    AUDIO_INFO_LOG("restore a2dp");
+    if (!audioDeviceManager_.GetScoState()) {
+        AudioServerProxy::GetInstance().RestoreRenderSinkProxy("a2dp");
+    }
 }
 
 int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)

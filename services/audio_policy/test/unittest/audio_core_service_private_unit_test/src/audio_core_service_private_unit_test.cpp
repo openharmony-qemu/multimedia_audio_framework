@@ -3923,5 +3923,282 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleRingToDefaultSceneChange_001, TestSi
     audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_PHONE_CALL);
     EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
 }
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_001
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when other reason
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN };
+    AudioDeviceDescriptor actived;
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_002
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and empty streams
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived;
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_003
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and stream is nullptr
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    std::shared_ptr<AudioStreamDescriptor> stream { nullptr };
+    streams.emplace_back(stream);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_004
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and stream is STREAM_STATUS_NEW
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = STREAM_STATUS_NEW;
+    stream->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(stream);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_005
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and stream new devices is empty
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_.clear();
+    streams.emplace_back(stream);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_006
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and actived will not change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_006, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(stream);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_007
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and actived all will not change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_007, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto streamA = std::make_shared<AudioStreamDescriptor>();
+    streamA->streamStatus_ = STREAM_STATUS_STARTED;
+    streamA->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamA);
+    auto streamB = std::make_shared<AudioStreamDescriptor>();
+    streamB->streamStatus_ = STREAM_STATUS_STARTED;
+    streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamB);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_008
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and actived will change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_008, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(stream);
+    audioCoreService->a2dpNeedSuspend_ = true;
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_009
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and actived all will change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_009, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto streamA = std::make_shared<AudioStreamDescriptor>();
+    streamA->streamStatus_ = STREAM_STATUS_STARTED;
+    streamA->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamA);
+    auto streamB = std::make_shared<AudioStreamDescriptor>();
+    streamB->streamStatus_ = STREAM_STATUS_STARTED;
+    streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamB);
+    audioCoreService->a2dpNeedSuspend_ = true;
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_010
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and the first actived will change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_010, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto streamA = std::make_shared<AudioStreamDescriptor>();
+    streamA->streamStatus_ = STREAM_STATUS_STARTED;
+    streamA->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE));
+    streams.emplace_back(streamA);
+    auto streamB = std::make_shared<AudioStreamDescriptor>();
+    streamB->streamStatus_ = STREAM_STATUS_STARTED;
+    streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamB);
+    audioCoreService->a2dpNeedSuspend_ = true;
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenFetch
+ * @tc.number : HandleA2dpSuspendWhenFetch_011
+ * @tc.desc   : Test HandleA2dpSuspendWhenFetch when old device unavailable and the second actived will change
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspendWhenFetch_011, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioStreamDeviceChangeReasonExt reason { AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE };
+    AudioDeviceDescriptor actived { DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streams;
+    auto streamA = std::make_shared<AudioStreamDescriptor>();
+    streamA->streamStatus_ = STREAM_STATUS_STARTED;
+    streamA->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE));
+    streams.emplace_back(streamA);
+    auto streamB = std::make_shared<AudioStreamDescriptor>();
+    streamB->streamStatus_ = STREAM_STATUS_STARTED;
+    streamB->newDeviceDescs_.emplace_back(std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_DP, OUTPUT_DEVICE));
+    streams.emplace_back(streamB);
+    audioCoreService->a2dpNeedSuspend_ = true;
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenFetch(reason, actived, streams));
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
+ * @tc.number : HandleA2dpSuspend_001
+ * @tc.desc   : Test HandleA2dpSuspend when a2dp need suspend
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = true;
+    audioCoreService->HandleA2dpSuspend();
+    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
+ * @tc.number : HandleA2dpSuspend_002
+ * @tc.desc   : Test HandleA2dpSuspend when a2dp needn't suspend
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = false;
+    audioCoreService->HandleA2dpSuspend();
+    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+    usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->HandleA2dpRestore();
+    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

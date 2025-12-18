@@ -817,6 +817,7 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         }
         audioA2dpDevice_.SetA2dpDeviceStreamInfo(macAddress, streamInfo);
         ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
+        AudioCoreService::GetCoreService()->HandleA2dpSuspendWhenLoad();
     } else if (audioA2dpDevice_.CheckA2dpDeviceExist(macAddress)) {
         AUDIO_DEBUG_LOG("Audio configuration update, macAddress:[%{public}s], streamInfo.sampleRate: %{public}d",
             GetEncryptAddr(macAddress).c_str(), streamInfo.samplingRate);

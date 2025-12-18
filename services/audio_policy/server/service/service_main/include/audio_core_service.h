@@ -323,6 +323,8 @@ private:
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    bool HandleA2dpSuspendWhenLoad();
+    void HandleA2dpRestore();
     int32_t FetchInputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetAudioServerProxy();
@@ -548,6 +550,9 @@ private:
     void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
+    bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
+        const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);
+    void HandleA2dpSuspend();
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
@@ -652,6 +657,10 @@ private:
     bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
 
+    std::atomic<bool> a2dpNeedSuspend_ = { false };
+    std::chrono::steady_clock::time_point a2dpSuspendUntil_;
+    std::mutex a2dpSuspendMutex_;
+
     // offload delay release
     // isOffloadOpened_ check whether offload is need open
     std::atomic<bool> isOffloadOpened_[OFFLOAD_TYPE_NUM] = {};
@@ -704,6 +713,14 @@ private:
     std::shared_ptr<AudioStreamDescriptor> streamDesc_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_;
     const AudioStreamDeviceChangeReasonExt reason_;
+};
+
+class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {
+public:
+    void Exec() override
+    {
+        AudioCoreService::GetCoreService()->HandleA2dpRestore();
+    }
 };
 }
 }
