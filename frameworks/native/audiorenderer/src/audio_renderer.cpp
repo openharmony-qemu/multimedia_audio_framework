@@ -1107,7 +1107,7 @@ void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
     }
 }
 
-int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, bool isStartStateWaitFor)
+int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, bool needWait)
 {
     // Check first to avoid redundant instructions consumption in thread switching
     if (!IsRestoreOrStopNeeded()) {
@@ -1135,13 +1135,13 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, b
         sharedRenderer->isSwitchStreamSt_ = true;
         sharedRenderer->switchStreamSt_.notify_all();
     });
-    IsStartWaitFor(isStartStateWaitFor);
+    WaitSwitchStreamIfNeeded(needWait);
     return SUCCESS;
 }
 
-bool AudioRendererPrivate::IsStartWaitFor(bool isStartStateWaitFor)
+bool AudioRendererPrivate::WaitSwitchStreamIfNeeded(bool needWait)
 {
-    if (isStartStateWaitFor) {
+    if (needWait) {
         std::unique_lock<std::mutex> lock(switchStreamMt_);
         return switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
             return isSwitchStreamSt_;
