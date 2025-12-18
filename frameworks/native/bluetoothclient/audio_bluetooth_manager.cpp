@@ -34,6 +34,7 @@ using namespace AudioStandard;
 
 const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
 const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
+constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
 A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
@@ -668,7 +669,6 @@ bool AudioHfpManager::IsRecognitionStatus()
 
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    constexpr int32_t UID_FOUNDATION_SA = 5523;
     auto scene = scene_.load();
     CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || isVirtual, ERROR, "only support no call");
     {
@@ -677,7 +677,7 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
             if (virtualCalls_.count(uid) > 0) {
                 virtualCalls_.erase(uid);
             }
-            if (UID_FOUNDATION_SA == uid) {
+            if (uid == UID_FOUNDATION_SA) {
                 virtualCalls_.clear();
             }
         } else {
