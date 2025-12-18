@@ -217,10 +217,9 @@ void RemoteDeviceManager::ReleaseOutputRoute(const std::string &adapterName)
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    if (wrapper->routeHandle_ != -1) {
-        wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
-        wrapper->routeHandle_ = -1;
-    }
+    CHECK_AND_RETURN(wrapper->routeHandle_ != -1);
+    wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+    wrapper->routeHandle_ = -1;
 }
 
 void RemoteDeviceManager::SetMicMute(const std::string &adapterName, bool isMute)
