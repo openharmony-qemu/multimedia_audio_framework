@@ -668,6 +668,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
+    constexpr int32_t UID_FOUNDATION_SA = 5523;
     auto scene = scene_.load();
     CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || isVirtual, ERROR, "only support no call");
     {
@@ -675,6 +676,9 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
         if (isVirtual) {
             if (virtualCalls_.count(uid) > 0) {
                 virtualCalls_.erase(uid);
+            }
+            if (UID_FOUNDATION_SA == uid) {
+                virtualCalls_.clear();
             }
         } else {
             virtualCalls_[uid] = isVirtual;
