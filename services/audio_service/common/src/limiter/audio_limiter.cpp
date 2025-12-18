@@ -158,11 +158,31 @@ int32_t AudioLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *
     return SUCCESS;
 }
 
-void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
+void AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
 {
-    // calculate envelope energy
     float maxEnvelopeLevel = 0.0f;
-    for (int32_t i = 0; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+    int32_t i = 0;
+#if USE_ARM_NEON == 1
+    for (; i <= algoFrameLen_ - 8; i += 8) {
+        float32x4x2_t lr = vld2q_f32(&inBuffer[i]); // load interleaved stereo samples
+
+        float32x4_t absL = vabsq_f32(lr.val[0]);
+        float32x4_t absR = vabsq_f32(lr.val[1]);
+        float32x4_t tempLevelVec = vmaxq_f32(absL, absR); // max value for each frame
+
+        float tempLevelArr[4];
+        vst1q_f32(tempLevelArr, tempLevelVec);
+
+        // envelope update must be scalar because of data dependency
+        for (int j = 0; j < 4; ++j) {
+            float tempLevel = tempLevelArr[j];
+            float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
+            nextLev_ = coeff * nextLev_ + (1.0f - coeff) * tempLevel;
+            maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
+        }
+    }
+#endif
+    for (; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
         float tempBufInLeft = inBuffer[i];
         float tempBufInRight = inBuffer[i + 1];
         float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
@@ -170,6 +190,57 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
         nextLev_ = coeff * nextLev_ + (1 - coeff) * tempLevel;
         maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
     }
+    return maxEnvelopeLevel;
+}
+
+void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outputBuffer, flaot &lastGain, float deltaGain)
+{
+    int32_t i = 0;
+#if USE_ARM_NEON == 1
+    for (; i <= algoFrameLen_ - 8; i += 8) {
+        // Load interleaved stereo input and history
+        float32x4x2_t in_data  = vld2q_f32(&inBuffer[i]);
+        float32x4x2_t his_data = vld2q_f32(&bufHis_[i]);
+
+        // Scalar-equivalent gain progression
+        lastGain += deltaGain;
+        float g0 = lastGain;
+        lastGain += deltaGain;
+        float g1 = lastGain;
+        lastGain += deltaGain;
+        float g2 = lastGain;
+        lastGain += deltaGain;
+        float g3 = lastGain;
+
+        // Pack gains into vector [g0 g1 g2 g3]
+        float32x4_t gainVec = { g0, g1, g2, g3 };
+
+        // Apply gain to history buffer
+        float32x4x2_t out_data;
+        out_data.val[0] = vmulq_f32(his_data.val[0], gainVec);
+        out_data.val[1] = vmulq_f32(his_data.val[1], gainVec);
+
+        // Store output
+        vst2q_f32(&outBuffer[i], out_data);
+
+        // Update history buffer with new input
+        vst2q_f32(&bufHis_[i], in_data);
+    }
+#endif
+    for (; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
+        lastGain += deltaGain;
+        outBuffer[i] = bufHis_[i] * lastGain;
+        outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+        bufHis_[i] = inBuffer[i];
+        bufHis_[i + 1] = inBuffer[i + 1];
+    }
+}
+
+void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
+{
+    // calculate envelope energy
+    // float maxEnvelopeLevel = 0.0f;
+    float maxEnvelopeLevel = CalculateEnvelopeEnergy(inBuffer);
 
     // calculate gain
     float tempMaxLevel = std::max(maxEnvelopeLevel, curMaxLev_);
@@ -185,13 +256,14 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
 
     // apply gain
     if (algoFrameLen_ % AUDIO_LMT_ALGO_CHANNEL == 0) {
-        for (int32_t i = 0; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
-            lastGain += deltaGain;
-            outBuffer[i] = bufHis_[i] * lastGain;
-            outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
-            bufHis_[i] = inBuffer[i];
-            bufHis_[i + 1] = inBuffer[i + 1];
-        }
+        // for (int32_t i = 0; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
+        //     lastGain += deltaGain;
+        //     outBuffer[i] = bufHis_[i] * lastGain;
+        //     outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+        //     bufHis_[i] = inBuffer[i];
+        //     bufHis_[i + 1] = inBuffer[i + 1];
+        // }
+        ApplyGainToStereoFrame(inBuffer, outBuffer, lastGain, deltaGain);
     } else {
         outBuffer[0] = bufHis_[0] * lastGain;
         bufHis_[0] = bufHis_[algoFrameLen_];
