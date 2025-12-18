@@ -17,6 +17,8 @@
 #define ST_AUDIO_SYSTEM_MANAGER_H
 
 #include "audio_system_manager_ext.h"
+#include "audio_workgroup_client_manager.h"
+#include "audio_wakeup_client_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -28,24 +30,6 @@ namespace AudioStandard {
 class AudioSystemManager {
 public:
     static AudioSystemManager *GetInstance();
-
-    /**
-     * @brief Map volume to HDI.
-     *
-     * @param volume volume value.
-     * @return Returns current volume.
-     * @since 8
-     */
-    static float MapVolumeToHDI(int32_t volume);
-
-    /**
-     * @brief Map volume from HDI.
-     *
-     * @param volume volume value.
-     * @return Returns current volume.
-     * @since 8
-     */
-    static int32_t MapVolumeFromHDI(float volume);
 
     /**
      * @brief Get audio streamType.
@@ -1564,54 +1548,12 @@ public:
      */
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
 
-    class WorkgroupPrioRecorder {
-    public:
-        WorkgroupPrioRecorder(int32_t grpId);
-        ~WorkgroupPrioRecorder() = default;
-        void SetRestoreByPermission(bool isByPermission);
-        bool GetRestoreByPermission();
-        int32_t GetGrpId();
-        void RecordThreadPrio(int32_t tokenId);
-        int32_t RestoreGroupPrio(bool isByPermission);
-        int32_t RestoreThreadPrio(int32_t tokenId);
-    private:
-        int32_t grpId_;
-        std::unordered_map<int32_t, int32_t> threads_;
-        bool restoreByPermission_;
-        std::mutex workgroupThreadsMutex_;
-    };
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
     int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:
-    class WakeUpCallbackImpl : public WakeUpSourceCallback {
-    public:
-        WakeUpCallbackImpl(AudioSystemManager *audioSystemManager)
-            :audioSystemManager_(audioSystemManager)
-        {
-        }
-        void OnCapturerState(bool isActive) override
-        {
-            auto callback = audioSystemManager_ -> audioCapturerSourceCallback_;
-            if (callback != nullptr) {
-                callback -> OnCapturerState(isActive);
-            }
-        }
-        void OnWakeupClose() override
-        {
-            auto callback = audioSystemManager_ -> audioWakeUpSourceCloseCallback_;
-            if (callback != nullptr) {
-                callback -> OnWakeupClose();
-            }
-        }
-    private:
-        AudioSystemManager *audioSystemManager_;
-    };
 
-    static constexpr int32_t MAX_VOLUME_LEVEL = 15;
-    static constexpr int32_t MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t CONST_FACTOR = 100;
     static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
 
     AudioSystemManager();
@@ -1621,43 +1563,16 @@ private:
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
     int32_t GetCallingPid() const;
 
-    int32_t RegisterWakeupSourceCallback();
     void OtherDeviceTypeCases(DeviceType deviceType) const;
     AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole, uint16_t dmDeviceType) const;
 
     int32_t cbClientId_ = -1;
-    int32_t volumeChangeClientPid_ = -1;
     AudioRingerMode ringModeBackup_ = RINGER_MODE_NORMAL;
-    std::shared_ptr<AudioManagerDeviceChangeCallback> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
-    std::vector<std::shared_ptr<AudioGroupManager>> groupManagerMap_;
     std::mutex ringerModeCallbackMutex_;
-    std::mutex groupManagerMapMutex_;
-
-    std::shared_ptr<AudioCapturerSourceCallback> audioCapturerSourceCallback_ = nullptr;
-    std::shared_ptr<WakeUpSourceCloseCallback> audioWakeUpSourceCloseCallback_ = nullptr;
-
-    std::shared_ptr<WakeUpCallbackImpl> remoteWakeUpCallback_;
-
-    class AudioWorkgroupChangeCallbackImpl : public AudioWorkgroupChangeCallback {
-    public:
-        AudioWorkgroupChangeCallbackImpl() {};
-        ~AudioWorkgroupChangeCallbackImpl() {};
-    private:
-        void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) override;
-    };
-
-    std::mutex startGroupPermissionMapMutex_;
-    std::unordered_map<uint32_t, std::unordered_map<uint32_t, bool>> startGroupPermissionMap_;
-    void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info);
-    bool IsValidToStartGroup(int32_t workgroupId);
-    bool hasSystemPermission_ = false;
-    std::unordered_map<int32_t, std::shared_ptr<WorkgroupPrioRecorder>> workgroupPrioRecorderMap_;
-    std::mutex workgroupPrioRecorderMutex_;
-    std::mutex volumeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

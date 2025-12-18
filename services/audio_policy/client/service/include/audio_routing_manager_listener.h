@@ -17,6 +17,7 @@
 #define AUDIO_ROUTING_MANAGER_LISTENER_H
 
 #include "audio_routing_manager.h"
+#include "audio_system_manager_ext.h"
 #include "standard_audio_routing_manager_listener_stub.h"
 
 namespace OHOS {
