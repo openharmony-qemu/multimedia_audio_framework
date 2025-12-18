@@ -21,6 +21,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "source/audio_capture_source.h"
 #include "capturer_clock_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -30,6 +31,9 @@ namespace AudioStandard {
 
 const uint32_t DEFAULT_SIZE = 8;
 const uint32_t UNIQUE_ID_INTERVAL = 8;
+static const uint32_t TEST_CAPUTRE_ID = 1;
+static const uint32_t TEST_STREAM_ID = 100000;
+
 class AudioCaptureSourceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -821,6 +825,86 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_010, TestSize.Level
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_VOICE_RECOGNITION_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_001
+ * @tc.desc   : Test ChangePipeStream() add, change and remove cases
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_001, TestSize.Level2)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_STATE_CHANGE,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    auto streams = pipeInfo->GetStreams();
+    if (streams.find(TEST_STREAM_ID) == streams.end()) {
+        DeInitPrimarySource();
+        FAIL();
+    }
+    EXPECT_EQ(CAPTURER_RUNNING, streams[TEST_STREAM_ID].state_);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_002
+ * @tc.desc   : Test ChangePipeStream() remove all cases
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_002, TestSize.Level2)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE_ALL,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_003
+ * @tc.desc   : Test ChangePipeStream() abnormal case
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_003, TestSize.Level4)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(static_cast<StreamChangeType>(STREAM_CHANGE_TYPE_STATE_CHANGE + 1),
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
 }
 } // namespace AudioStandard
 } // namespace OHOS

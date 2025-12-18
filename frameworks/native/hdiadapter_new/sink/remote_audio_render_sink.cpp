@@ -291,26 +291,6 @@ int64_t RemoteAudioRenderSink::GetVolumeDataCount()
     return volumeDataCount_;
 }
 
-int32_t RemoteAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t RemoteAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void RemoteAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string RemoteAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
@@ -413,41 +393,12 @@ int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcl
     return SUCCESS;
 }
 
-int32_t RemoteAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
     AUDIO_INFO_LOG("device: %{public}d", outputDevices[0]);
     return DoSetOutputRoute();
-}
-
-void RemoteAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
-}
-
-void RemoteAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t RemoteAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
@@ -557,11 +508,6 @@ void RemoteAudioRenderSink::OnAudioParamChange(const std::string &adapterName, c
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
-}
-
-void RemoteAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 AudioFormat RemoteAudioRenderSink::ConvertToHdiFormat(AudioSampleFormat format)

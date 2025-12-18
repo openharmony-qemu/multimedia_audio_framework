@@ -19,8 +19,8 @@
 #include <iostream>
 #include <vector>
 #include <mutex>
-#include "sink/i_audio_render_sink.h"
-#include "source/i_audio_capture_source.h"
+#include "sink/i_audio_sink_callback.h"
+#include "source/i_audio_source_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

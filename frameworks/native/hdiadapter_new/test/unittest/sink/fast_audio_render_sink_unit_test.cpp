@@ -138,31 +138,6 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_004, TestSize.Level1)
 
 /**
  * @tc.name   : Test FastSink API
- * @tc.number : FastSinkUnitTest_005
- * @tc.desc   : Test fast sink set audio scene
- */
-HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_005, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_);
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test FastSink API
- * @tc.number : FastSinkUnitTest_006
- * @tc.desc   : Test fast sink update active device
- */
-HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_006, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name   : Test FastSink API
  * @tc.number : FastSinkUnitTest_007
  * @tc.desc   : Test fast sink update apps uid
  */

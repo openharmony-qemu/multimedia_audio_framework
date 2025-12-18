@@ -40,12 +40,6 @@ public:
     int32_t Pause(void) override;
     int32_t Flush(void) override;
     int32_t Reset(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc) override;
-
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -59,17 +53,11 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
-    void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
-    void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state) override;
 
     void DumpInfo(std::string &dumpString) override;
-    std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -91,14 +79,6 @@ private:
     int32_t CheckPositionTime(void);
     int32_t StopInner();
 
-    // Funcs to handle pipe info
-    void InitPipeInfo();
-    void ChangePipeStatus(AudioPipeStatus state);
-    void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state);
-    void DeinitPipeInfo();
-
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 50;
@@ -112,7 +92,6 @@ private:
 #endif
 
     IAudioSourceAttr attr_ = {};
-    SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool started_ = false;
     bool paused_ = false;
@@ -131,10 +110,6 @@ private:
     uint32_t eachReadFrameSize_ = 0;
     size_t bufferSize_ = 0;
     uint32_t syncInfoSize_ = 0;
-
-    // For source info notify
-    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
-    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

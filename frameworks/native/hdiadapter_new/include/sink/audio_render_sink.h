@@ -47,9 +47,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
@@ -69,7 +66,6 @@ public:
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
 
     int32_t SetPaPower(int32_t flag) override;
@@ -77,13 +73,10 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
-    void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     void SetAddress(const std::string &address) override;
 
     void DumpInfo(std::string &dumpString) override;
-    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
 
     // for a2dp_offload connection state
     int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
@@ -124,14 +117,6 @@ private:
     void WaitForDataLinkConnected();
     void UpdateNearlinkOutputRoute();
 
-    // Funcs to handle pipe info
-    void InitPipeInfo();
-    void ChangePipeStatus(AudioPipeStatus state);
-    void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state);
-    void DeinitPipeInfo();
-
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -157,7 +142,6 @@ private:
     uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
     bool renderInited_ = false;
     bool started_ = false;
@@ -203,7 +187,7 @@ private:
     std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
-    std::mutex sinkMutex_;
+
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
 
@@ -212,10 +196,6 @@ private:
     bool isDataLinkConnected_ = false;
     std::condition_variable dataConnectionCV_;
     std::function<void(bool)> deviceCallback_ = nullptr;
-
-    // For sink info notify
-    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
-    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

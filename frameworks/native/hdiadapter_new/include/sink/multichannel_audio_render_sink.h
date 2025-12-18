@@ -45,10 +45,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     int32_t SetVolume(float left, float right) override;
@@ -65,21 +61,12 @@ public:
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
-    void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     void DumpInfo(std::string &dumpString) override;
-    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     int32_t SetSinkMuteForSwitchDevice(bool mute) override;
 private:
@@ -98,14 +85,6 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     void UpdateSinkState(bool started);
 
-    // Funcs to handle pipe info
-    void InitPipeInfo();
-    void ChangePipeStatus(AudioPipeStatus state);
-    void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state);
-    void DeinitPipeInfo();
-
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 4096;
@@ -121,7 +100,6 @@ private:
 
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
     bool renderInited_ = false;
     bool started_ = false;
@@ -155,15 +133,11 @@ private:
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
-    std::mutex sinkMutex_;
+
     // for device switch
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
-
-    // For sink info notify
-    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
-    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard
