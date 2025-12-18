@@ -1216,6 +1216,27 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_006, TestSize.Level1)
 }
 
 /*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_007
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_NEARLINK);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
+
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_SPEAKER);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::INACTIVE;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
+}
+
+/*
  * @tc.name  : Test HandleZeroVolumeStartEvent API
  * @tc.type  : FUNC
  * @tc.number: TestHandleZeroVolumeStartEvent_001
