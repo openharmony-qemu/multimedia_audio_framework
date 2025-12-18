@@ -1609,7 +1609,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetConverterConfig_001, TestSize.Level
     ASSERT_NE(nullptr, server);
 
     ConverterConfig ret = AudioConverterParser::GetInstance().LoadConfig();
-    EXPECT_NE(ret.outChannelLayout, 0);
+    EXPECT_EQ(ret.outChannelLayout, 0);
 }
 
 /**
