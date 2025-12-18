@@ -158,7 +158,7 @@ int32_t AudioLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *
     return SUCCESS;
 }
 
-void AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
+float AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
 {
     float maxEnvelopeLevel = 0.0f;
     int32_t i = 0;
@@ -193,7 +193,7 @@ void AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
     return maxEnvelopeLevel;
 }
 
-void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outputBuffer, flaot &lastGain, float deltaGain)
+void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain)
 {
     int32_t i = 0;
 #if USE_ARM_NEON == 1

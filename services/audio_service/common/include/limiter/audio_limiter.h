@@ -43,7 +43,7 @@ public:
 
 private:
     float CalculateEnvelopeEnergy(float *inBuffer);
-    void ApplyGainToStereoFrame(float *inBuffer, float *outputBuffer, flaot &lastGain, float deltaGain);
+    void ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
     void ProcessAlgo(float *inBuffer, float *outBuffer);
     uint32_t latency_;
     int32_t sinkIndex_;
