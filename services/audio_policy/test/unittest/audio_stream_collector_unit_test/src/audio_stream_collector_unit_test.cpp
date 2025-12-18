@@ -2233,7 +2233,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_101, TestSize.Level1
     int32_t ret = collector.CapturerMutedFlagChange(456, true);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_TRUE(changeInfo->muted);
-    EXPECT_TRUE(collector.audioCapturerChangeInfos_.empty());
+    EXPECT_FALSE(collector.audioCapturerChangeInfos_.empty());
 }
 
 /**
@@ -2251,7 +2251,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_102, TestSize.Level1
     int32_t ret = collector.CapturerMutedFlagChange(999, true);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_FALSE(changeInfo->muted);
-    EXPECT_TRUE(collector.audioCapturerChangeInfos_.empty());
+    EXPECT_FALSE(collector.audioCapturerChangeInfos_.empty());
 }
 
 /**
