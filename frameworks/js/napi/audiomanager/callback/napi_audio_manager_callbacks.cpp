@@ -61,11 +61,12 @@ void NapiAudioManagerCallback::SaveCallbackReference(const std::string &callback
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioManagerCallback::destroy";
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
                          "NapiAudioManagerCallback: creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == DEVICE_CHANGE_CALLBACK_NAME) {
         deviceChangeCallback_ = cb;
     } else if (callbackName == MICROPHONE_BLOCKED_CALLBACK_NAME) {
@@ -114,6 +115,7 @@ int32_t NapiAudioManagerCallback::GetAudioManagerDeviceChangeCbListSize()
 void NapiAudioManagerCallback::SaveRoutingManagerDeviceChangeCbRef(DeviceFlag deviceFlag, napi_value callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    std::string taskName = "NapiAudioManagerCallback::destroy";
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
 
@@ -125,7 +127,7 @@ void NapiAudioManagerCallback::SaveRoutingManagerDeviceChangeCbRef(DeviceFlag de
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
 
     routingManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
     AUDIO_INFO_LOG("Save routing device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
@@ -208,7 +210,7 @@ void NapiAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(napi_value
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
-
+    std::string taskName = "NapiAudioManagerCallback::destroy";
     for (auto it = microphoneBlockedCbList_.begin(); it != microphoneBlockedCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it)->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback, "audio manager has same callback, nothing to do");
@@ -216,7 +218,7 @@ void NapiAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(napi_value
 
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     microphoneBlockedCbList_.push_back({cb});
     AUDIO_INFO_LOG("SaveMicrophoneBlocked callback ref success, list size [%{public}zu]",
         microphoneBlockedCbList_.size());
@@ -254,7 +256,7 @@ void NapiAudioManagerCallback::SaveAudioManagerDeviceChangeCbRef(DeviceFlag devi
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = 1;
-
+    std::string taskName = "NapiAudioManagerCallback::destroy";
     for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = IsSameCallback(env_, callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: audio manager has same callback, nothing to do");
@@ -263,7 +265,7 @@ void NapiAudioManagerCallback::SaveAudioManagerDeviceChangeCbRef(DeviceFlag devi
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     audioManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
     AUDIO_INFO_LOG("Save manager device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
         deviceFlag, audioManagerDeviceChangeCbList_.size());

@@ -86,6 +86,7 @@ void NapiAudioSystemVolumeChangeCallback::SaveCallbackReference(const std::strin
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioSystemVolumeChangeCallback::destroy";
 
     for (auto &item : audioSystemVolumeChangeCbList_) {
         if (item == nullptr) {
@@ -98,7 +99,7 @@ void NapiAudioSystemVolumeChangeCallback::SaveCallbackReference(const std::strin
     napi_status status = napi_create_reference(env_, args, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
         "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     audioSystemVolumeChangeCbList_.push_back(cb);
     AUDIO_INFO_LOG("save callback ref success, list size=%{public}zu", audioSystemVolumeChangeCbList_.size());
 }

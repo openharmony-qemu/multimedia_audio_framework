@@ -84,6 +84,7 @@ void NapiAudioStreamVolumeChangeCallback::SaveCallbackReference(const std::strin
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+    std::string taskName = "NapiAudioStreamVolumeChangeCallback::destroy";
 
     CHECK_AND_RETURN_LOG(callbackName == AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME,
         "unknown callback type: %{public}s", callbackName.c_str());
@@ -91,7 +92,7 @@ void NapiAudioStreamVolumeChangeCallback::SaveCallbackReference(const std::strin
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     audioStreamVolumeChangeCbList_.push_back(cb);
     AUDIO_INFO_LOG("save callback ref success, list size=%{public}zu", audioStreamVolumeChangeCbList_.size());
 }
