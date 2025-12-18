@@ -1576,6 +1576,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 
 int32_t RendererInServer::SetRate(int32_t rate)
 {
+    CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
     audioRenderRate_ = static_cast<AudioRendererRate>(rate);
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
         "ProcessAndSetStaticBuffer fail!");
@@ -2783,6 +2784,8 @@ int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo
 
 int32_t RendererInServer::ProcessAndSetStaticBuffer()
 {
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
+        ERR_OPERATION_FAILED, "staticBuffer not inited");
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
 
@@ -2825,6 +2828,7 @@ int32_t RendererInServer::CreateServerBuffer()
             AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, audioServerBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
             ERR_OPERATION_FAILED, "staticBufferProcessor_ is nullptr!");
+        ProcessAndSetStaticBuffer();
     } else {
         // create OHAudioBuffer in server
         audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
@@ -2873,9 +2877,8 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
 
 void RendererInServer::MarkStaticFadeIn()
 {
-    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
-        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
+    CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
+    CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
 }
 

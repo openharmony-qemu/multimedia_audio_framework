@@ -138,7 +138,11 @@ void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t 
 {
     std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(bufferBase != nullptr, "bufferBase in SetProcessedBuffer is nullptr!");
+
+    // calculate the buffer beginning position when set renderRate
     curStaticDataPos_ = (processedBufferSize_ == 0 ? 0 : curStaticDataPos_ * 1.0 / processedBufferSize_ * bufferSize);
+    uint32_t byteSizePerFrame = streamInfo_.channels * PcmFormatToBits(streamInfo_.format);
+    curStaticDataPos_ = (byteSizePerFrame == 0 ? 0 : curStaticDataPos_ / byteSizePerFrame * byteSizePerFrame);
     processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }
@@ -151,7 +155,7 @@ void AudioStaticBufferProvider::SetLoopTimes(int64_t times)
     curStaticDataPos_ = 0;
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
-    AUDIO_INFO_LOG("SetLoopTimes %{public}d", times);
+    AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, times);
 }
 
 void AudioStaticBufferProvider::RefreshBufferStatus()

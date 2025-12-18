@@ -1358,15 +1358,17 @@ int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     CHECK_AND_RETURN_RET_LOG(processBuffer_->GetStaticMode(), ERR_INCORRECT_MODE, "not in static Mode");
+    CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(renderRate), SUCCESS);
     audioRenderRate_ = static_cast<AudioRendererRate>(renderRate);
     CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
         "ProcessAndSetStaticBuffer fail!");
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::ProcessAndSetStaticBuffer(bool needRefreshBufferStatus)
+int32_t AudioProcessInServer::ProcessAndSetStaticBuffer()
 {
-    CHECK_AND_RETURN_RET(needRefreshBufferStatus, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
+        ERR_OPERATION_FAILED, "staticBuffer not inited");
     int32_t ret = staticBufferProcessor_->ProcessBuffer(audioRenderRate_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessStaticBuffer fail!");
     uint8_t *bufferBase = nullptr;
@@ -1399,6 +1401,7 @@ int32_t AudioProcessInServer::CreateServerBuffer()
         staticBufferProcessor_ = AudioStaticBufferProcessor::CreateInstance(processConfig_.streamInfo, processBuffer_);
         CHECK_AND_RETURN_RET_LOG(staticBufferProcessor_ != nullptr,
             ERR_OPERATION_FAILED, "BufferProcessor_ is nullptr!");
+        ProcessAndSetStaticBuffer();
     } else {
         // create OHAudioBuffer in server.
         processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
@@ -1433,11 +1436,10 @@ void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
     }
 }
 
-void RendererInServer::MarkStaticFadeIn()
+void AudioProcessInServer::MarkStaticFadeIn()
 {
-    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, SUCCESS);
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
-        ERR_OPERATION_FAILED, "staticBuffer not Inited!");
+    CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
+    CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
