@@ -2005,21 +2005,19 @@ void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid,
     if (currentPid == incomingPid) {
         return;
     }
-    bool isCurTargetWindowState = WindowUtils::CheckWindowState(currentPid);
-    bool isIncomingTargetWindowState = WindowUtils::CheckWindowState(incomingPid);
-    if (!isCurTargetWindowState || !isIncomingTargetWindowState) {
-        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d Not all front desk audio access",
-            isCurTargetWindowState, isIncomingTargetWindowState);
+    if ((existStreamType != STREAM_MUSIC &&
+        existStreamType != STREAM_MOVIE && existStreamType != STREAM_SPEECH) ||
+        (incomingStreamType != STREAM_MUSIC && incomingStreamType != STREAM_MOVIE &&
+        incomingStreamType != STREAM_SPEECH)) {
         return;
     }
-    if ((existStreamType == STREAM_MUSIC ||
-        existStreamType == STREAM_MOVIE || existStreamType == STREAM_SPEECH) &&
-        (incomingStreamType == STREAM_MUSIC || incomingStreamType == STREAM_MOVIE ||
-        incomingStreamType == STREAM_SPEECH)) {
+
+    bool isCurTargetWindowState = WindowUtils::CheckWindowState(currentPid);
+    bool isIncomingTargetWindowState = WindowUtils::CheckWindowState(incomingPid);
+    if (isCurTargetWindowState && isIncomingTargetWindowState) {
+        AUDIO_INFO_LOG("The media windowStates concurrent");
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         focusEntry.actionOn = INCOMING;
-        AUDIO_INFO_LOG("The media windowStates concurrent");
-        return;
     }
 }
 
