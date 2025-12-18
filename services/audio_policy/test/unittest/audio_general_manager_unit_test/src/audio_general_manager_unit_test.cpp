@@ -228,7 +228,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_012, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -247,7 +247,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_013, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -447,7 +447,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_023, TestSize.Level1)
     EXPECT_NE(audioGeneralManagerPtr, nullptr);
 
     int32_t ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter,  audioDeviceDescriptors);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**

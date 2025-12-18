@@ -331,5 +331,20 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_010, TestSize.Level1)
     remoteSink->signalDetected_ = originSignalDetected;
     remoteSink->signalDetectedTime_ = originSignalDetectedTime;
 }
+
+/**
+ * @tc.name   : Test RemoteSink API
+ * @tc.number : RemoteSinkUnitTest_011
+ * @tc.desc   : Test remote sink release active device
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_011, TestSize.Level1)
+{
+    std::shared_ptr<RemoteAudioRenderSink> sink = std::make_shared<RemoteAudioRenderSink>("test");
+    sink->renderInited_.store(true);
+    sink->ReleaseActiveDevice(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(sink->renderInited_.load(), false);
+    sink->ReleaseActiveDevice(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(sink->renderInited_.load(), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
