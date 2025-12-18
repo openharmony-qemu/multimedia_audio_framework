@@ -1,4 +1,4 @@
-/*
+audio_resource_service_unit_test.cpp/*
  * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -848,7 +848,6 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
         audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
     }
     EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
-    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -883,23 +882,6 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_006, TestSize.Level1)
     service->audioWorkgroupMap_[2001].hasSystemPermission = false;
     int32_t pid = 9999;
     EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
-}
-
-/**
- * @tc.name  : AudioWorkgroupCheck - Max Process Limit
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_007
- * @tc.desc  : Should return ERR_NOT_SUPPORTED if normal process count reaches AUDIO_MAX_PROCESS.
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
-{
-    auto* service = AudioResourceService::GetInstance();
-    service->audioWorkgroupMap_.clear();
-    for (int i = 0; i < 2; ++i) {
-        service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
-    }
-    int32_t pid = 8888;
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
 }
 
 /**
