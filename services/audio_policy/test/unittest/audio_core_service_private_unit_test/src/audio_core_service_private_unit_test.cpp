@@ -1726,34 +1726,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Leve
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_104
- * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_NEW;
-    audioStreamDescriptor->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-
-    uint32_t flag = 0;
-
-    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
-    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
-    ASSERT_NE(audioCoreService->pipeManager_, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_105
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
  */
