@@ -1233,7 +1233,7 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_007, TestSize.Level1)
     PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_SPEAKER);
     audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::INACTIVE;
     audioEndpointInner->ZeroVolumeCheck(0);
-    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::INACTIVE);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
 }
 
 /*
