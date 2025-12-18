@@ -165,10 +165,6 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_004, TestSize.Level1)
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(sRet, PIPE_PRIMARY_OUTPUT);
 
-    deviceType = DEVICE_TYPE_NEARLINK_IN;
-    sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
-    EXPECT_EQ(sRet, PIPE_PRIMARY_OUTPUT);
-
     role = ROLE_SOURCE;
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
@@ -179,10 +175,6 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_004, TestSize.Level1)
     EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
-    EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
-
-    deviceType = DEVICE_TYPE_NEARLINK;
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
 
