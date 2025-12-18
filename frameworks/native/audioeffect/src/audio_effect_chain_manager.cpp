@@ -401,6 +401,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatializationEnabled(enabled);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
+    audioEffectChain->SetSystemLoadState(systemLoadState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
     audioEffectChain->SetEarphoneProduct(earphoneProduct_);
     audioEffectChain->SetOutdoorMode(outdoorModle_);
@@ -1007,6 +1008,10 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetSuperLoudnessMode(value);
                 paramUpdated = true;
                 break;
+            case HDI_SYSTEMLOAD_STATE:
+                audioEffectChain->SetSystemLoadState(value);
+                paramUpdated = true;
+                break;
             default:
                 break;
         }
@@ -1037,6 +1042,8 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(foldState_, HDI_FOLD_STATE);
     } else if (mainkey == "device_status" && subkey == "lid_state") {
         updateParam(lidState_, HDI_LID_STATE);
+    } else if (mainkey == "audio_effect" && subkey == SYSTEM_LOAD_SUBKEY) {
+        updateParam(systemLoadState_, HDI_SYSTEMLOAD_STATE);
     } else if (mainkey == "audio_effect" && subkey == "outdoor_mode") {
         updateParam(outdoorModle_, HDI_OUTDOOR_MODE);
     } else if (mainkey == "LOUD_VOLUME_MODE" && subkey == "super_loudness_mode") {

@@ -128,6 +128,12 @@ void AudioEffectChain::SetLidState(const std::string &lidState)
         "convert invalid lidState: %{public}s", lidState.c_str());
 }
 
+void AudioEffectChain::SetSystemLoadState(const std::string &systemLoadState)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(systemLoadState, systemLoadState_),
+        "convert invalid systemLoadState: %{public}s", systemLoadState.c_str());
+}
+
 void AudioEffectChain::SetEffectCurrSceneType(AudioEffectScene currSceneType)
 {
     currSceneType_ = currSceneType;
@@ -198,7 +204,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
-        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE]);
+        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
@@ -240,6 +246,7 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[EARPHONE_PRODUCT] = static_cast<int32_t>(earphoneProduct_);
     data[OUTDOOR_MODE] = static_cast<int32_t>(outdoorModle_);
     data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
+    data[SYSTEMLOAD_STATE_INDEX] = static_cast<int32_t>(systemLoadState_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
