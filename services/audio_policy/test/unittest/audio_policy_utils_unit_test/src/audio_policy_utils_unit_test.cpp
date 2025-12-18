@@ -529,10 +529,10 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
 /**
  * @tc.name  : Test GetSourcePortName API
  * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_020
+ * @tc.number: AudioPolicyUtilsUnitTest_021
  * @tc.desc  : Test GetSourcePortName
  */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
 {
     AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
     audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
