@@ -154,6 +154,7 @@ private:
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
+    static constexpr int32_t RSS_UID = 1096;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
@@ -359,6 +360,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
