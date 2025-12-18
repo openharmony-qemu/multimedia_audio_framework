@@ -77,11 +77,10 @@ IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
     // 1. Avoid unexpected release in proRenderStreamImpl working thread
-    // 2. Avoid RendererInServer destructor from AudioService weak_ptr, may cause deadlock in UpdateSessionOperation
+    // 2. Avoid RendererInServer/CapturerInServer_ destructor from AudioService weak_ptr, may cause deadlock in UpdateSessionOperation
     if (rendererInServer_) {
         rendererInServer_->Release();
     }
-
     if (capturerInServer_) {
         capturerInServer_->Release();
     }
