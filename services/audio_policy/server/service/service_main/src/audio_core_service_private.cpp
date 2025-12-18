@@ -72,6 +72,7 @@ static const uint32_t DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 350000; //
 static const uint32_t HEADSET_TO_SPK_EP_EXTRA_SLEEP_US = 120000; // 120ms
 static const uint32_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 120000; // 120ms
 static const uint32_t VOICE_CALL_DEVICE_SET_DELAY_US = 120000; // 120ms
+static const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
@@ -117,6 +118,50 @@ std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
         out[i] = tmp[i];
     }
     return out;
+}
+
+bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
+    const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams)
+{
+    if (reason.IsOldDeviceUnavaliable() && !streams.empty()) {
+        bool activedWillChange = any_of(streams.begin(), streams.end(), [&actived](const auto &stream) {
+            return stream != nullptr && stream->streamStatus_ == STREAM_STATUS_STARTED &&
+                !stream->newDeviceDescs_.empty() &&
+                !actived.IsSameDeviceDescPtr(stream->newDeviceDescs_.front());
+        });
+        if (activedWillChange) {
+            HandleA2dpSuspend();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void AudioCoreService::HandleA2dpSuspend()
+{
+    {
+        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
+        a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+            std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+
+        if (a2dpNeedSuspend_) {
+            return;
+        }
+
+        a2dpNeedSuspend_ = true;
+    }
+
+    AUDIO_INFO_LOG("suspend a2dp");
+    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+
+    auto action = std::make_shared<RestoreA2dpSinkAction>();
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.delayTimeMs = OLD_DEVICE_UNAVALIABLE_SUSPEND_MS;
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
+    asyncHandler_->PostAsyncAction(desc);
 }
 
 void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
@@ -692,6 +737,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
         audioActiveDevice_.GetCurrentOutputDeviceType());
     result = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName, SOURCE_TYPE_INVALID);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
+    HandleA2dpSuspendWhenLoad();
 #endif
     return result;
 }
