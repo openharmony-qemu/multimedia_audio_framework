@@ -36,7 +36,7 @@ constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
 constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
 constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
-constexpr std::string SYSTEM_LOAD_SUBKEY = "systemLoad_state";
+constexpr const char* SYSTEM_LOAD_SUBKEY = "systemLoad_state";
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
