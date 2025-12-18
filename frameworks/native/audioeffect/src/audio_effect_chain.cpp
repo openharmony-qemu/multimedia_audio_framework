@@ -200,7 +200,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     AUDIO_INFO_LOG("outdoor set param to handle, sceneType: %{public}d, effectMode: %{public}d, rotation: %{public}d, "
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
         "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
-        "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d",
+        "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
+        "systemLoadState: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
