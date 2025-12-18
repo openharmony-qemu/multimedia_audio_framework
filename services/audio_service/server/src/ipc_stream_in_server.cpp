@@ -81,6 +81,10 @@ IpcStreamInServer::~IpcStreamInServer()
     if (rendererInServer_) {
         rendererInServer_->Release();
     }
+
+    if (capturerInServer_) {
+        capturerInServer_->Release();
+    }
 }
 
 int32_t IpcStreamInServer::Config()
