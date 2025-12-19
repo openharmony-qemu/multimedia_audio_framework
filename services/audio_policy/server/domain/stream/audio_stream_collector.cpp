@@ -1898,7 +1898,8 @@ bool AudioStreamCollector::IsMediaPlaying()
     return false;
 }
 
-std::vector<int32_t> AudioStreamCollector::GetPlayingMediaSessionIdList()
+void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     static const std::unordered_set<int32_t> mediaStreamTypes = {
@@ -1911,15 +1912,13 @@ std::vector<int32_t> AudioStreamCollector::GetPlayingMediaSessionIdList()
         STREAM_CAMCORDER,
         STREAM_VOICE_MESSAGE
     };
-    std::vector<int32_t> sessionIdList{};
     for (auto &changeInfo: audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&
             mediaStreamTypes.count(GetStreamType((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage)) > 0) {
-            sessionIdList.push_back(changeInfo->sessionId);
+            rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
         }
     }
-    return sessionIdList;
 }
 
 bool AudioStreamCollector::IsVoipStreamActive()

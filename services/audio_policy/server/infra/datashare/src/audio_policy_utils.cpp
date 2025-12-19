@@ -360,6 +360,11 @@ string AudioPolicyUtils::ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
+bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId)
+{
+    return GetSinkName(desc, sessionId) == PRIMARY_SPEAKER;
+}
+
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
