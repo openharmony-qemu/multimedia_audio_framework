@@ -258,7 +258,8 @@ void AudioPolicyServerForceVolumeKeyControlType()
     CHECK_AND_RETURN(server != nullptr);
     int32_t volumeType = GetData<int32_t>();
     int32_t duration = GetData<int32_t>();
-    server->ForceVolumeKeyControlType(volumeType, duration);
+    int32_t ret = GetData<int32_t>();
+    server->ForceVolumeKeyControlType(volumeType, duration, ret);
 }
 
 TestFuncs g_testFuncs[] = {
