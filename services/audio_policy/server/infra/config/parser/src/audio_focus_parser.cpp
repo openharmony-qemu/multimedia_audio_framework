@@ -99,6 +99,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_UNPROCESSED, false}},
     {"SOURCE_TYPE_LIVE",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_LIVE, false}},
+    {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, false}},
 };
 
 // Initialize action map with string vs InterruptActionType
