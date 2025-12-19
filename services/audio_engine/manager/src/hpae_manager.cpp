@@ -1192,10 +1192,13 @@ void HpaeManager::HandleMoveAllSinkInputs(
     }
 }
 
-void HpaeManager::HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName)
+void HpaeManager::HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName,
+    MoveSessionType moveType)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", moveInfos.size(), sourceName.c_str());
-    moveInfos = GetUsedMoveInfos(moveInfos);
+    if (moveType != MOVE_ALL) {
+        moveInfos = GetUsedMoveInfos(moveInfos);
+    }
     if (sourceName.empty()) {
         AUDIO_INFO_LOG("source is empty, move to default source:%{public}s", defaultSource_.c_str());
         sourceName = defaultSource_;
