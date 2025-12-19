@@ -997,9 +997,9 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
     EXPECT_NE(hpaeRendererManager->converterForOutput_, nullptr);
     EXPECT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
     EXPECT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
-    EXPECT_NE(tmpNodeId1, hpaeRendererManager->converterForOutput_->GetNodeId());
-    EXPECT_NE(tmpNodeId2, hpaeRendererManager->loudnessGainNode_->GetNodeId());
-    EXPECT_NE(tmpNodeId3, hpaeRendererManager->converterForLoudness_->GetNodeId());
+    EXPECT_EQ(tmpNodeId1, hpaeRendererManager->converterForOutput_->GetNodeId());
+    EXPECT_EQ(tmpNodeId2, hpaeRendererManager->loudnessGainNode_->GetNodeId());
+    EXPECT_EQ(tmpNodeId3, hpaeRendererManager->converterForLoudness_->GetNodeId());
 }
 
 /**
