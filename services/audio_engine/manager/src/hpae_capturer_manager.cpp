@@ -105,7 +105,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene)
 {
     auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
-    CHECK_AND_RETURN(sceneType == HPAE_SCENE_EFFECT_NONE || sceneCluster != nullptr);
+    CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && sceneCluster != nullptr);
     // todo: algorithm instance count control
     HpaeNodeInfo clusterNodeInfo;
     clusterNodeInfo.channels = sourceInfo_.channels;
@@ -114,7 +114,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     clusterNodeInfo.frameLen = CalculateFrameLenBySampleRate(clusterNodeInfo.samplingRate);
     clusterNodeInfo.statusCallback = weak_from_this();
     clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-    sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
+    sceneCluster = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
     if (CaptureEffectCreate(sceneType, enhanceScene) != SUCCESS) {
         // not erase effect processcluster for inject
         AUDIO_WARNING_LOG("sceneType[%{public}u] create failed, not delete sceneCluster", sceneType);
