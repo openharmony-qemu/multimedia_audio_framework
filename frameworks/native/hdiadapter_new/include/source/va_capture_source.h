@@ -54,8 +54,6 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t CaptureFrame(char* frame, uint64_t requestBytes, uint64_t& replyBytes) override;
-    int32_t CaptureFrameWithEc(
-        FrameDesc* fdesc, uint64_t& replyBytes, FrameDesc* fdescEc, uint64_t& replyBytesEc) override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string& condition) override;
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
@@ -69,21 +67,10 @@ public:
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-
-    int32_t UpdateActiveDevice(DeviceType inputDevice) override;
-    void RegistCallback(uint32_t type, IAudioSourceCallback* callback) override;
-    void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t>& appsUid) final;
 
-    void SetAddress(const std::string& address) override;
-    void SetInvalidState(void) override;
-
     void DumpInfo(std::string& dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void CheckUpdateState(char* frame, size_t replyBytes);
 
@@ -94,7 +81,6 @@ private:
     std::shared_ptr<VASharedBufferOperator> bufferOperator_;
     uint32_t captureId_ = HDI_INVALID_ID;
     IAudioSourceAttr attr_ = {};
-    SourceCallbackWrapper callback_ = {};
     std::atomic<bool> sourceInited_ = false;
     std::atomic<bool> started_ = false;
     std::mutex statusMutex_;

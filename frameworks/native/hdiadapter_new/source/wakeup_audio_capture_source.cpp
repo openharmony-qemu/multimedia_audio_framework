@@ -218,25 +218,6 @@ int32_t WakeupAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     return res;
 }
 
-int32_t WakeupAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-std::string WakeupAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void WakeupAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t WakeupAudioCaptureSource::SetVolume(float left, float right)
 {
     return audioCaptureSource_.SetVolume(left, right);
@@ -306,11 +287,5 @@ void WakeupAudioCaptureSource::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: WakeupSource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
-
-void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

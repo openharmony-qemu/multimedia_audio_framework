@@ -199,25 +199,6 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     return SUCCESS;
 }
 
-int32_t RemoteAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-std::string RemoteAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void RemoteAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
 {
     float leftVolume = left;
@@ -260,6 +241,7 @@ int32_t RemoteAudioCaptureSource::SetMute(bool isMute)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set mute fail");
     return SUCCESS;
 }
+
 int32_t RemoteAudioCaptureSource::GetMute(bool &isMute)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -308,18 +290,6 @@ int32_t RemoteAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoE
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     AUDIO_INFO_LOG("end");
     return SUCCESS;
-}
-
-int32_t RemoteAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void RemoteAudioCaptureSource::RegistCallback(uint32_t type, IAudioSourceCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
 }
 
 int32_t RemoteAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -472,11 +442,6 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             }
         }
     }
-}
-
-void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

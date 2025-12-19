@@ -50,12 +50,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -68,20 +62,8 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
     void SetSpeed(float speed) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
-    void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state) override;
 
     int32_t Drain(AudioDrainType type) override;
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
@@ -91,9 +73,6 @@ public:
     int32_t UnLockOffloadRunningLock(void) override;
 
     void DumpInfo(std::string &dumpString) override;
-    std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -115,14 +94,6 @@ private:
     void CheckFlushThread();
 #endif
 
-    // Funcs to handle pipe info
-    void InitPipeInfo();
-    void ChangePipeStatus(AudioPipeStatus state);
-    void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state);
-    void DeinitPipeInfo();
-
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -139,7 +110,6 @@ private:
     static constexpr uint32_t AUDIO_SPEED_BASE = 1000;
 
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     struct OffloadHdiCallback hdiCallback_ = {};
     bool sinkInited_ = false;
     bool started_ = false;
@@ -179,14 +149,9 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
-    std::mutex sinkMutex_;
 #ifdef SUPPORT_OLD_ENGINE
     std::shared_ptr<std::thread> flushThread_;
 #endif
-
-    // For sink info notify
-    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
-    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

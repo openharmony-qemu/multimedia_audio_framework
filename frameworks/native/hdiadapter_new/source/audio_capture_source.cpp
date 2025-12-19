@@ -139,7 +139,8 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     }
 
-    InitPipeInfo();
+    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_INPUT_FLAG_NORMAL,
+        { currentActiveDevice_ });
 
     return SUCCESS;
 }
@@ -642,18 +643,6 @@ int32_t AudioCaptureSource::UpdateSourceType(SourceType sourceType)
     AUDIO_INFO_LOG("sourceType: %{public}d", sourceType);
     attr_.sourceType = sourceType;
     return DoSetInputRoute(currentActiveDevice_);
-}
-
-void AudioCaptureSource::RegistCallback(uint32_t type, IAudioSourceCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
-}
-
-void AudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
 }
 
 int32_t AudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -1435,90 +1424,6 @@ int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
     int32_t ret = 0;
     StringConverter(status, ret);
     return ret;
-}
-
-void AudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
-{
-    ChangePipeStream(change, streamId, source, state);
-}
-
-std::shared_ptr<AudioInputPipeInfo> AudioCaptureSource::GetInputPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    return copyPipe;
-}
-
-void AudioCaptureSource::InitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    pipeInfo_ = std::make_shared<AudioInputPipeInfo>(
-        hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_INPUT_FLAG_NORMAL);
-    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
-    pipeInfo_->SetDevice(currentActiveDevice_);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void AudioCaptureSource::ChangePipeStatus(AudioPipeStatus state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetStatus(state);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void AudioCaptureSource::ChangePipeDevice(const std::vector<DeviceType> &devices)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetDevices(devices);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
-}
-
-void AudioCaptureSource::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-
-    switch (change) {
-        case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, source, state);
-            break;
-        case STREAM_CHANGE_TYPE_REMOVE:
-            pipeInfo_->RemoveStream(streamId);
-            break;
-        case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
-            break;
-        default:
-            return;
-    }
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
-}
-
-void AudioCaptureSource::DeinitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->RemoveAllStreams();
-    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-
-    // clear pipe for get func
-    pipeInfo_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

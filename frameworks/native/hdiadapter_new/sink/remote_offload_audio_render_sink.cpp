@@ -290,16 +290,6 @@ int64_t RemoteOffloadAudioRenderSink::GetVolumeDataCount(void)
     return volumeDataCount_;
 }
 
-int32_t RemoteOffloadAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t RemoteOffloadAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
 void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
@@ -307,11 +297,6 @@ void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, co
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(value.c_str());
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
-}
-
-std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
@@ -699,48 +684,6 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     speed_ = speed;
 }
 
-int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void RemoteOffloadAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void RemoteOffloadAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t RemoteOffloadAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -873,11 +816,6 @@ void RemoteOffloadAudioRenderSink::OnAudioParamChange(const std::string &adapter
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
-}
-
-void RemoteOffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t RemoteOffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)

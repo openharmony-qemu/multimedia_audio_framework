@@ -249,13 +249,6 @@ int32_t VACaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64
     return SUCCESS;
 }
 
-int32_t VACaptureSource::CaptureFrameWithEc(
-    FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc, uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not supported");
-    return SUCCESS;
-}
-
 std::string VACaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     CHECK_AND_RETURN_RET_LOG(deviceController_ != nullptr, "", "device controller is null");
@@ -321,16 +314,6 @@ float VACaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t VACaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    return SUCCESS;
-}
-
-int32_t VACaptureSource::UpdateActiveDevice(DeviceType inputDevice)
-{
-    return SUCCESS;
-}
-
 void VACaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
 {
     if (startUpdate_) {
@@ -348,37 +331,20 @@ void VACaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
     }
 }
 
-void VACaptureSource::RegistCallback(uint32_t type, IAudioSourceCallback *callback)
-{
-    callback_.RegistCallback(type, callback);
-}
-
-void VACaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback)
-{
-    callback_.RegistCallback(type, callback);
-}
-
 int32_t VACaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
 {
     return SUCCESS;
 }
+
 int32_t VACaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return SUCCESS;
 }
 
-void VACaptureSource::SetAddress(const std::string &address)
-{}
-void VACaptureSource::SetInvalidState(void)
-{}
-
 void VACaptureSource::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: VASource\tstarted: " + std::string(started_.load() ? "true" : "false") + "\n";
 }
-
-void VACaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{}
 
 } // namespace AudioStandard
 } // namespace OHOS

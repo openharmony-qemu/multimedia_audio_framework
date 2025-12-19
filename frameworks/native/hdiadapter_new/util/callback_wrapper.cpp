@@ -20,6 +20,7 @@
 #include "util/callback_wrapper.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -119,26 +119,6 @@ int64_t FileAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t FileAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t FileAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void FileAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string FileAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
 int32_t FileAudioRenderSink::SetVolume(float left, float right)
 {
     AUDIO_INFO_LOG("not support");
@@ -185,41 +165,6 @@ void FileAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t FileAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-int32_t FileAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FileAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void FileAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t FileAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FileAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t FileAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
     AUDIO_INFO_LOG("not support");
@@ -235,11 +180,6 @@ int32_t FileAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 void FileAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FileSink\tfilePath: " + filePath_ + "\n";
-}
-
-void FileAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard
