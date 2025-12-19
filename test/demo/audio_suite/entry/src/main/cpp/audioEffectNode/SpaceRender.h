@@ -16,7 +16,7 @@ struct DynamicRenderParams {
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
-    
+
     int surroundTime = 2;
     int surroundDirection = 0;
     OH_AudioSuite_SurroundDirection surroundDirectionType =
