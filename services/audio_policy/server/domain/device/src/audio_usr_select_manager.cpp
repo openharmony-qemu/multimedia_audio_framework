@@ -77,8 +77,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
     int index = GetIdFromRecordDeviceInfoList(uid);
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET(index >= 0 && !recordDeviceInfoList_.empty(), capturerDevice);
-    CHECK_AND_RETURN_RET(recordDeviceInfoList_[0].sourceType_ != SourceType::SOURCE_TYPE_INVALID,
-        recordDeviceInfoList_[index].activeSelectedDevice_);
 
     std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice();
     capturerDevice = recordDeviceInfoList_[0].activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE ?
@@ -90,7 +88,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    // 判断设备是不是存在且处于连接状态
+    // 判断设备是不是存在且处于连接状�?
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
 
     if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
