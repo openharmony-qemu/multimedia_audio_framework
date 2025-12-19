@@ -239,7 +239,6 @@ void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, flo
 void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
 {
     // calculate envelope energy
-    // float maxEnvelopeLevel = 0.0f;
     float maxEnvelopeLevel = CalculateEnvelopeEnergy(inBuffer);
 
     // calculate gain
@@ -256,13 +255,6 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
 
     // apply gain
     if (algoFrameLen_ % AUDIO_LMT_ALGO_CHANNEL == 0) {
-        // for (int32_t i = 0; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
-        //     lastGain += deltaGain;
-        //     outBuffer[i] = bufHis_[i] * lastGain;
-        //     outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
-        //     bufHis_[i] = inBuffer[i];
-        //     bufHis_[i + 1] = inBuffer[i + 1];
-        // }
         ApplyGainToStereoFrame(inBuffer, outBuffer, lastGain, deltaGain);
     } else {
         outBuffer[0] = bufHis_[0] * lastGain;
