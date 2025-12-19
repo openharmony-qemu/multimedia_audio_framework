@@ -152,7 +152,7 @@ int32_t AudioRenderSink::Start(void)
 int32_t AudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    HILOG_COMM_WARN("halName: %{public}s", halName_.c_str());
+    HILOG_COMM_WARN("[AudioRenderSink::Stop]halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Stop");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
@@ -275,7 +275,8 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     if (stamp >= RENDER_FRAME_LIMIT) {
-        HILOG_COMM_WARN("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
+        HILOG_COMM_WARN("[AudioRenderSink::RenderFrame]len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms",
+            len, stamp);
     }
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_) {
@@ -325,8 +326,8 @@ void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::stri
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, halName: %{public}s", key, condition.c_str(),
-        halName_.c_str());
+    HILOG_COMM_INFO("[GetAudioParameter]key: %{public}d, condition: %{public}s, halName: %{public}s",
+        key, condition.c_str(), halName_.c_str());
     if (condition.starts_with("get_usb_info#C") && halName_ == HDI_ID_INFO_USB) {
         // init adapter to get parameter before load sink module (need fix)
         adapterNameCase_ = "usb";
@@ -929,9 +930,9 @@ int32_t AudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "devicePin: %{public}u, desc: %{public}s", halName_.c_str(), param.sampleRate, param.channelCount, param.format,
-        deviceDesc.pins, deviceDesc.desc);
+    HILOG_COMM_INFO("[AudioRenderSink::CreateRender]create render, halName: %{public}s, rate: %{public}u, "
+        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
+        param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

@@ -109,8 +109,8 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
-        static_cast<int>(operation), result);
+    HILOG_COMM_INFO("[OnOperationHandled]sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".",
+        sessionId_, static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -243,7 +243,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
 
     if (state_ != NEW) {
-        HILOG_COMM_ERROR("State is not new, release existing stream and recreate, state %{public}d", state_.load());
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]State is not new, release existing stream and recreate, state %{public}d",
+            state_.load());
         int32_t ret = DeinitIpcStream();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
     }
@@ -737,14 +738,14 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
-            HILOG_COMM_WARN("Strong ref is nullptr, could cause error");
+            HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
         }
         strongRef = nullptr;
         // start loop
         while (keepRunning) {
             strongRef = weakRef.lock();
             if (strongRef == nullptr) {
-                HILOG_COMM_INFO("RendererInClientInner destroyed");
+                HILOG_COMM_INFO("[InitCallbackLoop]RendererInClientInner destroyed");
                 break;
             }
             keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop
@@ -1047,7 +1048,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
     }
 
-    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("[StartAudioStream]Start SUCCESS, sessionId: %{public}d, uid: %{public}d",
+        sessionId_, clientUid_);
 
     UpdateTracker("RUNNING");
 
@@ -1114,8 +1116,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
-        clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
+    HILOG_COMM_INFO("[PauseAudioStream]Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s",
+        sessionId_, clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
 }
@@ -1171,8 +1173,8 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
-        sessionId_, clientUid_, volumeDataCount_);
+    HILOG_COMM_INFO("[StopAudioStream]Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, "
+        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1233,8 +1235,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
-        sessionId_, clientUid_, volumeDataCount_);
+    HILOG_COMM_INFO("[ReleaseAudioStream]Release end, sessionId: %{public}d, uid: %{public}d, "
+        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();

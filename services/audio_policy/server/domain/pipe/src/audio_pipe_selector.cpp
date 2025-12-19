@@ -367,7 +367,7 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
-    HILOG_COMM_INFO("Route flag after concurrency: %{public}u  sessionId: %{public}u",
+    HILOG_COMM_INFO("[ScanPipeListForStreamDesc]Route flag after concurrency: %{public}u  sessionId: %{public}u",
         streamDesc->routeFlag_, streamDesc->sessionId_);
 }
 
@@ -603,9 +603,10 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
-    HILOG_COMM_INFO("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
-    HILOG_COMM_INFO("info.moduleInfo_.channels: %{public}s, info.moduleInfo_.channelLayout: %{public}s",
-        info.moduleInfo_.channels.c_str(), info.moduleInfo_.channelLayout.c_str());
+    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
+    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]info.moduleInfo_.channels: %{public}s, "
+        "info.moduleInfo_.channelLayout: %{public}s", info.moduleInfo_.channels.c_str(),
+        info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
@@ -700,7 +701,7 @@ void AudioPipeSelector::ProcessModemCommunicationConcurrency(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal)
 {
     CHECK_AND_RETURN(AudioPipeManager::GetPipeManager()->IsModemCommunicationIdExist());
-    HILOG_COMM_INFO("ModemCommunication exists, need process concurrency");
+    HILOG_COMM_INFO("[RemoveTargetStreams]ModemCommunication exists, need process concurrency");
     std::shared_ptr<AudioStreamDescriptor> modemCommStream =
         AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc();
     for (auto &streamDesc : streamDescs) {

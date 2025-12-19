@@ -582,7 +582,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        HILOG_COMM_ERROR("failed: not allowed!");
+        HILOG_COMM_ERROR("[VerifyBackgroundCapture]failed: not allowed!");
     }
     return ret;
 }

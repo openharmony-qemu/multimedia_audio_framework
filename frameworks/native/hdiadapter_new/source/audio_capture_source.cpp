@@ -841,7 +841,8 @@ void AudioCaptureSource::CheckAcousticEchoCancelerSupported(int32_t sourceType, 
     std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
         "source_type_live_aec_supported");
     if (value != "true") {
-        HILOG_COMM_INFO("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
+        HILOG_COMM_INFO("[CheckAcousticEchoCancelerSupported]SOURCE_TYPE_LIVE not supported will be"
+        " changed to SOURCE_TYPE_MIC");
         hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
     }
 }
@@ -1119,7 +1120,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
+    HILOG_COMM_INFO("[CreateCapture]halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
         "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
         param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {

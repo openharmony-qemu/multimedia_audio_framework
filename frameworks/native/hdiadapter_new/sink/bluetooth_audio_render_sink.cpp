@@ -126,7 +126,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
-    HILOG_COMM_INFO("%{public}s update validState:true", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::DeInit]%{public}s update validState:true", logTypeTag_.c_str());
     validState_ = true;
     DeinitPipeInfo();
 }
@@ -176,7 +176,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         CHECK_AND_BREAK_LOG(audioRender_ != nullptr && IsValidState(), "Bluetooth renderer is nullptr");
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            HILOG_COMM_ERROR("start fail, remain %{public}d attempt(s)", tryCount);
+            HILOG_COMM_ERROR("[BluetoothAudioRenderSink::Start]start fail, remain %{public}d attempt(s)", tryCount);
             HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
                 "failed:" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
@@ -186,7 +186,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         ChangePipeStatus(PIPE_STATUS_RUNNING);
         return CheckBluetoothScenario();
     }
-    HILOG_COMM_ERROR("start fail for three times, return");
+    HILOG_COMM_ERROR("[BluetoothAudioRenderSink::Start]start fail for three times, return");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
         AUDIO_INFO_LOG("running lock unlock");
@@ -368,7 +368,7 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
                 CheckBluetoothScenario();
                 return;
             } else {
-                HILOG_COMM_ERROR("start fail, remain %{public}d attempt(s)", tryCount);
+                HILOG_COMM_ERROR("[SetAudioParameter]start fail, remain %{public}d attempt(s)", tryCount);
                 usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             }
         }
@@ -703,8 +703,8 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
-        param.channelCount, param.format);
+    HILOG_COMM_INFO("[BluetoothAudioRenderSink::CreateRender]create render, rate: %{public}u, channel: %{public}u, "
+        "format: %{public}u", param.sampleRate, param.channelCount, param.format);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
@@ -851,7 +851,7 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
             continue;
         }
         if (ret != SUCCESS) {
-            HILOG_COMM_ERROR("A2dp RenderFrame fail, ret: %{public}x", ret);
+            HILOG_COMM_ERROR("[DoRenderFrame]A2dp RenderFrame fail, ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
         }
         break;

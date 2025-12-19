@@ -213,8 +213,8 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
                 continue;
             }
 
-            HILOG_COMM_INFO("the incoming stream is rejected by streamId:%{public}d, pid:%{public}d",
-                (iterActive->first).streamId, (iterActive->first).pid);
+            HILOG_COMM_INFO("[ProcessActiveStreamFocus]the incoming stream is rejected by streamId:%{public}d, "
+                "pid:%{public}d", (iterActive->first).streamId, (iterActive->first).pid);
             incomingState = STOP;
             break;
         }

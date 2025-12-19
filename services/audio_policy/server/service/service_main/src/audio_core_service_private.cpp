@@ -311,8 +311,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
 int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
     ConnectState connectState, bool isVrSupported)
 {
-    HILOG_COMM_INFO("handleflag %{public}d, address %{public}s, connectState %{public}d",
-        handleFlag, GetEncryptAddr(address).c_str(), connectState);
+    HILOG_COMM_INFO("[ScoInputDeviceFetchedForRecongnition]handleflag %{public}d, address %{public}s, "
+        "connectState %{public}d", handleFlag, GetEncryptAddr(address).c_str(), connectState);
     if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
@@ -1396,7 +1396,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
         : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
     if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("Move sink input %{public}d to device %{public}d failed!",
+        HILOG_COMM_ERROR("[MoveToNewOutputDevice]Move sink input %{public}d to device %{public}d failed!",
             streamDesc->sessionId_, newDeviceDesc->deviceType_);
         audioIOHandleMap_.NotifyUnmutePort();
         return;
@@ -2015,8 +2015,8 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
 
     SleepForSwitchDevice(streamDesc, reason);
 
-    HILOG_COMM_INFO("Trigger recreate renderer stream %{public}u, pid: %{public}d, routeflag: 0x%{public}x",
-        sessionId, callerPid, routeFlag);
+    HILOG_COMM_INFO("[TriggerRecreateRendererStreamCallback]Trigger recreate renderer stream %{public}u, pid: "
+        "%{public}d, routeflag: 0x%{public}x", sessionId, callerPid, routeFlag);
     audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 }
 
@@ -2645,7 +2645,7 @@ void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paInde
 
 int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
-    HILOG_COMM_INFO("unload offload module");
+    HILOG_COMM_INFO("[ReleaseOffloadPipe]unload offload module");
     std::unique_lock<std::mutex> lock(offloadCloseMutex_);
     // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
     // the shutdown process..

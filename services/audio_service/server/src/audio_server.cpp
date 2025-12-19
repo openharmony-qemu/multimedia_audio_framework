@@ -1445,7 +1445,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    HILOG_COMM_INFO("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
+    HILOG_COMM_INFO("[SetIORoutes] 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
         type, deviceTypes.size(), flag);
     int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName) :
         SetIORoutesForRemote(type, flag, deviceTypes, networkId);
@@ -1917,7 +1917,8 @@ int32_t AudioServer::CheckMaxRendererInstances()
 int32_t AudioServer::CheckMaxLoopbackInstances(AudioMode audioMode)
 {
     if (AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(audioMode) >= DEFAULT_MAX_LOOPBACK_INSTANCES) {
-        HILOG_COMM_ERROR("Current Loopback stream num is greater than the maximum num of configured instances");
+        HILOG_COMM_ERROR("[CheckMaxLoopbackInstances]Current Loopback stream num is greater than "
+            "the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
     }
     return SUCCESS;
@@ -1942,7 +1943,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
             if (config.audioMode == AUDIO_MODE_PLAYBACK) {
                 AudioService::GetInstance()->CleanAppUseNumMap(appUid);
             }
-            HILOG_COMM_ERROR("GetIpcStream failed.");
+            HILOG_COMM_ERROR("[CreateAudioStream]GetIpcStream failed.");
             return nullptr;
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
@@ -1957,7 +1958,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         if (config.audioMode == AUDIO_MODE_PLAYBACK) {
             AudioService::GetInstance()->CleanAppUseNumMap(appUid);
         }
-        HILOG_COMM_ERROR("GetAudioProcess failed.");
+        HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
         return nullptr;
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
@@ -1968,7 +1969,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
 #else
-    HILOG_COMM_ERROR("GetAudioProcess failed.");
+    HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
     return nullptr;
 #endif
 }
@@ -2059,7 +2060,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
             maxRendererStreamCntPerUid_)) {
             errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
-            HILOG_COMM_ERROR("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
+            HILOG_COMM_ERROR("[CreateAudioProcessInner]Current audio renderer stream num exceeds "
+                "maxRendererStreamCntPerUid");
             return nullptr;
         }
     }
@@ -2423,7 +2425,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     if (!res) {
-        HILOG_COMM_INFO("Check record permission failed: No permission.");
+        HILOG_COMM_INFO("[CheckRecorderPermission]Check record permission failed: No permission.");
         return false;
     }
 
@@ -2440,7 +2442,8 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 
     if (!HandleCheckRecorderBackgroundCapture(config)) {
-        HILOG_COMM_INFO("VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+        HILOG_COMM_INFO("[CheckRecorderPermission]VerifyBackgroundCapture failed for callerUid:%{public}d",
+            config.callerUid);
         return false;
     }
     return true;
@@ -3051,7 +3054,8 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
 
-    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
+    HILOG_COMM_INFO("[CreateSinkPort]In, idBase: %{public}u, idType: %{public}u, info: %{public}s",
+        idBase, idType, idInfo.c_str());
     renderId = HdiAdapterManager::GetInstance().GetId(static_cast<HdiIdBase>(idBase),
         static_cast<HdiIdType>(idType), idInfo, true);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
@@ -3086,8 +3090,8 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
-    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, sourceType: %{public}d, info: %{public}s",
-        idBase, idType, attr.sourceType, idInfo.c_str());
+    HILOG_COMM_INFO("[CreateSourcePort]In, idBase: %{public}u, idType: %{public}u, sourceType: %{public}d, "
+        "info: %{public}s", idBase, idType, attr.sourceType, idInfo.c_str());
     captureId = HdiAdapterManager::GetInstance().GetId(static_cast<HdiIdBase>(idBase),
         static_cast<HdiIdType>(idType), idInfo, true);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);

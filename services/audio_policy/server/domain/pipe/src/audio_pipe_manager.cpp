@@ -56,7 +56,9 @@ void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if (IsSamePipe(info, *iter)) {
-            HILOG_COMM_INFO("Remove id:%{public}u, name: %{public}s", info->id_, info->name_.c_str());
+            CHECK_AND_CONTINUE_LOG(info != nullptr, "info is nullptr!");
+            HILOG_COMM_INFO("[RemoveAudioPipeInfo]Remove id:%{public}u, name: %{public}s",
+                info->id_, info->name_.c_str());
             iter = curPipeList_.erase(iter);
         } else {
             ++iter;
@@ -69,7 +71,8 @@ void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if ((*iter)->id_ == id) {
-            HILOG_COMM_INFO("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
+            HILOG_COMM_INFO("[RemoveAudioPipeInfo]Remove id:%{public}u, name: %{public}s",
+                id, (*iter)->name_.c_str());
             iter = curPipeList_.erase(iter);
         } else {
             ++iter;

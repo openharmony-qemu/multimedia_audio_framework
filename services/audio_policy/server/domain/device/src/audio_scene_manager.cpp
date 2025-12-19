@@ -42,7 +42,8 @@ namespace AudioStandard {
 
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    HILOG_COMM_INFO("Set audio scene start %{public}d, lastScene %{public}d", audioScene, audioScene_);
+    HILOG_COMM_INFO("[AudioSceneManager::SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
+        audioScene, audioScene_);
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {

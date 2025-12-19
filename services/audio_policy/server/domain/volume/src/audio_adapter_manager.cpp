@@ -1166,8 +1166,9 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
         UpdateVolumeForLowLatency(desc, volumeType);
-        HILOG_COMM_INFO("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
-            volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
+        HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
+            "device: %{public}s", volumeLevel, GetStreamMuteInternal(desc, volumeType),
+            volumeType, desc->GetName().c_str());
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }

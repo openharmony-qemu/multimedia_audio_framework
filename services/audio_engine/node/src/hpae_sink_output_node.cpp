@@ -335,7 +335,7 @@ StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("[HpaeSinkOutputNode::SetSinkState]Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
