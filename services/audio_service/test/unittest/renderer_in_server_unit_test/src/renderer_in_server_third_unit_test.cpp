@@ -2387,11 +2387,11 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_004, TestSize
     bufferProcessorTest->speedBufferSize_ = 100;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
 
-    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);;
+    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);
     bufferProcessorTest->speedBufferSize_ = 0;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
 
-    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);;
+    bufferProcessorTest->speedBuffer_ = std::make_unique<uint8_t[]>(100);
     bufferProcessorTest->speedBufferSize_ = 100;
     bufferProcessorTest->GetProcessedBuffer(&dataBase, dataSize);
     EXPECT_TRUE(dataBase != nullptr && dataSize != 0);

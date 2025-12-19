@@ -1323,7 +1323,7 @@ struct StaticBufferInfo : public Parcelable {
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return sharedMemory_->Marshalling(parcel);
+        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
