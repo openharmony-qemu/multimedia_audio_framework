@@ -1109,7 +1109,7 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
-    ipcStream_->PreSetLoopTimes(bufferLoopTimes);
+    ipcStream_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
 

@@ -644,12 +644,11 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 int32_t AudioRendererPrivate::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERR_NOT_SUPPORTED, "Can only be set in staticAudioRenderer!");
-    CHECK_AND_RETURN_RET_LOG((bufferLoopTimes >= -1 && bufferLoopTimes < INT64_MAX),
-        ERR_NOT_SUPPORTED, "set invalid bufferLoopTimes %{public}" PRId64 "!", bufferLoopTimes);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_INVALID_OPERATION, "audioStream_ is nullptr");
     AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, bufferLoopTimes);
-    return currentStream->SetLoopTimes(bufferLoopTimes == -1 ? -1 : bufferLoopTimes + 1);
+    bufferLoopTimes = (bufferLoopTimes == INT64_MAX ? bufferLoopTimes : bufferLoopTimes + 1);
+    return currentStream->SetLoopTimes(bufferLoopTimes < 0 ? -1 : bufferLoopTimes);
 }
 
 AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()

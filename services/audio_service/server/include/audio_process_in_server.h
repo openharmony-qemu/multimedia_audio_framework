@@ -176,7 +176,7 @@ public:
 
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 
-    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
 public:
@@ -214,8 +214,9 @@ private:
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 
     int32_t CreateServerBuffer();
-    int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
+    int32_t ProcessAndSetStaticBuffer();
     void MarkStaticFadeOut(bool isRefresh);
+    void MarkStaticFadeIn();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -290,7 +291,6 @@ private:
 
     mutable int64_t volumeDataCount_ = 0;
 
-    bool needRefreshBufferStatus_ = true;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
