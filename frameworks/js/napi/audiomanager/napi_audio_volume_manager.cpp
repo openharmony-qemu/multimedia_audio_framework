@@ -1827,6 +1827,13 @@ void NapiAudioVolumeManager::UnregisterVolumeDegreeChangeCallback(napi_env env, 
     CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
 
     if (callback != nullptr) {
+        napi_valuetype handler = napi_undefined;
+        if (napi_typeof(env, callback, &handler) != napi_ok || handler != napi_function) {
+            AUDIO_ERR_LOG("On type mismatch for parameter 1");
+            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+                "incorrect parameter types: The type of callback must be function");
+            return;
+        }
         cb->RemoveCallbackReference(env, callback);
     }
     if (callback == nullptr || cb->GetVolumeKeyEventCbListSize() == 0) {
