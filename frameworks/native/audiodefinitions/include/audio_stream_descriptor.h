@@ -248,6 +248,15 @@ public:
         return newDeviceDescs_[0]->getType();
     }
 
+    std::shared_ptr<AudioDeviceDescriptor> GetMainNewDeviceDesc()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return nullptr;
+        }
+        return newDeviceDescs_[0];
+    }
+
     bool IsA2dpOffloadStream()
     {
         std::lock_guard<std::mutex> lock(lock_);
