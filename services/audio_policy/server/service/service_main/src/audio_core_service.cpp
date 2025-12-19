@@ -593,8 +593,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
-    /*  */
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    // [Capturer NOTE 1.0] be careful device may be changed.
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
@@ -610,20 +610,27 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         RecordDeviceInfo info {
             .uid_ = GetRealUid(streamDesc), .sourceType_ = streamDesc->capturerInfo_.sourceType,
             .activeSelectedDevice_ = audioStateManager_.GetPreferredRecordCaptureDevice()};
+        // [Capturer NOTE 1.1] UpdateType::START_CLIENT may change device.
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
         FetchInputDeviceAndRoute("StartClient");
+        // [Capturer NOTE 1.2] After the FetchInputDeviceAndRoute, device may change:
+        // the device is selected based on the status of all streams,
+        // device force selection is related to the START status of streams,
+        // As a result, the device selection result may change compared with that before the START status.
+        deviceDesc = streamDesc->GetMainNewDeviceDesc();
+        CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
-            streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
+            deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
+            deviceDesc->deviceName_, deviceDesc->networkId_);
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-
+    // [Capturer NOTE 1.3] should use the new device.
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
 }
