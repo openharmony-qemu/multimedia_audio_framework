@@ -1763,6 +1763,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_LIVE:
             name = "SOURCE_TYPE_LIVE";
             break;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            name = "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT";
+            break;
         default:
             name = "UNKNOWN";
     }
