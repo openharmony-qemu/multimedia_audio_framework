@@ -248,6 +248,7 @@ public:
         return newDeviceDescs_[0]->getType();
     }
 
+
     bool IsA2dpOffloadStream()
     {
         std::lock_guard<std::mutex> lock(lock_);
