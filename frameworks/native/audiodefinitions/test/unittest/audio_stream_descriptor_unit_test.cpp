@@ -197,6 +197,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, RendererDevice_002, TestSize.Level4)
     EXPECT_EQ(DEVICE_TYPE_SPEAKER, testRendererStream_->GetMainNewDeviceType());
 }
 
+
 /**
  * @tc.name   : AudioStreamDescriptor_Dump_001
  * @tc.number : Dump_001
