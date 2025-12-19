@@ -380,7 +380,15 @@ int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self,
 
 void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 {
-    param.format = AUDIO_FORMAT_TYPE_EAC3; // in plan: add type switcher
+    // in plan: add type switcher for each encoding
+    switch (attr_.encodingType) {
+        case ENCODING_EAC3:
+            param.format = AUDIO_FORMAT_TYPE_EAC3;
+            break;
+        default:
+            AUDIO_WARNING_LOG("unknown format type, use PCM_16 as default");
+            param.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+    }
     param.channelCount = attr_.channel;
     param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
