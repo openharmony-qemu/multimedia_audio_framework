@@ -23,7 +23,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_errors.h"
 

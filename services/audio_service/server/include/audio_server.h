@@ -26,7 +26,6 @@
 #include "iremote_stub.h"
 #include "system_ability.h"
 
-#include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #ifdef SUPPORT_OLD_ENGINE
 #include "audio_server_dump.h"

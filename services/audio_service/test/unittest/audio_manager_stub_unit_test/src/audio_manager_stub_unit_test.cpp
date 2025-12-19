@@ -15,7 +15,6 @@
 
 #include "audio_manager_stub_unit_test.h"
 
-#include "audio_manager_base.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"

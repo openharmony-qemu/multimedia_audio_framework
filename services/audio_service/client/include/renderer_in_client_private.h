@@ -20,7 +20,6 @@
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
-#include "audio_manager_base.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"

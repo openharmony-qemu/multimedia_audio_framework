@@ -24,7 +24,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_secure_hash.h"
 #include "ipc_skeleton.h"
