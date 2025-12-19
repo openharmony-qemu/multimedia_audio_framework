@@ -81,6 +81,8 @@ public:
     void MarkSystemApp(int32_t pid);
     bool IsSystemApp(int32_t pid);
     bool IsSystemAppWithMixStrategy(const AudioInterrupt &audioInterrupt);
+    int32_t EnableMuteSuggestionWhenMixWithOthers(int32_t callerPid, bool enable);
+    bool IsMuteSuggestionWhenMixEnabled(int32_t callerPid);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

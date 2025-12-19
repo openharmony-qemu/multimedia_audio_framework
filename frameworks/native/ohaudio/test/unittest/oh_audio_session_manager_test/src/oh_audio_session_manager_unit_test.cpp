@@ -363,5 +363,34 @@ HWTEST(OHAudioSessionManagerUnitTest, SetAudioSessionStateChangeCallback_001, Te
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
+/**
+ * @tc.name  : Test EnableMuteSuggestionWhenMixWithOthers
+ * @tc.number: EnableMuteSuggestionWhenMixWithOthers001
+ * @tc.desc  : Test EnableMuteSuggestionWhenMixWithOthers with normal order.
+ */
+HWTEST(OHAudioSessionManagerUnitTest, EnableMuteSuggestionWhenMixWithOthers001, TestSize.Level0)
+{
+    ASSERT_NE(OHAudioSessionManager::GetInstance(), nullptr);
+    OH_AudioCommon_Result result = AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    result = OHAudioSessionManager::GetInstance()->SetAudioSessionScene(AudioSessionScene::MEDIA);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    result = OHAudioSessionManager::GetInstance()->EnableMuteSuggestionWhenMixWithOthers(true);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test EnableMuteSuggestionWhenMixWithOthers
+ * @tc.number: EnableMuteSuggestionWhenMixWithOthers002
+ * @tc.desc  : Test EnableMuteSuggestionWhenMixWithOthers with abnormal order.
+ */
+HWTEST(OHAudioSessionManagerUnitTest, EnableMuteSuggestionWhenMixWithOthers002, TestSize.Level0)
+{
+    ASSERT_NE(OHAudioSessionManager::GetInstance(), nullptr);
+    OHAudioSessionManager::GetInstance()->DeactivateAudioSession();
+    OH_AudioCommon_Result result = OHAudioSessionManager::GetInstance()->
+        EnableMuteSuggestionWhenMixWithOthers(true);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

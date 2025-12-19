@@ -312,5 +312,6 @@ interface IAudioPolicy {
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
+    void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
 }
 

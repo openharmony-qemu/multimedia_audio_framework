@@ -1759,6 +1759,10 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = NO_EVENT;
             break;
+        case INTERRUPT_HINT_MUTE_SUGGESTION:
+            break;
+        case INTERRUPT_HINT_UNMUTE_SUGGESTION:
+            break;
         default: // If the hintType is NONE, don't need to send callbacks
             return NO_EVENT;
     }

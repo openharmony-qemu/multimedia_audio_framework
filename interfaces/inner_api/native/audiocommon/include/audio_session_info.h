@@ -125,6 +125,18 @@ enum class AudioSessionStateChangeHint {
      * @since 20
      */
     UNDUCK = 5,
+
+    /**
+     * Muted the playback. (Playback is silenced.)
+     * @since 23
+     */
+    MUTE = 6,
+
+    /**
+     * Unmuted the playback.
+     * @since 23
+     */
+    UNMUTE = 7,
 };
 
 /**

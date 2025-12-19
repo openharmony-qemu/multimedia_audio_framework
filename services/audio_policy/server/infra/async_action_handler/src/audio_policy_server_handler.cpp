@@ -1190,6 +1190,43 @@ void AudioPolicyServerHandler::HandleInterruptEventWithStreamId(const AppExecFwk
     }
 }
 
+bool AudioPolicyServerHandler::BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
+    AudioSessionStateChangedEvent &stateChangedEvent)
+{
+    switch (hintType) {
+        case INTERRUPT_HINT_RESUME:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::RESUME;
+            break;
+        case INTERRUPT_HINT_PAUSE:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::PAUSE;
+            break;
+        case INTERRUPT_HINT_STOP:
+            // duckVolume = -1.0f, means timeout stop
+            if (duckVolume == -1.0f) {
+                duckVolume = 1.0f;
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::TIME_OUT_STOP;
+            } else {
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::STOP;
+            }
+            break;
+        case INTERRUPT_HINT_DUCK:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::DUCK;
+            break;
+        case INTERRUPT_HINT_UNDUCK:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNDUCK;
+            break;
+        case INTERRUPT_HINT_MUTE_SUGGESTION:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::MUTE;
+            break;
+        case INTERRUPT_HINT_UNMUTE_SUGGESTION:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNMUTE;
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
 void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1204,32 +1241,8 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
 
     InterruptHint hintType = eventContextObj->interruptEvent.hintType;
     AudioSessionStateChangedEvent stateChangedEvent;
-    switch (hintType) {
-        case INTERRUPT_HINT_RESUME:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::RESUME;
-            break;
-        case INTERRUPT_HINT_PAUSE:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::PAUSE;
-            break;
-        case INTERRUPT_HINT_STOP:
-            // duckVolume = -1.0f, means timeout stop
-            if (eventContextObj->interruptEvent.duckVolume == -1.0f) {
-                eventContextObj->interruptEvent.duckVolume = 1.0f;
-                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::TIME_OUT_STOP;
-            } else {
-                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::STOP;
-            }
-            break;
-        case INTERRUPT_HINT_DUCK:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::DUCK;
-            break;
-        case INTERRUPT_HINT_UNDUCK:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNDUCK;
-            break;
-        default:
-            AUDIO_ERR_LOG("Unspported hintType %{public}d", static_cast<int32_t>(hintType));
-            return;
-    }
+    CHECK_AND_RETURN_LOG(BuildStateChangedEvent(hintType, eventContextObj->interruptEvent.duckVolume,
+        stateChangedEvent), "unsupported hintType %{public}d", static_cast<int32_t>(hintType));
 
     if (clientCallbacksMap_.count(iterator->first) > 0 &&
         clientCallbacksMap_[iterator->first].count(CALLBACK_AUDIO_SESSION_STATE) > 0 &&

@@ -103,6 +103,7 @@ private:
     static napi_value ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info);
     static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+    static napi_value EnableMuteSuggestionWhenMixWithOthers(napi_env env, napi_callback_info info);
 
     static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
         NapiAudioSessionMgr *napiSessionMgr);

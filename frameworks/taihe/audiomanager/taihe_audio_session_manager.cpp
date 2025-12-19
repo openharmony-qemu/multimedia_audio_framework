@@ -155,6 +155,24 @@ void AudioSessionManagerImpl::SetAudioSessionScene(AudioSessionScene scene)
     return;
 }
 
+void AudioSessionManagerImpl::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "can not get session");
+        return;
+    }
+
+    int32_t ret = audioSessionMngr_->EnableMuteSuggestionWhenMixWithOthers(enable);
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, illegal state ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    }
+}
+
 void AudioSessionManagerImpl::OnAudioSessionDeactivated(
     callback_view<void(AudioSessionDeactivatedEvent const&)> callback)
 {
