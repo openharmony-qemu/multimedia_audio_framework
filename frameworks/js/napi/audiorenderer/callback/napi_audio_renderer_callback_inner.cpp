@@ -28,12 +28,13 @@ void NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(const std::strin
         callbackName.c_str());
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+    std::string taskName = "NapiAudioRendererCallbackInner::destroy";
     napi_env env = GetEnv();
     napi_status status = napi_create_reference(env, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "Creating reference for callback fail");
 
     if (successed != nullptr) {
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback, taskName);
         successed(cb);
     }
 };

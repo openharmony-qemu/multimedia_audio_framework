@@ -85,11 +85,12 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+    std::string taskName = "NapiAudioVolumeKeyEvent::destroy";
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioVolumeKeyEvent: creating reference for callback fail");
     callback_ = callback;
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == VOLUME_KEY_EVENT_CALLBACK_NAME ||
         callbackName == VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME) {
         audioVolumeKeyEventJsCallback_ = cb;
@@ -213,6 +214,7 @@ void NapiAudioVolumeKeyEventEx::SaveCallbackReference(const std::string &callbac
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioVolumeKeyEvent::destroy";
 
     CHECK_AND_RETURN_LOG(callbackName == VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME,
         "Unknown callback type: %{public}s", callbackName.c_str());
@@ -226,7 +228,7 @@ void NapiAudioVolumeKeyEventEx::SaveCallbackReference(const std::string &callbac
 
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr, "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     audioVolumeKeyEventCbList_.push_back(cb);
     AUDIO_INFO_LOG("save callback ref success, list size [%{public}zu]", audioVolumeKeyEventCbList_.size());
 }

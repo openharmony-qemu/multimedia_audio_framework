@@ -44,12 +44,13 @@ NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
 void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callbackName, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    std::string taskName = "NapiCapturerReadDataCallback::destroy";
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback failed");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == READ_DATA_CALLBACK_NAME) {
         capturerReadDataCallback_ = cb;
         isCallbackInited_ = true;

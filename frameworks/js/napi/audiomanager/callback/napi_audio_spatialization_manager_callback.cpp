@@ -66,6 +66,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChan
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioSpatializationEnabledChangeCallback::destroy";
 
     if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
         for (auto it = spatializationEnabledChangeCbList_.begin();
@@ -78,7 +79,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChan
         CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
             "NapiAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
         CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioSpatializationEnabledChangeCallback: creating callback failed");
         spatializationEnabledChangeCbList_.push_back(cb);
     } else if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
@@ -92,7 +93,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledChan
         CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
             "NapiAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
         CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioSpatializationEnabledChangeCallback: creating callback failed");
         spatializationEnabledChangeCbForAnyDeviceList_.push_back(cb);
     }
@@ -277,6 +278,7 @@ void NapiAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializat
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
+    std::string taskName = "NapiAudioCurrentSpatializationEnabledChangeCallback::destroy";
     const int32_t refCount = ARGS_ONE;
     for (auto it = spatializationEnabledChangeCbForCurrentDeviceList_.begin();
         it != spatializationEnabledChangeCbForCurrentDeviceList_.end(); ++it) {
@@ -288,7 +290,7 @@ void NapiAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializat
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioCurrentSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioCurrentSpatializationEnabledChangeCallback:creating callback failed");
 
     spatializationEnabledChangeCbForCurrentDeviceList_.push_back(cb);
@@ -439,6 +441,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCa
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioHeadTrackingEnabledChangeCallback::destroy";
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
         for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
             bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
@@ -449,7 +452,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCa
         CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
             "NapiAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
         CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioHeadTrackingEnabledChangeCallback: creating callback failed");
 
         headTrackingEnabledChangeCbList_.push_back(cb);
@@ -464,7 +467,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeCa
         CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
             "NapiAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
         CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioHeadTrackingEnabledChangeCallback: creating callback failed");
 
         headTrackingEnabledChangeCbForAnyDeviceList_.push_back(cb);
@@ -664,6 +667,8 @@ void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SaveAdaptiveSpatialRende
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
+
+    std::string taskName = "NapiAdaptiveSpatialRenderingEnabledChangeCallback::destroy";
     for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
         it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
@@ -674,7 +679,7 @@ void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SaveAdaptiveSpatialRende
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAdaptiveSpatialRenderingEnabledChangeCallback: creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     CHECK_AND_RETURN_LOG(cb != nullptr,
         "NapiAdaptiveSpatialRenderingEnabledChangeCallback: creating callback failed");
 

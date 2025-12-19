@@ -58,10 +58,11 @@ void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &call
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+    std::string taskName = "NapiRendererWriteDataCallback::destroy";
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr, "creating reference for callback failed");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == WRITE_DATA_CALLBACK_NAME) {
         rendererWriteDataCallback_ = cb;
     } else {

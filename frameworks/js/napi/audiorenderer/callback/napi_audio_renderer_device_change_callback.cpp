@@ -42,6 +42,7 @@ void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args
     const int32_t refCount = 1;
     bool isEquals = false;
     napi_value copyValue = nullptr;
+    std::string taskName = "NapiAudioRendererDeviceChangeCallback::destroy";
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
         napi_get_reference_value(env_, (*autoRef)->cb_, &copyValue);
@@ -54,7 +55,7 @@ void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioRendererDeviceChangeCallback: create reference for callback fail");
     
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     callbacks_.push_back(cb);
     AUDIO_DEBUG_LOG("AddAudioRendererDeviceChangeCallback sucessful");
 }
@@ -202,6 +203,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(n
     const int32_t refCount = 1;
     bool isEquals = false;
     napi_value copyValue = nullptr;
+    std::string taskName = "NapiAudioRendererOutputDeviceChangeWithInfoCallback::destroy";
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
         napi_get_reference_value(env_, (*autoRef)->cb_, &copyValue);
@@ -214,7 +216,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(n
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     callbacks_.push_back(cb);
     AUDIO_INFO_LOG("successful");
 }
