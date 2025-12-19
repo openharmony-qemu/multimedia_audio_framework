@@ -365,10 +365,7 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     HandleKvData(atoi(firstboot) == 1);
     auto descs = audioConnectedDevice_.GetCopy();
     for (auto &desc : descs) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
-        volumeDataMaintainer_.InitDeviceMuteMap(desc);
-        UpdateSafeVolumeInner(desc);
+        UpdateVolumeWhenDeviceConnect(desc);
     }
     UpdateVolumeForStreams();
 }
@@ -3148,10 +3145,7 @@ int32_t AudioAdapterManager::DoRestoreData()
     InitKVStore();
     auto descs = audioConnectedDevice_.GetCopy();
     for (auto &desc : descs) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
-        volumeDataMaintainer_.InitDeviceMuteMap(desc);
-        UpdateSafeVolumeInner(desc);
+        UpdateVolumeWhenDeviceConnect(desc);
     }
     UpdateVolumeForStreams();
     return SUCCESS;
@@ -3420,6 +3414,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
+    UpdateRingerMuteByRingerMode(desc);
     UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
@@ -3591,6 +3586,15 @@ void AudioAdapterManager::LoadCollaborationConfig()
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
     audioServiceAdapter_->LoadCollaborationConfig();
+}
+
+void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN(device->deviceType_ == DEVICE_TYPE_SPEAKER && device->networkId_ == LOCAL_NETWORK_ID);
+    bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
+    volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
+    AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_);
 }
 
 } // namespace AudioStandard
