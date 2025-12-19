@@ -166,6 +166,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_VOICE_TRANSCRIPTION", SOURCE_TYPE_VOICE_TRANSCRIPTION},
     {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     {"SOURCE_TYPE_LIVE", SOURCE_TYPE_LIVE},
+    {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT", SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -1202,6 +1203,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
         case TYPE_LIVE:
+        case TYPE_UNPROCESSED_VOICE_ASSISTANT:
             result = true;
             break;
         default:
@@ -1557,6 +1559,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_CAMCORDER:
         case SourceType::SOURCE_TYPE_UNPROCESSED:
         case SourceType::SOURCE_TYPE_LIVE:
+        case SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
             return true;
         default:
             return false;
