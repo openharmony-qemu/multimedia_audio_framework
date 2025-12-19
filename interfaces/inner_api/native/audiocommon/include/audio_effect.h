@@ -58,7 +58,6 @@ enum HdiSetParamCommandCode {
     HDI_OUTDOOR_MODE = 16,
     HDI_SUPER_LOUDNESS_MODE = 17,
     HDI_SYSTEMLOAD_STATE = 18,
-
 };
 
 enum AudioSpatialDeviceType {
