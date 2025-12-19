@@ -36,7 +36,10 @@ const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
 const int32_t PROC_COUNT = 4;              // process 4 times
 const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;  // 2 channel for stereo
 const int32_t AUDIO_LMT_ALGO_BYTE_PER_SAMPLE = sizeof(float);
-
+#if USE_ARM_NEON == 1
+const int32_t NEON_FRAME_PER_ITER = 4; // 4 stereo frame in a NEON process
+const int32_t NEON_SAMPLE_PER_ITER = 8; // 8 sample in 4 stereo frame (LR)
+#endif
 AudioLimiter::AudioLimiter(int32_t sinkIndex)
 {
     sinkIndex_ = sinkIndex;
@@ -163,18 +166,18 @@ float AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
     float maxEnvelopeLevel = 0.0f;
     int32_t i = 0;
 #if USE_ARM_NEON == 1
-    for (; i <= algoFrameLen_ - 8; i += 8) {
+    for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
         float32x4x2_t lr = vld2q_f32(&inBuffer[i]); // load interleaved stereo samples
 
         float32x4_t absL = vabsq_f32(lr.val[0]);
         float32x4_t absR = vabsq_f32(lr.val[1]);
         float32x4_t tempLevelVec = vmaxq_f32(absL, absR); // max value for each frame
 
-        float tempLevelArr[4];
+        float tempLevelArr[NEON_FRAME_PER_ITER];
         vst1q_f32(tempLevelArr, tempLevelVec);
 
         // envelope update must be scalar because of data dependency
-        for (int j = 0; j < 4; ++j) {
+        for (int j = 0; j < NEON_FRAME_PER_ITER; ++j) {
             float tempLevel = tempLevelArr[j];
             float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
             nextLev_ = coeff * nextLev_ + (1.0f - coeff) * tempLevel;
@@ -197,7 +200,7 @@ void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, flo
 {
     int32_t i = 0;
 #if USE_ARM_NEON == 1
-    for (; i <= algoFrameLen_ - 8; i += 8) {
+    for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
         // Load interleaved stereo input and history
         float32x4x2_t in_data  = vld2q_f32(&inBuffer[i]);
         float32x4x2_t his_data = vld2q_f32(&bufHis_[i]);
