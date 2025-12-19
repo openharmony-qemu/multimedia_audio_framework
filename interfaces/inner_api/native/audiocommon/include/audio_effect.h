@@ -36,6 +36,7 @@ constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
 constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
 constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
+constexpr const char* SYSTEM_LOAD_SUBKEY = "systemLoad_state";
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -56,6 +57,7 @@ enum HdiSetParamCommandCode {
     HDI_ABS_VOLUME_STATE = 15,
     HDI_OUTDOOR_MODE = 16,
     HDI_SUPER_LOUDNESS_MODE = 17,
+    HDI_SYSTEMLOAD_STATE = 18,
 };
 
 enum AudioSpatialDeviceType {
@@ -743,6 +745,7 @@ enum AudioEffectChainSetParamIndex {
     EARPHONE_PRODUCT = 14,
     OUTDOOR_MODE = 15,
     SUPER_LOUDNESS_MODE = 16,
+    SYSTEMLOAD_STATE_INDEX = 17,
     MAX_PARAM_INDEX,
 };
 

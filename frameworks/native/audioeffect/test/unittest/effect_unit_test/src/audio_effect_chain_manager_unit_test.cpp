@@ -3399,6 +3399,28 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_002, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test UpdateParamExtra API
+* @tc.number : UpdateParamExtra_003
+* @tc.desc   : Test UpdateParamExtra interface, key is systemLoad_state.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_003, TestSize.Level1)
+{
+    std::string mainkey = "audio_effect";
+    std::string subkey = SYSTEM_LOAD_SUBKEY;
+    std::string value = "0";
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->systemLoadState_, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[0], HDI_SYSTEMLOAD_STATE);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[1], 0);
+
+    value = "1";
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->systemLoadState_, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[0], HDI_SYSTEMLOAD_STATE);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[1], 1);
+}
+
+/**
 * @tc.name   : Test EffectApVolumeUpdate API
 * @tc.number : EffectApVolumeUpdate_003
 * @tc.desc   : Test EffectApVolumeUpdate interface.
