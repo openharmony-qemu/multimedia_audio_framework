@@ -648,8 +648,7 @@ void RendererInClientInner::FirstFrameProcess()
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
-        ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+        ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ);
     }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }

@@ -1918,6 +1918,16 @@ int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERR_INCORRECT_MODE;
 }
+
+std::string CapturerInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void CapturerInClientInner::GetBundleName(std::string name)
+{
+    bundleName = name;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

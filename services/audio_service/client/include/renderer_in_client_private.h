@@ -229,6 +229,8 @@ public:
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    std::string GetBundleName() override;
+    void SetBundleName(std::string name) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -551,6 +553,8 @@ private:
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
+
+    std::string bundleName = "";
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

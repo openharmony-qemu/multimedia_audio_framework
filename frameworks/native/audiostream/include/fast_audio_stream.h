@@ -224,6 +224,8 @@ public:
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    std::string GetBundleName() override;
+    void SetBundleName(std::string name) override;
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
@@ -284,6 +286,8 @@ private:
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+
+    std::string bundleName = "";
 
     enum {
         STATE_CHANGE_EVENT = 0

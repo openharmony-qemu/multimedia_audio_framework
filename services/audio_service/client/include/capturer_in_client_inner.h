@@ -225,6 +225,9 @@ public:
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 
+    std::string GetBundleName() override;
+    void SetBundleName(std::string name) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -352,6 +355,8 @@ private:
 
     bool paramsIsSet_ = false;
     int32_t innerCapId_ = 0;
+
+    std::string bundleName = "";
 
     enum {
         STATE_CHANGE_EVENT = 0,
