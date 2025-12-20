@@ -375,7 +375,8 @@ void AudioInterruptService::SendUnMuteSuggestionInterruptEvent(uint32_t currentp
         }
         auto currentInterrupt = it->second;
         AUDIO_INFO_LOG("Send unmute suggestion for currentpid %{public}d", currentpid);
-        InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE_SUGGESTION, 1.0f};
+        InterruptEventInternal interruptEvent = {
+            INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE_SUGGESTION, 1.0f};
         SendInterruptEventCallback(interruptEvent, currentInterrupt->sessionId, *currentInterrupt);
         suggestionInterrupts_.erase(currentpid);
         suggestionStreamIdRecords_.erase(currentpid);
