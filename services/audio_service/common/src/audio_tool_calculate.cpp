@@ -41,7 +41,6 @@ template <typename T, typename R,
     typename = std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<R>>>
 inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_t channels, size_t split)
 {
-    Trace trace("SumPcmAbsNormal");
     std::vector<R> sum(channels, 0);
     for (uint32_t i = 0; i < num_samples - (split - 1); i += split) {
         for (int32_t j = 0; j < channels; j++) {
@@ -165,10 +164,8 @@ std::vector<int64_t> SumS32AbsNeno(const int32_t* pcm, uint32_t num_samples, int
 {
     std::vector<int64_t> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumS32SingleAbsNeno");
         return SumS32SingleAbsNeno(pcm, num_samples);
     } else {
-        Trace trace("SumS32StereoAbsNeno");
         return SumS32StereoAbsNeno(pcm, num_samples);
     }
     return sum;
@@ -234,7 +231,6 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
     }
     sum[0] = SafeVaddvqU32(sum_left_32x4);
     sum[1] = SafeVaddvqU32(sum_right_32x4);
-    AUDIO_INFO_LOG("SumS16StereoAbsNeno, sum 0 :%{public}d", sum[0]);
 #endif
     return sum;
 }
@@ -242,14 +238,9 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
 std::vector<int32_t> SumS16AbsNeno(const int16_t* pcm, uint32_t num_samples, int32_t channels)
 {
     std::vector<int32_t> sum(channels, 0);
-    AUDIO_INFO_LOG("SumS16AbsNeno");
     if (channels == 1) {
-        AUDIO_INFO_LOG("SumS16AbsNeno channel 1");
-        Trace trace("SumS16SingleAbsNeno");
         return SumS16SingleAbsNeno(pcm, num_samples);
     } else {
-        AUDIO_INFO_LOG("SumS16AbsNeno channel 2");
-        Trace trace("SumS16StereoAbsNeno");
         return SumS16StereoAbsNeno(pcm, num_samples);
     }
     return sum;
@@ -258,15 +249,12 @@ std::vector<int32_t> SumS16AbsNeno(const int16_t* pcm, uint32_t num_samples, int
 std::vector<int32_t> AudioToolCalculate::SumAudioS16AbsPcm(const int16_t* pcm, uint32_t num_samples,
     int32_t channels, size_t split)
 {
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm1");
     if (!Is16ByteAligned(pcm) || channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<int16_t, int32_t>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm2");
     return SumS16AbsNeno(pcm, num_samples, channels);
 #else
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm3");
     return SumPcmAbsNormal<int16_t, int32_t>(pcm, num_samples, channels, split);
 #endif
 }
@@ -329,10 +317,8 @@ std::vector<int32_t> SumU8AbsNeno(const uint8_t *pcm, uint32_t num_samples, int3
 {
     std::vector<int32_t> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumU8SingleNeno");
         return SumU8SingleNeno(pcm, num_samples);
     } else {
-        Trace trace("SumU8StereoNeno");
         return SumU8StereoNeno(pcm, num_samples);
     }
     return sum;
@@ -402,10 +388,8 @@ std::vector<float> SumF32AbsNeno(const float *pcm, uint32_t num_samples, int32_t
 {
     std::vector<float> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumF32SingleAbsNeno");
         return SumF32SingleAbsNeno(pcm, num_samples);
     } else {
-        Trace trace("SumF32StereoAbsNeno");
         return SumF32StereoAbsNeno(pcm, num_samples);
     }
     return sum;
