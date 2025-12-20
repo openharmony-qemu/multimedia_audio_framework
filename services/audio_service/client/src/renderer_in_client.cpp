@@ -543,7 +543,7 @@ bool RendererInClientInner::WriteCallbackFunc()
         return true;
     }
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
-        HILOG_COMM_WARN("The queue is too long, reducing data through loops");
+        HILOG_COMM_WARN("[WriteCallbackFunc]The queue is too long, reducing data through loops");
     }
     BufferDesc temp;
     while (cbBufferQueue_.PopNotWait(temp)) {
@@ -596,11 +596,11 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         int32_t outBufferSize = 0;
         if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
             bufferSize = 0;
-            HILOG_COMM_ERROR("process speed error");
+            HILOG_COMM_ERROR("[ProcessSpeed]process speed error");
             return false;
         }
         if (outBufferSize == 0) {
-            HILOG_COMM_ERROR("speed buffer is not full");
+            HILOG_COMM_ERROR("[ProcessSpeed]speed buffer is not full");
             return false;
         }
         buffer = speedBuffer_.get();
@@ -731,14 +731,14 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
         // calculate wait time by buffer size, 10e6 is converting seconds to microseconds
         uint32_t waitTimeUs = bufferSize * 10e6 / (samplingRate * channels * samplePerFrame);
-        HILOG_COMM_ERROR("server is died! wait %{public}d us", waitTimeUs);
+        HILOG_COMM_ERROR("[WriteInner]server is died! wait %{public}d us", waitTimeUs);
         usleep(waitTimeUs);
         return ERR_WRITE_BUFFER;
     }
 
     CHECK_AND_RETURN_RET_LOG(gServerProxy_ != nullptr, ERROR, "server is died");
     if (clientBuffer_->GetStreamStatus() == nullptr) {
-        HILOG_COMM_ERROR("The stream status is null!");
+        HILOG_COMM_ERROR("[WriteInner]The stream status is null!");
         return ERR_INVALID_PARAM;
     }
 
@@ -872,7 +872,7 @@ void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t buffer
         }
         std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         if ((currentTime - startMuteTime_ >= ONE_MINUTE) && !isUpEvent_) {
-            HILOG_COMM_WARN("write silent data for some time");
+            HILOG_COMM_WARN("[WriteMuteDataSysEvent]write silent data for some time");
             isUpEvent_ = true;
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::AUDIO, Media::MediaMonitor::BACKGROUND_SILENT_PLAYBACK,

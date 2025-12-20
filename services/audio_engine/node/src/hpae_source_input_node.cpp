@@ -417,8 +417,8 @@ StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 
 int32_t HpaeSourceInputNode::SetSourceState(StreamManagerState sourceState)
 {
-    HILOG_COMM_INFO("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
+    HILOG_COMM_INFO("[SetSourceState]Source[%{public}s] state change:"
+        "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sourceState).c_str());
     state_ = sourceState;
     return SUCCESS;

@@ -595,7 +595,7 @@ int32_t AudioEffectChain::updatePrimaryChannel()
     if (isSupportedChannelLayoutFlage == false) {
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        HILOG_COMM_INFO("currChannelLayout is not supported, change to default channelLayout");
+        HILOG_COMM_INFO("[updatePrimaryChannel]currChannelLayout is not supported, change to default channelLayout");
         return ERROR;
     }
 

@@ -352,7 +352,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     CHECK_AND_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
         nullptr, "rendererFlags not support!");
 
-    HILOG_COMM_INFO("StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
+    HILOG_COMM_INFO("[Create]StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
@@ -449,7 +449,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         rendererFlags = isSupportInnerCaptureOffload ? rendererFlags : AUDIO_FLAG_NORMAL;
     }
 
-    HILOG_COMM_INFO("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
+    HILOG_COMM_INFO("[CreateRenderer]StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid,
@@ -464,7 +464,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
-        HILOG_COMM_ERROR("SetParams failed in renderer");
+        HILOG_COMM_ERROR("[CreateRenderer]SetParams failed in renderer");
         audioRenderer = nullptr;
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
             ERR_OPERATION_FAILED);
@@ -759,7 +759,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
-    HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
+    HILOG_COMM_INFO("[PrepareAudioStream]StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
 
     // force using AUDIO_OUTPUT_FLAG_HWDECODING. In plan:get true flag
@@ -838,7 +838,8 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
-    HILOG_COMM_INFO("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
+    HILOG_COMM_INFO("[DecideStreamClassAndUpdateRendererInfo]Route flag: %{public}u, streamClass: %{public}d, "\
+        "rendererFlag: %{public}d, pipeType: %{public}d",
         flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
 }
@@ -980,7 +981,7 @@ bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
 {
     bool result = audioStream_->StartAudioStream(cmdType);
     if (!result) {
-        HILOG_COMM_ERROR("Start audio stream failed");
+        HILOG_COMM_ERROR("[GetStartStreamResult]Start audio stream failed");
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
         if (!audioStream_->GetSilentModeAndMixWithOthers()) {
             int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
@@ -1803,7 +1804,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     if (audioStream_ != nullptr) {
         audioStream_->GetAudioSessionID(sessionID_);
     }
-    HILOG_COMM_INFO("sessionId: %{public}u, forceType: %{public}d, hintType: %{public}d",
+    HILOG_COMM_INFO("[OnInterrupt]sessionId: %{public}u, forceType: %{public}d, hintType: %{public}d",
         sessionID_, forceType, interruptEvent.hintType);
 
     if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
@@ -2348,7 +2349,8 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
     }
     InitSwitchInfo(targetClass, switchInfo);
     if (restoreInfo.restoreReason == SERVER_DIED) {
-        HILOG_COMM_INFO("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
+        HILOG_COMM_INFO("[FinishOldStream]Server died, reset session id: %{public}d",
+            switchInfo.params.originalSessionId);
         switchInfo.params.originalSessionId = 0;
         switchInfo.sessionId = 0;
         switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::MONOTONIC].first =
@@ -2467,8 +2469,8 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         + ", target class " + std::to_string(targetClass) + ", reason " + std::to_string(restoreInfo.restoreReason)
         + ", device change reason " + std::to_string(restoreInfo.deviceChangeReason)
         + ", target flag " + std::to_string(restoreInfo.targetStreamFlag));
-    HILOG_COMM_INFO("Restore AudioRenderer %{public}u, target class %{public}d, reason: %{public}d, "
-        "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
+    HILOG_COMM_INFO("[SwitchToTargetStream]Restore AudioRenderer %{public}u, target class %{public}d, "
+        "reason: %{public}d, device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
 
     isSwitching_ = true;
@@ -2763,13 +2765,14 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     CHECK_AND_RETURN_LOG(audioStream_, "audioStream_ is nullptr, no need for restore");
-    HILOG_COMM_INFO("Restore audio renderer when server died, session %{public}u", sessionID_);
+    HILOG_COMM_INFO("[RestoreAudioInLoop]Restore audio renderer when server died, session %{public}u", sessionID_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
     // When server died, restore client stream by SwitchToTargetStream. Target stream class is
     // the stream class of the old stream.
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
-    HILOG_COMM_INFO("Set restore status when server died, restore result %{public}d", restoreResult);
+    HILOG_COMM_INFO("[RestoreAudioInLoop]Set restore status when server died, restore result %{public}d",
+        restoreResult);
     return;
 }
 

@@ -127,8 +127,9 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
     if (addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end()) {
         if (isCollaborativeStateEnabled_) {
             isCollaborativeStateEnabled_ = false;
-            HILOG_COMM_INFO("current device %{public}s is not in addressToCollaborativeEnabledMap_, "
-                "close collaborative service", GetEncryptAddr(curDeviceAddress_).c_str());
+            HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current device %{public}s is not in "
+                "addressToCollaborativeEnabledMap_, close collaborative service",
+                GetEncryptAddr(curDeviceAddress_).c_str());
             return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
         }
         return SUCCESS;
@@ -136,8 +137,8 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
     bool isCurrentCollaborativeEnabled = (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
     if (isCollaborativeStateEnabled_ != isCurrentCollaborativeEnabled) {
         isCollaborativeStateEnabled_ = isCurrentCollaborativeEnabled;
-        HILOG_COMM_INFO("current collaborative enabled state changed to %{public}d for Mac address %{public}s",
-            isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
+        HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
+            "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_); // send to HpaeManager
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);

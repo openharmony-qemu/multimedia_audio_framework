@@ -275,8 +275,8 @@ void RendererInServer::OnCheckActiveMusicTime(const std::string &reason)
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     if (operation != OPERATION_UNDERFLOW) {
-        HILOG_COMM_INFO("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
-            (standByEnable_ ? "true" : "false"));
+        HILOG_COMM_INFO("[OnStatusUpdate]%{public}u recv operation:%{public}d standByEnable_:%{public}s",
+            streamIndex_, operation, (standByEnable_ ? "true" : "false"));
     }
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released!");
@@ -715,7 +715,7 @@ int32_t RendererInServer::WriteData()
             CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
                 "invalid write and read position.");
             uint64_t dataSize = currentWriteFrame - currentReadFrame;
-            HILOG_COMM_INFO("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
+            HILOG_COMM_INFO("[WriteData]sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
                 streamIndex_, dataSize);
         }
         return ERR_OPERATION_FAILED;
