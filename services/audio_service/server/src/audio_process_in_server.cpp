@@ -438,7 +438,7 @@ int32_t AudioProcessInServer::StartInner()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[AudioProcessInServer::StartInner]Start in server success!");
+    HILOG_COMM_INFO("[StartInner]Start in server success!");
     return SUCCESS;
 }
 
@@ -490,7 +490,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    HILOG_COMM_INFO("[AudioProcessInServer::Pause]Pause in server success!");
+    HILOG_COMM_INFO("[Pause]Pause in server success!");
     streamStatusInServer_ = STREAM_PAUSED;
     RemoveStreamInfo();
     return SUCCESS;
@@ -522,7 +522,7 @@ int32_t AudioProcessInServer::Resume()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[AudioProcessInServer::Resume]Resume in server success!");
+    HILOG_COMM_INFO("[Resume]Resume in server success!");
     streamStatusInServer_ = STREAM_RUNNING;
     return SUCCESS;
 }
@@ -570,7 +570,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    HILOG_COMM_INFO("[AudioProcessInServer::Stop]Stop in server success!");
+    HILOG_COMM_INFO("[Stop]Stop in server success!");
     streamStatusInServer_ = STREAM_STOPPED;
     RemoveStreamInfo();
     return SUCCESS;
@@ -597,7 +597,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
-    HILOG_COMM_INFO("[AudioProcessInServer::Release]notify service release result: %{public}d", ret);
+    HILOG_COMM_INFO("[Release]notify service release result: %{public}d", ret);
     ReleaseCaptureInjector();
     streamStatusInServer_ = STREAM_RELEASED;
     RemoveStreamInfo();

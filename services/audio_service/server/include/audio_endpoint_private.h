@@ -394,9 +394,6 @@ private:
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";
     std::string dupMixName_ = "";
-
-    // protect DelayStopDevice() and OnStart-->StartDevice()
-    std::mutex startStatusLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -219,7 +219,7 @@ int32_t AudioRenderSink::Pause(void)
 
 int32_t AudioRenderSink::Flush(void)
 {
-    HILOG_COMM_INFO("[AudioRenderSink::Flush]halName: %{public}s", halName_.c_str());
+    HILOG_COMM_INFO("[Flush]halName: %{public}s", halName_.c_str());
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
@@ -914,7 +914,7 @@ int32_t AudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("[AudioRenderSink::CreateRender]create render, halName: %{public}s, rate: %{public}u, "
+    HILOG_COMM_INFO("[CreateRender]create render, halName: %{public}s, rate: %{public}u, "
         "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
         param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();

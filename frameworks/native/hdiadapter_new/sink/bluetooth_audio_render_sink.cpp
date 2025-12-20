@@ -127,7 +127,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::DeInit]%{public}s update validState:true", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[DeInit]%{public}s update validState:true", logTypeTag_.c_str());
     validState_ = true;
     DeinitPipeInfo();
 }
@@ -152,7 +152,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Start");
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Start]%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[Start]%{public}s in", logTypeTag_.c_str());
     CHECK_AND_RETURN_RET(IsSinkInited(), ERR_NOT_STARTED);
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
@@ -203,7 +203,7 @@ int32_t BluetoothAudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Stop");
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Stop]%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[Stop]%{public}s in", logTypeTag_.c_str());
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
         AUDIO_INFO_LOG("running lock unlock");
@@ -265,7 +265,7 @@ int32_t BluetoothAudioRenderSink::Pause(void)
 
 int32_t BluetoothAudioRenderSink::Flush(void)
 {
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::Flush]%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[Flush]%{public}s in", logTypeTag_.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
@@ -335,7 +335,7 @@ int64_t BluetoothAudioRenderSink::GetVolumeDataCount()
 
 int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
 {
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::SuspendRenderSink]%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[SuspendRenderSink]%{public}s in", logTypeTag_.c_str());
     Trace trace("BluetoothAudioRenderSink::SuspendRenderSink");
     suspend_ = true;
     return SUCCESS;
@@ -343,7 +343,7 @@ int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
 
 int32_t BluetoothAudioRenderSink::RestoreRenderSink(void)
 {
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::RestoreRenderSink]%{public}s in", logTypeTag_.c_str());
+    HILOG_COMM_INFO("[RestoreRenderSink]%{public}s in", logTypeTag_.c_str());
     Trace trace("BluetoothAudioRenderSink::RestoreRenderSink");
     suspend_ = false;
     return SUCCESS;
@@ -651,7 +651,7 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("[BluetoothAudioRenderSink::CreateRender]create render, rate: %{public}u, channel: %{public}u, "
+    HILOG_COMM_INFO("[CreateRender]create render, rate: %{public}u, channel: %{public}u, "
         "format: %{public}u", param.sampleRate, param.channelCount, param.format);
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();

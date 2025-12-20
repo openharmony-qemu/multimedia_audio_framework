@@ -244,7 +244,7 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    HILOG_COMM_INFO("[HpaeSinkInputNode::SetState]Sink[%{public}s]->Session[%{public}u - %{public}d] state change:"
+    HILOG_COMM_INFO("[SetState]Sink[%{public}s]->Session[%{public}u - %{public}d] state change:"
         "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), GetSessionId(), GetStreamType(),
         ConvertSessionState2Str(state_).c_str(), ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;

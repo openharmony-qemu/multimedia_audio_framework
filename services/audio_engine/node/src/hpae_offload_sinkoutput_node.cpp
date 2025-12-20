@@ -329,7 +329,7 @@ StreamManagerState HpaeOffloadSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeOffloadSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    HILOG_COMM_INFO("[HpaeOffloadSinkOutputNode::SetSinkState]Sink[%{public}s] state change:"
+    HILOG_COMM_INFO("[SetSinkState]Sink[%{public}s] state change:"
         "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
