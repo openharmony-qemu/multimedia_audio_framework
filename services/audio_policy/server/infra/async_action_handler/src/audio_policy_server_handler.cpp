@@ -1216,10 +1216,10 @@ bool AudioPolicyServerHandler::BuildStateChangedEvent(InterruptHint hintType, fl
             stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNDUCK;
             break;
         case INTERRUPT_HINT_MUTE_SUGGESTION:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::MUTE;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::MUTE_SUGGESTION;
             break;
         case INTERRUPT_HINT_UNMUTE_SUGGESTION:
-            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNMUTE;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNMUTE_SUGGESTION;
             break;
         default:
             return false;

@@ -49,7 +49,7 @@ public:
     void OnAudioSessionStateChanged(AudioSessionStateChangeHint audioSessionStateChangeHint);
     void RecordAudioSessionOpt(const OperationType type, const int32_t value);
     bool RestoreParams(void);
-    void MoveMuteAfterSceneIfBefore();
+    void EnsureMuteAfterScene();
 
 private:
     void DeduplicateLastOperation(OperationType type);

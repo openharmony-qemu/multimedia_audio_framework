@@ -386,9 +386,9 @@ static const std::map<OHOS::AudioStandard::AudioSessionStateChangeHint,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_DUCK},
     {OHOS::AudioStandard::AudioSessionStateChangeHint::UNDUCK,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK},
-    {OHOS::AudioStandard::AudioSessionStateChangeHint::MUTE,
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::MUTE_SUGGESTION,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION},
-    {OHOS::AudioStandard::AudioSessionStateChangeHint::UNMUTE,
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::UNMUTE_SUGGESTION,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION},
 };
 
