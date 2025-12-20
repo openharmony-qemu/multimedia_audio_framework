@@ -3083,8 +3083,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
 
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
-        SetVolumeDbForDeviceInPipe(desc, STREAM_VOICE_ASSISTANT);
-        SetStreamMute(STREAM_VOICE_ASSISTANT, false);
+        SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
         AUDIO_INFO_LOG("a2dp ok");
     }
 }
@@ -3417,6 +3416,11 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
     UpdateRingerMuteByRingerMode(desc);
+    if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
+        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
+        SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
+        AUDIO_INFO_LOG("a2dp ok");
+    }
     UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
