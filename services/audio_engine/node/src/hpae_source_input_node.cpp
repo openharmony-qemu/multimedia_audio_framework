@@ -283,6 +283,20 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, con
     outputStreamMap_.at(micType).WriteDataToOutput(&inputAudioBufferMap_.at(micType));
 }
 
+void HpaeSourceInputNode::PushDataWithConcat(const uint64_t &replyBytes, const uint64_t replyBytesEc)
+{
+    if (concatMicEcFlag_) {
+        ConCatMicEcAndPushData(replyBytes, replyBytesEc);
+    } else {
+        PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        CHECK_AND_RETURN_LOG(
+            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
+            "same ec request != reply");
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+    }
+}
+
 void HpaeSourceInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess " + GetTraceInfo());
@@ -293,16 +307,7 @@ void HpaeSourceInputNode::DoProcess()
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
                                                  &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
-        if (concatMicEcFlag_) {
-            ConCatMicEcAndPushData(replyBytes, replyBytesEc);
-        } else {
-            PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
-            DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
-            CHECK_AND_RETURN_LOG(
-                CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
-                "same ec request != reply");
-            DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
-        }
+        PushDataWithConcat(replyBytes, replyBytesEc);
         PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
         DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
         CHECK_AND_RETURN_LOG(
