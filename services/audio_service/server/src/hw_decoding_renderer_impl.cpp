@@ -299,7 +299,7 @@ BufferDesc HWDecodingRendererStream::DequeueBuffer(size_t length)
 int32_t HWDecodingRendererStream::EnqueueBuffer(const BufferDesc &bufferDesc)
 {
     Trace trace("HWDecodingRendererStream::EnqueueBuffer[" + std::to_string(streamIndex_) + "]length:" +
-        std::to_string(bufferDesc.dataLength));
+        std::to_string(bufferDesc.dataLength) + " pts:" + std::to_string(bufferDesc.syncFramePts));
     // prepare buffer
     size_t length = bufferDesc.dataLength + sizeof(HWDecodingInfo);
     CHECK_AND_RETURN_RET_LOG(length <= bufferSize_ && bufferDesc.dataLength != 0, ERR_INVALID_PARAM,

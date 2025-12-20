@@ -637,6 +637,7 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 
 void RendererInClientInner::OnFirstFrameWriting()
 {
+    Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
 
@@ -828,6 +829,7 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
 
 int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
 {
+    Trace trace("RendererInClientInner::GetRawBuffer");
     if (clientBuffer_ == nullptr) {
         AUDIO_ERR_LOG("buffer is not inited");
         return ERR_OPERATION_FAILED;

@@ -396,6 +396,8 @@ void RendererInClientInner::RecordDropPosition(size_t bufLength)
 
 int32_t RendererInClientInner::WriteRawBuffer(BufferDesc &bufferDesc)
 {
+    Trace trace("RendererInClient::WriteRawBuffer dataLength:" + std::to_string(bufferDesc.dataLength) + " bufLength:" +
+        std::to_string(bufferDesc.bufLength));
     if (bufferDesc.dataLength == 0) {
         if (sleepCount_++ == LOG_COUNT_LIMIT) {
             sleepCount_ = 0;
@@ -529,7 +531,7 @@ void RendererInClientInner::CallClientHandle()
     if (cb != nullptr) {
         Trace traceCb("RendererInClientInner::OnWriteData");
         WatchTimeout guard("write interval too long"); // default time out 40ms
-        size_t length = isHWDecodingType_ ? FIXED_BUFFER_SIZE : cbBufferSize_;
+        size_t length = isHWDecodingType_ ? clientBuffer_->GetDataSize() : cbBufferSize_;
         cb->OnWriteData(length);
         guard.CheckCurrTimeout();
     }

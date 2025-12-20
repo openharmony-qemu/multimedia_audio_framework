@@ -38,12 +38,21 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
     constexpr int32_t PARAM2 = 2;
-    constexpr size_t FIXED_SIZE = 10 * 1024;
-    const uint64_t SYNC_FRAME_PTS_SPAN_US = 50000; // 50ms for test
+    constexpr size_t FIXED_SIZE = 1024;
+    const uint64_t SYNC_FRAME_PTS_SPAN_US = 20000; // 20ms for test
 }
 class AudioRenderModeCallbackTest : public AudioRendererWriteCallback,
     public enable_shared_from_this<AudioRenderModeCallbackTest> {
 public:
+    void TestPeriodCall()
+    {
+        Timestamp stamp;
+        bool ret = audioRenderer_->GetAudioPosition(stamp, Timestamp::MONOTONIC);
+        std::cout << "GetPosition:" << (ret ?  "success" : "fail") << " postion:" << stamp.framePosition << " sec:" <<
+            stamp.time.tv_sec << " nsec:" << stamp.time.tv_nsec << std::endl;
+        audioRenderer_->SetSpeed(1.0);
+    }
+
     void OnWriteData(size_t length) override
     {
         if (isEnd_) {
@@ -71,6 +80,9 @@ public:
         bufferDesc.dataLength = FIXED_SIZE;
         bufferDesc.syncFramePts = mockPts_;
         mockPts_ += SYNC_FRAME_PTS_SPAN_US;
+        if (mockPts_ % AUDIO_US_PER_S == 0) {
+            TestPeriodCall();
+        }
 
         bufferDesc.dataLength = fread(bufferDesc.buffer, 1, bufferDesc.dataLength, wavFile_);
         ret = audioRenderer_->Enqueue(bufferDesc);
@@ -95,6 +107,37 @@ public:
             default:
                 return AudioSampleFormat::INVALID_WIDTH;
         }
+    }
+
+    bool InitEAC3Render()
+    {
+        AudioRendererOptions rendererOptions = {};
+        rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_EAC3;
+        rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
+        rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+        rendererOptions.streamInfo.channels = STEREO;
+        rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
+        rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
+        rendererOptions.rendererInfo.rendererFlags = 0;
+
+        audioRenderer_ = AudioRenderer::Create(rendererOptions);
+        if (audioRenderer_== nullptr) {
+            AUDIO_ERR_LOG("RenderCallbackTest: Renderer create failed");
+            return false;
+        }
+
+        AUDIO_INFO_LOG("RenderCallbackTest: Playback renderer created");
+        if (audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK)) {
+            AUDIO_ERR_LOG("RenderCallbackTest: SetRenderMode failed");
+            return false;
+        }
+
+        if (audioRenderer_->SetRendererWriteCallback(shared_from_this())) {
+            AUDIO_ERR_LOG("RenderCallbackTest: SetRendererWriteCallback failed");
+            return false;
+        }
+
+        return true;
     }
 
     bool InitRender()
@@ -139,7 +182,8 @@ public:
     int32_t TestPlayback(int argc, char *argv[])
     {
         AUDIO_INFO_LOG("RenderCallbackTest: TestPlayback start");
-        if (!InitRender()) {
+        if (!InitEAC3Render()) {
+            std::cout << "InitEAC3Render failed" << std::endl;
             return -1;
         }
 
