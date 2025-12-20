@@ -281,7 +281,7 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     int32_t targetZoneId = -1;
     AudioInterrupt targetInterrupt;
-    const uint32_t targetSessionID = static_cast<uint32_t>(streamId);
+    const uint32_t targetSessionID = static_cast<uint32_t>(sessionID);
     bool clearFlag = false;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
 
