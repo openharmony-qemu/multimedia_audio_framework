@@ -98,7 +98,7 @@ void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEC()
     outputStreamMap_.emplace(micType, this);
     historyDataMap_.clear();
     historyRemainSizeMap_.clear();
-    concatDataBuffer_.resize(micInfo.channels * micInfo.frameLen * 1); 1: SAMPLE_S16LE
+    concatDataBuffer_.resize(micInfo.channels * micInfo.frameLen * 1); // 1: SAMPLE_S16LE
     AUDIO_INFO_LOG("mic:%{public}d, ec:%{public}d, concatBufferSize:%{public}d", micInfo.channels,
         ecInfo.channels, static_cast<uint32_t>(concatDataBuffer_.size()));
 }
