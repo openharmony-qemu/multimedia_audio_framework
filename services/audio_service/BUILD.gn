@@ -571,6 +571,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_effect.cpp",
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_workgroup.cpp",
+    "server/src/audio_system_load_listener.cpp",
     "server/src/config/audio_param_parser.cpp",
     "server/src/audio_injector_service.cpp",
   ]

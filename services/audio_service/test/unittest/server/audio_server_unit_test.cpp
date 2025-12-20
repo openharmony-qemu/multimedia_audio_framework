@@ -20,6 +20,7 @@
 #include "audio_service.h"
 #include "system_ability_definition.h"
 #include "audio_service_types.h"
+#include "audio_system_load_listener.h"
 
 using namespace testing::ext;
 
@@ -514,5 +515,26 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
     EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
 }
 
+/**
+ * @tc.name  : Test OnSystemloadLevel API
+ * @tc.type  : FUNC
+ * @tc.number: OnSystemloadLevel_001
+ * @tc.desc  : Test OnSystemloadLevel interface.
+ */
+HWTEST(AudioServerUnitTest, OnSystemloadLevel_001, TestSize.Level1)
+{
+    AudioSystemloadListener audioSystemloadListener;
+    AudioService::GetInstance()->currentRendererStreamCnt_ = 10;
+    audioSystemloadListener.OnSystemloadLevel(1);
+    audioSystemloadListener.OnSystemloadLevel(2);
+    audioSystemloadListener.OnSystemloadLevel(3);
+    audioSystemloadListener.OnSystemloadLevel(4);
+    audioSystemloadListener.OnSystemloadLevel(5);
+    audioSystemloadListener.OnSystemloadLevel(6);
+    audioSystemloadListener.OnSystemloadLevel(7);
+    AudioService::GetInstance()->currentRendererStreamCnt_ = 0;
+    audioSystemloadListener.OnSystemloadLevel(7);
+    EXPECT_EQ(AudioService::GetInstance()->currentRendererStreamCnt_, 0);
+}
 } // namespace AudioStandard
 } //
