@@ -317,6 +317,149 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
     return SUCCESS;
 }
 
+void AudioInterruptService::RemoveStreamIdSuggestionRecord(int32_t streamId)
+{
+    bool hasRecord = false;
+    for (auto it = suggestionStreamIdRecords_.begin(); it != suggestionStreamIdRecords_.end(); ++it) {
+        if (it->second.count(streamId) > 0) {
+            it->second.erase(streamId);
+            hasRecord = true;
+            AUDIO_INFO_LOG("remove mute stream record %{public}d for streamId %{public}d", streamId, it->first);
+        }
+    }
+    if (hasRecord) {
+        RemoveMuteSuggestionRecord();
+    }
+}
+ 
+void AudioInterruptService::RemovePidSuggestionRecord(int32_t pid)
+{
+    if (suggestionPidRecords_.count(pid) > 0) {
+        suggestionInterrupts_.erase(pid);
+        suggestionStreamIdRecords_.erase(pid);
+        suggestionPidRecords_.erase(pid);
+    }
+    bool hasRecord = false;
+    for (auto it = suggestionPidRecords_.begin(); it != suggestionPidRecords_.end(); ++it) {
+        it->second.erase(pid);
+        if (it->second.count(pid) > 0) {
+            it->second.erase(pid);
+            hasRecord = true;
+            AUDIO_INFO_LOG("remove mute session record %{public}d for streamId %{public}d", pid, it->first);
+        }
+    }
+    if (hasRecord) {
+        RemoveMuteSuggestionRecord();
+    }
+}
+ 
+bool AudioInterruptService::HasMuteSuggestionRecord(uint32_t currentpid)
+{
+    auto pidRecord = suggestionPidRecords_.find(currentpid);
+    if (pidRecord != suggestionPidRecords_.end() && pidRecord->second.size() > 0) {
+        return true;
+    }
+    auto streamIdRecord = suggestionStreamIdRecords_.find(currentpid);
+    if (streamIdRecord != suggestionStreamIdRecords_.end() && streamIdRecord->second.size() > 0) {
+        return true;
+    }
+    return false;
+}
+ 
+void AudioInterruptService::SendUnMuteSuggestionInterruptEvent(uint32_t currentpid)
+{
+    if (!HasMuteSuggestionRecord(currentpid)) {
+        auto it = suggestionInterrupts_.find(currentpid);
+        if (it == suggestionInterrupts_.end()) {
+            return;
+        }
+        auto currentInterrupt = it->second;
+        AUDIO_INFO_LOG("Send unmute suggestion for currentpid %{public}d", currentpid);
+        InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE_SUGGESTION, 1.0f};
+        SendInterruptEventCallback(interruptEvent, currentInterrupt->sessionId, *currentInterrupt);
+        suggestionInterrupts_.erase(currentpid);
+        suggestionStreamIdRecords_.erase(currentpid);
+        suggestionPidRecords_.erase(currentpid);
+    }
+}
+ 
+void AudioInterruptService::DelayRemoveMuteSuggestionRecord(uint32_t currentpid)
+{
+    auto audioInterruptService = shared_from_this();
+    auto removeTask = [audioInterruptService, currentpid] {
+        if (audioInterruptService == nullptr) {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        audioInterruptService->SendUnMuteSuggestionInterruptEvent(currentpid);
+    };
+ 
+    std::thread(removeTask).detach();
+    AUDIO_INFO_LOG("Started unmute suggestion for currentpid %{public}d with 1s delay", currentpid);
+}
+ 
+void AudioInterruptService::RemoveMuteSuggestionRecord()
+{
+    for (auto it = suggestionInterrupts_.begin(); it != suggestionInterrupts_.end(); ++it) {
+        auto currentpid = it->first;
+        if (!HasMuteSuggestionRecord(currentpid)) {
+            DelayRemoveMuteSuggestionRecord(currentpid);
+            for (auto it = suggestionPidRecords_.begin(); it != suggestionPidRecords_.end(); ++it) {
+                it->second.insert(currentpid);
+            }
+            return;
+        }
+    }
+}
+ 
+void AudioInterruptService::AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry,
+    const AudioInterrupt &muteInterrupt, const AudioInterrupt &recordInterrupt)
+{
+    auto mutePid = muteInterrupt.pid;
+    auto it = suggestionInterrupts_.find(mutePid);
+    if (it == suggestionInterrupts_.end()) {
+        std::shared_ptr<AudioInterrupt> sp = std::make_shared<AudioInterrupt>(muteInterrupt);
+        suggestionInterrupts_[mutePid] = sp;
+        AUDIO_INFO_LOG("Send mute suggestion for pid %{public}d", mutePid);
+        InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, focusEntry.forceType,
+            INTERRUPT_HINT_MUTE_SUGGESTION, 1.0f};
+        SendInterruptEventCallback(interruptEvent, muteInterrupt.sessionId, muteInterrupt);
+    }
+    if (sessionService_.IsAudioSessionFocusMode(recordInterrupt.pid) &&
+        suggestionPidRecords_[mutePid].count(recordInterrupt.pid) <= 0) {
+        suggestionPidRecords_[mutePid].insert(recordInterrupt.pid);
+        AUDIO_INFO_LOG("add mute session record %{public}d for sessionId %{public}d",
+            recordInterrupt.pid, mutePid);
+    } else if (!sessionService_.IsAudioSessionFocusMode(recordInterrupt.pid) &&
+        suggestionStreamIdRecords_[mutePid].count(recordInterrupt.sessionId) <= 0) {
+        suggestionStreamIdRecords_[mutePid].insert(recordInterrupt.sessionId);
+        AUDIO_INFO_LOG("add mute stream record %{public}d for sessionId %{public}d",
+            recordInterrupt.sessionId, mutePid);
+    }
+}
+ 
+void AudioInterruptService::SuggestionProcessWhenMixWithOthers(const AudioFocusEntry &focusEntry,
+    const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt)
+{
+    if (focusEntry.hintType != INTERRUPT_HINT_PAUSE && focusEntry.hintType != INTERRUPT_HINT_STOP) {
+        return;
+    }
+    if (currentInterrupt.audioFocusType.streamType > 0 &&
+        sessionService_.IsAudioSessionFocusMode(currentInterrupt.pid) &&
+        sessionService_.GetSessionStrategy(currentInterrupt.pid) == AudioConcurrencyMode::MIX_WITH_OTHERS &&
+        sessionService_.IsMuteSuggestionWhenMixEnabled(currentInterrupt.pid)) {
+        AddMuteSuggestionRecord(focusEntry, currentInterrupt, incomingInterrupt);
+    }
+ 
+    if (incomingInterrupt.audioFocusType.streamType > 0 &&
+        sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid) &&
+        sessionService_.GetSessionStrategy(incomingInterrupt.pid) == AudioConcurrencyMode::MIX_WITH_OTHERS &&
+        sessionService_.IsMuteSuggestionWhenMixEnabled(incomingInterrupt.pid) &&
+        !sessionService_.IsMuteSuggestionWhenMixEnabled(currentInterrupt.pid)) {
+        AddMuteSuggestionRecord(focusEntry, incomingInterrupt, currentInterrupt);
+    }
+}
+
 int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t callerPid, bool enable)
 {
     std::unique_lock<std::mutex> lock(mutex_);
