@@ -93,7 +93,7 @@ void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEC()
     pcmBufferInfoMap_.emplace(micType, PcmBufferInfo(micInfo.channels, micInfo.frameLen, micInfo.samplingRate));
     inputAudioBufferMap_.clear();
     inputAudioBufferMap_.emplace(micType, HpaePcmBuffer(pcmBufferInfoMap_.at(micType)));
-    inputAudioBufferMap_.at((micType).SetSourceBufferType(micType);
+    inputAudioBufferMap_.at(micType).SetSourceBufferType(micType);
     outputStreamMap_.clear();
     outputStreamMap_.emplace(micType, this);
     historyDataMap_.clear();
@@ -141,8 +141,8 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
             HpaeNodeInfo nodeInfo = nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_MIC];
             outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeSourceInputNodeOut_id" +
                 std::to_string(GetSessionId()) +
-                "_ch_" + std::to_string(nodeInfo.channels)
-                "_rate_" + std::to_string(nodeInfo.samplingRate)
+                "_ch_" + std::to_string(nodeInfo.channels) +
+                "_rate_" + std::to_string(nodeInfo.samplingRate) +
                 "_bit_" + std::to_string(nodeInfo.format) + ".pcm");
 #endif
         }
@@ -239,7 +239,7 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replayBytes, co
     if (inputPcmDumperMap_.find(ecType) != inputPcmDumperMap_.end() && inputPcmDumperMap_.at(ecType)) {
         inputPcmDumperMap_.at(ecType)->Dump((int8_t *)capturerFrameDataMap_.at(ecType).data(), replyBytesEc);
     }
-#endif 
+#endif
 
     uint32_t framelen = nodeInfoMap_.at(micType).frameLen;
     uint32_t totalChannel = nodeInfoMap_.at(micType).channels;
@@ -253,7 +253,7 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replayBytes, co
         size_t micFrameStart = i * micChannel * micFormatSize;
         size_t ecFrameStart = i * ecChannel * micFormatSize;
 
-        for (uint32_t j = 0; j< micChannel; j++) {
+        for (uint32_t j = 0; j < micChannel; j++) {
             size_t destOffset = frameStart + j * micFormatSize;
             size_t srcOffset = micFrameStart + j * micFormatSize;
             int32_t ret = memcpy_s(concatDataBuffer_.data() + destOffset, micFormatSize,
@@ -261,7 +261,7 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replayBytes, co
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "memcpy mic data failed");
         }
 
-        for (uint32_t j = 0; j< ecChannel; j++) {
+        for (uint32_t j = 0; j < ecChannel; j++) {
             size_t destOffset = frameStart + (micChannel + j) * micFormatSize;
             size_t srcOffset = ecFrameStart + j * ecFormatSize;
             int32_t ret = memcpy_s(concatDataBuffer_.data() + destOffset, ecFormatSize,
