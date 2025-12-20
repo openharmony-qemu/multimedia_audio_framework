@@ -23,22 +23,14 @@
 #include "audio_engine_callback_types.h"
 #include "common/hdi_adapter_info.h"
 #include "common/hdi_adapter_type.h"
+#include "util/callback_wrapper.h"
+#include "i_audio_source_callback.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioSourceCallback {
-public:
-    virtual ~IAudioSourceCallback() = default;
-    virtual void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
-        const std::string &condition, const std::string &value) {}
-    virtual void OnCaptureState(bool isActive) {}
-    virtual void OnWakeupClose(void) {}
-    virtual void OnInputPipeChange(AudioPipeChangeType changeType,
-        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) {};
-};
 
 class IAudioCaptureSource {
 public:
@@ -54,12 +46,13 @@ public:
     virtual int32_t Pause(void) = 0;
     virtual int32_t Flush(void) = 0;
     virtual int32_t Reset(void) = 0;
-    virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) = 0;
+    virtual int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) NOT_SUPPORT_RET
     virtual int32_t CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc) = 0;
+        uint64_t &replyBytesEc) NOT_SUPPORT_RET
 
-    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
-    virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
+    virtual void SetAudioParameter(const AudioParamKey key,
+        const std::string &condition, const std::string &value) {};
+    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
@@ -70,23 +63,18 @@ public:
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual float GetMaxAmplitude(void) = 0;
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) NOT_SUPPORT_RET
 
-    virtual int32_t UpdateActiveDevice(DeviceType inputDevice) = 0;
+    virtual int32_t UpdateActiveDevice(DeviceType inputDevice) NOT_SUPPORT_RET
     virtual int32_t UpdateSourceType(SourceType sourceType) SUCCESS_RET
-    virtual void RegistCallback(uint32_t type, IAudioSourceCallback *callback) {}
-    virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) {}
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
-    virtual void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state) {};
 
     virtual void SetAddress(const std::string &address) {}
     virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) {}
-    virtual std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() { return nullptr; }
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
     virtual bool IsCaptureInvalid(void) NOT_SUPPORT_RET
@@ -96,6 +84,33 @@ public:
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) NOT_SUPPORT_RET
     virtual int32_t GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) NOT_SUPPORT_RET
+
+    // Implement by self (begin)
+    virtual void RegistCallback(uint32_t type, IAudioSourceCallback *callback);
+    virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback);
+
+    virtual void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state);
+    virtual std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo();
+    // Implement by self (end)
+
+protected:
+    // Funcs to handle pipe info
+    virtual void InitPipeInfo(uint32_t id, HdiAdapterType adapter, uint32_t routeFlag,
+        std::vector<DeviceType> devices = { DEVICE_TYPE_NONE });
+    virtual void ChangePipeStatus(AudioPipeStatus state);
+    virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    virtual void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, SourceType source, CapturerState state);
+    virtual void DeinitPipeInfo();
+
+    // Common variables
+    SourceCallbackWrapper callback_ = {};
+
+private:
+    // For source info notify
+    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

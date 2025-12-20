@@ -4773,18 +4773,18 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_002, TestSize.Level0)
 }
 
 /**
- * @tc.name  : AudioRenderer_IsStartWaitFor_001
- * @tc.number: IsStartWaitFor_001
- * @tc.desc  : Test IsStartWaitFor() for different cases
+ * @tc.name  : AudioRenderer_WaitSwitchStreamIfNeeded_001
+ * @tc.number: WaitSwitchStreamIfNeeded_001
+ * @tc.desc  : Test WaitSwitchStreamIfNeeded() for different cases
  */
-HWTEST(AudioRendererUnitTest, IsStartWaitFor_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, WaitSwitchStreamIfNeeded_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
     auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
 
-    bool res = testRendererInner->IsStartWaitFor(true);
-    EXPECT_EQ(true, res);
-    res = testRendererInner->IsStartWaitFor(false);
+    bool res = testRendererInner->WaitSwitchStreamIfNeeded(true);
+    EXPECT_EQ(false, res);
+    res = testRendererInner->WaitSwitchStreamIfNeeded(false);
     EXPECT_EQ(true, res);
 }
 

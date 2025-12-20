@@ -198,6 +198,21 @@ HWTEST_F(AudioStreamDescriptorUnitTest, RendererDevice_002, TestSize.Level4)
 }
 
 /**
+ * @tc.name   : AudioStreamDescriptor_RendererDevice_003
+ * @tc.number : RendererDevice_003
+ * @tc.desc   : Test device funcs error branches by renderer AudioStreamDescriptor instance
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, RendererDevice_003, TestSize.Level4)
+{
+    testRendererStream_->AddNewDevice(nullptr);
+    EXPECT_EQ(nullptr, testRendererStream_->GetMainNewDeviceDesc());
+
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    testRendererStream_->AddNewDevice(device);
+    EXPECT_NE(nullptr, testRendererStream_->GetMainNewDeviceDesc());
+}
+
+/**
  * @tc.name   : AudioStreamDescriptor_Dump_001
  * @tc.number : Dump_001
  * @tc.desc   : Test dump funcs by renderer AudioStreamDescriptor instance

@@ -545,6 +545,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintM
         static_cast<int32_t>(AudioSessionStateChangeHint::TIME_OUT_STOP)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_DUCK", static_cast<int32_t>(AudioSessionStateChangeHint::DUCK)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION ", static_cast<int32_t>(AudioSessionStateChangeHint::MUTE)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION ",
+        static_cast<int32_t>(AudioSessionStateChangeHint::UNMUTE)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommendedActionMap = {

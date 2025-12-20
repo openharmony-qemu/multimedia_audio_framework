@@ -193,6 +193,23 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
   return sceneInfo;
 }
 
+function getMD5OfFile(filePath: string): string {
+  // 获取文件内容
+  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
+  let buf = new ArrayBuffer(40960);
+  fs.readSync(file.fd, buf);
+  fs.closeSync(file);
+
+  let mdAlgName = 'MD5';
+  let md = cryptoFramework.createMd(mdAlgName);
+  md.updateSync({ data: new Uint8Array(buf) });
+  let mdResult = md.digestSync();
+  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
+  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
+  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
+  return md5Str;
+}
+
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
   if (outputFileMd5.length != expectedFileMd5.length) {
     return false;

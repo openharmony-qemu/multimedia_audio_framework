@@ -54,10 +54,11 @@ void NapiAudioManagerInterruptCallback::SaveCallbackReference(const std::string 
     }
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
+    std::string taskName = "NapiAudioManagerInterruptCallback::destroy";
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     audioManagerInterruptCallbackList_.push_back(cb);
     AUDIO_INFO_LOG("SaveCallbackReference success, list size [%{public}zu]", audioManagerInterruptCallbackList_.size());
 }

@@ -236,6 +236,7 @@ int32_t AudioSession::Deactivate()
 
     streamsInSession_.clear();
     needToFetch_ = false;
+    isMuteSuggestionEnabled_ = false;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     return SUCCESS;
@@ -473,6 +474,16 @@ void AudioSession::MarkSystemApp(void)
 bool AudioSession::IsSystemApp(void) const
 {
     return isSystemApp_;
+}
+
+void AudioSession::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    isMuteSuggestionEnabled_ = enable;
+}
+
+bool AudioSession::IsMuteSuggestionWhenMixEnabled()
+{
+    return isMuteSuggestionEnabled_;
 }
 
 } // namespace AudioStandard

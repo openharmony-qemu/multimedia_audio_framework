@@ -44,9 +44,6 @@ BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency, c
 {
     if (halName_ == HDI_ID_INFO_HEARING_AID) {
         sinkType_ = ADAPTER_TYPE_HEARING_AID;
-        device_ = DEVICE_TYPE_HEARING_AID;
-    } else {
-        device_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     }
 
     logTypeTag_ = isBluetoothLowLatency_ ? "fast" : "normal";
@@ -89,7 +86,11 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     sinkInited_ = true;
     ++sinkInitCount_;
     started_ = false;
-    InitPipeInfo();
+    DeviceType device = (halName_ == HDI_ID_INFO_HEARING_AID ? DEVICE_TYPE_HEARING_AID : DEVICE_TYPE_BLUETOOTH_A2DP);
+    InitPipeInfo(hdiRenderId_,
+        (halName_ == HDI_ID_INFO_HEARING_AID ? HDI_ADAPTER_TYPE_HEARING_AID : HDI_ADAPTER_TYPE_A2DP),
+        (isBluetoothLowLatency_ ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL),
+        { device });
     return SUCCESS;
 }
 
@@ -385,12 +386,6 @@ void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
     }
 }
 
-std::string BluetoothAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    AUDIO_INFO_LOG("not support");
-    return "";
-}
-
 int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -510,48 +505,6 @@ int32_t BluetoothAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t BluetoothAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t BluetoothAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t BluetoothAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void BluetoothAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void BluetoothAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t BluetoothAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t BluetoothAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t BluetoothAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -584,11 +537,6 @@ void BluetoothAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: BtSink\tstarted: " + std::string(started_ ? "true" : "false") + "\tisLowLatency: " +
         std::string(isBluetoothLowLatency_ ? "true" : "false") + "\n";
-}
-
-void BluetoothAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -964,82 +912,5 @@ void BluetoothAudioRenderSink::SetBluetoothSinkParam(AudioParamKey key, std::str
     AUDIO_INFO_LOG("SetBluetoothSinkParam key %{public}u, condition %{public}s, value %{public}s",
         a2dpParam_.key, a2dpParam_.condition.c_str(), a2dpParam_.value.c_str());
 }
-
-void BluetoothAudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state)
-{
-    ChangePipeStream(change, sessionId, usage, state);
-}
-
-std::shared_ptr<AudioOutputPipeInfo> BluetoothAudioRenderSink::GetOutputPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    return copyPipe;
-}
-
-void BluetoothAudioRenderSink::InitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
-        hdiRenderId_,
-        (halName_ == HDI_ID_INFO_HEARING_AID ? HDI_ADAPTER_TYPE_HEARING_AID : HDI_ADAPTER_TYPE_A2DP),
-        (isBluetoothLowLatency_ ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL));
-    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
-    pipeInfo_->SetDevice(device_);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void BluetoothAudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetStatus(state);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void BluetoothAudioRenderSink::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-
-    switch (change) {
-        case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, usage, state);
-            break;
-        case STREAM_CHANGE_TYPE_REMOVE:
-            pipeInfo_->RemoveStream(streamId);
-            break;
-        case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
-            break;
-        default:
-            return;
-    }
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
-}
-
-void BluetoothAudioRenderSink::DeinitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->RemoveAllStreams();
-    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-
-    // clear pipe for get func
-    pipeInfo_ = nullptr;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

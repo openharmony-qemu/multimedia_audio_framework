@@ -40,6 +40,7 @@ AudioStaticBufferProvider::AudioStaticBufferProvider(AudioStreamInfo streamInfo,
 
 int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen)
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr && processedBuffer_ != nullptr, ERR_INVALID_OPERATION,
         "sharedBuffer is nullptr or read data before processBuffer!");
     if (!NeedProvideData()) {
@@ -97,9 +98,9 @@ int32_t AudioStaticBufferProvider::ProcessFadeInOutIfNeed(int8_t *inputData, siz
         needFadeIn_ = false;
     }
 
-    // if refreshloopTimes before fadeout, the beginning data will be processed as fadeout
-    if (delayRefreshLoopTimes_) {
-        RefreshLoopTimes();
+    // if RefreshBufferStatus before fadeout, the beginning data will be processed as fadeout
+    if (delayRefreshBufferStatus_) {
+        RefreshBufferStatus();
     }
     return ret;
 }
@@ -118,7 +119,6 @@ int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,
 void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo)
 {
     CHECK_AND_RETURN_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
-    preSetTotalLoopTimes_ = staticBufferInfo.preSetTotalLoopTimes_;
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
     curStaticDataPos_ = staticBufferInfo.curStaticDataPos_;
@@ -130,39 +130,49 @@ int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticB
     staticBufferInfo.totalLoopTimes_ = totalLoopTimes_;
     staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
     staticBufferInfo.curStaticDataPos_ = curStaticDataPos_;
-    staticBufferInfo.preSetTotalLoopTimes_ = preSetTotalLoopTimes_;
     staticBufferInfo.sharedMemory_ = sharedBuffer_->GetSharedMem();
     return SUCCESS;
 }
 
 void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(bufferBase != nullptr, "bufferBase in SetProcessedBuffer is nullptr!");
+
+    // calculate the buffer beginning position when set renderRate
+    curStaticDataPos_ = (processedBufferSize_ == 0 ? 0 : curStaticDataPos_ * 1.0 / processedBufferSize_ * bufferSize);
+    uint32_t byteSizePerFrame = streamInfo_.channels * PcmFormatToBits(streamInfo_.format);
+    curStaticDataPos_ = (byteSizePerFrame == 0 ? 0 : curStaticDataPos_ / byteSizePerFrame * byteSizePerFrame);
     processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }
 
-void AudioStaticBufferProvider::PreSetLoopTimes(int64_t times)
+void AudioStaticBufferProvider::SetLoopTimes(int64_t times)
 {
-    preSetTotalLoopTimes_ = times;
-}
-
-void AudioStaticBufferProvider::RefreshLoopTimes()
-{
-    // fadeout needs to be done before resfresh bufferStatus
-    if (needFadeOut_ && !IsLoopEnd()) {
-        Trace trace1("RefreshLoopTimes need delay Refresh");
-        delayRefreshLoopTimes_ = true;
-        return;
-    }
-    Trace trace("RefreshLoopTimes");
-    totalLoopTimes_ = preSetTotalLoopTimes_;
+    std::unique_lock<std::mutex> lock(eventMutex_);
+    totalLoopTimes_ = times;
     currentLoopTimes_ = 0;
     curStaticDataPos_ = 0;
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
-    AUDIO_INFO_LOG("RefreshLoopTimes, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
-    delayRefreshLoopTimes_ = false;
+    AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, times);
+}
+
+void AudioStaticBufferProvider::RefreshBufferStatus()
+{
+    // fadeout needs to be done before resfresh bufferStatus
+    if (needFadeOut_ && !IsLoopEnd()) {
+        Trace trace1("RefreshBufferStatus need delay Refresh");
+        delayRefreshBufferStatus_ = true;
+        return;
+    }
+    Trace trace("RefreshBufferStatus");
+    currentLoopTimes_ = 0;
+    curStaticDataPos_ = 0;
+    sharedBuffer_->ResetBufferEndCallbackSendTimes();
+    sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
+    AUDIO_INFO_LOG("RefreshBufferStatus, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
+    delayRefreshBufferStatus_ = false;
 }
 
 int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()

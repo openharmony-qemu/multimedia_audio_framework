@@ -474,6 +474,7 @@ private:
     int32_t StopAudioPort(std::string oldSinkName);
     void DealDoNotDisturbStatus();
     void DealDoNotDisturbStatusWhiteList();
+    void UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDeviceDescriptor> device);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

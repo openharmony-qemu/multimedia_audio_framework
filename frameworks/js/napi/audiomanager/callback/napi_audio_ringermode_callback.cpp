@@ -45,11 +45,12 @@ void NapiAudioRingerModeCallback::SaveCallbackReference(const std::string &callb
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
+    std::string taskName = "NapiAudioRingerModeCallback::destroy";
     const int32_t refCount = ARGS_ONE;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioRingerModeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == RINGERMODE_CALLBACK_NAME) {
         ringerModeCallback_ = cb;
     } else {

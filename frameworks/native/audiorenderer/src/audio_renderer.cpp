@@ -644,12 +644,11 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 int32_t AudioRendererPrivate::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERR_NOT_SUPPORTED, "Can only be set in staticAudioRenderer!");
-    CHECK_AND_RETURN_RET_LOG((bufferLoopTimes >= -1 && bufferLoopTimes < INT64_MAX),
-        ERR_NOT_SUPPORTED, "set invalid bufferLoopTimes %{public}" PRId64 "!", bufferLoopTimes);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_INVALID_OPERATION, "audioStream_ is nullptr");
     AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, bufferLoopTimes);
-    return currentStream->SetLoopTimes(bufferLoopTimes == -1 ? -1 : bufferLoopTimes + 1);
+    bufferLoopTimes = (bufferLoopTimes == INT64_MAX ? bufferLoopTimes : bufferLoopTimes + 1);
+    return currentStream->SetLoopTimes(bufferLoopTimes < 0 ? -1 : bufferLoopTimes);
 }
 
 AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
@@ -1108,7 +1107,7 @@ void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
     }
 }
 
-int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, bool isStartStateWaitFor)
+int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, bool needWait)
 {
     // Check first to avoid redundant instructions consumption in thread switching
     if (!IsRestoreOrStopNeeded()) {
@@ -1136,13 +1135,13 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc, b
         sharedRenderer->isSwitchStreamSt_ = true;
         sharedRenderer->switchStreamSt_.notify_all();
     });
-    IsStartWaitFor(isStartStateWaitFor);
+    WaitSwitchStreamIfNeeded(needWait);
     return SUCCESS;
 }
 
-bool AudioRendererPrivate::IsStartWaitFor(bool isStartStateWaitFor)
+bool AudioRendererPrivate::WaitSwitchStreamIfNeeded(bool needWait)
 {
-    if (isStartStateWaitFor) {
+    if (needWait) {
         std::unique_lock<std::mutex> lock(switchStreamMt_);
         return switchStreamSt_.wait_for(lock, std::chrono::milliseconds(SWITCH_WAIT_TIME_MS), [this] {
             return isSwitchStreamSt_;
@@ -1759,6 +1758,10 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             (void)audioStream_->SetDuckVolume(1.0f);
             AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = NO_EVENT;
+            break;
+        case INTERRUPT_HINT_MUTE_SUGGESTION:
+            break;
+        case INTERRUPT_HINT_UNMUTE_SUGGESTION:
             break;
         default: // If the hintType is NONE, don't need to send callbacks
             return NO_EVENT;

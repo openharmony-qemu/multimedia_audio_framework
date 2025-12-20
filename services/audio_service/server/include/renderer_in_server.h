@@ -163,7 +163,7 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
-    int32_t PreSetLoopTimes(int64_t bufferLoopTimes);
+    int32_t SetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
 public:
@@ -230,9 +230,10 @@ private:
     void PauseDirectStream();
 
     int32_t CreateServerBuffer();
-    int32_t ProcessAndSetStaticBuffer(bool needRefreshBufferStatus);
+    int32_t ProcessAndSetStaticBuffer();
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
     void MarkStaticFadeOut(bool isRefresh);
+    void MarkStaticFadeIn();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -338,7 +339,6 @@ private:
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
 
-    bool needRefreshBufferStatus_ = true;
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;

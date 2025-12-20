@@ -114,25 +114,6 @@ int32_t FileAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes,
     return SUCCESS;
 }
 
-int32_t FileAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-std::string FileAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void FileAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t FileAudioCaptureSource::SetVolume(float left, float right)
 {
     return SUCCESS;
@@ -170,16 +151,6 @@ float FileAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t FileAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    return SUCCESS;
-}
-
-int32_t FileAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
-{
-    return SUCCESS;
-}
-
 int32_t FileAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
 {
     AUDIO_INFO_LOG("not support");
@@ -195,11 +166,6 @@ int32_t FileAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUi
 void FileAudioCaptureSource::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FileSource\n";
-}
-
-void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

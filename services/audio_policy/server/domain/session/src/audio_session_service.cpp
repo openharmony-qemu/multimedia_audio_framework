@@ -291,7 +291,9 @@ bool AudioSessionService::ShouldAudioSessionProcessHintType(InterruptHint hintTy
            hintType == INTERRUPT_HINT_PAUSE ||
            hintType == INTERRUPT_HINT_STOP ||
            hintType == INTERRUPT_HINT_DUCK ||
-           hintType == INTERRUPT_HINT_UNDUCK;
+           hintType == INTERRUPT_HINT_UNDUCK ||
+           hintType == INTERRUPT_HINT_MUTE_SUGGESTION ||
+           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION;
 }
 
 bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintType)
@@ -299,7 +301,9 @@ bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintTyp
     return hintType == INTERRUPT_HINT_PAUSE ||
            hintType == INTERRUPT_HINT_STOP ||
            hintType == INTERRUPT_HINT_DUCK ||
-           hintType == INTERRUPT_HINT_UNDUCK;
+           hintType == INTERRUPT_HINT_UNDUCK ||
+           hintType == INTERRUPT_HINT_MUTE_SUGGESTION ||
+           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION;
 }
 
 std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)
@@ -617,6 +621,40 @@ bool AudioSessionService::IsSystemAppWithMixStrategy(const AudioInterrupt &audio
     }
 
     return false;
+}
+
+int32_t AudioSessionService::EnableMuteSuggestionWhenMixWithOthers(int32_t callerPid, bool enable)
+{
+    AUDIO_INFO_LOG("callerPid %{public}d, isMuteSuggestionEnabled %{public}d",
+        callerPid, enable);
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+
+    auto session = sessionMap_.find(callerPid);
+    CHECK_AND_RETURN_RET_LOG(session != sessionMap_.end() && session->second != nullptr, ERROR_ILLEGAL_STATE,
+        "The audio session of pid %{public}d has not been created", callerPid);
+
+    std::shared_ptr<AudioSession> audioSession = session->second;
+    CHECK_AND_RETURN_RET_LOG(audioSession->IsSceneParameterSet(), ERROR_ILLEGAL_STATE,
+        "The audio session of pid %{public}d not set audio session scene", callerPid);
+
+    CHECK_AND_RETURN_RET_LOG(!audioSession->IsActivated(), ERROR_ILLEGAL_STATE,
+        "The audio session of pid %{public}d mute suggestion must be set before activating the audio session",
+        callerPid);
+
+    audioSession->EnableMuteSuggestionWhenMixWithOthers(enable);
+    return SUCCESS;
+}
+
+bool AudioSessionService::IsMuteSuggestionWhenMixEnabled(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end() || session->second == nullptr) {
+        AUDIO_WARNING_LOG("The audio session of pid %{public}d has not been created", callerPid);
+        return false;
+    }
+
+    return session->second->IsMuteSuggestionWhenMixEnabled();
 }
 
 } // namespace AudioStandard

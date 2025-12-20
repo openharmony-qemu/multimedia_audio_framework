@@ -2629,6 +2629,20 @@ int32_t AudioPolicyManager::UnsetAudioSessionCurrentDeviceChangeCallback(
     return result;
 }
 
+int32_t AudioPolicyManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->EnableMuteSuggestionWhenMixWithOthers(enable);
+}
+
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

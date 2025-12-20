@@ -140,7 +140,7 @@ public:
 
     int32_t SetRebuildFlag() override;
 
-    int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
 
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
 

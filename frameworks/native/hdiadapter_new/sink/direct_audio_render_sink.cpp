@@ -227,26 +227,6 @@ int64_t DirectAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t DirectAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t DirectAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void DirectAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string DirectAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
 void DirectAudioRenderSink::SetSpeed(float speed)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -337,47 +317,6 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void DirectAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void DirectAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-}
-
-int32_t DirectAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t DirectAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -419,11 +358,6 @@ int32_t DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const 
 void DirectAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: directSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
-}
-
-void DirectAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type,

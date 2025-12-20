@@ -241,6 +241,7 @@ private:
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
     std::string lidState_ = "0";
+    std::string systemLoadState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
     std::string outdoorModle_ = "0";

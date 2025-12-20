@@ -80,7 +80,8 @@ int32_t AudioRenderSink::Init(const IAudioSinkAttr &attr)
 
     InitLatencyMeasurement();
     sinkInited_ = true;
-    InitPipeInfo();
+    InitPipeInfo(hdiRenderId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_OUTPUT_FLAG_NORMAL,
+        { currentActiveDevice_ });
 
     return SUCCESS;
 }
@@ -301,16 +302,6 @@ void AudioRenderSink::CheckJank()
 int64_t AudioRenderSink::GetVolumeDataCount()
 {
     return volumeDataCount_;
-}
-
-int32_t AudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t AudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
 }
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)
@@ -575,13 +566,6 @@ void AudioRenderSink::HandleDeviceCallback(const bool state)
     if (deviceCallback_ != nullptr) {
         deviceCallback_(state);
     }
-}
-
-void AudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
 }
 
 void AudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
@@ -1279,90 +1263,6 @@ void AudioRenderSink::WaitForDataLinkConnected()
         isDataLinkConnected_ = true;
     }
     dataConnectionWaitLock.unlock();
-}
-
-void AudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state)
-{
-    ChangePipeStream(change, streamId, usage, state);
-}
-
-std::shared_ptr<AudioOutputPipeInfo> AudioRenderSink::GetOutputPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    return copyPipe;
-}
-
-void AudioRenderSink::InitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
-        hdiRenderId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_OUTPUT_FLAG_NORMAL);
-    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
-    pipeInfo_->SetDevice(currentActiveDevice_);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void AudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetStatus(state);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void AudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetDevices(devices);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
-}
-
-void AudioRenderSink::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-
-    switch (change) {
-        case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, usage, state);
-            break;
-        case STREAM_CHANGE_TYPE_REMOVE:
-            pipeInfo_->RemoveStream(streamId);
-            break;
-        case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
-            break;
-        default:
-            return;
-    }
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
-}
-
-void AudioRenderSink::DeinitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->RemoveAllStreams();
-    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-
-    // clear pipe for get func
-    pipeInfo_ = nullptr;
 }
 
 } // namespace AudioStandard

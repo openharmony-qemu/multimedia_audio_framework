@@ -1313,7 +1313,6 @@ enum InnerCapMode : uint32_t {
 };
 
 struct StaticBufferInfo : public Parcelable {
-    int64_t preSetTotalLoopTimes_ = 0;
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
@@ -1321,11 +1320,10 @@ struct StaticBufferInfo : public Parcelable {
 
     bool Marshalling(Parcel &parcel) const override
     {
-        parcel.WriteInt64(preSetTotalLoopTimes_);
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return sharedMemory_->Marshalling(parcel);
+        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
@@ -1334,7 +1332,6 @@ struct StaticBufferInfo : public Parcelable {
         if (info == nullptr) {
             return nullptr;
         }
-        info->preSetTotalLoopTimes_ = parcel.ReadInt64();
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();

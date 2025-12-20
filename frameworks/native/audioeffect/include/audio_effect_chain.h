@@ -48,6 +48,7 @@ public:
     void SetExtraSceneType(const std::string &extraSceneType);
     void SetFoldState(const std::string &foldState);
     void SetLidState(const std::string &lidState);
+    void SetSystemLoadState(const std::string &systemLoadState);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
@@ -101,6 +102,7 @@ private:
     uint32_t extraEffectChainType_ = 0;
     uint32_t foldState_ = 0;
     uint32_t lidState_ = 0;
+    uint32_t systemLoadState_ = 0;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;

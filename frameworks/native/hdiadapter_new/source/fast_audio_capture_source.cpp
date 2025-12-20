@@ -47,7 +47,8 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
     sourceInited_ = true;
-    InitPipeInfo();
+    InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST,
+        { static_cast<DeviceType>(attr_.deviceType) });
     return SUCCESS;
 }
 
@@ -197,31 +198,6 @@ int32_t FastAudioCaptureSource::Reset(void)
     return SUCCESS;
 }
 
-int32_t FastAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-std::string FastAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void FastAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t FastAudioCaptureSource::SetVolume(float left, float right)
 {
     AUDIO_INFO_LOG("not support");
@@ -284,12 +260,6 @@ int32_t FastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExc
 int32_t FastAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
 {
     return DoSetInputRoute(inputDevice);
-}
-
-void FastAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
 }
 
 int32_t FastAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -609,95 +579,6 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     int32_t ret = audioCapture_->Stop(audioCapture_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
     return ERR_OPERATION_FAILED;
-}
-
-void FastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-void FastAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
-{
-    ChangePipeStream(change, streamId, source, state);
-}
-
-std::shared_ptr<AudioInputPipeInfo> FastAudioCaptureSource::GetInputPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    return copyPipe;
-}
-
-void FastAudioCaptureSource::InitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    pipeInfo_ = std::make_shared<AudioInputPipeInfo>(
-        hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST);
-    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
-    pipeInfo_->SetDevice(static_cast<DeviceType>(attr_.deviceType));
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void FastAudioCaptureSource::ChangePipeStatus(AudioPipeStatus state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetStatus(state);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void FastAudioCaptureSource::ChangePipeDevice(const std::vector<DeviceType> &devices)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetDevices(devices);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
-}
-
-void FastAudioCaptureSource::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-
-    switch (change) {
-        case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, source, state);
-            break;
-        case STREAM_CHANGE_TYPE_REMOVE:
-            pipeInfo_->RemoveStream(streamId);
-            break;
-        case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
-            break;
-        default:
-            return;
-    }
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
-}
-
-void FastAudioCaptureSource::DeinitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->RemoveAllStreams();
-    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
-
-    auto copyPipe = std::make_shared<AudioInputPipeInfo>(*pipeInfo_);
-    callback_.OnInputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-
-    // clear pipe for get func
-    pipeInfo_ = nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
