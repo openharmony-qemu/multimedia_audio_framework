@@ -1703,7 +1703,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
-        SuggestionProcessWhenMixWithOthers(focusEntry, iterActive->first, incomingInterrupt);  
+        SuggestionProcessWhenMixWithOthers(focusEntry, iterActive->first, incomingInterrupt);
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
             iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
             // incomming peeling should not stop/pause/duck other playing instances
