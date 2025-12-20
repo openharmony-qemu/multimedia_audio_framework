@@ -697,8 +697,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     HandleRingToDefaultSceneChange(lastAudioScene, audioScene);
     FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
 

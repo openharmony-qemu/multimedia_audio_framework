@@ -349,6 +349,7 @@ public:
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
+    void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
 private:
     friend class PolicyCallbackImpl;
 

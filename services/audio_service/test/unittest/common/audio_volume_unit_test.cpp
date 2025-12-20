@@ -267,6 +267,21 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMute_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: SetDualStreamVolumeMute_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetDualStreamVolumeMute_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    bool isDualMuted = true;
+    AudioVolume::GetInstance()->SetDualStreamVolumeMute(sessionId, isDualMuted);
+    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(retVolume, 0);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: SetSystemVolume_001
  * @tc.desc  : Test AudioVolume interface.
  */

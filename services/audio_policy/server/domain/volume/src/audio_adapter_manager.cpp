@@ -3597,5 +3597,12 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_);
 }
 
+void AudioAdapterManager::SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) {
+    AudioVolume::GetInstance()->SetDualStreamVolumeMute(sessionId, isDualMute);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeDb = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
