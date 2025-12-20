@@ -455,6 +455,7 @@ private:
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
     int32_t SetAudioBalanceStatus();
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
+    void OnStartExpansion();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

@@ -66,6 +66,7 @@
 #include "audio_manager_listener.h"
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
+#include "audio_system_load_listener.h"
 
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
@@ -643,6 +644,17 @@ void AudioServer::InitMaxRendererStreamCntPerUid()
     }
 }
 
+void AudioServer::OnStartExpansion()
+{
+    AudioSystemloadListener audioSystemloadListener;
+
+    RegisterAudioCapturerSourceCallback();
+    RegisterAudioRendererSinkCallback();
+    ParseAudioParameter();
+    NotifyProcessStatus();
+    audioSystemloadListener.RegisterResSchedSys();
+}
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
@@ -689,10 +701,7 @@ void AudioServer::OnStart()
     HPAE::IHpaeManager::GetHpaeManager().Init();
     AUDIO_INFO_LOG("IHpaeManager Init\n");
 #endif // SUPPORT_OLD_ENGINE
-    RegisterAudioCapturerSourceCallback();
-    RegisterAudioRendererSinkCallback();
-    ParseAudioParameter();
-    NotifyProcessStatus();
+    OnStartExpansion();
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
 }
