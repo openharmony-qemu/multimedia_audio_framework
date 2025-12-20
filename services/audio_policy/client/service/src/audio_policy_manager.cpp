@@ -2947,13 +2947,13 @@ int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const 
     return gsp->LoadSplitModule(splitArgs, networkId);
 }
 
-bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid,
+bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
     StreamUsage streamUsage, bool &silentControl)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     bool isAllowed = false;
-    gsp->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
+    gsp->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
     return isAllowed;
 }
 

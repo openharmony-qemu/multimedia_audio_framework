@@ -668,7 +668,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+        StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
