@@ -1093,7 +1093,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
 
-    RemoveStreamIdSuggestionRecord(currAudioInterrupt.sessionId);
+    RemoveStreamIdSuggestionRecord(currAudioInterrupt.streamId);
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
     if (HasAudioSessionFakeInterrupt(zoneId, currAudioInterrupt.pid)) {

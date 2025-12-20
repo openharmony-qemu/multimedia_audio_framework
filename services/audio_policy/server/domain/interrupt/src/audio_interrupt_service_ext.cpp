@@ -281,7 +281,7 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     int32_t targetZoneId = -1;
     AudioInterrupt targetInterrupt;
-    const uint32_t targetSessionID = static_cast<uint32_t>(sessionID);
+    const uint32_t targetSessionID = static_cast<uint32_t>(streamId);
     bool clearFlag = false;
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
 
@@ -377,7 +377,7 @@ void AudioInterruptService::SendUnMuteSuggestionInterruptEvent(uint32_t currentp
         AUDIO_INFO_LOG("Send unmute suggestion for currentpid %{public}d", currentpid);
         InterruptEventInternal interruptEvent = {
             INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE_SUGGESTION, 1.0f};
-        SendInterruptEventCallback(interruptEvent, currentInterrupt->sessionId, *currentInterrupt);
+        SendInterruptEventCallback(interruptEvent, currentInterrupt->streamId, *currentInterrupt);
         suggestionInterrupts_.erase(currentpid);
         suggestionStreamIdRecords_.erase(currentpid);
         suggestionPidRecords_.erase(currentpid);
@@ -424,7 +424,7 @@ void AudioInterruptService::AddMuteSuggestionRecord(const AudioFocusEntry &focus
         AUDIO_INFO_LOG("Send mute suggestion for pid %{public}d", mutePid);
         InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, focusEntry.forceType,
             INTERRUPT_HINT_MUTE_SUGGESTION, 1.0f};
-        SendInterruptEventCallback(interruptEvent, muteInterrupt.sessionId, muteInterrupt);
+        SendInterruptEventCallback(interruptEvent, muteInterrupt.streamId, muteInterrupt);
     }
     if (sessionService_.IsAudioSessionFocusMode(recordInterrupt.pid) &&
         suggestionPidRecords_[mutePid].count(recordInterrupt.pid) <= 0) {
@@ -432,10 +432,10 @@ void AudioInterruptService::AddMuteSuggestionRecord(const AudioFocusEntry &focus
         AUDIO_INFO_LOG("add mute session record %{public}d for sessionId %{public}d",
             recordInterrupt.pid, mutePid);
     } else if (!sessionService_.IsAudioSessionFocusMode(recordInterrupt.pid) &&
-        suggestionStreamIdRecords_[mutePid].count(recordInterrupt.sessionId) <= 0) {
-        suggestionStreamIdRecords_[mutePid].insert(recordInterrupt.sessionId);
+        suggestionStreamIdRecords_[mutePid].count(recordInterrupt.streamId) <= 0) {
+        suggestionStreamIdRecords_[mutePid].insert(recordInterrupt.streamId);
         AUDIO_INFO_LOG("add mute stream record %{public}d for sessionId %{public}d",
-            recordInterrupt.sessionId, mutePid);
+            recordInterrupt.streamId, mutePid);
     }
 }
  
