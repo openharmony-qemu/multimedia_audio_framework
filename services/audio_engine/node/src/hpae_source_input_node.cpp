@@ -143,8 +143,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
                 std::to_string(GetSessionId()) +
                 "_ch_" + std::to_string(nodeInfo.channels)
                 "_rate_" + std::to_string(nodeInfo.samplingRate)
-                "_bit_" + std::to_string(nodeInfo.format) + "_"
-                TransSourceBufferTypeToString(sourceBufferType) + ".pcm");
+                "_bit_" + std::to_string(nodeInfo.format) + ".pcm");
 #endif
         }
     }
@@ -276,7 +275,7 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replayBytes, co
         concatDataBuffer_.data(), inputAudioBufferMap_.at(micType).GetPcmDataBuffer());
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
-        float *outputData = inputAudioBufferMap_.at(micType).GetPcmDatBuffer();
+        float *outputData = inputAudioBufferMap_.at(micType).GetPcmDataBuffer();
         outputPcmDumper_->Dump((int8_t *) outputData,
             nodeInfoMap_.at(micType).channels * nodeInfoMap_.at(micType).frameLen * sizeof(float));
     }
@@ -299,7 +298,7 @@ void HpaeSourceInputNode::DoProcess()
         } else {
             PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
             DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
-            CHECK_AND_RETUREN_LOG(
+            CHECK_AND_RETURN_LOG(
                 CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
                 "same ec request != reply");
             DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
