@@ -111,7 +111,8 @@ public:
         TYPE_VOICE_TRANSCRIPTION = 12,
         TYPE_CAMCORDER = 13,
         TYPE_UNPROCESSED = 14,
-        TYPE_LIVE = 17
+        TYPE_LIVE = 17,
+        TYPE_UNPROCESSED_VOICE_ASSISTANT = 19,
     };
 
     enum AudioDataCallbackResult {
