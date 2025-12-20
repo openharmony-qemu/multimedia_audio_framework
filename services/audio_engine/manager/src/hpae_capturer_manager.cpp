@@ -722,6 +722,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     nodeInfo.samplingRate = sourceInfo_.samplingRate;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     nodeInfo.statusCallback = weak_from_this();
+    nodeInfo.sourceType = sourceInfo_.sourceType;
     mainMicType_ = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? HPAE_SOURCE_MIC_EC : HPAE_SOURCE_MIC;
 
     if (mainMicType_ == HPAE_SOURCE_MIC_EC) {
@@ -731,6 +732,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
         ecNodeInfo.frameLen = sourceInfo_.ecFrameLen;
         ecNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
         ecNodeInfo.statusCallback = weak_from_this();
+        ecNodeInof.sourceType = sourceInfo_.sourceType;
         nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC_EC;
         std::vector<HpaeNodeInfo> nodeInfos = {nodeInfo, ecNodeInfo};
         sourceInputClusterMap_[mainMicType_] = std::make_shared<HpaeSourceInputCluster>(nodeInfos);
