@@ -253,7 +253,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DeviceString_001, TestSize.Level3)
  */
 HWTEST_F(AudioStreamDescriptorUnitTest, BundleName_001, TestSize.Level3)
 {
-    testRendererStream_->SetBunduleName(testBundleName);
+    testRendererStream_->SetBundleName(testBundleName);
     EXPECT_EQ(testBundleName, testRendererStream_->GetBundleName());
 }
 

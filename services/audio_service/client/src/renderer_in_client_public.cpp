@@ -2036,5 +2036,15 @@ bool RendererInClientInner::NeedStopFlush()
 {
     return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
 }
+
+const std::string RendererInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void RendererInClientInner::SetBundleName(std::string &name)
+{
+    bundleName = name;
+}
 } // namespace AudioStandard
 } // namespace OHOS

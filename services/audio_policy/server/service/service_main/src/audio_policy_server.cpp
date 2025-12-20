@@ -3192,7 +3192,7 @@ int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescr
     bool disableFastStream = coreService_->GetDisableFastStreamParam();
     if (disableFastStream || streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         std::string bundleName = AudioBundleManager::GetBundleName();
-        streamDesc->SetBunduleName(bundleName);
+        streamDesc->SetBundleName(bundleName);
     }
     uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkIdIn = LOCAL_NETWORK_ID;

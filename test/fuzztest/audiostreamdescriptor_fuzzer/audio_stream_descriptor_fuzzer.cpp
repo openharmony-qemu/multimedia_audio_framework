@@ -141,14 +141,14 @@ void UnmarshallingDeviceDescVectorFuzzTest()
     streamDesc->UnmarshallingDeviceDescVector(parcel, descs);
 }
 
-void SetBunduleNameFuzzTest()
+void SetBundleNameFuzzTest()
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     if (streamDesc == nullptr) {
         return;
     }
     std::string bundleName = "abc";
-    streamDesc->SetBunduleName(bundleName);
+    streamDesc->SetBundleName(bundleName);
 }
 
 void DumpFuzzTest()
@@ -295,7 +295,7 @@ TestFuncs g_testFuncs[] = {
     UnmarshallingFuzzTest,
     WriteDeviceDescVectorToParcelFuzzTest,
     UnmarshallingDeviceDescVectorFuzzTest,
-    SetBunduleNameFuzzTest,
+    SetBundleNameFuzzTest,
     DumpFuzzTest,
     DumpCommonAttrsFuzzTest,
     DumpRendererStreamAttrsFuzzTest,

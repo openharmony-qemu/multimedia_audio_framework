@@ -548,7 +548,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.contentType = rendererInfo_.contentType;
     audioInterrupt_.sessionStrategy = strategy_;
     audioInterrupt_.api = rendererInfo_.playerType;
-    audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+    audioInterrupt_.bundleName = audioStream_->GetBundleName();
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
     }
@@ -775,6 +775,8 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
         audioStream_->NotifyRouteUpdate(flag, networkId);
+        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
+        audioStream_->SetBundleName(bundleName);
     }
     return SUCCESS;
 }
@@ -2852,7 +2854,7 @@ void AudioRendererPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
     if (!latencyMeasEnabled_) {
         return;
     }
-    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+    std::string bundleName = audioStream_->GetBundleName();
     uint32_t sessionId = 0;
     audioStream_->GetAudioSessionID(sessionId);
     latencyMeasurement_ = std::make_shared<AudioLatencyMeasurement>(audioStreamParams.samplingRate,
