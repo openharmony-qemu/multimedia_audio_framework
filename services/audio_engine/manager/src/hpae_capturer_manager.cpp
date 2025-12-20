@@ -732,7 +732,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
         ecNodeInfo.frameLen = sourceInfo_.ecFrameLen;
         ecNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
         ecNodeInfo.statusCallback = weak_from_this();
-        ecNodeInof.sourceType = sourceInfo_.sourceType;
+        ecNodeInfo.sourceType = sourceInfo_.sourceType;
         nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC_EC;
         std::vector<HpaeNodeInfo> nodeInfos = {nodeInfo, ecNodeInfo};
         sourceInputClusterMap_[mainMicType_] = std::make_shared<HpaeSourceInputCluster>(nodeInfos);
