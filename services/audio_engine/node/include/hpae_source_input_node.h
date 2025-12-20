@@ -104,7 +104,7 @@ private:
     bool concatMicEcFlag_ = false;
     std::vector<char> concatDataBuffer_;
 #ifdef ENABLE_HOOK_PCM
-    std::unordered_map<hpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
+    std::unordered_map<HpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
 };
