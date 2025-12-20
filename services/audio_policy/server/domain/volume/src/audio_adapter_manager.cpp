@@ -3083,6 +3083,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
         SetVolumeDbForDeviceInPipe(desc, STREAM_VOICE_ASSISTANT);
+        SetStreamMute(STREAM_VOICE_ASSISTANT, false);
         AUDIO_INFO_LOG("a2dp ok");
     }
 }
