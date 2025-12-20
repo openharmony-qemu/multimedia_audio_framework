@@ -1030,7 +1030,6 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     }
     if (endpointStatus_ == IDEL) {
         // call sink start
-        std::unique_lock<std::mutex> lock(startStatusLock_);
         if (!isStarted_) {
             CHECK_AND_RETURN_RET_LOG(StartDevice(RUNNING, INT64_MAX), ERR_OPERATION_FAILED, "StartDevice failed");
             return SUCCESS;
@@ -1760,17 +1759,14 @@ void AudioEndpointInner::AsyncGetPosTime()
         if (stopUpdateThread_) {
             break;
         }
-        {
-            std::unique_lock<std::mutex> lock(startStatusLock_);
-            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
-                HILOG_COMM_INFO("IDEL for too long, let's call hdi stop");
-                DelayStopDevice();
-                continue;
-            }
-            if (!isStarted_) {
-                UpdateVirtualDeviceHandleInfo();
-                continue;
-            }
+        if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
+            HILOG_COMM_INFO("IDEL for too long, let's call hdi stop");
+            DelayStopDevice();
+            continue;
+        }
+        if (!isStarted_) {
+            UpdateVirtualDeviceHandleInfo();
+            continue;
         }
         // get signaled, call get pos-time
         uint64_t curHdiHandlePos = posInFrame_;
