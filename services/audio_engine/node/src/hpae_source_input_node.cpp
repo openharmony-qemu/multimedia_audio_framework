@@ -79,7 +79,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
-void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEC()
+void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
 {
     HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
@@ -227,13 +227,13 @@ static bool CheckEcAndMicRefReplyValid(const uint64_t &requestBytes, const uint6
     return replyBytes != 0 && requestBytes == replyBytes;
 }
 
-void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replayBytes, const uint64_t replyBytesEc)
+void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc)
 {
     HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumperMap_.find(micType) != inputPcmDumperMap_.end() && inputPcmDumperMap_.at(micType)) {
-        inputPcmDumperMap_.at(micType)->Dump((int8_t *)capturerFrameDataMap_.at(micType).data(), replayBytes);
+        inputPcmDumperMap_.at(micType)->Dump((int8_t *)capturerFrameDataMap_.at(micType).data(), replyBytes);
     }
 
     if (inputPcmDumperMap_.find(ecType) != inputPcmDumperMap_.end() && inputPcmDumperMap_.at(ecType)) {
