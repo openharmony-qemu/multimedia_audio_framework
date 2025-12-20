@@ -2156,7 +2156,7 @@ HWTEST_F(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::string bundleName = "com.example.app";
-    streamDesc->SetBunduleName(bundleName);
+    streamDesc->SetBundleName(bundleName);
     EXPECT_EQ(audioCoreService->IsFastAllowed(streamDesc->bundleName_), true);
 }
 

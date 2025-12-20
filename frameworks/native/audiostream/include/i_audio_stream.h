@@ -358,8 +358,8 @@ public:
 
     virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 
-    virtual std::string GetBundleName() = 0;
-    virtual void SetBundleName(std::string name) = 0;
+    virtual const std::string GetBundleName() = 0;
+    virtual void SetBundleName(std::string &name) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

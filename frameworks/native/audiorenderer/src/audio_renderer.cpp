@@ -2851,7 +2851,7 @@ void AudioRendererPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
     if (!latencyMeasEnabled_) {
         return;
     }
-    std::string bundleName = audioSteam_->GetBundleName();
+    std::string bundleName = audioStream_->GetBundleName();
     uint32_t sessionId = 0;
     audioStream_->GetAudioSessionID(sessionId);
     latencyMeasurement_ = std::make_shared<AudioLatencyMeasurement>(audioStreamParams.samplingRate,

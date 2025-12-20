@@ -225,8 +225,8 @@ public:
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
 
-    std::string GetBundleName() override;
-    void SetBundleName(std::string name) override;
+    const std::string GetBundleName() override;
+    void SetBundleName(std::string &name) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

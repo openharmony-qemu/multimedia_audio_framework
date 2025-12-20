@@ -1373,12 +1373,12 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 
-std::string FastAudioStream::GetBundleName()
+const std::string FastAudioStream::GetBundleName()
 {
     return bundleName;
 }
 
-void FastAudioStream::GetBundleName(std::string name)
+void FastAudioStream::SetBundleName(std::string &name)
 {
     bundleName = name;
 }

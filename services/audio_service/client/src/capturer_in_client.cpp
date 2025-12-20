@@ -1919,12 +1919,12 @@ int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
     return ERR_INCORRECT_MODE;
 }
 
-std::string CapturerInClientInner::GetBundleName()
+const std::string CapturerInClientInner::GetBundleName()
 {
     return bundleName;
 }
 
-void CapturerInClientInner::GetBundleName(std::string name)
+void CapturerInClientInner::SetBundleName(std::string &name)
 {
     bundleName = name;
 }

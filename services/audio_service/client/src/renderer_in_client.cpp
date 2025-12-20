@@ -1015,8 +1015,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         return;
     }
 
-    ipcStream_->RegisterThreadPriority(tid,
-        AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_START);
+    ipcStream_->RegisterThreadPriority(tid, bundleName, METHOD_START);
 }
 
 void RendererInClientInner::ResetCallbackLoopTid()
