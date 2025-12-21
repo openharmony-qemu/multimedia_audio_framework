@@ -46,6 +46,16 @@ struct AudioCapturerParams {
     AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
     /** preferred Input Device */
     AudioDeviceDescriptor preferredInputDevice;
+    /** Audio codec format */
+    AudioEncodingType audioEcEncoding = ENCODING_PCM;
+    /** Sampling rate */
+    AudioSamplingRate ecSamplingRate = SAMPLE_RATE_44100;
+    /** Number of audio channels */
+    AudioChannel audioEcChannel = MONO;
+    /** audioSampleFormat */
+    AudioSampleFormat audioEcSampleFormat = SAMPLE_S16LE;
+    /** Audio Channel Layout */
+    AudioChannelLayout ecChannelLayout = CH_LAYOUT_UNKNOWN;
 };
 
 class AudioCapturerCallback {

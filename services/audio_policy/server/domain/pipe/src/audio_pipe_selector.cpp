@@ -42,6 +42,14 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
+static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16"},
+    {SAMPLE_S24LE, "s24"},
+    {SAMPLE_S32LE, "s32"},
+    {SAMPLE_F32LE, "f32"},
+}
+
 static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
@@ -596,6 +604,12 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
+        info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo.samplingRate);
+        info.moduleInfo_.ecChannels = std::to_string(streamDesc->ecStreamInfo.channels);
+        info.moduleInfo_.ecFormat = std::to_string(streamDesc->ecStreamInfo.format);
+    }
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;

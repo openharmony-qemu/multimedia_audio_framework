@@ -70,6 +70,7 @@ private:
         {"primary in unprocess", PIPE_TYPE_IN_NORMAL_UNPROCESS},
         {"primary in ULTRASONIC", PIPE_TYPE_IN_NORMAL_ULTRASONIC},
         {"primary in voice recognition", PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION},
+        {"primary in raw ai", PIPE_TYPE_IN_NORMAL_RAW_AI},
     };
 };
 } // namespace AudioStandard

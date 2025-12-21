@@ -119,7 +119,8 @@ napi_value NapiAudioCapturer::Init(napi_env env, napi_value exports)
 
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer),
-        DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturerSync", CreateAudioCapturerSync)
+        DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturerSync", CreateAudioCapturerSync),
+        DECLARE_NAPI_STATIC_FUNCTION("createMicInAudioCapturerSync", CreateAudioCapturerSync)
     };
 
     napi_status status = InitAudioCapturer(env, constructor);
@@ -366,6 +367,35 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
     };
 
     return NapiAsyncWork::Enqueue(env, context, "CreateAudioCapturer", nullptr, complete);
+}
+
+napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("CreateMicInAudioCapturer failed : no memory");
+        NapiAudioError::ThrowError(env, "CreateMicInAudioCapturer failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetCapturerOptions(env, &context->capturerOptions, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "CreateMicInAudioCapturer failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto complete = [env, context](napi_value &output) {
+        output = CreateAudioCapturerWrapper(env, context->capturerOptions);
+        if (NapiAudioCapturer::isConstructSuccess_ != SUCCESS) {
+            context->SignError(NapiAudioCapturer::isConstructSuccess_);
+            NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
+        }
+    };
+
+    return NapiAsyncWork::Enqueue(env, context, "CreateMicInAudioCapturer", nullptr, complete);
 }
 
 napi_value NapiAudioCapturer::CreateAudioCapturerSync(napi_env env, napi_callback_info info)

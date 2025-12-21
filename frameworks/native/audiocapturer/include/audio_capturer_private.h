@@ -128,6 +128,12 @@ public:
         audioStreamParams.encoding = params.audioEncoding;
         audioStreamParams.channelLayout = params.channelLayout;
 
+        audioStreamParams.ecFormat = params.audioEcSampleFormat;
+        audioStreamParams.ecSamplingRate = params.ecSamplingRate;
+        audioStreamParams.ecChannels = params.audioEcChannel;
+        audioStreamParams.ecEncoding = params.audioEcEncoding;
+        audioStreamParams.ecChannelLayout = params.ecChannelLayout;
+
         return audioStreamParams;
     }
 
