@@ -131,6 +131,7 @@ std::string RemoteDeviceManager::GetAudioParameter(const std::string &adapterNam
     std::string value;
     int32_t ret = wrapper->adapter_->GetExtraParams(hdiKey, condition.c_str(), value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get param fail, error code: %{public}d", ret);
+    AUDIO_INFO_LOG("value: %{public}s", value.c_str());
     return value;
 #else
     AUDIO_INFO_LOG("not support");
@@ -231,6 +232,7 @@ int32_t RemoteDeviceManager::HandleEvent(const std::string &adapterName, const A
     const char *value, void *reserved)
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition, value);
+    HandleAdapterParamChangeEvent(adapterName, key, condition, value);
     int32_t ret = SUCCESS;
     switch (key) {
         case AudioParamKey::PARAM_KEY_STATE:
@@ -274,6 +276,20 @@ void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapter
     wrapper->captureCallbacks_[hdiCaptureId] = callback;
 }
 
+void RemoteDeviceManager::RegistAdapterManagerCallback(const std::string &adapterName,
+    std::shared_ptr<IAudioAdapterCallback> callback)
+{
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+
+    CHECK_AND_RETURN_LOG(adapterParamCallbacks_.count(adapterName) == 0,
+        "callback already existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallbacks_[adapterName] = callback;
+}
+
 void RemoteDeviceManager::UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
@@ -294,6 +310,17 @@ void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapt
     CHECK_AND_RETURN_LOG(wrapper->captureCallbacks_.count(hdiCaptureId) != 0,
         "callback not exist, hdiCaptureId: %{public}u", hdiCaptureId);
     wrapper->captureCallbacks_.erase(hdiCaptureId);
+}
+
+void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adapterName)
+{
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+    CHECK_AND_RETURN_LOG(adapterParamCallbacks_.count(adapterName) != 0,
+        "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallbacks_.erase(adapterName);
 }
 
 void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
@@ -695,5 +722,29 @@ void RemoteDeviceManager::SetAudioScene(const AudioScene scene)
 {
     AUDIO_INFO_LOG("not support");
 }
+
+int32_t RemoteDeviceManager::HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,
+    const char *condition, const char *value)
+{
+    CHECK_AND_RETURN_RET_LOG(condition != nullptr && value != nullptr, ERR_INVALID_PARAM,
+        "condition or value is nullptr");
+    uint32_t renderId = ParseRenderId(condition);
+    CHECK_AND_RETURN_RET_LOG(renderId == HDI_INVALID_ID, ERR_INVALID_HANDLE, "renderId is %{public}u", renderId);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    std::shared_ptr<IAudioAdapterCallback> adapterParamCallback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+        AUDIO_INFO_LOG("exist %{public}zu renders in adapter", adapterParamCallbacks_.size());
+        adapterParamCallback = adapterParamCallbacks_.count(adapterName) != 0 ?
+            adapterParamCallbacks_[adapterName] : adapterParamCallback;
+    }
+    CHECK_AND_RETURN_RET_LOG(adapterParamCallback != nullptr, ERR_INVALID_HANDLE,
+        "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallback->OnAdapterParamChange(adapterName, key, std::string(condition), std::string(value));
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

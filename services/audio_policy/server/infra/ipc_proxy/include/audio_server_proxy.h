@@ -124,6 +124,10 @@ public:
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t SetNonInterruptMuteProxy(uint32_t sessionId, bool muteFlag);
+    std::string GetRemoteAudioParameterProxy(const std::string& networkId);
+    void SetRemoteAudioParameterProxy(const std::string& networkId, bool isVol, int32_t val);
+    void RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& neowtrokId);
+    void UnRegistAdapterManagerCallback(const std::string& networkId);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

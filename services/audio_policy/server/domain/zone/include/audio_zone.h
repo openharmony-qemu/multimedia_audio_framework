@@ -81,6 +81,7 @@ public:
     int32_t RemoveDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     int32_t EnableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t DisableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
     bool IsDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
         int32_t clientUid, const RouterType &bypassType);

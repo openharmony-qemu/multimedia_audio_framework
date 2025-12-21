@@ -48,6 +48,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnRegisterAudioZoneClient(pid_t clientPid);

@@ -779,5 +779,16 @@ bool AudioZoneService::CheckExistUidInAudioZone()
     }
     return false;
 }
+
+std::shared_ptr<AudioDeviceDescriptor> AudioZoneService::GetDeviceDescriptor(DeviceType type, std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        auto desc = it.second->GetDeviceDescriptor(type, networkId);
+        CHECK_AND_CONTINUE(desc != nullptr);
+        return desc;
+    }
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

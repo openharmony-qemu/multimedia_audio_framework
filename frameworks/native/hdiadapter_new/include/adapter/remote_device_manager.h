@@ -98,8 +98,11 @@ public:
         std::shared_ptr<IDeviceManagerCallback> callback) override;
     void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
         std::shared_ptr<IDeviceManagerCallback> callback) override;
+    void RegistAdapterManagerCallback(const std::string &adapterName,
+        std::shared_ptr<IAudioAdapterCallback> callback) override;
     void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) override;
     void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) override;
+    void UnRegistAdapterManagerCallback(const std::string &adapterName) override;
 
     void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc, uint32_t &hdiRenderId) override;
     void DestroyRender(const std::string &adapterName, uint32_t hdiRenderId) override;
@@ -128,6 +131,8 @@ private:
     int32_t SetOutputPortPin(DeviceType outputDevice, RemoteAudioRouteNode &sink);
     int32_t SetInputPortPin(DeviceType inputDevice, RemoteAudioRouteNode &source);
     void DestroyAllChannels(const std::string &adapterName);
+    int32_t HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,
+        const char *condition, const char *value);
 
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
@@ -142,6 +147,8 @@ private:
     std::unordered_map<std::string, std::shared_ptr<RemoteAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
     std::unordered_set<std::string> adaptersLoaded_;
+    std::unordered_map<std::string, std::shared_ptr<IAudioAdapterCallback>> adapterParamCallbacks_;
+    std::mutex adapterParamCallbackMtx_;
 };
 
 } // namespace AudioStandard

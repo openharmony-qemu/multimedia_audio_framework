@@ -1018,7 +1018,10 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
             continue;
         }
         // Find the target device.
-        desc->volumeBehavior_ = volumeBehavior;
+        // only update target info.
+        desc->volumeBehavior_.isReady = volumeBehavior.isReady;
+        desc->volumeBehavior_.isVolumeControlDisabled = volumeBehavior.isVolumeControlDisabled;
+        desc->volumeBehavior_.databaseVolumeName = volumeBehavior.databaseVolumeName;
         AUDIO_INFO_LOG("isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
             volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
         AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(desc);

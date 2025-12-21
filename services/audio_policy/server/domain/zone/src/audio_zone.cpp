@@ -313,9 +313,11 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDe
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
             AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
                 device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
-            devices_.emplace_back(std::make_pair(device, connectDevices.size() != 0));
+            std::shared_ptr<AudioDeviceDescriptor> target =
+                connectDevices.size() != 0 ? connectDevices.front() : device;
+            devices_.emplace_back(std::make_pair(target, connectDevices.size() != 0));
             AUDIO_INFO_LOG("add device %{public}d,%{public}d,%{public}s to zone %{public}d",
-                device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
+                target->deviceType_, target->deviceId_, target->deviceName_.c_str(), zoneId_);
         }
     }
     return SUCCESS;
@@ -542,6 +544,18 @@ bool AudioZone::CheckExistUidInZone()
         }
     }
     return false;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType type, std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : devices_) {
+        if (it.second && it.first->deviceType_ == type &&
+            it.first->networkId_ == networkId) {
+            return it.first;
+        }
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS
