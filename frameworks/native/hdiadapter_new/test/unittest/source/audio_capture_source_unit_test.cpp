@@ -837,7 +837,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_011, TestSize.Level
     auto captureSource = std::make_shared<AudioCaptureSource>(1);
     uint32_t id = 0;
     captureSource->attr_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
-    captureSource->attr_.hdiSourceType = "AUIDO_INPUT_RAW_AI_TYPE";
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_RAW_AI_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
 }
