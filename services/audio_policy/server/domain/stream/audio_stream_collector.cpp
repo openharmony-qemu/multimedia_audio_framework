@@ -1080,6 +1080,20 @@ int32_t AudioStreamCollector::GetUid(int32_t sessionId)
     return defaultUid;
 }
 
+bool AudioStreamCollector::GetBackMuteBySessionId(int32_t sessionId)
+{
+    bool backMute = false;
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    const auto &it = std::find_if(audioRendererChangeInfos_.begin(), audioRendererChangeInfos_.end(),
+        [&sessionId](const std::shared_ptr<AudioRendererChangeInfo> &changeInfo) {
+            return changeInfo->sessionId == sessionId;
+        });
+    if (it != audioRendererChangeInfos_.end()) {
+        backMute = (*it)->backMute;
+    }
+    return backMute;
+}
+
 int32_t AudioStreamCollector::ResumeStreamState()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

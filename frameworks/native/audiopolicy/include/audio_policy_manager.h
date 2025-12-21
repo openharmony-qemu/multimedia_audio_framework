@@ -270,6 +270,8 @@ public:
 
     bool IsAudioSessionActivated();
 
+    bool IsOtherMediaPlaying();
+
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 
     int32_t UnsetAudioSessionCallback();

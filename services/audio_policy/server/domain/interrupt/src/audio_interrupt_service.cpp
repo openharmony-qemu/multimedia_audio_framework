@@ -543,6 +543,58 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
     return sessionService_.IsAudioSessionActivated(callerPid);
 }
 
+bool AudioInterruptService::IsOtherMediaPlaying()
+{
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    std::lock_guard<std::mutex> lock(mutex_);
+    int32_t zoneId = zoneManager_.FindZoneByPid(callerPid);
+    auto itZone = zonesMap_.find(zoneId);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        audioFocusInfoList = itZone->second->audioFocusInfoList;
+    }
+
+    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+        CHECK_AND_CONTINUE(iter->first.pid != callerPid);
+        if (iter->second != ACTIVE && iter->second != DUCK) {
+            continue;
+        }
+        if (iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC ||
+            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MOVIE ||
+            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_GAME ||
+            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_SPEECH) {
+            if (CheckPlaying(iter->first)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool AudioInterruptService::CheckPlaying(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(audioInterrupt.pid);
+        if (sessionStreams.size() == 0) {
+            AUDIO_INFO_LOG("existence sessionId:%{public}d, pid:%{public}d",
+                audioInterrupt.streamId, audioInterrupt.pid);
+            return true;
+        }
+        for (auto &stream : sessionStreams) {
+            bool streamBackMute = streamCollector_.GetBackMuteBySessionId(stream.streamId);
+            CHECK_AND_CONTINUE(streamBackMute == false);
+            AUDIO_INFO_LOG("existence sessionId:%{public}d, pid:%{public}d", stream.streamId, stream.pid);
+            return true;
+        }
+    } else {
+        bool backMute = streamCollector_.GetBackMuteBySessionId(audioInterrupt.streamId);
+        CHECK_AND_RETURN_RET(backMute == false, false);
+        AUDIO_INFO_LOG("existence sessionId:%{public}d, pid:%{public}d", audioInterrupt.streamId, audioInterrupt.pid);
+        return true;
+    }
+    return false;
+}
+
 bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt)
 {

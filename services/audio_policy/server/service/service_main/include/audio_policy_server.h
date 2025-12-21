@@ -261,6 +261,8 @@ public:
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
+    int32_t IsOtherMediaPlaying(bool &existence) override;
+
     int32_t SetAudioSessionScene(int32_t audioSessionScene) override;
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;

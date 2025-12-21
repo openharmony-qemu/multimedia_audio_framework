@@ -754,6 +754,17 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevice(
 OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthers(
     OH_AudioSessionManager *audioSessionManager, bool enable);
 
+/**
+ * @brief Returns if there is any other application playing audio in media usage.
+ * The short sound effect will not be considered in.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}.
+ * @return {@code true} if there is other application playing audio in media usage.
+ * @since 23
+ */
+bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager);
+
 #ifdef __cplusplus
 }
 #endif

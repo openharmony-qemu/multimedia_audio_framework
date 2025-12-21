@@ -2301,6 +2301,15 @@ bool AudioPolicyManager::IsAudioSessionActivated()
     return active;
 }
 
+bool AudioPolicyManager::IsOtherMediaPlaying()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool existence = false;
+    gsp->IsOtherMediaPlaying(existence);
+    return existence;
+}
+
 int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const SourceType sourceType, bool isRunning)
 {

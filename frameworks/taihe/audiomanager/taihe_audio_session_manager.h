@@ -41,6 +41,7 @@ public:
     void ActivateAudioSessionSync(AudioSessionStrategy const &strategy);
     void DeactivateAudioSessionSync();
     bool IsAudioSessionActivated();
+    bool IsOtherMediaPlaying();
     DeviceType GetDefaultOutputDevice();
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
     void SetAudioSessionScene(AudioSessionScene scene);
