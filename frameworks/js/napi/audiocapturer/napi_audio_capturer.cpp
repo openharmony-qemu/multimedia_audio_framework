@@ -120,7 +120,7 @@ napi_value NapiAudioCapturer::Init(napi_env env, napi_value exports)
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturer", CreateAudioCapturer),
         DECLARE_NAPI_STATIC_FUNCTION("createAudioCapturerSync", CreateAudioCapturerSync),
-        DECLARE_NAPI_STATIC_FUNCTION("createMicInAudioCapturerSync", CreateAudioCapturerSync)
+        DECLARE_NAPI_STATIC_FUNCTION("createMicInAudioCapturer", CreateMicInAudioCapturer)
     };
 
     napi_status status = InitAudioCapturer(env, constructor);
