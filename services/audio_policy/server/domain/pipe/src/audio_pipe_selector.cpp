@@ -48,7 +48,7 @@ static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
     {SAMPLE_S24LE, "s24"},
     {SAMPLE_S32LE, "s32"},
     {SAMPLE_F32LE, "f32"},
-}
+};
 
 static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
@@ -395,6 +395,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_NORMAL_UNPROCESS;
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
+    } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {
+            return PIPE_TYPE_IN_NORMAL_RAW_AI;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -606,9 +608,9 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
-        info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo.samplingRate);
-        info.moduleInfo_.ecChannels = std::to_string(streamDesc->ecStreamInfo.channels);
-        info.moduleInfo_.ecFormat = std::to_string(streamDesc->ecStreamInfo.format);
+        info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
+        info.moduleInfo_.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
+        info.moduleInfo_.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
     }
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
