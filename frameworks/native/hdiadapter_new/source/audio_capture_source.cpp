@@ -754,7 +754,7 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
     {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION},
     {"AUDIO_INPUT_ULTRASONIC_TYPE",  AUDIO_INPUT_ULTRASONIC_TYPE},
-    {"AUDIO_INPUT_RAW_AI_TYPE",  AUDIO_INPUT_RAW_AI_TYPE}
+    {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE}
 };
 
 AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
@@ -819,8 +819,8 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
         case SOURCE_TYPE_OFFLOAD_CAPTURE:
             hdiAudioInputType = AUDIO_INPUT_OFFLOAD_CAPTURE_TYPE;
             break;
-        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
-            hdiAudioInputType = AUDI_INPUT_VOICE_TRANSCRIPTION;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT: // This configuration uses the old channel.
+            hdiAudioInputType = AUDIO_INPUT_VOICE_TRANSCRIPTION;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
