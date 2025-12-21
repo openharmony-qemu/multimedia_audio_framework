@@ -3508,6 +3508,12 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
     }
 }
 
+void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    CHECK_AND_RETURN_LOG(enable, "route unenable");
+    server_->coreService_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
+}
+
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
     const std::string &condition)
 {

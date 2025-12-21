@@ -159,6 +159,8 @@ public:
     void OnOutputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
 
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
+
     // IAudioSourceCallback
     void OnWakeupClose() override;
     void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,

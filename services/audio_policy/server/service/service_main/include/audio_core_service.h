@@ -354,6 +354,7 @@ private:
     void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
+    void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);

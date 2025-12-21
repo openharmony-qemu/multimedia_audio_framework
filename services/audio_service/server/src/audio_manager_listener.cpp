@@ -39,6 +39,12 @@ void AudioManagerListenerCallback::OnAudioParameterChange(const std::string netw
     }
 }
 
+void AudioManagerListenerCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    CHECK_AND_RETURN(listener_ != nullptr);
+    listener_->OnHdiRouteStateChange(networkId, enable);
+}
+
 void AudioManagerListenerCallback::OnCapturerState(bool isActive)
 {
     if (listener_ != nullptr) {

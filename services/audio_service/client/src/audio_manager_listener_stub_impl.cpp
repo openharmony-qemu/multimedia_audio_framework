@@ -50,6 +50,14 @@ int32_t AudioManagerListenerStubImpl::OnAudioParameterChange(const std::string &
     return SUCCESS;
 }
 
+int32_t AudioManagerListenerStubImpl::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::shared_ptr<AudioParameterCallback> cb = callback_.lock();
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, SUCCESS, "OnHdiRouteStateChange error");
+    cb->OnHdiRouteStateChange(networkId, enable);
+    return SUCCESS;
+}
+
 int32_t AudioManagerListenerStubImpl::OnCapturerState(bool isActive)
 {
     std::shared_ptr<WakeUpSourceCallback> cb = wakeUpCallback_.lock();

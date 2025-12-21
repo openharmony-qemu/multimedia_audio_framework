@@ -61,6 +61,7 @@ public:
         std::shared_ptr<IDeviceManagerCallback> callback) {}
     virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
     virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
+    virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback) {}
 
     virtual void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
         uint32_t &hdiRenderId) = 0;

@@ -122,6 +122,19 @@ void SinkCallbackWrapper::OnOutputPipeChange(AudioPipeChangeType changeType,
     }
 }
 
+void SinkCallbackWrapper::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
+    }
+}
+
 void SourceCallbackWrapper::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> cb)
 {
     CHECK_AND_RETURN_LOG(type < HDI_CB_TYPE_NUM, "invalid type %{public}u", type);

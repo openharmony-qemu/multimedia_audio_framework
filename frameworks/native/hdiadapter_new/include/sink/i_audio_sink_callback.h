@@ -36,6 +36,8 @@ public:
 
     virtual void OnOutputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) {};
+
+    virtual void OnHdiRouteStateChange(const std::string &networkId, bool enable) {};
 };
 
 } // namespace AudioStandard

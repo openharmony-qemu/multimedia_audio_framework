@@ -281,6 +281,8 @@ public:
      */
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
+
+    virtual void OnHdiRouteStateChange(const std::string &networkId, bool enable) = 0;
 };
 
 class AudioPreferredOutputDeviceChangeCallback;
