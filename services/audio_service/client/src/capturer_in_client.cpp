@@ -205,12 +205,12 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    if (capturerInfo_sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrameWithEc failed with invalid params");
+            ERROR_INVALID_PARAM, "GetByteSizePerFrameWithEc failed with invalid params");
     } else {
         CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+            ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
     }
     
     if (state_ != NEW) {
