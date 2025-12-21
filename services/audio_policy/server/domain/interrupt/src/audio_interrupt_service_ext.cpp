@@ -405,8 +405,8 @@ void AudioInterruptService::RemoveMuteSuggestionRecord()
         auto currentpid = it->first;
         if (!HasMuteSuggestionRecord(currentpid)) {
             DelayRemoveMuteSuggestionRecord(currentpid);
-            for (auto it = suggestionPidRecords_.begin(); it != suggestionPidRecords_.end(); ++it) {
-                it->second.insert(currentpid);
+            for (auto record = suggestionPidRecords_.begin(); record != suggestionPidRecords_.end(); ++record) {
+                record->second.insert(currentpid);
             }
             return;
         }
