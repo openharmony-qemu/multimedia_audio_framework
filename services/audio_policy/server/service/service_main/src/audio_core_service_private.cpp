@@ -140,28 +140,26 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
 
 void AudioCoreService::HandleA2dpSuspend()
 {
-    {
-        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
-        a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
-            std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-
-        if (a2dpNeedSuspend_) {
-            return;
-        }
-
-        a2dpNeedSuspend_ = true;
-    }
-
-    AUDIO_INFO_LOG("suspend a2dp");
-    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
     auto action = std::make_shared<RestoreA2dpSinkAction>();
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = OLD_DEVICE_UNAVALIABLE_SUSPEND_MS;
+
     CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
-    asyncHandler_->PostAsyncAction(desc);
+    a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+        std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    CHECK_AND_RETURN_LOG(asyncHandler_->PostAsyncAction(desc), "post async action fail");
+
+    if (a2dpNeedSuspend_) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("suspend a2dp");
+    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+    a2dpNeedSuspend_ = true;
 }
 
 void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
