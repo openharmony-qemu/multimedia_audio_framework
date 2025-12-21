@@ -151,24 +151,24 @@ void AudioCapturerPrivate::HandleSetCapturerInfoByOptions(const AudioCapturerOpt
 }
 
 // LCOV_EXCL_START
-static inline CheckEcparam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
+static inline bool checkEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
         (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
         capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
-            AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT "
-                "can only samplingRate and format same");
-            return false;
-        } else {
-            return true;
-        }
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT"
+            "can only be samplingRate and format same");
+        return false;
+    } else {
+        return true;
+    }
 }
 
-static inline void FillecParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
+static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
 {
     params.audioEcSampleFormat = ec.format;
     params.ecSamplingRate = ec.samplingRate;
-    params.audioEcChannel = AudioChannel::CHANNEL_3 == ec.channels ? AudioChannel::STEREO : ec.channels;
+    params.audioEcChannel = (ec.channels == AudioChannel::CHANNEL_3) ? AudioChannel::STEREO : ec.channels;
     params.audioEcEncoding = ec.encoding;
 }
 
@@ -193,7 +193,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
     
-    if (!CheckEcparam(SourceType, capturerOptions)) {
+    if (!checkEcParam(sourceType, capturerOptions)) {
         return nullptr;
     }
 
@@ -210,6 +210,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
+    FillEcParams(params, capturerOptions.ecStreamInfo);
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
     if (capturer == nullptr) {
