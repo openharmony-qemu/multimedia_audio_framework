@@ -41,6 +41,7 @@ public:
     void OnRenderSinkStateChange(uint32_t uniqueId, bool started) override;
     void OnOutputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
 
 private:
     std::unordered_map<uint32_t, std::shared_ptr<IAudioSinkCallback> > cbs_;

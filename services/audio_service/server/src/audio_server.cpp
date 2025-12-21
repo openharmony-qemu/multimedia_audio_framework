@@ -1667,8 +1667,12 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)",
         GetEncryptStr(networkId).c_str(), connected);
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is nullptr");
     if (sink != nullptr && connected) {
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
+        deviceManager->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
     std::shared_ptr<IAudioRenderSink> sinkOffload = GetSinkByProp(HDI_ID_TYPE_REMOTE_OFFLOAD, networkId.c_str(),
         false, false);
@@ -2212,6 +2216,18 @@ void AudioServer::OnCaptureSourceParamChange(const std::string &networkId, const
         callback = audioParamCb_;
     }
     callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+void AudioServer::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::shared_ptr<AudioParameterCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(audioParamCbMtx_);
+        AUDIO_INFO_LOG("OnHdiRouteStateChange Callback from networkId: %s", networkId.c_str());
+        CHECK_AND_RETURN_LOG(audioParamCb_ != nullptr, "OnHdiRouteStateChange: audio param callback is null.");
+        callback = audioParamCb_;
+    }
+    callback->OnHdiRouteStateChange(networkId, enable);
 }
 
 void AudioServer::OnWakeupClose()

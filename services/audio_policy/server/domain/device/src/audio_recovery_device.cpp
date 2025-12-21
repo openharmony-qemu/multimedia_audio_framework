@@ -227,6 +227,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }
 
+    audioActiveDevice_.NotifyUserSelectionEventToRemote(selectedDesc[0]);
+
     bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
     if (isVirtualDevice == true) {
         selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
@@ -265,7 +267,6 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
             AudioStreamDeviceChangeReason::OVERRODE);
     }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
-    audioActiveDevice_.NotifyUserSelectionEventToRemote(selectedDesc[0]);
     return SUCCESS;
 }
 
@@ -353,6 +354,8 @@ int32_t AudioRecoveryDevice::SetRenderDeviceForUsage(StreamUsage streamUsage,
 int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &selectedDesc)
 {
     CHECK_AND_RETURN_RET_LOG(selectedDesc != nullptr, ERROR_INVALID_PARAM, "selectedDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(selectedDesc->networkId_ == LOCAL_NETWORK_ID, SUCCESS,
+        "Virtual remote device, not process");
 
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
     if (selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
@@ -542,7 +545,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     for (const auto &desc : audioDeviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
-        AudioCoreService::GetCoreService()->DeactivateRemoteDevice(desc->networkId_, desc->deviceType_);
+        AudioCoreService::GetCoreService()->NotifyRemoteRouteStateChange(desc->networkId_, desc->deviceType_, false);
     }
     return SUCCESS;
 }
