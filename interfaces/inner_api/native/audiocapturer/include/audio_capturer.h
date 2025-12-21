@@ -54,7 +54,7 @@ struct AudioCapturerParams {
     AudioChannel audioEcChannel = MONO;
     /** audioEcSampleFormat */
     AudioSampleFormat audioEcSampleFormat = SAMPLE_S16LE;
-    /** Audio Channel Layout */
+    /** Audio ec Channel Layout */
     AudioChannelLayout ecChannelLayout = CH_LAYOUT_UNKNOWN;
 };
 
