@@ -1041,6 +1041,19 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_045, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_048
+* @tc.desc  : Test CreateCheckMusicActiveThread interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
+{
+    AudioVolumeManager::GetInstance().calculateLoopSafeTime_ = nullptr;
+    AudioVolumeManager::GetInstance().CreateCheckMusicActiveThread();
+    EXPECT_TRUE(AudioVolumeManager::GetInstance().calculateLoopSafeTime_ != nullptr);
+    AudioVolumeManager::GetInstance().CreateCheckMusicActiveThread();
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_049
 * @tc.desc  : Test CreateCheckMusicActiveThread interface.
 */
