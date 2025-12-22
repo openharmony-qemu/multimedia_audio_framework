@@ -278,6 +278,8 @@ int32_t DirectAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t
         "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
     timeSec = stamp.tvSec;
     timeNanoSec = stamp.tvNSec;
+    Trace trace("DirectAudioRenderSink::GetRenderPosition:frames:" + std::to_string(frames) + " Sec:" +
+        std::to_string(timeSec) + " NSec:" + std::to_string(timeNanoSec));
     return ret;
 }
 
