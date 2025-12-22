@@ -94,6 +94,11 @@ int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inF
 {
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
     uint32_t expectedOutFrameLen = outFrameLen;
+
+    if (tmpOutBuf_.size() < static_cast<size_t>(expectedOutFrameLen) * channels_) {
+        tmpOutBuf_.resize(static_cast<size_t>(expectedOutFrameLen) * channels_, 0.0f);
+    }
+
     int32_t ret =
         SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf_.data(), &outFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "process failed with error %{public}s",
