@@ -79,11 +79,46 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
 #endif
 }
 
+void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
+{
+    HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    HpaeNodeInfo micInfo = nodeInfoMap_[micType];
+    HpaeNodeInfo ecInfo = nodeInfoMap_[ecType];
+    nodeInfoMap_.clear();
+    micInfo.channels = static_cast<AudioChannel>(micInfo.channels + ecInfo.channels);
+    nodeInfoMap_.emplace(micType, micInfo);
+    nodeInfoMap_.emplace(ecType, ecInfo);
+    pcmBufferInfoMap_.clear();
+    pcmBufferInfoMap_.emplace(micType, PcmBufferInfo(micInfo.channels, micInfo.frameLen, micInfo.samplingRate));
+    inputAudioBufferMap_.clear();
+    inputAudioBufferMap_.emplace(micType, HpaePcmBuffer(pcmBufferInfoMap_.at(micType)));
+    inputAudioBufferMap_.at(micType).SetSourceBufferType(micType);
+    outputStreamMap_.clear();
+    outputStreamMap_.emplace(micType, this);
+    historyDataMap_.clear();
+    historyRemainSizeMap_.clear();
+    concatDataBuffer_.resize(micInfo.channels * micInfo.frameLen * 1); // 1: SAMPLE_S16LE
+    AUDIO_INFO_LOG("mic:%{public}d, ec:%{public}d, concatBufferSize:%{public}d", micInfo.channels,
+        ecInfo.channels, static_cast<uint32_t>(concatDataBuffer_.size()));
+}
+
 HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
     : HpaeNode(*nodeInfos.begin()), sourceInputNodeType_((*nodeInfos.begin()).sourceInputNodeType)
 {
     for (auto nodeInfo : nodeInfos) {
         HpaeSourceBufferType sourceBufferType = nodeInfo.sourceBufferType;
+        if (nodeInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+            concatMicEcFlag_ = true;
+#ifdef ENABLE_HOOK_PCM
+            inputPcmDumperMap_.emplace(sourceBufferType, std::make_unique<HpaePcmDumper>(
+                "HpaeSourceInputNodeIn_id" + std::to_string(GetSessionId()) +
+                "_ch_" + std::to_string(nodeInfo.channels) +
+                "_rate_" + std::to_string(nodeInfo.samplingRate) +
+                "_bit_" + std::to_string(nodeInfo.format) + "_" +
+                TransSourceBufferTypeToString(sourceBufferType) + ".pcm"));
+#endif
+        }
         nodeInfoMap_.emplace(sourceBufferType, nodeInfo);
         frameByteSizeMap_.emplace(
             sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
@@ -100,6 +135,17 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         outputStreamMap_.emplace(sourceBufferType, this);
         historyDataMap_.emplace(sourceBufferType, 0);
         historyRemainSizeMap_.emplace(sourceBufferType, 0);
+        if (concatMicEcFlag_) {
+            UpdateSourceInputMapCancatMicEc();
+#ifdef ENABLE_HOOK_PCM
+            HpaeNodeInfo nodeInfo = nodeInfoMap_[HPAE_SOURCE_BUFFER_TYPE_MIC];
+            outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeSourceInputNodeOut_id" +
+                std::to_string(GetSessionId()) +
+                "_ch_" + std::to_string(nodeInfo.channels) +
+                "_rate_" + std::to_string(nodeInfo.samplingRate) +
+                "_bit_" + std::to_string(nodeInfo.format) + ".pcm");
+#endif
+        }
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceInputNode[MIC_EC]");
@@ -181,6 +227,76 @@ static bool CheckEcAndMicRefReplyValid(const uint64_t &requestBytes, const uint6
     return replyBytes != 0 && requestBytes == replyBytes;
 }
 
+void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc)
+{
+    HpaeSourceBufferType micType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    HpaeSourceBufferType ecType = HPAE_SOURCE_BUFFER_TYPE_EC;
+#ifdef ENABLE_HOOK_PCM
+    if (inputPcmDumperMap_.find(micType) != inputPcmDumperMap_.end() && inputPcmDumperMap_.at(micType)) {
+        inputPcmDumperMap_.at(micType)->Dump((int8_t *)capturerFrameDataMap_.at(micType).data(), replyBytes);
+    }
+
+    if (inputPcmDumperMap_.find(ecType) != inputPcmDumperMap_.end() && inputPcmDumperMap_.at(ecType)) {
+        inputPcmDumperMap_.at(ecType)->Dump((int8_t *)capturerFrameDataMap_.at(ecType).data(), replyBytesEc);
+    }
+#endif
+
+    uint32_t framelen = nodeInfoMap_.at(micType).frameLen;
+    uint32_t totalChannel = nodeInfoMap_.at(micType).channels;
+    uint32_t micChannel = totalChannel - nodeInfoMap_.at(ecType).channels;
+    uint32_t ecChannel = nodeInfoMap_.at(ecType).channels;
+    uint32_t micFormatSize = GetSizeFromFormat(nodeInfoMap_.at(micType).format);
+    uint32_t ecFormatSize = GetSizeFromFormat(nodeInfoMap_.at(ecType).format);
+
+    for (uint32_t i = 0; i < framelen; i++) {
+        size_t frameStart = i * totalChannel * micFormatSize;
+        size_t micFrameStart = i * micChannel * micFormatSize;
+        size_t ecFrameStart = i * ecChannel * micFormatSize;
+
+        for (uint32_t j = 0; j < micChannel; j++) {
+            size_t destOffset = frameStart + j * micFormatSize;
+            size_t srcOffset = micFrameStart + j * micFormatSize;
+            int32_t ret = memcpy_s(concatDataBuffer_.data() + destOffset, micFormatSize,
+            capturerFrameDataMap_.at(micType).data() + srcOffset, micFormatSize);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "memcpy mic data failed");
+        }
+
+        for (uint32_t j = 0; j < ecChannel; j++) {
+            size_t destOffset = frameStart + (micChannel + j) * micFormatSize;
+            size_t srcOffset = ecFrameStart + j * ecFormatSize;
+            int32_t ret = memcpy_s(concatDataBuffer_.data() + destOffset, ecFormatSize,
+            capturerFrameDataMap_.at(ecType).data() + srcOffset, ecFormatSize);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "memcpy ec data failed");
+        }
+    }
+
+    ConvertToFloat(nodeInfoMap_.at(micType).format,
+        nodeInfoMap_.at(micType).channels * nodeInfoMap_.at(micType).frameLen,
+        concatDataBuffer_.data(), inputAudioBufferMap_.at(micType).GetPcmDataBuffer());
+#ifdef ENABLE_HOOK_PCM
+    if (outputPcmDumper_) {
+        float *outputData = inputAudioBufferMap_.at(micType).GetPcmDataBuffer();
+        outputPcmDumper_->Dump((int8_t *) outputData,
+            nodeInfoMap_.at(micType).channels * nodeInfoMap_.at(micType).frameLen * sizeof(float));
+    }
+#endif
+    outputStreamMap_.at(micType).WriteDataToOutput(&inputAudioBufferMap_.at(micType));
+}
+
+void HpaeSourceInputNode::DoProcessInnerMicAndEc(const uint64_t &replyBytes, const uint64_t replyBytesEc)
+{
+    if (concatMicEcFlag_) {
+        ConCatMicEcAndPushData(replyBytes, replyBytesEc);
+    } else {
+        PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
+        CHECK_AND_RETURN_LOG(
+            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
+            "same ec request != reply");
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+    }
+}
+
 void HpaeSourceInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetNodeId()) + "]HpaeSourceInputNode::DoProcess " + GetTraceInfo());
@@ -191,12 +307,8 @@ void HpaeSourceInputNode::DoProcess()
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
                                                  &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
-        PushDataToBuffer(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
-        DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, replyBytes);
-        CHECK_AND_RETURN_LOG(
-            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
-            "same ec request != reply");
-        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+        
+        DoProcessInnerMicAndEc(replyBytes, replyBytesEc);
     } else if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD) {
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
