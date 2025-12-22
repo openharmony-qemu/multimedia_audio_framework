@@ -46,15 +46,16 @@ public:
         VolumeValues *volumes); // all volume
     float GetStreamVolume(uint32_t sessionId); // only stream volume factor
     float GetAppVolume(int32_t appUid, AudioVolumeMode mode);
+    uint32_t GetDurationMs(uint32_t sessionId);
     // history volume
     float GetHistoryVolume(uint32_t sessionId);
-    void SetHistoryVolume(uint32_t sessionId, float volume);
+    void SetHistoryVolume(uint32_t sessionId, float volume, uint32_t durationMs = 0);
 
     // stream volume
     void AddStreamVolume(StreamVolumeParams &streamVolumeParams);
     void RemoveStreamVolume(uint32_t sessionId);
     void SetStreamVolume(uint32_t sessionId, float volume);
-    void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor);
+    void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor, uint32_t durationMs = 0);
     void SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPowerFactor);
     void SetStreamVolumeMute(uint32_t sessionId, bool isMuted);
     void SetNonInterruptMute(uint32_t sessionId, bool muteFlag);
@@ -149,6 +150,7 @@ public:
     float lowPowerFactor_ = 1.0f;
     bool isMuted_ = false;
     bool nonInterruptMute_ = false;
+    uint32_t durationMs_ = 0;
 
     // Indicates whether the stream is muted by SetAppRingMuted API.
     // This flag is only applicable to ring stream.
