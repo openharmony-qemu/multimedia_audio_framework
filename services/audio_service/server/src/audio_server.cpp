@@ -2602,7 +2602,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         if (type == HDI_ID_TYPE_PRIMARY) {
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
-            info == HDI_ID_INFO_VOICE_RECOGNITION | info == HDI_ID_INFO_RAW_AI;
+            info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {

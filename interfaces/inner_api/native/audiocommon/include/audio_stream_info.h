@@ -26,6 +26,7 @@
 #include "securec.h"
 
 #include "audio_buffer_desc.h"
+#include "audio_stream_info_ext.h"
 
 namespace OHOS {
 namespace AudioStandard {

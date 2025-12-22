@@ -303,6 +303,25 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
     return currentStream->GetFrameCount(frameCount);
 }
 
+AudioStreamParams AudioCapturerPrivate::ConvertToAudioStreamParams(const AudioCapturerParams params)
+{
+    AudioStreamParams audioStreamParams;
+
+    audioStreamParams.format = params.audioSampleFormat;
+    audioStreamParams.samplingRate = params.samplingRate;
+    audioStreamParams.channels = params.audioChannel;
+    audioStreamParams.encoding = params.audioEncoding;
+    audioStreamParams.channelLayout = params.channelLayout;
+
+    audioStreamParams.ecFormat = params.audioEcSampleFormat;
+    audioStreamParams.ecSamplingRate = params.ecSamplingRate;
+    audioStreamParams.ecChannels = params.audioEcChannel;
+    audioStreamParams.ecEncoding = params.audioEcEncoding;
+    audioStreamParams.ecChannelLayout = params.ecChannelLayout;
+
+    return audioStreamParams;
+}
+
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
