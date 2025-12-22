@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */xx
+ */
 
 #ifndef AUDIO_CAPTURER_PRIVATE_H
 #define AUDIO_CAPTURER_PRIVATE_H
@@ -84,6 +84,8 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
+        void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
@@ -107,6 +109,7 @@ public:
 
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
     void HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
+    int32_t StartPlaybackCapture() override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
