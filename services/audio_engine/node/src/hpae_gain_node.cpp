@@ -28,6 +28,7 @@
 #include "audio_stream_info.h"
 #include "hpae_info.h"
 #include "audio_engine_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -179,12 +180,13 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
         AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+        auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
         statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade out fail");
         return;
     }
     // do fade in
@@ -195,8 +197,9 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        auto ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }
 }
 
@@ -276,8 +279,8 @@ uint32_t HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
             break;
         }
         case FadeType::DEFAULT_FADE: {
+            byteLength = input->DataSize();
             index = fadeInState_ ? GetFadeInLength(byteLength, input) : index;
-            byteLength = index == 0 ? input->DataSize() : byteLength;
             AUDIO_DEBUG_LOG("[%{public}d]: default fade length in Bytes: %{public}u", GetSessionId(), byteLength);
             break;
         }
@@ -294,8 +297,9 @@ uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *inpu
     size_t length = input->DataSize() / sizeof(float);
     for (size_t i = 0; i < length; ++i) {
         if (fabs(data[i]) > EPSILON) {
-            byteLength = input->DataSize() - i * sizeof(float);
-            index = i * sizeof(float);
+            CHECK_AND_BREAK_LOG(GetChannelCount() > 0, "channel is zero!");
+            index = i / GetChannelCount() * GetChannelCount() * sizeof(float);
+            byteLength = input->DataSize() - index;
             break;
         }
     }
