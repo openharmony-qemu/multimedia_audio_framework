@@ -1576,10 +1576,12 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 
 int32_t RendererInServer::SetRate(int32_t rate)
 {
-    CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
-    audioRenderRate_ = static_cast<AudioRendererRate>(rate);
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
-        "ProcessAndSetStaticBuffer fail!");
+    if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
+        audioRenderRate_ = static_cast<AudioRendererRate>(rate);
+        CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
+            "ProcessAndSetStaticBuffer fail!");
+    }
     return stream_->SetRate(rate);
 }
 
