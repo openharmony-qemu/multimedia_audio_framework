@@ -697,8 +697,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     HandleRingToDefaultSceneChange(lastAudioScene, audioScene);
     FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
     for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
 
@@ -1756,6 +1755,18 @@ void AudioCoreService::DeactivateRemoteDevice(const std::string &networkId, Devi
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
         AudioPolicyUtils::GetInstance().GetDeviceRole(deviceType));
     audioPolicyManager_.StopAudioPort(moduleName);
+}
+
+void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable)
+{
+    CHECK_AND_RETURN(networkId != LOCAL_NETWORK_ID);
+    std::shared_ptr<AudioDeviceDescriptor> desc = audioConnectedDevice_.GetConnectedDeviceByType(networkId,
+        deviceType);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    desc->connectState_ = enable ? CONNECTED : VIRTUAL_CONNECTED;
+    OnDeviceInfoUpdated(*desc, CONNECTSTATE_UPDATE);
+    CHECK_AND_RETURN(!enable);
+    DeactivateRemoteDevice(networkId, deviceType);
 }
 
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

@@ -109,7 +109,7 @@ int32_t FastAudioRenderSink::Start(void)
     if (runningLock_ != nullptr) {
         runningLock_->Lock(RUNNING_LOCK_TIMEOUTMS_LASTING);
     } else {
-        HILOG_COMM_ERROR("running lock is null, playback can not work well");
+        HILOG_COMM_ERROR("[FastAudioRenderSink::Start]running lock is null, playback can not work well");
     }
 #endif
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
@@ -252,7 +252,8 @@ int64_t FastAudioRenderSink::GetVolumeDataCount()
 void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
-    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    HILOG_COMM_INFO("[SetAudioParameter]key: %{public}d, condition: %{public}s, "
+        "value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
     AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);

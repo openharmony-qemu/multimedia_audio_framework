@@ -254,6 +254,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_active_device.cpp",
     "server/domain/pipe/src/audio_capturer_session.cpp",
     "server/domain/device/src/audio_connected_device.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
     "server/domain/device/src/audio_device_common.cpp",
     "server/domain/device/src/audio_device_lock.cpp",
     "server/domain/device/src/audio_device_status.cpp",

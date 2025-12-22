@@ -1460,7 +1460,7 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
             rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
         }
     }
-    HILOG_COMM_INFO("pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
+    HILOG_COMM_INFO("[HandleRendererInfoEvent]pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
         audioPolicyClientProxyAPSCbsMap_.size());
 }
 

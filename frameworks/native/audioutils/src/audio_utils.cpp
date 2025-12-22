@@ -582,7 +582,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        HILOG_COMM_ERROR("failed: not allowed!");
+        HILOG_COMM_ERROR("[VerifyBackgroundCapture]failed: not allowed!");
     }
     return ret;
 }
@@ -1762,6 +1762,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
             break;
         case SOURCE_TYPE_LIVE:
             name = "SOURCE_TYPE_LIVE";
+            break;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            name = "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT";
             break;
         default:
             name = "UNKNOWN";

@@ -185,7 +185,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     }
 }
 
-void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
+void AudioStreamDescriptor::SetBundleName(std::string &bundleName)
 {
     AUDIO_INFO_LOG("Bundle name: %{public}s", bundleName.c_str());
     bundleName_ = bundleName;

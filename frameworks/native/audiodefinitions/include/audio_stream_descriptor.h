@@ -124,7 +124,7 @@ public:
         streamAction_ = action;
     }
 
-    void SetBunduleName(std::string &bundleName);
+    void SetBundleName(std::string &bundleName);
 
     std::string GetBundleName()
     {

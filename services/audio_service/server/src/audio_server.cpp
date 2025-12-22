@@ -66,6 +66,7 @@
 #include "audio_manager_listener.h"
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
+#include "audio_system_load_listener.h"
 
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
@@ -156,7 +157,8 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_VOICE_TRANSCRIPTION,
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
-    SOURCE_TYPE_LIVE
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -182,6 +184,7 @@ static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_CAMCORDER,
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
 };
 
 static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = {
@@ -641,6 +644,17 @@ void AudioServer::InitMaxRendererStreamCntPerUid()
     }
 }
 
+void AudioServer::OnStartExpansion()
+{
+    AudioSystemloadListener audioSystemloadListener;
+
+    RegisterAudioCapturerSourceCallback();
+    RegisterAudioRendererSinkCallback();
+    ParseAudioParameter();
+    NotifyProcessStatus();
+    audioSystemloadListener.RegisterResSchedSys();
+}
+
 void AudioServer::OnStart()
 {
     AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
@@ -687,10 +701,7 @@ void AudioServer::OnStart()
     HPAE::IHpaeManager::GetHpaeManager().Init();
     AUDIO_INFO_LOG("IHpaeManager Init\n");
 #endif // SUPPORT_OLD_ENGINE
-    RegisterAudioCapturerSourceCallback();
-    RegisterAudioRendererSinkCallback();
-    ParseAudioParameter();
-    NotifyProcessStatus();
+    OnStartExpansion();
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
 }
@@ -1445,7 +1456,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    HILOG_COMM_INFO("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
+    HILOG_COMM_INFO("[SetIORoutes] 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
         type, deviceTypes.size(), flag);
     int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName) :
         SetIORoutesForRemote(type, flag, deviceTypes, networkId);
@@ -1656,8 +1667,12 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)",
         GetEncryptStr(networkId).c_str(), connected);
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is nullptr");
     if (sink != nullptr && connected) {
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
+        deviceManager->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
     std::shared_ptr<IAudioRenderSink> sinkOffload = GetSinkByProp(HDI_ID_TYPE_REMOTE_OFFLOAD, networkId.c_str(),
         false, false);
@@ -1917,7 +1932,8 @@ int32_t AudioServer::CheckMaxRendererInstances()
 int32_t AudioServer::CheckMaxLoopbackInstances(AudioMode audioMode)
 {
     if (AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(audioMode) >= DEFAULT_MAX_LOOPBACK_INSTANCES) {
-        HILOG_COMM_ERROR("Current Loopback stream num is greater than the maximum num of configured instances");
+        HILOG_COMM_ERROR("[CheckMaxLoopbackInstances]Current Loopback stream num is greater than "
+            "the maximum num of configured instances");
         return ERR_EXCEED_MAX_STREAM_CNT;
     }
     return SUCCESS;
@@ -1942,7 +1958,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
             if (config.audioMode == AUDIO_MODE_PLAYBACK) {
                 AudioService::GetInstance()->CleanAppUseNumMap(appUid);
             }
-            HILOG_COMM_ERROR("GetIpcStream failed.");
+            HILOG_COMM_ERROR("[CreateAudioStream]GetIpcStream failed.");
             return nullptr;
         }
         AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
@@ -1957,7 +1973,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         if (config.audioMode == AUDIO_MODE_PLAYBACK) {
             AudioService::GetInstance()->CleanAppUseNumMap(appUid);
         }
-        HILOG_COMM_ERROR("GetAudioProcess failed.");
+        HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
         return nullptr;
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
@@ -1968,7 +1984,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
 #else
-    HILOG_COMM_ERROR("GetAudioProcess failed.");
+    HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
     return nullptr;
 #endif
 }
@@ -2059,7 +2075,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
             maxRendererStreamCntPerUid_)) {
             errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
-            HILOG_COMM_ERROR("Current audio renderer stream num exceeds maxRendererStreamCntPerUid");
+            HILOG_COMM_ERROR("[CreateAudioProcessInner]Current audio renderer stream num exceeds "
+                "maxRendererStreamCntPerUid");
             return nullptr;
         }
     }
@@ -2199,6 +2216,18 @@ void AudioServer::OnCaptureSourceParamChange(const std::string &networkId, const
         callback = audioParamCb_;
     }
     callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+void AudioServer::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::shared_ptr<AudioParameterCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lockSet(audioParamCbMtx_);
+        AUDIO_INFO_LOG("OnHdiRouteStateChange Callback from networkId: %s", networkId.c_str());
+        CHECK_AND_RETURN_LOG(audioParamCb_ != nullptr, "OnHdiRouteStateChange: audio param callback is null.");
+        callback = audioParamCb_;
+    }
+    callback->OnHdiRouteStateChange(networkId, enable);
 }
 
 void AudioServer::OnWakeupClose()
@@ -2423,7 +2452,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     if (!res) {
-        HILOG_COMM_INFO("Check record permission failed: No permission.");
+        HILOG_COMM_INFO("[CheckRecorderPermission]Check record permission failed: No permission.");
         return false;
     }
 
@@ -2440,7 +2469,8 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     }
 
     if (!HandleCheckRecorderBackgroundCapture(config)) {
-        HILOG_COMM_INFO("VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+        HILOG_COMM_INFO("[CheckRecorderPermission]VerifyBackgroundCapture failed for callerUid:%{public}d",
+            config.callerUid);
         return false;
     }
     return true;
@@ -3051,7 +3081,8 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
 
-    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, info: %{public}s", idBase, idType, idInfo.c_str());
+    HILOG_COMM_INFO("[CreateSinkPort]In, idBase: %{public}u, idType: %{public}u, info: %{public}s",
+        idBase, idType, idInfo.c_str());
     renderId = HdiAdapterManager::GetInstance().GetId(static_cast<HdiIdBase>(idBase),
         static_cast<HdiIdType>(idType), idInfo, true);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
@@ -3086,8 +3117,8 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), SUCCESS,
         "refused for %{public}d", callingUid);
-    HILOG_COMM_INFO("In, idBase: %{public}u, idType: %{public}u, sourceType: %{public}d, info: %{public}s",
-        idBase, idType, attr.sourceType, idInfo.c_str());
+    HILOG_COMM_INFO("[CreateSourcePort]In, idBase: %{public}u, idType: %{public}u, sourceType: %{public}d, "
+        "info: %{public}s", idBase, idType, attr.sourceType, idInfo.c_str());
     captureId = HdiAdapterManager::GetInstance().GetId(static_cast<HdiIdBase>(idBase),
         static_cast<HdiIdType>(idType), idInfo, true);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
@@ -3378,7 +3409,6 @@ void AudioServer::OnAdapterParamChange(std::string networkId, const AudioParamKe
     }
     CHECK_AND_RETURN_LOG(callback != nullptr, "audioAdapterCb_  is nullptr");
     callback->OnAudioParameterChange(networkId, key, condition, value);
-
 }
 
 int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32_t key,

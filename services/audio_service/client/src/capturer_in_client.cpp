@@ -199,9 +199,9 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
 {
-    HILOG_COMM_INFO("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
-        " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
-        info.encoding);
+    HILOG_COMM_INFO("[SetAudioStreamInfo]AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels,
+        info.format, eStreamType_, info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
@@ -1917,6 +1917,16 @@ int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
 {
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERR_INCORRECT_MODE;
+}
+
+const std::string CapturerInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void CapturerInClientInner::SetBundleName(std::string &name)
+{
+    bundleName = name;
 }
 } // namespace AudioStandard
 } // namespace OHOS

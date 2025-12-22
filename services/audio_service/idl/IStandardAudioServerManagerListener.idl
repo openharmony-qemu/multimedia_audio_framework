@@ -22,4 +22,5 @@ interface IStandardAudioServerManagerListener {
     void OnWakeupClose();
     [oneway] void OnDataTransferStateChange([in] int callbackId, [in] AudioRendererDataTransferStateChangeInfo info);
     [oneway] void OnMuteStateChange([in] int callbackId, [in] int uid, [in] unsigned int sessionId, [in] boolean isMuted);
+    [oneway] void OnHdiRouteStateChange([in] String networkId, [in] boolean enable);
 }

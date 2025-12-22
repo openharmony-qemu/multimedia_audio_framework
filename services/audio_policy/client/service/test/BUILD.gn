@@ -73,6 +73,7 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "cJSON:cjson",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "drivers_interface_audio:libaudio_proxy_5.0",

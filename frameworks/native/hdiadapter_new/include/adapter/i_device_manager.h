@@ -66,6 +66,7 @@ public:
 
     virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
     virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
+    virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback) {}
 
     virtual void UnRegistAdapterManagerCallback(const std::string &adapterName) {}
 

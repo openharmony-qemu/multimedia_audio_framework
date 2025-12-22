@@ -362,6 +362,16 @@ private:
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
+    void RemoveStreamIdSuggestionRecord(int32_t streamId);
+    void RemovePidSuggestionRecord(int32_t pid);
+    bool HasMuteSuggestionRecord(uint32_t streamId);
+    void SendUnMuteSuggestionInterruptEvent(uint32_t streamId);
+    void DelayRemoveMuteSuggestionRecord(uint32_t streamId);
+    void RemoveMuteSuggestionRecord();
+    void AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt);
+    void SuggestionProcessWhenMixWithOthers(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -375,6 +385,10 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
 
     std::map<int32_t, std::shared_ptr<AudioInterruptClient>> interruptClients_;
+
+    std::map<uint32_t, std::shared_ptr<AudioInterrupt>> suggestionInterrupts_;
+    std::map<uint32_t, std::unordered_set<int32_t>> suggestionStreamIdRecords_;
+    std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

@@ -1174,8 +1174,9 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
         UpdateVolumeForLowLatency(desc, volumeType);
-        HILOG_COMM_INFO("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
-            volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
+        HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
+            "device: %{public}s", volumeLevel, GetStreamMuteInternal(desc, volumeType),
+            volumeType, desc->GetName().c_str());
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
@@ -3094,7 +3095,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
 
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
         SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
-        SetVolumeDbForDeviceInPipe(desc, STREAM_VOICE_ASSISTANT);
+        SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
         AUDIO_INFO_LOG("a2dp ok");
     }
 }
@@ -3434,6 +3435,11 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
     UpdateRingerMuteByRingerMode(desc);
+    if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
+        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
+        SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
+        AUDIO_INFO_LOG("a2dp ok");
+    }
     UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
@@ -3620,6 +3626,14 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_);
 }
 
+void AudioAdapterManager::SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute)
+{
+    AudioVolume::GetInstance()->SetDualStreamVolumeMute(sessionId, isDualMute);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeDb = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
+}
+
 void AudioAdapterManager::SetVolumeFromRemote(std::string networkId, int32_t volumeDegree)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER, networkId);
@@ -3717,6 +3731,5 @@ void AudioAdapterManager::UpdateVolumeWhenPassThroughDeviceConnect(std::shared_p
     SetOffloadVolume(STREAM_MUSIC, 1.0, REMOTE_CLASS, device->networkId_);
     RegistAdapterManagerCallback(device->networkId_);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

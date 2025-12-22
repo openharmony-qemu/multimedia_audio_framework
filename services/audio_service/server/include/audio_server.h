@@ -159,6 +159,8 @@ public:
     void OnOutputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
 
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
+
     // IAudioSourceCallback
     void OnWakeupClose() override;
     void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
@@ -462,6 +464,7 @@ private:
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
     int32_t SetAudioBalanceStatus();
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
+    void OnStartExpansion();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

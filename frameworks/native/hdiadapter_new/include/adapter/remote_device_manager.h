@@ -26,6 +26,7 @@
 #include <v1_0/audio_types.h>
 #include "audio_info.h"
 #include "adapter/i_device_manager.h"
+#include "util/callback_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -102,6 +103,7 @@ public:
         std::shared_ptr<IAudioAdapterCallback> callback) override;
     void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) override;
     void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) override;
+    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
     void UnRegistAdapterManagerCallback(const std::string &adapterName) override;
 
     void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc, uint32_t &hdiRenderId) override;
@@ -128,6 +130,8 @@ private:
         const char *value);
     int32_t HandleCaptureParamEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
+    int32_t HandleRouteEnableEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
+        const char *value, const std::string &contentDesStr);
     int32_t SetOutputPortPin(DeviceType outputDevice, RemoteAudioRouteNode &sink);
     int32_t SetInputPortPin(DeviceType inputDevice, RemoteAudioRouteNode &source);
     void DestroyAllChannels(const std::string &adapterName);
@@ -141,12 +145,14 @@ private:
     static constexpr int32_t PARAMS_STATE_NUM = 2;
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
+    static constexpr char ROUTE_ENABLE = '1';
 
     sptr<RemoteIAudioManager> audioManager_ = nullptr;
     std::mutex managerMtx_;
     std::unordered_map<std::string, std::shared_ptr<RemoteAdapterWrapper> > adapters_;
     std::mutex adapterMtx_;
     std::unordered_set<std::string> adaptersLoaded_;
+    SinkCallbackWrapper callback_ = {};
     std::unordered_map<std::string, std::shared_ptr<IAudioAdapterCallback>> adapterParamCallbacks_;
     std::mutex adapterParamCallbackMtx_;
 };

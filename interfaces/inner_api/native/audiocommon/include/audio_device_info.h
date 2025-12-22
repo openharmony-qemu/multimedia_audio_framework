@@ -402,7 +402,6 @@ struct VolumeBehavior : public Parcelable {
     int32_t controlInitVolume = 0;
     bool controlInitMute = false;
 
-
     VolumeBehavior(bool isReady_, bool isVolumeControlDisabled_, std::string databaseVolumeName_)
         : isReady(isReady_), isVolumeControlDisabled(isVolumeControlDisabled_), databaseVolumeName(databaseVolumeName_)
     {}

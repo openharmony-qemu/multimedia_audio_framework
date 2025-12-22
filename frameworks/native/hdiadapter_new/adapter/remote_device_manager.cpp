@@ -312,6 +312,12 @@ void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapt
     wrapper->captureCallbacks_.erase(hdiCaptureId);
 }
 
+void RemoteDeviceManager::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
+{
+    AUDIO_INFO_LOG("in");
+    callback_.RegistCallback(type, callback);
+}
+
 void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adapterName)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
@@ -589,6 +595,8 @@ int32_t RemoteDeviceManager::HandleStateChangeEvent(const std::string &adapterNa
         "not find daudio device type value, contentDes: %{public}s", contentDesStr.c_str());
 
     int32_t ret = SUCCESS;
+    ret = HandleRouteEnableEvent(adapterName, key, condition, value, contentDesStr);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
     if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_SPK) {
         AUDIO_INFO_LOG("ERR_EVENT is DAUDIO_DEV_TYPE_SPK");
         ret = HandleRenderParamEvent(adapterName, key, condition, value);
@@ -660,6 +668,22 @@ int32_t RemoteDeviceManager::HandleCaptureParamEvent(const std::string &adapterN
     }
     CHECK_AND_RETURN_RET_LOG(captureCallback != nullptr, ERR_INVALID_HANDLE, "not find capture port in adapter");
     captureCallback->OnAudioParamChange(adapterName, key, std::string(condition), std::string(value));
+    return SUCCESS;
+}
+
+int32_t RemoteDeviceManager::HandleRouteEnableEvent(const std::string &adapterName, const AudioParamKey key,
+    const char *condition, const char *value, const std::string &contentDesStr)
+{
+    std::string routeEnableKey = "ROUTE_ENABLE=";
+    size_t routeEnableKeyPos = contentDesStr.find(routeEnableKey);
+    CHECK_AND_RETURN_RET_LOG(routeEnableKeyPos != std::string::npos, ERR_INVALID_PARAM,
+        "not find daudio route enable info, contentDes: %{public}s", contentDesStr.c_str());
+    size_t routeEnableValPos = routeEnableKeyPos + routeEnableKey.length();
+    CHECK_AND_RETURN_RET_LOG(routeEnableValPos < contentDesStr.length(), ERR_INVALID_PARAM,
+        "not find daudio route enable value, contentDes: %{public}s", contentDesStr.c_str());
+    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE, ERR_INVALID_PARAM, "route unenable");
+    bool enable = contentDesStr[routeEnableValPos] == ROUTE_ENABLE;
+    callback_.OnHdiRouteStateChange(adapterName, enable);
     return SUCCESS;
 }
 

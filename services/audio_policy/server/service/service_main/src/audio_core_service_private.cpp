@@ -140,28 +140,26 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
 
 void AudioCoreService::HandleA2dpSuspend()
 {
-    {
-        std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
-        a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
-            std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-
-        if (a2dpNeedSuspend_) {
-            return;
-        }
-
-        a2dpNeedSuspend_ = true;
-    }
-
-    AUDIO_INFO_LOG("suspend a2dp");
-    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+    std::lock_guard<std::mutex> lock(a2dpSuspendMutex_);
 
     auto action = std::make_shared<RestoreA2dpSinkAction>();
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
     desc.delayTimeMs = OLD_DEVICE_UNAVALIABLE_SUSPEND_MS;
+
     CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
-    asyncHandler_->PostAsyncAction(desc);
+    a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+        std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    CHECK_AND_RETURN_LOG(asyncHandler_->PostAsyncAction(desc), "post async action fail");
+
+    if (a2dpNeedSuspend_) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("suspend a2dp");
+    AudioServerProxy::GetInstance().SuspendRenderSinkProxy("a2dp");
+    a2dpNeedSuspend_ = true;
 }
 
 void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
@@ -311,8 +309,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
 int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
     ConnectState connectState, bool isVrSupported)
 {
-    HILOG_COMM_INFO("handleflag %{public}d, address %{public}s, connectState %{public}d",
-        handleFlag, GetEncryptAddr(address).c_str(), connectState);
+    HILOG_COMM_INFO("[ScoInputDeviceFetchedForRecongnition]handleflag %{public}d, address %{public}s, "
+        "connectState %{public}d", handleFlag, GetEncryptAddr(address).c_str(), connectState);
     if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
@@ -625,14 +623,12 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
             for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-                AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+                audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
             AudioStreamType streamType = streamCollector_.GetStreamType(sessionID);
             if (streamType == STREAM_MUSIC) {
-                AudioVolume::GetInstance()->SetStreamVolumeMute(sessionID, false);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionID);
+                audioPolicyManager_.SetDualStreamVolumeMute(sessionID, false);
             }
         }
     }
@@ -1396,7 +1392,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
         : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
     if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("Move sink input %{public}d to device %{public}d failed!",
+        HILOG_COMM_ERROR("[MoveToNewOutputDevice]Move sink input %{public}d to device %{public}d failed!",
             streamDesc->sessionId_, newDeviceDesc->deviceType_);
         audioIOHandleMap_.NotifyUnmutePort();
         return;
@@ -1772,8 +1768,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
-                AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->sessionId_, true);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->sessionId_);
+                audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, true);
             }
             shouldUpdateDeviceDueToDualTone_ = true;
         } else {
@@ -1844,14 +1839,12 @@ void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after,
     CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
     for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
     AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->GetSessionId());
     if (streamType == STREAM_MUSIC) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->GetSessionId(), false);
-        audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(streamDesc->GetSessionId());
+        audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->GetSessionId(), false);
     }
 }
 
@@ -2015,8 +2008,8 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
 
     SleepForSwitchDevice(streamDesc, reason);
 
-    HILOG_COMM_INFO("Trigger recreate renderer stream %{public}u, pid: %{public}d, routeflag: 0x%{public}x",
-        sessionId, callerPid, routeFlag);
+    HILOG_COMM_INFO("[TriggerRecreateRendererStreamCallback]Trigger recreate renderer stream %{public}u, pid: "
+        "%{public}d, routeflag: 0x%{public}x", sessionId, callerPid, routeFlag);
     audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 }
 
@@ -2606,15 +2599,12 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         FetchOutputDeviceAndRoute("UpdateTracker_2");
         CHECK_AND_RETURN_LOG(!isRingDualToneOnPrimarySpeaker_, "no need to execute SetInnerStreamMute false");
         for (std::pair<uint32_t, AudioStreamType> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
-            audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(stream.first);
+            audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
         AudioStreamType streamType = streamCollector_.GetStreamType(streamChangeInfo.audioRendererChangeInfo.sessionId);
         if (streamType == STREAM_MUSIC) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
-            audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(
-                streamChangeInfo.audioRendererChangeInfo.sessionId);
+            audioPolicyManager_.SetDualStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
         }
     }
 }
@@ -2645,7 +2635,7 @@ void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paInde
 
 int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
-    HILOG_COMM_INFO("unload offload module");
+    HILOG_COMM_INFO("[ReleaseOffloadPipe]unload offload module");
     std::unique_lock<std::mutex> lock(offloadCloseMutex_);
     // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
     // the shutdown process..
@@ -2763,8 +2753,7 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
             for (const auto &sessionId : sessionIdList) {
                 AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(sessionId, streamType));
-                AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
-                audioPolicyManager_.SetOffloadVolumeForStreamVolumeChange(sessionId);
+                audioPolicyManager_.SetDualStreamVolumeMute(sessionId, true);
             }
         }
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);

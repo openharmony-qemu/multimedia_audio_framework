@@ -3192,7 +3192,7 @@ int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescr
     bool disableFastStream = coreService_->GetDisableFastStreamParam();
     if (disableFastStream || streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         std::string bundleName = AudioBundleManager::GetBundleName();
-        streamDesc->SetBunduleName(bundleName);
+        streamDesc->SetBundleName(bundleName);
     }
     uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkIdIn = LOCAL_NETWORK_ID;
@@ -3506,6 +3506,12 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
             AUDIO_DEBUG_LOG("[AudioPolicyServer]: No processing");
             break;
     }
+}
+
+void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    CHECK_AND_RETURN_LOG(enable, "route unenable");
+    server_->coreService_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,

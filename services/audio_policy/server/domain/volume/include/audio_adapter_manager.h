@@ -349,7 +349,7 @@ public:
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
-
+    void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
 

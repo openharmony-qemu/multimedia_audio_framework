@@ -312,6 +312,7 @@ public:
     virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
     virtual void updateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
+    virtual void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) = 0;
     virtual void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress) = 0;
     virtual void SetMuteFromRemote(std::string networkId, bool mute) = 0;
 };

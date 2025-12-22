@@ -988,10 +988,12 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
     return SUCCESS;
 }
 
-void HandleDistributedDeviceDisConnected(DStatusInfo &statusInfo,
+void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
     AudioStreamDeviceChangeReasonExt &reason, AudioDeviceDescriptor &deviceDesc)
 {
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    const std::string networkId = statusInfo.networkId;
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
     AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
@@ -1621,9 +1623,8 @@ uint32_t AudioDeviceStatus::GetPaIndexByPortName(const std::string &portName)
 
 void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device)
 {
-    
     std::string remoteAudioParameter =
-        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId);
+        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId_);
     AUDIO_INFO_LOG("Get Remote AudioParameter: %{public}s", remoteAudioParameter.c_str());
     RemoteDeviceCapability capability;
     capability.FromJsonString(remoteAudioParameter);

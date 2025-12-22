@@ -770,7 +770,8 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         }
         sceneTypeToProcessClusterCount_--;
         if (sceneTypeToProcessClusterCount_ == 0) {
-            HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            HILOG_COMM_INFO("[DeleteRendererInputNodeSession]need to erase rendererSceneCluster, "
+                "last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }
