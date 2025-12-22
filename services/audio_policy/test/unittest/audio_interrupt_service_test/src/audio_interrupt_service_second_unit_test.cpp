@@ -1149,26 +1149,26 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
-    SourceType existSourceType, incomingSourceType;
-    incomingSourceType = SOURCE_TYPE_INVALID;
-    existSourceType = SOURCE_TYPE_INVALID;
-    AudioStreamType existStreamType = STREAM_ALARM;
-    AudioStreamType incomingStreamType = STREAM_ALARM;
+    AudioFocusType existAudioFocusType;
+    AudioFocusType incomingAudioFocusType;
+    incomingAudioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    existAudioFocusType.sourcesType = SOURCE_TYPE_INVALID;
+    incomingAudioFocusType.streamType = STREAM_ALARM;
     string bundleName = "test";
     std::string currentBundleName = "currentTest";
     AudioFocusEntry focusEntry;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
-    incomingSourceType = SOURCE_TYPE_VOICE_CALL;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
-    existSourceType = SOURCE_TYPE_MIC;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
+    incomingAudioFocusType.sourcesType = SOURCE_TYPE_VOICE_CALL;
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
+    existAudioFocusType.sourcesType = SOURCE_TYPE_MIC;
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
     audioInterruptService->queryBundleNameListCallback_ = listener;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
 }
 
 /**
