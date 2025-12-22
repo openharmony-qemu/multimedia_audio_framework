@@ -77,26 +77,26 @@ public:
 
     void Init();
 
-    int32_t GetDefaultVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc, AudioStreamType streamType);
-    void GetDefaultVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    int32_t GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+    void GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
-    void GetDefaultVolumeLevelForDPsDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    void GetDefaultVolumeLevelForDPsDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
-    void GetDefaultVolumeLevelForDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    void GetDefaultVolumeLevelForDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
-    void GetDefaultVolumeLevelForHearingAidDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
-        AudioStreamType streamType, int32_t &volumeLevel);
-    
-    int32_t GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc, AudioStreamType streamType);
-    void GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    void GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
     
-    int32_t GetMinVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc, AudioStreamType streamType);
-    void GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    int32_t GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+    void GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
     
-    bool IsDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
-    bool IsDeviceWithSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+    void GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, int32_t &volumeLevel);
+    
+    bool IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:
     AudioVolumeUtils() {};
