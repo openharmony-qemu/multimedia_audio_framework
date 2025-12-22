@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef RENDERER_IN_CLIENT_PRIVATE_H
-#define RENDERER_IN_CLIENT_PRIVATE_H
+#define RENDERER_IN_CLIENT_PRIVATE_Hss
 
 #include <optional>
 

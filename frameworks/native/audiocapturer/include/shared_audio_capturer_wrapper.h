@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 class SharedCapturerWrapper : public AudioCapturer {
-public:
+public:xx
     explicit SharedCapturerWrapper(std::shared_ptr<AudioCapturer> sharedAudioCapturer)
         : sharedAudioCapturer_(sharedAudioCapturer)
     {

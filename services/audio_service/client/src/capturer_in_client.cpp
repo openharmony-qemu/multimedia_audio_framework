@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef FAST_AUDIO_STREAM_H
-#define FAST_AUDIO_STREAM_H
+#define FAST_AUDIO_STREAM_Hss
 
 #ifndef LOG_TAG
 #define LOG_TAG "CapturerInClientInner"
