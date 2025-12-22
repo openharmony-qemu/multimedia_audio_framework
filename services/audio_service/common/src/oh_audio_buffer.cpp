@@ -242,9 +242,9 @@ float OHAudioBuffer::GetDuckFactor()
     return ohAudioBufferBase_.GetDuckFactor();
 }
 
-bool OHAudioBuffer::SetDuckFactor(float duckFactor)
+bool OHAudioBuffer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
-    return ohAudioBufferBase_.SetDuckFactor(duckFactor);
+    return ohAudioBufferBase_.SetDuckFactor(duckFactor, durationMs);
 }
 
 uint32_t OHAudioBuffer::GetUnderrunCount()
