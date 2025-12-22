@@ -24,7 +24,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 class SharedCapturerWrapper : public AudioCapturer {
-public:xx
+public:
     explicit SharedCapturerWrapper(std::shared_ptr<AudioCapturer> sharedAudioCapturer)
         : sharedAudioCapturer_(sharedAudioCapturer)
     {
@@ -293,6 +293,16 @@ public:xx
     bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
     {
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
+    }
+
+    int32_t StartPlaybackCapture() override {
+        return 0;
+    }
+ 
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
+    {
+        return;
     }
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
