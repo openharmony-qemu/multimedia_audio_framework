@@ -33,12 +33,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+using namespace std;
 namespace {
+    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
     static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
 }
+
+constexpr int32_t MS_PER_S = 1000;
+constexpr int32_t NS_PER_MS = 1000000;
+
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
     uint8_t *GetBase() override;
