@@ -942,16 +942,16 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_037, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     float duckFactor = 0.2f;
 
-    auto ret1 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret1 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret2 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     ipcStreamInServerRet.ConfigRenderer();
-    auto ret3 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret3 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 
@@ -1458,7 +1458,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_064, TestSize.Level1)
         ipcStreamInServerRet.streamListenerHolder_);
     ASSERT_TRUE(ipcStreamInServerRet.rendererInServer_ != nullptr);
 
-    auto result = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto result = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
@@ -2126,7 +2126,7 @@ HWTEST(IpcStreamInServerUnitTest, SetDuckFactor_001, TestSize.Level3)
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
 
-    auto ret = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, SUCCESS);
 }
 
