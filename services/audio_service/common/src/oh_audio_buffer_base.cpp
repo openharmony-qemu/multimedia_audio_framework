@@ -587,7 +587,8 @@ float OHAudioBufferBase::GetVolumeFromOh()
     if ((currentTime - beginDurationMs) < durationMs &&
         !FLOAT_COMPARE_EQ(duckFactor, oldDuckFactor) && durationMs > 0) {
         float delta = duckFactor - oldDuckFactor;
-        factor = lastEventFactor + delta * (currentTime - basicBufferInfo_->lastEventTime.load()) / durationMs;
+        factor = lastEventFactor + delta *
+            static_cast<float>(currentTime - basicBufferInfo_->lastEventTime.load()) / static_cast<float>(durationMs);
         if ((delta > 0 && factor > duckFactor) || (delta < 0 && factor < duckFactor)) {
             factor = duckFactor;
         }
