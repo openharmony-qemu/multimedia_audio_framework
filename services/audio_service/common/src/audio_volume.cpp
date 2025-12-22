@@ -217,7 +217,8 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
     return 0.0f;
 }
 
-uint32_t AudioVolume::GetDurationMs(uint32_t sessionId){
+uint32_t AudioVolume::GetDurationMs(uint32_t sessionId)
+{
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
