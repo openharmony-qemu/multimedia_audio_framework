@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "OHAudioDeviceDescriptor.h"
+static const int32_t START_RESULT_SUCCESS = 0;
 
 using OHOS::AudioStandard::Timestamp;
 
@@ -37,6 +38,8 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
     AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(audioCapturer->IsModernInnerCapturer() != true, AUDIOSTREAM_ERROR_ILLEGAL_STATE,
+        "Innercapturer can not use this interface");
     if (audioCapturer->Release()) {
         OHOS::AudioStandard::ObjectRefMap<OHOS::AudioStandard::OHAudioCapturer>::DecreaseRef(audioCapturer);
         return AUDIOSTREAM_SUCCESS;
@@ -51,6 +54,19 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     if (audioCapturer->Start()) {
+        return AUDIOSTREAM_SUCCESS;
+    } else {
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+}
+
+OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCapturer* capturer,
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+    int32_t startResult = audioCapturer->StartPlaybackCapture(capturer, callback, userData);
+    if (startResult == START_RESULT_SUCCESS) {
         return AUDIOSTREAM_SUCCESS;
     } else {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
@@ -264,6 +280,7 @@ OHAudioCapturer::~OHAudioCapturer()
 bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
 {
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
+    IsModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.IsModernInnerCapturer;
     return audioCapturer_ != nullptr;
 }
 
@@ -582,6 +599,27 @@ void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, vo
     } else {
         AUDIO_WARNING_LOG("The read callback function is not set");
     }
+}
+
+int32_t OHAudioCapturer::StartPlaybackCapture(OH_AudioCapturer* capturer,
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "callback is nullptr");
+    capturerOnPlaybackCaptureStartCallback_ = std::make_shared<OHAudioCapturerOnPlaybackCaptureStartCallback> (callback,
+        reinterpret_cast<OH_AudioCapturer*>(this), userData);
+    audioCapturer_->SetPlaybackCaptureStartStateCallback(capturerOnPlaybackCaptureStartCallback_);
+ 
+    return audioCapturer_->StartPlaybackCapture();
+}
+ 
+bool OHAudioCapturer::IsModernInnerCapturer()
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
+    AudioCapturerInfo capturerInfo;
+    CHECK_AND_RETURN_RET(audioCapturer_->GetCapturerInfo(capturerInfo) == SUCCESS, false);
+    CHECK_AND_RETURN_RET(capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && IsModernInnerCapturer_, false);
+    return true;
 }
 
 void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData)
