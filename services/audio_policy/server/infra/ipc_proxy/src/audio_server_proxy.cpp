@@ -725,5 +725,45 @@ int32_t AudioServerProxy::SetNonInterruptMuteProxy(uint32_t sessionId, bool mute
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
+
+std::string AudioServerProxy::GetRemoteAudioParameterProxy(const std::string& networkId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "error for audio server proxy null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    std::string value = "";
+    gsp->GetRemoteAudioParameter(networkId, AUDIO_EXT_PARAM_KEY_CUSTOM, "", value);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return value;
+}
+void AudioServerProxy::SetRemoteAudioParameterProxy(const std::string& networkId, bool isVol, int32_t val)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    std::string condition = isVol ? "" : "EVENT_TYPE=4;";
+    condition = condition + "CONTROL=REMOTE;";
+
+    gsp->SetAudioParameter(networkId, VOLUME, condition, to_string(val));
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioServerProxy::RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& neowtrokId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->RegistAdapterManagerCallback(object, neowtrokId);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
+void AudioServerProxy::UnRegistAdapterManagerCallback(const std::string& networkId)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->UnRegistAdapterManagerCallback(networkId);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
 }
 }

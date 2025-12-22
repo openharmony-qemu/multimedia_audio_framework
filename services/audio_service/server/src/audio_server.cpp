@@ -3356,6 +3356,79 @@ int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 #endif
     return ret;
 }
+
+int32_t AudioServer::RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& networkId)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+
+    std::lock_guard<std::mutex> lock(audioAdapterCbMutex_);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "listener object is nullptr");
+    sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "AudioServer: listener obj cast failed");
+
+    std::shared_ptr<AudioParameterCallback> callback =
+        std::make_shared<AudioManagerListenerCallback>(listener);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "AudioPolicyServer: failed to  create cb obj");
+
+    audioAdapterCb_ = callback;
+    audioAdapterNetworkIdSet_.insert(networkId);
+    AUDIO_INFO_LOG("set audioadpater callback success");
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    auto callbackPtr = std::shared_ptr<IAudioSinkCallback>(this);
+    deviceManager->RegistAdapterManagerCallback(networkId.c_str(), callbackPtr);
+    return SUCCESS;
+}
+
+int32_t AudioServer::UnRegistAdapterManagerCallback(const std::string& networkId)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+
+    std::lock_guard<std::mutex> lock(audioAdapterCbMutex_);
+    audioAdapterNetworkIdSet_.erase(networkId);
+    audioAdapterCb_ = audioAdapterNetworkIdSet_.empty() ? nullptr : audioAdapterCb_;
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    deviceManager->UnRegistAdapterManagerCallback(networkId.c_str());
+    return SUCCESS;
+}
+
+void AudioServer::OnAdapterParamChange(std::string networkId, const AudioParamKey key,
+    std::string condition, std::string value)
+{
+    std::shared_ptr<AudioParameterCallback> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioAdapterCbMutex_);
+        callback = audioAdapterCb_;
+    }
+    CHECK_AND_RETURN_LOG(callback != nullptr, "audioAdapterCb_  is nullptr");
+    callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32_t key,
+    const std::string& condition, std::string& value)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    bool ret = VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
+    value = deviceManager->GetAudioParameter(networkId.c_str(), static_cast<AudioParamKey>(key), condition);
+    AUDIO_INFO_LOG("Get valume %{public}s by key:%{public}d, condition:%{public}s",
+        value.c_str(), key, condition.c_str());
+    return SUCCESS;
+}
+
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

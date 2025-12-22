@@ -350,6 +350,16 @@ public:
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
+    void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
+    void SetMuteFromRemote(std::string networkId, bool mute);
+
+    class RemoteVolumeCallback : public AudioParameterCallback {
+        void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+            const std::string& condition, const std::string& value) override;
+        
+        void OnHdiRouteStateChange(const std::string& networkId, bool enable) override {};
+    };
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -476,6 +486,11 @@ private:
     void DealDoNotDisturbStatus();
     void DealDoNotDisturbStatusWhiteList();
     void UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDeviceDescriptor> device);
+    void SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
+        std::shared_ptr<AudioDeviceDescriptor> device);
+    void RegistAdapterManagerCallback(std::string networkId);
+    void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
+    void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -564,6 +579,7 @@ private:
     std::atomic<bool> isCastingConnect_ = false;
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
+    std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

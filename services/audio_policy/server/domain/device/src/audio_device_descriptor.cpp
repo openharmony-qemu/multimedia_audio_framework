@@ -257,6 +257,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
+    volumeBehavior_ = deviceDescriptor.volumeBehavior_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -297,6 +298,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
+    volumeBehavior_ = deviceDescriptor->volumeBehavior_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const

@@ -293,6 +293,13 @@ public:
     int32_t GetCurrentInputPipeChangeInfos(
         std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos) override;
 
+    int32_t RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& networkId) override;
+    int32_t UnRegistAdapterManagerCallback(const std::string& networkId) override;
+    void OnAdapterParamChange(std::string networkId, const AudioParamKey key,
+        std::string condition, std::string value) override;
+    int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
+        const std::string& condition, std::string& value) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -517,6 +524,10 @@ private:
 
     std::map<pid_t, sptr<CallbackHandle>> cbHandles_;
     std::mutex cbLock_;
+
+    std::mutex audioAdapterCbMutex_;
+    std::shared_ptr<AudioParameterCallback> audioAdapterCb_;
+    std::unordered_set<std::string> audioAdapterNetworkIdSet_;
 };
 
 class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {

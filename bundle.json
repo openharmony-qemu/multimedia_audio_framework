@@ -58,6 +58,7 @@
             "bundle_framework",
             "background_task_mgr",
             "c_utils",
+            "cJSON",
             "cellular_data",
             "common_event_service",
             "config_policy",
