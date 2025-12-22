@@ -75,6 +75,7 @@ static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
 static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
+static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 }
 
 enum NodeName {
