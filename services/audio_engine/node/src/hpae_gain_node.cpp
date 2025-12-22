@@ -218,7 +218,7 @@ uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen
     uint32_t remainDurationMs = 0;
     uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
     uint32_t times = duration / spaneInFrameMs;
-    if (times > 0){
+    if (times > 0) {
         *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;
         remainDurationMs = duration - spaneInFrameMs;
     }
@@ -251,10 +251,9 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         std::to_string(durationMs));
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
-    AUDIO_DEBUG_LOG(
-        "curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
-        "durationMs: %{public}u deviceClass :%{public}s",
-        curSystemGain,preSystemGain, systemStepGain,durationMs,GetDeviceClass().c_str());
+    AUDIO_DEBUG_LOG("curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
+        "durationMs: %{public}u deviceClass :%{public}s", curSystemGain, preSystemGain, systemStepGain,
+        durationMs, GetDeviceClass().c_str());
     if (audioVolume->IsSameVolume(0.0f, curSystemGain) && audioVolume->IsSameVolume(0.0f, preSystemGain)) {
         SilenceData(input);
         input->SetBufferSilence(true);
