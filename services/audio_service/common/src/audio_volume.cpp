@@ -96,6 +96,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         volumes->volumeStream = it->second.totalVolume_;
         volumes->volumeHistory = it->second.historyVolume_;
         volumes->volumeApp = it->second.appVolume_;
+        volumes->durationMs = it->second.durationMs_;
         appUid = it->second.GetAppUid();
         if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.IsSystemApp()) {
             volumeType = STREAM_MUSIC;
