@@ -737,11 +737,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_001, TestSiz
     ASSERT_TRUE(server != nullptr);
 
     float duckFactor = -0.5f;
-    auto ret = server->SetDuckFactor(duckFactor);
+    auto ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     duckFactor = 2.0f;
-    ret = server->SetDuckFactor(duckFactor);
+    ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -772,7 +772,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_002, TestSiz
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
 
     float duckFactor = 0.5f;
-    auto ret = server->SetDuckFactor(duckFactor);
+    auto ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, SUCCESS);
 }
 
