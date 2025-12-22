@@ -63,7 +63,6 @@ const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
     { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE},
     { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE},
     { SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, AUDIO_INPUT_RAW_AI_TYPE},
-
 };
 
 uint32_t ConvertToHDIAudioInputType(SourceType sourceType)
