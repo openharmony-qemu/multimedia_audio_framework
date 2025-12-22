@@ -28,6 +28,7 @@ struct VolumeValues {
     float volumeApp;
     float volume;
     float volumeHistory;
+    uint32_t durationMs;
 };
 
 enum FadePauseState {
