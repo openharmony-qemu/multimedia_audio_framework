@@ -58,6 +58,7 @@ public:
     int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void GetPlayingMediaRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t CapturerMutedFlagChange(const uint32_t sessionId, bool muteFlag);
     int32_t GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos);
     void RegisteredTrackerClientDied(int32_t uid, int32_t pid);
@@ -96,7 +97,6 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
-    std::vector<int32_t> GetPlayingMediaSessionIdList();
     int32_t ResumeStreamState();
     bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();

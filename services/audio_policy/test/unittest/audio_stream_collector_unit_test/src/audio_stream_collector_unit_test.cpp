@@ -1420,16 +1420,18 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioStreamCollector
-* @tc.number: GetPlayingMediaSessionIdList_001
-* @tc.desc  : Test GetPlayingMediaSessionIdList()
+* @tc.number: GetPlayingMediaRendererChangeInfos_001
+* @tc.desc  : Test GetPlayingMediaRendererChangeInfos()
 */
-HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaSessionIdList_001, TestSize.Level1)
+HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaRendererChangeInfos_001, TestSize.Level1)
 {
     // Test1
     std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
     collector->audioRendererChangeInfos_.push_back(nullptr);
-    vector<int32_t> sessionIdList = collector->GetPlayingMediaSessionIdList();
-    EXPECT_EQ(0, sessionIdList.size());
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
 
     // Test2
     AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
@@ -1439,8 +1441,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaSessionIdList_001, TestSiz
     info1->rendererInfo = rendererInfo1;
     info1->channelCount = 2;
     collector->audioRendererChangeInfos_.push_back(std::move(info1));
-    sessionIdList = collector->GetPlayingMediaSessionIdList();
-    EXPECT_EQ(0, sessionIdList.size());
+    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
 
     // Test3
     AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION, 0};
@@ -1450,8 +1453,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaSessionIdList_001, TestSiz
     info2->rendererInfo = rendererInfo2;
     info2->channelCount = 1;
     collector->audioRendererChangeInfos_.push_back(std::move(info2));
-    sessionIdList = collector->GetPlayingMediaSessionIdList();
-    EXPECT_EQ(0, sessionIdList.size());
+    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
 
     // Test4
     AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA, 0};
@@ -1461,8 +1465,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaSessionIdList_001, TestSiz
     info3->rendererInfo = rendererInfo3;
     info3->channelCount = 2;
     collector->audioRendererChangeInfos_.push_back(std::move(info3));
-    sessionIdList = collector->GetPlayingMediaSessionIdList();
-    EXPECT_EQ(1, sessionIdList.size());
+    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(1, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
 }
 
 /**
