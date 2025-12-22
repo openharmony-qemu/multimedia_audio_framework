@@ -172,4 +172,4 @@ enum AudioStreamType {
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_STREAM_INFO_ext_H
+#endif // AUDIO_STREAM_INFO_EXT_H
