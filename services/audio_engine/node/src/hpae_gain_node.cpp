@@ -213,6 +213,18 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
     }
 }
 
+uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain)
+{
+    uint32_t remainDurationMs = 0;
+    uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
+    uint32_t times = duration / spaneInFrameMs;
+    if (times > 0){
+        *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;
+        remainDurationMs = duration - spaneInFrameMs;
+    }
+    return remainDurationMs;
+}
+
 void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount)
 {
     struct VolumeValues volumes;
