@@ -3231,7 +3231,7 @@ std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(Adj
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
 }
 
-void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device,
+void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioVolumeType volumeType)
 {
     Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
