@@ -621,6 +621,8 @@ public:
             STREAM_ULTRASONIC,
             STREAM_SYSTEM,
             STREAM_VOICE_CALL_ASSISTANT,
+            STREAM_ANNOUNCEMENT,
+            STREAM_EMERGENCY,
             STREAM_ALL
         };
         for (auto &volumeType : volumeList) {

@@ -44,7 +44,9 @@ static const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
     STREAM_ULTRASONIC,
-    STREAM_MUSIC
+    STREAM_MUSIC,
+    STREAM_ANNOUNCEMENT,
+    STREAM_EMERGENCY,
 };
 
 static const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {

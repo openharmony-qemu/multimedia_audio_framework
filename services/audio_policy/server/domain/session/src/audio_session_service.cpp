@@ -50,6 +50,8 @@ static const std::unordered_map<AudioStreamType, AudioSessionType> SESSION_TYPE_
     {STREAM_NOTIFICATION, AudioSessionType::NOTIFICATION},
     {STREAM_DTMF, AudioSessionType::DTMF},
     {STREAM_VOICE_ASSISTANT, AudioSessionType::VOICE_ASSISTANT},
+    {STREAM_ANNOUNCEMENT, AudioSessionType::SONIFICATION},
+    {STREAM_EMERGENCY, AudioSessionType::SONIFICATION},
 };
 
 AudioSessionService::AudioSessionService()

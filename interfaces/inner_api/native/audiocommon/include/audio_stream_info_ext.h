@@ -161,9 +161,19 @@ enum AudioStreamType {
     STREAM_APP = 28,
 
     /**
+     * Indicates audio streams for announcement.
+     */
+    STREAM_ANNOUNCEMENT = 29,
+
+    /**
+     * Indicates audio streams for emergency.
+     */
+    STREAM_EMERGENCY = 30,
+
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_APP,
+    STREAM_TYPE_MAX = STREAM_EMERGENCY,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

@@ -101,6 +101,8 @@ public:
         USAGE_ULTRASONIC = 16,
         USAGE_VIDEO_COMMUNICATION = 17,
         USAGE_VOICE_CALL_ASSISTANT = 21,
+        USAGE_ANNOUNCEMENT = 22,
+        USAGE_EMERGENCY = 23,
         USAGE_MAX = 100
     };
 

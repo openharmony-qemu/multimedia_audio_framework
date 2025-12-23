@@ -83,6 +83,8 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+    {STREAM_ANNOUNCEMENT, STREAM_USAGE_ANNOUNCEMENT},
+    {STREAM_EMERGENCY, STREAM_USAGE_EMERGENCY}
 };
 
 static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
@@ -426,9 +428,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         nullptr, "sa not start");
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
-    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+    if (!CheckStreamTypeAndPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage)) {
         return nullptr;
     }
 
@@ -471,6 +471,26 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     }
 
     return audioRenderer;
+}
+
+bool AudioRenderer::CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage)
+{
+    if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
+        AudioRenderer::SendRendererCreateError(streamUsage, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
+        return false;
+    }
+
+#ifdef MULTI_ALARM_LEVEL
+    if ((audioStreamType == STREAM_ANNOUNCEMENT) || (audioStreamType == STREAM_EMERGENCY)) {
+        if (!PermissionUtil::VerifySystemPermission()) {
+            AudioRenderer::SendRendererCreateError(streamUsage, ERR_PERMISSION_DENIED);
+            AUDIO_ERR_LOG("ANNOUNCEMENT or EMERGENCY can only create by system app");
+            return false;
+        }
+    }
+#endif
+    return true;
 }
 
 void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,

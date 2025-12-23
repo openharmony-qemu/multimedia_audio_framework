@@ -1186,6 +1186,7 @@ public:
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
+    static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard
