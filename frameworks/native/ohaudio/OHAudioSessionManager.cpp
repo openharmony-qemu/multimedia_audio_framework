@@ -870,7 +870,7 @@ OH_AudioCommon_Result OHAudioSessionManager::EnableMuteSuggestionWhenMixWithOthe
 
 void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent)
 {
-    OH_AudioSession_DeactivatedEvent event;
+    OH_AudioSession_DeactivatedEvent event = {};
     event.reason = static_cast<OH_AudioSession_DeactivatedReason>(deactiveEvent.deactiveReason);
     callback_(event);
 }
@@ -878,7 +878,7 @@ void OHAudioSessionCallback::OnAudioSessionDeactive(const AudioSessionDeactiveEv
 void OHAudioSessionStateCallback::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
 {
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
-    OH_AudioSession_StateChangedEvent event;
+    OH_AudioSession_StateChangedEvent event = {};
     event.stateChangeHint = static_cast<OH_AudioSession_StateChangeHint>(stateChangedEvent.stateChangeHint);
     callback_(event);
 }
