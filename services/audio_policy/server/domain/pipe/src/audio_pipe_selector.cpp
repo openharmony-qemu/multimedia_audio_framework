@@ -61,6 +61,23 @@ static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, 
         (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
 }
 
+bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe,
+    std::shared_ptr<AudioPipeInfo> oldPipe)
+{
+    CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
+    CHECK_AND_RETURN_RET(!newPipe->streamDescriptors_.empty(), false);
+    const auto streamDesc = newPipe->streamDescriptors_.front();
+    CHECK_AND_RETURN_RET(!!streamDesc->newDeviceDescs_.empty() && !streamDesc->oldDeviceDescs_.empty(), false);
+    const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceID();
+    const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceID();
+    if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
+        newPipe->moduleInfo.className == "usb" && oldPipe->moduleInfo.className == "usb" &&
+        newDeviceID != oldDeviceID) {
+        return true;
+    }
+    return false;
+}
+
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
 {
 }
@@ -625,10 +642,14 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
-    info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
-    info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
-    info.moduleInfo_.macAddress = streamDesc->newDeviceDescs_[0]->macAddress_;
+    auto newDeviceDesc = streamDesc->newDeviceDesc.front();
+    info.moduleInfo_.deviceType = std::to_string(newDeviceDesc->deviceType_);
+    info.moduleInfo_.networkId = newDeviceDesc->networkId_;
+    info.moduleInfo_.macAddress = newDeviceDesc->macAddress_;
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    if (newDeviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        info.moduleInfo_.rate = newDeviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SAMPLE_RATE);
+    }
 
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -643,15 +664,14 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
+    CHECK_AND_RETURN_RET(!IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
-    if ((oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
-        (oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT)) {
+    if (oldPipe->IsRouteFast() || newPipe->IsRouteFast() || oldPipe->IsRouteDirect() || newPipe->IsRouteDirect()) {
         return AUDIO_STREAM_ACTION_RECREATE;
-    } else {
-        return AUDIO_STREAM_ACTION_MOVE;
     }
+    return AUDIO_STREAM_ACTION_MOVE;
 }
 
 void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
@@ -740,7 +760,9 @@ bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescri
 {
     CHECK_AND_RETURN_RET(!streamDesc->IsRunning(), false);
     CHECK_AND_RETURN_RET_LOG(streamDescToOldPipeInfo.size() != 0, false, "streamDescToOldPipeInfo is empty!");
-    return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
+    const auto sessionID = streamDesc->GetSessionId();
+    CHECK_AND_RETURN_RET(streamDescToOldPipeInfo[sessionID], false);
+    return (streamDescToOldPipeInfo[sessionID]->IsRenderPipeNeedMoveToNormal() &&
         streamDesc->IsRenderStreamNeedRecreate());
 }
 

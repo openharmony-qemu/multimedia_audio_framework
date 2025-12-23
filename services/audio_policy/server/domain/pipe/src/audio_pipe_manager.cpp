@@ -239,6 +239,19 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
     return "";
 }
 
+AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
+    const std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
+{
+    AudioStreamInfo streamInfo = pipeInfo->audioStreamInfo_;
+    if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        const std::string &rate = pipeInfo->moduleInfo_.rate; 
+        if (rate == "96000") {
+            streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+        }
+    }
+    return streamInfo;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoBySessionId(
     uint32_t sessionId, AudioStreamInfo &streamInfo)
 {
@@ -249,9 +262,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
             CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
                 desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ == sessionId) {
-                AUDIO_INFO_LOG("Device type: %{public}d", desc->newDeviceDescs_.front()->deviceType_);
-                streamInfo = pipeInfo->audioStreamInfo_;
-                return desc->newDeviceDescs_.front();
+                const auto deviceDesc = desc->newDeviceDescs_.front()
+                AUDIO_INFO_LOG("Device type: %{public}d", deviceDesc->deviceType_);
+                streamInfo = DecideStreamInfo(pipeInfo, deviceDesc);
+                return deviceDesc;
             }
         }
     }

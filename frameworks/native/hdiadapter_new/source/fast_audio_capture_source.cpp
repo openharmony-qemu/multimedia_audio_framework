@@ -451,6 +451,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
 
 void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
+    deviceDesc.desc = const_cast<char *>("");
     switch (static_cast<DeviceType>(attr_.deviceType)) {
         case DEVICE_TYPE_MIC:
             deviceDesc.pins = PIN_IN_MIC;
@@ -464,12 +465,15 @@ void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &device
         case DEVICE_TYPE_BLUETOOTH_SCO:
             deviceDesc.pins = PIN_IN_BLUETOOTH_SCO_HEADSET;
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
+            deviceDesc.pins = PIN_OUT_USB_HEADSET;
+            break;
         default:
             AUDIO_WARNING_LOG("unsupport, use default, deviceType: %{public}d", attr_.deviceType);
             deviceDesc.pins = PIN_IN_MIC;
             break;
     }
-    deviceDesc.desc = const_cast<char *>("");
 }
 
 void FastAudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene)
@@ -486,8 +490,9 @@ int32_t FastAudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create capture, type: %{public}d, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "device: %{public}u", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
+    AUDIO_INFO_LOG("create capture, adapterName %{public}s type: %{public}d, rate: %{public}u, channel: %{public}u, "
+        "format: %{public}u, device: %{public}u",
+        attr_.adapterName.c_str(), param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -510,6 +515,16 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     int32_t ret = deviceManager->SetInputRoute(attr_.adapterName, inputDevice, streamId, inputType);
     ChangePipeDevice({ inputDevice });
     return ret;
+}
+
+void FastAudioCaptureSource::EnableSyncInfo(const int32_t syncInfoSize)
+{
+    if (syncInfoSize == 0) {
+        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
+        return;
+    }
+    syncInfoSize_ = syncInfoSize;
+    AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", syncInfoSize);
 }
 
 int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
@@ -537,8 +552,8 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "buffer size will overflow");
-
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte;
+    EnableSyncInfo(desc.syncInfoSize);
     return SUCCESS;
 }
 

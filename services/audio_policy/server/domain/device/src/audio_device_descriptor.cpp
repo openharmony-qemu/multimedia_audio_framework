@@ -245,6 +245,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     isEnable_ = deviceDescriptor.isEnable_;
     exceptionFlag_ = deviceDescriptor.exceptionFlag_;
     deviceUsage_ = deviceDescriptor.deviceUsage_;
+    audioParameters_ = deviceDescriptor.audioParameters_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor.isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
@@ -286,6 +287,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     isEnable_ = deviceDescriptor->isEnable_;
     exceptionFlag_ = deviceDescriptor->exceptionFlag_;
     deviceUsage_ = deviceDescriptor->deviceUsage_;
+    audioParameters_ = deviceDescriptor->audioParameters_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor->isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
@@ -324,6 +326,43 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
 void AudioDeviceDescriptor::SetClientInfo(const ClientInfo &clientInfo) const
 {
     clientInfo_ = clientInfo;
+}
+
+std::string AudioDeviceDescriptor::ParseArmUsbAudioParameters(const AudioParametersKey key) const
+{
+    CHECK_AND_RETURN_RET(!audioParameters_.empty(), "");
+    std::string keyStr = "";
+    if (getRole() == DeviceRole::OUTPUT_DEVICE) {
+        keyStr = "sink_";
+    } else if (getRole() == DeviceRole::INPUT_DEVICE) {
+        keyStr = "source_";
+    } else {
+        return "";
+    }
+
+    if (key == AudioParametersKey::SAMPLE_RATE) {
+        keyStr += "rate:";
+    } else if (key == AudioParameterKey::FORMAT) {
+        keyStr += "format:";
+    } else if (key == AudioParameterKey::SUPPORT_MMAP) {}
+        keyStr += "support_mmap";
+    } else 
+        return "";
+    }
+
+    const std::string sep = ";";
+    auto itBegin = audioParameters_.find(keyStr);
+    auto itEnd = audioParameters_.find(sep, itBegin);
+    CHECK_AND_RETURN_RET(itBegin != itEnd, "");
+    return audioParameters_.substr(itBegin + keyStr.size(), itEnd - itBegin - keyStr.size());
+}
+
+std::string AudioDeviceDescriptor::ParseAudioParameters(const AudioParametersKey key) const
+{
+    if (getType() == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET) {
+        return ParseArmUsbAudioParameters(key);
+    }
+    return ""
 }
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const

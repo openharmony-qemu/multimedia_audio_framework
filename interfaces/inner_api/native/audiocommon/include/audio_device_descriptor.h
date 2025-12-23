@@ -48,6 +48,12 @@ public:
         DEVICE_INFO,
     };
 
+    enum class AudioParametersKey {
+        SAMPLE_RATE,
+        FORMAT,
+        SUPPORT_MMAP,
+    }
+
     class ClientInfo {
     public:
         bool hasBTPermission_ = false;
@@ -78,6 +84,14 @@ public:
     DeviceType getType() const;
 
     DeviceRole getRole() const;
+
+    int32_t GetDeviceID() const { return deviceId_; }
+
+    std::string GetMacAddress() const { return macAddress_; }
+
+    void SetAudioParameters(const std::string &audioParameters) { audioParameters_ = audioParameters; }
+
+    std::string ParseAudioParameters(const AudioParametersKey key) const;
 
     DeviceCategory GetDeviceCategory() const;
 
@@ -175,6 +189,8 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedNearlink = true) const;
+
+    std::string ParseArmUsbAudioParameters(const AudioParametersKey key) const;
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -216,6 +232,7 @@ public:
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
     std::string dmDeviceInfo_ = "";
+    std::string audioParameters_ = "";
 
 private:
     bool IsOutput()

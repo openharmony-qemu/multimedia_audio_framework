@@ -3078,6 +3078,16 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
     return SUCCESS;
 }
 
+bool AudioServer::NeedDelayCreateSink(const uint32_t idBase, const uint32_t idType, const std::string &idInfo)
+{
+    CHECK_AND_RETURN_RET(idBase == HDI_ID_BASE_RENDER, false);
+    if (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo || HDI_ID_INFO_USB == idInfo) {
+        AUDIO_INFO_LOG("delay create");
+        return true;
+    }
+    false;
+}
+
 int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
     const IAudioSinkAttr &attr, uint32_t &renderId)
 {
@@ -3097,10 +3107,7 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     }
 
     // if stream is fast, create when endpoint config to reduce power
-    if (idBase == HDI_ID_BASE_RENDER && (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo)) {
-        AUDIO_INFO_LOG("Fast stream delay create");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(!NeedDelayCreateSink(idBase, idType, idInfo), SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {
         AUDIO_WARNING_LOG("Sink is nullptr");
@@ -3113,6 +3120,16 @@ int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std:
     }
     RegisterSinkLatencyFetcher(renderId);
     return SUCCESS;
+}
+
+bool AudioServer::NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo)
+{
+    CHECK_AND_RETURN_RET(idBase == HDI_ID_BASE_CAPTURE, false);
+    if (HDI_ID_TYPE_FAST == idType || HDI_ID_INFO_MMAP == idInfo || HDI_ID_INFO_USB == idInfo) {
+        AUDIO_INFO_LOG("delay create");
+        return true;
+    }
+    false;
 }
 
 int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
@@ -3129,10 +3146,7 @@ int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const st
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
 
     // if stream is fast, create when endpoint config to reduce power
-    if (idBase == HDI_ID_BASE_CAPTURE && HDI_ID_TYPE_FAST == idType) {
-        AUDIO_INFO_LOG("Fast stream delay create");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(!NeedDelayCreateSource(idBase, idType, idInfo), SUCCESS);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(captureId, true);
     if (source == nullptr) {
         AUDIO_WARNING_LOG("Source is nullptr");

@@ -1300,26 +1300,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_047, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_048
- * @tc.desc  : Test AudioEndpointInner::GetFastSource()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_048, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::string networkId = "RemoteDevice";
-    IAudioSourceAttr attr = {};
-    audioEndpointInner->GetFastSource(networkId, type, attr);
-}
-
-/*
  * @tc.name  : Test MockCallbacks API
  * @tc.type  : FUNC
  * @tc.number: MockCallbacks_049
