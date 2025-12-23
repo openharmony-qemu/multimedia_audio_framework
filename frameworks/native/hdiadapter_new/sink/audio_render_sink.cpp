@@ -1265,5 +1265,10 @@ void AudioRenderSink::WaitForDataLinkConnected()
     dataConnectionWaitLock.unlock();
 }
 
+bool AudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

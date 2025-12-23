@@ -314,6 +314,33 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     }
 }
 
+static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
+{
+    auto limitFunc = [](uint32_t renderId) -> bool {
+        uint32_t type = IdHandler::GetInstance().ParseType(renderId);
+        std::string info = IdHandler::GetInstance().ParseInfo(renderId);
+        if (type == HDI_ID_TYPE_PRIMARY) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        if (type == HDI_ID_TYPE_OFFLOAD) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        if (type == HDI_ID_TYPE_MULTICHANNEL) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        return false;
+    };
+    auto processFunc = [deviceTypes, limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
+        CHECK_AND_RETURN_RET(sink != nullptr && sink->IsInited(), SUCCESS);
+
+        sink->UpdateActiveDevice(deviceTypes);
+        return SUCCESS;
+    };
+    (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+    return SUCCESS;
+}
+
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
 static std::vector<std::pair<std::string, std::string>> ConvertStringPair(const std::vector<StringPair> &stringPair)
 {
@@ -1494,16 +1521,15 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForAllSinks(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForAllSinks(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
-
     return SUCCESS;
 }
 

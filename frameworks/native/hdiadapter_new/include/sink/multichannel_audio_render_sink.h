@@ -69,6 +69,8 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     int32_t SetSinkMuteForSwitchDevice(bool mute) override;
+
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);

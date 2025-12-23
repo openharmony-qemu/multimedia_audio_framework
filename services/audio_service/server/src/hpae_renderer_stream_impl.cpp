@@ -260,6 +260,16 @@ int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 
 uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
 {
+    std::string deviceClass;
+    std::string deviceNetId;
+    {
+        std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+        deviceClass = deviceClass_;
+        deviceNetId = deviceNetId_;
+    }
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId);
+    CHECK_AND_RETURN_RET(audioRendererSink->IsInA2dpOffload(), 0);
+
     Trace trace("HpaeRendererStreamImpl::GetA2dpOffloadLatency");
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;

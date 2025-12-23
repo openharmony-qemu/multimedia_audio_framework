@@ -717,5 +717,11 @@ int32_t MultichannelAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 
     return SUCCESS;
 }
+
+bool MultichannelAudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

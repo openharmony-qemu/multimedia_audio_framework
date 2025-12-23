@@ -1857,7 +1857,8 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
         return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
     } else {
         int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
-        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
+        if ((writableSizeInFrame > 0) &&
+            ((totalSizeInFrame_ - static_cast<uint32_t>(writableSizeInFrame)) < spanSizeInFrame_)) {
             return true;
         }
     }

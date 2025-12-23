@@ -119,6 +119,7 @@ private:
     void NotifyFirstStreamData();
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
