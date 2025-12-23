@@ -1923,14 +1923,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     SourceType existSourceType = existAudioFocusType.sourceType;
     SourceType incomingSourceType = incomingAudioFocusType.sourceType;
     UpdateFocusStrategy(bundleName, focusEntry, IsMediaStream(existStreamType), IsMediaStream(incomingStreamType));
-    if (uid == static_cast<int32_t>(AUDIO_ID)) {
-        AUDIO_INFO_LOG("lake app:%{public}s access", std::to_string(uid).c_str());
-        UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType, std::to_string(uid),
-            bundleName, focusEntry);
-    } else {
-        UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType, currentBundleName,
-            bundleName, focusEntry);
-    }
+    UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     if (interruptCustom_ != nullptr) {
@@ -1950,6 +1943,25 @@ void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
+}
+
+void AudioInterruptService::UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    int32_t uid = incomingInterrupt.uid;
+    std::string bundleName = GetAudioInterruptBundleName(incomingInterrupt);
+    std::string currentBundleName = GetAudioInterruptBundleName(currentInterrupt);
+    AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
+    AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
+    if (uid == static_cast<int32_t>(AUDIO_ID)) {
+        AUDIO_INFO_LOG("lake app:%{public}s access", std::to_string(uid).c_str());
+        UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType, std::to_string(uid),
+            bundleName, focusEntry);
+    } else {
+        UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType, currentBundleName,
+            bundleName, focusEntry);
+    }
+
 }
 
 void AudioInterruptService::UpdateMicFocusStrategy(const AudioFocusType &existAudioFocusType,
