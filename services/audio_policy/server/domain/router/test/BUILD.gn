@@ -261,10 +261,6 @@ ohos_unittest("stream_filter_router_ext_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/stream_filter_router_unit_test/src/stream_filter_router_ext_unit_test.cpp",
   ]
