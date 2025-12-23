@@ -82,6 +82,10 @@ public:
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
+    bool IsOtherMediaPlaying();
+
+    bool CheckPlaying(const AudioInterrupt &audioInterrupt);
+
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioManagerInterruptCallback();

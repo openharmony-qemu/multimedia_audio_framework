@@ -110,6 +110,13 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
+bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager)
+{
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
+    return ohAudioSessionManager->IsOtherMediaPlaying();
+}
+
 OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSessionManager *audioSessionManager,
     OH_AudioDevice_Usage deviceUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
 {
@@ -584,6 +591,12 @@ bool OHAudioSessionManager::IsAudioSessionActivated()
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
     return audioSessionManager_->IsAudioSessionActivated();
+}
+
+bool OHAudioSessionManager::IsOtherMediaPlaying()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
+    return audioSessionManager_->IsOtherMediaPlaying();
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionScene(AudioSessionScene sene)

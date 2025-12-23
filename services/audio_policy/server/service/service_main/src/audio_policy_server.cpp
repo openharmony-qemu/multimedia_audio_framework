@@ -5114,6 +5114,17 @@ int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsOtherMediaPlaying(bool &isExistence)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        isExistence = false;
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
+    isExistence = interruptService_->IsOtherMediaPlaying();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
 {
     if (interruptService_ == nullptr) {

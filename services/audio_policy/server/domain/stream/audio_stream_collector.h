@@ -90,6 +90,7 @@ public:
     AudioStreamType GetStreamType(int32_t sessionId);
     int32_t GetChannelCount(int32_t sessionId);
     int32_t GetUid(int32_t sessionId);
+    bool GetBackMuteBySessionId(int32_t sessionId);
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
