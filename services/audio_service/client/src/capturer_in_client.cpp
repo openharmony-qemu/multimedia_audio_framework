@@ -205,10 +205,16 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM,
-        HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
-
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
+    } else {
+        CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
+    }
+    
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
@@ -429,7 +435,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appTokenId = appTokenId_;
     config.appInfo.appFullTokenId = fullTokenId_;
 
-    config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    }
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);

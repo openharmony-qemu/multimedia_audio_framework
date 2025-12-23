@@ -76,6 +76,7 @@ private:
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturerWrapper(napi_env env, const AudioCapturerOptions capturerOptions);
     static napi_value CreateAudioCapturer(napi_env env, napi_callback_info info);
+    static napi_value CreateMicInAudioCapturer(napi_env env, napi_callback_info info);
     static napi_value CreateAudioCapturerSync(napi_env env, napi_callback_info info);
     static napi_value GetCapturerInfo(napi_env env, napi_callback_info info);
     static napi_value GetCapturerInfoSync(napi_env env, napi_callback_info info);

@@ -177,6 +177,8 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    FILE *ecDumpFile_ = nullptr;
+    std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;

@@ -64,8 +64,8 @@ void AudioBackgroundManager::SubscribeBackgroundTask()
     }
 }
 
-bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid,
-    int32_t streamUsage, bool &silentControl)
+bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+    StreamUsage streamUsage, bool &silentControl)
 {
     std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     if (!FindKeyInMap(pid)) {
@@ -78,19 +78,20 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     AUDIO_INFO_LOG("appStatesMap_ start pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
         appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
+    StartStreamInfo startStreamInfo = {uid, pid, sessionId};
     if (!(appState.isBack && !appState.isSystem)) {
-        streamCollector_.HandleStartStreamMuteState(uid, pid, false, false, silentControl);
+        streamCollector_.HandleStartStreamMuteState(startStreamInfo, false, false, silentControl);
         return true;
     }
     bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
     if (appState.hasSession) {
-        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, false, silentControl);
+        streamCollector_.HandleStartStreamMuteState(startStreamInfo, mute, false, silentControl);
         return true;
     }
     bool mediaUsage = std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
         streamUsage) != 0;
     if (!mediaUsage) {
-        streamCollector_.HandleStartStreamMuteState(uid, pid, mute, true, silentControl);
+        streamCollector_.HandleStartStreamMuteState(startStreamInfo, mute, true, silentControl);
         return true;
     }
     HandleSessionStateChange(uid, pid, silentControl);

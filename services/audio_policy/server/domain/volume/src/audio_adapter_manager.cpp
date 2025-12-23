@@ -1473,6 +1473,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_VOICE_RECOGNITION;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_RAW_AI) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_RAW_AI;
+        }
     }
 }
 
@@ -3692,7 +3696,7 @@ void AudioAdapterManager::RemoteVolumeCallback::OnAudioParameterChange(const std
                 AudioAdapterManager::GetInstance().SetVolumeFromRemote(networkId, volumeDegree);
                 return;
             }
-            if (condition.find("MUTE_CHANAGE") == 0) {
+            if (condition.find("MUTE_CHANGE") == 0) {
                 int32_t mute = std::stoi(value);
                 AudioAdapterManager::GetInstance().SetMuteFromRemote(networkId, mute);
                 return;

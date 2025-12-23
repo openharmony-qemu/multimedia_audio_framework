@@ -46,6 +46,7 @@ enum AudioFlag : uint32_t {
     AUDIO_INPUT_FLAG_UNPROCESS = 0x40000, // select, route
     AUDIO_INPUT_FLAG_ULTRASONIC = 0x80000, // select, route
     AUDIO_INPUT_FLAG_VOICE_RECOGNITION = 0x100000, // select, route
+    AUDIO_INPUT_FLAG_RAW_AI = 0x200000, // select, route
     AUDIO_FLAG_MAX,
 };
 

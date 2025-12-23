@@ -1222,7 +1222,7 @@ int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
     float *resampleOutBuff =
         reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, outBuffLen));
     ret = resampler_->Process(resampleInBuff, resampleInBuffSize, resampleOutBuff, resampleOutBuffSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[CaptureDataResampleProcess]Capture data resample failed, "
             "srcRate:%{public}u, dstRate:%{public}u", srcRate, dstRate));
 

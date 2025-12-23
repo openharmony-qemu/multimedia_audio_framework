@@ -78,7 +78,7 @@ int32_t AudioServer::RegisterCallbackHandle(const sptr<IRemoteObject> &object)
     sptr<IAudioEngineCallbackHandle> handle = iface_cast<IAudioEngineCallbackHandle>(object);
     CHECK_AND_RETURN_RET_LOG(handle != nullptr, ERR_INVALID_PARAM, "remote object invalid when cast interface");
     pid_t pid = IPCSkeleton::GetCallingPid();
-    uid_t uid = IPCSkeleton::GetCallingUid();
+    uid_t uid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     {
         std::lock_guard<std::mutex> lock(cbLock_);
         CHECK_AND_RETURN_RET_LOG(cbHandles_.find(pid) == cbHandles_.end(),

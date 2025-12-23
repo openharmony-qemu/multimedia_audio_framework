@@ -438,7 +438,8 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
             sleepCount_ = LOG_COUNT_LIMIT;
         } else {
             int32_t readableSizeInFrames = clientBuffer_->GetReadableDataFrames();
-            bool flagTryPrintLog = ((readableSizeInFrames >= 0) && (readableSizeInFrames < spanSizeInFrame_));
+            bool flagTryPrintLog = ((readableSizeInFrames >= 0)
+                && (static_cast<uint32_t>(readableSizeInFrames) < spanSizeInFrame_));
             if (flagTryPrintLog && (sleepCount_++ == LOG_COUNT_LIMIT)) {
                 sleepCount_ = 0;
                 AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
@@ -681,15 +682,13 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
                 return (state_ != RUNNING) || CheckBufferNeedWrite();
             });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        CHECK_AND_CALL_RET_FUNC(futexRes != FUTEX_TIMEOUT, ERROR,
-            HILOG_COMM_ERROR("[WriteCacheData]write data time out, mode is %{public}s",
-                (offloadEnable_ ? "offload" : "normal")));
+        CHECK_AND_CALL_RET_FUNC(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
+            "time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal")));
 
         uint64_t writePos = clientBuffer_->GetCurWriteFrame();
         uint64_t readPos = clientBuffer_->GetCurReadFrame();
-        CHECK_AND_CALL_RET_FUNC(writePos >= readPos, ERROR,
-            HILOG_COMM_ERROR("[WriteCacheData]writePos: %{public}" PRIu64 " readPos: %{public}" PRIu64 "",
-                writePos, readPos));
+        CHECK_AND_CALL_RET_FUNC(writePos >= readPos, ERROR, HILOG_COMM_ERROR("[WriteCacheData]writePos: "
+            "%{public}" PRIu64 " readPos: %{public}" PRIu64 "", writePos, readPos));
         RingBufferWrapper ringBuffer;
         int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
         CHECK_AND_CALL_RET_FUNC(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR,
@@ -706,9 +705,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
 
     preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
 
-    if (!ProcessVolume()) {
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET(ProcessVolume(), ERR_OPERATION_FAILED);
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
     VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);

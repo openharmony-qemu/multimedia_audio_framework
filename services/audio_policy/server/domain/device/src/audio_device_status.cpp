@@ -1320,8 +1320,17 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
 #ifdef BLUETOOTH_ENABLE
 void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
 {
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && !audioDeviceManager_.GetScoState()) {
-        Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc.macAddress_);
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioRendererInfo rendererInfo = {};
+        rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+            audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo);
+        CHECK_AND_RETURN(preferredDeviceList.size() > 0);
+        if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
+        } else {
+            Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
+        }
     }
 }
 #endif

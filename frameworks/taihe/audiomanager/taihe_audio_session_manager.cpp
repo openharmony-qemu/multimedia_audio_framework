@@ -88,6 +88,15 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
     return audioSessionMngr_->IsAudioSessionActivated();
 }
 
+bool AudioSessionManagerImpl::IsOtherMediaPlaying()
+{
+    if (audioSessionMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
+        return false;
+    }
+    return audioSessionMngr_->IsOtherMediaPlaying();
+}
+
 DeviceType AudioSessionManagerImpl::GetDefaultOutputDevice()
 {
     if (audioSessionMngr_ == nullptr) {

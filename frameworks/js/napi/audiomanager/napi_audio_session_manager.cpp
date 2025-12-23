@@ -104,6 +104,7 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setBluetoothAndNearlinkPreferredRecordCategory", PreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("getBluetoothAndNearlinkPreferredRecordCategory", GetPreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("enableMuteSuggestionWhenMixWithOthers", EnableMuteSuggestionWhenMixWithOthers),
+        DECLARE_NAPI_FUNCTION("isOtherMediaPlaying", IsOtherMediaPlaying),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -238,6 +239,33 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         NapiParamUtils::SetValueInt32(env, context->intValue, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "DeactivateAudioSession", executor, complete);
+}
+
+napi_value NapiAudioSessionMgr::IsOtherMediaPlaying(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("IsOtherMediaPlaying failed : no memory");
+        NapiAudioError::ThrowError(env, "IsOtherMediaPlaying failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        NapiParamUtils::SetValueBoolean(env, false, result);
+        return result;
+    }
+    context->GetCbInfo(env, info);
+
+    CHECK_AND_RETURN_RET_LOG(CheckContextStatus(context), result,  "context object state is error.");
+    auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+    ObjectRefMap objectGuard(obj);
+    auto *napiSessionMgr = objectGuard.GetPtr();
+    if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+        NapiParamUtils::SetValueBoolean(env, false, result);
+        return result;
+    }
+    context->isActive = napiSessionMgr->audioSessionMngr_->IsOtherMediaPlaying();
+    NapiParamUtils::SetValueBoolean(env, context->isActive, result);
+    return result;
 }
 
 napi_value NapiAudioSessionMgr::IsAudioSessionActivated(napi_env env, napi_callback_info info)

@@ -512,10 +512,10 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
+int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetDuckFactor(duckFactor);
+        return rendererInServer_->SetDuckFactor(duckFactor, durationMs);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

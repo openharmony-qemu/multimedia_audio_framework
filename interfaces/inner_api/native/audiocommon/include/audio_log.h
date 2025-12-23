@@ -54,7 +54,7 @@
         if (!(cond)) {                                 \
             func;                                      \
         }                                              \
-    }
+    } while (0)
 
 #define CHECK_AND_CALL_RET_FUNC(cond, ret, func)       \
     do {                                               \
@@ -62,7 +62,7 @@
             func;                                      \
             return ret;                                \
         }                                              \
-    }
+    } while (0)
 
 #define CHECK_AND_RETURN_RET_LOG(cond, ret, fmt, ...)  \
     do {                                               \

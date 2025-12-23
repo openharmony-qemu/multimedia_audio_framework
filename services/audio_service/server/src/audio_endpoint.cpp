@@ -1131,8 +1131,6 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
             CHECK_AND_CALL_RET_FUNC(StartDevice(), ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[LinkProcessStream]StartDevice failed"));
         }
-        AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
-        return SUCCESS;
     }
 
     AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
@@ -1400,8 +1398,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         streamType, appUid, processList_[i]->GetAudioSessionId()));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
-    int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
-        processBufferList_[i]->GetDuckFactor() * processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
+    int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetVolumeFromOh();
     float baseVolume = volumeFromOhaudioBuffer * appVolume * doNotDisturbStatusVolume * mdmMuteFactor;
 
     VolumeResult result;
@@ -1893,10 +1890,10 @@ int32_t AudioEndpointInner::ConvertDataFormat(const BufferDesc &readBuf, BufferD
     CHECK_AND_CALL_RET_FUNC(streamInfo.channels == STEREO && streamInfo.channels == dstStreamInfo_.channels, ERROR,
         HILOG_COMM_ERROR("[ConvertDataFormat]now only support STEREO, renderer chn:%{public}d, capture "
             "chn:%{public}d", streamInfo.channels, dstStreamInfo_.channels));
-    CHECK_AND_CALL_RET_FUNC(streamInfo.format == SAMPLE_S16LE && streamInfo.format == dstStreamInfo_.format, ERROR, 
+    CHECK_AND_CALL_RET_FUNC(streamInfo.format == SAMPLE_S16LE && streamInfo.format == dstStreamInfo_.format, ERROR,
         HILOG_COMM_ERROR("[ConvertDataFormat]now only support s16le, renderer format:%{public}d, "
             "capture format:%{public}d", streamInfo.format, dstStreamInfo_.format));
-    CHECK_AND_CALL_RET_FUNC(streamInfo.samplingRate == dstStreamInfo_.samplingRate, ERROR, 
+    CHECK_AND_CALL_RET_FUNC(streamInfo.samplingRate == dstStreamInfo_.samplingRate, ERROR,
         HILOG_COMM_ERROR("[ConvertDataFormat]now only support s16le, renderer rate:%{public}d, "
             "capture rate:%{public}d", streamInfo.samplingRate, dstStreamInfo_.samplingRate));
 
@@ -2179,7 +2176,7 @@ void AudioEndpointInner::ProcessUpdateAppsUidForPlayback()
         }
     }
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-    CHECK_AND_CALL_RET_FUNC(sink, HILOG_COMM_ERROR("[ProcessUpdateAppsUidForPlayback]fastSink_ is nullptr"));
+    CHECK_AND_CALL_FUNC(sink, HILOG_COMM_ERROR("[ProcessUpdateAppsUidForPlayback]fastSink_ is nullptr"));
     sink->UpdateAppsUid(appsUid);
 }
 
@@ -2195,7 +2192,7 @@ void AudioEndpointInner::ProcessUpdateAppsUidForRecord()
         }
     }
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
-    CHECK_AND_CALL_RET_FUNC(source, HILOG_COMM_ERROR("[ProcessUpdateAppsUidForRecord]fastSource_ is nullptr"));
+    CHECK_AND_CALL_FUNC(source, HILOG_COMM_ERROR("[ProcessUpdateAppsUidForRecord]fastSource_ is nullptr"));
     source->UpdateAppsUid(appsUid);
 }
 

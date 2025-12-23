@@ -41,6 +41,7 @@ constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t FRAME_LEN_40MS = 40;
+constexpr uint32_t FRAME_LEN_60MS = 60;
 constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t SAMPLE_RATE_48010 = 48010;
@@ -220,6 +221,26 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_003, TestSize.Level0)
     // Process first 40ms frame, send first half of data to output
     int32_t ret = resampler1.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, RESAMPLER_ERR_OVERFLOW);
+}
+
+/*
+ * @tc.name  : Test Process API.
+ * @tc.type  : FUNC
+ * @tc.number: ProcessTest_005.
+ * @tc.desc  : Test Process, when outFrameLen more than 20ms.
+ */
+ HWTEST_F(AudioProResamplerTest, ProcessTest_005, TestSize.Level0)
+{
+    ProResampler resampler1(SAMPLE_RATE_8000, SAMPLE_RATE_16000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_8000 * FRAME_LEN_60MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_16000 * FRAME_LEN_60MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), resampler1.expectedOutFrameLen_ * resampler1.channels_);
+    int32_t ret = resampler1.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    EXPECT_EQ(resampler1.tmpOutBuf_.size(), outFrameLen * resampler1.channels_);
 }
 
 /*

@@ -307,6 +307,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     if (voiceRecognitionSource != nullptr && voiceRecognitionSource->IsInited()) {
         voiceRecognitionSource->UpdateActiveDevice(type);
     }
+    std::shared_ptr<IAudioCaptureSource> rawAiSource =
+        GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_RAW_AI);
+    if (rawAiSource != nullptr && rawAiSource->IsInited()) {
+        rawAiSource->UpdateActiveDevice(type);
+    }
 }
 
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
@@ -2425,9 +2430,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     int32_t appUid = config.appInfo.appUid;
-    if (appUid == ROOT_UID) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(appUid != ROOT_UID, true);
 #endif
 
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
@@ -2464,7 +2467,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return false;
     }
 
-    if (sourceType == SOURCE_TYPE_WAKEUP) {
+    if (sourceType == SOURCE_TYPE_WAKEUP || sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
         bool hasIntelVoicePermission = VerifyClientPermission(MANAGE_INTELLIGENT_VOICE_PERMISSION, tokenId);
         CHECK_AND_RETURN_RET_LOG(hasSystemPermission && hasIntelVoicePermission, false,
@@ -2617,7 +2620,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         if (type == HDI_ID_TYPE_PRIMARY) {
             return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_USB ||
             info == HDI_ID_INFO_UNPROCESS || info == HDI_ID_INFO_ULTRASONIC ||
-            info == HDI_ID_INFO_VOICE_RECOGNITION;
+            info == HDI_ID_INFO_VOICE_RECOGNITION || info == HDI_ID_INFO_RAW_AI;
         }
 #ifdef SUPPORT_LOW_LATENCY
         if (type == HDI_ID_TYPE_FAST) {

@@ -725,7 +725,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     }
 
     CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
-        HILOG_COMM_ERROR("[CheckRendererAudioStreamInfo]SetAudioStreamInfo Failed"));
+        HILOG_COMM_ERROR("[SetParams]SetAudioStreamInfo Failed"));
     AUDIO_INFO_LOG("SetAudioStreamInfo Succeeded");
 
     RegisterRendererPolicyServiceDiedCallback();
@@ -738,11 +738,11 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     ret = InitOutputDeviceChangeCallback();
     CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
-        HILOG_COMM_ERROR("[CheckRendererAudioStreamInfo]InitOutputDeviceChangeCallback Failed"));
+        HILOG_COMM_ERROR("[SetParams]InitOutputDeviceChangeCallback Failed"));
 
     ret = InitFormatUnsupportedErrorCallback();
     CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
-        HILOG_COMM_ERROR("[CheckRendererAudioStreamInfo]InitFormatUnsupportedErrorCallback Failed"));
+        HILOG_COMM_ERROR("[SetParams]InitFormatUnsupportedErrorCallback Failed"));
 
     InitAudioRouteCallback();
 
@@ -966,10 +966,10 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     currentStream->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl)
+bool AudioRendererPrivate::IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl)
 {
     bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(
-        appInfo_.appUid, appInfo_.appPid, streamUsage, silentControl);
+        appInfo_.appUid, appInfo_.appPid, sessionId, streamUsage, silentControl);
     if (ret) {
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;
@@ -1174,7 +1174,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
     bool silentControl = false;
-    CHECK_AND_CALL_RET_FUNC(IsAllowedStartBackground(audioInterrupt_.streamUsage, silentControl), false,
+    CHECK_AND_CALL_RET_FUNC(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl), false,
         HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
     RendererState state = GetStatusInner();
     CHECK_AND_CALL_RET_FUNC((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -1207,7 +1207,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-        CHECK_AND_CALL_RET_FUNC(ret == 0, false, HILOG_COMM_ERROR("ActivateAudioInterrupt Failed"));
+        CHECK_AND_CALL_RET_FUNC(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
     }
 
     if (IsNoStreamRenderer()) {
@@ -3031,7 +3031,7 @@ int32_t AudioRendererPrivate::StopDataCallback()
 {
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
+    CHECK_AND_CALL_RET_FUNC(state == RENDERER_RUNNING, ERROR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[StopDataCallback]StopDataCallback failed. Illegal state:%{public}u", state));
     return audioStream_->SetOffloadDataCallbackState(3); // 3 hdi state full
 }

@@ -162,6 +162,8 @@ public:
 
     bool IsAudioSessionActivated();
 
+    bool IsOtherMediaPlaying();
+
     OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
     OH_AudioCommon_Result SelectMediaInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     OH_AudioDeviceDescriptor *GetSelectedMediaInputDevice();

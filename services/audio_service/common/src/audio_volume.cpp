@@ -96,6 +96,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         volumes->volumeStream = it->second.totalVolume_;
         volumes->volumeHistory = it->second.historyVolume_;
         volumes->volumeApp = it->second.appVolume_;
+        volumes->durationMs = it->second.durationMs_;
         appUid = it->second.GetAppUid();
         if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.IsSystemApp()) {
             volumeType = STREAM_MUSIC;
@@ -216,13 +217,24 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
     return 0.0f;
 }
 
-void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
+uint32_t AudioVolume::GetDurationMs(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    if (it != streamVolume_.end()) {
+        return it->second.durationMs_;
+    }
+    return 0;
+}
+
+void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume, uint32_t durationMs)
 {
     AUDIO_DEBUG_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.historyVolume_ = volume;
+        it->second.durationMs_ = durationMs;
     }
 }
 
@@ -270,14 +282,15 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
     }
 }
 
-void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor)
+void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor, uint32_t durationMs)
 {
-    AUDIO_INFO_LOG("[SetStreamVolumeDuckFactor]stream volume, sessionId:%{public}u, duckFactor:%{public}f",
-        sessionId, duckFactor);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, duckFactor:%{public}f, durationMs:%{public}d",
+        sessionId, duckFactor, durationMs);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.duckFactor_ = duckFactor;
+        it->second.durationMs_ = durationMs;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
             it->second.isDualMuted_) ? 0.0f :

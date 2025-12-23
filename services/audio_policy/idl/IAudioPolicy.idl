@@ -231,7 +231,7 @@ interface IAudioPolicy {
     void GetInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetAudioDeviceAnahsCallback([in] IRemoteObject object);
     void UnsetAudioDeviceAnahsCallback();
-    void IsAllowedPlayback([in] int uid, [in] int pid, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
+    void IsAllowedPlayback([in] int uid, [in] int pid, [in] unsigned int sessionId, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
@@ -313,5 +313,6 @@ interface IAudioPolicy {
     void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
+    void IsOtherMediaPlaying([out] boolean retIsExistence);
 }
 

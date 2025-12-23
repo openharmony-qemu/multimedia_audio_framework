@@ -819,6 +819,8 @@ interface AudioSessionManager {
 
   IsAudioSessionActivated(): bool;
 
+  IsOtherMediaPlaying(): bool;
+
   GetDefaultOutputDevice(): DeviceType;
 
   SetAudioSessionScene(scene: AudioSessionScene): void;
