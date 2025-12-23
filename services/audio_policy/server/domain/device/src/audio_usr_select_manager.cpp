@@ -108,9 +108,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t index)
 {
-    CHECK_AND_RETURN_RET(recordDeviceInfoList_[0].appPreferredCategory_ !=
+    CHECK_AND_RETURN_RET(recordDeviceInfoList_[index].appPreferredCategory_ !=
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, std::make_shared<AudioDeviceDescriptor>());
     std::vector<DeviceType> types = {
         DEVICE_TYPE_NEARLINK,
