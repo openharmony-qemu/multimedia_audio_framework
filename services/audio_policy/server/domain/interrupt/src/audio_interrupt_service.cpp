@@ -1961,7 +1961,6 @@ void AudioInterruptService::UpdateMicFocusByUid(const AudioInterrupt &currentInt
         UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType, currentBundleName,
             bundleName, focusEntry);
     }
-
 }
 
 void AudioInterruptService::UpdateMicFocusStrategy(const AudioFocusType &existAudioFocusType,
