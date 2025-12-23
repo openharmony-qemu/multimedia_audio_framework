@@ -90,10 +90,7 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
 
 bool AudioSessionManagerImpl::IsOtherMediaPlaying()
 {
-    if (audioSessionMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr, false, "audioSessionMngr_ is nullptr");
     return audioSessionMngr_->IsOtherMediaPlaying();
 }
 
