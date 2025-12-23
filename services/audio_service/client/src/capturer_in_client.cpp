@@ -205,19 +205,22 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+    CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+        ERROR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
 
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
+        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
     }
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream(config);
-    CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
+    CHECK_AND_CALL_RET_FUNC(initRet == SUCCESS, initRet,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
 
@@ -502,7 +505,8 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     AudioProcessConfig config = ConstructConfig();
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
+    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = nullptr;
     gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);

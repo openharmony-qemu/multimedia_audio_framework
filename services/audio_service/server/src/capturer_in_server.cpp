@@ -732,7 +732,8 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =
             CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
+        CHECK_AND_CALL_RET_FUNC(result == SUCCESS, result,
+            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);

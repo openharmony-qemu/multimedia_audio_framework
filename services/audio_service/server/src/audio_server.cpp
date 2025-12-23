@@ -2062,9 +2062,11 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
-    CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
-        ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
-    CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
+    CHECK_AND_CALL_RET_FUNC(CheckConfigFormat(resetConfig), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
+        ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
+    CHECK_AND_CALL_RET_FUNC(PermissionChecker(resetConfig), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission"));
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2086,7 +2088,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     }
     if (IsSatellite(resetConfig, callingUid)) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_RETURN_RET_LOG(isSupportSate, nullptr, "Do not support satellite");
+        CHECK_AND_CALL_RET_FUNC(isSupportSate, nullptr,
+            HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
         if (deviceManager != nullptr) {
@@ -2430,7 +2433,8 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_TRANSCRIPTION failed: no system permission.");
+        CHECK_AND_CALL_RET_FUNC(hasSystemPermission, false,
+            HILOG_COMM_ERROR("[CheckRecorderPermission]VOICE_TRANSCRIPTION failed: no system permission."));
     }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
