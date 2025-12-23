@@ -2643,7 +2643,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.L
     EXPECT_NE(nullptr, rendererInServer);
 
     float duck = 0.2f;
-    int32_t ret = rendererInServer->SetDuckFactor(duck);
+    int32_t ret = rendererInServer->SetDuckFactor(duck, 0);
     EXPECT_EQ(SUCCESS, ret);
 }
 

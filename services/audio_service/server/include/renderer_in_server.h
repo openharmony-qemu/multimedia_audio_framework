@@ -133,7 +133,7 @@ public:
     int32_t SetClientVolume();
     int32_t SetLoudnessGain(float loudnessGain);
     int32_t SetMute(bool isMute);
-    int32_t SetDuckFactor(float duckFactor);
+    int32_t SetDuckFactor(float duckFactor, uint32_t durationMs);
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false);
     int32_t SetSourceDuration(int64_t duration);
 

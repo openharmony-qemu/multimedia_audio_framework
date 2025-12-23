@@ -399,7 +399,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->SetSilentModeAndMixWithOthers(false);
     ipcStream->SetClientVolume();
     ipcStream->SetMute(false);
-    ipcStream->SetDuckFactor(volume);
+    ipcStream->SetDuckFactor(volume, 0);
     ipcStream->Stop();
     ipcStream->Release(false);
 }

@@ -61,6 +61,7 @@ static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
+static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 }
 
 class ProcessCbImpl;
@@ -536,7 +537,7 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     duckVolumeInFloat_ = vol;
 
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
-    audioBuffer_->SetDuckFactor(vol);
+    audioBuffer_->SetDuckFactor(vol, DUCK_UNDUCK_DURATION_MS);
 
     return SUCCESS;
 }

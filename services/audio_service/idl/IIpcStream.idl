@@ -57,7 +57,7 @@ interface IIpcStream {
     void SetSilentModeAndMixWithOthers([in] boolean on);
     void SetClientVolume();
     void SetMute([in] boolean isMute);
-    void SetDuckFactor([in] float duckFactor);
+    void SetDuckFactor([in] float duckFactor, [in] unsigned int durationMs);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
