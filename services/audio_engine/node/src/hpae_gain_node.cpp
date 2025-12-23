@@ -43,17 +43,6 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
 {
     isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
         GetDeviceClass() == VIRTUAL_INJECTOR;
-    auto audioVolume = AudioVolume::GetInstance();
-    float curSystemGain = 1.0f;
-    if (isInnerCapturerOrInjector_) {
-        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
-    } else {
-        struct VolumeValues volumes;
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
-    }
-    audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
-    audioVolume->Monitor(GetSessionId(), true);
-    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
         "SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HIDUMP_DFX
