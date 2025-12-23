@@ -241,7 +241,6 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
 
   public_external_deps += [
     "libxml2:libxml2",
-    "openssl:libcrypto_shared",
   ]
 
   sources = [
