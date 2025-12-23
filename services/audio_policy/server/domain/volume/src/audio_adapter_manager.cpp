@@ -3696,7 +3696,7 @@ void AudioAdapterManager::RemoteVolumeCallback::OnAudioParameterChange(const std
                 AudioAdapterManager::GetInstance().SetVolumeFromRemote(networkId, volumeDegree);
                 return;
             }
-            if (condition.find("MUTE_CHANAGE") == 0) {
+            if (condition.find("MUTE_CHANGE") == 0) {
                 int32_t mute = std::stoi(value);
                 AudioAdapterManager::GetInstance().SetMuteFromRemote(networkId, mute);
                 return;
