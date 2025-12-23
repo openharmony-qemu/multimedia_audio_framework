@@ -345,7 +345,7 @@ std::string AudioDeviceDescriptor::ParseArmUsbAudioParameters(const AudioParamet
     } else if (key == AudioParameterKey::FORMAT) {
         keyStr += "format:";
     } else if (key == AudioParameterKey::SUPPORT_MMAP) {}
-        keyStr += "support_mmap";
+        keyStr += "mmap:";
     } else 
         return "";
     }
