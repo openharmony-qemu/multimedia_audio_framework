@@ -1217,7 +1217,9 @@ HWTEST(AudioPolicyUnitTest, MaxOrMinVolumeOption_001, TestSize.Level1)
     int32_t volLevel = 20;
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
-    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
+    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 0);
+    EXPECT_FALSE(result);
+    result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 1);
     EXPECT_FALSE(result);
 }
 
