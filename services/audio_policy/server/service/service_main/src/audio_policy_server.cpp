@@ -5175,7 +5175,7 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn,
+int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn,
     bool &isAllowed, bool &silentControl)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
@@ -5185,10 +5185,16 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t s
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != MEDIA_SERVICE_UID) {
         auto callerPid = IPCSkeleton::GetCallingPid();
-        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, streamUsage, silentControl);
+        if (!PermissionUtil::VerifySystemPermission() && !coreService_->IsStreamBelongToUid(callerUid, sessionId)) {
+            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to callerUid %{public}d",
+                sessionId, callerUid);
+            return ERR_UNKNOWN;
+        }
+        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, sessionId, streamUsage,
+            silentControl);
         return SUCCESS;
     }
-    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, streamUsage, silentControl);
+    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     return SUCCESS;
 }
 

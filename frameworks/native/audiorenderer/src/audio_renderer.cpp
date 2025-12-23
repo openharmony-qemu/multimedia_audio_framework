@@ -961,10 +961,10 @@ void AudioRendererPrivate::UnsetRendererPeriodPositionCallback()
     currentStream->UnsetRendererPeriodPositionCallback();
 }
 
-bool AudioRendererPrivate::IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl)
+bool AudioRendererPrivate::IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl)
 {
     bool ret = AudioPolicyManager::GetInstance().IsAllowedPlayback(
-        appInfo_.appUid, appInfo_.appPid, streamUsage, silentControl);
+        appInfo_.appUid, appInfo_.appPid, sessionId, streamUsage, silentControl);
     if (ret) {
         AUDIO_INFO_LOG("AVSession IsAudioPlaybackAllowed is: %{public}d", ret);
         return ret;
@@ -1168,7 +1168,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
     bool silentControl = false;
-    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackground(audioInterrupt_.streamUsage, silentControl),
+    CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
         false, "Start failed. IsAllowedStartBackground is false");
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),

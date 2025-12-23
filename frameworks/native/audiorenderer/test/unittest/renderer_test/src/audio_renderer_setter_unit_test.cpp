@@ -2000,8 +2000,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_001, TestS
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    uint32_t sessionId = -1;
     bool silentControl = false;
-    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
+    auto ret = audioRenderer->IsAllowedStartBackground(sessionId, audioRenderer->rendererInfo_.streamUsage,
+        silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -2020,8 +2022,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_002, TestS
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    uint32_t sessionId = -1;
     bool silentControl = false;
-    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
+    auto ret = audioRenderer->IsAllowedStartBackground(sessionId, audioRenderer->rendererInfo_.streamUsage,
+        silentControl);
     EXPECT_EQ(ret, true);
 }
 

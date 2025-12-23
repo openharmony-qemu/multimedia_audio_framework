@@ -33,6 +33,12 @@ const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
     STREAM_USAGE_AUDIOBOOK
 };
 
+struct StartStreamInfo {
+    int32_t uid;
+    int32_t pid;
+    uint32_t sessionId;
+};
+
 class AudioStreamCollector {
 public:
     static AudioStreamCollector& GetAudioStreamCollector()
@@ -68,7 +74,7 @@ public:
     void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia, bool &silentControl);
+    void HandleStartStreamMuteState(StartStreamInfo startStreamInfo, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
