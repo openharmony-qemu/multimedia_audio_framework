@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ss
+ */
 
 /**
  * @addtogroup OHAudio
@@ -956,6 +956,47 @@ typedef enum {
      */
     AUDIOSTREAM_LATENCY_TYPE_HARDWARE = 2
 } OH_AudioStream_LatencyType;
+
+typedef enum {
+    /**
+     * default mode".
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT = 0x0,
+    /**
+     * media mode.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA = 0x1,
+    /**
+     * Self-exclusion mode.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF = 0x8000,
+} OH_AudioStream_PlaybackCaptureMode;
+ 
+typedef enum {
+    /**
+     * Internal recording started successfully.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_SUCCESS = 0,
+/**
+ * Start playback capture failed state, because the request for interrupt is denied
+ * or meet system internal error.
+ * @since 23
+ */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_FAILED = 1,
+/**
+ * Start playback capture but user not authorized state.
+ * @since 23
+ */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_NOT_AUTHORIZED = 2,
+} OH_AudioStream_PlaybackCaptureStartState;
 
 #ifdef __cplusplus
 }
