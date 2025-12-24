@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef CAPTURER_IN_CLIENT_INNER_H
-#define CAPTURER_IN_CLIENT_INNER_Hss
+#define CAPTURER_IN_CLIENT_INNER_H
 
 #include "capturer_in_client.h"
 
