@@ -37,7 +37,7 @@ public:
     explicit OutputPort(std::shared_ptr<AudioNode> node) : audioNode_(node)
     {
         if (audioNode_ == nullptr) {
-            AUDIO_ERROR_LOG("node is nullptr, initialization failed");
+            AUDIO_ERR_LOG("node is nullptr, initialization failed");
             return;
         }
         uint32_t sourceSepara = 2;
