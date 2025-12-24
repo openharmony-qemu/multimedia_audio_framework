@@ -18,7 +18,7 @@
 
 #include <chrono>
 #include <thread>
-#include <vector>ss
+#include <vector>
 
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
@@ -63,6 +63,18 @@ void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t
 int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());
+    return ERR_NOT_SUPPORTED;
+}
+
+void FastAudioStream::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t FastAudioStream::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation: RequestUserPrivacyAuthority");
     return ERR_NOT_SUPPORTED;
 }
 
