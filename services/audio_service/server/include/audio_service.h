@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.xx
+ * limitations under the License.
  */
 
 #ifndef AUDIO_SERVICE_H
@@ -148,6 +148,7 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
