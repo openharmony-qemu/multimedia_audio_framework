@@ -292,6 +292,7 @@ public:
         std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos) override;
     int32_t GetCurrentInputPipeChangeInfos(
         std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -376,6 +377,10 @@ private:
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
 
+    void ResetRecordConfig(AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
+    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
     void ResetRecordConfig(AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
     bool CheckStreamInfoFormat(const AudioProcessConfig &config);
