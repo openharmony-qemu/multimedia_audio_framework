@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "CapturerInServer"
 #endif
-ss
+
 #include "capturer_in_server.h"
 #include <cinttypes>
 #include "securec.h"
@@ -37,6 +37,12 @@ ss
 
 namespace OHOS {
 namespace AudioStandard {
+const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* WELINK_BUNDLENAME = "com.huawei.it.welink";
+const char* WELINK_PC_BUNDLENAME = "com.huawei.it.works";
+const char* WELINK_HMOS_BUNDLENAME = "com.huawei.welink.hmos";
+const char* WELINK_INNER_BUNDLENAME = "com.huawei.welink.hmos.inner";
+const char* WELINK_HMPOSPC_BUNDLENAME = "com.huawei.welink.hmpospc";
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
@@ -533,6 +539,9 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t CapturerInServer::Start()
 {
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
+        filterConfig_.IsModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
+        ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -862,6 +871,32 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
     return stream_->GetLatency(latency);
+}
+
+int32_t CapturerInServer::RequestUserPrivacyAuthority()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    if (status_ == I_STATUS_STARTING || status_ == I_STATUS_STARTED) {
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_FAILED);
+        AUDIO_ERR_LOG("Inner capturer already start");
+        return SUCCESS;
+    }
+    std::string bundleName = GetBundleNameByToken(processConfig_.appInfo.appTokenId);
+ 
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID()) ||
+        bundleName == WELINK_BUNDLENAME || bundleName == WELINK_PC_BUNDLENAME || bundleName == WELINK_HMOS_BUNDLENAME ||
+        bundleName == WELINK_INNER_BUNDLENAME || bundleName == WELINK_HMPOSPC_BUNDLENAME
+        ) {
+        hasRequestUserPrivacyAuthority_ = true;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
+        AUDIO_INFO_LOG("%{public}s request user privacy authority success", bundleName.c_str());
+    } else {
+        hasRequestUserPrivacyAuthority_ = false;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
+        AUDIO_ERR_LOG("%{public}s request user privacy authority failed", bundleName.c_str());
+    }
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)
