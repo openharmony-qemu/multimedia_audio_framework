@@ -36,6 +36,10 @@ class OutputPort {
 public:
     explicit OutputPort(std::shared_ptr<AudioNode> node) : audioNode_(node)
     {
+        if (audioNode_ == nullptr) {
+            AUDIO_ERROR_LOG("node is nullptr, initialization failed");
+            return;
+        }
         uint32_t sourceSepara = 2;
         convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
         tmpData_.resize(1);
