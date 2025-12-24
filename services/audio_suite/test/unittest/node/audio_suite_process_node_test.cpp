@@ -108,7 +108,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
 {
     std::unique_ptr<AudioSuitePcmBuffer> buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_unique<MockInputNode>();
-    OutputPort<AudioSuitePcmBuffer*>* inputNodeOutputPort =
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     inputNodeOutputPort->WriteDataToOutput(buffer.get());
     EXPECT_CALL(*mockInputNode_, DoProcess()).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
