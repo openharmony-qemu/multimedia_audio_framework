@@ -46,10 +46,7 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
-    if (outputStream_ == nullptr) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERR_INVALID_OPERATION, "Create OutputPort is null");
-    }
+    outputStream_ = OutputPort<AudioSuitePcmBuffer*>(GetSharedInstance());
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
@@ -82,7 +79,7 @@ int32_t AudioInputNode::Flush()
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
-    outputStream_->resetResampleCfg();
+    outputStream_.resetResampleCfg();
     return SUCCESS;
 }
 
@@ -98,14 +95,13 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
     return ERROR;
 }
 
-std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioInputNode::GetOutputPort()
+OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
 {
-    return outputStream_;
+    return &outputStream_;
 }
 
 int32_t AudioInputNode::DoProcess()
 {
-    CHECK_AND_RETURN_RET(outputStream_ != nullptr, ERR_INVALID_PARAM, "outputStream is null");
     CHECK_AND_RETURN_RET(GetDataFromUser() == SUCCESS, ERR_WRITE_FAILED, "Get data from user fail");
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED, "Get data from buffer fail");
     return SUCCESS;
@@ -197,7 +193,7 @@ int32_t AudioInputNode::GeneratePushBuffer()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer fail");
 
     outPcmData_.SetIsFinished(GetAudioNodeDataFinishedFlag() && (cachedBuffer_.GetSize() == 0));
-    outputStream_->WriteDataToOutput(&outPcmData_);
+    outputStream_.WriteDataToOutput(&outPcmData_);
     return SUCCESS;
 }
 
