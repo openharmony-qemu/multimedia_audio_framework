@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-ss
+
 #ifndef ST_AUDIO_SERVER_H
 #define ST_AUDIO_SERVER_H
 
