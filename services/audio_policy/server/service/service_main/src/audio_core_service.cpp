@@ -43,6 +43,7 @@ static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int32_t REFETCH_DEVICE = 4;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
+static const std::string NOT_SUPPORT_MMAP_FLAG = "0";
 }
 
 static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
@@ -398,6 +399,19 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
+
+    if (streamDesc->newDeviceDescs_.empty()) {
+        return false;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    const std::string supportMmap =
+        deviceDesc.ParseArmUsbAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
+    if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
+        streamDesc->audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("device not support mmap");
+        return true;
+    }
+
     return false;
 }
 
@@ -493,6 +507,36 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
+bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
+        streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("Forced normal cases");
+        return true;
+    }
+
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        AUDIO_WARNING_LOG("Use normal for remotecast");
+        return true;
+    }
+
+    if (streamDesc->newDeviceDescs_.empty()) {
+        return false;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    const std::string supportMmap =
+        deviceDesc.ParseArmUsbAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
+    if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
+        streamDesc->audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("device not support mmap");
+        return true;
+    }
+
+    return false;
+}
+
 void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
@@ -506,23 +550,13 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         }
     }
 
-    if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
-        streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
-        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal cases");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(RecordIsForcedNormal(streamDesc) == false, "Forced normal");
 
     // fast/normal has done in audioCapturerPrivate
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         // in plan: if has two voip, return normal
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_VOIP;
         AUDIO_INFO_LOG("Use voip");
-        return;
-    }
-    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST) {
-        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_WARNING_LOG("Use normal for remotecast");
         return;
     }
 
