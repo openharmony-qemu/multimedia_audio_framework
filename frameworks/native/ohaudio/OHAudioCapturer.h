@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef OH_AUDIO_CAPTURER_Hss
+#ifndef OH_AUDIO_CAPTURER_H
 #define OH_AUDIO_CAPTURER_H
 
 #include "native_audiocapturer.h"
