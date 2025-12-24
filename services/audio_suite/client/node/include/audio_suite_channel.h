@@ -44,6 +44,21 @@ public:
             tmpData_.resize(sourceSepara);
         }
     }
+
+    OutputPort &operator=(OutputPort &&that) noexcept
+    {
+        if (this != &that) {
+            inputPortSet_ = std::move(that.inputPortSet_);
+            outputData_ = std::move(that.outputData_);
+            audioNode_ = std::move(that.audioNode_);
+            convert_ = std::move(that.convert_);
+            tmpData_ = std::move(that.tmpData_);
+            portType_ = that.portType_;
+        }
+        return *this;
+    }
+
+    OutputPort() = default;
     void WriteDataToOutput(T data);
     OutputPort(const OutputPort &that) = delete;
     std::vector<T> PullOutputData(PcmBufferFormat outFormat, bool needConvert);
@@ -54,6 +69,7 @@ public:
     void SetPortType(AudioNodePortType type) {portType_ = type;}
     AudioNodePortType GetPortType() {return portType_;}
     int32_t resetResampleCfg();
+
 private:
     std::set<InputPort<T>*> inputPortSet_;
     std::vector<T> outputData_;
