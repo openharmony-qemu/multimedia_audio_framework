@@ -57,7 +57,6 @@ public:
         }
         return *this;
     }
-
     OutputPort() = default;
     void WriteDataToOutput(T data);
     OutputPort(const OutputPort &that) = delete;
@@ -69,7 +68,6 @@ public:
     void SetPortType(AudioNodePortType type) {portType_ = type;}
     AudioNodePortType GetPortType() {return portType_;}
     int32_t resetResampleCfg();
-
 private:
     std::set<InputPort<T>*> inputPortSet_;
     std::vector<T> outputData_;
