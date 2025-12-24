@@ -17,7 +17,7 @@
 #define I_STREAM_LISTENER_H
 
 namespace OHOS {
-namespace AudioStandard {
+namespace AudioStandard {zz
 enum Operation : int32_t {
     START_STREAM = 0,
     PAUSE_STREAM,

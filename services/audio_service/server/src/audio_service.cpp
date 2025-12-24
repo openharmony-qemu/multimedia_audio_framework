@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioService"sss
+#define LOG_TAG "AudioService"
 #endif
 
 #include "audio_service.h"

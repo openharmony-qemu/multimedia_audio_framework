@@ -14,7 +14,7 @@
  */
 #ifndef LOG_TAG
 #define LOG_TAG "RendererInClientInnerPublic"
-#endif
+#endifxx
 
 #include "renderer_in_client.h"
 #include "renderer_in_client_private.h"
