@@ -193,7 +193,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
     inputNodeOutputPort->WriteDataToOutput(buffer.get());
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
     node_->Connect(mockInputNode_);
 
     ret = node_->DoProcess();
