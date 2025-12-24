@@ -85,6 +85,7 @@
     *GetPrivacyType*;
     *GetEndPointByType*;
     *SetEndpointMuteForSwitchDevice*;
+    *RequestUserPrivacyAuthority*;
   local:
     *;
 };
