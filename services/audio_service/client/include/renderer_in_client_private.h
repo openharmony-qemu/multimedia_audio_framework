@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef RENDERER_IN_CLIENT_PRIVATE_H
-#define RENDERER_IN_CLIENT_PRIVATE_Hss
+#define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
 
@@ -59,6 +59,9 @@ public:
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
