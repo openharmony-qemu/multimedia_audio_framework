@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.xx
+ * limitations under the License.
  */
 
 /**
@@ -65,6 +65,18 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
+
+/**
+ * @brief Callback function to get playback capture start result.
+ *
+ * @param capturer Pointer to the AudioCapturer instance that triggers the callback.
+ * @param userData Pointer to the user data passed when setting the callback via
+ *     {@link #OH_AudioCapturer_RequestPlaybackCaptureStart}.
+ * @param state The final state to describe whether start request is successful.
+ * @since 23
+ */
+typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(OH_AudioCapturer* capturer, void* userData,
+    OH_AudioStream_PlaybackCaptureStartState stateCode);
 
 /*
  * Request to pause the capturer stream.
@@ -345,6 +357,24 @@ typedef void (*OH_AudioCapturer_OnFastStatusChange)(
     void* userData,
     OH_AudioStream_FastStatus status
 );
+
+/**
+ * Asynchronously request to start the playback capture stream.
+ * This function is non-blocking, which means system will continue to process user authorization and
+ * stream starting when receiving the start request. And the final result will be returned by callback.
+ * @param capturer reference created by {@link #OH_AudioStreamBuilder_GenerateCapturer}
+ * @param callback Callback function used to receive the final result of start request.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return Function result code:
+ *     {@link #AUDIOSTREAM_SUCCESS} If the execution is successful.
+ *     {@link #AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer is nullptr or callback is invalid.
+ *     {@link #AUDIOSTREAM_ERROR_ILLEGAL_STATE} Running and released are illegal states.
+ *     {@link #AUDIOSTREAM_ERROR_SYSTEM} System internal error, like audio service error.
+ * @since 23
+ */
+ 
+OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCapturer* capturer,
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
 
 #ifdef __cplusplus
 }
