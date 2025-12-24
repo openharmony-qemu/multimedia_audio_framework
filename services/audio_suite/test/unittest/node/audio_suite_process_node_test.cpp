@@ -242,7 +242,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSi
             SAMPLE_S16LE,
             SAMPLE_RATE_48000};
 
-    std::unique_ptr<TestAudioSuiteProcessNode> node = 
+    std::unique_ptr<TestAudioSuiteProcessNode> node =
         std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
 
     int32_t dataDurationMS = 20;  // 20 ms pcmbuf duration for example
