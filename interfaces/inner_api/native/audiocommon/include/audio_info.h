@@ -9,7 +9,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific xxlanguage governing permissions and
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 #ifndef AUDIO_INFO_H
@@ -999,6 +999,7 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+    bool IsModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1037,6 +1038,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         parcel.WriteBool(silentCapture);
+        parcel.WriteBool(IsModernInnerCapturer);
         return true;
     }
 
@@ -1097,6 +1099,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         config->silentCapture = parcel.ReadBool();
+
+        config->IsModernInnerCapturer = parcel.ReadBool();
 
         return config;
     }
@@ -1263,6 +1267,15 @@ enum FastStatus {
     FASTSTATUS_NORMAL,
     /** Fast status */
     FASTSTATUS_FAST
+};
+
+enum PlaybackCaptureStartState {
+    /* Internal recording started successfully. */
+    START_STATE_SUCCESS = 0,
+    /* Start playback capture failed */
+    START_STATE_FAILED = 1,
+    /* Start playback capture but user not authorized state. */
+    START_STATE_NOT_AUTHORIZED = 2
 };
 
 struct StreamSwitchingInfo {
