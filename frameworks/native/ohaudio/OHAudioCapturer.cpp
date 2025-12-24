@@ -582,6 +582,20 @@ void OHAudioCapturerFastStatusChangeCallback::OnFastStatusChange(FastStatus stat
     callback_(ohAudioCapturer_, userData_, static_cast<OH_AudioStream_FastStatus>(status));
 }
 
+void OHAudioCapturerOnPlaybackCaptureStartCallback::OnPlaybackCaptureStartResult(
+    PlaybackCaptureStartState state)
+{
+    CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
+ 
+    callback_(ohAudioCapturer_, userData_, static_cast<OH_AudioStream_PlaybackCaptureStartState>(state));
+    if (state == START_STATE_SUCCESS) {
+        OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(ohAudioCapturer_);
+        CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "convert capturer failed");
+        audioCapturer->Start();
+    }
+}
+
 void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData)
 {
     if (readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
@@ -728,6 +742,27 @@ void OHAudioCapturer::SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFas
     audioCapturerFastStatusChangeCallback_ = std::make_shared<OHAudioCapturerFastStatusChangeCallback> (callback,
         reinterpret_cast<OH_AudioCapturer*>(this), userData);
     audioCapturer_->SetFastStatusChangeCallback(audioCapturerFastStatusChangeCallback_);
+}
+
+int32_t OHAudioCapturer::StartPlaybackCapture(OH_AudioCapturer* capturer,
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "callback is nullptr");
+    capturerOnPlaybackCaptureStartCallback_ = std::make_shared<OHAudioCapturerOnPlaybackCaptureStartCallback> (callback,
+        reinterpret_cast<OH_AudioCapturer*>(this), userData);
+    audioCapturer_->SetPlaybackCaptureStartStateCallback(capturerOnPlaybackCaptureStartCallback_);
+ 
+    return audioCapturer_->StartPlaybackCapture();
+}
+ 
+bool OHAudioCapturer::IsModernInnerCapturer()
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
+    AudioCapturerInfo capturerInfo;
+    CHECK_AND_RETURN_RET(audioCapturer_->GetCapturerInfo(capturerInfo) == SUCCESS, false);
+    CHECK_AND_RETURN_RET(capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && IsModernInnerCapturer_, false);
+    return true;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
