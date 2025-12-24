@@ -614,18 +614,6 @@ void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, vo
         AUDIO_WARNING_LOG("The read callback function is not set");
     }
 }
-
-int32_t OHAudioCapturer::StartPlaybackCapture(OH_AudioCapturer* capturer,
-    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData)
-{
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR, "callback is nullptr");
-    capturerOnPlaybackCaptureStartCallback_ = std::make_shared<OHAudioCapturerOnPlaybackCaptureStartCallback> (callback,
-        reinterpret_cast<OH_AudioCapturer*>(this), userData);
-    audioCapturer_->SetPlaybackCaptureStartStateCallback(capturerOnPlaybackCaptureStartCallback_);
- 
-    return audioCapturer_->StartPlaybackCapture();
-}
  
 bool OHAudioCapturer::IsModernInnerCapturer()
 {
