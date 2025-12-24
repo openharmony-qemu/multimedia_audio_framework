@@ -155,4 +155,5 @@ interface IStandardAudioService {
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
     void GetPrivacyTypeAudioServer([in] unsigned int sessionId, [out] int privacyType, [out] int ret);
+   [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
 }
