@@ -1437,36 +1437,6 @@ HWTEST_F(RendererInServerFourthUnitTest, IsHighResolution_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetEAC3ControlParam
- * @tc.type  : FUNC
- * @tc.number: GetEAC3ControlParam_001
- * @tc.desc  : Test GetEAC3ControlParam API
- */
-HWTEST_F(RendererInServerFourthUnitTest, GetEAC3ControlParam_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    int32_t eac3TestFlag = 1;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    rendererInServer->GetEAC3ControlParam();
-    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
-}
-
-/**
- * @tc.name  : Test GetEAC3ControlParam
- * @tc.type  : FUNC
- * @tc.number: GetEAC3ControlParam_002
- * @tc.desc  : Test GetEAC3ControlParam API
- */
-HWTEST_F(RendererInServerFourthUnitTest, GetEAC3ControlParam_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    int32_t eac3TestFlag = 0;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    rendererInServer->GetEAC3ControlParam();
-    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
-}
-
-/**
  * @tc.name  : Test GetPlaybackManager
  * @tc.type  : FUNC
  * @tc.number: GetPlaybackManager_001

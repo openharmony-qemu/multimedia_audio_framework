@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
@@ -63,6 +64,9 @@ std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::directSink_ = nullptr
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::voipSink_ = nullptr;
 IAudioSinkAttr AudioRenderSinkUnitTest::attr_ = {};
 bool AudioRenderSinkUnitTest::primarySinkInited_ = false;
+
+static const uint32_t TEST_RENDER_ID = 1;
+static const uint32_t TEST_STREAM_ID = 100000;
 
 void AudioRenderSinkUnitTest::SetUpTestCase()
 {
@@ -681,6 +685,86 @@ HWTEST_F(AudioRenderSinkUnitTest, VoipSinkUnitTest_005, TestSize.Level1)
     int32_t ret = voipSink_->SetVolume(1.0f, 1.0f);
     EXPECT_EQ(ret, SUCCESS);
     DeInitVoipSink();
+}
+
+/**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : ChangePipeStream_001
+ * @tc.desc   : Test ChangePipeStream() add, change and remove cases
+ */
+HWTEST_F(AudioRenderSinkUnitTest, ChangePipeStream_001, TestSize.Level2)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    primarySink_->InitPipeInfo(TEST_RENDER_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    primarySink_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_PREPARED);
+    auto pipeInfo = primarySink_->GetOutputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySink_->ChangePipeStream(STREAM_CHANGE_TYPE_STATE_CHANGE,
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_RUNNING);
+    pipeInfo = primarySink_->GetOutputPipeInfo();
+    auto streams = pipeInfo->GetStreams();
+    if (streams.find(TEST_STREAM_ID) == streams.end()) {
+        DeInitPrimarySink();
+        FAIL();
+    }
+    EXPECT_EQ(RENDERER_RUNNING, streams[TEST_STREAM_ID].state_);
+
+    primarySink_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE,
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_PREPARED);
+    pipeInfo = primarySink_->GetOutputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : ChangePipeStream_002
+ * @tc.desc   : Test ChangePipeStream() remove all cases
+ */
+HWTEST_F(AudioRenderSinkUnitTest, ChangePipeStream_002, TestSize.Level2)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    primarySink_->InitPipeInfo(TEST_RENDER_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    primarySink_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_PREPARED);
+    auto pipeInfo = primarySink_->GetOutputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySink_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE_ALL,
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_RUNNING);
+    pipeInfo = primarySink_->GetOutputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : ChangePipeStream_003
+ * @tc.desc   : Test ChangePipeStream() abnormal case
+ */
+HWTEST_F(AudioRenderSinkUnitTest, ChangePipeStream_003, TestSize.Level4)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+
+    primarySink_->InitPipeInfo(TEST_RENDER_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    primarySink_->ChangePipeStream(static_cast<StreamChangeType>(STREAM_CHANGE_TYPE_STATE_CHANGE + 1),
+        TEST_STREAM_ID, STREAM_USAGE_MUSIC, RENDERER_PREPARED);
+    auto pipeInfo = primarySink_->GetOutputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySink();
 }
 
 } // namespace AudioStandard

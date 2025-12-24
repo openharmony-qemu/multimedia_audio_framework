@@ -71,6 +71,7 @@ int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
     for (auto &splitStream : splitStreamVector) {
         audioRenderWrapperMap_[splitStream] = {};
     }
+    InitLatencyMeasurement();
     sinkInited_.store(true);
     return SUCCESS;
 }
@@ -88,14 +89,9 @@ void RemoteAudioRenderSink::DeInit(void)
     started_.store(false);
     paused_.store(false);
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    CHECK_AND_RETURN(deviceManager != nullptr);
+    DestroyRender();
     std::unique_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
-        deviceManager->DestroyRender(deviceNetworkId_, it.second.hdiRenderId_);
-        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, it.second.hdiRenderId_);
-        it.second.audioRender_.ForceSetRefPtr(nullptr);
         DumpFileUtil::CloseDumpFile(&it.second.dumpFile_);
     }
     audioRenderWrapperMap_.clear();
@@ -295,26 +291,6 @@ int64_t RemoteAudioRenderSink::GetVolumeDataCount()
     return volumeDataCount_;
 }
 
-int32_t RemoteAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t RemoteAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void RemoteAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string RemoteAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
@@ -417,41 +393,12 @@ int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcl
     return SUCCESS;
 }
 
-int32_t RemoteAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
     AUDIO_INFO_LOG("device: %{public}d", outputDevices[0]);
     return DoSetOutputRoute();
-}
-
-void RemoteAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
-}
-
-void RemoteAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t RemoteAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
@@ -535,6 +482,17 @@ void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamT
     this->streamUsageMap_[splitStreamType] = usage;
 }
 
+void RemoteAudioRenderSink::ReleaseActiveDevice(DeviceType type)
+{
+    AUDIO_INFO_LOG("device: %{public}d", type);
+    if (renderInited_.load()) {
+        DestroyRender();
+        renderInited_.store(false);
+        started_.store(false);
+    }
+    ReleaseOutputRoute();
+}
+
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: RemoteSink\tstarted: " + std::string(started_.load() ? "true" : "false") +
@@ -550,11 +508,6 @@ void RemoteAudioRenderSink::OnAudioParamChange(const std::string &adapterName, c
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
-}
-
-void RemoteAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 AudioFormat RemoteAudioRenderSink::ConvertToHdiFormat(AudioSampleFormat format)
@@ -694,6 +647,20 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
     return SUCCESS;
 }
 
+void RemoteAudioRenderSink::DestroyRender()
+{
+    AUDIO_INFO_LOG("destroy render");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
+    for (auto &it : audioRenderWrapperMap_) {
+        deviceManager->DestroyRender(deviceNetworkId_, it.second.hdiRenderId_);
+        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, it.second.hdiRenderId_);
+        it.second.audioRender_.ForceSetRefPtr(nullptr);
+    }
+}
+
 int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
 {
     std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
@@ -707,6 +674,45 @@ int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
     int32_t ret = deviceManager->SetOutputRoute(deviceNetworkId_, { DEVICE_TYPE_SPEAKER }, static_cast<int32_t>(
         GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_REMOTE)));
     return ret;
+}
+
+void RemoteAudioRenderSink::ReleaseOutputRoute()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->ReleaseOutputRoute(deviceNetworkId_);
+}
+
+void RemoteAudioRenderSink::InitLatencyMeasurement(void)
+{
+    CHECK_AND_RETURN(AudioLatencyMeasurement::CheckIfEnabled());
+
+    AUDIO_INFO_LOG("in");
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "signalDetectAgent is nullptr");
+    signalDetectAgent_->sampleFormat_ = attr_.format;
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
+    signalDetected_ = false;
+}
+
+void RemoteAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)
+{
+    CHECK_AND_RETURN(signalDetectAgent_ != nullptr);
+    uint32_t byteSize = static_cast<uint32_t>(GetFormatByteSize(attr_.format));
+    size_t newlyCheckedTime = len / (attr_.sampleRate / MILLISECOND_PER_SECOND) /
+        (byteSize * sizeof(uint8_t) * attr_.channel);
+    signalDetectedTime_ += newlyCheckedTime;
+    if (signalDetectedTime_ >= MILLISECOND_PER_SECOND && signalDetectAgent_->signalDetected_) {
+        LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true, signalDetectAgent_->lastPeakBufferTime_);
+        LatencyMonitor::GetInstance().ShowTimestamp(true);
+        signalDetectAgent_->signalDetected_ = false;
+    }
+    signalDetected_ = signalDetectAgent_->CheckAudioData(data, len);
+    if (signalDetected_) {
+        AUDIO_INFO_LOG("signal detected");
+        signalDetectedTime_ = 0;
+    }
 }
 
 void RemoteAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
@@ -737,6 +743,8 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     if (!started_.load()) {
         AUDIO_WARNING_LOG("not start, invalid state");
     }
+
+    CheckLatencySignal(reinterpret_cast<uint8_t *>(&data), len);
 
     std::vector<int8_t> bufferVec(len);
     int32_t ret = memcpy_s(bufferVec.data(), len, &data, len);

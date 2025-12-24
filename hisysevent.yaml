@@ -358,6 +358,16 @@ SUITE_ENGINE_UTILIZATION_STATS:
   APP_NAME: {type: STRING, arrsize: 20, desc: application name}
   AUDIO_NODE_TYPE: {type: STRING, desc: audio node type}
   AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+  RT_MODE_RENDER_COUNT: {type: UINT32, arrsize: 20, desc: total render count of overtime scenarios in realtime mode}
+  RT_MODE_RTF_OVER_BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline in realtime mode}
+  RT_MODE_RTF_OVER_110BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline 110 percent in realtime mode}
+  RT_MODE_RTF_OVER_120BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline 120 percent in realtime mode}
+  RT_MODE_RTF_OVER_100_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value over 100 percent in realtime mode}
+  EDIT_MODE_RENDER_COUNT: {type: UINT32, arrsize: 20, desc: total render count of overtime scenarios in edit mode}
+  EDIT_MODE_RTF_OVER_BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline in edit mode}
+  EDIT_MODE_RTF_OVER_110BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline 110 percent in edit mode}
+  EDIT_MODE_RTF_OVER_120BASE_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value exceeding baseline 120 percent in edit mode}
+  EDIT_MODE_RTF_OVER_100_COUNT: {type: UINT32, arrsize: 20, desc: count of RTF value over 100 percent in edit mode}
 
 SUITE_ENGINE_EXCEPTION:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio suite engine exception}

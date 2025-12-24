@@ -63,6 +63,7 @@ public:
 class AudioParameterCallbackTest : public AudioParameterCallback {
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) {}
+    virtual void OnHdiRouteStateChange(const std::string &networkId, bool enable) {}
 };
 
 void AudioServiceUnitTest::SetUpTestCase(void)

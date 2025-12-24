@@ -31,6 +31,10 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
+  generalVoiceChangeType?: GeneralVoiceChangeType;
+  pureVoiceChangeType?: PureVoiceChangeType;
+  pureVoiceChangeGender?: PureVoiceChangeGenderOption;
+  pureVoiceChangePitch?: number;
   spaceRender?: SpaceRender;
 }
 

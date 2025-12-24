@@ -1820,6 +1820,14 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
     auto testEndpoint = std::make_shared<AudioEndpointInner>(
         AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_PLAYBACK);
 
+    // Call config to init sink
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    testEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType);
+
     MockAudioProcessStream mockProcessStream;
     EXPECT_CALL(mockProcessStream, GetUsage()).WillOnce(Return(StreamUsage::STREAM_USAGE_MUSIC));
     testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
@@ -1835,6 +1843,14 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
 {
     auto testEndpoint = std::make_shared<AudioEndpointInner>(
         AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_RECORD);
+
+    // Call config to init source
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    testEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType);
 
     MockAudioProcessStream mockProcessStream;
     EXPECT_CALL(mockProcessStream, GetSource()).WillOnce(Return(SourceType::SOURCE_TYPE_MIC));

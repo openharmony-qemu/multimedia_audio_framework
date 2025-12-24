@@ -183,6 +183,7 @@ public:
     }
 
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    bool isHWDecodingType_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
@@ -202,10 +203,10 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool isStartStateWaitFor = false);
+    int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool needWait = false);
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
-    bool IsStartWaitFor(bool isStartStateWaitFor = false);
+    bool WaitSwitchStreamIfNeeded(bool needWait = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
@@ -235,7 +236,7 @@ private:
     void WriteUnderrunEvent() const;
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
     RendererState GetStatusInner() const;

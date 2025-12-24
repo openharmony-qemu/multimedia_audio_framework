@@ -87,6 +87,62 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     }
 }
 
+bool AudioStateManager::IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const int32_t callerUid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid_, forcedDeviceMapList_);
+}
+
+bool AudioStateManager::IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const int32_t callerUid, const int32_t ownerUid,
+    const std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &forcedList) const
+{
+    CHECK_AND_RETURN_RET(preferred != nullptr, true);
+    if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
+        if (callerUid == CLEAR_UID) {
+            return forcedList.empty();
+        } else if (callerUid == SYSTEM_UID || callerUid == ownerUid) {
+            auto findFun = [ownerUid](const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &record) {
+                return !record.empty() && (record.begin()->first == SYSTEM_UID || record.begin()->first == ownerUid);
+            };
+            return !any_of(forcedList.begin(), forcedList.end(), findFun);
+        } else {
+            auto findFun = [callerUid](const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &record) {
+                return !record.empty() && record.begin()->first == callerUid;
+            };
+            return !any_of(forcedList.begin(), forcedList.end(), findFun);
+        }
+    }
+
+    if (forcedList.empty()) {
+        return false;
+    }
+
+    if (!IsSamePreferred(callerUid, preferred, forcedList.back())) {
+        return false;
+    }
+
+    return true;
+}
+
+bool AudioStateManager::IsSamePreferred(const int32_t uid, const std::shared_ptr<AudioDeviceDescriptor> &preferred,
+    const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &recordMap) const
+{
+    CHECK_AND_RETURN_RET(preferred != nullptr, false);
+    CHECK_AND_RETURN_RET(!recordMap.empty(), false);
+
+    if (uid != recordMap.begin()->first) {
+        return false;
+    }
+
+    if (!preferred->IsSameDeviceDescPtr(recordMap.begin()->second)) {
+        return false;
+    }
+
+    return true;
+}
+
 void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(mutex_);

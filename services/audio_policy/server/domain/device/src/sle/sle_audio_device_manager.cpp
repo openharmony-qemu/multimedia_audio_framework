@@ -116,7 +116,7 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
         AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType, timeoutMs);
     callback_->StartPlaying(device, streamType, timeoutMs, ret);
     if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("startplaying failed");
+        HILOG_COMM_ERROR("[startplaying] failed");
         return ret;
     }
     startedSleStreamType_[device][streamType].isStarted = true;
@@ -129,7 +129,7 @@ int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t s
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     int32_t ret = ERROR;
-    HILOG_COMM_INFO("StopPlaying device [%{public}s] sle streamType [%{public}u]",
+    HILOG_COMM_INFO("[StopPlaying] device [%{public}s] sle streamType [%{public}u]",
         AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType);
     callback_->StopPlaying(device, streamType, ret);
     return ret;

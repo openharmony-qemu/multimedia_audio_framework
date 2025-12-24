@@ -32,7 +32,7 @@ LoudVolumeManager::LoudVolumeManager()
       audioActiveDevice_(AudioActiveDevice::GetInstance())
 
 {
-    loudVolumeModeEnable_ = system::GetBoolParameter("const.audio.loudvolume", false);
+    loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
     AUDIO_INFO_LOG("create LoudVolumeManager");
 };
 
@@ -50,11 +50,23 @@ bool LoudVolumeManager::IsSkipCloseLoudVolType(AudioStreamType streamType)
     return false;
 }
 
+std::map<AudioVolumeType, LoudVolumeHoldType>& LoudVolumeManager::GetLoudVolumeEnableMap()
+{
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT_ONLY_MUSIC) {
+        return LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_MUSIC;
+    } else if (loudVolumeSupportMode_ == LOUD_VOLUME_SUPPORT_ONLY_VOICE) {
+        return LOUD_VOL_STREAM_TYPE_ENABLE_ONLY_VOICE;
+    } else {
+        return LOUD_VOL_STREAM_TYPE_ENABLE;
+    }
+}
+
 bool LoudVolumeManager::FindLoudVolStreamTypeEnable(
     AudioStreamType streamType, LoudVolumeHoldType &funcHoldType)
 {
-    auto iter = LOUD_VOL_STREAM_TYPE_ENABLE.find(VolumeUtils::GetVolumeTypeFromStreamType(streamType));
-    if (iter != LOUD_VOL_STREAM_TYPE_ENABLE.end()) {
+    std::map<AudioVolumeType, LoudVolumeHoldType> map = GetLoudVolumeEnableMap();
+    auto iter = map.find(VolumeUtils::GetVolumeTypeFromStreamType(streamType));
+    if (iter != map.end()) {
         funcHoldType = iter->second;
         return true;
     }
@@ -136,7 +148,7 @@ bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldTy
 bool LoudVolumeManager::ReloadLoudVolumeMode(
     const AudioStreamType streamInFocus, SetLoudVolMode setVolMode)
 {
-    if (!loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
         return false;
     }
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_INVALID;
@@ -159,7 +171,8 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
     const int32_t keyType, const AudioStreamType &streamInFocus)
 {
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_INVALID;
-    if (!loudVolumeModeEnable_ || !FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType)) {
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT ||
+        !FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType)) {
         return false;
     }
     std::lock_guard<std::mutex> lock(loudVolTrigTimeMutex_);

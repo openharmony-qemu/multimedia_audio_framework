@@ -254,7 +254,7 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_008, TestSize.Level2
 
     AudioStreamInfo streamInfo;
     enginePtr->isInit_ = false;
-    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3,
+    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE,
         HDI_ID_INFO_DEFAULT, true);
     EXPECT_NE(enginePtr->renderId_, HDI_INVALID_ID);
 
@@ -298,7 +298,7 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_010, TestSize.Level2
     streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_S32LE;
     enginePtr->isInit_ = true;
-    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3,
+    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE,
         HDI_ID_INFO_DEFAULT, true);
     EXPECT_NE(enginePtr->renderId_, HDI_INVALID_ID);
     auto ret = enginePtr->InitSink(streamInfo);
@@ -356,7 +356,7 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_012, TestSize.Level2
     auto enginePtr = std::make_shared<DirectPlayBackEngine>();
     ASSERT_TRUE(enginePtr != nullptr);
 
-    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3,
+    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE,
         HDI_ID_INFO_DEFAULT, true);
     auto sink = HdiAdapterManager::GetInstance().GetRenderSink(enginePtr->renderId_, true);
     ASSERT_TRUE(sink != nullptr);
@@ -376,7 +376,7 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_013, TestSize.Level2
     auto enginePtr = std::make_shared<DirectPlayBackEngine>();
     EXPECT_NE(enginePtr, nullptr);
 
-    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3,
+    enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE,
         HDI_ID_INFO_DEFAULT, true);
     EXPECT_NE(enginePtr->renderId_, HDI_INVALID_ID);
     

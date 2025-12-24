@@ -267,6 +267,21 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMute_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: SetDualStreamVolumeMute_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetDualStreamVolumeMute_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    bool isDualMuted = true;
+    AudioVolume::GetInstance()->SetDualStreamVolumeMute(sessionId, isDualMuted);
+    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(retVolume, 0);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: SetSystemVolume_001
  * @tc.desc  : Test AudioVolume interface.
  */
@@ -350,6 +365,36 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
     AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolumeMute_003
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_003, TestSize.Level1)
+{
+    std::string deviceClass = "test";
+    bool isMuted = true;
+    AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_ANNOUNCEMENT, deviceClass, isMuted);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
+    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolumeMute_004
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_004, TestSize.Level1)
+{
+    std::string deviceClass = "test";
+    bool isMuted = true;
+    AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_EMERGENCY, deviceClass, isMuted);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
+    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
 }
 
 /**
@@ -1407,6 +1452,52 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_005, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_006
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_006, TestSize.Level1)
+{
+    audioVolumeTest->systemVolume_.clear();
+    std::string deviceClass = "test";
+    float volume = 2.0f;
+    int32_t volumeLevel = 2;
+    audioVolumeTest->SetSystemVolume(STREAM_ANNOUNCEMENT, deviceClass, volume, volumeLevel);
+    EXPECT_EQ(audioVolumeTest->systemVolume_.empty(), true);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_007
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_007, TestSize.Level1)
+{
+    audioVolumeTest->systemVolume_.clear();
+    std::string deviceClass = "test";
+    float volume = 2.0f;
+    int32_t volumeLevel = 2;
+    audioVolumeTest->SetSystemVolume(STREAM_EMERGENCY, deviceClass, volume, volumeLevel);
+    EXPECT_EQ(audioVolumeTest->systemVolume_.empty(), true);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetSystemVolume_008
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_008, TestSize.Level1)
+{
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_ANNOUNCEMENT, "speaker", 0.5f, 5);
+    AudioVolume::GetInstance()->SetSystemVolume(STREAM_EMERGENCY, "speaker", 1.0f, 5);
+    auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
+    EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
+}
+
+/**
  * @tc.name  : Test GetSimpleBufferAvg API
  * @tc.type  : FUNC
  * @tc.number: GetSimpleBufferAvg_002
@@ -1762,6 +1853,35 @@ HWTEST_F(AudioVolumeUnitTest, GetCurrentActiveDevice_001, TestSize.Level1)
     AudioVolume::GetInstance()->currentActiveDevice_ = deviceType;
     DeviceType ret = AudioVolume::GetInstance()->GetCurrentActiveDevice();
     EXPECT_EQ(ret, deviceType);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetNonInterruptMute_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_GAME;
+    StreamUsage streamUsage = STREAM_USAGE_GAME;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    AudioVolume::GetInstance()->SetNonInterruptMute(sessionId, isMuted);
+    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(retVolume, 0);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

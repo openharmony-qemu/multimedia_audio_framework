@@ -111,6 +111,108 @@ HWTEST(AudioSessionManagerUnitTest, AudioSessionRestoreParams_001, TestSize.Leve
     EXPECT_EQ(restoreParams_.actions_.size(), 0);
 }
 
+
+/**
+ * @tc.name  : Test AudioSessionRestoreParams class
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionRestoreParams_002
+ * @tc.desc  : Test AudioSessionRestoreParams class interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionRestoreParams_002, TestSize.Level1)
+{
+    AudioSessionRestoreParams restoreParams;
+    restoreParams.actions_.clear();
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParams.EnsureMuteAfterScene();
+    bool ret = false;
+    ret = restoreParams.actions_.size() > 0 && restoreParams.actions_[0] != nullptr &&
+        restoreParams.actions_[0]->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE;
+    EXPECT_TRUE(ret);
+
+    restoreParams.actions_.clear();
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+    restoreParams.EnsureMuteAfterScene();
+    ret = restoreParams.actions_.size() > 0 && restoreParams.actions_[0] != nullptr &&
+        restoreParams.actions_[0]->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION;
+    EXPECT_TRUE(ret);
+
+    restoreParams.actions_.clear();
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+    restoreParams.EnsureMuteAfterScene();
+    ret = restoreParams.actions_.size() > 0 && restoreParams.actions_[0] != nullptr &&
+        restoreParams.actions_[0]->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE;
+    EXPECT_TRUE(ret);
+
+    restoreParams.actions_.clear();
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+    restoreParams.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParams.EnsureMuteAfterScene();
+    ret = restoreParams.actions_.size() > 0 && restoreParams.actions_[0] != nullptr &&
+        restoreParams.actions_[0]->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE;
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioSessionRestoreParams class
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionRestoreParams_003
+ * @tc.desc  : Test AudioSessionRestoreParams class interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionRestoreParams_003, TestSize.Level1)
+{
+    using OperationType = AudioSessionRestoreParams::OperationType;
+    AudioSessionRestoreParams restoreParams;
+    restoreParams.actions_.clear();
+    restoreParams.RecordAudioSessionOpt(OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParams.RecordAudioSessionOpt(OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 1);
+    restoreParams.RecordAudioSessionOpt(OperationType::AUDIO_SESSION_SET_SCENE, 1);
+    restoreParams.RecordAudioSessionOpt(OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+    bool ret = false;
+    ret = restoreParams.actions_.size() == 3 &&
+        restoreParams.actions_[0] != nullptr && restoreParams.actions_[0]->optValue == 0 &&
+        restoreParams.actions_[0]->type == OperationType::AUDIO_SESSION_SET_SCENE &&
+        restoreParams.actions_[1] != nullptr && restoreParams.actions_[1]->optValue == 1 &&
+        restoreParams.actions_[1]->type == OperationType::AUDIO_SESSION_SET_SCENE &&
+        restoreParams.actions_[2] != nullptr && restoreParams.actions_[2]->optValue == 0 &&
+        restoreParams.actions_[2]->type == OperationType::AUDIO_SESSION_MUTE_SUGGESTION;
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioSessionRestoreParams class
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionRestoreParams_004
+ * @tc.desc  : Test AudioSessionRestoreParams class interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionRestoreParams_004, TestSize.Level1)
+{
+    using OperationType = AudioSessionRestoreParams::OperationType;
+    using AudioSessionAction = AudioSessionRestoreParams::AudioSessionAction;
+    AudioSessionRestoreParams restoreParams;
+    restoreParams.actions_.clear();
+    auto action1 = std::make_unique<AudioSessionAction>(OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+    restoreParams.actions_.push_back(std::move(action1));
+    auto action2 = std::make_unique<AudioSessionAction>(OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restoreParams.actions_.push_back(std::move(action2));
+    auto action3 = std::make_unique<AudioSessionAction>(OperationType::AUDIO_SESSION_ACTIVATE, 1);
+    restoreParams.actions_.push_back(std::move(action3));
+    auto action4 = std::make_unique<AudioSessionAction>(OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParams.actions_.push_back(std::move(action4));
+    restoreParams.EnsureMuteAfterScene();
+    bool ret = false;
+    ret = restoreParams.actions_.size() == 4 &&
+        restoreParams.actions_[0] != nullptr && restoreParams.actions_[0]->optValue == 0 &&
+        restoreParams.actions_[0]->type == OperationType::AUDIO_SESSION_ACTIVATE &&
+        restoreParams.actions_[1] != nullptr && restoreParams.actions_[1]->optValue == 1 &&
+        restoreParams.actions_[1]->type == OperationType::AUDIO_SESSION_ACTIVATE &&
+        restoreParams.actions_[2] != nullptr &&
+        restoreParams.actions_[2]->type == OperationType::AUDIO_SESSION_SET_SCENE &&
+        restoreParams.actions_[3] != nullptr &&
+        restoreParams.actions_[3]->type == OperationType::AUDIO_SESSION_MUTE_SUGGESTION;
+    EXPECT_TRUE(ret);
+}
+
 /**
  * @tc.name  : Test OnAudioPolicyServiceDied api
  * @tc.type  : FUNC
@@ -129,6 +231,27 @@ HWTEST(AudioSessionManagerUnitTest, AudioSessionManagerServiceDiedRestore_001, T
     AudioSessionManager::GetInstance()->setDeviceType_ = DEVICE_TYPE_DEFAULT;
     AudioSessionManager::GetInstance()->restoreParams_.RecordAudioSessionOpt(
         AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restore.OnAudioPolicyServiceDied();
+    EXPECT_EQ(AudioSessionManager::GetInstance()->restoreParams_.actions_.size(), 1);
+}
+
+/**
+ * @tc.name  : Test OnAudioPolicyServiceDied api
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionManagerServiceDiedRestore_002
+ * @tc.desc  : Test OnAudioPolicyServiceDied interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionManagerServiceDiedRestore_002, TestSize.Level1)
+{
+    ASSERT_NE(AudioSessionManager::GetInstance(), nullptr);
+
+    AudioSessionManager::GetInstance()->restoreParams_.actions_.clear();
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = false;
+    AudioSessionManager::GetInstance()->DeactivateAudioSession();
+    AudioSessionManager::GetInstance()->restoreParams_.RecordAudioSessionOpt(
+        AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
+
+    AudioSessionManagerServiceDiedRestore restore;
     restore.OnAudioPolicyServiceDied();
     EXPECT_EQ(AudioSessionManager::GetInstance()->restoreParams_.actions_.size(), 1);
 }

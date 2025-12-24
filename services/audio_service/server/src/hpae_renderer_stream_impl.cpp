@@ -58,6 +58,8 @@ static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 static constexpr int64_t TIME_INTERVAL_NS = 200 * 1000000LL;
+static constexpr uint32_t DUCK_UNDUCK_STEP_TIME = 20;
+static constexpr uint32_t DUCK_UNDUCK_STEP_TIME_US = 20000;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
@@ -91,6 +93,9 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
+    if (offloadVolumeRmap_.valid()) {
+        offloadVolumeRmap_.wait();
+    }
     if (dumpEnqueueIn_ != nullptr) {
     DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
@@ -637,32 +642,32 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         ResetSinkLatencyFetcher(callBackStreamInfo);
     }
     NotifyFirstStreamData();
+    CHECK_AND_RETURN_RET(callBackStreamInfo.needData, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(sendDataEnabled_.load(), ERR_OPERATION_FAILED,
+        "Send data disabled, sessionId %{public}u", streamIndex_);
     if (isCallbackMode_) { // callback buffer
         auto requestDataLen = callBackStreamInfo.requestDataLen;
         auto writeCallback = writeCallback_.lock();
         CHECK_AND_RETURN_RET(writeCallback != nullptr, ERROR);
-        if (callBackStreamInfo.needData) {
-            writeCallback->GetAvailableSize(requestDataLen);
-            requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
-            size_t mutePaddingSize = 0;
-            if (callBackStreamInfo.requestDataLen > requestDataLen) {
-                mutePaddingSize = callBackStreamInfo.requestDataLen - requestDataLen;
-                int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
-                memset_s(callBackStreamInfo.inputData + requestDataLen,
-                    mutePaddingSize, chToFill, mutePaddingSize);
-                requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
-            }
-            callBackStreamInfo.requestDataLen = requestDataLen;
-            int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
-                requestDataLen);
-            CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-            noWaitDataFlag_ = true;
-            size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
-            CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
-            mutePaddingFrames_.fetch_add(mutePaddingFrames);
-            Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
-            AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
+        writeCallback->GetAvailableSize(requestDataLen);
+        requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
+        size_t mutePaddingSize = 0;
+        if (callBackStreamInfo.requestDataLen > requestDataLen) {
+            mutePaddingSize = callBackStreamInfo.requestDataLen - requestDataLen;
+            int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
+            memset_s(callBackStreamInfo.inputData + requestDataLen,
+                mutePaddingSize, chToFill, mutePaddingSize);
+            requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
         }
+        callBackStreamInfo.requestDataLen = requestDataLen;
+        int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        noWaitDataFlag_ = true;
+        size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
+        CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
+        mutePaddingFrames_.fetch_add(mutePaddingFrames);
+        Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
+        AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
     } else { // write buffer
         return WriteDataFromRingBuffer(callBackStreamInfo.forceData,
             callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
@@ -742,12 +747,48 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
     return 0;
 }
 
+void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
+    std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId)
+{
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float lastVolume = AudioVolume::GetInstance()->GetVolume(sessionId, streamType, volumeDeviceClass, &volumes);
+    float volumeHistory = volumes.volumeHistory;
+    float lastEventVolume = 0.0f;
+    float volume = 0.0f;
+
+    uint32_t step = volumes.durationMs / DUCK_UNDUCK_STEP_TIME;
+    float volumeStep = (volumeHistory - lastVolume) / step;
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
+    if (audioRendererSinkInstance == nullptr) {
+        AUDIO_ERR_LOG("Renderer is null.");
+        return;
+    }
+    for (int i = 0; i < step; i++) {
+        usleep(DUCK_UNDUCK_STEP_TIME_US);
+        if (lastVolume != AudioVolume::GetInstance()->GetVolume(sessionId, streamType, volumeDeviceClass, &volumes)) {
+            return;
+        }
+        lastEventVolume = AudioVolume::GetInstance()->GetHistoryVolume(sessionId);
+        volume = lastEventVolume - volumeStep;
+        if (volumeStep > 0) {
+            volume = std::max(std::min(volume, volumeHistory), lastVolume);
+        } else {
+            volume = std::max(std::min(volume, lastVolume), volumeHistory);
+        }
+        AUDIO_INFO_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
+        AudioVolume::GetInstance()->SetHistoryVolume(sessionId, volume);
+        audioRendererSinkInstance->SetVolume(volume, volume);
+    }
+    return;
+}
+
 int32_t HpaeRendererStreamImpl::OffloadSetVolume()
 {
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    bool notEnableRmap = true;
     std::string deviceClass;
     std::string deviceNetId;
     {
@@ -755,14 +796,26 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
     }
+    AudioStreamType streamType = processConfig_.streamType;
     std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, volumeDeviceClass,
-        &volumes);
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, streamType, volumeDeviceClass, &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f", streamIndex_,
         volumeDeviceClass.c_str(), volume);
+    uint32_t sessionId = streamIndex_;
     if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
-        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+        if (volumes.durationMs != 0 && volumes.volumeHistory != volumes.volume) {
+            notEnableRmap = false;
+            offloadVolumeRmap_ = std::async(std::launch::async,
+                [this, sessionId, streamType, volumeDeviceClass, deviceClass, deviceNetId] {
+                OffloadVolumeRmap(sessionId, streamType, volumeDeviceClass, deviceClass, deviceNetId);
+            });
+        } else {
+            AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+        }
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);
+    }
+    if (!notEnableRmap) {
+        return SUCCESS;
     }
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
     if (audioRendererSinkInstance == nullptr) {
@@ -958,6 +1011,11 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
     }
+}
+
+void HpaeRendererStreamImpl::SetSendDataEnabled(bool enabled)
+{
+    sendDataEnabled_.store(enabled);
 }
 
 bool HpaeRendererStreamImpl::OnQueryUnderrun()

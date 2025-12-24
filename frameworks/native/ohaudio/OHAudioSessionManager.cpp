@@ -110,6 +110,13 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     return ohAudioSessionManager->IsAudioSessionActivated();
 }
 
+bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager)
+{
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
+    return ohAudioSessionManager->IsOtherMediaPlaying();
+}
+
 OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSessionManager *audioSessionManager,
     OH_AudioDevice_Usage deviceUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
 {
@@ -393,6 +400,17 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentInputDeviceChangeC
     return ohAudioSessionManager->UnsetAudioSessionCurrentInputDeviceChangeCallback(callback);
 }
 
+OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthers(
+    OH_AudioSessionManager *audioSessionManager, bool enable)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    return ohAudioSessionManager->EnableMuteSuggestionWhenMixWithOthers(enable);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -573,6 +591,12 @@ bool OHAudioSessionManager::IsAudioSessionActivated()
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
     return audioSessionManager_->IsAudioSessionActivated();
+}
+
+bool OHAudioSessionManager::IsOtherMediaPlaying()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr, false, "failed, audioSessionManager_ is null");
+    return audioSessionManager_->IsOtherMediaPlaying();
 }
 
 OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionScene(AudioSessionScene sene)
@@ -829,6 +853,18 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCurrentDeviceChang
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
     sessionDeviceCallbacks_.erase(callback);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    int32_t ret = audioSessionManager_->EnableMuteSuggestionWhenMixWithOthers(enable);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to EnableMuteSuggestionWhenMixWithOthers.");
+        return ret == ERROR_ILLEGAL_STATE ? AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

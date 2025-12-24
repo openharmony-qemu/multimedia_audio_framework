@@ -61,7 +61,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+        HILOG_COMM_ERROR("[IpcStreamInServer::Create]IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
             ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
@@ -77,9 +77,13 @@ IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
     // 1. Avoid unexpected release in proRenderStreamImpl working thread
-    // 2. Avoid RendererInServer destructor from AudioService weak_ptr, may cause deadlock in UpdateSessionOperation
+    // 2. Avoid RendererInServer/CapturerInServer destructor from AudioService weak_ptr,
+    // may cause deadlock in UpdateSessionOperation
     if (rendererInServer_) {
         rendererInServer_->Release();
+    }
+    if (capturerInServer_) {
+        capturerInServer_->Release();
     }
 }
 
@@ -280,6 +284,15 @@ int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptur
 #else
     return ERROR;
 #endif
+}
+
+int32_t IpcStreamInServer::RequestHandleData(uint64_t syncFramePts, uint32_t size)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->RequestHandleData(syncFramePts, size);
+    }
+    AUDIO_ERR_LOG("failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
@@ -497,10 +510,10 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
+int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetDuckFactor(duckFactor);
+        return rendererInServer_->SetDuckFactor(duckFactor, durationMs);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;
@@ -576,14 +589,14 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
-int32_t IpcStreamInServer::PreSetLoopTimes(int64_t bufferLoopTimes)
+int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
         AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
             static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->PreSetLoopTimes(bufferLoopTimes);
+    return rendererInServer_->SetLoopTimes(bufferLoopTimes);
 }
 
 int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)

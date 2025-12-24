@@ -848,7 +848,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
         audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
     }
     EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
-    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), SUCCESS);
 }
 
 /**
@@ -899,7 +899,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
         service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
     }
     int32_t pid = 8888;
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
 }
 
 /**

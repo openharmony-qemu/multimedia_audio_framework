@@ -270,6 +270,8 @@ public:
 
     bool IsAudioSessionActivated();
 
+    bool IsOtherMediaPlaying();
+
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 
     int32_t UnsetAudioSessionCallback();
@@ -303,6 +305,8 @@ public:
 
     int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
         const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback);
+
+    int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -387,6 +391,8 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
+
+    std::string GetSystemSoundPath(const int32_t systemSoundType);
 
     float GetMinStreamVolume(void);
 
@@ -546,6 +552,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
 
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
+
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
 
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
@@ -660,7 +670,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+        StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 

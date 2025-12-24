@@ -20,6 +20,7 @@
 #include "util/callback_wrapper.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -118,6 +119,19 @@ void SinkCallbackWrapper::OnOutputPipeChange(AudioPipeChangeType changeType,
     for (auto &cb : rawCbs_) {
         CHECK_AND_CONTINUE(cb.second != nullptr);
         cb.second->OnOutputPipeChange(changeType, changedPipeInfo);
+    }
+}
+
+void SinkCallbackWrapper::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
     }
 }
 

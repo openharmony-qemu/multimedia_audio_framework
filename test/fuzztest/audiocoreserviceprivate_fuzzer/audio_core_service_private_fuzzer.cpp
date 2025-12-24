@@ -732,17 +732,6 @@ void AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest()
     }
 }
 
-void AudioCoreServicePrivateIsPaRouteFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-
-    uint32_t routeFlag = GetData<uint32_t>();
-    audioCoreService->IsPaRoute(routeFlag);
-}
-
 void AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1143,7 +1132,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateSelectRingerOrAlarmDevicesFuzzTest,
     AudioCoreServicePrivateUpdateDualToneStateFuzzTest,
     AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest,
-    AudioCoreServicePrivateIsPaRouteFuzzTest,
     AudioCoreServicePrivateSendA2dpConnectedWhileRunningFuzzTest,
     AudioCoreServicePrivateUpdateTrackerDeviceChangeFuzzTest,
     AudioCoreServicePrivateUpdateOutputDeviceFuzzTest,

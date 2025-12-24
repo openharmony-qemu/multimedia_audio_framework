@@ -1441,7 +1441,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckFastStreamOverLimitToNormal_003, TestSi
 
     for (int i = 0; i <= MAX_FAST_STREAM_COUNT; ++i) {
         if (i % 2 == 0) {
-            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+            EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
         } else {
             EXPECT_EQ(streamDescs[i]->routeFlag_, AUDIO_INPUT_FLAG_FAST);
         }

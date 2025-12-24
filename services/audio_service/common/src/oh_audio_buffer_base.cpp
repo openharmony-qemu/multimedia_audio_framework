@@ -33,12 +33,18 @@
 
 namespace OHOS {
 namespace AudioStandard {
+using namespace std;
 namespace {
+    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
     static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
 }
+
+constexpr int32_t MS_PER_S = 1000;
+constexpr int32_t NS_PER_MS = 1000000;
+
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
     uint8_t *GetBase() override;
@@ -564,14 +570,54 @@ float OHAudioBufferBase::GetDuckFactor()
     return factor;
 }
 
-bool OHAudioBufferBase::SetDuckFactor(float duckFactor)
+float OHAudioBufferBase::GetVolumeFromOh()
+{
+    float volumeStream = 1.0f;
+    uint32_t durationMs = basicBufferInfo_->durationMs.load();
+    uint32_t beginDurationMs = basicBufferInfo_->beginDurationMs.load();
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+ 
+    float oldDuckFactor = basicBufferInfo_->oldDuckFactor.load();
+    float duckFactor = basicBufferInfo_->duckFactor.load();
+    float lastEventFactor = basicBufferInfo_->lastEventFactor.load();
+    float factor = duckFactor;
+ 
+    if ((currentTime - beginDurationMs) < durationMs &&
+        !FLOAT_COMPARE_EQ(duckFactor, oldDuckFactor) && durationMs > 0) {
+        float delta = duckFactor - oldDuckFactor;
+        factor = lastEventFactor + delta *
+            static_cast<float>(currentTime - basicBufferInfo_->lastEventTime.load()) / static_cast<float>(durationMs);
+        if ((delta > 0 && factor > duckFactor) || (delta < 0 && factor < duckFactor)) {
+            factor = duckFactor;
+        }
+        basicBufferInfo_->lastEventTime.store(currentTime);
+        basicBufferInfo_->lastEventFactor.store(factor);
+    } else {
+        basicBufferInfo_->lastEventFactor.store(duckFactor);
+    }
+ 
+    return volumeStream * factor * GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
+}
+ 
+bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "buffer is not inited!");
     if (duckFactor < MIN_FLOAT_VOLUME || duckFactor > MAX_FLOAT_VOLUME) {
         AUDIO_ERR_LOG("invlaid factor:%{public}f", duckFactor);
         return false;
     }
+    timespec tm {};
+    clock_gettime(CLOCK_MONOTONIC, &tm);
+    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+ 
+    float oldDuckFactor = basicBufferInfo_->duckFactor.load();
+    basicBufferInfo_->oldDuckFactor.store(oldDuckFactor);
     basicBufferInfo_->duckFactor.store(duckFactor);
+    basicBufferInfo_->beginDurationMs.store(currentTime);
+    basicBufferInfo_->durationMs.store(durationMs);
+    basicBufferInfo_->lastEventTime.store(currentTime);
     return true;
 }
 
@@ -847,6 +893,19 @@ int32_t OHAudioBufferBase::GetAllReadableBuffer(RingBufferWrapper &buffer)
     return GetAllReadableBufferFromPosFrame(readPosInFrame, buffer);
 }
 
+int32_t OHAudioBufferBase::GetRawBuffer(uint32_t size, BufferDesc &bufferDesc)
+{
+    if (size > totalSizeInByte_) {
+        AUDIO_ERR_LOG("invalid size:%{public}d", size);
+        return AUDIO_INVALID_PARAM;
+    }
+    bufferDesc.buffer = dataBase_;
+    bufferDesc.bufLength = size;
+    bufferDesc.dataLength = 0;
+    bufferDesc.syncFramePts = 0;
+    return SUCCESS;
+}
+
 int64_t OHAudioBufferBase::GetLastWrittenTime()
 {
     return lastWrittenTime_;
@@ -1005,7 +1064,14 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->timeStamp.store(0);
 
     basicBufferInfo_->streamVolume.store(MAX_FLOAT_VOLUME);
+
+    basicBufferInfo_->beginDurationMs.store(0);
+    basicBufferInfo_->durationMs.store(0);
     basicBufferInfo_->duckFactor.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->oldDuckFactor.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->lastEventFactor.store(MAX_FLOAT_VOLUME);
+    basicBufferInfo_->lastEventTime.store(0);
+    
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 
     // for static audio renderer

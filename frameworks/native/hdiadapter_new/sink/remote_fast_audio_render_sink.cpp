@@ -198,26 +198,6 @@ int64_t RemoteFastAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t RemoteFastAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t RemoteFastAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void RemoteFastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string RemoteFastAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
 int32_t RemoteFastAudioRenderSink::SetVolume(float left, float right)
 {
     leftVolume_ = left;
@@ -284,47 +264,6 @@ void RemoteFastAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t RemoteFastAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-int32_t RemoteFastAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteFastAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void RemoteFastAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
-}
-
-void RemoteFastAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t RemoteFastAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteFastAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteFastAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
     return ERR_NOT_SUPPORTED;
@@ -350,11 +289,6 @@ void RemoteFastAudioRenderSink::OnAudioParamChange(const std::string &adapterNam
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
-}
-
-void RemoteFastAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t RemoteFastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

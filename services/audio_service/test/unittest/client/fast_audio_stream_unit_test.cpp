@@ -345,6 +345,10 @@ HWTEST_F(FastSystemStreamUnitTest, GetSwitchInfo_003, TestSize.Level4)
 
     IAudioStream::SwitchInfo info;
     fastAudioStream->rendererInfo_.isStatic = true;
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
     fastAudioStream->GetSwitchInfo(info);
     EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_001 end");

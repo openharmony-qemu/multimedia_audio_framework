@@ -772,6 +772,8 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+    CHECK_AND_RETURN_LOG(streamImpl->sendDataEnabled_.load(),
+        "Send data disabled, sessionId %{public}u", streamImpl->streamIndex_);
 
     Trace trace("PaRendererStreamImpl::PAStreamWriteCb sink-input:" + std::to_string(streamImpl->sinkInputIndex_) +
         " length:" + std::to_string(length));
@@ -1331,6 +1333,11 @@ int32_t PaRendererStreamImpl::ReturnIndex(int32_t index)
 void PaRendererStreamImpl::BlockStream() noexcept
 {
     return;
+}
+
+void PaRendererStreamImpl::SetSendDataEnabled(bool enabled)
+{
+    sendDataEnabled_.store(enabled);
 }
 // offload end
 

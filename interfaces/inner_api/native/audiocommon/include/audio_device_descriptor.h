@@ -26,9 +26,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-inline bool IsUsb(DeviceType type)
+inline bool IsUsb(DeviceType deviceType)
 {
-    return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
+    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
 }
 
 inline bool IsNearlinkDevice(DeviceType deviceType)

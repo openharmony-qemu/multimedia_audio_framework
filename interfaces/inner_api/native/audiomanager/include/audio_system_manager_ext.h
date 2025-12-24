@@ -31,7 +31,6 @@
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_policy_interface.h"
-#include "audio_workgroup_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,9 +62,7 @@ public:
     static InterruptGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
-class VolumeGroupInfo;
 class VolumeGroupInfo : public Parcelable {
-    friend class AudioSystemManager;
 public:
     int32_t volumeGroupId_ = 0;
     int32_t mappingId_ = 0;
@@ -284,27 +281,8 @@ public:
      */
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) = 0;
-};
 
-class AudioCapturerSourceCallback {
-public:
-    virtual ~AudioCapturerSourceCallback() = default;
-    virtual void OnCapturerState(bool isActive) = 0;
-};
-
-class WakeUpSourceCloseCallback {
-public:
-    virtual ~WakeUpSourceCloseCallback() = default;
-    virtual void OnWakeupClose() = 0;
-};
-
-class WakeUpSourceCallback : public AudioCapturerSourceCallback, public WakeUpSourceCloseCallback {
-public:
-    virtual ~WakeUpSourceCallback() = default;
-    // Stop all listening capturers from sending false callbacks;
-    // when all capturers have stopped, allow one capturer to start sending true callbacks
-    virtual void OnCapturerState(bool isActive) = 0;
-    virtual void OnWakeupClose() = 0;
+    virtual void OnHdiRouteStateChange(const std::string &networkId, bool enable) = 0;
 };
 
 class AudioPreferredOutputDeviceChangeCallback;
@@ -362,12 +340,6 @@ public:
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
 
     virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
-};
-
-class AudioWorkgroupChangeCallback {
-public:
-    virtual ~AudioWorkgroupChangeCallback() = default;
-    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

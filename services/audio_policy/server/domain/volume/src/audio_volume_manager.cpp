@@ -84,6 +84,8 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ULTRASONIC,
     STREAM_SYSTEM,
     STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_ANNOUNCEMENT,
+    STREAM_EMERGENCY,
     STREAM_ALL
 };
 
@@ -182,8 +184,8 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, \
         volume:%{public}d, volumeDegree:%{public}d",
         streamType, deviceType, vol.volumeInt, vol.volumeDegree);
-    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    float volumeActual = mdmMute ? 0.0f : vol.volumeFloat;
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float volumeActual = vol.volumeFloat * mdmMuteFactor;
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeActual);
     return true;
 }
@@ -664,7 +666,8 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
-    HILOG_COMM_INFO("SetA2dpAbsVolume streamType: STREAM_MUSIC, volumeLevel: %{public}d", sVolumeLevel);
+    HILOG_COMM_INFO("[SetA2dpDeviceVolume]SetA2dpAbsVolume streamType: STREAM_MUSIC, volumeLevel: %{public}d",
+        sVolumeLevel);
     float volumeDbTemp = audioPolicyManager_.CalculateVolumeDbNonlinear(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP,
         sVolumeLevel);
     audioPolicyManager_.SaveSystemVolumeForEffect(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC, sVolumeLevel);
@@ -731,23 +734,15 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
     SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(macAddress, streamType, mute);
     audioPolicyManager_.SetAbsVolumeMuteNearlink(mute);
-    HILOG_COMM_INFO("success for macaddress:[%{public}s], volume value:[%{public}d], streamType [%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
+    HILOG_COMM_INFO("[SetNearlinkDeviceVolume]success for macaddress:[%{public}s], volume value:[%{public}d], "
+        "streamType [%{public}d]", GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
 
 int32_t AudioVolumeManager::SetNearlinkDeviceVolumeEx(AudioVolumeType streamType, int32_t volumeLevel)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (curOutputDeviceType != DEVICE_TYPE_NEARLINK) {
-        return SaveSpecifiedDeviceVolume(streamType, volumeLevel, DEVICE_TYPE_NEARLINK);
-    } else {
-        SetSystemVolumeDegreeByLevel(streamType, volumeLevel);
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-        return audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
-            volumeLevel, deviceDesc);
-    }
+    return audioPolicyManager_.SetNearlinkDeviceVolume(streamType, volumeLevel);
 }
 
 void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)

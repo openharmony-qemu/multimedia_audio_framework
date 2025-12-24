@@ -122,6 +122,7 @@ public:
     virtual ~IAudioStream() = default;
 
     static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
+    static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -357,6 +358,9 @@ public:
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 
     virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
+
+    virtual const std::string GetBundleName() = 0;
+    virtual void SetBundleName(std::string &name) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

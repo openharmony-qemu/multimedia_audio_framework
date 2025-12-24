@@ -261,7 +261,11 @@ public:
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
+    int32_t IsOtherMediaPlaying(bool &existence) override;
+
     int32_t SetAudioSessionScene(int32_t audioSessionScene) override;
+
+    int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;
 
     int32_t GetDefaultOutputDevice(int32_t &deviceType) override;
 
@@ -392,6 +396,8 @@ public:
 
     int32_t GetSystemSoundUri(const std::string &key, std::string &uri) override;
 
+    int32_t GetSystemSoundPath(const int32_t systemSoundType, std::string &path) override;
+
     int32_t GetMinStreamVolume(float &volume) override;
 
     int32_t GetMaxStreamVolume(float &volume) override;
@@ -511,6 +517,10 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
+
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
     int32_t AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
@@ -577,7 +587,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn, bool &isAllowed,
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
         bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
@@ -661,6 +671,7 @@ public:
         // AudioParameterCallback
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string &condition,
             const std::string &value) override;
+        void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
     private:
         sptr<AudioPolicyServer> server_;
         void VolumeOnChange(const std::string networkId, const std::string &condition);
@@ -808,7 +819,8 @@ private:
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus,
+        int32_t zoneId = 0);
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
@@ -928,7 +940,7 @@ private:
     bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool loudVolumeModeEnable_ = false;
+    int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;

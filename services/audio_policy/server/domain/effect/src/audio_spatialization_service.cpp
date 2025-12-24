@@ -191,7 +191,7 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb(WRITE_DEVICESPATIAL_INFO, address);
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -252,7 +252,7 @@ int32_t AudioSpatializationService::SetHeadTrackingEnabled(
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
-    WriteSpatializationStateToDb(WRITE_DEVICESPATIAL_INFO, address);
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -282,7 +282,7 @@ int32_t AudioSpatializationService::SetAdaptiveSpatialRenderingEnabled(
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     int32_t ret = UpdateSpatializationStateReal(false);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
-    WriteSpatializationStateToDb(WRITE_DEVICESPATIAL_INFO, address);
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
 }
 
@@ -462,7 +462,7 @@ void AudioSpatializationService::UpdateCurrentDevice(
         }
         std::string deviceSpatialInfo = EncapsulateDeviceInfo(macAddress);
         UpdateDeviceSpatialMapInfo(macAddress, deviceSpatialInfo);
-        WriteSpatializationStateToDb(WRITE_DEVICESPATIAL_INFO, macAddress);
+        WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     }
     if (currentDeviceAddress_ == macAddress) {
         AUDIO_INFO_LOG("no need to UpdateCurrentDevice");
@@ -612,15 +612,15 @@ int32_t AudioSpatializationService::UpdateSpatializationSceneType()
     return SPATIALIZATION_SERVICE_OK;
 }
 
-void AudioSpatializationService::UpdateDeviceSpatialInfo(const uint32_t deviceID, const std::string deviceSpatialInfo)
+void AudioSpatializationService::UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo)
 {
     std::stringstream ss(deviceSpatialInfo);
     std::string token;
     std::string address;
     int32_t convertValue = 0;
     std::getline(ss, address, '|');
+    CHECK_AND_RETURN_LOG(!addressToDeviceSpatialInfoMap_.count(address), "device already exists");
     addressToDeviceSpatialInfoMap_[address] = deviceSpatialInfo;
-    addressToDeviceIDMap_[address] = deviceID;
     std::getline(ss, token, '|');
     CHECK_AND_RETURN_LOG(StringConverter(token, convertValue), "convert invalid spatializationEnabled");
     addressToSpatialEnabledMap_[address].spatializationEnabled = convertValue;
@@ -694,6 +694,61 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     }
 }
 
+int32_t AudioSpatializationService::InitOldSpatialInfo()
+{
+    std::string deviceSpatialInfo;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device1", deviceSpatialInfo);
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_NO_INIT, ERROR, "database not initialized");
+    if (ret != SUCCESS || deviceSpatialInfo == "nulldata") {
+        AUDIO_WARNING_LOG("Failed to read spatialization_state_device1 from setting db! Err: %{public}d", ret);
+        return ERROR;
+    } else {
+        UpdateDeviceSpatialInfo(deviceSpatialInfo);
+        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device1", "nulldata");
+    }
+
+    for (uint32_t i = 2; i < MAX_DEVICE_NUM; ++i) {
+        ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i),
+            deviceSpatialInfo);
+        if (ret != SUCCESS || deviceSpatialInfo == "nulldata") {
+            AUDIO_WARNING_LOG("Failed to read spatialization_state_device%{public}d from setting db! Err: %{public}d",
+                i, ret);
+            break;
+        }
+        UpdateDeviceSpatialInfo(deviceSpatialInfo);
+        settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i), "nulldata");
+    }
+    WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
+    return SUCCESS;
+}
+
+int32_t AudioSpatializationService::InitNewSpatialInfo()
+{
+    std::string allDeviceSpatialInfo;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device", allDeviceSpatialInfo);
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_NO_INIT, ERROR, "database not initialized");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to read spatialization_state_device from setting db!"
+        "Err: %{public}d", ret);
+    size_t start = 0;
+    bool exitLoop = false;
+    while (!exitLoop) {
+        size_t open = allDeviceSpatialInfo.find('{', start);
+        size_t close = allDeviceSpatialInfo.find('}', open);
+        if (open == std::string::npos || close == std::string::npos) {
+            exitLoop = true;
+        } else {
+            size_t length = close - open - 1;
+            if (length > 0 && open + 1 < allDeviceSpatialInfo.length()) {
+                UpdateDeviceSpatialInfo(allDeviceSpatialInfo.substr(open + 1, length));
+            }
+            start = close + 1;
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioSpatializationService::InitSpatializationScene()
 {
     int32_t sceneType = 0;
@@ -713,11 +768,15 @@ int32_t AudioSpatializationService::InitSpatializationScene()
 
 void AudioSpatializationService::InitSpatializationState()
 {
-    std::map<std::string, uint32_t> tmpAddressToDeviceIDMap;
+    std::map<std::string, std::string> tmpAddressToDeviceIDMap;
     {
         std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
         int32_t pack = 0;
         std::string deviceSpatialInfo;
+
+        addressToDeviceSpatialInfoMap_.clear();
+        addressToSpatialEnabledMap_.clear();
+        addressToSpatialDeviceStateMap_.clear();
 
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         ErrCode ret = settingProvider.GetIntValue(SPATIALIZATION_STATE_SETTINGKEY, pack);
@@ -729,21 +788,7 @@ void AudioSpatializationService::InitSpatializationState()
             UnpackSpatializationState(pack, spatializationStateFlag_);
             UpdateSpatializationStateReal(false);
         }
-        
         CHECK_AND_RETURN(InitSpatializationScene() == SUCCESS);
-
-        for (uint32_t i = 1; i <= MAX_DEVICE_NUM; ++i) {
-            ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(i),
-                deviceSpatialInfo);
-            CHECK_AND_RETURN_LOG(ret != ERR_NO_INIT, "database not initialized");
-            if (ret != SUCCESS) {
-                AUDIO_DEBUG_LOG("Failed to read spatialization_state_device%{public}d from setting db! Err: %{public}d",
-                    i, ret);
-                break;
-            }
-            UpdateDeviceSpatialInfo(i, deviceSpatialInfo);
-        }
-        tmpAddressToDeviceIDMap = addressToDeviceIDMap_;
 
         ret = settingProvider.GetStringValue(PRE_SETTING_SPATIAL_ADDRESS, preSettingSpatialAddress_);
         CHECK_AND_RETURN_LOG(ret != ERR_NO_INIT, "database not initialized");
@@ -751,6 +796,11 @@ void AudioSpatializationService::InitSpatializationState()
             AUDIO_WARNING_LOG("Failed to read pre_setting_spatial_address from setting db! Err: %{public}d", ret);
             preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
         }
+
+        if (InitOldSpatialInfo() != SUCCESS) {
+            InitNewSpatialInfo();
+        }
+        tmpAddressToDeviceIDMap = addressToDeviceSpatialInfoMap_;
         UpdateSpatializationStateReal(false);
     }
     for (auto it = tmpAddressToDeviceIDMap.begin(); it != tmpAddressToDeviceIDMap.end(); ++it) {
@@ -758,7 +808,7 @@ void AudioSpatializationService::InitSpatializationState()
     }
 }
 
-void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation operation, const std::string address)
+void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation operation)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     switch (operation) {
@@ -776,13 +826,14 @@ void AudioSpatializationService::WriteSpatializationStateToDb(WriteToDbOperation
                 "Failed to write spatialization_scene to setting db: %{public}d", ret);
             break;
         }
-        case WRITE_DEVICESPATIAL_INFO: {
-            std::string encryptedAddress = GetSha256EncryptAddress(address);
-            uint32_t tmpID = addressToDeviceIDMap_[encryptedAddress];
-            ErrCode ret = settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device" +
-                std::to_string(tmpID), addressToDeviceSpatialInfoMap_[encryptedAddress]);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state_device%{public}d to"
-                "setting db: %{public}d", tmpID, ret);
+        case WRITE_ALLDEVICESPATIAL_INFO: {
+            std::ostringstream oss;
+            for (const auto& entry : addressToDeviceSpatialInfoMap_) {
+                oss << "{" << entry.second << "}";
+            }
+            ErrCode ret = settingProvider.PutStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device", oss.str());
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write spatialization_state_device to"
+                "setting db: %{public}d", ret);
             ret = settingProvider.PutStringValue(PRE_SETTING_SPATIAL_ADDRESS, preSettingSpatialAddress_);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to write pre_setting_spatial_address to"
                 "setting db: %{public}d", ret);
@@ -867,7 +918,8 @@ std::string AudioSpatializationService::GetSha256EncryptAddress(const std::strin
 {
     const int32_t HexWidth = 2;
     unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char *>(address.c_str()), address.size(), hash);
+    AudioSecureHash::AudioSecureHashAlgo(reinterpret_cast<const unsigned char *>(address.c_str()),
+        address.size(), hash);
     std::stringstream ss;
     for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
         ss << std::hex << std::setw(HexWidth) << std::setfill('0') << (int32_t)hash[i];
@@ -919,13 +971,10 @@ std::string AudioSpatializationService::RemoveOldestDevice()
 void AudioSpatializationService::UpdateDeviceSpatialMapInfo(std::string address, std::string deviceSpatialInfo)
 {
     std::string encryptedAddress = GetSha256EncryptAddress(address);
-    if (!addressToDeviceSpatialInfoMap_.count(encryptedAddress)) {
-        if (addressToDeviceSpatialInfoMap_.size() >= MAX_DEVICE_NUM) {
-            std::string oldestAddr = RemoveOldestDevice();
-            addressToDeviceIDMap_[encryptedAddress] = addressToDeviceIDMap_[oldestAddr];
-        } else {
-            addressToDeviceIDMap_[encryptedAddress] = addressToDeviceSpatialInfoMap_.size() + 1;
-        }
+    if (!addressToDeviceSpatialInfoMap_.count(encryptedAddress) &&
+        addressToDeviceSpatialInfoMap_.size() >= MAX_DEVICE_NUM) {
+        RemoveOldestDevice();
+        AUDIO_INFO_LOG("the number of devices exceeds the maximum limit, remove the least recently used one.");
     }
     addressToDeviceSpatialInfoMap_[encryptedAddress] = deviceSpatialInfo;
 }

@@ -95,7 +95,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
 
   public_external_deps += [
     "libxml2:libxml2",
-    "openssl:libcrypto_shared",
   ]
 
   if (accessibility_enable == true) {

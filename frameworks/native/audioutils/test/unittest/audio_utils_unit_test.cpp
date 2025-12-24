@@ -108,6 +108,23 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test EncodingTypeStr  API
+* @tc.type  : FUNC
+* @tc.number: EncodingTypeStr_001
+* @tc.desc  : Test EncodingTypeStr API
+*/
+HWTEST(AudioUtilsUnitTest, EncodingTypeStr_001, TestSize.Level1)
+{
+    AudioEncodingType type = ENCODING_PCM;
+    std::string result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "PCM");
+
+    type = ENCODING_INVALID;
+    result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "INVALID");
+}
+
+/**
 * @tc.name  : Test PermissionUtil API
 * @tc.type  : FUNC
 * @tc.number: PermissionUtil_001
@@ -1210,14 +1227,14 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_006, TestSize.Level0
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetSourceName_007
-* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_LIVE
-*             when sourceType is others
+* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT
+*             when sourceType is SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT
 */
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0)
 {
-    SourceType sourceType = SOURCE_TYPE_MAX;
+    SourceType sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
-    EXPECT_EQ(sourceName, "UNKNOWN");
+    EXPECT_EQ(sourceName, "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT");
 }
 
 /**

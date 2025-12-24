@@ -18,7 +18,6 @@
 
 #include <dlfcn.h>
 #include <stdlib.h>
-#include "audio_suite_log.h"
 #include "audio_stream_info.h"
 
 namespace OHOS {

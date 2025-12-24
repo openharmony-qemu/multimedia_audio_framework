@@ -64,6 +64,8 @@ public:
 
     virtual int32_t Drain(bool stopFlag) override { return 0; }
 
+    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return 0; }
+
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
@@ -126,7 +128,7 @@ public:
 
     virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
 
-    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+    virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
     virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, uint32_t method) override
     {
@@ -151,7 +153,7 @@ public:
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
 
-    virtual int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
     virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
@@ -1425,10 +1427,44 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_051, TestSize.Level1
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     float speed = 2.0f;
     auto ret = ptrRendererInClientInner->SetSpeed(speed);
     EXPECT_EQ(ret, SUCCESS);
+
+    ptrRendererInClientInner->isHWDecodingType_ = true;
+    ret = ptrRendererInClientInner->SetSpeed(speed);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteRawBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: WriteRawBuffer_001
+ * @tc.desc  : Test RendererInClientInner::WriteRawBuffer.
+ */
+HWTEST(RendererInClientInnerUnitTest, WriteRawBuffer_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = nullptr;
+    bufferDesc.dataLength = 0;
+    int32_t ret = ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    bufferDesc.dataLength = 1;
+    ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
+    EXPECT_NE(ptrRendererInClientInner->sleepCount_, 0);
 }
 
 /**
@@ -1919,6 +1955,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_066, TestSize.Level1
 HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_067, TestSize.Level1)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     float volume = -0.1f;
     int32_t ret = ptrRendererInClientInner->SetDuckVolume(volume);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
@@ -1926,6 +1966,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_067, TestSize.Level1
     volume = 1.1f;
     ret = ptrRendererInClientInner->SetDuckVolume(volume);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    volume = 0.2f;
+    ret = ptrRendererInClientInner->SetDuckVolume(volume);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1974,6 +2018,11 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_070, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.encoding = ENCODING_AUDIOVIVID;
     ret = ptrRendererInClientInner->GetBufferDesc(bufDesc);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+
+    ptrRendererInClientInner->isHWDecodingType_ = true;
+    ptrRendererInClientInner->clientBuffer_ = nullptr;
+    ret = ptrRendererInClientInner->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -2422,6 +2471,14 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_088, TestSize.Level1
     bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
 
     EXPECT_EQ(ret, true);
+
+    BufferDesc bufferDesc;
+    int32_t result = ptrRendererInClientInner->GetRawBuffer(bufferDesc);
+    EXPECT_EQ(result, SUCCESS);
+
+    ptrRendererInClientInner->clientBuffer_ = nullptr;
+    result = ptrRendererInClientInner->GetRawBuffer(bufferDesc);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -2475,6 +2532,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_090, TestSize.Level4
 
     // totalsize is 100
     ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(100);
+    ret = ptrRendererInClientInner->ProcessWriteInner(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ptrRendererInClientInner->isHWDecodingType_ = true;
     ret = ptrRendererInClientInner->ProcessWriteInner(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 }

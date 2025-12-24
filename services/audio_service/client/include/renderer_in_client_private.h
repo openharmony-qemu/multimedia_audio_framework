@@ -229,6 +229,8 @@ public:
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    const std::string GetBundleName() override;
+    void SetBundleName(std::string &name) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -239,6 +241,14 @@ private:
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
+
+    void InitDFXOperaiton();
+
+    bool GetHWDecodingTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+
+    int32_t GetRawBuffer(BufferDesc &bufDesc);
+
+    int32_t WriteRawBuffer(BufferDesc &bufferDesc);
 
     const AudioProcessConfig ConstructConfig();
 
@@ -337,6 +347,8 @@ private:
     RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
+
+    bool isHWDecodingType_ = false;
 
     // for data process
     bool isBlendSet_ = false;
@@ -494,10 +506,17 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
-    bool loudVolumeModeEnable_ = false;
+    int32_t loudVolumeSupportMode_ = 0;
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
+
+    enum LoudVolumeSupportType {
+        LOUD_VOLUME_NOT_SUPPORT = 0,
+        LOUD_VOLUME_SUPPORT,
+        LOUD_VOLUME_SUPPORT_ONLY_MUSIC,
+        LOUD_VOLUME_SUPPORT_ONLY_VOICE,
+    };
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -534,6 +553,8 @@ private:
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
+
+    std::string bundleName = "";
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

@@ -47,9 +47,9 @@ int32_t DirectAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("DirectAudioRenderSink::Init");
+    attr_ = attr;
     testFlag_ = system::GetIntParameter("persist.multimedia.eac3test", 0);
     if (!testFlag_) {
-        attr_ = attr;
         int32_t ret = CreateRender();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     }
@@ -77,6 +77,7 @@ void DirectAudioRenderSink::DeInit(void)
 
 bool DirectAudioRenderSink::IsInited(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     return sinkInited_;
 }
 
@@ -88,13 +89,12 @@ int32_t DirectAudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
-    dumpFileName_ = "direct_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
-    std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
+    dumpFileName_ = EncodingTypeStr(attr_.encodingType) + "_" + GetTime() + "_" + std::to_string(attr_.sampleRate)
+        + "_" + std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".not.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (testFlag_) {
         started_ = true;
         lock.unlock();
-        StartTestThread();
         return SUCCESS;
     }
     AudioXCollie audioXCollie("DirectAudioRenderSink::Start", TIMEOUT_SECONDS_10,
@@ -155,12 +155,24 @@ int32_t DirectAudioRenderSink::Resume(void)
 
 int32_t DirectAudioRenderSink::Pause(void)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    AudioXCollie audioXCollie("DirectAudioRenderSink::Pause", TIMEOUT_SECONDS_10, nullptr, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    int32_t ret = audioRender_->Pause(audioRender_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Pause fail:%{public}d", ret);
+    started_ = false;
+    return SUCCESS;
 }
 
 int32_t DirectAudioRenderSink::Flush(void)
 {
+    AUDIO_INFO_LOG("flush");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+
+    int32_t ret = audioRender_->Flush(audioRender_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail:%{public}d", ret);
     return SUCCESS;
 }
 
@@ -171,8 +183,18 @@ int32_t DirectAudioRenderSink::Reset(void)
 
 int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     if (testFlag_) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
+        Trace trace("DirectAudioRenderSink::MockRenderFrame");
+        int8_t *ptr = reinterpret_cast<int8_t *>(&data) + sizeof(HWDecodingInfo);
+        CHECK_AND_RETURN_RET_LOG(len > sizeof(HWDecodingInfo), ERR_OPERATION_FAILED, "mock write failed");
+        size_t dataLen = len - sizeof(HWDecodingInfo);
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(ptr), dataLen);
+        uint64_t temp = *reinterpret_cast<uint64_t *>(&data);
+        CHECK_AND_RETURN_RET_LOG(temp >= mockPts_, ERR_OPERATION_FAILED, "mock write failed");
+        usleep(temp - mockPts_);
+        mockPts_ = temp;
+        return SUCCESS;
     } else {
         int64_t stamp = ClockTime::GetCurNano();
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
@@ -188,10 +210,7 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
 #endif
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
         if (writeLen != 0) {
-            AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
-                AudioEncodingType::ENCODING_EAC3, static_cast<AudioSampleFormat>(attr_.format),
-                static_cast<AudioChannel>(attr_.channel));
-            // EAC3 format is not supported to count volume
+            // EAC3 format is not supported to count volume, stream info in not needed.
             if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
                 DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
                 AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
@@ -208,29 +227,22 @@ int64_t DirectAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t DirectAudioRenderSink::SuspendRenderSink(void)
+void DirectAudioRenderSink::SetSpeed(float speed)
 {
-    return SUCCESS;
-}
-
-int32_t DirectAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void DirectAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-}
-
-std::string DirectAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetRenderSpeed(audioRender_, speed);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "failed:%{public}d", ret);
 }
 
 int32_t DirectAudioRenderSink::SetVolume(float left, float right)
 {
-    return SUCCESS;
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    float half = 2.0f;
+    float volume = (left + right) / half;
+    int32_t ret = audioRender_->SetVolume(audioRender_, volume);
+    return ret;
 }
 
 int32_t DirectAudioRenderSink::GetVolume(float &left, float &right)
@@ -248,13 +260,13 @@ int32_t DirectAudioRenderSink::GetLatency(uint32_t &latency)
 
 int32_t DirectAudioRenderSink::GetTransactionId(uint64_t &transactionId)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    transactionId = reinterpret_cast<uint64_t>(audioRender_);
+    transactionId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HWDECODING);
     return SUCCESS;
 }
 
 int32_t DirectAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     struct AudioTimeStamp stamp = {};
@@ -266,6 +278,8 @@ int32_t DirectAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t
         "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
     timeSec = stamp.tvSec;
     timeNanoSec = stamp.tvNSec;
+    Trace trace("DirectAudioRenderSink::GetRenderPosition:frames:" + std::to_string(frames) + " Sec:" +
+        std::to_string(timeSec) + " NSec:" + std::to_string(timeNanoSec));
     return ret;
 }
 
@@ -305,47 +319,6 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void DirectAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void DirectAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-}
-
-int32_t DirectAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t DirectAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t DirectAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -367,6 +340,7 @@ int32_t DirectAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
 
 int32_t DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
     int32_t ret = SUCCESS;
     hdiCallback_ = {
@@ -386,11 +360,6 @@ int32_t DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const 
 void DirectAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: directSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
-}
-
-void DirectAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type,
@@ -413,11 +382,19 @@ int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self,
 
 void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 {
+    // in plan: add type switcher for each encoding
+    switch (attr_.encodingType) {
+        case ENCODING_EAC3:
+            param.format = AUDIO_FORMAT_TYPE_EAC3;
+            break;
+        default:
+            AUDIO_WARNING_LOG("unknown format type, use PCM_16 as default");
+            param.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
+    }
     param.channelCount = attr_.channel;
-    param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
-    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_EAC3));
-    param.type = AUDIO_DIRECT;
+    param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HWDECODING));
+    param.type = AUDIO_OFFLOAD;
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -425,11 +402,17 @@ void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &pa
     param.silenceThreshold = 0;
     param.sampleRate = attr_.sampleRate;
     param.channelLayout = attr_.channelLayout;
+
+    AUDIO_INFO_LOG("Init offloadInfo with format:%{public}s", EncodingTypeStr(attr_.encodingType).c_str());
+    param.offloadInfo.sampleRate = attr_.sampleRate;
+    param.offloadInfo.channelCount = attr_.channel;
+    param.offloadInfo.format = param.format;
+    param.offloadInfo.channelLayout = attr_.channelLayout;
 }
 
 void DirectAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
-    deviceDesc.pins = PIN_OUT_SPEAKER;
+    deviceDesc.pins = PIN_OUT_DP;
     deviceDesc.desc = const_cast<char *>("");
 }
 

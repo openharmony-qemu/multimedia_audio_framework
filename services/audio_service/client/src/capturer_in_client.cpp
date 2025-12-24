@@ -199,15 +199,20 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
 {
-    HILOG_COMM_INFO("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
-        " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
-        info.encoding);
+    HILOG_COMM_INFO("[SetAudioStreamInfo]AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels,
+        info.format, eStreamType_, info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
-
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM, "GetByteSizePerFrameWithEc failed with invalid params");
+    } else {
+        CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+    }
+    
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
@@ -426,7 +431,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appTokenId = appTokenId_;
     config.appInfo.appFullTokenId = fullTokenId_;
 
-    config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    }
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
@@ -1917,6 +1926,16 @@ int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
 {
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERR_INCORRECT_MODE;
+}
+
+const std::string CapturerInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void CapturerInClientInner::SetBundleName(std::string &name)
+{
+    bundleName = name;
 }
 } // namespace AudioStandard
 } // namespace OHOS

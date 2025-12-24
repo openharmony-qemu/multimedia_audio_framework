@@ -73,7 +73,6 @@ RemoteOffloadAudioRenderSink::~RemoteOffloadAudioRenderSink()
     if (sinkInited_.load()) {
         DeInit();
     }
-    CheckFlushThread();
     AUDIO_INFO_LOG("volumeDataCount: %{public}" PRId64, volumeDataCount_);
 }
 
@@ -86,6 +85,7 @@ int32_t RemoteOffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
 
+    InitLatencyMeasurement();
     renderInited_.store(true);
     sinkInited_.store(true);
     return SUCCESS;
@@ -126,16 +126,10 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
         renderInited_.store(true);
     }
-    InitLatencyMeasurement();
 
     if (started_.load()) {
         if (isFlushing_.load()) {
-#ifdef SUPPORT_OLD_ENGINE
-            isNeedRestart_ = true;
-            AUDIO_ERR_LOG("start fail, will restart after flush");
-#else
             AUDIO_ERR_LOG("start fail, during flush");
-#endif
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -160,7 +154,6 @@ int32_t RemoteOffloadAudioRenderSink::Stop(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
     Trace trace("RemoteOffloadAudioRenderSink::Stop");
-    DeInitLatencyMeasurement();
 
     if (!started_.load()) {
         UnLockOffloadRunningLock();
@@ -222,39 +215,12 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
     AUDIO_INFO_LOG("in");
 
-#ifdef SUPPORT_OLD_ENGINE
-    CheckFlushThread();
-    isFlushing_.store(true);
-    flushThread_ = std::make_shared<std::thread>([&] {
-        auto future = async(std::launch::async, [&] {
-            std::lock_guard<std::mutex> lock(sinkMutex_);
-            CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-            return audioRender_->Flush();
-        });
-        if (future.wait_for(std::chrono::milliseconds(250)) == std::future_status::timeout) { // 250: max wait 250ms
-            AUDIO_ERR_LOG("flush fail, timeout of 250ms");
-        } else {
-            int32_t ret = future.get();
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
-            }
-        }
-        isFlushing_.store(false);
-        if (isNeedRestart_) {
-            isNeedRestart_ = false;
-            Start();
-        }
-    });
-    FlushResetPosition();
-    renderPos_ = 0;
-#else
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     isFlushing_.store(true);
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush();
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
     isFlushing_.store(false);
-#endif
     return SUCCESS;
 }
 
@@ -265,30 +231,14 @@ int32_t RemoteOffloadAudioRenderSink::Flush(void)
     return FlushInner();
 }
 
-void RemoteOffloadAudioRenderSink::CheckFlushThread()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    if (flushThread_ != nullptr && flushThread_->joinable()) {
-        flushThread_->join();
-    }
-    flushThread_.reset();
-#endif
-}
-
 int32_t RemoteOffloadAudioRenderSink::Reset(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::Reset");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_OPERATION_FAILED, "not start, invalid state");
 
-#ifdef SUPPORT_OLD_ENGINE
-    isNeedRestart_ = true;
-#endif
     int32_t ret = FlushInner();
     if (ret != SUCCESS) {
-#ifdef SUPPORT_OLD_ENGINE
-        isNeedRestart_ = false;
-#endif
         AUDIO_ERR_LOG("reset fail");
         return ERR_OPERATION_FAILED;
     }
@@ -340,16 +290,6 @@ int64_t RemoteOffloadAudioRenderSink::GetVolumeDataCount(void)
     return volumeDataCount_;
 }
 
-int32_t RemoteOffloadAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t RemoteOffloadAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
 void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
@@ -357,11 +297,6 @@ void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, co
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(value.c_str());
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
-}
-
-std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
@@ -749,48 +684,6 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     speed_ = speed;
 }
 
-int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void RemoteOffloadAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void RemoteOffloadAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t RemoteOffloadAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t RemoteOffloadAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -925,11 +818,6 @@ void RemoteOffloadAudioRenderSink::OnAudioParamChange(const std::string &adapter
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
 }
 
-void RemoteOffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
 uint32_t RemoteOffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);
@@ -1038,11 +926,6 @@ void RemoteOffloadAudioRenderSink::InitLatencyMeasurement(void)
     signalDetectAgent_->sampleFormat_ = attr_.format;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(attr_.format);
     signalDetected_ = false;
-}
-
-void RemoteOffloadAudioRenderSink::DeInitLatencyMeasurement(void)
-{
-    signalDetectAgent_ = nullptr;
 }
 
 void RemoteOffloadAudioRenderSink::CheckLatencySignal(uint8_t *data, size_t len)

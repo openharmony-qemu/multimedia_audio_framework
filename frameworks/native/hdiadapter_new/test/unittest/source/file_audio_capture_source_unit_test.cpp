@@ -217,30 +217,6 @@ HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_009, TestSize.Level1
 
 /**
  * @tc.name   : Test FileSource API
- * @tc.number : FileSourceUnitTest_010
- * @tc.desc   : Test file source set audio scene
- */
-HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_010, TestSize.Level1)
-{
-    EXPECT_TRUE(source_ && source_->IsInited());
-    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test FileSource API
- * @tc.number : FileSourceUnitTest_011
- * @tc.desc   : Test file source update active device
- */
-HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_011, TestSize.Level1)
-{
-    EXPECT_TRUE(source_ && source_->IsInited());
-    int32_t ret = source_->UpdateActiveDevice(DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test FileSource API
  * @tc.number : FileSourceUnitTest_012
  * @tc.desc   : Test file source update apps uid
  */

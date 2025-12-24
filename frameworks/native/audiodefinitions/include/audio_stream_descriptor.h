@@ -58,6 +58,7 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
     int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
+    AudioStreamInfo ecStreamInfo_ = {};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -124,7 +125,7 @@ public:
         streamAction_ = action;
     }
 
-    void SetBunduleName(std::string &bundleName);
+    void SetBundleName(std::string &bundleName);
 
     std::string GetBundleName()
     {
@@ -246,6 +247,15 @@ public:
             return DEVICE_TYPE_NONE;
         }
         return newDeviceDescs_[0]->getType();
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetMainNewDeviceDesc()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return nullptr;
+        }
+        return newDeviceDescs_[0];
     }
 
     bool IsA2dpOffloadStream()

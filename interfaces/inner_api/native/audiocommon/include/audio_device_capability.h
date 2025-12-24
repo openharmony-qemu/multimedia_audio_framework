@@ -12,19 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OFFLIEN_STREAM_IN_SERVER_FUZZ_H
-#define OFFLIEN_STREAM_IN_SERVER_FUZZ_H
 
-#include "offline_stream_in_server.h"
-#include "audio_info.h"
+#ifndef AUDIO_DEVICE_CAPABILITY_H
+#define AUDIO_DEVICE_CAPABILITY_H
+
+#include <audio_device_stream_info.h>
+
+#define REMOTE_DEFAULT_VOLUME 100
+
 namespace OHOS {
 namespace AudioStandard {
-class OfflineStreamInServerFuzzTest {
+class RemoteDeviceCapability {
+
 public:
-    void OfflineStreamInServerFuzz();
-    std::vector<std::function<void()>> Funcs_;
-    std::shared_ptr<OfflineStreamInServer> offlineStreamInServer_;
+    std::list<DeviceStreamInfo> streamInfoList_;
+    bool isSupportRemoteVolume_ = false;
+    int32_t initVolume_ = REMOTE_DEFAULT_VOLUME;
+    bool initMuteStatus_ = false;
+
+    std::string GetJsonString() const;
+    void FromJsonString(const std::string &jsonString);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // OFFLIEN_STREAM_IN_SERVER_FUZZ_H
+#endif // AUDIO_DEVICE_CAPABILITY_H

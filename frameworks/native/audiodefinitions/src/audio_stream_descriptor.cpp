@@ -120,7 +120,8 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         preferredInputDevice.Marshalling(parcel) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
-        parcel.WriteInt32(oldOriginalFlag_);
+        parcel.WriteInt32(oldOriginalFlag_) &&
+        ecStreamInfo_.Marshalling(parcel);
 }
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
@@ -151,6 +152,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
     info->oldOriginalFlag_ = parcel.ReadInt32();
+    info->ecStreamInfo_.UnmarshallingSelf(parcel);
 
     return info;
 }
@@ -185,7 +187,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     }
 }
 
-void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
+void AudioStreamDescriptor::SetBundleName(std::string &bundleName)
 {
     AUDIO_INFO_LOG("Bundle name: %{public}s", bundleName.c_str());
     bundleName_ = bundleName;

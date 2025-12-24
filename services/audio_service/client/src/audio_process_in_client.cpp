@@ -61,6 +61,7 @@ static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
+static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 }
 
 class ProcessCbImpl;
@@ -376,7 +377,7 @@ const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy
 */
 void AudioProcessInClientInner::AudioServerDied(pid_t pid, pid_t uid)
 {
-    HILOG_COMM_INFO("audio server died, will restore proxy in next call");
+    HILOG_COMM_INFO("[AudioServerDied]audio server died, will restore proxy in next call");
     std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
     gAudioServerProxy = nullptr;
 }
@@ -419,7 +420,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
-    HILOG_COMM_INFO("AudioProcessInClient deconstruct.");
+    HILOG_COMM_INFO("[~AudioProcessInClientInner]AudioProcessInClient deconstruct.");
 
     JoinCallbackLoop();
     if (isInited_) {
@@ -536,7 +537,7 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     duckVolumeInFloat_ = vol;
 
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
-    audioBuffer_->SetDuckFactor(vol);
+    audioBuffer_->SetDuckFactor(vol, DUCK_UNDUCK_DURATION_MS);
 
     return SUCCESS;
 }
@@ -1389,7 +1390,8 @@ void AudioProcessInClientInner::CallExitStandBy()
     int32_t result = processProxy_->Start();
     StreamStatus targetStatus = StreamStatus::STREAM_STARTING;
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_RUNNING);
-    HILOG_COMM_INFO("Call start result:%{public}d  status change: %{public}s", result, ret ? "success" : "fail");
+    HILOG_COMM_INFO("[CallExitStandBy]Call start result:%{public}d  status change: %{public}s",
+        result, ret ? "success" : "fail");
     UpdateHandleInfo();
 }
 
@@ -1616,7 +1618,9 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
         AUDIO_US_PER_SECOND,
         [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
-            return true;
+            CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic &&
+                streamStatus_->load() == StreamStatus::STREAM_STAND_BY, true);
+            return false;
         }
 
         if (IsRestoreNeeded()) {
@@ -1844,7 +1848,7 @@ int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "SetLoopTimes processProxy_ is nullptr");
-    processProxy_->PreSetLoopTimes(bufferLoopTimes);
+    processProxy_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
 

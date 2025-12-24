@@ -148,6 +148,8 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
     {STREAM_VOICE_RING, "VOICE_RING"},
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
+    {STREAM_ANNOUNCEMENT, "ANNOUNCEMENT"},
+    {STREAM_EMERGENCY, "EMERGENCY"},
 };
 
 static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
@@ -582,7 +584,7 @@ bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullToke
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
-        HILOG_COMM_ERROR("failed: not allowed!");
+        HILOG_COMM_ERROR("[VerifyBackgroundCapture]failed: not allowed!");
     }
     return ret;
 }
@@ -1678,10 +1680,11 @@ void LatencyMonitor::ShowTimestamp(bool isRenderer)
 void LatencyMonitor::ShowBluetoothTimestamp()
 {
     std::lock_guard lock(mutex_);
-    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, BTSinkDetectedTime:%{public}s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
-    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, BTSinkDetectedTime:%s",
-        rendererMockTime_.c_str(), sinkDetectedTime_.c_str());
+    AUDIO_INFO_LOG("LatencyMeas RendererMockTime:%{public}s, RendererInServerDetectedTime:%{public}s, "
+                   "BTSinkDetectedTime:%{public}s", rendererMockTime_.c_str(),
+        rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
+    AUTO_CTRACE("LatencyMeas RendererMockTime:%s, RendererInServerDetectedTime:%s, BTSinkDetectedTime:%s",
+        rendererMockTime_.c_str(), rendererInServerDetectedTime_.c_str(), sinkDetectedTime_.c_str());
 }
 
 const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
@@ -1762,6 +1765,9 @@ const std::string AudioInfoDumpUtils::GetSourceName(SourceType sourceType)
         case SOURCE_TYPE_LIVE:
             name = "SOURCE_TYPE_LIVE";
             break;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            name = "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT";
+            break;
         default:
             name = "UNKNOWN";
     }
@@ -1819,7 +1825,9 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
-    {STREAM_APP, STREAM_APP}
+    {STREAM_APP, STREAM_APP},
+    {STREAM_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
+    {STREAM_EMERGENCY, STREAM_EMERGENCY},
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
@@ -1848,7 +1856,10 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_SYSTEM_ENFORCED, STREAM_SYSTEM},
 
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
-    {STREAM_APP, STREAM_APP}
+    {STREAM_APP, STREAM_APP},
+
+    {STREAM_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
+    {STREAM_EMERGENCY, STREAM_EMERGENCY}
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultVolumeToStreamUsageMap_ = {
@@ -1880,7 +1891,11 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_ACCESSIBILITY, {
         STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_ULTRASONIC, {
-        STREAM_USAGE_ULTRASONIC}}
+        STREAM_USAGE_ULTRASONIC}},
+    {STREAM_ANNOUNCEMENT, {
+        STREAM_USAGE_ANNOUNCEMENT}},
+    {STREAM_EMERGENCY, {
+        STREAM_USAGE_EMERGENCY}}
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {
@@ -1909,7 +1924,11 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolume
         STREAM_USAGE_ULTRASONIC}},
     {STREAM_VOICE_CALL_ASSISTANT, {
         STREAM_USAGE_VOICE_CALL_ASSISTANT
-    }}
+    }},
+    {STREAM_ANNOUNCEMENT, {
+        STREAM_USAGE_ANNOUNCEMENT}},
+    {STREAM_EMERGENCY, {
+        STREAM_USAGE_EMERGENCY}}
 };
 
 std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = {
@@ -1933,7 +1952,9 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_VOICE_CALL},
     {STREAM_USAGE_VOICE_RINGTONE, STREAM_RING},
     {STREAM_USAGE_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
-    {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC}
+    {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC},
+    {STREAM_USAGE_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
+    {STREAM_USAGE_EMERGENCY, STREAM_EMERGENCY},
 };
 
 std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
@@ -1947,6 +1968,8 @@ std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
     STREAM_ULTRASONIC,
     STREAM_NOTIFICATION,
     STREAM_NAVIGATION,
+    STREAM_ANNOUNCEMENT,
+    STREAM_EMERGENCY,
     STREAM_ALL,
 };
 
@@ -1969,6 +1992,8 @@ static const std::map<AudioStreamType, StreamUsage> STREAMTYPE_TO_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+    {STREAM_ANNOUNCEMENT, STREAM_USAGE_ANNOUNCEMENT},
+    {STREAM_EMERGENCY, STREAM_USAGE_EMERGENCY},
 };
 
 static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
@@ -2039,7 +2064,9 @@ std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamU
     {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},
     {STREAM_ULTRASONIC, {STREAM_USAGE_ULTRASONIC}},
-    {STREAM_MUSIC, {STREAM_USAGE_MUSIC}}
+    {STREAM_MUSIC, {STREAM_USAGE_MUSIC}},
+    {STREAM_ANNOUNCEMENT, {STREAM_USAGE_ANNOUNCEMENT}},
+    {STREAM_EMERGENCY, {STREAM_USAGE_EMERGENCY}},
 };
 
 std::vector<StreamUsage> VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType)
@@ -2219,6 +2246,31 @@ void AudioDump::SetVersionType(const std::string& versionType)
 std::string AudioDump::GetVersionType()
 {
     return versionType_;
+}
+
+bool IsHWDecodingType(AudioEncodingType type)
+{
+    return HWDECODING_TYPES.count(type);
+}
+
+const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringMap = {
+    {ENCODING_PCM, "PCM"},
+    {ENCODING_AUDIOVIVID, "AUDIOVIVID"},
+    {ENCODING_EAC3, "EAC3"},
+    {ENCODING_AC3, "AC3"},
+    {ENCODING_TRUE_HD, "TRUE_HD"},
+    {ENCODING_DTS_HD, "DTS_HD"},
+    {ENCODING_DTS_X, "DTS_X"},
+    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
+};
+
+std::string EncodingTypeStr(AudioEncodingType type)
+{
+    auto it = g_EncodingTypeToStringMap.find(type);
+    if (it == g_EncodingTypeToStringMap.end()) {
+        return "INVALID";
+    }
+    return it->second;
 }
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info)

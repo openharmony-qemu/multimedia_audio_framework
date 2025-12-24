@@ -287,8 +287,10 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    bool HandleRingToDefaultSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
-    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    bool HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
+    bool IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene);
+    int32_t SetSessionDefaultOutputDevice(
+        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false);
     int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
@@ -323,6 +325,8 @@ private:
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    bool HandleA2dpSuspendWhenLoad();
+    void HandleA2dpRestore();
     int32_t FetchInputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void SetAudioServerProxy();
@@ -351,6 +355,8 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
+    void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -363,6 +369,7 @@ private:
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
     void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
+    bool CheckRingAndVoipStreamRunning();
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
     void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration, std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -459,6 +466,7 @@ private:
     void UpdateSessionConnectionState(const int32_t &sessionID, const int32_t &state);
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
@@ -489,7 +497,6 @@ private:
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
 
-    bool IsPaRoute(uint32_t routeFlag);
     bool RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t HandleScoOutputDeviceFetched(
         shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason);
@@ -521,6 +528,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
@@ -546,6 +554,9 @@ private:
     void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
+    bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
+        const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);
+    void HandleA2dpSuspend();
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
@@ -650,6 +661,10 @@ private:
     bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
 
+    std::atomic<bool> a2dpNeedSuspend_ = { false };
+    std::chrono::steady_clock::time_point a2dpSuspendUntil_;
+    std::mutex a2dpSuspendMutex_;
+
     // offload delay release
     // isOffloadOpened_ check whether offload is need open
     std::atomic<bool> isOffloadOpened_[OFFLOAD_TYPE_NUM] = {};
@@ -702,6 +717,14 @@ private:
     std::shared_ptr<AudioStreamDescriptor> streamDesc_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_;
     const AudioStreamDeviceChangeReasonExt reason_;
+};
+
+class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {
+public:
+    void Exec() override
+    {
+        AudioCoreService::GetCoreService()->HandleA2dpRestore();
+    }
 };
 }
 }

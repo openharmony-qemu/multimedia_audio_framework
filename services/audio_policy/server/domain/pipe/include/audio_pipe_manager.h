@@ -82,6 +82,7 @@ public:
     void UpdateRingAndVoipStreamStatus(const AudioScene audioScene);
     void UpdateRingAndVoipStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs);
+    bool CheckRingAndVoipStreamRunning();
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescForAudioScene(const AudioScene audioScene);
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetRingAndVoipDescMap();
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);

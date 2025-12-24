@@ -18,30 +18,21 @@
 
 #include <iostream>
 #include <string>
+#include <mutex>
 #include <functional>
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_engine_callback_types.h"
 #include "common/hdi_adapter_info.h"
 #include "common/hdi_adapter_type.h"
+#include "util/callback_wrapper.h"
+#include "i_audio_sink_callback.h"
 
 #define SUCCESS_RET { return SUCCESS; }
 #define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 
 namespace OHOS {
 namespace AudioStandard {
-class IAudioSinkCallback {
-public:
-    virtual ~IAudioSinkCallback() = default;
-
-    virtual void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
-        const std::string &condition, const std::string &value) {};
-
-    virtual void OnRenderSinkStateChange(uint32_t uniqueId, bool started) {};
-
-    virtual void OnOutputPipeChange(AudioPipeChangeType changeType,
-        std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) {};
-};
 
 class IAudioRenderSink {
 public:
@@ -60,11 +51,12 @@ public:
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
     virtual int64_t GetVolumeDataCount() = 0;
 
-    virtual int32_t SuspendRenderSink(void) = 0;
-    virtual int32_t RestoreRenderSink(void) = 0;
+    virtual int32_t SuspendRenderSink(void) SUCCESS_RET
+    virtual int32_t RestoreRenderSink(void) SUCCESS_RET
 
-    virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
-    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
+    virtual void SetAudioParameter(const AudioParamKey key,
+        const std::string &condition, const std::string &value) {};
+    virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
@@ -78,21 +70,18 @@ public:
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
     virtual void SetSpeed(float speed) {}
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
-    virtual int32_t GetAudioScene(void) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) NOT_SUPPORT_RET
+    virtual int32_t GetAudioScene(void) NOT_SUPPORT_RET
 
-    virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;
-    virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback) {}
-    virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSinkCallback> callback) {}
-    virtual void ResetActiveDeviceForDisconnect(DeviceType device) = 0;
+    virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) NOT_SUPPORT_RET
 
-    virtual int32_t SetPaPower(int32_t flag) = 0;
-    virtual int32_t SetPriPaPower(void) = 0;
+    virtual void ResetActiveDeviceForDisconnect(DeviceType device) {}
+
+    virtual int32_t SetPaPower(int32_t flag) NOT_SUPPORT_RET
+    virtual int32_t SetPriPaPower(void) NOT_SUPPORT_RET
 
     virtual int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
-    virtual void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state) {};
 
     virtual int32_t SetRenderEmpty(int32_t durationUs) SUCCESS_RET
     virtual void SetAddress(const std::string &address) {}
@@ -100,7 +89,6 @@ public:
 
     virtual void DumpInfo(std::string &dumpString) = 0;
     virtual bool IsSinkInited(void) NOT_SUPPORT_RET
-    virtual std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo() { return nullptr; }
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -110,10 +98,8 @@ public:
     // offload extend function
     virtual int32_t Drain(AudioDrainType type) NOT_SUPPORT_RET
     virtual void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
-    virtual int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
-    {
-        return SUCCESS;
-    }
+    virtual int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) SUCCESS_RET
+
     virtual int32_t SetBufferSize(uint32_t sizeMs) NOT_SUPPORT_RET
     virtual int32_t SetOffloadRenderCallbackType(RenderCallbackType type) NOT_SUPPORT_RET
     virtual int32_t LockOffloadRunningLock(void) NOT_SUPPORT_RET
@@ -131,6 +117,8 @@ public:
      */
     virtual void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
         const StreamUsage usage) {};
+
+    virtual void ReleaseActiveDevice(DeviceType type) {}
 
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
@@ -152,6 +140,34 @@ public:
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
 
     virtual void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) {}
+
+    // Implement by self (begin)
+    virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback);
+    virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSinkCallback> callback);
+
+    virtual std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo();
+    virtual void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    // Implement by self (end)
+
+protected:
+    // Funcs to handle pipe info
+    virtual void InitPipeInfo(uint32_t id, HdiAdapterType adapter, uint32_t routeFlag,
+        std::vector<DeviceType> devices = { DEVICE_TYPE_NONE });
+    virtual void ChangePipeStatus(AudioPipeStatus state);
+    virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
+    virtual void ChangePipeStream(StreamChangeType change,
+        uint32_t streamId, StreamUsage usage, RendererState state);
+    virtual void DeinitPipeInfo();
+
+    // Common variables
+    SinkCallbackWrapper callback_ = {};
+    std::mutex sinkMutex_;
+
+private:
+    // For sink info notify
+    std::shared_ptr<AudioOutputPipeInfo> pipeInfo_ = nullptr;
+    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

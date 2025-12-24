@@ -2126,5 +2126,93 @@ HWTEST_F(AudioCoreServiceUnitTest, CheckStaticModeAndSelectFlag_002, TestSize.Le
     EXPECT_TRUE(audioCoreService->CheckStaticModeAndSelectFlag(streamDesc));
 }
 
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenLoad
+ * @tc.number : HandleA2dpSuspendWhenLoad_001
+ * @tc.desc   : Test HandleA2dpSuspendWhenLoad when a2dp need suspend
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpSuspendWhenLoad_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_.store(true);
+    EXPECT_TRUE(audioCoreService->HandleA2dpSuspendWhenLoad());
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspendWhenLoad
+ * @tc.number : HandleA2dpSuspendWhenLoad_002
+ * @tc.desc   : Test HandleA2dpSuspendWhenLoad when a2dp needn't suspend
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpSuspendWhenLoad_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_.store(false);
+    EXPECT_FALSE(audioCoreService->HandleA2dpSuspendWhenLoad());
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpRestore
+ * @tc.number : HandleA2dpRestore_001
+ * @tc.desc   : Test HandleA2dpRestore, needn't restore
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = false;
+    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+    audioCoreService->a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+        std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->HandleA2dpRestore();
+    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpRestore
+ * @tc.number : HandleA2dpRestore_002
+ * @tc.desc   : Test HandleA2dpRestore, call before a2dpSuspendUntil_
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = true;
+    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+    audioCoreService->a2dpSuspendUntil_ = std::chrono::steady_clock::now() +
+        std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->HandleA2dpRestore();
+    EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpRestore
+ * @tc.number : HandleA2dpRestore_003
+ * @tc.desc   : Test HandleA2dpRestore, call after a2dpSuspendUntil_
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = true;
+    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+    auto now = std::chrono::steady_clock::now();
+    audioCoreService->a2dpSuspendUntil_ = now - std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    auto afterSuspend = now + std::chrono::milliseconds(OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->HandleA2dpRestore();
+    EXPECT_TRUE(std::chrono::steady_clock::now() < afterSuspend);
+    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

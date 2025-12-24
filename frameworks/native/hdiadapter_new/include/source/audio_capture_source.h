@@ -66,18 +66,13 @@ public:
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
     int32_t UpdateSourceType(SourceType sourceType) override;
-    void RegistCallback(uint32_t type, IAudioSourceCallback *callback) override;
-    void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
-    void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state) override;
 
     void SetAddress(const std::string &address) override;
     int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
-    std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo() override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
     int32_t GetArmUsbDeviceStatus() override;
@@ -108,9 +103,12 @@ private:
     bool IsNonblockingSource(const std::string &adapterName);
     int32_t ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
         uint64_t &replyBytesEc) const;
+    void ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
     void SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc, const AudioCaptureFrameInfo &frameInfo);
-    int32_t ProcessECFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
+    int32_t CheckFrameInfoLen(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
+    void ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
     int32_t NonblockingStart(void);
     int32_t NonblockingStop(void);
     int32_t NonblockingCaptureFrameWithEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
@@ -123,14 +121,6 @@ private:
     bool IsCaptureInvalid(void) override;
     static AudioInputType MappingAudioInputType(std::string hdiSourceType);
     uint32_t GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const;
-
-    // Funcs to handle pipe info
-    void InitPipeInfo();
-    void ChangePipeStatus(AudioPipeStatus state);
-    void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state);
-    void DeinitPipeInfo();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -153,7 +143,6 @@ private:
     const std::string halName_ = "";
     IAudioSourceAttr attr_ = {};
     std::mutex callbackMutex_;
-    SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool captureInited_ = false;
     std::atomic<bool> started_ = false;
@@ -188,6 +177,8 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    FILE *ecDumpFile_ = nullptr;
+    std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;
@@ -196,10 +187,6 @@ private:
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
     static const std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
-
-    // For source info notify
-    std::shared_ptr<AudioInputPipeInfo> pipeInfo_ = nullptr;
-    std::mutex pipeLock_;
 };
 
 } // namespace AudioStandard

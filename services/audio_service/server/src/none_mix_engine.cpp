@@ -519,8 +519,8 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ret;
     }
     RegisterSinkLatencyFetcher(renderId_);
-    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    float volume = mdmMute ? 0.0f : 1.0f;
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float volume = 1.0f * mdmMuteFactor;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;

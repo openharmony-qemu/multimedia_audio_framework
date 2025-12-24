@@ -80,6 +80,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
+constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128K
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
 
@@ -490,6 +491,7 @@ struct StreamVolumeEvent : public Parcelable {
     int32_t volumeGroupId = -1;
     int32_t previousVolume = -1;
     std::string networkId = "";
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const override
     {
@@ -1311,7 +1313,6 @@ enum InnerCapMode : uint32_t {
 };
 
 struct StaticBufferInfo : public Parcelable {
-    int64_t preSetTotalLoopTimes_ = 0;
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
@@ -1319,11 +1320,10 @@ struct StaticBufferInfo : public Parcelable {
 
     bool Marshalling(Parcel &parcel) const override
     {
-        parcel.WriteInt64(preSetTotalLoopTimes_);
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return sharedMemory_->Marshalling(parcel);
+        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
@@ -1332,7 +1332,6 @@ struct StaticBufferInfo : public Parcelable {
         if (info == nullptr) {
             return nullptr;
         }
-        info->preSetTotalLoopTimes_ = parcel.ReadInt64();
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();
@@ -1677,6 +1676,7 @@ enum AudioParamKey {
     PERF_INFO = 201,
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
+    AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
 };
 
 struct DStatusInfo {
@@ -1694,6 +1694,12 @@ struct DStatusInfo {
     ConnectType connectType = CONNECT_TYPE_LOCAL;
     uint16_t dmDeviceType = 0;
     std::string dmDeviceInfo = "";
+};
+
+struct HWDecodingInfo {
+    uint64_t pts = 0;
+    uint32_t size = 0;
+    int32_t optCode = 0;
 };
 
 struct AudioRendererDataInfo {

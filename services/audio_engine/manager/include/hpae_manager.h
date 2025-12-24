@@ -220,7 +220,8 @@ private:
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
         MoveSessionType moveType);
     void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
-    void HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
+    void HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName,
+        MoveSessionType moveType);
     void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType,
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);

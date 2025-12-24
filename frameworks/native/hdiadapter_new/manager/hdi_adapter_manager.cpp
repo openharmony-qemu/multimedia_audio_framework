@@ -127,7 +127,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t rend
         AUDIO_WARNING_LOG("no available sink, renderId: %{public}u", renderId);
         return nullptr;
     }
-    HILOG_COMM_INFO("create sink, renderId: %{public}u", renderId);
+    HILOG_COMM_INFO("[GetRenderSink]create sink, renderId: %{public}u", renderId);
     HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
     std::shared_ptr<IAudioRenderSink> renderSink = fac.CreateRenderSink(renderId);
     if (renderSink == nullptr) {

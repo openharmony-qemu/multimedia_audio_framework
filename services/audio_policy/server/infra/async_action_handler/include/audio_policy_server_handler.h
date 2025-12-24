@@ -298,6 +298,8 @@ private:
 
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
+    bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
+        AudioSessionStateChangedEvent &stateChangedEvent);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;

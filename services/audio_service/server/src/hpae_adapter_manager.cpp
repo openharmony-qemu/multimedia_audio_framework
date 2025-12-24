@@ -304,7 +304,7 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
         std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
-        HILOG_COMM_ERROR("Create rendererStream Failed");
+        HILOG_COMM_ERROR("[CreateRendererStream]Create rendererStream Failed");
         return nullptr;
     }
     return rendererStream;

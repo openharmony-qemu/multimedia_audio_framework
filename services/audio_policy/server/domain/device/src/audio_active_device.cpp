@@ -238,6 +238,21 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
 #endif
 }
 
+void AudioActiveDevice::NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
+    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->deviceName_,
+        desc->networkId_);
+}
+
+void AudioActiveDevice::NotifyUserDisSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
+    ReleaseActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->networkId_);
+}
+
 void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReason reason)
 {
@@ -338,13 +353,18 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, c
     CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     if (!active) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
+        auto desc = std::make_shared<AudioDeviceDescriptor>();
+        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
+            SUCCESS, "redundant preferred call renderer");
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, desc, uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleNegtiveBt(deviceType);
 #endif
     } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr, uid, "SetDeviceActive");
+        const auto &desc = *itr;
+        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
+            SUCCESS, "redundant preferred call renderer");
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, desc, uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
@@ -366,18 +386,24 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
+    const auto &desc = *itr;
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            (*itr)->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(std::make_shared<AudioDeviceDescriptor>(**itr), ENABLE_UPDATE);
+            auto Desc = std::make_shared<AudioDeviceDescriptor>(*desc);
+            Desc->isEnable_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(Desc, ENABLE_UPDATE);
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
+        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
+            SUCCESS, "redundant preferred call renderer");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(**itr), uid, "SetCallDeviceActive");
+            std::make_shared<AudioDeviceDescriptor>(desc), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
+        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
+            SUCCESS, "redundant preferred call renderer");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
@@ -411,6 +437,14 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
         audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName, networkId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
+}
+
+void AudioActiveDevice::ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
+    const std::string &networkId)
+{
+    Trace trace("KeyAction AudioActiveDevice::ReleaseActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
+    auto ret = AudioServerProxy::GetInstance().ReleaseActiveDeviceRouteProxy(deviceType, deviceFlag, networkId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to release the route for %{public}d", deviceType);
 }
 
 bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
@@ -599,7 +633,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         STREAM_USAGE_GAME,
         STREAM_USAGE_DTMF,
         STREAM_USAGE_SYSTEM,
-        STREAM_USAGE_ENFORCED_TONE
+        STREAM_USAGE_ENFORCED_TONE,
+        STREAM_USAGE_ANNOUNCEMENT,
+        STREAM_USAGE_EMERGENCY
     };
     {
         std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);

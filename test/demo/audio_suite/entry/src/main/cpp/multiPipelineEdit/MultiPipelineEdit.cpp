@@ -18,13 +18,16 @@
 #include <fstream>
 #include <fcntl.h>
 #include <multiPipelineEdit/MultiPipelineEdit.h>
+#include "./callback/RegisterCallback.h"
+#include "./audioEffectNode/Output.h"
+#include "./audioEffectNode/Input.h"
 #include "../callback/RegisterCallback.h"
 #include "../audioEffectNode/Output.h"
 #include "../audioEffectNode/Input.h"
 #include "NodeManager.h"
 #include "PipelineManager.h"
 #include "audioSuiteError/AudioSuiteError.h"
-
+#include <./utils/Utils.h>
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
@@ -57,7 +60,7 @@ const int ARRAY_SIZE_2 = 2;
 const int AUDIOSUITE_ERROR_SYSTEM_CODE = 3;
 const int ERROR_CODE_3 = 3;
 const double HUNDRED_NUM = 100;
-const int VALID_FILE_LENGTH = -1;
+const int INVALID_FILE_LENGTH = -1;
 const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
@@ -504,7 +507,6 @@ napi_value DestroyMultiPipeline(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_audioSuiteEngine_Destroy result: %{public}d", static_cast<int>(result));
     g_engineInitedFlag = false;
-    g_engineInitedFlag = false;
     g_startMultiProcess = true;
     g_nodeManager = g_singlePipelineNodeManager;
     multiPipelineProcessMap.clear();
@@ -886,7 +888,7 @@ int GetFileLength(FILE *inputFile)
     if (fseek(inputFile, 0, SEEK_END) != 0) {
         fclose(inputFile);
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "fseek ERROR");
-        return VALID_FILE_LENGTH;
+        return INVALID_FILE_LENGTH;
     }
     int fileLength = ftell(inputFile);
     return fileLength;
@@ -904,9 +906,6 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     int fd = fileno(inputFile);
     int fileLength = GetFileLength(inputFile);
     OH_AVSource *source = OH_AVSource_CreateWithFD(fd, 0, fileLength);
-    if (source == nullptr) {
-        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
-    }
     OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
     if (trackFormat == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
@@ -935,6 +934,8 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
         UpdateInputNodeParams *updateParams =
             new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
         MultiUpdateInputNode(result, *updateParams);
+        delete updateParams;
+        updateParams = nullptr;
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
@@ -1158,6 +1159,7 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
     }
+    FreeBuffer(&playAudioBuffer);
     playAudioBuffer = (char *)malloc(*writeSize);
     std::copy(audioData, audioData + *writeSize, playAudioBuffer);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1192,7 +1194,7 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
             int32_t copySize = std::min(audioDataSize, writeSize);
             std::copy(playAudioBuffer, playAudioBuffer + copySize,
                 static_cast<char *>(firstAudioBuffer) + firstBufferSize);
-            firstBufferSize += writeSize;
+            firstBufferSize += std::min(audioDataSize, writeSize);
         }
     }
     int32_t copySize = std::min(audioDataSize, writeSize);
@@ -1298,6 +1300,7 @@ napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info)
 {
+    std::lock_guard<std::mutex> lock(g_threadLock);
     napi_value jsMap;
     napi_create_object(env, &jsMap);
     bool endFlag = true;

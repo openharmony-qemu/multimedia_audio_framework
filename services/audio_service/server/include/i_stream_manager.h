@@ -31,6 +31,7 @@ enum ManagerType : int32_t {
     DIRECT_PLAYBACK,
     VOIP_PLAYBACK,
     EAC3_PLAYBACK,
+    HWDECODING_PLAYBACK,
     RECORDER,
 };
 

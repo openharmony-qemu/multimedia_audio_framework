@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/direct_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -33,17 +34,17 @@ public:
 
 protected:
     static uint32_t id_;
-    static std::shared_ptr<IAudioRenderSink> sink_;
+    static std::shared_ptr<DirectAudioRenderSink> sink_;
     static IAudioSinkAttr attr_;
 };
 
 uint32_t DirectAudioRenderSinkUnitTest::id_ = HDI_INVALID_ID;
-std::shared_ptr<IAudioRenderSink> DirectAudioRenderSinkUnitTest::sink_ = nullptr;
+std::shared_ptr<DirectAudioRenderSink> DirectAudioRenderSinkUnitTest::sink_ = nullptr;
 IAudioSinkAttr DirectAudioRenderSinkUnitTest::attr_ = {};
 
 void DirectAudioRenderSinkUnitTest::SetUpTestCase()
 {
-    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3, HDI_ID_INFO_DEFAULT, true);
+    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, HDI_ID_INFO_DEFAULT, true);
 }
 
 void DirectAudioRenderSinkUnitTest::TearDownTestCase()
@@ -53,7 +54,7 @@ void DirectAudioRenderSinkUnitTest::TearDownTestCase()
 
 void DirectAudioRenderSinkUnitTest::SetUp()
 {
-    sink_ = HdiAdapterManager::GetInstance().GetRenderSink(id_, true);
+    sink_ = std::static_pointer_cast<DirectAudioRenderSink>(HdiAdapterManager::GetInstance().GetRenderSink(id_, true));
     if (sink_ == nullptr) {
         return;
     }
@@ -95,6 +96,24 @@ HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test InitAudioSampleAttr API
+ * @tc.number : InitAudioSampleAttrTest_001
+ * @tc.desc   : Test direct sink deinit
+ */
+HWTEST_F(DirectAudioRenderSinkUnitTest, InitAudioSampleAttrTest_001, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_ != nullptr);
+    struct AudioSampleAttributes param;
+    sink_->attr_.encodingType = ENCODING_EAC3;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_EAC3);
+
+    sink_->attr_.encodingType = ENCODING_PCM;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+}
+
+/**
  * @tc.name   : Test DirectSink API
  * @tc.number : DirectSinkUnitTest_003
  * @tc.desc   : Test direct sink start, stop, resume, pause, flush, reset
@@ -109,12 +128,10 @@ HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_003, TestSize.Level1)
     ret = sink_->Resume();
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
     ret = sink_->Pause();
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ret = sink_->Flush();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     ret = sink_->Reset();
-    EXPECT_EQ(ret, SUCCESS);
-    ret = sink_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -127,7 +144,7 @@ HWTEST_F(DirectAudioRenderSinkUnitTest, DirectSinkUnitTest_004, TestSize.Level1)
 {
     EXPECT_TRUE(sink_ != nullptr);
     int32_t ret = sink_->SetVolume(0.0f, 0.0f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
     float left;
     float right;
     ret = sink_->GetVolume(left, right);

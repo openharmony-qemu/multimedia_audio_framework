@@ -148,10 +148,14 @@ interface IStandardAudioService {
     void GetCurrentOutputPipeChangeInfos([out] List<sharedptr<AudioOutputPipeInfo>> pipeChangeInfos);
     void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
     void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
+    void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
     void GetPrivacyTypeAudioServer([in] unsigned int sessionId, [out] int privacyType, [out] int ret);
+    void RegistAdapterManagerCallback([in] IRemoteObject object, [in] String networkId);
+    void UnRegistAdapterManagerCallback([in] String networkId);
+    void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
 }

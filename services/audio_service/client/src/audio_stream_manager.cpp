@@ -179,7 +179,9 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_CAMCORDER:
         case STREAM_NAVIGATION:
             break;
-        case STREAM_ULTRASONIC:{
+        case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
             break;
@@ -217,7 +219,9 @@ bool AudioStreamManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) co
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
-        case STREAM_USAGE_ULTRASONIC:{
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, false, "streamUsage=%{public}d. No system permission", streamUsage);
             break;

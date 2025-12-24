@@ -284,7 +284,7 @@ int32_t AudioZoneService::AddStreamsToAudioZone(int32_t zoneId, std::vector<Audi
 
 int32_t AudioZoneService::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream)
 {
-    return RemoveKeyFromAudioZone(zoneId, INVALID_UID, "", "", stream.streamUsage);
+    return RemoveKeysFromAudioZone(zoneId, {AudioZoneBindKey(INVALID_UID, "", "", stream.streamUsage)});
 }
 
 int32_t AudioZoneService::RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams)
@@ -338,8 +338,8 @@ int32_t AudioZoneService::AddKeyToAudioZone(int32_t zoneId, int32_t uid,
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     int32_t srcZoneId;
     {
-        AUDIO_DEBUG_LOG("add key %{public}d,%{public}s,%{public}s to zone %{public}d",
-            uid, deviceTag.c_str(), streamTag.c_str(), zoneId);
+        AUDIO_DEBUG_LOG("add key %{public}d,%{public}s,%{public}s,%{public}d to zone %{public}d",
+            uid, deviceTag.c_str(), streamTag.c_str(), usage, zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         srcZoneId = FindAudioZoneByKey(uid, deviceTag, streamTag, usage);
         auto zone = FindZone(zoneId);
@@ -402,8 +402,7 @@ int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t call
 int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    int32_t zoneId = FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
-    return zoneId != 0 ? zoneId : FindAudioZoneByKey(INVALID_UID, "", "", usage);
+    return FindAudioZoneByKey(uid, "", "", usage);
 }
 
 int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &deviceTag,
@@ -421,22 +420,43 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &dev
 
 int32_t AudioZoneService::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
-    return RemoveKeyFromAudioZone(zoneId, uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    return RemoveKeysFromAudioZone(zoneId, {AudioZoneBindKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID)});
 }
 
-int32_t AudioZoneService::RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid,
-    const std::string &deviceTag, const std::string &streamTag, const StreamUsage &usage)
+int32_t AudioZoneService::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    int32_t ret = SUCCESS;
+    for (const auto usage : usages) {
+        const int32_t r = AddKeyToAudioZone(zoneId, uid, "", "", usage);
+        if (r != SUCCESS) {
+            AUDIO_WARNING_LOG("AddKeyToAudioZone failed, uid %{public}d, usage %{public}d: %{public}d", uid, usage, r);
+            ret = r;
+        }
+    }
+    return ret;
+}
+
+int32_t AudioZoneService::RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    std::vector<AudioZoneBindKey> bindKeys;
+    for (const auto &usage : usages) {
+        bindKeys.push_back(AudioZoneBindKey(uid, usage));
+    }
+    return RemoveKeysFromAudioZone(zoneId, bindKeys);
+}
+
+int32_t AudioZoneService::RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys)
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
-        AUDIO_DEBUG_LOG("remove key %{public}d,%{public}s,%{public}s from zone %{public}d",
-            uid, deviceTag.c_str(), streamTag.c_str(), zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
         CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
-
-        zone->RemoveKey(AudioZoneBindKey(uid, deviceTag, streamTag, usage));
-        tmp = interruptService_;
+        for (const auto &bindKey : bindKeys) {
+            AUDIO_DEBUG_LOG("remove key '%{public}s' from zone %{public}d", bindKey.GetString().c_str(), zoneId);
+            zone->RemoveKey(bindKey);
+            tmp = interruptService_;
+        }
     }
 
     CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
@@ -758,6 +778,17 @@ bool AudioZoneService::CheckExistUidInAudioZone()
         }
     }
     return false;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioZoneService::GetDeviceDescriptor(DeviceType type, std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        auto desc = it.second->GetDeviceDescriptor(type, networkId);
+        CHECK_AND_CONTINUE(desc != nullptr);
+        return desc;
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

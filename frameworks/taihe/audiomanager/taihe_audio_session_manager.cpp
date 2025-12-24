@@ -88,6 +88,12 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
     return audioSessionMngr_->IsAudioSessionActivated();
 }
 
+bool AudioSessionManagerImpl::IsOtherMediaPlaying()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr, false, "audioSessionMngr_ is nullptr");
+    return audioSessionMngr_->IsOtherMediaPlaying();
+}
+
 DeviceType AudioSessionManagerImpl::GetDefaultOutputDevice()
 {
     if (audioSessionMngr_ == nullptr) {
@@ -153,6 +159,24 @@ void AudioSessionManagerImpl::SetAudioSessionScene(AudioSessionScene scene)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
     return;
+}
+
+void AudioSessionManagerImpl::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "can not get session");
+        return;
+    }
+
+    int32_t ret = audioSessionMngr_->EnableMuteSuggestionWhenMixWithOthers(enable);
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, illegal state ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    }
 }
 
 void AudioSessionManagerImpl::OnAudioSessionDeactivated(

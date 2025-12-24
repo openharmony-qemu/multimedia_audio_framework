@@ -93,7 +93,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_AI_MIC),
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
-    std::string(PRIMARY_VOICE_RECOGNITION_MIC)
+    std::string(PRIMARY_VOICE_RECOGNITION_MIC),
+    std::string(PRIMARY_RAW_AI_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)

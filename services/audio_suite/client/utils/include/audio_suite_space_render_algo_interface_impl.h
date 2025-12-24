@@ -18,7 +18,6 @@
 
 #include "audio_suite_algo_interface.h"
 #include "audio_hms_space_render_api.h"
-#include "audio_suite_log.h"
 #include <utility>
 #include <dlfcn.h>
 

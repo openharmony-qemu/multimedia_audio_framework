@@ -1373,5 +1373,15 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 
+const std::string FastAudioStream::GetBundleName()
+{
+    return bundleName;
+}
+
+void FastAudioStream::SetBundleName(std::string &name)
+{
+    bundleName = name;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

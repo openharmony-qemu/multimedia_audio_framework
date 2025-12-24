@@ -99,7 +99,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    HILOG_COMM_INFO("withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
+    HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
@@ -328,8 +328,9 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    HILOG_COMM_WARN("withlock mac[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
-        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
+    HILOG_COMM_WARN("[OnDeviceInfoUpdated]withlock mac[%{public}s] type[%{public}d] command: %{public}d "
+        "category[%{public}d] connectState[%{public}d] isEnable[%{public}d]",
+        GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     coreService_->OnDeviceInfoUpdated(desc, command);
 }
@@ -637,6 +638,7 @@ void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &rea
 
 int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->CaptureConcurrentCheck(sessionId);
 }

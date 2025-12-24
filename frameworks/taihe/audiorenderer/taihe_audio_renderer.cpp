@@ -1189,6 +1189,15 @@ AudioRendererOrNull CreateAudioRendererSync(AudioRendererOptions const &options)
         AUDIO_ERR_LOG("get rendererOptions failed");
         return AudioRendererOrNull::make_type_null();
     }
+
+#ifndef MULTI_ALARM_LEVEL
+    auto streamUsage = rendererOptions.rendererInfo.streamUsage;
+    if (streamUsage == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsage == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        rendererOptions.rendererInfo.streamUsage = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
+
     return AudioRendererImpl::CreateAudioRendererWrapper(rendererOptions);
 }
 } // namespace ANI::Audio

@@ -112,6 +112,7 @@ public:
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName,
         const std::string &networkId = LOCAL_NETWORK_ID) override;
+    int32_t ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
@@ -157,6 +158,8 @@ public:
 
     void OnOutputPipeChange(AudioPipeChangeType changeType,
         std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
+
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
@@ -289,6 +292,13 @@ public:
         std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos) override;
     int32_t GetCurrentInputPipeChangeInfos(
         std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos) override;
+
+    int32_t RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& networkId) override;
+    int32_t UnRegistAdapterManagerCallback(const std::string& networkId) override;
+    void OnAdapterParamChange(std::string networkId, const AudioParamKey key,
+        std::string condition, std::string value) override;
+    int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
+        const std::string& condition, std::string& value) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -452,6 +462,9 @@ private:
     int32_t ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads) override;
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
+    int32_t SetAudioBalanceStatus();
+    int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
+    void OnStartExpansion();
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
@@ -466,6 +479,9 @@ private:
 
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    bool isEarpiece_ = false;
+    float audioBalanceValue_ = 0.0f;
 
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.
@@ -508,6 +524,10 @@ private:
 
     std::map<pid_t, sptr<CallbackHandle>> cbHandles_;
     std::mutex cbLock_;
+
+    std::mutex audioAdapterCbMutex_;
+    std::shared_ptr<AudioParameterCallback> audioAdapterCb_;
+    std::unordered_set<std::string> audioAdapterNetworkIdSet_;
 };
 
 class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {

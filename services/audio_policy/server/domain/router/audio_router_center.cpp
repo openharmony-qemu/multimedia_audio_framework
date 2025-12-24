@@ -222,8 +222,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
-        HILOG_COMM_INFO("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
-            "id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
+        HILOG_COMM_INFO("[FetchOutputDevicesInner][%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], "
+            "1st type:[%{public}d], id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
             clientUID, descs.size(), type, audioId_, routerType);
     }
     return descs;
@@ -234,7 +234,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, STREAM_USAGE_INVALID);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
     if (zoneId != 0) {
         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);

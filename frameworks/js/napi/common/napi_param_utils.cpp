@@ -445,6 +445,43 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
     return napi_ok;
 }
 
+napi_status NapiParamUtils::GetEcStreamInfo(const napi_env &env, AudioStreamInfo *ecStreamInfo, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
+    if (status == napi_ok) {
+        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
+            ecStreamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+        } else {
+            AUDIO_ERR_LOG("invaild samplingRate");
+            return napi_generic_failure;
+        }
+    }
+
+    status = GetValueInt32(env, "channels", intValue, in);
+    if (status == napi_ok) {
+        ecStreamInfo->channels = static_cast<AudioChannel>(intValue);
+    }
+
+    status = GetValueInt32(env, "sampleFormat", intValue, in);
+    if (status == napi_ok) {
+        ecStreamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
+    }
+
+    status = GetValueInt32(env, "encodingType", intValue, in);
+    if (status == napi_ok) {
+        ecStreamInfo->encoding = static_cast<AudioEncodingType>(intValue);
+    }
+
+    int64_t int64Value = 0;
+    status = GetValueInt64(env, "channelLayout", int64Value, in);
+    if (status == napi_ok) {
+        ecStreamInfo->channelLayout = static_cast<AudioChannelLayout>(int64Value);
+    }
+
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result)
 {
     napi_status status = napi_create_object(env, &result);
@@ -770,6 +807,13 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
     CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
     opts->preferredInputDevice = device;
+
+    if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
+        status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseEcStreamInfo failed");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without ecStreamInfo");
+    }
 
     if (napi_get_named_property(env, in, "playbackCaptureConfig", &result) == napi_ok) {
         return GetPlaybackCaptureConfig(env, &(opts->playbackCaptureConfig), result);

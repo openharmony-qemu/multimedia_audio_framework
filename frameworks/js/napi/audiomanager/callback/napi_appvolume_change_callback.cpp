@@ -52,11 +52,12 @@ void NapiAudioManagerAppVolumeChangeCallback::SaveVolumeChangeCallbackForUidRefe
         }
     }
     napi_ref callback = nullptr;
+    std::string taskName = "NapiAudioManagerAppVolumeChangeCallback::destroy";
     const int32_t refCount = ARGS_ONE;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioManagerAppVolumeChangeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID) {
         appVolumeChangeForUidList_.push_back({cb, appUid});
     }  else {
@@ -76,11 +77,12 @@ void NapiAudioManagerAppVolumeChangeCallback::SaveSelfVolumdChangeCallbackRefere
         }
     }
     napi_ref callback = nullptr;
+    std::string taskName = "NapiAudioManagerAppVolumeChangeCallback::destroy";
     const int32_t refCount = ARGS_ONE;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioManagerAppVolumeChangeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == APP_VOLUME_CHANGE_CALLBACK_NAME) {
         selfAppVolumeChangeList_.push_back(cb);
     }  else {

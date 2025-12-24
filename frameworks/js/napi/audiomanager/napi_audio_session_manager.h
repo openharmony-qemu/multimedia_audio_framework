@@ -65,6 +65,7 @@ private:
     static napi_value ActivateAudioSession(napi_env env, napi_callback_info info);
     static napi_value DeactivateAudioSession(napi_env env, napi_callback_info info);
     static napi_value IsAudioSessionActivated(napi_env env, napi_callback_info info);
+    static napi_value IsOtherMediaPlaying(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value *args, const std::string &cbName);
     static void UnregisterCallback(napi_env env, napi_value jsThis);
     static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
@@ -103,6 +104,7 @@ private:
     static napi_value ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info);
     static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+    static napi_value EnableMuteSuggestionWhenMixWithOthers(napi_env env, napi_callback_info info);
 
     static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
         NapiAudioSessionMgr *napiSessionMgr);

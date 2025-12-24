@@ -30,6 +30,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AudioManagerListenerCallback);
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) override;
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
     void OnCapturerState(bool isActive) override final;
     void OnWakeupClose() override;
     void TrigerFirstOnCapturerStateCallback(bool isActive);

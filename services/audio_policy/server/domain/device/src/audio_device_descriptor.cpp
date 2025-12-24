@@ -257,6 +257,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
+    volumeBehavior_ = deviceDescriptor.volumeBehavior_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -297,6 +298,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
+    volumeBehavior_ = deviceDescriptor->volumeBehavior_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -551,6 +553,7 @@ void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bo
     if (statusInfo.model == "hiplay") { model_ = "hiplay"; }
     networkId_ = statusInfo.networkId;
     dmDeviceType_ = statusInfo.dmDeviceType;
+    connectState_ = dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX ? VIRTUAL_CONNECTED : CONNECTED;
     dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }
 
@@ -686,9 +689,13 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
                 *deviceStreamInfo.channelLayout.begin() : AudioChannelLayout::CH_LAYOUT_STEREO;
             AudioSamplingRate samplingRate = !deviceStreamInfo.samplingRate.empty() ?
                 *deviceStreamInfo.samplingRate.begin() : AudioSamplingRate::SAMPLE_RATE_48000;
+            AudioSampleFormat sampleFormat = deviceStreamInfo.format == AudioSampleFormat::INVALID_WIDTH ?
+                AudioSampleFormat::SAMPLE_S16LE : deviceStreamInfo.format;
+            AudioEncodingType encodingType = deviceStreamInfo.encoding == AudioEncodingType::ENCODING_INVALID ?
+                AudioEncodingType::ENCODING_PCM : deviceStreamInfo.encoding;
             cap.samplingRate = samplingRate;
-            cap.encoding = deviceStreamInfo.encoding;
-            cap.format = deviceStreamInfo.format;
+            cap.encoding = encodingType;
+            cap.format = sampleFormat;
             cap.channels = ConvertLayoutToAudioChannel(channelLayout);
             cap.channelLayout = channelLayout;
             capabilities_.push_back(cap);

@@ -48,7 +48,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
 
     sinkInited_ = true;
-    InitPipeInfo();
+    InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
 
     return SUCCESS;
 }
@@ -109,7 +109,7 @@ int32_t FastAudioRenderSink::Start(void)
     if (runningLock_ != nullptr) {
         runningLock_->Lock(RUNNING_LOCK_TIMEOUTMS_LASTING);
     } else {
-        HILOG_COMM_ERROR("running lock is null, playback can not work well");
+        HILOG_COMM_ERROR("[FastAudioRenderSink::Start]running lock is null, playback can not work well");
     }
 #endif
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
@@ -249,28 +249,14 @@ int64_t FastAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t FastAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
 void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
-    HILOG_COMM_INFO("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    HILOG_COMM_INFO("[SetAudioParameter]key: %{public}d, condition: %{public}s, "
+        "value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
     AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);
-}
-
-std::string FastAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
 }
 
 int32_t FastAudioRenderSink::SetVolume(float left, float right)
@@ -374,48 +360,6 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void FastAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void FastAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t FastAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t FastAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
     return SUCCESS;
@@ -434,11 +378,6 @@ int32_t FastAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 void FastAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FastSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
-}
-
-void FastAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t FastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -719,89 +658,5 @@ void FastAudioRenderSink::PreparePosition(void)
         curWritePos_);
 #endif
 }
-
-void FastAudioRenderSink::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state)
-{
-    ChangePipeStream(change, streamId, usage, state);
-}
-
-std::shared_ptr<AudioOutputPipeInfo> FastAudioRenderSink::GetOutputPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_RET(pipeInfo_ != nullptr, nullptr);
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    return copyPipe;
-}
-
-void FastAudioRenderSink::InitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    pipeInfo_ = std::make_shared<AudioOutputPipeInfo>(
-        hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
-    pipeInfo_->SetStatus(PIPE_STATUS_OPEN);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void FastAudioRenderSink::ChangePipeStatus(AudioPipeStatus state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetStatus(state);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-}
-
-void FastAudioRenderSink::ChangePipeDevice(const std::vector<DeviceType> &devices)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->SetDevices(devices);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_DEVICE, copyPipe);
-}
-
-void FastAudioRenderSink::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, StreamUsage usage, RendererState state)
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-
-    switch (change) {
-        case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, usage, state);
-            break;
-        case STREAM_CHANGE_TYPE_REMOVE:
-            pipeInfo_->RemoveStream(streamId);
-            break;
-        case STREAM_CHANGE_TYPE_STATE_CHANGE:
-            pipeInfo_->UpdateStream(streamId, state);
-            break;
-        default:
-            return;
-    }
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STREAM, copyPipe);
-}
-
-void FastAudioRenderSink::DeinitPipeInfo()
-{
-    std::lock_guard<std::mutex> lock(pipeLock_);
-    CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
-    pipeInfo_->RemoveAllStreams();
-    pipeInfo_->SetStatus(PIPE_STATUS_CLOSE);
-
-    auto copyPipe = std::make_shared<AudioOutputPipeInfo>(*pipeInfo_);
-    callback_.OnOutputPipeChange(PIPE_CHANGE_TYPE_PIPE_STATUS, copyPipe);
-
-    // clear pipe for get func
-    pipeInfo_ = nullptr;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

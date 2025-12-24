@@ -56,7 +56,9 @@ void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if (IsSamePipe(info, *iter)) {
-            HILOG_COMM_INFO("Remove id:%{public}u, name: %{public}s", info->id_, info->name_.c_str());
+            CHECK_AND_CONTINUE_LOG(info != nullptr, "info is nullptr!");
+            HILOG_COMM_INFO("[RemoveAudioPipeInfo]Remove id:%{public}u, name: %{public}s",
+                info->id_, info->name_.c_str());
             iter = curPipeList_.erase(iter);
         } else {
             ++iter;
@@ -69,7 +71,8 @@ void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if ((*iter)->id_ == id) {
-            HILOG_COMM_INFO("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
+            HILOG_COMM_INFO("[RemoveAudioPipeInfo]Remove id:%{public}u, name: %{public}s",
+                id, (*iter)->name_.c_str());
             iter = curPipeList_.erase(iter);
         } else {
             ++iter;
@@ -82,7 +85,6 @@ void AudioPipeManager::UpdateAudioPipeInfo(std::shared_ptr<AudioPipeInfo> newPip
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
         if (IsSamePipe(newPipe, *iter)) {
-            AUDIO_INFO_LOG("Update id:%{public}u, name %{public}s", (*iter)->id_, (*iter)->name_.c_str());
             Assign(*iter, newPipe);
             // Action is only used in pipe execution, while pipeManager can only store default action
             (*iter)->pipeAction_ = PIPE_ACTION_DEFAULT;
@@ -187,7 +189,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_UNPROCESS) ||
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
-        (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION)) {
+        (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
+        (routeFlag & AUDIO_INPUT_FLAG_RAW_AI)) {
         return true;
     }
     return false;
@@ -542,6 +545,17 @@ void AudioPipeManager::UpdateRingAndVoipStreamDevice(
 
     ringAndVoipDescMap_[VOIP_SESSIONID]->oldDeviceDescs_ = ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_;
     ringAndVoipDescMap_[VOIP_SESSIONID]->newDeviceDescs_ = voipDeviceDescs;
+}
+
+bool AudioPipeManager::CheckRingAndVoipStreamRunning()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+
+    CHECK_AND_RETURN_RET(ringAndVoipDescMap_.find(RING_SESSIONID) != ringAndVoipDescMap_.end(), false);
+    CHECK_AND_RETURN_RET(ringAndVoipDescMap_.find(VOIP_SESSIONID) != ringAndVoipDescMap_.end(), false);
+
+    return ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ == STREAM_STATUS_STARTED ||
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ == STREAM_STATUS_STARTED;
 }
 
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescForAudioScene(const AudioScene audioScene)

@@ -68,6 +68,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
     currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
     bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;
     outBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES + RESIZE_EXPAND_BYTES);
+    readFinishedFlag_ = false;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init end");
     return SUCCESS;

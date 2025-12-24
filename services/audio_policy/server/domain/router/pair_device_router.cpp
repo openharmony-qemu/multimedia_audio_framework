@@ -34,7 +34,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamU
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
         CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr &&
-            !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice),
+            !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice) &&
+            activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
             make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
@@ -130,7 +131,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
         CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr &&
-            !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice),
+            !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice) &&
+            activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
             make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;

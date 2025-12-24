@@ -51,12 +51,7 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-
+    void SetSpeed(float speed) override;
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -68,23 +63,11 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     void DumpInfo(std::string &dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static int32_t DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type, int8_t *reserved,
@@ -105,11 +88,11 @@ private:
 #endif
 
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     struct DirectHdiCallback hdiCallback_ = {};
     bool sinkInited_ = false;
     bool started_ = false;
     int32_t testFlag_ = 0;
+    uint64_t mockPts_ = 0;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -125,7 +108,6 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
-    std::mutex sinkMutex_;
     std::thread testThread_;
 };
 

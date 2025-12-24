@@ -62,7 +62,20 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
+    {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
 };
+
+static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
+{
+    switch (routeFlag) {
+        case AUDIO_INPUT_FLAG_AI:               return PRIMARY_AI_MIC;
+        case AUDIO_INPUT_FLAG_UNPROCESS:        return PRIMARY_UNPROCESS_MIC;
+        case AUDIO_INPUT_FLAG_ULTRASONIC:       return PRIMARY_ULTRASONIC_MIC;
+        case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
+        case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
+        default:                                return PRIMARY_MIC;
+    }
+}
 
 int32_t AudioPolicyUtils::startDeviceId = 1;
 
@@ -168,7 +181,8 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
-        HILOG_COMM_INFO("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+        HILOG_COMM_INFO("[SetPreferredDevice]Set preferredType %{public}d failed, ret: %{public}d",
+            preferredType, ret);
         return ret;
     }
     AudioDeviceStatus::GetInstance().NotifyPreferredDeviceSet(preferredType, desc, uid, caller);
@@ -359,6 +373,11 @@ string AudioPolicyUtils::ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
+bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId)
+{
+    return GetSinkName(desc, sessionId) == PRIMARY_SPEAKER;
+}
+
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
@@ -386,22 +405,10 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
-            if (routeFlag == AUDIO_INPUT_FLAG_AI) {
-                portName = PRIMARY_AI_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_AI_IC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
-                portName = PRIMARY_UNPROCESS_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_UNPROCESS_MIC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
-                portName = PRIMARY_ULTRASONIC_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_ULTRASONIC_MIC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
-                portName = PRIMARY_VOICE_RECOGNITION_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_VOICE_RECOGNITION_MIC for devicetype: %{public}d", deviceType);
-            } else {
-                portName = PRIMARY_MIC;
-            }
+            portName = ResolvePrimaryMicPort(routeFlag);
+            AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;
         case DeviceType::DEVICE_TYPE_BT_SPP:
             portName = VIRTUAL_AUDIO;
@@ -464,6 +471,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PORT_NONE, INVALID_CLASS},
         {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
         {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
+        {PRIMARY_RAW_AI_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -719,7 +727,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
-        deviceName == PRIMARY_VOICE_RECOGNITION_MIC) {
+        deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
