@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ss
+ */
 
 #ifndef AUDIO_CAPTURER_H
 #define AUDIO_CAPTURER_H
@@ -162,6 +162,19 @@ public:
     virtual void OnFastStatusChange(FastStatus status) = 0;
 };
 
+class AudioCapturerOnPlaybackCaptureStartCallback {
+public:
+    virtual ~AudioCapturerOnPlaybackCaptureStartCallback() = default;
+ 
+    /**
+     * Called to notify internal recording started result.
+     *
+     * @param state Internal recording started result.
+     * since 23
+     */
+    virtual void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -304,6 +317,18 @@ public:
      */
     virtual void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Set the audio capturer playback capture start state callback listener
+     *
+     * @since 23
+     */
+    virtual void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+        {
+            (void) callback;
+            return;
+        }
 
     /**
      * @brief Obtains audio capturer parameters.
@@ -754,6 +779,11 @@ public:
     {
         (void)callbackType;
         return;
+    }
+
+    virtual int32_t StartPlaybackCapture()
+    {
+        return 0;
     }
 
 protected:
