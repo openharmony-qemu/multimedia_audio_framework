@@ -46,7 +46,6 @@ int32_t AudioSuiteAissNode::DoProcess()
     CHECK_AND_RETURN_RET_LOG(GetAudioNodeDataFinishedFlag() != true, SUCCESS, "AudioSuiteProcessNode"
         "DoProcess:Current node type = %{public}d does not have more data to process.", GetNodeType());
     CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "AudioSuiteAissNode init failed");
-    CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "outputStream_ is nullptr");
 
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
@@ -63,8 +62,8 @@ int32_t AudioSuiteAissNode::DoProcess()
         }
         tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
-        outputStream_->WriteDataToOutput(&tmpHumanSoundOutput_);
-        outputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
+        outputStream_.WriteDataToOutput(&tmpHumanSoundOutput_);
+        outputStream_.WriteDataToOutput(&tmpBkgSoundOutput_);
         // for dfx
         auto endTime = std::chrono::steady_clock::now();
         auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
@@ -81,8 +80,8 @@ int32_t AudioSuiteAissNode::DoProcess()
         tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpHumanSoundOutput_ = *tempOut;
         tmpBkgSoundOutput_ = *tempOut;
-        outputStream_->WriteDataToOutput(tempOut);
-        outputStream_->WriteDataToOutput(tempOut);
+        outputStream_.WriteDataToOutput(tempOut);
+        outputStream_.WriteDataToOutput(tempOut);
     } else {
         AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d can't get "
             "pcmbuffer from prenodes", GetNodeType());
