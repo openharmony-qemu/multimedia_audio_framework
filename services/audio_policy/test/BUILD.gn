@@ -3918,6 +3918,7 @@ ohos_unittest("audio_ec_manager_unit_test") {
     "./unittest/audio_ec_manager_unit_test/include",
     "../../audio_policy/server/src/service/service",
     "../../audio_policy/server/domain/pipe/src",
+    "../../../frameworks/native/include",
   ]
 
   use_exceptions = true
@@ -3949,6 +3950,7 @@ ohos_unittest("audio_ec_manager_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
+    "../../../frameworks/native/audioutils:audio_utils",
   ]
 
     sanitize = {
