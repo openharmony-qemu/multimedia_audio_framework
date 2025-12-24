@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef FAST_AUDIO_STREAM_H
-#define FAST_AUDIO_STREAM_Hss
+#define FAST_AUDIO_STREAM_H
 
 #ifndef LOG_TAG
 #define LOG_TAG "CapturerInClientInner"
@@ -1145,6 +1145,45 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
     return true;
+}
+
+void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    playbackCaptureStartCallback_ = callback;
+}
+ 
+int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return ERROR;
+    }
+    gasp->RequestUserPrivacyAuthority(sessionId);
+ 
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
+    });
+    Operation operation = notifiedOperation_;
+    int64_t result = notifiedResult_;
+    waitLock.unlock();
+ 
+    std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    if (operation != USER_PRIVACY_AUTHORITY) {
+        AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), operation, result);
+        playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(START_STATE_FAILED);
+        return ERROR;
+    }
+    playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(
+        static_cast<PlaybackCaptureStartState>(notifiedResult_));
+    lock.unlock();
+ 
+    return SUCCESS;
 }
 
 bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
