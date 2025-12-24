@@ -614,15 +614,6 @@ void OHAudioCapturer::SetReadDataCallback(CapturerCallback capturerCallbacks, vo
         AUDIO_WARNING_LOG("The read callback function is not set");
     }
 }
- 
-bool OHAudioCapturer::IsModernInnerCapturer()
-{
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");
-    AudioCapturerInfo capturerInfo;
-    CHECK_AND_RETURN_RET(audioCapturer_->GetCapturerInfo(capturerInfo) == SUCCESS, false);
-    CHECK_AND_RETURN_RET(capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && IsModernInnerCapturer_, false);
-    return true;
-}
 
 void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks, void* userData)
 {
