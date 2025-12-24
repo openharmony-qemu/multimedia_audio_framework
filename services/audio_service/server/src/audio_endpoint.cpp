@@ -74,7 +74,7 @@ std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo
     bool recreateEndpointFlag = false;
     if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag_ != A2DP_OFFLOAD) {
         recreateEndpointFlag = true;
-    } else if (deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET) {
+    } else if (deviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         recreateEndpointFlag = true;
     }
     // All primary sinks share one endpoint
@@ -571,11 +571,11 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
         return false;
     }
-    if (sink->Inited()) {
+    if (sink->IsInited()) {
         sink->DeInit();
     }
 
-    IAudioSinkAttr attr = InitSinkAttr(attr, deviceInfo);
+    IAudioSinkAttr attr = InitSinkAttr(deviceInfo);
     sink->Init(attr);
     if (!sink->IsInited()) {
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
@@ -640,7 +640,7 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 
     if (type == AudioEndpoint::TYPE_MMAP) {
         if (deviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            fastSinkType_ = FAST_SINK_TYPE_ARM_USB
+            fastSinkType_ = FAST_SINK_TYPE_ARM_USB;
             return SwitchSink(fastRenderId_, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB);
         }
         fastSinkType_ = FAST_SINK_TYPE_NORMAL;
@@ -663,7 +663,7 @@ IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioDeviceDescriptor &dev
     if (attr.deviceNetworkId == LOCAL_NETWORK_ID) {
         attr.adapterName = deviceInfo.deviceType_ == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET ? "usb" : "primary";
     } else {
-        attr.adapterName = "remote"
+        attr.adapterName = "remote";
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.address = deviceInfo.GetMacAddress();
@@ -681,7 +681,7 @@ IAudioSourceAttr AudioEndpointInner::InitSourceAttr(const AudioDeviceDescriptor 
     if (attr.deviceNetworkId == LOCAL_NETWORK_ID) {
         attr.adapterName = deviceInfo.deviceType_ == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET ? "usb" : "primary";
     } else {
-        attr.adapterName = "remote"
+        attr.adapterName = "remote";
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.macAddress = deviceInfo.GetMacAddress();
@@ -1559,7 +1559,7 @@ void AudioEndpointInner::CheckJank(uint64_t curePos)
         return;
     }
     if (syncInfoSize_ != 0) {
-        audioMode_ == AudioMode::AUDIO_MODE_PLAYBACK ? CheckSyncInfo(curePos); RecordCheckSyncInfo(curePos);
+        audioMode_ == AudioMode::AUDIO_MODE_PLAYBACK ? CheckSyncInfo(curePos) : RecordCheckSyncInfo(curePos);
         lastWriteTime_ = ClockTime::GetCurNano();
     }
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());

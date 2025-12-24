@@ -405,9 +405,9 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     const std::string supportMmap =
-        deviceDesc.ParseArmUsbAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
+        deviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
     if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
-        streamDesc->audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
     }
@@ -527,9 +527,9 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     const std::string supportMmap =
-        deviceDesc.ParseArmUsbAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
+        deviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
     if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
-        streamDesc->audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
     }

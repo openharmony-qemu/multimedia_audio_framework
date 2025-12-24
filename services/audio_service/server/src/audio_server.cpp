@@ -3085,7 +3085,7 @@ bool AudioServer::NeedDelayCreateSink(const uint32_t idBase, const uint32_t idTy
         AUDIO_INFO_LOG("delay create");
         return true;
     }
-    false;
+    return false;
 }
 
 int32_t AudioServer::CreateSinkPort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
@@ -3129,7 +3129,7 @@ bool AudioServer::NeedDelayCreateSource(const uint32_t idBase, const uint32_t id
         AUDIO_INFO_LOG("delay create");
         return true;
     }
-    false;
+    return false;
 }
 
 int32_t AudioServer::CreateSourcePort(uint32_t idBase, uint32_t idType, const std::string &idInfo,

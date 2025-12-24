@@ -262,7 +262,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
             CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
                 desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ == sessionId) {
-                const auto deviceDesc = desc->newDeviceDescs_.front()
+                const auto deviceDesc = desc->newDeviceDescs_.front();
                 AUDIO_INFO_LOG("Device type: %{public}d", deviceDesc->deviceType_);
                 streamInfo = DecideStreamInfo(pipeInfo, deviceDesc);
                 return deviceDesc;

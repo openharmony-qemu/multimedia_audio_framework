@@ -342,11 +342,11 @@ std::string AudioDeviceDescriptor::ParseArmUsbAudioParameters(const AudioParamet
 
     if (key == AudioParametersKey::SAMPLE_RATE) {
         keyStr += "rate:";
-    } else if (key == AudioParameterKey::FORMAT) {
+    } else if (key == AudioParametersKey::FORMAT) {
         keyStr += "format:";
-    } else if (key == AudioParameterKey::SUPPORT_MMAP) {}
+    } else if (key == AudioParametersKey::SUPPORT_MMAP) {
         keyStr += "mmap:";
-    } else 
+    } else {
         return "";
     }
 
@@ -362,7 +362,7 @@ std::string AudioDeviceDescriptor::ParseAudioParameters(const AudioParametersKey
     if (getType() == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET) {
         return ParseArmUsbAudioParameters(key);
     }
-    return ""
+    return "";
 }
 
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const

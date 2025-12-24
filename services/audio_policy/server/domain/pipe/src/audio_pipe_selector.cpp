@@ -71,7 +71,7 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
     const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceID();
     const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceID();
     if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
-        newPipe->moduleInfo.className == "usb" && oldPipe->moduleInfo.className == "usb" &&
+        newPipe->moduleInfo_.className == "usb" && oldPipe->moduleInfo_.className == "usb" &&
         newDeviceID != oldDeviceID) {
         return true;
     }
@@ -642,7 +642,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
-    auto newDeviceDesc = streamDesc->newDeviceDesc.front();
+    auto newDeviceDesc = streamDesc->newDeviceDescs_.front();
     info.moduleInfo_.deviceType = std::to_string(newDeviceDesc->deviceType_);
     info.moduleInfo_.networkId = newDeviceDesc->networkId_;
     info.moduleInfo_.macAddress = newDeviceDesc->macAddress_;

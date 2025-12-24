@@ -52,7 +52,7 @@ public:
         SAMPLE_RATE,
         FORMAT,
         SUPPORT_MMAP,
-    }
+    };
 
     class ClientInfo {
     public:
