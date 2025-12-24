@@ -3965,31 +3965,37 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipesAndExecute_001, TestSize
 }
 
 /**
- * @tc.name   : AudioCoreServicePrivateTest_HandleRingToDefaultSceneChange_001
- * @tc.number : HandleRingToDefaultSceneChange_001
- * @tc.desc   : Test HandleRingToDefaultSceneChange() for audioscene change.
+ * @tc.name   : AudioCoreServicePrivateTest_HandleRingToNonRingSceneChange_001
+ * @tc.number : HandleRingToNonRingSceneChange_001
+ * @tc.desc   : Test HandleRingToNonRingSceneChange() for audioscene change.
  */
-HWTEST_F(AudioCoreServicePrivateTest, HandleRingToDefaultSceneChange_001, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, HandleRingToNonRingSceneChange_001, TestSize.Level3)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
     audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_DEFAULT);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_DEFAULT);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_PHONE_CALL);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_PHONE_CHAT);
     EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
 
     audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_DEFAULT);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_DEFAULT);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_PHONE_CALL);
+    EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_PHONE_CHAT);
     EXPECT_FALSE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
 
     audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_DEFAULT);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_DEFAULT);
     EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_VOICE_RINGING, AUDIO_SCENE_PHONE_CALL);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_PHONE_CALL);
     EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_RINGING, AUDIO_SCENE_PHONE_CALL);
-    EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
-    audioCoreService->HandleRingToDefaultSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_PHONE_CALL);
+    audioCoreService->HandleRingToNonRingSceneChange(AUDIO_SCENE_DEFAULT, AUDIO_SCENE_PHONE_CHAT);
     EXPECT_TRUE(audioCoreService->isRingDualToneOnPrimarySpeaker_);
 }
 
