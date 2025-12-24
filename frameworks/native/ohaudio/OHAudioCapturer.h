@@ -168,7 +168,6 @@ private:
     OH_AudioCapturer *ohAudioCapturer_;
     void *userData_;
 };
- 
 
 class OHAudioCapturer {
 public:
