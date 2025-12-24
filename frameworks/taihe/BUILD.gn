@@ -147,6 +147,10 @@ taihe_shared_library("audio_taihe") {
     sources += [ "audiorenderer/taihe_toneplayer.cpp" ]
     deps += [ "../native/toneplayer:audio_toneplayer" ]
   }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
 }
 
 generate_static_abc("audio_framework_taihe_abc") {

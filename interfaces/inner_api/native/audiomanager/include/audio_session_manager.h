@@ -49,7 +49,7 @@ public:
     void OnAudioSessionStateChanged(AudioSessionStateChangeHint audioSessionStateChangeHint);
     void RecordAudioSessionOpt(const OperationType type, const int32_t value);
     bool RestoreParams(void);
-    void MoveMuteAfterSceneIfBefore();
+    void EnsureMuteAfterScene();
 
 private:
     void DeduplicateLastOperation(OperationType type);
@@ -345,6 +345,15 @@ public:
      * @since 21
      */
     int32_t ClearSelectedInputDevice();
+
+    /**
+     * @brief Returns if there is any other application playing audio in media usage.
+     * The short sound effect will not be considered in.
+     *
+     * @return {@code true} if there is other application playing audio in media usage.
+     * @since 23
+     */
+    bool IsOtherMediaPlaying();
 
     int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 

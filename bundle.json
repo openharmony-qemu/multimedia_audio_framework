@@ -43,7 +43,8 @@
           "audio_framework_feature_low_latency",
           "audio_framework_feature_device_manager",
           "audio_framework_feature_mutesink_enable",
-          "audio_framework_feature_audiosuite_support"
+          "audio_framework_feature_audiosuite_support",
+          "audio_framework_feature_multi_alarm_level"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -58,6 +59,7 @@
             "bundle_framework",
             "background_task_mgr",
             "c_utils",
+            "cJSON",
             "cellular_data",
             "common_event_service",
             "config_policy",
@@ -97,7 +99,6 @@
             "libxml2",
             "cJSON",
             "opensles",
-            "openssl",
             "qos_manager",
             "media_foundation",
             "runtime_core",
@@ -107,9 +108,7 @@
             "window_manager",
             "call_manager"
           ],
-          "third_party": [
-            "openssl"
-          ]
+          "third_party": []
         },
         "build": {
           "group_type": {

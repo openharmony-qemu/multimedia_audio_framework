@@ -121,18 +121,7 @@ public:
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
     bool isChannelChange_ = false;
-    static inline AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params)
-    {
-        AudioStreamParams audioStreamParams;
-
-        audioStreamParams.format = params.audioSampleFormat;
-        audioStreamParams.samplingRate = params.samplingRate;
-        audioStreamParams.channels = params.audioChannel;
-        audioStreamParams.encoding = params.audioEncoding;
-        audioStreamParams.channelLayout = params.channelLayout;
-
-        return audioStreamParams;
-    }
+    AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params);
 
 private:
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);

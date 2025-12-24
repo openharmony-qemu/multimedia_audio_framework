@@ -1396,8 +1396,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         streamType, appUid, processList_[i]->GetAudioSessionId()));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
-    int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
-        processBufferList_[i]->GetDuckFactor() * processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
+    int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetVolumeFromOh();
     float baseVolume = volumeFromOhaudioBuffer * appVolume * doNotDisturbStatusVolume * mdmMuteFactor;
 
     VolumeResult result;
@@ -1410,7 +1409,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     } else {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume * vol.volumeFloat);
     }
-
+    AUDIO_INFO_LOG("sessionId: %{public}d, volumeStart: %{public}d, volumeFromOhaudioBuffer: %{public}d",
+        processList_[i]->GetAudioSessionId(), result.volumeStart, volumeFromOhaudioBuffer);
     result.muteFlag = processList_[i]->GetMuteState();
     result.volumeEnd = volumeFromOhaudioBuffer;
     result.volumeHap = result.muteFlag ? 0 : volumeFromOhaudioBuffer;

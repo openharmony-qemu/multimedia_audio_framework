@@ -65,6 +65,11 @@ bool AudioSessionManager::IsAudioSessionActivated()
     return AudioPolicyManager::GetInstance().IsAudioSessionActivated();
 }
 
+bool AudioSessionManager::IsOtherMediaPlaying()
+{
+    return AudioPolicyManager::GetInstance().IsOtherMediaPlaying();
+}
+
 int32_t AudioSessionManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     AUDIO_INFO_LOG("in");
@@ -369,7 +374,7 @@ void AudioSessionRestoreParams::OnAudioSessionStateChanged(AudioSessionStateChan
     }
 }
 
-void AudioSessionRestoreParams::MoveMuteAfterSceneIfBefore()
+void AudioSessionRestoreParams::EnsureMuteAfterScene()
 {
     auto muteIt = std::find_if(actions_.begin(), actions_.end(),
         [](const std::unique_ptr<AudioSessionAction> &action) {
@@ -382,7 +387,7 @@ void AudioSessionRestoreParams::MoveMuteAfterSceneIfBefore()
     if (muteIt == actions_.end() || sceneIt == actions_.end() || muteIt >= sceneIt) {
         return;
     }
-    std::rotate(muteIt, sceneIt, sceneIt + 1);
+    std::rotate(muteIt, muteIt + 1, sceneIt + 1);
 }
 
 void AudioSessionRestoreParams::DeduplicateLastOperation(AudioSessionRestoreParams::OperationType type)
@@ -434,8 +439,12 @@ void AudioSessionRestoreParams::RecordAudioSessionOpt(const OperationType type, 
         }
 
         DeduplicateLastOperation(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE);
+        // After deduplication, SCENE operations might appear before MUTE operations.
+        // However, MUTE settings need to be applied after SCENE settings in practice.
+        // Therefore, we need to reorder MUTE operations to appear after SCENE operations.
+        EnsureMuteAfterScene();
+    } else if (type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION) {
         DeduplicateLastOperation(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION);
-        MoveMuteAfterSceneIfBefore();
     }
 }
 

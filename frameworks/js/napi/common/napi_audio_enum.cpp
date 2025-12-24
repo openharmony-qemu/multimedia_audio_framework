@@ -114,7 +114,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
     {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
     {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
-    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION}
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION},
+    {"STREAM_USAGE_ANNOUNCEMENT", STREAM_USAGE_ANNOUNCEMENT},
+    {"STREAM_USAGE_EMERGENCY", STREAM_USAGE_EMERGENCY}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -546,9 +548,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintM
         static_cast<int32_t>(AudioSessionStateChangeHint::TIME_OUT_STOP)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_DUCK", static_cast<int32_t>(AudioSessionStateChangeHint::DUCK)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
-    {"AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION ", static_cast<int32_t>(AudioSessionStateChangeHint::MUTE)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION ",
+        static_cast<int32_t>(AudioSessionStateChangeHint::MUTE_SUGGESTION)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION ",
-        static_cast<int32_t>(AudioSessionStateChangeHint::UNMUTE)},
+        static_cast<int32_t>(AudioSessionStateChangeHint::UNMUTE_SUGGESTION)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommendedActionMap = {
@@ -1407,6 +1410,21 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
 #endif
             break;
         default:
+            result = GetJsAudioVolumeTypeFir(volumeType);
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsAudioVolumeTypeFir(AudioStreamType volumeType)
+{
+    int32_t result = MEDIA;
+    switch (volumeType) {
+        case AudioStreamType::STREAM_ANNOUNCEMENT:
+        case AudioStreamType::STREAM_EMERGENCY:
+            result = NapiAudioEnum::ALARM;
+            break;
+        default:
             result = NapiAudioEnum::MEDIA;
             break;
     }
@@ -1487,6 +1505,12 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+            result = NapiAudioEnum::USAGE_ANNOUNCEMENT;
+            break;
+        case StreamUsage::STREAM_USAGE_EMERGENCY:
+            result = NapiAudioEnum::USAGE_EMERGENCY;
             break;
         default:
             result = NapiAudioEnum::USAGE_UNKNOW;
@@ -1644,6 +1668,8 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case STREAM_USAGE_VOICE_RINGTONE:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY:
             result = true;
             break;
         default:
@@ -1803,6 +1829,12 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
             break;
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = STREAM_USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case NapiAudioEnum::USAGE_ANNOUNCEMENT:
+            result = STREAM_USAGE_ANNOUNCEMENT;
+            break;
+        case NapiAudioEnum::USAGE_EMERGENCY:
+            result = STREAM_USAGE_EMERGENCY;
             break;
         case NapiAudioEnum::USAGE_MAX:
             result = STREAM_USAGE_MAX;

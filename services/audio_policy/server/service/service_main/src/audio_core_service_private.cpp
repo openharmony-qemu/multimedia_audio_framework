@@ -102,6 +102,7 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
+    std::string(PRIMARY_RAW_AI_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -2081,7 +2082,8 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
             audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) &&
             ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
             (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION))) {
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI))) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }
@@ -2734,6 +2736,28 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
     }
 }
 
+/**
+ * Mutes media streams on the primary sink when a dual-tone ringtone is playing.
+ * Ensures that media does not play simultaneously on two devices.
+ */
+void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    for (const auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo != nullptr && AudioPolicyUtils::GetInstance().IsOnPrimarySink(
+            changeInfo->outputDeviceInfo, changeInfo->sessionId)) {
+            AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
+            streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(changeInfo->sessionId, streamType));
+            audioPolicyManager_.SetDualStreamVolumeMute(changeInfo->sessionId, true);
+        }
+    }
+}
+
 // After media playback is interrupted by the alarm or ring,
 // a delay is required before switching to dual output (e.g., speaker + headset).
 // This ensures that the remaining audio buffer is drained,
@@ -2747,15 +2771,7 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
         streamDesc->newDeviceDescs_.size() > 1 &&
         (streamCollector_.IsMediaPlaying() || streamCollector_.IsStreamRunning(STREAM_USAGE_ALARM)) &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
-        if (AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
-            streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
-            vector<std::int32_t> sessionIdList = streamCollector_.GetPlayingMediaSessionIdList();
-            for (const auto &sessionId : sessionIdList) {
-                AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(sessionId, streamType));
-                audioPolicyManager_.SetDualStreamVolumeMute(sessionId, true);
-            }
-        }
+        HandlePrimaryMediaMuteForDualRing(streamDesc);
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
     }
 }

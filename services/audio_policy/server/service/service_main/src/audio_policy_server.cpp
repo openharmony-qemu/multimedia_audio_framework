@@ -449,7 +449,7 @@ void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType,
-    const AudioStreamType &streamInFocus)
+    const AudioStreamType &streamInFocus, int32_t zoneId)
 {
     int32_t streamInFocusInt = static_cast<int32_t>(streamInFocus);
     int32_t volumeLevelMax = -1;
@@ -467,6 +467,16 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
         volumeEvent.previousVolume = volLevel;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+        if (zoneId == 0) {
+            deviceDesc = audioActiveDevice_.GetDeviceForVolume(volumeEvent.volumeType);
+        } else {
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
+            AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
+            deviceDesc = !devices.empty() ? devices[0] : nullptr;
+        }
+        volumeEvent.networkId = deviceDesc == nullptr ? LOCAL_NETWORK_ID : deviceDesc->networkId_;
+        volumeEvent.deviceType = deviceDesc == nullptr ? DEVICE_TYPE_NONE : deviceDesc->deviceType_;
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, false, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
@@ -692,7 +702,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
         }
     }
 #endif
-    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus, zoneId)) {
         AUDIO_ERR_LOG("device %{public}d, stream %{public}d, volumelevel %{public}d invalid",
             audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus, volumeLevelInInt);
         return ERROR_INVALID_PARAM;
@@ -5114,6 +5124,17 @@ int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsOtherMediaPlaying(bool &isExistence)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        isExistence = false;
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
+    isExistence = interruptService_->IsOtherMediaPlaying();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
 {
     if (interruptService_ == nullptr) {
@@ -5175,7 +5196,7 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
     return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
-int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn,
+int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn,
     bool &isAllowed, bool &silentControl)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
@@ -5185,10 +5206,16 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, int32_t s
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != MEDIA_SERVICE_UID) {
         auto callerPid = IPCSkeleton::GetCallingPid();
-        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, streamUsage, silentControl);
+        if (!PermissionUtil::VerifySystemPermission() && !coreService_->IsStreamBelongToUid(callerUid, sessionId)) {
+            AUDIO_ERR_LOG("The sessionId %{public}u does not belong to callerUid %{public}d",
+                sessionId, callerUid);
+            return ERR_UNKNOWN;
+        }
+        isAllowed = audioBackgroundManager_.IsAllowedPlayback(callerUid, callerPid, sessionId, streamUsage,
+            silentControl);
         return SUCCESS;
     }
-    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, streamUsage, silentControl);
+    isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     return SUCCESS;
 }
 

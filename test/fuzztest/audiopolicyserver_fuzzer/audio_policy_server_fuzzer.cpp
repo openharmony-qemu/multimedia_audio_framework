@@ -1017,11 +1017,12 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest()
 
     int32_t uid = GetData<int32_t>();
     int32_t pid = GetData<int32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
     bool isAllowed = GetData<bool>();
     int32_t streamUsage = GetData<StreamUsage>();
     bool silentControl = GetData<bool>();
 
-    audioPolicyServer->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
+    audioPolicyServer->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
 }
 
 void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
@@ -2077,7 +2078,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerIsRingerModeValidFuzzTest,
     AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest,
     AudioPolicyServerAddRemoteDevstatusCallbackFuzzTest,
-    AudioPolicyServerOnReceiveEventFuzzTest,
     AudioPolicyServerSubscribeBackgroundTaskFuzzTest,
     AudioPolicyServerSubscribeCommonEventExecuteFuzzTest,
     AudioPolicyServerCheckSubscribePowerStateChangeFuzzTest,

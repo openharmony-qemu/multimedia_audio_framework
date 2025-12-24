@@ -89,6 +89,8 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateS
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_ACCESSIBILITY)] = STREAM_ACCESSIBILITY;
     streamMap[make_pair(CONTENT_TYPE_ULTRASONIC, STREAM_USAGE_SYSTEM)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
 
     // Old mapping relationships from content and usage to stream type
     streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
@@ -128,6 +130,8 @@ void AudioSystemManager::CreateStreamMap(map<pair<ContentType, StreamUsage>, Aud
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
 }
 
 AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, StreamUsage streamUsage)
@@ -340,7 +344,9 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
             break;
-        case STREAM_ULTRASONIC:{
+        case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
             break;

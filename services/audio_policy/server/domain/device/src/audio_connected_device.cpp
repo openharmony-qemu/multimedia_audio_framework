@@ -26,8 +26,9 @@
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
 #include "media_monitor_manager.h"
-
 #include "audio_policy_utils.h"
+#include "audio_zone_service.h"
+
 #ifdef FEATURE_DEVICE_MANAGER
 #include "device_manager.h"
 #endif
@@ -519,6 +520,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceTy
     CHECK_AND_RETURN_RET_LOG(type != DEVICE_TYPE_NONE, defaultOutputDevice_, "device type is none");
     CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
     std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
+    CHECK_AND_RETURN_RET(device == nullptr, device);
+
+    device = AudioZoneService::GetInstance().GetDeviceDescriptor(type, networkId);
     CHECK_AND_RETURN_RET(device == nullptr, device);
 
     device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);

@@ -32,6 +32,7 @@
 #include "audio_server_proxy.h"
 #include "audio_scene_manager.h"
 #include "audio_spatialization_service.h"
+#include "audio_manager_listener_stub_impl.h"
 
 using namespace std;
 
@@ -515,6 +516,7 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
 
     SaveVolumeData(devices[0], streamType, volumeLevel, false, true);
+    SetRemoteVolumeForPassThroughDevice(devices[0], volumeLevel);
     return SetVolumeDbForDeviceInPipe(devices[0], streamType);
 }
 
@@ -569,6 +571,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     volumeDataMaintainer_.SaveVolumeToMap(desc, streamType, volumeLevel);
     // Save the volume to database
     SaveVolumeToDbAsync(desc, streamType, volumeLevel);
+    SetRemoteVolumeForPassThroughDevice(desc, volumeLevel);
 
     return SetVolumeDbForDeviceInPipe(desc, streamType);
 }
@@ -716,6 +719,9 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
 int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
 {
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
+    CHECK_AND_RETURN_RET_LOG(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE, SUCCESS,
+        "pass through device volume db not set");
     return SetVolumeDb(desc, streamType);
 }
 
@@ -991,6 +997,10 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
 
     volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
     SaveMuteToDbAsync(device, streamType, mute);
+    if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
+        AudioServerProxy::GetInstance().SetRemoteAudioParameterProxy(device->networkId_, false, mute);
+        AUDIO_INFO_LOG("set remote mute: %{public}d", mute);
+    }
     return SetVolumeDbForDeviceInPipe(device, streamType);
 }
 
@@ -1159,6 +1169,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
         auto desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(desc != nullptr);
+        CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
@@ -1272,6 +1283,7 @@ void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
         AUDIO_INFO_LOG("streamType:%{public}d begin reduce volume for streamType:%{public}d", streamType, volumeType);
         auto desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(desc != nullptr);
+        CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         SetVolumeDb(desc, volumeType);
     }
 }
@@ -1460,6 +1472,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_VOICE_RECOGNITION;
+        }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_RAW_AI) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_RAW_AI;
         }
     }
 }
@@ -3231,7 +3247,7 @@ std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(Adj
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
 }
 
-void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device,
+void AudioAdapterManager::UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioVolumeType volumeType)
 {
     Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
@@ -3406,13 +3422,20 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
     CHECK_AND_RETURN_LOG(deviceVolumeBehaviorListener_ != nullptr,
         "QueryDeviceVolumeBehavior deviceVolumeBehaviorListener_ is null");
     (void)deviceVolumeBehaviorListener_->OnQueryDeviceVolumeBehavior(behavior);
-    desc->volumeBehavior_ = behavior;
+    // only update target info
+    desc->volumeBehavior_.isReady = behavior.isReady;
+    desc->volumeBehavior_.isVolumeControlDisabled = behavior.isVolumeControlDisabled;
+    desc->volumeBehavior_.databaseVolumeName = behavior.databaseVolumeName;
     AUDIO_INFO_LOG("query ok");
 }
 
 void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
+    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
+        UpdateVolumeWhenPassThroughDeviceConnect(desc);
+        return;
+    }
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
     UpdateRingerMuteByRingerMode(desc);
@@ -3492,6 +3515,9 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<Audio
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.DeInitDeviceVolumeMap(desc);
     volumeDataMaintainer_.DeInitDeviceMuteMap(desc);
+    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
+        AudioServerProxy::GetInstance().UnRegistAdapterManagerCallback(desc->networkId_);
+    }
     AUDIO_INFO_LOG("update ok");
 }
 
@@ -3533,6 +3559,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     for (auto &streamDesc : streamDescs) {
         auto device = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
+        CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         SetVolumeDb(device, streamType);
     }
     return SUCCESS;
@@ -3611,5 +3638,102 @@ void AudioAdapterManager::SetDualStreamVolumeMute(int32_t sessionId, bool isDual
     SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
 }
 
+void AudioAdapterManager::SetVolumeFromRemote(std::string networkId, int32_t volumeDegree)
+{
+    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER, networkId);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is not exist");
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, GetMaxVolumeLevel(STREAM_MUSIC, desc));
+    SaveVolumeData(desc, STREAM_MUSIC, volumeLevel, false, true);
+    SendVolumeKeyEventCbWithUpdateUi(STREAM_MUSIC, desc);
+}
+
+void AudioAdapterManager::SetMuteFromRemote(std::string networkId, bool mute)
+{
+    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER, networkId);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is not exist");
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, mute);
+    SendVolumeKeyEventCbWithUpdateUi(STREAM_MUSIC, desc);
+}
+
+void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
+    std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = streamType;
+    bool mute = GetStreamMuteInternal(device, streamType);
+    volumeEvent.volume = GetStreamVolumeInternal(device, streamType) * (mute ? 0 : 1);
+    volumeEvent.volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * (mute ? 0 : 1);
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = device->networkId_;
+    volumeEvent.deviceType = device->deviceType_;
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
+}
+
+void AudioAdapterManager::RegistAdapterManagerCallback(std::string networkId)
+{
+    remoteVolumeCallback_ = std::make_shared<RemoteVolumeCallback>();
+    sptr<AudioManagerListenerStubImpl> parameterChangeCbStub = new(std::nothrow) AudioManagerListenerStubImpl();
+    CHECK_AND_RETURN_LOG(parameterChangeCbStub != nullptr, "parameterChangeCbStub is nullptr");
+    parameterChangeCbStub->SetParameterCallback(remoteVolumeCallback_);
+
+    sptr<IRemoteObject> object = parameterChangeCbStub->AsObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "parameterChangeCbStub object is nullptr");
+    AudioServerProxy::GetInstance().RegistAdapterManagerCallback(object, networkId);
+}
+
+void AudioAdapterManager::RemoteVolumeCallback::OnAudioParameterChange(const std::string networkId,
+    const AudioParamKey key, const std::string& condition, const std::string& value)
+{
+    AUDIO_INFO_LOG("OnAudioParameterChange key: %{public}d, condition: %{public}s, value: %{public}s",
+        key, condition.c_str(), value.c_str());
+    switch (key) {
+        case AudioParamKey::VOLUME:
+            if (condition.find("VOLUME_CHANAGE") == 0) {
+                int32_t volumeDegree = std::stoi(value);
+                AudioAdapterManager::GetInstance().SetVolumeFromRemote(networkId, volumeDegree);
+                return;
+            }
+            if (condition.find("MUTE_CHANGE") == 0) {
+                int32_t mute = std::stoi(value);
+                AudioAdapterManager::GetInstance().SetMuteFromRemote(networkId, mute);
+                return;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioAdapterManager::SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device,
+    int32_t volumeLevel)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
+
+    int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
+    int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, maxRet);
+    AudioServerProxy::GetInstance().SetRemoteAudioParameterProxy(device->networkId_, true, volumeDegree);
+    AUDIO_INFO_LOG("set remote volume %{public}d", volumeDegree);
+}
+
+void AudioAdapterManager::UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
+
+    int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(device->volumeBehavior_.controlInitVolume, maxRet);
+    SaveVolumeData(device, STREAM_MUSIC, volumeLevel, false, true);
+    volumeDataMaintainer_.SaveMuteToMap(device, STREAM_MUSIC, device->volumeBehavior_.controlInitMute);
+    AUDIO_INFO_LOG("init volume %{public}d, mute: %{public}d by remote control",
+        device->volumeBehavior_.controlInitVolume, device->volumeBehavior_.controlInitMute);
+    SystemVolume systemVolume(STREAM_MUSIC, REMOTE_CLASS, 1.0, maxRet, false);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+    SetOffloadVolume(STREAM_MUSIC, 1.0, REMOTE_CLASS, device->networkId_);
+    RegistAdapterManagerCallback(device->networkId_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -390,6 +390,13 @@ napi_value NapiAudioRenderer::CreateAudioRenderer(napi_env env, napi_callback_in
     };
     context->GetCbInfo(env, info, inputParser);
 
+#ifndef MULTI_ALARM_LEVEL
+    auto streamUsage = context->rendererOptions.rendererInfo.streamUsage;
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        context->rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
+
     auto complete = [env, context](napi_value &output) {
         output = CreateAudioRendererWrapper(env, context->rendererOptions);
 
@@ -420,6 +427,13 @@ napi_value NapiAudioRenderer::CreateAudioRendererSync(napi_env env, napi_callbac
     AudioRendererOptions rendererOptions;
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::GetRendererOptions(env, &rendererOptions, argv[PARAM0]) == napi_ok,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "GetRendererOptions failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    auto streamUsage = rendererOptions.rendererInfo.streamUsage;
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     return NapiAudioRenderer::CreateAudioRendererWrapper(env, rendererOptions);
 }

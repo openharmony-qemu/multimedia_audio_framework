@@ -151,6 +151,27 @@ void AudioCapturerPrivate::HandleSetCapturerInfoByOptions(const AudioCapturerOpt
 }
 
 // LCOV_EXCL_START
+static inline bool checkEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
+{
+    if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
+        (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+        capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT"
+            "can only be samplingRate and format same");
+        return false;
+    } else {
+        return true;
+    }
+}
+
+static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
+{
+    params.audioEcSampleFormat = ec.format;
+    params.ecSamplingRate = ec.samplingRate;
+    params.audioEcChannel = (ec.channels == AudioChannel::CHANNEL_3) ? AudioChannel::STEREO : ec.channels;
+    params.audioEcEncoding = ec.encoding;
+}
+
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
@@ -172,6 +193,10 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
     
+    if (!checkEcParam(sourceType, capturerOptions)) {
+        return nullptr;
+    }
+
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, capturerFlags:%{public}d, "
         "AppInfo:[%{public}d] [%{public}s] [%{public}s], ", sourceType, capturerOptions.capturerInfo.capturerFlags,
         appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" : "F");
@@ -185,6 +210,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
+    FillEcParams(params, capturerOptions.ecStreamInfo);
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
     if (capturer == nullptr) {
@@ -277,6 +303,25 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
     return currentStream->GetFrameCount(frameCount);
 }
 
+AudioStreamParams AudioCapturerPrivate::ConvertToAudioStreamParams(const AudioCapturerParams params)
+{
+    AudioStreamParams audioStreamParams;
+
+    audioStreamParams.format = params.audioSampleFormat;
+    audioStreamParams.samplingRate = params.samplingRate;
+    audioStreamParams.channels = params.audioChannel;
+    audioStreamParams.encoding = params.audioEncoding;
+    audioStreamParams.channelLayout = params.channelLayout;
+
+    audioStreamParams.ecFormat = params.audioEcSampleFormat;
+    audioStreamParams.ecSamplingRate = params.ecSamplingRate;
+    audioStreamParams.ecChannels = params.audioEcChannel;
+    audioStreamParams.ecEncoding = params.audioEcEncoding;
+    audioStreamParams.ecChannelLayout = params.ecChannelLayout;
+
+    return audioStreamParams;
+}
+
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
@@ -352,6 +397,11 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->ecStreamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.ecFormat);
+    streamDesc->ecStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.ecSamplingRate);
+    streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.ecChannels);
+    streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.ecEncoding);
+    streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.ecChannelLayout);
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_ = capturerInfo_;

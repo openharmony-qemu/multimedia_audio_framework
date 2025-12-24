@@ -1689,6 +1689,7 @@ enum AudioParamKey {
     PERF_INFO = 201,
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
+    AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
 };
 
 struct DStatusInfo {

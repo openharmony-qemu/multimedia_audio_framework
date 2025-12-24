@@ -392,10 +392,9 @@ void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &pa
             param.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
     }
     param.channelCount = attr_.channel;
-    param.sampleRate = AUDIO_SAMPLE_RATE_48K;
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HWDECODING));
-    param.type = AUDIO_DP;
+    param.type = AUDIO_OFFLOAD;
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -403,6 +402,12 @@ void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &pa
     param.silenceThreshold = 0;
     param.sampleRate = attr_.sampleRate;
     param.channelLayout = attr_.channelLayout;
+
+    AUDIO_INFO_LOG("Init offloadInfo with format:%{public}s", EncodingTypeStr(attr_.encodingType).c_str());
+    param.offloadInfo.sampleRate = attr_.sampleRate;
+    param.offloadInfo.channelCount = attr_.channel;
+    param.offloadInfo.format = param.format;
+    param.offloadInfo.channelLayout = attr_.channelLayout;
 }
 
 void DirectAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)

@@ -3139,6 +3139,103 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeVoiceCallDeviceSet_001,
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandlePrimaryMediaMuteForDualRing_001
+ * @tc.desc  : Test AudioCoreService::HandlePrimaryMediaMuteForDualRing()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandlePrimaryMediaMuteForDualRing_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    newDesc1->networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    newDesc2->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    info->sessionId = 10000;
+    info->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    info->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    audioCoreService->HandlePrimaryMediaMuteForDualRing(streamDesc);
+    EXPECT_EQ(0, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandlePrimaryMediaMuteForDualRing_002
+ * @tc.desc  : Test AudioCoreService::HandlePrimaryMediaMuteForDualRing()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandlePrimaryMediaMuteForDualRing_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    newDesc1->networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    newDesc2->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    audioCoreService->HandlePrimaryMediaMuteForDualRing(streamDesc);
+    EXPECT_EQ(0, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandlePrimaryMediaMuteForDualRing_003
+ * @tc.desc  : Test AudioCoreService::HandlePrimaryMediaMuteForDualRing()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandlePrimaryMediaMuteForDualRing_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    newDesc1->networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    newDesc2->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    info->sessionId = 10000;
+    info->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    info->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    audioCoreService->HandlePrimaryMediaMuteForDualRing(streamDesc);
+    EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_001
  * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
  */

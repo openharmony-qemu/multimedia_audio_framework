@@ -127,16 +127,16 @@ enum class AudioSessionStateChangeHint {
     UNDUCK = 5,
 
     /**
-     * Muted the playback. (Playback is silenced.)
+     * Suggests that the playback be muted. The application may choose to mute its audio upon receiving this hint.
      * @since 23
      */
-    MUTE = 6,
+    MUTE_SUGGESTION = 6,
 
     /**
-     * Unmuted the playback.
+     * Suggests that the playback be unmuted. The application may choose to restore its audio upon receiving this hint.
      * @since 23
      */
-    UNMUTE = 7,
+    UNMUTE_SUGGESTION = 7,
 };
 
 /**
