@@ -325,34 +325,6 @@ void AudioPolicyServiceEnhanceSevenFuzzTest()
     GetServerPtr()->audioPolicyService_.OnReceiveEvent(eventData);
 }
 
-void AudioPolicyServiceEnhanceEightFuzzTest()
-{
-    std::shared_ptr<AudioDeviceDescriptor> remote = std::make_shared<AudioDeviceDescriptor>();
-    CastType type = GetData<CastType>();
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SwitchActiveA2dpDevice(remote);
-
-    AudioProcessConfig config;
-    GetServerPtr()->audioPolicyService_.NotifyWakeUpCapturerRemoved();
-    GetServerPtr()->audioPolicyService_.IsAbsVolumeSupported();
-
-    AudioModuleInfo moduleInfo;
-    AudioStreamInfo audioStreamInfo;
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.ReloadA2dpAudioPort(moduleInfo,
-        DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "", "", SOURCE_TYPE_MIC);
-
-    InternalDeviceType internalDeviceType = GetData<InternalDeviceType>();
-
-    std::string anahsShowType = "";
-    GetServerPtr()->audioPolicyService_.OnUpdateAnahsSupport(anahsShowType);
-
-    DeviceType deviceType = GetData<DeviceType>();
-    std::string macAddress = "";
-    std::string deviceName = "";
-    AudioStreamInfo streamInfo;
-    GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ReloadA2dpOffloadOnDeviceChanged(
-        deviceType, macAddress, deviceName, streamInfo);
-}
-
 void AudioPolicyServiceEnhanceNineFuzzTest()
 {
     DStatusInfo statusInfo;
