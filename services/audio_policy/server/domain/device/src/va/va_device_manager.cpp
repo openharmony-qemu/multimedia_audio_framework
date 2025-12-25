@@ -209,5 +209,6 @@ uint32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStr
     AUDIO_INFO_LOG("calculate buffer size: %{public}d", bufferSize);
     return bufferSize;
 }
+
 }  // namespace VirtualAudioDevice
 }  // namespace OHOS
