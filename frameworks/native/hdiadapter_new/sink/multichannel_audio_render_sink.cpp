@@ -228,16 +228,6 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
             AUDIO_WARNING_LOG("call memset_s fail");
         }
     }
-    if (emptyFrameCount_ > 0) {
-        Trace trace("MultichannelAudioRenderSink::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s fail");
-        }
-        --emptyFrameCount_;
-        if (emptyFrameCount_ == 0) {
-            updateActiveDeviceCV_.notify_all();
-        }
-    }
 
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -399,20 +389,7 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
         return SUCCESS;
     }
     currentActiveDevice_ = outputDevices[0];
-
-    emptyFrameCount_ = 5; // 5: frame count before update route
-    std::unique_lock<std::mutex> lock(switchDeviceMutex_);
-    updateActiveDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
-        if (emptyFrameCount_ == 0) {
-            AUDIO_INFO_LOG("wait for empty frame end");
-            return true;
-        }
-        AUDIO_DEBUG_LOG("emptyFrameCount: %{public}d", emptyFrameCount_.load());
-        return false;
-    });
-    int32_t ret = DoSetOutputRoute(outputDevices);
-    emptyFrameCount_ = 5; // 5: frame count after update route
-    return ret;
+    return SUCCESS;
 }
 
 void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)

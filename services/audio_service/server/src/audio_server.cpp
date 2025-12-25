@@ -330,7 +330,7 @@ static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
         }
         return false;
     };
-    auto processFunc = [deviceTypes, limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+    auto processFunc = [&deviceTypes, limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
         CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
         CHECK_AND_RETURN_RET(sink != nullptr && sink->IsInited(), SUCCESS);
 
@@ -338,7 +338,6 @@ static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
         return SUCCESS;
     };
     (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
-    return SUCCESS;
 }
 
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>

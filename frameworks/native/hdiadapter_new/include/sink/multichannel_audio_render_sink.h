@@ -122,7 +122,6 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    std::atomic<int32_t> emptyFrameCount_ = 0;
     std::condition_variable updateActiveDeviceCV_;
     // for dfx log
     int32_t logMode_ = 0;
