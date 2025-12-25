@@ -415,6 +415,10 @@ ohos_unittest("audio_service_unit_test") {
     ]
     defines += [ "FEATURE_CALL_MANAGER" ]
   }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
 }
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
