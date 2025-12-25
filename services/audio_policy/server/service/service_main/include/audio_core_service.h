@@ -188,6 +188,7 @@ public:
             uint32_t &timeStamp) override;
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+        void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -590,6 +591,8 @@ private:
 
     // for remote
     void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    AudioStreamDeviceChangeReasonExt UpdateRemoteDeviceChangeReason(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
 
