@@ -572,7 +572,7 @@ float OHAudioBufferBase::GetDuckFactor()
 
 float OHAudioBufferBase::GetVolumeFromOh()
 {
-    float volumeStream = 1.0f;
+    float volumeStream = GetStreamVolume();
     uint32_t durationMs = basicBufferInfo_->durationMs.load();
     uint32_t beginDurationMs = basicBufferInfo_->beginDurationMs.load();
     timespec tm {};
