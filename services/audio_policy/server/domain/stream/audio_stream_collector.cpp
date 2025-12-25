@@ -465,7 +465,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
             RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            ResetRingerModeMute(rendererState, streamUsage);
+            if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+                ResetRingerModeMute(rendererState, streamUsage);
+            }
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
