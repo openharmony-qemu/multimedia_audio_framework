@@ -294,8 +294,10 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     Init();
-
-    bool res = Publish(this);
+    bool res = false;
+    if (!isUT_) {
+        res = Publish(this);
+    }
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,

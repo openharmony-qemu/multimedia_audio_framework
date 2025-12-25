@@ -951,6 +951,7 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
 
     int32_t sessionIdByRemote_ = -1;
+    bool isUT_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
