@@ -125,6 +125,8 @@ public:
     // for a2dp_offload connection state
     virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
 
+    virtual bool IsInA2dpOffload() {return false;}
+
     virtual int32_t GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
         NOT_SUPPORT_RET;
     virtual int32_t GetHdiLatency(uint32_t &latency) NOT_SUPPORT_RET;
