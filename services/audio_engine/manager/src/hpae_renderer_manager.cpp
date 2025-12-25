@@ -445,7 +445,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
         if (sessionGainNode != nullptr) {
-            sessionGainNode->RetsetVolume();
+            sessionGainNode->ResetVolume();
         }
         ConnectProcessCluster(sessionId, sceneType);
     }
