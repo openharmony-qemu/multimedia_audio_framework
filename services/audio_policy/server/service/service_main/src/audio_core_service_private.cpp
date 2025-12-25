@@ -411,14 +411,13 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
     pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
 
-    std::shared_ptr<ActivateNearlinkDeviceAction> action =
-        std::make_shared<ActivateNearlinkDeviceAction>(pipeManager_->GetStreamDescForAudioScene(audioScene),
-        pipeManager_->GetRingAndVoipDescMap(), reason);
-    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionHandler::AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-    if (asyncHandler_ != nullptr) {
-        asyncHandler_->PostAsyncAction(desc);
+    ActivateNearlinkDevice(pipeManager_->GetStreamDescForAudioScene(audioScene), reason);
+
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap =
+        pipeManager_->GetRingAndVoipDescMap();
+    for (auto &entry : ringAndVoipDescMap) {
+        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
+        sleAudioDeviceManager_.UpdateSleStreamTypeCount(entry.second);
     }
 }
 
@@ -3532,35 +3531,6 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
         desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
             GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
             streamDesc->rendererInfo_.privacyType);
-    }
-}
-
-void AudioCoreService::ActivateNearlinkDeviceAsync(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Stream desc is nullptr");
-    auto deviceDesc = streamDesc->newDeviceDescs_.front();
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "Device desc is nullptr");
-
-    StreamUsage audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
-    bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
-        ResetNearlinkDeviceState(deviceDesc, isRunning);
-
-        DeactivateBluetoothDevice(isRunning);
-
-        int32_t ret = sleAudioDeviceManager_.SetActiveDevice(*deviceDesc, audioStreamConfig);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Activating Nearlink device fails, ret: %{public}d", ret);
-        CHECK_AND_RETURN_LOG(isRunning, "Stream is not running, no needs start playing");
-        int32_t result = sleAudioDeviceManager_.StartPlaying(*deviceDesc, audioStreamConfig, streamDesc->GetRealUid());
-        if (result != SUCCESS) {
-            AUDIO_ERR_LOG("NearlinkAsync device activation failed, macAddress: %{public}s, result: %{public}d",
-                GetEncryptAddr(deviceDesc->macAddress_).c_str(), result);
-            HandleNearlinkErrResultAsync(result, deviceDesc);
-            return;
-        }
-        sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     }
 }
 
