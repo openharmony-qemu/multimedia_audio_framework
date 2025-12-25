@@ -20,6 +20,7 @@
 #include "audio_suite_base.h"
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,6 +74,7 @@ private:
     AudioEffectHandle pitchAlgoHandle_ = nullptr;
 
     std::vector<int16_t> tempDataOut_;
+    AudioSuiteLibraryManager algoLibrary_;
 
     std::vector<float> ParseStringToFloatArray(const std::string &str, char delimiter)
     {
@@ -82,7 +84,10 @@ private:
 
         while (std::getline(iss, token, delimiter)) {
             if (!token.empty()) {
-                params.push_back(std::stof(token));
+                float value;
+                CHECK_AND_RETURN_RET_LOG(StringConverterFloat(token, value), params,
+                    "Tempo convert string to float value error, invalid data is %{public}s", token.c_str());
+                params.push_back(value);
             }
         }
         return params;

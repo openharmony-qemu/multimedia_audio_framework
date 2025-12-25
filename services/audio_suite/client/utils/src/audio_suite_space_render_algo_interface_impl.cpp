@@ -27,6 +27,7 @@
 #include "audio_suite_space_render_algo_interface_impl.h"
 #include "audio_suite_algo_interface.h"
 #include "audio_hms_space_render_api.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,8 +67,9 @@ AudioSuiteSpaceRenderAlgoInterfaceImpl::~AudioSuiteSpaceRenderAlgoInterfaceImpl(
 int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
 {
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail", soPath.c_str());
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", soPath.c_str());
  
     algoApi_.getSpeces = reinterpret_cast<FunSpaceRenderGetSpeces>(dlsym(libHandle_, "SpaceRenderGetSpeces"));
     CHECK_AND_RETURN_RET_LOG(algoApi_.getSpeces != nullptr, ERROR, "Failed to get symbol SpaceRenderGetSpeces");

@@ -182,7 +182,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
-            "ReadProcessNodePreOutputData failed, preOutputs[0] is nullptr");
+            "Failed to get data from the previous node.");
         int32_t ret = SplitDataToQueue(preOutputs[0]->GetPcmData(), preOutputs[0]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AudioSuiteTempoPitchNode SplitDataToQueue failed");
     } else {
