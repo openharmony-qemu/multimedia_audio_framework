@@ -176,10 +176,6 @@ ohos_unittest("audio_zone_service_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_zone_service_unit_test/audio_zone_device_unit_test.cpp",
     "./unittest/audio_zone_service_unit_test/audio_zone_unit_test.cpp",
@@ -343,10 +339,6 @@ ohos_unittest("audio_zone_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "../../audio_policy/client/stub/src/audio_zone_client.cpp",
     "../../audio_policy/server/domain/zone/src/audio_zone_service.cpp",
@@ -502,10 +494,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
@@ -791,10 +779,6 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_second_unit_test.cpp",
   ]
@@ -934,10 +918,6 @@ ohos_unittest("audio_policy_service_first_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_first_unit_test.cpp",
@@ -1117,10 +1097,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
@@ -1308,10 +1284,6 @@ ohos_unittest("audio_policy_service_third_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
@@ -1489,10 +1461,6 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_microphone_descriptor_unit_test/src/audio_microphone_descriptor_unit_test.cpp",
@@ -1674,10 +1642,6 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_thirdext_unit_test.cpp",
     "./unittest/audio_policy_service_unit_test/src/get_server_util.cpp",
@@ -1854,10 +1818,6 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_extended_unit_test.cpp",
@@ -3476,10 +3436,6 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_pro_unit_test.cpp" ]
 
@@ -5325,10 +5281,6 @@ ohos_unittest("audio_background_manager_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_background_manager_unit_test/src/audio_background_manager_unit_test.cpp",
   ]
@@ -5899,10 +5851,6 @@ ohos_unittest("audio_core_service_unit_test") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_core_service_unit_test/src/audio_core_service_unit_test.cpp",
     "./unittest/audio_core_service_unit_test/src/get_server_util.cpp",
@@ -6069,10 +6017,6 @@ ohos_unittest("audio_core_service_utils_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [ "./unittest/audio_core_service_utils_unit_test/src/audio_core_service_utils_unit_test.cpp" ]
 

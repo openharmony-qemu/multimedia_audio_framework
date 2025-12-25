@@ -665,23 +665,23 @@ HWTEST(AudioServiceCommonUnitTest, SetDuckFactor_001, TestSize.Level1)
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     float invalidDuckFactor = -0.1f;
-    bool result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    bool result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor, 0);
     EXPECT_FALSE(result);
 
     invalidDuckFactor = 1.1f;
-    result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor, 0);
     EXPECT_FALSE(result);
 
     float validDuckFactor = 0.5f;
-    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor, 0);
     EXPECT_TRUE(result);
 
     validDuckFactor = 0.0f;
-    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor, 0);
     EXPECT_TRUE(result);
 
     float maxDuckFactor = 1.0f;
-    result = ohAudioBuffer->SetDuckFactor(maxDuckFactor);
+    result = ohAudioBuffer->SetDuckFactor(maxDuckFactor, 0);
     EXPECT_TRUE(result);
 }
 

@@ -2031,7 +2031,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetDuckFactor_001, TestS
 
     float duckFactor = 0.2f;
     rendererInServer->isDualToneEnabled_ = true;
-    int32_t ret = rendererInServer->SetDuckFactor(duckFactor);
+    int32_t ret = rendererInServer->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -2046,7 +2046,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetDuckFactor_002, TestS
     EXPECT_NE(nullptr, rendererInServer);
 
     float duckFactor = -0.2f;
-    int32_t ret = rendererInServer->SetDuckFactor(duckFactor);
+    int32_t ret = rendererInServer->SetDuckFactor(duckFactor, 0);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -2061,7 +2061,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetDuckFactor_003, TestS
     EXPECT_NE(nullptr, rendererInServer);
 
     float duckFactor = 2.0f;
-    int32_t ret = rendererInServer->SetDuckFactor(duckFactor);
+    int32_t ret = rendererInServer->SetDuckFactor(duckFactor, 0);
     EXPECT_NE(SUCCESS, ret);
 }
 

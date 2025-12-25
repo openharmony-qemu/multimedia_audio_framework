@@ -236,7 +236,7 @@ private:
     void WriteUnderrunEvent() const;
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
     RendererState GetStatusInner() const;

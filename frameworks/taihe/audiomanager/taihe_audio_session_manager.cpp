@@ -88,6 +88,12 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
     return audioSessionMngr_->IsAudioSessionActivated();
 }
 
+bool AudioSessionManagerImpl::IsOtherMediaPlaying()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr, false, "audioSessionMngr_ is nullptr");
+    return audioSessionMngr_->IsOtherMediaPlaying();
+}
+
 DeviceType AudioSessionManagerImpl::GetDefaultOutputDevice()
 {
     if (audioSessionMngr_ == nullptr) {

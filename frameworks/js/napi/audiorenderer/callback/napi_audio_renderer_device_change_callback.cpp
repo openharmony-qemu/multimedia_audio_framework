@@ -82,11 +82,6 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
     napi_value copyValue = nullptr;
 
     if (args == nullptr) {
-        for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-            napi_status ret = napi_delete_reference(env, (*autoRef)->cb_);
-            CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
-            (*autoRef)->cb_ = nullptr;
-        }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
         return;
@@ -101,9 +96,6 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
         if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
             callbacks_.remove(*autoRef);
-            napi_status status = napi_delete_reference(env, (*autoRef)->cb_);
-            CHECK_AND_RETURN_LOG(status == napi_ok, "deleting callback reference failed");
-            (*autoRef)->cb_ = nullptr;
             return;
         }
     }

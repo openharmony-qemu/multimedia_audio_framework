@@ -128,7 +128,7 @@ public:
 
     virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
 
-    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+    virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
     virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, uint32_t method) override
     {
@@ -1955,6 +1955,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_066, TestSize.Level1
 HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_067, TestSize.Level1)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     float volume = -0.1f;
     int32_t ret = ptrRendererInClientInner->SetDuckVolume(volume);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
@@ -1962,6 +1966,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_067, TestSize.Level1
     volume = 1.1f;
     ret = ptrRendererInClientInner->SetDuckVolume(volume);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    volume = 0.2f;
+    ret = ptrRendererInClientInner->SetDuckVolume(volume);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

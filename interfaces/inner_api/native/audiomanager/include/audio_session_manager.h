@@ -346,6 +346,15 @@ public:
      */
     int32_t ClearSelectedInputDevice();
 
+    /**
+     * @brief Returns if there is any other application playing audio in media usage.
+     * The short sound effect will not be considered in.
+     *
+     * @return {@code true} if there is other application playing audio in media usage.
+     * @since 23
+     */
+    bool IsOtherMediaPlaying();
+
     int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();

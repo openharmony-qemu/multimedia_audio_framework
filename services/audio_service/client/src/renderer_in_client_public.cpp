@@ -76,6 +76,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
+static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -474,6 +475,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
     AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d volume:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, volume);
+#ifdef MULTI_ALARM_LEVEL
+    if (eStreamType_ == STREAM_ANNOUNCEMENT || eStreamType_ == STREAM_EMERGENCY) {
+        AUDIO_INFO_LOG("streamType:%{public}d not support to set volume", eStreamType_);
+        return SUCCESS;
+    }
+#endif
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
@@ -529,9 +536,9 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     }
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    clientBuffer_->SetDuckFactor(volume);
+    clientBuffer_->SetDuckFactor(volume, DUCK_UNDUCK_DURATION_MS);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetDuckFactor(volume);
+    int32_t ret = ipcStream_->SetDuckFactor(volume, DUCK_UNDUCK_DURATION_MS);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Duck failed:%{public}u", ret);
         return ERROR;

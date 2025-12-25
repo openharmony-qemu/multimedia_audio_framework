@@ -65,6 +65,11 @@ bool AudioSessionManager::IsAudioSessionActivated()
     return AudioPolicyManager::GetInstance().IsAudioSessionActivated();
 }
 
+bool AudioSessionManager::IsOtherMediaPlaying()
+{
+    return AudioPolicyManager::GetInstance().IsOtherMediaPlaying();
+}
+
 int32_t AudioSessionManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     AUDIO_INFO_LOG("in");

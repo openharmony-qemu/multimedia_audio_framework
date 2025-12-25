@@ -372,14 +372,16 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_016, TestSize.Level4)
 {
     int32_t uid = 1;
     int32_t pid = 1;
+    uint32_t sessionId = 1;
     bool isAllowed = false;
     int32_t streamUsage = 1;
     bool silentControl = false;
-    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl), SUCCESS);
+    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, sessionId, streamUsage,
+        isAllowed, silentControl), ERR_UNKNOWN);
 
     streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MAX) + 1;
-    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl),
-        ERR_NOT_SUPPORTED);
+    EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, sessionId, streamUsage,
+        isAllowed, silentControl), ERR_NOT_SUPPORTED);
 }
 
 /**

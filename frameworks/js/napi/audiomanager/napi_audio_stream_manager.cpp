@@ -385,6 +385,12 @@ napi_value NapiAudioStreamMgr::IsStreamActiveByStreamUsage(napi_env env, napi_ca
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of streamUsage must be enum StreamUsage"), "get streamUsage failed");
 
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
+
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
         "audioStreamMngr_ is nullptr");
@@ -465,6 +471,12 @@ napi_value NapiAudioStreamMgr::GetEffectInfoArraySync(napi_env env, napi_callbac
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of usage must be enum StreamUsage"), "get streamUsage failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,

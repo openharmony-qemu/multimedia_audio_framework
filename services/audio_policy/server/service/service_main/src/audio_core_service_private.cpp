@@ -3585,11 +3585,11 @@ void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<A
     }
 }
 
-void AudioCoreService::HandleRingToDefaultSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
+void AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
 {
     if ((lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING) &&
-        audioScene == AUDIO_SCENE_DEFAULT) {
-        AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to default");
+        (audioScene == AUDIO_SCENE_DEFAULT || AUDIO_SCENE_PHONE_CALL || AUDIO_SCENE_PHONE_CHAT)) {
+        AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to non-ring");
         isRingDualToneOnPrimarySpeaker_ = false;
     }
 }
