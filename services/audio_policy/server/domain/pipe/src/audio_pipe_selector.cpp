@@ -601,21 +601,28 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
+void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(deviceDesc, "streamDesc is nullptr");
+    moduleInfo.deviceType = std::to_string(deviceDesc->deviceType_);
+    moduleInfo.networkId = deviceDesc->networkId_;
+    moduleInfo.macAddress = deviceDesc->macAddress_;
+    if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
+        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo()[0].samplingRate.empty(), "samplingRate set empty");
+        moduleInfo.rate = to_string(deviceDesc->GetAudioStreamInfo()[0].samplingRate.front());
+    }
+}
+
 void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info)
 {
     CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "streamPropInfo is nullptr");
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
-    if (pipeInfoPtr == nullptr) {
-        AUDIO_ERR_LOG("Adapter info is null");
-        return ;
-    }
-
+    CHECK_AND_RETURN_LOG(pipeInfoPtr, "pipeInfoPtr is null");
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
-    if (adapterInfoPtr == nullptr) {
-        AUDIO_ERR_LOG("Pipe info is null");
-        return ;
-    }
+    CHECK_AND_RETURN_LOG(pipeInfoPtr, "adapterInfoPtr is null");
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
@@ -623,6 +630,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
+    moduleInfo.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
         info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
@@ -642,13 +650,8 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
-    auto newDeviceDesc = streamDesc->newDeviceDescs_.front();
-    info.moduleInfo_.deviceType = std::to_string(newDeviceDesc->deviceType_);
-    info.moduleInfo_.networkId = newDeviceDesc->networkId_;
-    info.moduleInfo_.macAddress = newDeviceDesc->macAddress_;
-    info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
-    if (newDeviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-        info.moduleInfo_.rate = newDeviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SAMPLE_RATE);
+    if (!streamDesc->newDeviceDescs_.empty()) {
+        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
 
     info.streamDescriptors_.push_back(streamDesc);

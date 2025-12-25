@@ -85,13 +85,15 @@ public:
 
     DeviceRole getRole() const;
 
-    int32_t GetDeviceID() const { return deviceId_; }
+    int32_t GetDeviceId() const;
 
-    std::string GetMacAddress() const { return macAddress_; }
+    std::string GetMacAddress() const;
 
-    void SetAudioParameters(const std::string &audioParameters) { audioParameters_ = audioParameters; }
+    uint32_t GetDeviceSupportMmap() const;
 
-    std::string ParseAudioParameters(const AudioParametersKey key) const;
+    std::list<DeviceStreamInfo> GetAudioStreamInfo() const;
+
+    uint32_t ParseAudioParameters(const string &audioParameters);
 
     DeviceCategory GetDeviceCategory() const;
 
@@ -111,6 +113,8 @@ public:
         int32_t channelIndexMasks = 0);
 
     void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
+
+    void SetDeviceSupportMmap(const uint32_t deviceSupportMmap);
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
@@ -190,7 +194,7 @@ private:
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedNearlink = true) const;
 
-    std::string ParseArmUsbAudioParameters(const AudioParametersKey key) const;
+    uint32_t ParseArmUsbAudioParameters(const string &audioParameters, AudioParametersKey key);
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -232,7 +236,9 @@ public:
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
     std::string dmDeviceInfo_ = "";
-    std::string audioParameters_ = "";
+
+private:
+    uint32_t deviceSupportMmap_ = 1;
 
 private:
     bool IsOutput()

@@ -43,7 +43,6 @@ static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int32_t REFETCH_DEVICE = 4;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
-static const std::string NOT_SUPPORT_MMAP_FLAG = "0";
 }
 
 static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
@@ -404,9 +403,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    const std::string supportMmap =
-        deviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
-    if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
+    if (!deviceDesc->GetDeviceSupportMmap()) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
@@ -526,10 +523,8 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
         return false;
     }
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    const std::string supportMmap =
-        deviceDesc->ParseAudioParameters(AudioDeviceDescriptor::AudioParametersKey::SUPPORT_MMAP);
-    if (supportMmap == NOT_SUPPORT_MMAP_FLAG) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    if (!deviceDesc->GetDeviceSupportMmap()) {
+        streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("device not support mmap");
         return true;
     }
