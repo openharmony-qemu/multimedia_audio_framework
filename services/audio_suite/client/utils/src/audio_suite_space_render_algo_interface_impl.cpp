@@ -125,9 +125,16 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetPositionParameter(const std::stri
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_POSITIONS_PARAMS_NUM,
         ERR_INVALID_PARAM, "Invalid Position parameter format.");
  
-    spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
-    spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
-    spaceRenderParam_.cartPoint[PARAMS_NUM_TWO] = std::stof(tokens[PARAMS_NUM_TWO]);
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]), ERROR,
+        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ONE],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]), ERROR,
+        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_TWO],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]), ERROR,
+        "Position convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_TWO].c_str());
+
     AUDIO_INFO_LOG("SpaceRender set Position x :%{public}f y :%{public}f z :%{public}f",
         spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO],
         spaceRenderParam_.cartPoint[PARAMS_NUM_ONE], spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]);
@@ -141,12 +148,29 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetRotationParameter(const std::stri
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_ROTATION_PARAMS_NUM,
         ERR_INVALID_PARAM, "Invalid Rotation parameter format.");
- 
-    spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO] = std::stof(tokens[PARAMS_NUM_ZERO]);
-    spaceRenderParam_.cartPoint[PARAMS_NUM_ONE] = std::stof(tokens[PARAMS_NUM_ONE]);
-    spaceRenderParam_.cartPoint[PARAMS_NUM_TWO] = std::stof(tokens[PARAMS_NUM_TWO]);
-    spaceRenderParam_.rotationTime = std::stoi(tokens[PARAMS_NUM_THREE]);
-    spaceRenderParam_.rotationDirection = static_cast<SpaceRenderRotationMode>(std::stoi(tokens[PARAMS_NUM_FOUR]));
+
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO]), ERROR,
+        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ONE],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_ONE]), ERROR,
+        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_TWO],
+        spaceRenderParam_.cartPoint[PARAMS_NUM_TWO]), ERROR,
+        "Rotation convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_TWO].c_str());
+
+    int32_t rotationTime;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_THREE],
+        rotationTime), ERROR,
+        "Rotation convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_THREE].c_str());
+    spaceRenderParam_.rotationTime = static_cast<float>(rotationTime);
+
+    int32_t rotationDirection;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_FOUR],
+        rotationDirection), ERROR,
+        "Rotation convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_FOUR].c_str());
+    spaceRenderParam_.rotationDirection = static_cast<SpaceRenderRotationMode>(rotationDirection);
+
     AUDIO_INFO_LOG(
         "SpaceRender set Rotation x :%{public}f y :%{public}f z :%{public}f time :%{public}f Direction :%{public}d",
         spaceRenderParam_.cartPoint[PARAMS_NUM_ZERO],
@@ -162,9 +186,14 @@ int AudioSuiteSpaceRenderAlgoInterfaceImpl::SetExtensionParameter(const std::str
  
     CHECK_AND_RETURN_RET_LOG(tokens.size() == SPACE_RENDER_EXTENSION_PARAMS_NUM,
         ERR_INVALID_PARAM, "Invalid Extension parameter format.");
- 
-    spaceRenderParam_.expandRadius = std::stof(tokens[PARAMS_NUM_ZERO]);
-    spaceRenderParam_.expandAngle = std::stoi(tokens[PARAMS_NUM_ONE]);
+
+    CHECK_AND_RETURN_RET_LOG(StringConverterFloat(tokens[PARAMS_NUM_ZERO],
+        spaceRenderParam_.expandRadius), ERROR,
+        "Extension convert string to float value error, invalid data is %{public}s", tokens[PARAMS_NUM_ZERO].c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tokens[PARAMS_NUM_ONE],
+        spaceRenderParam_.expandAngle), ERROR,
+        "Extension convert string to int value error, invalid data is %{public}s", tokens[PARAMS_NUM_ONE].c_str());
+
     AUDIO_INFO_LOG(
         "SpaceRender set Rotation Radius :%{public}f Angle :%{public}d",
         spaceRenderParam_.expandRadius, spaceRenderParam_.expandAngle);
