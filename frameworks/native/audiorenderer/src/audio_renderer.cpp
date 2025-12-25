@@ -396,14 +396,8 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
-
-    if (rendererInfo_.isStatic && rendererOptions.strategy.concurrencyMode == AudioConcurrencyMode::INVALID) {
-        strategy_.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-        originalStrategy_.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    } else {
-        strategy_ = rendererOptions.strategy;
-        originalStrategy_ = rendererOptions.strategy;
-    }
+    strategy_ = rendererOptions.strategy;
+    originalStrategy_ = rendererOptions.strategy;
 }
 
 bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
