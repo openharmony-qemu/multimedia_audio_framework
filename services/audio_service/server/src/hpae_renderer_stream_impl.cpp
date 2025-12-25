@@ -785,7 +785,7 @@ void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamTy
         } else {
             volume = std::max(std::min(volume, lastVolume), volumeHistory);
         }
-        AUDIO_INFO_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
+        AUDIO_DEBUG_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
         AudioVolume::GetInstance()->SetHistoryVolume(sessionId, volume);
         audioRendererSinkInstance->SetVolume(volume, volume);
     }

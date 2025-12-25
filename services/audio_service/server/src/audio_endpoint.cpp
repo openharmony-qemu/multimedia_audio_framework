@@ -1409,7 +1409,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     } else {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume * vol.volumeFloat);
     }
-    AUDIO_INFO_LOG("sessionId: %{public}d, volumeStart: %{public}d, volumeFromOhaudioBuffer: %{public}d",
+    AUDIO_DEBUG_LOG("sessionId: %{public}d, volumeStart: %{public}d, volumeFromOhaudioBuffer: %{public}d",
         processList_[i]->GetAudioSessionId(), result.volumeStart, volumeFromOhaudioBuffer);
     result.muteFlag = processList_[i]->GetMuteState();
     result.volumeEnd = volumeFromOhaudioBuffer;
