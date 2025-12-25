@@ -452,12 +452,6 @@ bool FastAudioStream::GetSilentModeAndMixWithOthers()
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
-    if (rendererInfo_.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
-        CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
-        return processClient_->SetStaticRenderRate(renderRate);
-    }
-
     CHECK_AND_RETURN_RET(RENDER_RATE_NORMAL != renderRate, SUCCESS);
     AUDIO_ERR_LOG("%{public}s: Unsupported", logTag_.c_str());
     return ERR_INVALID_OPERATION;
