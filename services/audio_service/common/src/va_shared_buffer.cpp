@@ -86,10 +86,8 @@ int32_t VAAudioSharedMemory::Init()
         }
         isFromRemote = true;
         int size = AshmemGetSize(fd_);
-        if (size < 0 || static_cast<size_t>(size) != size_) {
-            AUDIO_WARNING_LOG("AshmemGetSize failed, get size: %{public}d size_: %{public}zu", size, size_);
-            return ERR_OPERATION_FAILED;
-        }
+        CHECK_AND_RETURN_RET_LOG(
+            size > 0 && static_cast<size_t>(size) == size_, ERR_OPERATION_FAILED, "AshmemGetSize failed");
         ashmem_ = sptr<Ashmem>(new Ashmem(fd_, size));
         CHECK_AND_RETURN_RET_LOG((ashmem_ != nullptr), ERR_OPERATION_FAILED, "CreateAshmem failed.");
     } else {
@@ -98,11 +96,8 @@ int32_t VAAudioSharedMemory::Init()
         fd_ = ashmem_->GetAshmemFd();
         CHECK_AND_RETURN_RET_LOG((fd_ >= 0), ERR_OPERATION_FAILED, "Init failed: fd %{public}d", fd_);
     }
-    if (!ashmem_->MapReadAndWriteAshmem()) {
-        AUDIO_INFO_LOG("ashmem Map shared memory fail");
-    } else {
-        AUDIO_INFO_LOG("ashmem Map shared memory success");
-    }
+    bool isMapSuccess = ashmem_->MapReadAndWriteAshmem();
+    AUDIO_INFO_LOG("map ashmem result:%{public}d", isMapSuccess);
 
     void *addr = mmap(nullptr, size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
     CHECK_AND_RETURN_RET_LOG(addr != MAP_FAILED, ERR_OPERATION_FAILED, "Init failed: fd %{public}d size %{public}zu",
@@ -209,12 +204,9 @@ std::shared_ptr<VASharedBuffer> VASharedBuffer::CreateFromLocal(uint32_t dataSiz
     memInfo.statusMemCapacity_ = 0;
     memInfo.statusFd_ = INVALID_FD;
 
-    if (buffer->Init(memInfo) == SUCCESS) {
-        return buffer;
-    } else {
-        AUDIO_ERR_LOG("init va shared buffer failed");
-        return nullptr;
-    }
+    int ret = buffer->Init(memInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "init va shared buffer failed");
+    return buffer;
 }
 
 std::shared_ptr<VASharedBuffer> VASharedBuffer::CreateFromRemote(const VASharedMemInfo &memInfo)
@@ -225,12 +217,9 @@ std::shared_ptr<VASharedBuffer> VASharedBuffer::CreateFromRemote(const VASharedM
     }
 
     std::shared_ptr<VASharedBuffer> buffer = std::make_shared<VASharedBuffer>();
-    if (buffer->Init(memInfo) == SUCCESS) {
-        return buffer;
-    } else {
-        AUDIO_ERR_LOG("init va shared buffer failed");
-        return nullptr;
-    }
+    int ret = buffer->Init(memInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "init va shared buffer failed");
+    return buffer;
 }
 
 uint8_t *VASharedBuffer::GetDataBase()

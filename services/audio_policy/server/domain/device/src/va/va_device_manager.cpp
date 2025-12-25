@@ -44,9 +44,6 @@ std::shared_ptr<AudioDeviceDescriptor> VADeviceManager::ConvertVADeviceToDescrip
     desc->deviceName_ = config.name_;
     desc->displayName_ = config.name_;
     switch (config.type_) {
-        case VA_DEVICE_TYPE_NONE:
-            desc->deviceType_ = DEVICE_TYPE_NONE;
-            break;
         case VA_DEVICE_TYPE_BT_SPP:
             desc->deviceType_ = DEVICE_TYPE_BT_SPP;
             break;
@@ -108,6 +105,9 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(vaDevice != nullptr, "invalid parameter: null pointer detected");
+    AUDIO_INFO_LOG("disconnecting va device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
+        vaDevice->configuration_.name_.c_str(),
+        vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
     connectedVADeviceMap_.erase(vaDevice->configuration_.address_);
@@ -209,6 +209,5 @@ uint32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStr
     AUDIO_INFO_LOG("calculate buffer size: %{public}d", bufferSize);
     return bufferSize;
 }
-
 }  // namespace VirtualAudioDevice
 }  // namespace OHOS
