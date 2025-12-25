@@ -182,8 +182,8 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     // tempo
     std::string tempoSoPath = nc.soPath + tempoSoName;
     void *tempoSoHandle = algoLibrary_.LoadLibrary(tempoSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        tempoSoHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
+    CHECK_AND_RETURN_RET_LOG(tempoSoHandle != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
     using GET_SPEC_FUNC = AudioPVSpec(*)(void);
     GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
     if (pvGetSpecFunc == nullptr) {
@@ -201,8 +201,8 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     // pitch
     std::string pitchSoPath = nc.soPath + pitchSoName;
     void *pitchSoHandle = algoLibrary_.LoadLibrary(pitchSoPath);
-    CHECK_AND_RETURN_RET_LOG(
-        pitchSoHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
+    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
     AudioEffectLibrary *audioEffectLibHandle =
         static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
     if (audioEffectLibHandle == nullptr) {
