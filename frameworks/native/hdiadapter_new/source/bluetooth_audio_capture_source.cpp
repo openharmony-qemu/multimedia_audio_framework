@@ -338,7 +338,9 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("update validState:%{public}s", (audioScene == AUDIO_SCENE_DEFAULT) ? "true" : "false");
+    std::lock_guard<std::mutex> lock(statusMutex_);
     validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
+    started_ = validState_ ? started_ : false;
     return SUCCESS;
 }
 
