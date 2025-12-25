@@ -1502,8 +1502,8 @@ void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDes
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     AUDIO_INFO_LOG("add device back to global list only");
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(desc, descForCb);
+    audioConnectedDevice_.AddConnectedDevice(desc);
+    audioDeviceManager_.AddNewDevice(desc);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
 }
