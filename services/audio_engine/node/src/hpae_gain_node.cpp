@@ -118,7 +118,7 @@ bool HpaeGainNode::SetClientVolume(float gain)
     return true;
 }
 
-bool HpaeGainNode::ResetVolume()
+void HpaeGainNode::ResetVolume()
 {
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;

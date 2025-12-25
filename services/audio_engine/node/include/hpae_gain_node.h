@@ -36,7 +36,7 @@ public:
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);
-    bool ResetVolume();
+    void ResetVolume();
     uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
