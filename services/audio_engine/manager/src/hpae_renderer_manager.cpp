@@ -443,6 +443,10 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     }
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
+        std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
+        if (sessionGainNode != nullptr) {
+            sessionGainNode->RetsetVolume();
+        }
         ConnectProcessCluster(sessionId, sceneType);
     }
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {

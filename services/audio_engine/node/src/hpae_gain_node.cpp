@@ -118,6 +118,21 @@ bool HpaeGainNode::SetClientVolume(float gain)
     return true;
 }
 
+bool HpaeGainNode::ResetVolume()
+{
+    auto audioVolume = AudioVolume::GetInstance();
+    float curSystemGain = 1.0f;
+    if (isInnerCapturerOrInjector_) {
+        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
+    } else {
+        struct VolumeValues volumes;
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+    }
+    audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
+    audioVolume->Monitor(GetSessionId(), true);
+    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+}
+
 float HpaeGainNode::GetClientVolume()
 {
     return curGain_;
