@@ -999,7 +999,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream use rate:%{public}d format:%{public}d", streamInfo.samplingRate, streamInfo.format);
+            AUDIO_INFO_LOG("Fast stream use rate:%{public}d format:%{public}d", streamInfo.samplingRate,
+                streamInfo.format);
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;

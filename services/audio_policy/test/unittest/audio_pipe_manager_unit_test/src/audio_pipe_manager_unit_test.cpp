@@ -1561,7 +1561,6 @@ HWTEST_F(AudioPipeManagerUnitTest, DecideStreamInfo_001, TestSize.Level1)
     pipeInfo->moduleInfo_.rate = "96000";
     audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
     EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
-
 }
 } // namespace AudioStandard
 } // namespace OHOS

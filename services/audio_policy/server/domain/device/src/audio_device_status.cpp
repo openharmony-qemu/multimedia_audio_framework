@@ -662,7 +662,7 @@ int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &is
         } else if (audioConnectedDevice_.IsArmDevice(address, role)) {
             devType = DEVICE_TYPE_USB_ARM_HEADSET;
             // Temporary resolution to avoid pcm driver problem
-            // set role none to remove deviceinfo in audio_server 
+            // set role none to remove deviceinfo in audio_server
             std::string condition = string("address=") + address + " role=" + to_string(DEVICE_ROLE_NONE);
             AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
         }

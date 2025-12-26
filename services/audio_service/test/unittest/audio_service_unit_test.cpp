@@ -1743,19 +1743,23 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
 
     isSwitchStream = true;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false), ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS);
     
     isSwitchStream = true;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false), NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 
     isSwitchStream = false;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false), NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 
     isSwitchStream = false;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false), NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
 
 /**

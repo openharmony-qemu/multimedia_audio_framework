@@ -387,7 +387,7 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
 
     const std::string sep = ";";
     auto itBegin = audioParameters.find(keyStr);
-    auto itEnd = audioParameters.find_first_of(sep,itBegin);
+    auto itEnd = audioParameters.find_first_of(sep, itBegin);
     CHECK_AND_RETURN_RET(itBegin != itEnd, 0);
     std::string parseRet = audioParameters.substr(itBegin + keyStr.size(), itEnd - itBegin - keyStr.size());
     uint32_t ret = 0;
@@ -412,7 +412,7 @@ void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParamet
             static_cast<AudioSampleFormat>(ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::FORMAT));
         audioStreamInfo_.push_back(streamInfo);
  
-        deviceSupportMmap_ = 
+        deviceSupportMmap_ =
             AudioDeviceDescriptor::ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::SUPPORT_MMAP);
     }
 }

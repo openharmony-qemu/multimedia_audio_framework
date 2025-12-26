@@ -78,7 +78,8 @@ std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo
         recreateEndpointFlag = true;
     }
     // All primary sinks share one endpoint
-    std::string key = deviceInfo.networkId_ + "_"  + (recreateEndpointFlag ? std::to_string(deviceInfo.deviceId_) : "0");
+    std::string key = deviceInfo.networkId_ + "_"  + (recreateEndpointFlag ?
+        std::to_string(deviceInfo.deviceId_) : "0");
     return key + "_" + std::to_string(deviceInfo.deviceRole_) + "_" + std::to_string(endpointFlag);
 }
 
