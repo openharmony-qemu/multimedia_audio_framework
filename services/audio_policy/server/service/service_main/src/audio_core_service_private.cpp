@@ -2376,14 +2376,6 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, descs.front()->networkId_);
     }
-    if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        string condition = string("address=") + descs.front()->macAddress_ + " role=" + to_string(OUTPUT_DEVICE);
-        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
-            condition);
-        if (!deviceInfo.empty()) {
-            AUDIO_DEBUG_LOG("[GetAudioParameterProxy]deviceInfo: %{public}s", deviceInfo.c_str());
-        }
-    }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(), reason);
     return SUCCESS;
 }
@@ -2405,7 +2397,7 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentInputDevice(*desc);
     if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.PresetArmIdleInput(desc->macAddress_);
+        audioEcManager_.PresetArmIdleInput(desc);
     }
     DeviceType deviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", deviceType);
@@ -2945,7 +2937,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+        audioEcManager_.ActivateArmDevice(deviceDesc);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
@@ -2969,7 +2961,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+        audioEcManager_.ActivateArmDevice(deviceDesc);
     }
 
     return SUCCESS;

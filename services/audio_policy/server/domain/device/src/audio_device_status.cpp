@@ -469,6 +469,11 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
+        std::string condition =
+            string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
+        std::string audioParameter =
+            AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
+        updatedDesc.ParseAudioParameters(audioParameter);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
@@ -657,9 +662,9 @@ int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &is
         } else if (audioConnectedDevice_.IsArmDevice(address, role)) {
             devType = DEVICE_TYPE_USB_ARM_HEADSET;
             // Temporary resolution to avoid pcm driver problem
-            string condition = string("address=") + address + " role=" + to_string(DEVICE_ROLE_NONE);
-            string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
-                condition);
+            // set role none to remove deviceinfo in audio_server
+            std::string condition = string("address=") + address + " role=" + to_string(DEVICE_ROLE_NONE);
+            AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
         }
     } else if (devType == DEVICE_TYPE_EXTERN_CABLE) {
         CheckAndWriteDeviceChangeExceptionEvent(isConnected,

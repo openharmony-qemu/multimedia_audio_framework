@@ -206,7 +206,8 @@ void PresetArmIdleInputFuzzTest()
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
     ecManager.Init(ecEnableState, 0);
-    ecManager.PresetArmIdleInput("AA:BB:CC:DD:EE:FF");
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ecManager.PresetArmIdleInput(deviceDesc);
 }
 
 void ActivateArmDeviceFuzzTest()
@@ -214,8 +215,8 @@ void ActivateArmDeviceFuzzTest()
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
     ecManager.Init(ecEnableState, 0);
-    DeviceRole role = g_fuzzUtils.GetData<DeviceRole>();
-    ecManager.ActivateArmDevice("AA:BB:CC:DD:EE:FF", role);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ecManager.ActivateArmDevice(deviceDesc);
 }
 
 void CloseUsbArmDeviceFuzzTest()
@@ -240,9 +241,11 @@ void UpdateArmModuleInfoFuzzTest()
     AudioModuleInfo moduleInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceRole_ = role;
     int32_t micRefEnableState = 0;
     ecManager.Init(ecEnableState, micRefEnableState);
-    ecManager.UpdateArmModuleInfo(address, role, moduleInfo);
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
 }
 
 void GetTargetSourceTypeAndMatchingFlagFuzzTest()
