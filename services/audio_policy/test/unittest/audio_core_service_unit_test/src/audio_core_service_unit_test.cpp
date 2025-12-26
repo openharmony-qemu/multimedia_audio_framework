@@ -2214,5 +2214,21 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_003, TestSize.Level1)
     EXPECT_TRUE(std::chrono::steady_clock::now() < afterSuspend);
     EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
 }
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetAudioScene_007
+* @tc.desc  : Test SetAudioScene - AUDIO_SCENE_DEFAULT.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetAudioScene_007 start");
+    auto result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(result, SUCCESS);
+    result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(result, SUCCESS);
+    result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
