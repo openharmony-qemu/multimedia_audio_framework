@@ -130,7 +130,7 @@ int32_t AudioSuiteProcessNode::Flush()
 
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
-    outputStream_ = OutputPort<AudioSuitePcmBuffer*>(GetSharedInstance());
+    outputStream_.SetOutputPort(GetSharedInstance());
     return SUCCESS;
 }
 
