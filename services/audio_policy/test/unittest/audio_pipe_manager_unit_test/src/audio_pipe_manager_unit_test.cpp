@@ -1546,21 +1546,21 @@ HWTEST_F(AudioPipeManagerUnitTest, DecideStreamInfo_001, TestSize.Level1)
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
 
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->audioStreamInfo_->samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    pipeInfo->moduleInfo_->rate = "192000";
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    pipeInfo->moduleInfo_.rate = "192000";
     audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_->samplingRate, AudioSamplingRate::SAMPLE_RATE_8000);
+    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_8000);
 
-    pipeInfo->audioStreamInfo_->samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    pipeInfo->moduleInfo_->rate = "96000";
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    pipeInfo->moduleInfo_.rate = "96000";
     audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_->samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
+    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
 
     deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    pipeInfo->audioStreamInfo_->samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    pipeInfo->moduleInfo_->rate = "96000";
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    pipeInfo->moduleInfo_.rate = "96000";
     audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_->samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
+    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
 
 }
 } // namespace AudioStandard

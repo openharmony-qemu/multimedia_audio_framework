@@ -1627,10 +1627,10 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Lev
     DeviceStreamInfo deviceStreamInfo;
     deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
-    moduleInfo.rate = 8000;
+    moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceStreamInfo, moduleInfo);
+    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "96000");
 }
 
@@ -1648,10 +1648,10 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     DeviceStreamInfo deviceStreamInfo;
     deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
-    moduleInfo.rate = 8000;
+    moduleInfo.rate = "8000";
 
     deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceStreamInfo, moduleInfo);
+    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 } // namespace AudioStandard
