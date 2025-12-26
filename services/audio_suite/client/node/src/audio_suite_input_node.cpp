@@ -46,7 +46,7 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
-    outputStream_ = OutputPort<AudioSuitePcmBuffer*>(GetSharedInstance());
+    outputStream_.SetOutputPort(GetSharedInstance());
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
