@@ -845,7 +845,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_002, TestSize.Level
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -865,7 +865,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -904,7 +904,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_012, TestSize.Lev
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -924,7 +924,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_013, TestSize.Lev
     pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
 
     std::string idInfo = "err";
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
