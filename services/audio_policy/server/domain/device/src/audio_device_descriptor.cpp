@@ -416,6 +416,26 @@ void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParamet
     }
 }
 
+DeviceRole AudioDeviceDescriptor::getRole() const
+{
+    return deviceRole_;
+}
+
+DeviceCategory AudioDeviceDescriptor::GetDeviceCategory() const
+{
+    return deviceCategory_;
+}
+
+bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
+{
+    return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;
+}
+
+void AudioDeviceDescriptor::SetClientInfo(const ClientInfo &clientInfo) const
+{
+    clientInfo_ = clientInfo;
+}
+
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
     bool ret = MarshallingInner(parcel);

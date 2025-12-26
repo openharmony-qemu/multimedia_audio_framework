@@ -470,10 +470,10 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
         std::string condition =
-            string("address=") + updateDesc.GetMacAddress() + " role=" + to_string(updateDesc.getRole());
+            string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
         std::string audioParameter =
             AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
-        updateDesc.ParseAudioParameters(audioParameter);
+        updatedDesc.ParseAudioParameters(audioParameter);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,

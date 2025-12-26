@@ -68,8 +68,8 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
     CHECK_AND_RETURN_RET(!newPipe->streamDescriptors_.empty(), false);
     const auto streamDesc = newPipe->streamDescriptors_.front();
     CHECK_AND_RETURN_RET(!!streamDesc->newDeviceDescs_.empty() && !streamDesc->oldDeviceDescs_.empty(), false);
-    const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceID();
-    const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceID();
+    const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceId();
+    const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceId();
     if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
         newPipe->moduleInfo_.className == "usb" && oldPipe->moduleInfo_.className == "usb" &&
         newDeviceID != oldDeviceID) {
@@ -610,8 +610,8 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.macAddress = deviceDesc->macAddress_;
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
-        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo()[0].samplingRate.empty(), "samplingRate set empty");
-        moduleInfo.rate = to_string(deviceDesc->GetAudioStreamInfo()[0].samplingRate.front());
+        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().front().samplingRate.empty(), "samplingRate set empty");
+        moduleInfo.rate = to_string(*(deviceDesc->GetAudioStreamInfo().front().samplingRate.begine()));
     }
 }
 
@@ -630,7 +630,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
-    moduleInfo.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
         info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
