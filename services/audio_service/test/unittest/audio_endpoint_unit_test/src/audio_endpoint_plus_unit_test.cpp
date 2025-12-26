@@ -1836,17 +1836,17 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSourceAttr_001, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "usb");
 
-    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
     IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "primary");
 
-    deviceInfo.deviceNetworkId = REMOTE_NETWORK_ID;
+    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
     IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "remote");
 }
@@ -1867,17 +1867,17 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "usb");
 
-    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "primary");
 
-    deviceInfo.deviceNetworkId = REMOTE_NETWORK_ID;
+    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
     IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "remote");
 }
