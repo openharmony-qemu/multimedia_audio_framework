@@ -105,11 +105,6 @@ typedef enum {
     VMP_TRAD_FEMALE
 }SpeakerSex;
 
-extern int AudioVoiceMphGetsize(AudioVoiceMphMemSize *memSize);
-extern int AudioVoiceMphInit(char *handle, char *scratchBuf);
-extern int AudioVoiceMphSetPara(char *handle, SpeakerSex gender, AudioVoiceMphTradType type);
-extern int AudioVoiceMphApply(char *handle, char *scratchBuf, AudioVoiceMphData *data);
-
 #ifdef __cplusplus
 }
 #endif

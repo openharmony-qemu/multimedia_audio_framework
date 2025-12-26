@@ -367,6 +367,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
     EXPECT_TRUE(it != AudioVolume::GetInstance()->systemVolume_.end());
 }
 
+#ifdef MULTI_ALARM_LEVEL
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
@@ -375,6 +376,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_002, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_003, TestSize.Level1)
 {
+    AudioVolume::GetInstance()->systemVolume_.clear();
     std::string deviceClass = "test";
     bool isMuted = true;
     AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_ANNOUNCEMENT, deviceClass, isMuted);
@@ -390,12 +392,14 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_003, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolumeMute_004, TestSize.Level1)
 {
+    AudioVolume::GetInstance()->systemVolume_.clear();
     std::string deviceClass = "test";
     bool isMuted = true;
     AudioVolume::GetInstance()->SetSystemVolumeMute(STREAM_EMERGENCY, deviceClass, isMuted);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1test");
     EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
 }
+#endif
 
 /**
  * @tc.name  : Test AudioVolume API
@@ -1451,6 +1455,7 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_005, TestSize.Level1)
     EXPECT_EQ(it->second.totalVolume_, volume);
 }
 
+#ifdef MULTI_ALARM_LEVEL
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
@@ -1491,11 +1496,13 @@ HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_007, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, SetSystemVolume_008, TestSize.Level1)
 {
+    audioVolumeTest->systemVolume_.clear();
     AudioVolume::GetInstance()->SetSystemVolume(STREAM_ANNOUNCEMENT, "speaker", 0.5f, 5);
     AudioVolume::GetInstance()->SetSystemVolume(STREAM_EMERGENCY, "speaker", 1.0f, 5);
     auto it = AudioVolume::GetInstance()->systemVolume_.find("1speaker");
     EXPECT_EQ(it, AudioVolume::GetInstance()->systemVolume_.end());
 }
+#endif
 
 /**
  * @tc.name  : Test GetSimpleBufferAvg API

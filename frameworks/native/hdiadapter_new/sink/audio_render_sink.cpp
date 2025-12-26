@@ -141,7 +141,7 @@ int32_t AudioRenderSink::Start(void)
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
             "local start failed, halName_:" + halName_);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
@@ -1263,6 +1263,11 @@ void AudioRenderSink::WaitForDataLinkConnected()
         isDataLinkConnected_ = true;
     }
     dataConnectionWaitLock.unlock();
+}
+
+bool AudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
 }
 
 } // namespace AudioStandard

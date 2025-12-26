@@ -314,6 +314,32 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     }
 }
 
+static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
+{
+    auto limitFunc = [](uint32_t renderId) -> bool {
+        uint32_t type = IdHandler::GetInstance().ParseType(renderId);
+        std::string info = IdHandler::GetInstance().ParseInfo(renderId);
+        if (type == HDI_ID_TYPE_PRIMARY) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        if (type == HDI_ID_TYPE_OFFLOAD) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        if (type == HDI_ID_TYPE_MULTICHANNEL) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+        return false;
+    };
+    auto processFunc = [&deviceTypes, limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
+        CHECK_AND_RETURN_RET(sink != nullptr && sink->IsInited(), SUCCESS);
+
+        sink->UpdateActiveDevice(deviceTypes);
+        return SUCCESS;
+    };
+    (void)HdiAdapterManager::GetInstance().ProcessSink(processFunc);
+}
+
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
 static std::vector<std::pair<std::string, std::string>> ConvertStringPair(const std::vector<StringPair> &stringPair)
 {
@@ -1494,16 +1520,15 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForAllSinks(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForAllSinks(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
     }
-
     return SUCCESS;
 }
 
@@ -2069,10 +2094,12 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     errorCode = CheckAndWaitAudioPolicyReady();
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
-    AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
-    CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
-        ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str());
-    CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
+    AudioProcessConfig resetConfig = ResetProcessConfig(config);
+    CHECK_AND_CALL_RET_FUNC(CheckConfigFormat(resetConfig), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
+        ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
+    CHECK_AND_CALL_RET_FUNC(PermissionChecker(resetConfig), nullptr,
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission"));
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2094,7 +2121,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     }
     if (IsSatellite(resetConfig, callingUid)) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_RETURN_RET_LOG(isSupportSate, nullptr, "Do not support satellite");
+        CHECK_AND_CALL_RET_FUNC(isSupportSate, nullptr,
+            HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
         if (deviceManager != nullptr) {
@@ -2430,15 +2458,14 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     int32_t appUid = config.appInfo.appUid;
-    if (appUid == ROOT_UID) {
-        return true;
-    }
+    CHECK_AND_RETURN_RET(appUid != ROOT_UID, true);
 #endif
 
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_TRANSCRIPTION failed: no system permission.");
+        CHECK_AND_CALL_RET_FUNC(hasSystemPermission, false,
+            HILOG_COMM_ERROR("[CheckRecorderPermission]VOICE_TRANSCRIPTION failed: no system permission."));
     }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {

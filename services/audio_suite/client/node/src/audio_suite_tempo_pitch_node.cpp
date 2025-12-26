@@ -182,7 +182,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
-            "ReadProcessNodePreOutputData failed, preOutputs[0] is nullptr");
+            "Failed to get data from the previous node.");
         int32_t ret = SplitDataToQueue(preOutputs[0]->GetPcmData(), preOutputs[0]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AudioSuiteTempoPitchNode SplitDataToQueue failed");
     } else {
@@ -211,11 +211,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
 {
     CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), SUCCESS,
         "Current node type = %{public}d does not have more data to process.", GetNodeType());
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
-            "node type = %{public}d outputStream is null!", GetNodeType());
-    }
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data
@@ -241,7 +236,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         SetAudioNodeDataFinishedFlag(true);
     }
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     return SUCCESS;

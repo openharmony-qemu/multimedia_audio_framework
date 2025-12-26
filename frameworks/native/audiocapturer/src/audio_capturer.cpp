@@ -358,7 +358,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret, HILOG_COMM_ERROR("[SetParams]InitAudioStream failed"));
 
     RegisterCapturerPolicyServiceDiedCallback();
 
@@ -506,7 +506,8 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
 
     audioStream_->SetCapturerSource(capturerInfo_.sourceType);
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_, filterConfig_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioStreamInfo failed");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[InitAudioStream]SetAudioStreamInfo failed"));
     // for inner-capturer
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         ret = UpdatePlaybackCaptureConfig(filterConfig_);
@@ -788,7 +789,8 @@ bool AudioCapturerPrivate::IsRestoreOrStopNeeded()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    CHECK_AND_CALL_RET_FUNC(audioStream_ != nullptr, false,
+        HILOG_COMM_ERROR("[IsRestoreOrStopNeeded]audio stream is null"));
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
 
@@ -844,7 +846,7 @@ bool AudioCapturerPrivate::Start()
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
+    CHECK_AND_CALL_RET_FUNC(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
@@ -1527,7 +1529,8 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetAudioStreamInfo failed");
+    CHECK_AND_CALL_RET_FUNC(res == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"));
     audioStream->SetCaptureMode(info.captureMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
 
@@ -1607,7 +1610,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         streamDesc, flag, switchInfo.params.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
 
-    bool switchResult = false;
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
@@ -1626,7 +1628,8 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
             streamDesc, flag, switchInfo.params.originalSessionId);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
+        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, false,
+            HILOG_COMM_ERROR("[GenerateNewStream]CreateRendererClient failed"));
 
         newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
@@ -1652,7 +1655,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     if (previousState == CAPTURER_RUNNING) {
         // restart audio stream
         newAudioStream->SetRebuildFlag();
-        switchResult = newAudioStream->StartAudioStream();
+        bool switchResult = newAudioStream->StartAudioStream();
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     }
     return true;

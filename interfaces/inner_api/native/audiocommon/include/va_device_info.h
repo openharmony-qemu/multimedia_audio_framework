@@ -170,9 +170,9 @@ struct VAInputStreamAttribute : public Parcelable {
 
 struct VASharedMemInfo : public Parcelable {
     int dataFd_;
-    int dataMemCapacity_;
+    uint32_t dataMemCapacity_;
     int statusFd_;
-    int statusMemCapacity_;
+    uint32_t statusMemCapacity_;
 
     VASharedMemInfo() = default;
 
@@ -180,18 +180,18 @@ struct VASharedMemInfo : public Parcelable {
     {
         MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
         return msgParcel.WriteFileDescriptor(dataFd_) &&
-               msgParcel.WriteInt32(dataMemCapacity_) &&
+               msgParcel.WriteUint32(dataMemCapacity_) &&
                msgParcel.WriteFileDescriptor(statusFd_) &&
-               msgParcel.WriteInt32(statusMemCapacity_);
+               msgParcel.WriteUint32(statusMemCapacity_);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
     {
         MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
         dataFd_ = msgParcel.ReadFileDescriptor();
-        dataMemCapacity_ = msgParcel.ReadInt32();
+        dataMemCapacity_ = msgParcel.ReadUint32();
         statusFd_ = msgParcel.ReadFileDescriptor();
-        statusMemCapacity_ = msgParcel.ReadInt32();
+        statusMemCapacity_ = msgParcel.ReadUint32();
     }
 
     static VASharedMemInfo *Unmarshalling(Parcel &parcel)

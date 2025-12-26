@@ -44,9 +44,7 @@ VACaptureSource::VACaptureSource(const uint32_t captureId) : captureId_(captureI
 
 VACaptureSource::~VACaptureSource()
 {
-    if (sourceInited_) {
-        DeInit();
-    }
+    DeInit();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
@@ -126,7 +124,8 @@ std::shared_ptr<VAInputStreamAttribute> VACaptureSource::MakeVAStreamAttributeFr
 int32_t VACaptureSource::InitOperator()
 {
     CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
-    uint32_t bufferCapacity = attr_.bufferSize * 2;
+    const uint32_t bufferFactor = 10;
+    uint32_t bufferCapacity = attr_.bufferSize * bufferFactor;
     std::shared_ptr<VASharedBuffer> vaBuffer = VASharedBuffer::CreateFromLocal(bufferCapacity);
     CHECK_AND_RETURN_RET_LOG(vaBuffer != nullptr, ERR_OPERATION_FAILED, "vaBuffer is null");
     bufferOperator_ = std::make_shared<VASharedBufferOperator>(*vaBuffer);

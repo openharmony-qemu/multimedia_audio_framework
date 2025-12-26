@@ -483,6 +483,7 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    descs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc());
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
     streamUsageDeviceMap_.clear();

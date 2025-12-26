@@ -81,6 +81,7 @@ private:
     char *handle_ = nullptr;
     char *scratchBuf_ = nullptr;
     void *libHandle_{nullptr};
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

@@ -107,29 +107,21 @@ size_t VASharedBufferOperator::Read(uint8_t *data, size_t dataSize)
     if (readIndex + readSize <= capacity) {
         const void *read_ptr = dataAshmem_->ReadFromAshmem(readSize, readIndex);
         ret = memcpy_s(data, dataSize, read_ptr, readSize);
-        if (ret) {
-            AUDIO_INFO_LOG("[1] Read failed");
-            WakeFutex();
-            return 0;
-        }
     } else {
         size_t firstReadSize = capacity - readIndex;
         const void *first_read_ptr = dataAshmem_->ReadFromAshmem(firstReadSize, readIndex);
-        ret = memcpy_s(data, dataSize, first_read_ptr, firstReadSize);
-        if (ret) {
-            AUDIO_INFO_LOG("[2] Read failed");
-            WakeFutex();
-            return 0;
-        }
+        int firstRet = memcpy_s(data, dataSize, first_read_ptr, firstReadSize);
         size_t secondReadSize = readSize - firstReadSize;
         const void *second_read_ptr = dataAshmem_->ReadFromAshmem(secondReadSize, 0);
-        ret = memcpy_s(data + firstReadSize, dataSize - firstReadSize, second_read_ptr, secondReadSize);
-        if (ret) {
-            AUDIO_INFO_LOG("[3] Read failed");
-            WakeFutex();
-            return 0;
-        }
+        int secondRet = memcpy_s(data + firstReadSize, dataSize - firstReadSize, second_read_ptr, secondReadSize);
+        ret = std::max(firstRet, secondRet);
     }
+    if (ret) {
+        AUDIO_INFO_LOG("Read failed");
+        WakeFutex();
+        return 0;
+    }
+    
     statusInfo_->readPos += readSize;
 
     WakeFutex();
@@ -144,16 +136,11 @@ size_t VASharedBufferOperator::Write(uint8_t *data, size_t dataSize)
     CHECK_AND_RETURN_RET_LOG(statusInfo_ != nullptr, 0, "statusInfo_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(data != nullptr, 0, "data pointer is null");
     CHECK_AND_RETURN_RET_LOG(dataAshmem_ != nullptr, 0, "dataAshmem is nullptr");
-
-    FutexCode retCode = WaitForFutex(timeoutInNano_, []() { return true; });
+    CHECK_AND_RETURN_RET_LOG(dataSize > 0, 0, "wrong param: dataSize is 0");
+    
+    FutexCode retCode = WaitForFutex(timeoutInNano_, [this]() { return GetWritableSizeNoLock() > 0; });
     CHECK_AND_RETURN_RET_LOG(retCode == FUTEX_SUCCESS, 0, "wait futex failed");
-
     size_t writeSize = std::min(dataSize, GetWritableSizeNoLock());
-    if (writeSize == 0) {
-        AUDIO_INFO_LOG("wrong writeSize: %{public}zu", writeSize);
-        WakeFutex();
-        return 0;
-    }
 
     AUDIO_INFO_LOG("Write dataSize: %{public}zu. Actual writeSize: %{public}zu", dataSize, writeSize);
 
@@ -162,26 +149,17 @@ size_t VASharedBufferOperator::Write(uint8_t *data, size_t dataSize)
 
     if (writeIndex + writeSize <= capacity) {
         success = dataAshmem_->WriteToAshmem(data, writeSize, writeIndex);
-        if (!success) {
-            AUDIO_INFO_LOG("[1] Write failed");
-            WakeFutex();
-            return 0;
-        }
     } else {
         size_t firstWriteSize = capacity - writeIndex;
-        success = dataAshmem_->WriteToAshmem(data, firstWriteSize, writeIndex);
-        if (!success) {
-            AUDIO_INFO_LOG("[2] Write failed");
-            WakeFutex();
-            return 0;
-        }
+        bool firstSuccess = dataAshmem_->WriteToAshmem(data, firstWriteSize, writeIndex);
         size_t secondWriteSize = writeSize - firstWriteSize;
-        success = dataAshmem_->WriteToAshmem(data + firstWriteSize, secondWriteSize, 0);
-        if (!success) {
-            AUDIO_INFO_LOG("[3] Write failed");
-            WakeFutex();
-            return 0;
-        }
+        bool secondSuccess = dataAshmem_->WriteToAshmem(data + firstWriteSize, secondWriteSize, 0);
+        success = firstSuccess && secondSuccess;
+    }
+    if (!success) {
+        AUDIO_INFO_LOG("Write failed");
+        WakeFutex();
+        return 0;
     }
     statusInfo_->writePos += writeSize;
 
@@ -201,25 +179,21 @@ std::atomic<uint32_t>* VASharedBufferOperator::GetFutex()
     return &statusInfo_->futex;
 }
 
-FutexCode VASharedBufferOperator::WaitForFutex(uint64_t timeoutInNs, const std::function<bool(void)> &pred)
+FutexCode VASharedBufferOperator::WaitForFutex(int64_t timeoutInNs, const std::function<bool(void)> &pred)
 {
     auto futex = GetFutex();
     CHECK_AND_RETURN_RET_LOG(futex != nullptr, FUTEX_INVALID_PARAMS, "futex is null");
-    uint64_t startTime = ClockTime::GetCurNano();
-    uint64_t curTime = ClockTime::GetCurNano();
+    int64_t startTime = ClockTime::GetCurNano();
+    int64_t curTime = ClockTime::GetCurNano();
     while (curTime - startTime < timeoutInNs) {
         uint32_t expected = LOCK_RELEASED;
-        if (futex->compare_exchange_weak(expected, LOCK_OWNED) && pred()) {
+        if (pred() && futex->compare_exchange_weak(expected, LOCK_OWNED)) {
             return FUTEX_SUCCESS;
         }
         std::this_thread::yield();
         curTime = ClockTime::GetCurNano();
     }
-    if (curTime - startTime >= timeoutInNs) {
-        return FUTEX_TIMEOUT;
-    } else {
-        return FUTEX_PRE_EXIT;
-    }
+    return FUTEX_TIMEOUT;
 }
 
 void VASharedBufferOperator::WakeFutex()
@@ -227,13 +201,6 @@ void VASharedBufferOperator::WakeFutex()
     auto futex = GetFutex();
     CHECK_AND_RETURN_LOG(futex != nullptr, "futex is null");
     futex->store(LOCK_RELEASED);
-}
-
-void VASharedBufferOperator::WakeFutexIfNeed()
-{
-    if (statusInfo_) {
-        FutexTool::FutexWake(&(statusInfo_->futex));
-    }
 }
 
 bool VASharedBufferOperator::HasEnoughReadableData()

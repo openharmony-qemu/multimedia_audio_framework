@@ -197,11 +197,11 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(),
-            ERR_INVALID_PARAM,
-            "no focus cfg, active stream type = %{public}d, incoming stream type = %{public}d",
-            static_cast<int32_t>(focusPair.first.streamType),
-            static_cast<int32_t>(focusPair.second.streamType));
+        CHECK_AND_CALL_RET_FUNC(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[ProcessActiveStreamFocus]no focus cfg, active stream type = %{public}d, "
+                "incoming stream type = %{public}d",
+                static_cast<int32_t>(focusPair.first.streamType),
+                static_cast<int32_t>(focusPair.second.streamType)));
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
@@ -265,7 +265,8 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
     incomingInterrupt.audioFocusType.isPlay = false;
     AudioFocuState incomingState = ACTIVE;
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_RET_LOG(itZone != zonesMap_.end(), false, "can not find zoneid");
+    CHECK_AND_CALL_RET_FUNC(itZone != zonesMap_.end(), false,
+        HILOG_COMM_ERROR("[IsCapturerFocusAvailable]can not find zoneid"));
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
     if (itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;

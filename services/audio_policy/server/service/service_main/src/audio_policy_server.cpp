@@ -294,8 +294,10 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     Init();
-
-    bool res = Publish(this);
+    bool res = false;
+    if (!isUT_) {
+        res = Publish(this);
+    }
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
@@ -2623,7 +2625,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uint32_t clientUid, int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        HILOG_COMM_ERROR("[SetAudioInterruptCallback]The interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
     if (coreService_ == nullptr) {
@@ -2835,7 +2837,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr");
+        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
         return ERR_UNKNOWN;
     }
 
@@ -3521,7 +3523,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
 void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
 {
     CHECK_AND_RETURN_LOG(enable, "route unenable");
-    server_->coreService_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
+    server_->eventEntry_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
