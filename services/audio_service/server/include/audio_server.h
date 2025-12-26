@@ -388,8 +388,6 @@ private:
         const AudioPlaybackCaptureConfig &filterConfig);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config,
         const AudioPlaybackCaptureConfig &filterConfig);
-    void ResetRecordConfig(AudioProcessConfig &config);
-    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
     bool CheckStreamInfoFormat(const AudioProcessConfig &config);
     bool CheckRendererFormat(const AudioProcessConfig &config);
     bool CheckRecorderFormat(const AudioProcessConfig &config);
