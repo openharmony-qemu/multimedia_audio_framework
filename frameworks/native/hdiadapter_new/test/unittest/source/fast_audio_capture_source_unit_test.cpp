@@ -241,5 +241,60 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, FastVoipSourceUnitTest_004, TestSize.Le
     DeInitFastVoipSource();
 }
 
+/**
+ * @tc.name   : Test FastSource API
+ * @tc.number : InitDeviceDesc_001
+ * @tc.desc   : Test fast source update pins
+ */
+HWTEST_F(FastAudioCaptureSourceUnitTest, InitDeviceDesc_001, TestSize.Level1)
+{
+    InitFastSource();
+    struct AudioDeviceDescriptor deviceDesc;
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_MIC;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_IN_MIC);
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_IN_HS_MIC);
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_USB_HEADSET;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_IN_USB_EXT);
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_IN_BLUETOOTH_SCO_HEADSET);
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_HEADSET);
+
+    fastSource_->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    fastSource_->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_IN_MIC);
+
+    DeInitFastSource();
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : EnableSyncInfo_001
+ * @tc.desc   : Test EnableSyncInfo()
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level1)
+{
+    InitFastSource();
+
+    fastSource_->EnableSyncInfo(true);
+    EXPECT_EQ(fastSource_->syncInfoSize_, true);
+
+    fastSource_->EnableSyncInfo(false);
+    EXPECT_EQ(fastSource_->syncInfoSize_, false);
+
+    DeInitFastSource();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

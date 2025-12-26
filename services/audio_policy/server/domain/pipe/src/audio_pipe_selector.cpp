@@ -70,12 +70,14 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
     CHECK_AND_RETURN_RET(!!streamDesc->newDeviceDescs_.empty() && !streamDesc->oldDeviceDescs_.empty(), false);
     const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceId();
     const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceId();
-    if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
-        newPipe->moduleInfo_.className == "usb" && oldPipe->moduleInfo_.className == "usb" &&
-        newDeviceID != oldDeviceID) {
-        return true;
+
+    if (!newPipe->IsRouteFast() || !oldPipe->IsRouteFast()) {
+        return false;
     }
-    return false;
+    if (newPipe->moduleInfo_.className != "usb" && oldPipe->moduleInfo_.className != "usb") {
+        return false;
+    }
+    return newDeviceID != oldDeviceID;
 }
 
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())

@@ -1820,5 +1820,66 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
     EXPECT_CALL(mockProcessStream, GetSource()).WillOnce(Return(SourceType::SOURCE_TYPE_MIC));
     testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
 }
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSourceAttr_001
+ * @tc.desc  : Test AudioEndpointInner::InitSourceAttr()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSourceAttr_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "usb");
+
+    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "primary");
+
+    deviceInfo.deviceNetworkId = REMOTE_NETWORK_ID;
+    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "remote");
+}
+
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_001
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "usb");
+
+    deviceInfo.deviceNetworkId = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "primary");
+
+    deviceInfo.deviceNetworkId = REMOTE_NETWORK_ID;
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "remote");
+}
 } // namespace AudioStandard
 } // namespace OHOS

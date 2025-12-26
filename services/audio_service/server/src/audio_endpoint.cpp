@@ -1587,18 +1587,13 @@ void AudioEndpointInner::CheckSyncInfo(uint64_t curWritePos)
 
 void AudioEndpointInner::RecordCheckSyncInfo(uint64_t curReadPos)
 {
-    if (dstSpanSizeInframe_ == 0) {
-        return;
-    }
+    CHECK_AND_RETURN(dstSpanSizeInframe_ != 0);
     uint32_t curReadFrame = curReadPos / dstSpanSizeInframe_;
     dstAudioBuffer_->SetSyncWriteFrame(curReadFrame);
     uint32_t curWriteFrame = dstAudioBuffer_->GetSyncWriteFrame();
     Trace trace("Sync: writeIndex:" + std::to_string(curWriteFrame) + " readIndex:" + std::to_string(curReadFrame));
 
-    if (curWriteFrame >= curReadFrame) {
-        // seems running ok.
-        return;
-    }
+    CHECK_AND_RETURN(curWriteFrame < curReadFrame);
     AUDIO_WARNING_LOG("write %{public}d is slower than read %{public}d ", curWriteFrame, curReadFrame);
     int64_t cost = (ClockTime::GetCurNano() - lastWriteTime_) / AUDIO_US_PER_SECOND;
     AudioPerformanceMonitor::GetInstance().ReportWriteSlow(adapterType_, cost);
