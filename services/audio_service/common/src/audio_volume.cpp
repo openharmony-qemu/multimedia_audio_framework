@@ -197,7 +197,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
     if (it != streamVolume_.end()) {
         // only stream volume factor
         volumeStream =
-            it->second.isMuted_ || it->second.nonInterruptMute_ ?
+            it->second.isMuted_ || it->second.nonInterruptMute_ || it->second.isDualMuted_ ?
             0.0f : it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_;
     } else {
         HILOG_COMM_ERROR("[GetStreamVolume]stream volume not exist, sessionId:%{public}u", sessionId);
