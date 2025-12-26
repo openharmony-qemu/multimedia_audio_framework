@@ -68,6 +68,8 @@ static const std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_ENUM_S
     {STREAM_VOICE_RING, "ring"},
     {STREAM_VOICE_CALL_ASSISTANT, "voice_call_assistant"},
     {STREAM_CAMCORDER, "camcorder"},
+    {STREAM_ANNOUNCEMENT, "announcement"},
+    {STREAM_EMERGENCY, "emergency"}
 };
 
 static int32_t CheckReturnIfinvalid(bool expr, const int32_t retVal)
@@ -111,7 +113,8 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     pa_stream *paStream = InitPaStream(processConfig, sessionId, false);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render!");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
+    CHECK_AND_CALL_RET_FUNC(rendererStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateRender]Failed to init pa stream!"));
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -237,7 +240,8 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     pa_stream *paStream = InitPaStream(processConfig, sessionId, true);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init capture");
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_CALL_RET_FUNC(capturerStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateCapturer]Failed to init pa stream"));
     capturerStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     capturerStreamMap_[sessionId] = capturerStream;

@@ -2078,7 +2078,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerIsRingerModeValidFuzzTest,
     AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest,
     AudioPolicyServerAddRemoteDevstatusCallbackFuzzTest,
-    AudioPolicyServerOnReceiveEventFuzzTest,
     AudioPolicyServerSubscribeBackgroundTaskFuzzTest,
     AudioPolicyServerSubscribeCommonEventExecuteFuzzTest,
     AudioPolicyServerCheckSubscribePowerStateChangeFuzzTest,

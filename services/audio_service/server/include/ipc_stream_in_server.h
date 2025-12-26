@@ -119,7 +119,7 @@ public:
 
     int32_t SetMute(bool isMute) override;
 
-    int32_t SetDuckFactor(float duckFactor) override;
+    int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override;
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
 

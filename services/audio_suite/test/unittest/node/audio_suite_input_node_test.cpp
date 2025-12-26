@@ -137,8 +137,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetOutputPort_001, TestSize
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
 
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outport =
-        inputNode->GetOutputPort();
+    OutputPort<AudioSuitePcmBuffer*>* outport = inputNode->GetOutputPort();
     EXPECT_NE(outport, nullptr);
 }
 

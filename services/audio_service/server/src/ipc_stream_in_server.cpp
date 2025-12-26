@@ -124,9 +124,11 @@ std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
 int32_t IpcStreamInServer::ConfigRenderer()
 {
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
-    CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "Create RendererInServer failed");
+    CHECK_AND_CALL_RET_FUNC(rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[ConfigRenderer]Create RendererInServer failed"));
     int32_t ret = rendererInServer_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed!");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[ConfigRenderer]Init RendererInServer failed!"));
     return SUCCESS;
 }
 
@@ -510,10 +512,10 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
+int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetDuckFactor(duckFactor);
+        return rendererInServer_->SetDuckFactor(duckFactor, durationMs);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;

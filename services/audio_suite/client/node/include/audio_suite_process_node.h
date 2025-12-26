@@ -52,13 +52,13 @@ public:
         return AudioNode::GetAudioNodeInfo().audioFormat.audioChannelInfo.numChannels;
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override
+    virtual OutputPort<AudioSuitePcmBuffer*>* GetOutputPort() override
     {
-        return outputStream_;
+        return &outputStream_;
     }
 
 protected:
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_ = nullptr;
+    OutputPort<AudioSuitePcmBuffer*> outputStream_;
     InputPort<AudioSuitePcmBuffer *> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();

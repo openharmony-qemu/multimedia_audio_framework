@@ -61,6 +61,7 @@ static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
+static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 }
 
 class ProcessCbImpl;
@@ -390,7 +391,8 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
         "CheckIfSupport failed!");
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
+    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, nullptr,
+        HILOG_COMM_ERROR("[Create]Create failed, can not get service."));
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType);
 
@@ -536,7 +538,7 @@ int32_t AudioProcessInClientInner::SetDuckVolume(float vol)
     duckVolumeInFloat_ = vol;
 
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
-    audioBuffer_->SetDuckFactor(vol);
+    audioBuffer_->SetDuckFactor(vol, DUCK_UNDUCK_DURATION_MS);
 
     return SUCCESS;
 }
@@ -862,7 +864,8 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 // the buffer will be used by client
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
+    CHECK_AND_CALL_RET_FUNC(isInited_, ERR_ILLEGAL_STATE,
+        HILOG_COMM_ERROR("[GetBufferDesc]not inited!"));
     Trace trace("AudioProcessInClient::GetBufferDesc");
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -1643,7 +1646,7 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
             return true;
         }
 
-        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        uint32_t writableSizeInFrame = static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames());
         if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) >= spanSizeInFrame_)) {
             return true;
         }
@@ -1856,7 +1859,7 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
     if (processConfig_.rendererInfo.isStatic) {
         return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
     } else {
-        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        uint32_t writableSizeInFrame = static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames());
         if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
             return true;
         }

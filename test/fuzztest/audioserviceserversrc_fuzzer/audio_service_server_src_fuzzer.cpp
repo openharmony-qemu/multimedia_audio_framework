@@ -909,7 +909,7 @@ void SetDuckFactorFuzzTest()
     CHECK_AND_RETURN(renderer != nullptr);
 
     float duckFactor = g_fuzzUtils.GetData<float>();
-    renderer->SetDuckFactor(duckFactor);
+    renderer->SetDuckFactor(duckFactor, 0);
 }
 
 void SetDefaultOutputDeviceFuzzTest()

@@ -75,6 +75,8 @@ public:
         USAGE_ULTRASONIC = 16,
         USAGE_VIDEO_COMMUNICATION = 17,
         USAGE_VOICE_CALL_ASSISTANT = 21,
+        USAGE_ANNOUNCEMENT = 22,
+        USAGE_EMERGENCY = 23,
         USAGE_MAX = 100
     };
 
@@ -149,6 +151,7 @@ public:
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
+    static int32_t GetJsAudioVolumeTypeFir(AudioStreamType volumeType);
     static int32_t GetJsStreamUsage(StreamUsage streamUsage);
     static int32_t GetJsStreamUsageFir(StreamUsage streamUsage);
     static int32_t GetJsAudioVolumeMode(AudioVolumeMode volumeMode);

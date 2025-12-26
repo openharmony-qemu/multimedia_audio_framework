@@ -41,7 +41,6 @@ int32_t AudioSuiteProcessNode::DoProcess()
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "outputStream_ is nullptr");
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
@@ -76,7 +75,7 @@ int32_t AudioSuiteProcessNode::DoProcess()
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     return SUCCESS;
 }
 
@@ -124,19 +123,14 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    if (outputStream_) {
-        outputStream_->resetResampleCfg();
-    }
+    outputStream_.ResetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
-    if (outputStream_ == nullptr) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "Create OutputPort is null");
-    }
+    outputStream_.SetOutputPort(GetSharedInstance());
     return SUCCESS;
 }
 
@@ -147,7 +141,7 @@ int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode
         return ERR_INVALID_PARAM;
     }
     CHECK_AND_RETURN_RET_LOG(preNode->GetOutputPort() != nullptr, ERROR, "OutputPort is null");
-    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
+    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
     return SUCCESS;
 }
 

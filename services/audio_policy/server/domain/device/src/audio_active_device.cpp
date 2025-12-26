@@ -483,6 +483,7 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    descs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc());
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
     streamUsageDeviceMap_.clear();
@@ -633,7 +634,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         STREAM_USAGE_GAME,
         STREAM_USAGE_DTMF,
         STREAM_USAGE_SYSTEM,
-        STREAM_USAGE_ENFORCED_TONE
+        STREAM_USAGE_ENFORCED_TONE,
+        STREAM_USAGE_ANNOUNCEMENT,
+        STREAM_USAGE_EMERGENCY
     };
     {
         std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);

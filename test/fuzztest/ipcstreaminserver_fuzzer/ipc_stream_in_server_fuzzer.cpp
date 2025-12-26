@@ -325,7 +325,7 @@ void IpcStreamInServerSetDuckFactorFuzzTest()
     shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
     CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
     float duckFactor = g_fuzzUtils.GetData<float>();
-    ipcStreamInServerRet->SetDuckFactor(duckFactor);
+    ipcStreamInServerRet->SetDuckFactor(duckFactor, 0);
 }
 
 void IpcStreamInServerRegisterThreadPriorityFuzzTest()

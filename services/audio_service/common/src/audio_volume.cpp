@@ -52,7 +52,9 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"ultrasonic", STREAM_ULTRASONIC},
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
-    {"navigation", STREAM_NAVIGATION}
+    {"navigation", STREAM_NAVIGATION},
+    {"announcement", STREAM_ANNOUNCEMENT},
+    {"emergency", STREAM_EMERGENCY},
 };
 
 uint64_t DURATION_TIME_DEFAULT = 40;
@@ -96,6 +98,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         volumes->volumeStream = it->second.totalVolume_;
         volumes->volumeHistory = it->second.historyVolume_;
         volumes->volumeApp = it->second.appVolume_;
+        volumes->durationMs = it->second.durationMs_;
         appUid = it->second.GetAppUid();
         if (volumeType == STREAM_VOICE_ASSISTANT && !it->second.IsSystemApp()) {
             volumeType = STREAM_MUSIC;
@@ -216,13 +219,24 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
     return 0.0f;
 }
 
-void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
+uint32_t AudioVolume::GetDurationMs(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(volumeMutex_);
+    auto it = streamVolume_.find(sessionId);
+    if (it != streamVolume_.end()) {
+        return it->second.durationMs_;
+    }
+    return 0;
+}
+
+void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume, uint32_t durationMs)
 {
     AUDIO_DEBUG_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.historyVolume_ = volume;
+        it->second.durationMs_ = durationMs;
     }
 }
 
@@ -270,14 +284,15 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
     }
 }
 
-void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor)
+void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor, uint32_t durationMs)
 {
-    AUDIO_INFO_LOG("[SetStreamVolumeDuckFactor]stream volume, sessionId:%{public}u, duckFactor:%{public}f",
-        sessionId, duckFactor);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u, duckFactor:%{public}f, durationMs:%{public}d",
+        sessionId, duckFactor, durationMs);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
         it->second.duckFactor_ = duckFactor;
+        it->second.durationMs_ = durationMs;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
             it->second.isDualMuted_) ? 0.0f :
@@ -502,6 +517,12 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 {
     auto volumeType = systemVolume.GetVolumeType();
     auto deviceClass = systemVolume.GetDeviceClass();
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     systemVolume.totalVolume_ = systemVolume.isMuted_ ? 0.0f : systemVolume.volume_;
     std::string key = std::to_string(volumeType) + deviceClass;
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
@@ -524,6 +545,12 @@ void AudioVolume::SetSystemVolume(SystemVolume &systemVolume)
 void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceClass,
     float volume, int32_t volumeLevel)
 {
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolume system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     std::string key = std::to_string(volumeType) + deviceClass;
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = systemVolume_.find(key);
@@ -544,6 +571,12 @@ void AudioVolume::SetSystemVolume(int32_t volumeType, const std::string &deviceC
 
 void AudioVolume::SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted)
 {
+#ifdef MULTI_ALARM_LEVEL
+    if (volumeType == STREAM_ANNOUNCEMENT || volumeType == STREAM_EMERGENCY) {
+        AUDIO_WARNING_LOG("SetSystemVolumeMute system volume, volumeType:%{public}d is not settable", volumeType);
+        return;
+    }
+#endif
     AUDIO_INFO_LOG("system volume, volumeType:%{public}d, deviceClass:%{public}s, isMuted:%{public}d",
         volumeType, deviceClass.c_str(), isMuted);
     std::string key = std::to_string(volumeType) + deviceClass;

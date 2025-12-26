@@ -218,9 +218,6 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
     }
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
 
@@ -251,7 +248,7 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     return SUCCESS;
 }
 

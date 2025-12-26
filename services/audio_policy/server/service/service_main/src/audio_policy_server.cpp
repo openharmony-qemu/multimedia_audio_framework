@@ -294,8 +294,10 @@ void AudioPolicyServer::OnStart()
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
     Init();
-
-    bool res = Publish(this);
+    bool res = false;
+    if (!isUT_) {
+        res = Publish(this);
+    }
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
@@ -449,7 +451,7 @@ void AudioPolicyServer::OnRemoveSystemAbility(int32_t systemAbilityId, const std
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType,
-    const AudioStreamType &streamInFocus)
+    const AudioStreamType &streamInFocus, int32_t zoneId)
 {
     int32_t streamInFocusInt = static_cast<int32_t>(streamInFocus);
     int32_t volumeLevelMax = -1;
@@ -467,6 +469,16 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
         volumeEvent.previousVolume = volLevel;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+        if (zoneId == 0) {
+            deviceDesc = audioActiveDevice_.GetDeviceForVolume(volumeEvent.volumeType);
+        } else {
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
+            AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
+            deviceDesc = !devices.empty() ? devices[0] : nullptr;
+        }
+        volumeEvent.networkId = deviceDesc == nullptr ? LOCAL_NETWORK_ID : deviceDesc->networkId_;
+        volumeEvent.deviceType = deviceDesc == nullptr ? DEVICE_TYPE_NONE : deviceDesc->deviceType_;
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, false, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
@@ -692,7 +704,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
         }
     }
 #endif
-    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
+    if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus, zoneId)) {
         AUDIO_ERR_LOG("device %{public}d, stream %{public}d, volumelevel %{public}d invalid",
             audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus, volumeLevelInInt);
         return ERROR_INVALID_PARAM;
@@ -2613,7 +2625,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uint32_t clientUid, int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        HILOG_COMM_ERROR("[SetAudioInterruptCallback]The interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
     if (coreService_ == nullptr) {
@@ -2825,7 +2837,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr");
+        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
         return ERR_UNKNOWN;
     }
 
@@ -3511,7 +3523,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
 void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
 {
     CHECK_AND_RETURN_LOG(enable, "route unenable");
-    server_->coreService_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
+    server_->eventEntry_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,

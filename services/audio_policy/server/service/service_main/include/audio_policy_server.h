@@ -819,7 +819,8 @@ private:
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus,
+        int32_t zoneId = 0);
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
@@ -950,6 +951,7 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
 
     int32_t sessionIdByRemote_ = -1;
+    bool isUT_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;

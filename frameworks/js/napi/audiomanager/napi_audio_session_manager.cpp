@@ -247,8 +247,6 @@ napi_value NapiAudioSessionMgr::IsOtherMediaPlaying(napi_env env, napi_callback_
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("IsOtherMediaPlaying failed : no memory");
-        NapiAudioError::ThrowError(env, "IsOtherMediaPlaying failed : no memory",
-            NAPI_ERR_NO_MEMORY);
         NapiParamUtils::SetValueBoolean(env, false, result);
         return result;
     }

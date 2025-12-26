@@ -63,6 +63,8 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -97,6 +99,8 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -126,6 +130,8 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -235,6 +241,8 @@ int32_t AudioVolumeClientManager::SetMute(AudioVolumeType volumeType, bool mute,
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -266,6 +274,8 @@ bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -420,6 +430,8 @@ int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, in
         case STREAM_VOICE_ASSISTANT:
                 break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -448,6 +460,8 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
         case STREAM_VOICE_RING:
             break;
         case STREAM_ULTRASONIC:
+        case STREAM_ANNOUNCEMENT:
+        case STREAM_EMERGENCY:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
@@ -495,7 +509,9 @@ int32_t AudioVolumeClientManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
-        case STREAM_USAGE_ULTRASONIC: {
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;
@@ -529,7 +545,9 @@ int32_t AudioVolumeClientManager::GetMinVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
-        case STREAM_USAGE_ULTRASONIC: {
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;
@@ -563,7 +581,9 @@ int32_t AudioVolumeClientManager::GetVolumeByUsage(StreamUsage streamUsage)
         case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
-        case STREAM_USAGE_ULTRASONIC: {
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;
@@ -597,7 +617,9 @@ int32_t AudioVolumeClientManager::IsStreamMuteByUsage(StreamUsage streamUsage, b
         case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
-        case STREAM_USAGE_ULTRASONIC: {
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;
@@ -633,7 +655,9 @@ float AudioVolumeClientManager::GetVolumeInDbByStream(StreamUsage streamUsage,
         case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_DTMF:
         case STREAM_USAGE_ENFORCED_TONE:
-        case STREAM_USAGE_ULTRASONIC: {
+        case STREAM_USAGE_ULTRASONIC:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY: {
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
             break;

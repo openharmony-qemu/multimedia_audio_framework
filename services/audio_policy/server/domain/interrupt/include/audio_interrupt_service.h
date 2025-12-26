@@ -271,9 +271,11 @@ private:
         std::shared_ptr<AudioInterruptZone> &zoneInfo,
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
-    void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
-        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
-        const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
+    void UpdateMicFocusStrategy(const AudioFocusType &existAudioFocusType,
+        const AudioFocusType &incomingAudioFocusType, const std::string &currentBundleName,
+        const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
+    void UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
         const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
         AudioFocusEntry &focusTypess);

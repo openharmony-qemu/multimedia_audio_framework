@@ -156,7 +156,8 @@ int32_t RendererInServer::ConfigServerBuffer()
         processConfig_.streamInfo.customSampleRate) / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
+    CHECK_AND_CALL_RET_FUNC(spanSizeInByte_ != 0, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[ConfigServerBuffer]Config oh audio buffer failed!"));
     AUDIO_INFO_LOG("engineTotalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu, byteSizePerFrame_:%{public}zu "
         "spanSizeInByte_: %{public}zu, bufferTotalSizeInFrame_: %{public}zu", engineTotalSizeInFrame_,
         spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, bufferTotalSizeInFrame_);
@@ -218,8 +219,8 @@ int32_t RendererInServer::Init()
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
         AUDIO_INFO_LOG("high resolution create failed use normal replace");
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
-        "Construct rendererInServer failed: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[Init]Construct rendererInServer failed: %{public}d", ret));
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     StreamVolumeParams streamVolumeParams = { streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
@@ -227,8 +228,8 @@ int32_t RendererInServer::Init()
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
-        "Construct rendererInServer failed: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[Init]Construct rendererInServer failed: %{public}d", ret));
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
 
@@ -712,8 +713,8 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame >= currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
-            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
-                "invalid write and read position.");
+            CHECK_AND_CALL_RET_FUNC(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                HILOG_COMM_ERROR("[WriteData]invalid write and read position."));
             uint64_t dataSize = currentWriteFrame - currentReadFrame;
             HILOG_COMM_INFO("[WriteData]sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
                 streamIndex_, dataSize);
@@ -833,14 +834,15 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
     std::lock_guard lock(writeLock_);
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
+    CHECK_AND_CALL_RET_FUNC(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[WriteData]invalid span size"));
     int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / static_cast<int64_t>(spanSizeInFrame_);
     Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
-            CHECK_AND_RETURN_RET_LOG(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
-                "invalid write and read position.");
+            CHECK_AND_CALL_RET_FUNC(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+                HILOG_COMM_ERROR("[WriteData]invalid write and read position."));
             uint64_t dataSize = currentWriteFrame - currentReadFrame;
             AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
                 streamIndex_, dataSize);
@@ -850,8 +852,10 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     int32_t ret = audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "WriteData GetReadbuffer failed");
-    CHECK_AND_RETURN_RET_LOG(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM, "data not enouth");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[WriteData]WriteData GetReadbuffer failed"));
+    CHECK_AND_CALL_RET_FUNC(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[WriteData]data not enouth"));
 
     ringBufferDesc.dataLength = requestDataLen;
     ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
@@ -1090,7 +1094,8 @@ int32_t RendererInServer::StartInnerDuringStandby()
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[StartInnerDuringStandby]Policy start client failed, reason: %{public}d", ret));
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     RecordStandbyTime(true, false);
@@ -1127,7 +1132,8 @@ int32_t RendererInServer::StartInner()
     MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
     // Bluetooth connection may take a long time, which may cause the data before and after the connection
     // are not continuous, resulting in pop sounds. To avoid the problem,
@@ -1137,7 +1143,8 @@ int32_t RendererInServer::StartInner()
 
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[StartInner]Start stream failed, reason: %{public}d", ret));
 
     startedTime_ = ClockTime::GetCurNano();
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -1471,7 +1478,8 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
 
@@ -1576,10 +1584,12 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
 
 int32_t RendererInServer::SetRate(int32_t rate)
 {
-    CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
-    audioRenderRate_ = static_cast<AudioRendererRate>(rate);
-    CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
-        "ProcessAndSetStaticBuffer fail!");
+    if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET(audioRenderRate_ != static_cast<AudioRendererRate>(rate), SUCCESS);
+        audioRenderRate_ = static_cast<AudioRendererRate>(rate);
+        CHECK_AND_RETURN_RET_LOG(ProcessAndSetStaticBuffer() == SUCCESS, ERR_OPERATION_FAILED,
+            "ProcessAndSetStaticBuffer fail!");
+    }
     return stream_->SetRate(rate);
 }
 
@@ -2172,7 +2182,7 @@ int32_t RendererInServer::SetMute(bool isMute)
     return SUCCESS;
 }
 
-int32_t RendererInServer::SetDuckFactor(float duckFactor)
+int32_t RendererInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (duckFactor < MIN_FLOAT_VOLUME || duckFactor > MAX_FLOAT_VOLUME) {
         AUDIO_ERR_LOG("invalid duck volume:%{public}f", duckFactor);
@@ -2185,19 +2195,19 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
     AudioVolume::GetInstance()->SaveAdjustStreamVolumeInfo(duckFactor, streamIndex_, currentTime,
         static_cast<uint32_t>(AdjustStreamVolume::DUCK_VOLUME_INFO));
 
-    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor);
+    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(streamIndex_, duckFactor, durationMs);
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(
-                    capInfo.second.dupStream->GetStreamIndex(), duckFactor);
+                    capInfo.second.dupStream->GetStreamIndex(), duckFactor, durationMs);
             }
         }
     }
     SetSoftLinkFunc([duckFactor](auto &softLink) { softLink->SetVolumeDuckFactor(duckFactor); });
     if (isDualToneEnabled_) {
-        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor, durationMs);
     }
     if (offloadEnable_) {
         OffloadSetVolumeInner();

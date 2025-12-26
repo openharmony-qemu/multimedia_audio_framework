@@ -20,6 +20,7 @@
 #include <condition_variable>
 #include <shared_mutex>
 #include <atomic>
+#include <future>
 #include "i_renderer_stream.h"
 #include "audio_ring_cache.h"
 
@@ -119,12 +120,16 @@ private:
     void NotifyFirstStreamData();
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
+    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
+        std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
     State state_ = INVALID;
+    std::future<void> offloadVolumeRmap_;
 
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;

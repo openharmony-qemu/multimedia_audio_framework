@@ -86,6 +86,7 @@ public:
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
     void HandleDeviceCallback(const bool state);
 
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);

@@ -84,6 +84,8 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ULTRASONIC,
     STREAM_SYSTEM,
     STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_ANNOUNCEMENT,
+    STREAM_EMERGENCY,
     STREAM_ALL
 };
 
@@ -306,10 +308,8 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
     if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
         volumeDb = 1;
     }
-    std::thread([volumeDb]() {
-        AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
-        AUDIO_INFO_LOG("%{public}f", volumeDb);
-    }).detach();
+    AudioServerProxy::GetInstance().SetVoiceVolumeProxy(volumeDb);
+    AUDIO_INFO_LOG("%{public}f", volumeDb);
 }
 
 void AudioVolumeManager::InitKVStore()
