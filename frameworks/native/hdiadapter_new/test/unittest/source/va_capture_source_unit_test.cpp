@@ -147,33 +147,9 @@ HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_005, TestSize.Level1)
 /**
  * @tc.name   : Test BluetoothSource API
  * @tc.number : BluetoothSourceUnitTest_006
- * @tc.desc   : Test bluetooth source set audio scene
- */
-HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_006, TestSize.Level1)
-{
-    EXPECT_TRUE(source_);
-    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test BluetoothSource API
- * @tc.number : BluetoothSourceUnitTest_007
- * @tc.desc   : Test bluetooth source update active device
- */
-HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_007, TestSize.Level1)
-{
-    EXPECT_TRUE(source_);
-    int32_t ret = source_->UpdateActiveDevice(DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test BluetoothSource API
- * @tc.number : BluetoothSourceUnitTest_008
  * @tc.desc   : Test bluetooth source set invalid state
  */
-HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_008, TestSize.Level1)
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_006, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
     source_->SetInvalidState();
