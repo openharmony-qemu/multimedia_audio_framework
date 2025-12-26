@@ -1835,19 +1835,20 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSourceAttr_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
 
+    IAudioSourceAttr attr;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "usb");
 
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "primary");
 
     deviceInfo.networkId_ = REMOTE_NETWORK_ID;
-    IAudioSourceAttr attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "remote");
 }
 
@@ -1866,19 +1867,20 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
 
+    IAudioSinkAttr attr;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "usb");
 
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "primary");
 
     deviceInfo.networkId_ = REMOTE_NETWORK_ID;
-    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(deviceInfo);
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo);
     EXPECT_EQ(attr.adapterName, "remote");
 }
 } // namespace AudioStandard
