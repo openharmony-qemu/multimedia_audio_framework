@@ -721,7 +721,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
-    } else {
+    } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
     }
     if (audioSceneManager_.IsHangUpScene()) {

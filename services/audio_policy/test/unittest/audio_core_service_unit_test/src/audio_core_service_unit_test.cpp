@@ -2214,5 +2214,7 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_003, TestSize.Level1)
     EXPECT_TRUE(std::chrono::steady_clock::now() < afterSuspend);
     EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
 }
+
+
 } // namespace AudioStandard
 } // namespace OHOS
