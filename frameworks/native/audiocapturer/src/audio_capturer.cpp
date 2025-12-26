@@ -1510,9 +1510,6 @@ void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
 {
     audioStream_->GetSwitchInfo(switchInfo);
 
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    }
     switchInfo.captureMode = audioCaptureMode_;
     switchInfo.params.originalSessionId = sessionID_;
     return;
@@ -1559,6 +1556,9 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     bool switchResult = false;
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");

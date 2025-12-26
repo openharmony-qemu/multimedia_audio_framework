@@ -2265,9 +2265,6 @@ uint32_t AudioRendererPrivate::GetUnderflowCountInner() const
 void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info)
 {
     audioStream_->GetSwitchInfo(info);
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    }
 
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
@@ -2364,6 +2361,9 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
