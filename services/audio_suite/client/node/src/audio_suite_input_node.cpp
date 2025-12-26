@@ -79,7 +79,7 @@ int32_t AudioInputNode::Flush()
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
-    outputStream_.resetResampleCfg();
+    outputStream_.ResetResampleCfg();
     return SUCCESS;
 }
 
