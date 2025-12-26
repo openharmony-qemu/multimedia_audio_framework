@@ -244,10 +244,12 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
 {
     AudioStreamInfo streamInfo = pipeInfo->audioStreamInfo_;
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-        const std::string &rate = pipeInfo->moduleInfo_.rate; 
-        if (rate == "96000") {
-            streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+        const int &rate = std::stoi(pipeInfo->moduleInfo_.rate); 
+        if (rate > AudioSamplingRate::SAMPLE_RATE_96000) {
+            streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+            return streamInfo;
         }
+        streamInfo.samplingRate = static_cast<AudioSamplingRate>(rate);
     }
     return streamInfo;
 }
