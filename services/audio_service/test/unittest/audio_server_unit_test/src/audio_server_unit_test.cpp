@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0zz
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -576,11 +576,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckStreamInfoFormat_001, TestSize.Lev
     audioServer->NotifyDeviceInfo(LOCAL_NETWORK_ID, false);
     audioServer->NotifyDeviceInfo("", true);
     audioServer->NotifyDeviceInfo("", false);
+    AudioPlaybackCaptureConfig filterConfig;
 
     AudioProcessConfig config = {};
     config.callerUid = AudioServer::MEDIA_SERVICE_UID;
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
 
     config.audioMode = AUDIO_MODE_RECORD;
     config.streamInfo.channels = CHANNEL_11;
@@ -973,10 +974,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerResetRecordConfig_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
 }
 
 /**
@@ -1835,9 +1837,10 @@ HWTEST_F(AudioServerUnitTest, ResetRecordConfig_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_LIVE;
 
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_LIVE);
 }
 
@@ -1852,8 +1855,9 @@ HWTEST_F(AudioServerUnitTest, ResetRecordConfig_002, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     EXPECT_EQ(config.isInnerCapturer, true);
 }
 
