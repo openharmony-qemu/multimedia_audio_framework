@@ -2625,7 +2625,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uint32_t clientUid, int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        HILOG_COMM_ERROR("[SetAudioInterruptCallback]The interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
     if (coreService_ == nullptr) {
@@ -2837,7 +2837,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr");
+        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
         return ERR_UNKNOWN;
     }
 

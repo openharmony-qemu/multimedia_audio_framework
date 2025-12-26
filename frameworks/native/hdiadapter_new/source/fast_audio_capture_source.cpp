@@ -45,7 +45,8 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     ret = PrepareMmapBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED,
+        HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
     sourceInited_ = true;
     InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST,
         { static_cast<DeviceType>(attr_.deviceType) });
@@ -520,7 +521,8 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
 
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret: %{public}d", ret));
     AUDIO_INFO_LOG("memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
         "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryFd,
         desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
@@ -577,7 +579,8 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     AUDIO_ERR_LOG("fail, stop capture");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Stop(audioCapture_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[CheckPositionTime]stop fail, ret: %{public}d", ret));
     return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard
