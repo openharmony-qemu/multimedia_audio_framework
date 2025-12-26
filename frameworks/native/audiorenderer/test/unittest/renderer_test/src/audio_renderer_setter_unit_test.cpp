@@ -1918,10 +1918,9 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRenderer
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_NORMAL);
 }
 
@@ -1935,10 +1934,9 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRenderer
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::FAST_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
 }
 

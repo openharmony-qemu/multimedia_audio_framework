@@ -4079,11 +4079,10 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_001, TestSize.Level1)
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::VOIP_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
 
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
 }
 
@@ -4556,11 +4555,10 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_002, TestSize.Level1)
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::VOIP_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
 
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
 }
 
