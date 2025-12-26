@@ -123,7 +123,7 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    outputStream_.resetResampleCfg();
+    outputStream_.ResetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
