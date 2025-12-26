@@ -987,12 +987,6 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
     int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
-
-int32_t AudioServer::RequestUserPrivacyAuthority(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
-    return AudioService::GetInstance()->RequestUserPrivacyAuthority(sessionId);
-}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
