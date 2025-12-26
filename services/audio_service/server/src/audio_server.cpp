@@ -2094,7 +2094,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     errorCode = CheckAndWaitAudioPolicyReady();
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
-    AudioProcessConfig resetConfig = ResetProcessConfig(config);
+    AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
     CHECK_AND_CALL_RET_FUNC(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
