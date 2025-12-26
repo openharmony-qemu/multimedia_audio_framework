@@ -88,7 +88,7 @@ public:
         return shared_from_this();
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort()
+    virtual OutputPort<AudioSuitePcmBuffer*>* GetOutputPort()
     {
         return nullptr;
     }
