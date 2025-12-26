@@ -405,10 +405,17 @@ int32_t RendererInClientInner::WriteRawBuffer(BufferDesc &bufferDesc)
             sleepCount_ = 0;
             AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
         }
+        Trace waitTrace("RendererInClient::WaitClientWrite");
         usleep(WAIT_FOR_NEXT_CB);
         return SUCCESS;
     }
     FirstFrameProcess();
+    if (gServerProxy_ == nullptr) {
+        cbThreadReleased_ = true;
+        Trace waitTrace("RendererInClient::WaitServerRestart");
+        usleep(WAIT_FOR_NEXT_CB);
+        return ERR_WRITE_BUFFER;
+    }
     sleepCount_ = LOG_COUNT_LIMIT;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_WRITE_FAILED, "ipc stream is null");
