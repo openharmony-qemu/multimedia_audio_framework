@@ -46,7 +46,7 @@ public:
     size_t GetInputNum() const;
     void SetPortType(AudioNodePortType type) {portType_ = type;}
     AudioNodePortType GetPortType() {return portType_;}
-    int32_t resetResampleCfg();
+    int32_t ResetResampleCfg();
     int32_t SetOutputPort(std::shared_ptr<AudioNode> node);
 private:
     std::set<InputPort<T>*> inputPortSet_;
@@ -286,7 +286,7 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
 }
 
 template <class T>
-int32_t OutputPort<T>::resetResampleCfg()
+int32_t OutputPort<T>::ResetResampleCfg()
 {
     CHECK_AND_RETURN_RET_LOG(!convert_.empty(), ERROR, "convert_ is empty.");
     for (auto &tmpConvert : convert_) {
