@@ -14,7 +14,7 @@
  */
 #ifndef LOG_TAG
 #define LOG_TAG "RendererInClientInnerPublic"
-#endifxx
+#endif
 
 #include "renderer_in_client.h"
 #include "renderer_in_client_private.h"
@@ -168,6 +168,18 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
 }
 
 int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
+void RendererInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
     AUDIO_ERR_LOG("Unsupported operation!");
     return ERR_NOT_SUPPORTED;
