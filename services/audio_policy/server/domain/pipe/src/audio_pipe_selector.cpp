@@ -611,7 +611,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().front().samplingRate.empty(), "samplingRate set empty");
-        moduleInfo.rate = to_string(*(deviceDesc->GetAudioStreamInfo().front().samplingRate.begine()));
+        moduleInfo.rate = to_string(*(deviceDesc->GetAudioStreamInfo().front().samplingRate.begin()));
     }
 }
 
