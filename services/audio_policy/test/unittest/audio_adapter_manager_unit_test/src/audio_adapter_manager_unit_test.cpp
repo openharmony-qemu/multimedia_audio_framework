@@ -825,7 +825,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_001, TestSize.Level
     pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
 
     std::string idInfo;
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
     EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
@@ -845,6 +845,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_002, TestSize.Level
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
+    HdiIdType &idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -864,6 +865,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
+    HdiIdType &idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -874,7 +876,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level
  * @tc.type: FUNC
  * @tc.desc: when successful execution, return success
  */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_001, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Level1)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -882,7 +884,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_001, TestSize.Lev
     pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
 
     std::string idInfo;
-    HdiIdType &idType;
+    HdiIdType idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
     EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
@@ -894,7 +896,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_001, TestSize.Lev
  * @tc.type: FUNC
  * @tc.desc: when successful execution, return success
  */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_002, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_012, TestSize.Level1)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -902,6 +904,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_002, TestSize.Lev
     pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
 
     std::string idInfo = "err";
+    HdiIdType &idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
@@ -913,7 +916,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_002, TestSize.Lev
  * @tc.type: FUNC
  * @tc.desc: when successful execution, return success
  */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_003, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_013, TestSize.Level1)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -921,6 +924,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_003, TestSize.Lev
     pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
 
     std::string idInfo = "err";
+    HdiIdType &idType;
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
