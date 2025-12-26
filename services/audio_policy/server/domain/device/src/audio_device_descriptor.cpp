@@ -396,8 +396,8 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
         return static_cast<uint32_t>(formatStrToEnum[parseRet]);
     }
     CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
-    ret = std::stoi(parseRet);
-    return ret
+    ret = static_cast<uint32_t>(std::stoi(parseRet));
+    return ret;
 }
 
 void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParameters)

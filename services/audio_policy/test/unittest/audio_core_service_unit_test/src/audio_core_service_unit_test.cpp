@@ -2246,7 +2246,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_001, TestSize.Level1)
  * @tc.number : RecordIsForcedNormal_002
  * @tc.desc   : Test HandleA2dpRestore, call after a2dpSuspendUntil_
  */
-HWTEST_F(AudioCoreServiceUnitTest, HandleA2dpRestore_002, TestSize.Level1)
+HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2279,11 +2279,11 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_003, TestSize.Level1)
     streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
     streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST;
     
-    auto deviceDesc - std::make_shared<AudioDeviceDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc.SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
     deviceDesc.SetDeviceSupportMmap(1);
-    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false;);
+    EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
 
 /**
@@ -2301,11 +2301,11 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
     streamDesc->rendererInfo_.capturerFlags = AUDIO_FLAG_MMAP;
     
-    auto deviceDesc - std::make_shared<AudioDeviceDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc.SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
     deviceDesc.SetDeviceSupportMmap(1);
-    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false;);
+    EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
 } // namespace AudioStandard
 } // namespace OHOS
