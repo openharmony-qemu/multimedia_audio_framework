@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCapturer"xx
+#define LOG_TAG "AudioCapturer"
 #endif
 
 #include "audio_capturer.h"
@@ -29,6 +29,7 @@
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
+#include "audio_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -646,6 +647,12 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
 {
     std::lock_guard lock(fastStatusChangeCallbackMutex_);
     fastStatusChangeCallback_ = callback;
+}
+
+void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    audioStream_->SetPlaybackCaptureStartStateCallback(callback);
 }
 
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
@@ -2103,6 +2110,11 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     return ret;
+}
+
+int32_t AudioCapturerPrivate::StartPlaybackCapture()
+{
+    return audioStream_->RequestUserPrivacyAuthority(sessionID_);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
