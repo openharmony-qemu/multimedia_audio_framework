@@ -115,7 +115,6 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
     }
     sceneMixerMap_[sceneType]->Connect(sceneConverterMap_[sceneType]);
     sceneConverterMap_[sceneType]->Connect(preNode);
-    UpdateStreamInfo(preNode);
     connectedProcessCluster_.insert(sceneType);
 }
 
