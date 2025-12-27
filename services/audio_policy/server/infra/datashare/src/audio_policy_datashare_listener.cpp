@@ -27,7 +27,10 @@ namespace AudioStandard {
 
 static const char *CONFIG_AUDIO_BALANCE_KEY = "master_balance";
 static const char *CONFIG_AUDIO_MONO_KEY = "master_mono";
-static const char *CONFIG_AUDIO_BROADCAST_KEY = "outdoor_worker_model_audio";
+static const char *CONFIG_AUDIO_BROADCAST_KEY = "linkedage_state_clearBroadcasting";
+static const char *BROADCAST_ORIGINAL = "0";
+static const char *BROADCAST_OPEN = "1";
+static const char *BROADCAST_CLOSE = "2";
 
 void AudioPolicyDataShareListener::RegisterAccessiblilityBalance()
 {
@@ -79,21 +82,17 @@ void AudioPolicyDataShareListener::RegisterBroadcast()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncBroadcast = [&](const std::string &key) {
-        std::string value = "0";
-        std::string newvalue = "0";
-        ErrCode ret = settingProvider.GetStringValue(CONFIG_AUDIO_BROADCAST_KEY, value, "broadcast");
+        std::string value = BROADCAST_ORIGINAL;
+        std::string newvalue = BROADCAST_ORIGINAL;
+        ErrCode ret = settingProvider.GetStringValue(CONFIG_AUDIO_BROADCAST_KEY, value, "system");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "get Broadcast value failed");
-        if (value == "true") {
-            newvalue = "1";
-        } else if (value == "false") {
-            newvalue = "2";
-        }
+        newvalue = value == "2" ? BROADCAST_OPEN : BROADCAST_CLOSE;
         AUDIO_INFO_LOG("RegisterBroadcast = %{public}s", newvalue.c_str());
         std::string newkey = "outdoor_mode";
         AudioServerProxy::GetInstance().SetAudioParameterProxy(newkey, newvalue);
     };
     sptr observer = settingProvider.CreateObserver(CONFIG_AUDIO_BROADCAST_KEY, updateFuncBroadcast);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "broadcast");
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver broadcast failed");
     } else {
