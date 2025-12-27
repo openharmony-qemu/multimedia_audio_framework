@@ -41,7 +41,7 @@ public:
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
     OH_AudioStream_Result SetRendererKeepRunning(bool keepRunning);
-   OH_AudioStream_Result SetPlaybackCaptureMode(uint32_t mode);
+    OH_AudioStream_Result SetPlaybackCaptureMode(uint32_t mode);
     OH_AudioStream_Result StartPlaybackCapture(OH_AudioStream_PlaybackCaptureStartState stateCode);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
