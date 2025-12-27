@@ -227,7 +227,7 @@ private:
     InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
     std::shared_ptr<OHAudioCapturerOnPlaybackCaptureStartCallback> capturerOnPlaybackCaptureStartCallback_ = nullptr;
-    bool IsModernInnerCapturer_ = false;
+    bool isModernInnerCapturer_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

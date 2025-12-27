@@ -1352,15 +1352,17 @@ void AudioServerGetHapBuildApiVersionFuzzTest()
 void AudioServerResetRecordConfigFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ResetRecordConfig(config);
+    audioServerPtr->ResetRecordConfig(config, filterConfig);
 }
 
 void AudioServerResetProcessConfigFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ResetProcessConfig(config);
+    audioServerPtr->ResetProcessConfig(config, filterConfig);
 }
 
 void AudioServerCheckStreamInfoFormatFuzzTest()
@@ -1746,6 +1748,7 @@ void AudioServerSetActiveOutputDeviceFuzzTest()
 void AudioServerResetRecordConfigSourceTypeFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
@@ -1753,17 +1756,18 @@ void AudioServerResetRecordConfigSourceTypeFuzzTest()
         return;
     }
     config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
-    audioServerPtr->ResetRecordConfig(config);
+    audioServerPtr->ResetRecordConfig(config, filterConfig);
 }
 
 void AudioServerResetProcessConfigCallerUidFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     config.callerUid = provider.ConsumeIntegral<int32_t>();
-    audioServerPtr->ResetProcessConfig(config);
+    audioServerPtr->ResetProcessConfig(config, filterConfig);
 }
 
 void AudioServerCheckStreamInfoFormatNotContainFuzzTest()
