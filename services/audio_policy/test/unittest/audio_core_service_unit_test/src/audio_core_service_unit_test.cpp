@@ -71,12 +71,17 @@ static void GetPermission()
 void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
+    AudioPolicyServer* server = GetServerPtr();
+    server->isUT_ = true;
     GetPermission();
     GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
 }
 void AudioCoreServiceUnitTest::TearDownTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::TearDownTestCase start-end");
+    AudioPolicyServer* server = GetServerPtr();
+    server->isUT_ = false;
+    server->coreService_ = nullptr;
 }
 void AudioCoreServiceUnitTest::SetUp(void)
 {
