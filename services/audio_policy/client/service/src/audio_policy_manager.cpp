@@ -3485,6 +3485,15 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
     static AudioPolicyManager policyManager;
     return policyManager;
 }
+
+AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
+    int32_t audioScene = AUDIO_SCENE_DEFAULT;
+    gsp->GetAudioSceneFromAllZones(audioScene);
+    return static_cast<AudioScene>(audioScene);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

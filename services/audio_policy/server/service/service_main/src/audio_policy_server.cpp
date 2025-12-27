@@ -5709,5 +5709,11 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t device
         static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
+{
+    audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

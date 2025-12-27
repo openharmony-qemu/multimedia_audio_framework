@@ -1252,5 +1252,10 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
         sourceType, ret);
     return ret;
 }
+
+AudioScene AudioPolicyService::GetAudioSceneFromAllZones()
+{
+    return AudioZoneService::GetInstance().GetAudioSceneFromAllZones();
+}
 } // namespace AudioStandard
 } // namespace OHOS

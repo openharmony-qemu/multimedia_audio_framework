@@ -104,6 +104,8 @@ public:
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
 
+    AudioScene GetAudioSceneFromAllZones();
+
 private:
     AudioZoneService() = default;
     ~AudioZoneService() = default;
