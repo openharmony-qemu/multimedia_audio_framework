@@ -1789,7 +1789,7 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
             AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID ||
-            filterConfig.IsModernInnerCapturer) {
+            filterConfig.isModernInnerCapturer) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
