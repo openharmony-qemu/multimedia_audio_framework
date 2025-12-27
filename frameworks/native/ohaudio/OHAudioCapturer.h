@@ -216,7 +216,7 @@ public:
     StreamEventCallbackType GetCapturerStreamEventCallbackType();
     int32_t StartPlaybackCapture(OH_AudioCapturer* capturer,
         OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
-    bool IsModernInnerCapturer();
+    bool isModernInnerCapturer();
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
