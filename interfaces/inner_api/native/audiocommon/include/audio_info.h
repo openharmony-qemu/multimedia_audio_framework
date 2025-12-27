@@ -999,7 +999,7 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
-    bool IsModernInnerCapturer = false;
+    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1038,7 +1038,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         parcel.WriteBool(silentCapture);
-        parcel.WriteBool(IsModernInnerCapturer);
+        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1100,7 +1100,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         // silentCapture
         config->silentCapture = parcel.ReadBool();
 
-        config->IsModernInnerCapturer = parcel.ReadBool();
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         return config;
     }
