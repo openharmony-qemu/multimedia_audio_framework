@@ -452,6 +452,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->GetAudioParameter("getSmartPAPOWER", str);
     audioServer->GetAudioParameter("Is_Fast_Blocked_For_AppName#", str);
     auto result = audioServer->GetUsbParameter("address=card2;device=0 role=1");
+    result = audioServer->GetUsbParameter("address=card2;device=0 role=0");
+    result = audioServer->GetUsbParameter("address=card2;device=0 role=2");
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE,
         "address=card=2;device=0 role=0", str);
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::USB_DEVICE,

@@ -391,8 +391,11 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
     CHECK_AND_RETURN_RET(itBegin != itEnd, 0);
     std::string parseRet = audioParameters.substr(itBegin + keyStr.size(), itEnd - itBegin - keyStr.size());
     uint32_t ret = 0;
+    AUDIO_INFO_LOG("parseRet:%{public}s", parseRet.c_str());
     if (key == AudioParametersKey::FORMAT) {
         parseRet = ParseAudioFormat(parseRet);
+        AUDIO_INFO_LOG("parseRet:%{public}s, format: %{public}u", parseRet.c_str(),
+            static_cast<uint32_t>(formatStrToEnum[parseRet]));
         return static_cast<uint32_t>(formatStrToEnum[parseRet]);
     }
     CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
@@ -402,7 +405,6 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
 
 void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParameters)
 {
-    CHECK_AND_RETURN(!audioParameters.empty());
     if (getType() == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET) {
         DeviceStreamInfo streamInfo = {};
         streamInfo.samplingRate.insert(
@@ -411,9 +413,9 @@ void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParamet
         streamInfo.format =
             static_cast<AudioSampleFormat>(ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::FORMAT));
         audioStreamInfo_.push_back(streamInfo);
- 
-        deviceSupportMmap_ =
-            AudioDeviceDescriptor::ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::SUPPORT_MMAP);
+
+        deviceSupportMmap_ = AudioDeviceDescriptor::ParseArmUsbAudioParameters(audioParameters,
+            AudioParametersKey::SUPPORT_MMAP);
     }
 }
 

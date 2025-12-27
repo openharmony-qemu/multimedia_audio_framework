@@ -38,6 +38,7 @@ namespace {
     constexpr int32_t SAMPLE_FORMAT_S24LE = 24;
     constexpr int32_t SAMPLE_FORMAT_S32LE = 32;
     constexpr int32_t PARAM2 = 2;
+    constexpr int32_t PARAM3 = 3;
     constexpr size_t FIXED_SIZE = 1024;
     const uint64_t SYNC_FRAME_PTS_SPAN_US = 20000; // 20ms for test
 }
@@ -47,10 +48,9 @@ public:
     void TestPeriodCall()
     {
         Timestamp stamp;
-        bool ret = audioRenderer_->GetAudioPosition(stamp, Timestamp::MONOTONIC);
-        std::cout << "GetPosition:" << (ret ?  "success" : "fail") << " postion:" << stamp.framePosition << " sec:" <<
-            stamp.time.tv_sec << " nsec:" << stamp.time.tv_nsec << std::endl;
+        audioRenderer_->GetAudioPosition(stamp, Timestamp::MONOTONIC);
         audioRenderer_->SetSpeed(1.0);
+        std::cout << "writing data..." << std::endl;
     }
 
     void OnWriteData(size_t length) override
@@ -112,7 +112,7 @@ public:
     bool InitEAC3Render()
     {
         AudioRendererOptions rendererOptions = {};
-        rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_EAC3;
+        rendererOptions.streamInfo.encoding = encodingType_;
         rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_48000;
         rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
         rendererOptions.streamInfo.channels = STEREO;
@@ -151,7 +151,7 @@ public:
         }
 
         AudioRendererOptions rendererOptions = {};
-        rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_EAC3;
+        rendererOptions.streamInfo.encoding = encodingType_;
         rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(wavHeader.SamplesPerSec);
         rendererOptions.streamInfo.format = GetSampleFormat(wavHeader.bitsPerSample);
         rendererOptions.streamInfo.channels = static_cast<AudioChannel>(wavHeader.NumOfChan);
@@ -218,6 +218,7 @@ public:
     }
 
     FILE *wavFile_ = nullptr;
+    AudioEncodingType encodingType_ = ENCODING_EAC3; // default to EAC3
 private:
     void CallExit()
     {
@@ -235,6 +236,23 @@ private:
     uint64_t mockPts_ = 0;
 };
 
+std::map<std::string, AudioEncodingType> g_typeToStr = {
+    {"EAC3", ENCODING_EAC3},
+    {"AC3", ENCODING_AC3},
+    {"TRUE_HD", ENCODING_TRUE_HD},
+    {"DTS_HD", ENCODING_DTS_HD},
+    {"DTS_X", ENCODING_DTS_X},
+    {"VIVID", ENCODING_AUDIOVIVID_DIRECT}};
+
+AudioEncodingType GetEncodingType(std::string type)
+{
+    if (g_typeToStr.count(type)) {
+        return g_typeToStr[type];
+    }
+    std::cout << "invalid encoding type:" << type << " will use EAC3 instead!" << std::endl;
+    return ENCODING_EAC3;
+}
+
 int main(int argc, char *argv[])
 {
     char *inputPath = argv[1];
@@ -246,9 +264,16 @@ int main(int argc, char *argv[])
     AUDIO_INFO_LOG("RenderCallbackTest: path = %{public}s", path);
     auto testObj = std::make_shared<AudioRenderModeCallbackTest>();
 
-    if (argc != PARAM2) {
-        std::cout << "can not find file path, call xxx_test xxx.wav" << std::endl;
+    if (argc > PARAM3) {
+        std::cout << "call test with file path and format" << std::endl;
         return -1;
+    }
+
+    if (argc == PARAM3) {
+        std::cout << "Test with format:" << argv[PARAM2] << std::endl;
+        testObj->encodingType_ = GetEncodingType(argv[PARAM2]);
+    } else {
+        std::cout << "Test with EAC3" << std::endl;
     }
 
     testObj->wavFile_ = fopen(path, "rb");

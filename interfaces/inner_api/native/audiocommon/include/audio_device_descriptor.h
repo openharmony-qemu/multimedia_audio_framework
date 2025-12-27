@@ -193,7 +193,7 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedNearlink = true) const;
-
+    
     uint32_t ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key);
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;

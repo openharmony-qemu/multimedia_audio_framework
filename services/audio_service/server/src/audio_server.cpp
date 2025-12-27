@@ -1275,25 +1275,14 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
     lock_guard<mutex> lg(mtxGetUsbParameter_);
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
-    CHECK_AND_RETURN_RET_LOG(sink, "", "rendererSink is nullptr");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "deviceManager is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
-    if (role == OUTPUT_DEVICE) {
-        sink->SetAddress(address);
+    if (role == OUTPUT_DEVICE  || role == INPUT_DEVICE) {
         auto it = usbInfoMap_.find(address);
         if (it == usbInfoMap_.end()) {
-            usbInfoStr = sink->GetAudioParameter(USB_DEVICE, infoCond);
-            usbInfoMap_[address] = usbInfoStr;
-        } else {
-            usbInfoStr = it->second;
-        }
-    } else if (role == INPUT_DEVICE) {
-        std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
-        CHECK_AND_RETURN_RET_LOG(source, "", "capturerSource is nullptr");
-        source->SetAddress(address);
-        auto it = usbInfoMap_.find(address);
-        if (it == usbInfoMap_.end()) {
-            usbInfoStr = sink->GetAudioParameter(USB_DEVICE, infoCond);
+            usbInfoStr = deviceManager->GetAudioParameter("usb", USB_DEVICE, infoCond);
             usbInfoMap_[address] = usbInfoStr;
         } else {
             usbInfoStr = it->second;
