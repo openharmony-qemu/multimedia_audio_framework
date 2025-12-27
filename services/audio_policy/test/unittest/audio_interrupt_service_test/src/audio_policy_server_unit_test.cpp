@@ -3755,5 +3755,37 @@ HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
     server->GetSystemSoundPath(-1, ret);
     EXPECT_EQ(ret, "");
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer::OnStart.
+* @tc.number: OnStart_001
+* @tc.desc  : Publish() is skipped when isUT_ is true.
+*/
+HWTEST(AudioPolicyUnitTest, OnStart_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->isUT_ = true;
+    server->OnStart();
+    EXPECT_TRUE(server->isUT_);
+    EXPECT_FALSE(server->IsPublishCalled());
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::OnStart.
+* @tc.number: OnStart_002
+* @tc.desc  : Publish() is not skipped when isUT_ is false.
+*/
+HWTEST(AudioPolicyUnitTest, OnStart_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->isUT_ = false;
+    server->OnStart();
+    EXPECT_FALSE(server->isUT_);
+    EXPECT_TRUE(server->IsPublishCalled());
+}
 } // AudioStandard
 } // OHOS
