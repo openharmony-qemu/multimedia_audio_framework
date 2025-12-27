@@ -884,7 +884,6 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority()
         return SUCCESS;
     }
     std::string bundleName = GetBundleNameByToken(processConfig_.appInfo.appTokenId);
- 
     if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID()) ||
         bundleName == WELINK_BUNDLENAME || bundleName == WELINK_PC_BUNDLENAME || bundleName == WELINK_HMOS_BUNDLENAME ||
         bundleName == WELINK_INNER_BUNDLENAME || bundleName == WELINK_HMPOSPC_BUNDLENAME
