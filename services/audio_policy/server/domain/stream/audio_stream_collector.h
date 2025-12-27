@@ -158,7 +158,7 @@ private:
     bool IsTransparentCapture(const uint32_t clientUid);
     void ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage);
     void PostReclaimMemoryTask();
-    void ReclaimMem();
+    void ReclaimMem(const std::string &reclaimContent);
     bool CheckAudioStateIdle();
     std::atomic_bool isActivatedMemReclaiTask_ = false;
     std::mutex clearMemoryMutex_;
