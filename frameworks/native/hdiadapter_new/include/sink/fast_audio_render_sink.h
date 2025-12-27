@@ -79,6 +79,7 @@ private:
     void ReleaseMmapBuffer(void);
     int32_t CheckPositionTime(void);
     void PreparePosition(void);
+    void EnableSyncInfo(const int32_t syncInfoSize);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

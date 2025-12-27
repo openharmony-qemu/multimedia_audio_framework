@@ -51,6 +51,7 @@ static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 
 class AudioServiceUnitTest : public testing::Test {
 public:
@@ -1721,6 +1722,44 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
     ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
+}
+
+/**
+ * @tc.name  : Test GetReleaseDelayTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetReleaseDelayTime_003
+ * @tc.desc  : Test GetReleaseDelayTime interface.
+ */
+HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
+        123, clientConfig.audioMode);
+    EXPECT_NE(nullptr, endpoint);
+    bool isSwitchStream;
+
+    isSwitchStream = true;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    
+    isSwitchStream = true;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+
+    isSwitchStream = false;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+
+    isSwitchStream = false;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
 
 /**

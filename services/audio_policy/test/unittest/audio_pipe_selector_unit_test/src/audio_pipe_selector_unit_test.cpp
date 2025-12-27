@@ -1517,5 +1517,142 @@ HWTEST_F(AudioPipeSelectorUnitTest, SetPipeTypeByStreamType_001, TestSize.Level1
     audioPipeSelector->SetPipeTypeByStreamType(pipeType, streamDesc);
     EXPECT_EQ(pipeType, PIPE_TYPE_IN_NORMAL);
 }
+
+/**
+ * @tc.name: SetPipeTypeByStreamType_001
+ * @tc.desc: Test SetPipeTypeByStreamType
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    auto oldPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto newPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>();
+    auto oldDevice = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDevice);
+    streamDesc->oldDeviceDescs_.push_back(oldDevice);
+    newPipe->streamDescriptors_.push_back(streamDesc);
+
+
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+}
+
+/**
+ * @tc.name: SetPipeTypeByStreamType_002
+ * @tc.desc: Test SetPipeTypeByStreamType
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    auto oldPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto newPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>();
+    auto oldDevice = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDevice);
+    streamDesc->oldDeviceDescs_.push_back(oldDevice);
+    newPipe->streamDescriptors_.push_back(streamDesc);
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    
+    oldPipe->moduleInfo_.className = "primary";
+    newPipe->moduleInfo_.className = "primary";
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+
+    oldPipe->moduleInfo_.className = "usb";
+    newPipe->moduleInfo_.className = "primary";
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+
+    oldPipe->moduleInfo_.className = "primary";
+    newPipe->moduleInfo_.className = "usb";
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+}
+
+/**
+ * @tc.name: SetPipeTypeByStreamType_003
+ * @tc.desc: Test SetPipeTypeByStreamType
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IsBothFastArmUsbNeedRecreate_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    auto oldPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto newPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>();
+    auto oldDevice = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDevice);
+    streamDesc->oldDeviceDescs_.push_back(oldDevice);
+    newPipe->streamDescriptors_.push_back(streamDesc);
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    oldPipe->moduleInfo_.className = "usb";
+    newPipe->moduleInfo_.className = "usb";
+    
+    oldDevice->deviceId_ = 1;
+    newDevice->deviceId_ = 1;
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), false);
+
+    oldDevice->deviceId_ = 1;
+    newDevice->deviceId_ = 2;
+    EXPECT_EQ(audioPipeSelector->IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), true);
+}
+
+/**
+ * @tc.name: UpdateMouleInfoWitchDevice_001
+ * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    AudioModuleInfo moduleInfo;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo deviceStreamInfo;
+    deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
+    deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
+    moduleInfo.rate = "8000";
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, "96000");
+}
+
+/**
+ * @tc.name: UpdateMouleInfoWitchDevice_002
+ * @tc.desc: Test UpdateMouleInfoWitchDevice
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    AudioModuleInfo moduleInfo;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo deviceStreamInfo;
+    deviceStreamInfo.samplingRate.insert(SAMPLE_RATE_96000);
+    deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
+    moduleInfo.rate = "8000";
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, "8000");
+}
 } // namespace AudioStandard
 } // namespace OHOS
