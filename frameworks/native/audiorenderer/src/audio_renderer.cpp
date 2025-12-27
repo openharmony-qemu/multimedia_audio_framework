@@ -3196,7 +3196,7 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
 int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
 {
     std::shared_lock lock(rendererMutex_);
-    CHECK_AND_RETURN_RET_LOG(GetStatusInner() != RENDERER_RELEASED, ERROR_ILLEGAL_STATE, "state is released");
+    CHECK_AND_RETURN_RET_LOG(GetStatusInner() != RENDERER_RELEASED, ERR_ILLEGAL_STATE, "state is released");
     return audioStream_->GetLatencyWithFlag(latency, flag);
 }
 }  // namespace AudioStandard
