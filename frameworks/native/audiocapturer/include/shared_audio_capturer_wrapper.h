@@ -295,7 +295,8 @@ public:
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
     }
 
-    int32_t StartPlaybackCapture() override {
+    int32_t StartPlaybackCapture() override
+    {
         return 0;
     }
  
