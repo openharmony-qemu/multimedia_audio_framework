@@ -1811,7 +1811,7 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
 }
 
 AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config,
-    const AudioProcessConfig &filterConfig)
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AudioProcessConfig resetConfig(config);
 
