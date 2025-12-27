@@ -654,7 +654,7 @@ void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const 
     rendererChangeInfo->rendererInfo.streamUsage = streamUsage;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-    
+
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByStreamUsage(streamUsage);
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
 }
@@ -1153,7 +1153,7 @@ void AudioStreamCollectorPostReclaimMemoryTaskFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     audioStreamCollector_.PostReclaimMemoryTask();
-    audioStreamCollector_.ReclaimMem();
+    audioStreamCollector_.ReclaimMem("1");
 }
 
 void AudioStreamCollectorCheckAudioStateIdleFuzzTest(const uint8_t *rawData, size_t size)
