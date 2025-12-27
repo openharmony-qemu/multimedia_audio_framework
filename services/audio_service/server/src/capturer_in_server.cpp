@@ -540,7 +540,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 int32_t CapturerInServer::Start()
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
-        filterConfig_.IsModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
+        filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
