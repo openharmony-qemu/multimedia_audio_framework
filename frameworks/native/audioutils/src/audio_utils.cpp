@@ -2312,27 +2312,6 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     return interrupts;
 }
 
-std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
-{
-    using namespace Security::AccessToken;
-    AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
-    AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
-        "invalid token type %{public}u", tokenType);
-    if (tokenType == TOKEN_HAP) {
-        HapTokenInfo tokenInfo = {};
-        int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-hap", "hap %{public}u failed: %{public}d", tokenIdNum, ret);
-        return tokenInfo.bundleName;
-    } else {
-        NativeTokenInfo tokenInfo = {};
-        int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-native", "native %{public}u failed: %{public}d", tokenIdNum, ret);
-        return tokenInfo.processName;
-    }
-}
-
 uint32_t PcmFormatToBits(AudioSampleFormat format)
 {
     switch (format) {

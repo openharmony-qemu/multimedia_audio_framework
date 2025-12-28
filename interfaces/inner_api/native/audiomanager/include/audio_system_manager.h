@@ -1169,8 +1169,6 @@ public:
      */
     int32_t DisableSafeMediaVolume();
 
-    static void AudioServerDied(pid_t pid, pid_t uid);
-
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
 
@@ -1396,7 +1394,7 @@ public:
      * @return Returns current supported audio volume types
      * @since 20
      */
-    std::vector<AudioVolumeType>GetSupportedAudioVolumeTypes();
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
 
     /**
      * @brief Get the audioVolumeType that streamUsage belongs.
@@ -1565,14 +1563,6 @@ private:
 
     void OtherDeviceTypeCases(DeviceType deviceType) const;
     AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole, uint16_t dmDeviceType) const;
-
-    int32_t cbClientId_ = -1;
-    AudioRingerMode ringModeBackup_ = RINGER_MODE_NORMAL;
-    std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
-    std::shared_ptr<AudioRingerModeCallback> ringerModeCallback_ = nullptr;
-    std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
-    std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_ = nullptr;
-    std::mutex ringerModeCallbackMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

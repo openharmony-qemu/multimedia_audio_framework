@@ -26,6 +26,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_utils_c.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -204,7 +205,7 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     AudioPipeType pipeType = PIPE_TYPE_MAP[adapterType];
     for (auto item : silenceDetectMap_) {
         if (item.second.isRunning && item.second.pipeType == pipeType) {
-            std::string name = GetBundleNameByToken(item.second.tokenId);
+            std::string name = AudioBundleManager::GetBundleNameByToken(item.second.tokenId);
             hapNames << name << ";";
         }
     }

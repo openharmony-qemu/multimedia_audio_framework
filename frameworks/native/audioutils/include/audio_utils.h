@@ -33,6 +33,7 @@
 #include "securec.h"
 
 #include "audio_info.h"
+#include "audio_stream_info.h"
 #include "audio_common_utils.h"
 
 #define AUDIO_MS_PER_SECOND 1000
@@ -629,8 +630,6 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
 std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 
-std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
-
 uint32_t PcmFormatToBits(AudioSampleFormat format);
 std::string ConvertToStringForFormat(const AudioSampleFormat format);
 std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
@@ -641,7 +640,6 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
 std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

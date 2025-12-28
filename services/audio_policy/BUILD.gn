@@ -186,7 +186,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_definition_policy_utils.cpp",
     "server/infra/appclient/src/app_state_listener.cpp",
     "server/infra/appclient/src/audio_background_manager.cpp",
-    "server/infra/appclient/src/audio_bundle_manager.cpp",
     "server/infra/appclient/src/client_type_manager.cpp",
     "server/infra/appclient/src/client_type_manager_handler.cpp",
     "server/infra/config/parser/src/audio_affinity_parser.cpp",
