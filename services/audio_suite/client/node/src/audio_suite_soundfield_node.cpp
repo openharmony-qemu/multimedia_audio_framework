@@ -12,123 +12,159 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef LOG_TAG
-#define LOG_TAG "AudioSpaceRenderNode"
+#define LOG_TAG "AudioSuiteSoundFieldNode"
 #endif
- 
-#include "audio_suite_space_render_node.h"
-#include <fstream>
+#include <unordered_map>
+#include "audio_suite_soundfield_node.h"
 #include "audio_utils.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
- 
 namespace {
-static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-}  // namespace
+static constexpr AudioChannelLayout SOUNDFIELD_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 
-AudioSuiteSpaceRenderNode::AudioSuiteSpaceRenderNode()
-    : AudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER)
-{
+static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
+    {AUDIO_SUITE_SOUND_FIELD_FRONT_FACING, IMEDIA_SWS_SOUROUND_FRONT},
+    {AUDIO_SUITE_SOUND_FIELD_GRAND, IMEDIA_SWS_SOUROUND_GRAND},
+    {AUDIO_SUITE_SOUND_FIELD_NEAR, IMEDIA_SWS_SOUROUND_DEFAULT},
+    {AUDIO_SUITE_SOUND_FIELD_WIDE, IMEDIA_SWS_SOUROUND_BROAD}
+};
 }
 
-AudioSuiteSpaceRenderNode::~AudioSuiteSpaceRenderNode()
+AudioSuiteSoundFieldNode::AudioSuiteSoundFieldNode()
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_SOUND_FIELD)
+{}
+
+AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
 {
-    if (isInit_) {
-        DeInit();
-    }
+    DeInit();
 }
 
-int32_t AudioSuiteSpaceRenderNode::Init()
+int32_t AudioSuiteSoundFieldNode::Init()
 {
-    if (isInit_) {
-        AUDIO_ERR_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited");
-        return ERROR;
-    }
-    
+    AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
     CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
 
-    algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER,
-        nodeCapability);
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ CreateAlgoInterface failed");
+    algoInterface_ =
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeCapability);
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create soundField algoInterface");
 
     int32_t ret = algoInterface_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
-    InitAudioFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init soundField algorithm");
+
+    InitAudioFormat(AudioFormat{{SOUNDFIELD_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
     outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
-        SPACE_RENDER_ALGO_CHANNEL_LAYOUT,
+        SOUNDFIELD_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
 
-    isInit_ = true;
-    AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::Init end");
+    AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init end");
     return SUCCESS;
 }
 
-int32_t AudioSuiteSpaceRenderNode::DeInit()
+int32_t AudioSuiteSoundFieldNode::DeInit()
 {
+    AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::DeInit begin");
+
     if (algoInterface_ != nullptr) {
         algoInterface_->Deinit();
-        algoInterface_ = nullptr;
+        algoInterface_.reset();
     }
- 
-    if (isInit_) {
-        isInit_ = false;
-        AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::DeInit end");
-        return SUCCESS;
-    }
- 
-    return ERROR;
+
+    AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::DeInit end");
+    return SUCCESS;
 }
 
-AudioSuitePcmBuffer *AudioSuiteSpaceRenderNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
+int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value)
 {
-    int32_t ret;
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteSpaceRenderNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr,
-        "AudioSuiteSpaceRenderNode SignalProcess inputs[0] is nullptr");
-    CHECK_AND_RETURN_RET_LOG(outPcmBuffer_.GetPcmData() != nullptr, nullptr, "outPcmBuffer_ GetPcmData is nullptr");
+    AUDIO_INFO_LOG("SoundField node SetOptions [%{public}s]: %{public}s", name.c_str(), value.c_str());
 
-    std::vector<uint8_t *> dataInPcm = {inputs[0]->GetPcmData()};
-    std::vector<uint8_t *> dataOutPcm = {outPcmBuffer_.GetPcmData()};
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
 
-    ret = algoInterface_->Apply(dataInPcm, dataOutPcm);
-
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteSpaceRenderNode SignalProcess Apply failed");
-
-    return &outPcmBuffer_;
-}
-
-int32_t AudioSuiteSpaceRenderNode::SetOptions(std::string name, std::string value)
-{
-    AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ is nullptr");
-
+    CHECK_AND_RETURN_RET_LOG(name == "SoundFieldType", ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
+    
     paraName_ = name;
     paraValue_ = value;
 
-    int32_t ret = algoInterface_->SetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed ret: %{public}d", ret);
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
-    return SUCCESS;
+    // convert from SoundFieldType to iMedia_Surround_PARA
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(value, valueInt), ERROR, "convert invalid string");
+
+    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
+    if (it != soundFieldParaMap.end()) {
+        int32_t ret = algoInterface_->SetParameter(name, std::to_string(static_cast<int32_t>(it->second)));
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOptions fail");
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("SetOptions Unknown value %{public}s", value.c_str());
+        return ERROR;
+    }
 }
 
-int32_t AudioSuiteSpaceRenderNode::GetOptions(std::string name, std::string &value)
+int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &value)
 {
-    AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::GetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ is nullptr");
-    
-    int32_t ret = algoInterface_->GetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetParameter failed");
-    AUDIO_INFO_LOG("GetOptions SUCCESS");
-    return SUCCESS;
+    AUDIO_INFO_LOG("SoundField node GetOptions [%{public}s]", name.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
+
+    CHECK_AND_RETURN_RET_LOG(name == "SoundFieldType", ERROR, "GetOptions Unknown Para name: %{public}s", name.c_str());
+
+    std::string tempValue = "";
+    int32_t ret = algoInterface_->GetParameter(name, tempValue);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetOptions fail");
+
+    // convert from iMedia_Surround_PARA to SoundFieldType
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(tempValue, valueInt), ERROR, "convert invalid string");
+    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(valueInt);
+
+    for (const auto& pair : soundFieldParaMap) {
+        if (pair.second == paraValue) {
+            value = std::to_string(static_cast<int32_t>(pair.first));
+            AUDIO_INFO_LOG("SoundField node GetOptions success [%{public}s]: %{public}s", name.c_str(), value.c_str());
+            return SUCCESS;
+        }
+    }
+
+    AUDIO_ERR_LOG("GetOptions Unknown value %{public}s", tempValue.c_str());
+    return ERROR;
+}
+
+AudioSuitePcmBuffer *AudioSuiteSoundFieldNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
+{
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface is nullptr, need Init first");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "Inputs list is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "Input data is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid input format");
+
+    uint32_t inputDataSize = inputs[0]->GetDataSize();
+    uint32_t frameSize = SOUNDFIELD_ALGO_FRAME_SIZE;
+    uint32_t frameCount = inputDataSize / frameSize;
+    CHECK_AND_RETURN_RET_LOG(inputDataSize % frameSize == 0, nullptr, "Invalid inputPcmBuffer size");
+
+    uint8_t *inDataPtr = inputs[0]->GetPcmData();
+    uint8_t *outDataPtr = outPcmBuffer_.GetPcmData();
+    // apply algo for every frame
+    for (uint32_t i = 0; i < frameCount; i++) {
+        algoInputs_[0] = inDataPtr;
+        algoOutputs_[0] = outDataPtr;
+
+        int32_t ret = algoInterface_->Apply(algoInputs_, algoOutputs_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "soundField node Apply algo fail");
+
+        inDataPtr += frameSize;
+        outDataPtr += frameSize;
+    }
+
+    return &outPcmBuffer_;
 }
 
 }  // namespace AudioSuite
