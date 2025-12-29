@@ -528,6 +528,7 @@ bool OHAudioBufferBase::SetStreamVolume(float streamVolume)
         return false;
     }
     basicBufferInfo_->streamVolume.store(streamVolume);
+    AUDIO_ERR_LOG("streamVolume:%{public}f", streamVolume);
     return true;
 }
 
