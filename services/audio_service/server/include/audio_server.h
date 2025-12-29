@@ -447,7 +447,8 @@ private:
     int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId) override;
     int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
     int32_t StopGroup(int32_t workgroupId) override;
-
+    bool NeedDelayCreateSink(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
+    bool NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);

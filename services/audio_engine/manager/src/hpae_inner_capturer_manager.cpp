@@ -662,6 +662,8 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone");
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
+            "no need disconnect renderer input session, %{public}u is running", sessionId);
         DisConnectRendererInputSessionInner(sessionId);
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;

@@ -1445,6 +1445,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_BLUETOOTH;
             idInfo = HDI_ID_INFO_MMAP;
         }
+    } else if (pipeInfo->adapterName_ == "usb") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_USB;
+        }
     }
 }
 
@@ -1476,6 +1481,11 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_RAW_AI) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_RAW_AI;
+        }
+    } else if (pipeInfo->adapterName_ == "usb") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_USB;
         }
     }
 }
@@ -1951,6 +1961,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.channelLayout.empty()) {
         attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     }
+    attr.address = audioModuleInfo.macAddress;
     return attr;
 }
 

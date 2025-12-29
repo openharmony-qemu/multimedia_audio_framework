@@ -75,6 +75,7 @@ private:
     int32_t DoSetInputRoute(DeviceType inputDevice);
 
     // low latency
+    void EnableSyncInfo(const int32_t syncInfoSize);
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
     int32_t StopInner();

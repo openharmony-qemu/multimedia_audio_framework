@@ -665,6 +665,8 @@ public:
 
     int32_t RestoreDistributedDeviceInfo() override;
 
+    bool IsPublishCalled() const;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -953,6 +955,7 @@ private:
 
     int32_t sessionIdByRemote_ = -1;
     bool isUT_ = false;
+    bool isPublishCalled_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;

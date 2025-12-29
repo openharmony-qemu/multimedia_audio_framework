@@ -497,6 +497,7 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
 
 void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
+    deviceDesc.desc = const_cast<char *>("");
     switch (static_cast<DeviceType>(attr_.deviceType)) {
         case DEVICE_TYPE_EARPIECE:
             deviceDesc.pins = PIN_OUT_EARPIECE;
@@ -513,12 +514,15 @@ void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDes
         case DEVICE_TYPE_BLUETOOTH_SCO:
             deviceDesc.pins = PIN_OUT_BLUETOOTH_SCO;
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
+            deviceDesc.pins = PIN_OUT_USB_HEADSET;
+            break;
         default:
             AUDIO_WARNING_LOG("unsupport, use default, deviceType: %{public}d", attr_.deviceType);
             deviceDesc.pins = PIN_OUT_SPEAKER;
             break;
     }
-    deviceDesc.desc = const_cast<char *>("");
 }
 
 int32_t FastAudioRenderSink::CreateRender(void)
@@ -543,6 +547,16 @@ int32_t FastAudioRenderSink::CreateRender(void)
 void FastAudioRenderSink::UpdateSinkState(bool started)
 {
     callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST), started);
+}
+
+void FastAudioRenderSink::EnableSyncInfo(const int32_t syncInfoSize)
+{
+    if (syncInfoSize == 0) {
+        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
+        return;
+    }
+    syncInfoSize_ = syncInfoSize;
+    AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", syncInfoSize);
 }
 
 int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
@@ -571,13 +585,8 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "buffer size will overflow");
-    if (desc.syncInfoSize != 0) {
-        AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", desc.syncInfoSize);
-        syncInfoSize_ = desc.syncInfoSize;
-    } else {
-        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
-    }
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
+    EnableSyncInfo(desc.syncInfoSize);
 #ifdef DEBUG_DIRECT_USE_HDI
     privBufferFd_ = dup(bufferFd_);
     bufferAddress_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, privBufferFd_, 0);

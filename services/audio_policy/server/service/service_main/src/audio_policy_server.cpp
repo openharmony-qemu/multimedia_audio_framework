@@ -297,6 +297,7 @@ void AudioPolicyServer::OnStart()
     bool res = false;
     if (!isUT_) {
         res = Publish(this);
+        isPublishCalled_ = true;
     }
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -5708,6 +5709,11 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t device
     volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType),
         static_cast<DeviceType>(deviceType));
     return SUCCESS;
+}
+
+bool AudioPolicyServer::IsPublishCalled() const
+{
+    return isPublishCalled_;
 }
 
 int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)

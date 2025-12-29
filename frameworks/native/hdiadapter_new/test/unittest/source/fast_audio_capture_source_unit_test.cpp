@@ -241,5 +241,23 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, FastVoipSourceUnitTest_004, TestSize.Le
     DeInitFastVoipSource();
 }
 
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : EnableSyncInfo_001
+ * @tc.desc   : Test EnableSyncInfo()
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level1)
+{
+    InitFastSource();
+
+    fastSource_->EnableSyncInfo(true);
+    EXPECT_EQ(fastSource_->syncInfoSize_, true);
+
+    fastSource_->EnableSyncInfo(false);
+    EXPECT_EQ(fastSource_->syncInfoSize_, false);
+
+    DeInitFastSource();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
