@@ -486,7 +486,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererKeepRunning(OH_AudioStrea
  *
  * @param builder Reference provided by OH_AudioStreamBuilder_Create().
  * @param mode The playback capture mode to set. This can be a combination of the available
- *     {@link #uint32_t}.
+ *     {@link #OH_AudioStream_PlaybackCaptureMode}.
  * @return Function result code:
  *     {@link #AUDIOSTREAM_SUCCESS} If the execution is successful.
  *     {@link #AUDIOSTREAM_ERROR_INVALID_PARAM} 1.The param of builder is nullptr;
