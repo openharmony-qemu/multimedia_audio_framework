@@ -652,7 +652,9 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
     const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
 {
-    audioStream_->SetPlaybackCaptureStartStateCallback(callback);
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
+    currentStream->SetPlaybackCaptureStartStateCallback(callback);
 }
 
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
