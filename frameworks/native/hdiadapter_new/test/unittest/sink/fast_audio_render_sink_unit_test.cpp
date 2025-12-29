@@ -265,15 +265,15 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_010, TestSize.Level1)
  * @tc.number : EnableSyncInfo_001
  * @tc.desc   : Test EnableSyncInfo()
  */
-HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level1)
+HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level2)
 {
-    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    auto testSink = std::make_shared<FastAudioRenderSink>();
 
-    fastAudioRenderSink->EnableSyncInfo(true);
-    EXPECT_EQ(fastAudioRenderSink->syncInfoSize_, true);
+    testSink->EnableSyncInfo(0);
+    EXPECT_EQ(testSink->syncInfoSize_, 0);
 
-    fastAudioRenderSink->EnableSyncInfo(false);
-    EXPECT_EQ(fastAudioRenderSink->syncInfoSize_, false);
+    testSink->EnableSyncInfo(1);
+    EXPECT_EQ(testSink->syncInfoSize_, 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
