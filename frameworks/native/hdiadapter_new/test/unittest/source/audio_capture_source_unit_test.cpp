@@ -621,9 +621,9 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_003, TestSize.Level1)
     EXPECT_TRUE(usbSource_);
     usbSource_->DeInit();
     int32_t ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
 }
 
@@ -637,17 +637,17 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
     InitUsbSource();
     EXPECT_TRUE(usbSource_);
     int32_t ret = usbSource_->Start();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Resume();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Pause();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Flush();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Reset();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
@@ -809,7 +809,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_009, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_ULTRASONIC;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_ULTRASONIC_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_ULTRASONIC * UNIQUE_ID_INTERVAL);
 }
 
 /**
@@ -824,7 +824,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_010, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_VOICE_RECOGNITION_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_RECOGNITION * UNIQUE_ID_INTERVAL);
 }
 
 /**

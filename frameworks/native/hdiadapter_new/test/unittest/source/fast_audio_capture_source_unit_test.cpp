@@ -242,21 +242,19 @@ HWTEST_F(FastAudioCaptureSourceUnitTest, FastVoipSourceUnitTest_004, TestSize.Le
 }
 
 /**
- * @tc.name   : Test FastSink API
+ * @tc.name   : Test FastSource API
  * @tc.number : EnableSyncInfo_001
  * @tc.desc   : Test EnableSyncInfo()
  */
-HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level1)
+HWTEST_F(FastAudioCaptureSourceUnitTest, EnableSyncInfo_001, TestSize.Level2)
 {
-    InitFastSource();
+    auto testSource = std::make_shared<FastAudioCaptureSource>();
 
-    fastSource_->EnableSyncInfo(true);
-    EXPECT_EQ(fastSource_->syncInfoSize_, true);
+    testSource->EnableSyncInfo(0);
+    EXPECT_EQ(testSource->syncInfoSize_, 0);
 
-    fastSource_->EnableSyncInfo(false);
-    EXPECT_EQ(fastSource_->syncInfoSize_, false);
-
-    DeInitFastSource();
+    testSource->EnableSyncInfo(1);
+    EXPECT_EQ(testSource->syncInfoSize_, 1);
 }
 
 } // namespace AudioStandard
