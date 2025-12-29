@@ -79,7 +79,7 @@ static PureVoiceParameter g_setparameter[] = {
 };
  
 static std::string g_outfile002 = "/data/audiosuite/pure/out2.pcm";
-static int32_t g_expectedGetOutputPortCalls = 1;      // Times of GetOutputPort called in DoProcess
+static int32_t g_expectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 
 class MockInputNode : public AudioNode {
 public:
