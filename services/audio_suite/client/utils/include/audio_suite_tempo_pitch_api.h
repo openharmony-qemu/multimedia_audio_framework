@@ -38,12 +38,6 @@ typedef struct {
     uint32_t outFormat;
 } AudioPVSpec;
 
-extern PVParam PVCreate(int sampleRate);
-extern void PVDestroypvHandle(PVParam pvHandle);
-extern int PVSetSpeed(PVParam pvHandle, float speed);
-extern int PVChangeSpeed(PVParam pvHandle, const short *dataIn, short *dataOut, int inCount, int outCount);
-extern AudioPVSpec PVGetSpec(void);
-
 #ifdef __cplusplus
 }
 #endif
