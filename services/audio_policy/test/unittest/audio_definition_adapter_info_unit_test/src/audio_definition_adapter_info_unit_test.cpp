@@ -600,11 +600,12 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, DecideAudioPin_001, TestSize.Level1)
 {
     auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
     EXPECT_NE(audioPolicyConfigData, nullptr);
-    AdapterDeviceInfo adapterDeviceInfo;
-    adapterDeviceInfo.type_ = DEVICE_TYPE_DP;
-    adapterDeviceInfo.pin_ = AUDIO_PIN_OUT_DP;
-    adapterDeviceInfo.role_ = OUTPUT_DEVICE;
-    audioPolicyConfigData[std::make_pair(DEVICE_TYPE_DP, OUTPUT_DEVICE)].insert(adapterDeviceInfo);
+    auto adapterDeviceInfo = std::make_shared<AdapterDeviceInfo>();
+    adapterDeviceInfo->type_ = DEVICE_TYPE_DP;
+    adapterDeviceInfo->pin_ = AUDIO_PIN_OUT_DP;
+    adapterDeviceInfo->role_ = OUTPUT_DEVICE;
+    auto tmp = std::make_pair(DEVICE_TYPE_DP, OUTPUT_DEVICE);
+    audioPolicyConfigData[tmp].insert(adapterDeviceInfo);
 
     EXPECT_EQ(audioPolicyConfigData->DecideAudioPin(DEVICE_TYPE_DP, OUTPUT_DEVICE), AUDIO_PIN_OUT_DP);
 }
