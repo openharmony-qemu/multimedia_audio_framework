@@ -91,6 +91,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
 
@@ -202,6 +203,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
 
