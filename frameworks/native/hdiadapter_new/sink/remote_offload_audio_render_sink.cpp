@@ -217,6 +217,7 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     isFlushing_.store(true);
+    FlushResetPosition();
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush();
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
