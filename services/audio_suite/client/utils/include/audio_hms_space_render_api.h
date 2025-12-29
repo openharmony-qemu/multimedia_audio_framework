@@ -75,13 +75,6 @@ typedef struct {
     int expandAngle;
 } SpaceRenderParam;
 
-SpaceRenderSpeces SpaceRenderGetSpeces(void);
-int SpaceRenderGetSize(const SpaceRenderParam *params);
-int SpaceRenderGetLateSamples(const char *phandle);
-int SpaceRenderInit(char *phandle, const SpaceRenderParam *params);
-int SpaceRenderApply(char *phandle, const short *pcmIn, const int inSampleCnt, short *pcmOut);
-int SpaceRenderRelease(char *phandle);
-
 #ifdef __cplusplus
 }
 #endif
