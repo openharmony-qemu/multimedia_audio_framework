@@ -38,11 +38,6 @@
 namespace OHOS {
 namespace AudioStandard {
 const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
-const char* WELINK_BUNDLENAME = "com.huawei.it.welink";
-const char* WELINK_PC_BUNDLENAME = "com.huawei.it.works";
-const char* WELINK_HMOS_BUNDLENAME = "com.huawei.welink.hmos";
-const char* WELINK_INNER_BUNDLENAME = "com.huawei.welink.hmos.inner";
-const char* WELINK_HMPOSPC_BUNDLENAME = "com.huawei.welink.hmpospc";
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
@@ -884,10 +879,7 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority()
         return SUCCESS;
     }
     std::string bundleName = GetBundleNameByToken(processConfig_.appInfo.appTokenId);
-    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID()) ||
-        bundleName == WELINK_BUNDLENAME || bundleName == WELINK_PC_BUNDLENAME || bundleName == WELINK_HMOS_BUNDLENAME ||
-        bundleName == WELINK_INNER_BUNDLENAME || bundleName == WELINK_HMPOSPC_BUNDLENAME
-        ) {
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
         AUDIO_INFO_LOG("%{public}s request user privacy authority success", bundleName.c_str());
