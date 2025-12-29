@@ -37,7 +37,6 @@ int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
         LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadVbCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
     }
@@ -47,12 +46,6 @@ int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Voice Beautifier and General Voice Change are not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Voice Beautifier and General Voice Change do not support realtime mode on this device.");
-    }
     return SUCCESS;
 }
 
@@ -63,7 +56,6 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
         LoadCapability("iMedia_Eq_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadEqCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
     }
@@ -72,14 +64,7 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
-    nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Equalizer is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Equalizer does not support realtime mode on this device.");
-    }
-    return SUCCESS;
+    nc.outFormat = specs.outFormat;eturn SUCCESS;
 }
 
 int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
@@ -89,7 +74,6 @@ int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
         LoadCapability("iMedia_Surround_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadSfCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
     }
@@ -99,12 +83,6 @@ int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Sound Field is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Sound Field does not support realtime mode on this device.");
-    }
     return SUCCESS;
 }
 
@@ -115,7 +93,6 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
         LoadCapability("iMedia_Env_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadEnvCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
     }
@@ -125,12 +102,6 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("EnvironmentEffect is not supported on this device.");
-    }
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("EnvironmentEffect does not support realtime mode on this device.");
-    }
     return SUCCESS;
 }
 
@@ -154,7 +125,6 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
     }
     SpaceRenderSpeces specs = getSpecsFunc();
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
     }
@@ -164,8 +134,6 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    AUDIO_INFO_LOG("Space Render is not supported on this device.");
-    AUDIO_WARNING_LOG("Space Render does not support realtime mode on this device.");
 
     dlclose(libHandle);
     libHandle = nullptr;
@@ -189,7 +157,6 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(specs != nullptr,
         ERROR, "function: %{public}s return a nullptr.", "AudioAinrGetSpec");
     nc.supportedOnThisDevice = specs->isSupport;
-    nc.isSupportRealtime = specs->isRealTime;
     nc.frameLen = specs->frameLen;
     nc.inSampleRate = specs->inSampleRate;
     nc.inChannels = specs->inChannels;     
@@ -197,12 +164,6 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     nc.outSampleRate = specs->outSampleRate;
     nc.outChannels = specs->outChannels;
     nc.outFormat = specs->outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Ainr is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Ainr does not support realtime mode on this device.");
-    }
     dlclose(libHandle);
     libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
@@ -224,7 +185,6 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     nc.supportedOnThisDevice = supportConfig.isSupport;
-    nc.isSupportRealtime = supportConfig.isRealTime;
     nc.frameLen = supportConfig.frameLen;
     nc.inSampleRate = supportConfig.inSampleRate;
     nc.inChannels = supportConfig.inChannels;     
@@ -232,12 +192,6 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     nc.outSampleRate = supportConfig.outSampleRate;
     nc.outChannels = supportConfig.outChannels;
     nc.outFormat = supportConfig.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("AISS is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("AISS does not support realtime mode on this device.");
-    }
 
     dlclose(libHandle);
     libHandle = nullptr;
@@ -252,7 +206,6 @@ int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
         LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadGeneralCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     nc.frameLen = specs.frameLen;
     nc.inSampleRate = specs.inSampleRate;
     nc.inChannels = specs.inChannels;     
@@ -260,12 +213,6 @@ int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("General Voice Change is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("General Voice Change does not support realtime mode on this device.");
-    }
     return SUCCESS;
 }
  
@@ -276,7 +223,6 @@ int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
         LoadCapability("AudioVoiceMphTradGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadPureCapability failed.");
     nc.supportedOnThisDevice = specs.isSupport;
-    nc.isSupportRealtime = specs.isRealTime;
     nc.frameLen = specs.frameLen;
     nc.inSampleRate = specs.inSampleRate;
     nc.inChannels = specs.inChannels;     
@@ -284,12 +230,6 @@ int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Pure Voice Change is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Pure Voice Change does not support realtime mode on this device.");
-    }
     return SUCCESS;
 }
 
@@ -319,7 +259,6 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     }
     AudioPVSpec spec = pvGetSpecFunc();
     nc.supportedOnThisDevice = spec.isSupport;
-    nc.isSupportRealtime = spec.isRealTime;
     if (spec.frameLen != 0) {
         nc.frameLen = spec.frameLen;
     }
@@ -329,12 +268,6 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     nc.outSampleRate = spec.outSampleRate;
     nc.outChannels = spec.outChannels;
     nc.outFormat = spec.outFormat;
-    if(nc.supportedOnThisDevice == false){
-        AUDIO_WARNING_LOG("Tempo is not supported on this device.");
-    }
-    if(nc.isSupportRealtime == false){
-        AUDIO_WARNING_LOG("Tempo does not support realtime mode on this device.");
-    }
     dlclose(tempoSoHandle);
     tempoSoHandle = nullptr;
     // pitch
