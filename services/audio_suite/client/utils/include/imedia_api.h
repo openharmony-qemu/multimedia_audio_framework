@@ -160,19 +160,6 @@ typedef enum tagEnum_IMEDIA_Env_PARA {
     IMEDIA_SWS_ENV_TYPE_NUM
 } iMedia_Env_PARA;
 
-extern IMEDIA_INT32 iMedia_Env_GetSize(iMedia_SWS_MEM_SIZE *pMemSize);
-
-extern IMEDIA_INT32 iMedia_Env_Init(
-    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
-
-extern IMEDIA_INT32 iMedia_Apply(
-    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, iMedia_SWS_DATA *pDATA);
-
-extern IMEDIA_INT32 iMedia_Env_SetParams(
-    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
-
-extern IMEDIA_INT32 iMedia_Env_GetParams(IMEDIA_VOID *pHandle, iMedia_Env_PARA *pEnvType);
-
 #ifdef __cplusplus
 }
 #endif
