@@ -44,12 +44,15 @@ static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
 
 typedef struct {
-    bool currentDeviceSupport;
-    bool realTimeSupport;
-    unsigned int frameLenSpecs;
-    unsigned int sampleRateSpecs;
-    unsigned int channelCountSpecs;
-    unsigned int sampleFormatSpecs;
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;;
 } SpaceRenderSpeces;
 
 typedef enum {
@@ -71,6 +74,13 @@ typedef struct {
     float expandRadius;
     int expandAngle;
 } SpaceRenderParam;
+
+SpaceRenderSpeces SpaceRenderGetSpeces(void);
+int SpaceRenderGetSize(const SpaceRenderParam *params);
+int SpaceRenderGetLateSamples(const char *phandle);
+int SpaceRenderInit(char *phandle, const SpaceRenderParam *params);
+int SpaceRenderApply(char *phandle, const short *pcmIn, const int inSampleCnt, short *pcmOut);
+int SpaceRenderRelease(char *phandle);
 
 #ifdef __cplusplus
 }
