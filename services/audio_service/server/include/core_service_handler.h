@@ -45,7 +45,7 @@ public:
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-        AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess);
+        AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
     int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId);

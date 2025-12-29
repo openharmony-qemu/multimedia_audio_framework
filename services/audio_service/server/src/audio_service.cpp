@@ -866,7 +866,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioStreamInfo audioStreamInfo;
-    int pin;
+    int32_t pin;
     AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, pin);
     std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(config.originalSessionId);
     std::lock_guard<std::mutex> lock(processListMutex_);
@@ -982,7 +982,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
 }
 
 AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config,
-    AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess)
+    AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -1068,7 +1068,7 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
     const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, const std::string &adapterName,
-    const int pin, bool isVoipStream)
+    const int32_t pin, bool isVoipStream)
 {
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;

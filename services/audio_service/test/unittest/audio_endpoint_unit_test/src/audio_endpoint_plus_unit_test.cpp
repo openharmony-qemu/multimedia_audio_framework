@@ -1807,7 +1807,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
 
     MockAudioProcessStream mockProcessStream;
@@ -1833,7 +1833,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
 
     MockAudioProcessStream mockProcessStream;
@@ -1887,7 +1887,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
 
     IAudioSinkAttr attr;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);

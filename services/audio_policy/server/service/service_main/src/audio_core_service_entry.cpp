@@ -134,7 +134,7 @@ std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sess
 }
 
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock

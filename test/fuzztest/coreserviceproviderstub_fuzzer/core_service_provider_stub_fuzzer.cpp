@@ -124,7 +124,7 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
     AudioStreamInfo info;
-    int pin;
+    int32_t pin;
     coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, reload);
 }
 

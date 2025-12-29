@@ -93,7 +93,7 @@ std::string CoreServiceHandler::GetModuleNameBySessionId(uint32_t sessionId)
 }
 
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-    AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess)
+    AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin,

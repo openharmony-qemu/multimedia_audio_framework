@@ -234,7 +234,7 @@ void AudioServiceCheckInnerCapForProcessFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -255,7 +255,7 @@ void AudioServiceLinkProcessToEndpointFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -276,7 +276,7 @@ void AudioServiceUnlinkProcessToEndpointFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -304,7 +304,8 @@ void AudioServiceGetDeviceInfoForProcessFuzzTest()
     config.streamInfo.format = g_testAudioSampleFormats[GetData<uint32_t>() % g_testAudioSampleFormats.size()];
 
     AudioStreamInfo info;
-    audioService->GetDeviceInfoForProcess(config, info);
+    int32_t pin;
+    audioService->GetDeviceInfoForProcess(config, info, pin);
 }
 
 void AudioServiceGetMaxAmplitudeFuzzTest()
@@ -315,7 +316,7 @@ void AudioServiceGetMaxAmplitudeFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -712,7 +713,7 @@ void AudioServiceNotifyStreamVolumeChangedFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -737,7 +738,7 @@ void AudioServiceDumpFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
@@ -798,7 +799,7 @@ void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int pin = 0;
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
         AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     CHECK_AND_RETURN(audioEndpointPtr != nullptr);

@@ -497,8 +497,9 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
 
 void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
+    // only dp adapter use the pin configured in xml;
     if (attr_.adapterName == "dp") {
-        deviceDesc.pin = static_cast<AudioPortPin>(attr_.pin);
+        deviceDesc.pins = static_cast<AudioPortPin>(attr_.pin);
         deviceDesc.desc = const_cast<char *>("dp_fast");
         AUDIO_INFO_LOG("use config pin");
         return;

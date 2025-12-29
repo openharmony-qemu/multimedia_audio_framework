@@ -33,7 +33,7 @@ public:
     int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
     int32_t GetModuleNameBySessionId(uint32_t sessionId, std::string& name) override;
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo,
-        AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess) override;
+        AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
     int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 

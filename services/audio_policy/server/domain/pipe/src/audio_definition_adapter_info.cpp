@@ -296,7 +296,7 @@ void AudioPolicyConfigData::RegisterStreamProperty(
     Reorganize();
 }
 
-AudioPon AudioPolicyConfigData::DecideAudioPin(DeviceType type, DeviceRole role)
+AudioPin AudioPolicyConfigData::DecideAudioPin(DeviceType type, DeviceRole role)
 {
     auto tmp = std::make_pair(type, role);
     CHECK_AND_RETURN_RET_LOG(deviceInfoMap.find(tmp) != deviceInfoMap.end(), AUDIO_PIN_NONE,

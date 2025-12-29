@@ -262,6 +262,31 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_010, TestSize.Level1)
 
 /**
  * @tc.name   : Test FastSink API
+ * @tc.number : FastSinkUnitTest_011
+ * @tc.desc   : Test fast sink update apps uid
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_011, TestSize.Level1)
+{
+    auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
+    ASSERT_NE(fastAudioRenderSink, nullptr);
+
+    struct AudioDeviceDescriptor deviceDesc;
+    deviceDesc = static_cast<AudioPortPin>(AUDIO_PORT_OUT_SPEAKER);
+    fastAudioRenderSink->attr_.adapterName = "dp";
+    fastAudioRenderSink->attr_.pin = AUDIO_PORT_OUT_DP;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, fastAudioRenderSink->attr_.pin);
+
+    struct AudioDeviceDescriptor deviceDesc;
+    deviceDesc = static_cast<AudioPortPin>(AUDIO_PORT_OUT_SPEAKER);
+    fastAudioRenderSink->attr_.adapterName = "primary";
+    fastAudioRenderSink->attr_.pin = AUDIO_PORT_OUT_DP;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_NE(deviceDesc.pins, fastAudioRenderSink->attr_.pin);
+}
+
+/**
+ * @tc.name   : Test FastSink API
  * @tc.number : EnableSyncInfo_001
  * @tc.desc   : Test EnableSyncInfo()
  */

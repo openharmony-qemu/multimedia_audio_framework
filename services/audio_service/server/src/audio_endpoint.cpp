@@ -85,7 +85,7 @@ std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-    const std::string &adapterName, const int pin)
+    const std::string &adapterName, const int32_t pin)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
     audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
@@ -556,7 +556,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 }
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-    const std::string &adapterName, const int pin, AudioStreamType streamType)
+    const std::string &adapterName, const int32_t pin, AudioStreamType streamType)
 {
     AUDIO_INFO_LOG("Role %{public}d, format %{public}d", deviceInfo.deviceRole_,
         streamInfo.format);
@@ -655,7 +655,7 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
 }
 
 IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioDeviceDescriptor &deviceInfo,
-    const std::string &adapterName, const int pin)
+    const std::string &adapterName, const int32_t pin)
 {
     IAudioSinkAttr attr;
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz

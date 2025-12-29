@@ -68,7 +68,7 @@ public:
 
     static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
         const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-        const std::string &adapterName, const int pin);
+        const std::string &adapterName, const int32_t pin);
     static std::string GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
@@ -117,7 +117,7 @@ protected:
 
 private:
     virtual bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-        const std::string &adapterName, const int pin, AudioStreamType streamType) = 0;
+        const std::string &adapterName, const int32_t pin, AudioStreamType streamType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
