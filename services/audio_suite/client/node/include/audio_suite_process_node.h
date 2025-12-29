@@ -66,7 +66,7 @@ protected:
     NodeCapability nodeCapability;
     // for dfx
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
-    void CheckEffectNodeOvertimeCount(); 
+    void CheckEffectNodeOvertimeCount();
     int32_t InitOutputStream();
     int32_t InitAudioFormat(AudioFormat audioFormat);
     uint32_t pcmDurationMs_;
