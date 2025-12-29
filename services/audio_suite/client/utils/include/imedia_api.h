@@ -97,12 +97,15 @@ typedef enum tagEnum_IMEDIA_Surround_PARA {
 } iMedia_Surround_PARA;
 
 typedef struct tagSTRU_IMEDIA_Support_SPECS {
-    unsigned int currentDeviceSupport;
-    unsigned int realTimeSupport;
-    unsigned int frameLenSpecs;
-    unsigned int sampleRateSpecs;
-    unsigned int channelCountSpecs;
-    unsigned int sampleFormatSpecs;
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } iMedia_Support_SPECS;
 
 // Sound field algorithm configurations
@@ -156,6 +159,19 @@ typedef enum tagEnum_IMEDIA_Env_PARA {
     IMEDIA_SWS_ENV_PHONOGRAPH = 3,
     IMEDIA_SWS_ENV_TYPE_NUM
 } iMedia_Env_PARA;
+
+extern IMEDIA_INT32 iMedia_Env_GetSize(iMedia_SWS_MEM_SIZE *pMemSize);
+
+extern IMEDIA_INT32 iMedia_Env_Init(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
+
+extern IMEDIA_INT32 iMedia_Apply(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, iMedia_SWS_DATA *pDATA);
+
+extern IMEDIA_INT32 iMedia_Env_SetParams(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
+
+extern IMEDIA_INT32 iMedia_Env_GetParams(IMEDIA_VOID *pHandle, iMedia_Env_PARA *pEnvType);
 
 #ifdef __cplusplus
 }
