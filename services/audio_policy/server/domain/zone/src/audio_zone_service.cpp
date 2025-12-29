@@ -802,5 +802,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioZoneService::GetDeviceDescriptor(Dev
     }
     return nullptr;
 }
+
+AudioScene AudioZoneService::GetAudioSceneFromAllZones()
+{
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, AUDIO_SCENE_DEFAULT, "interruptService_ tmp is nullptr");
+    return tmp->GetHighestPriorityAudioSceneFromAllZones();
+}
 } // namespace AudioStandard
 } // namespace OHOS

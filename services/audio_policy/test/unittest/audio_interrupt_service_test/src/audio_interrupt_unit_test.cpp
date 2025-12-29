@@ -4801,5 +4801,37 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_013, TestSize.Level1)
     AudioStreamCollector::GetAudioStreamCollector().audioRendererChangeInfos_.clear();
 }
 
+/**
+ * @tc.name  : Test GetHighestPriorityAudioSceneFromAllZones
+ * @tc.number: GetHighestPriorityAudioSceneFromAllZones_001
+ * @tc.desc  : Test GetHighestPriorityAudioSceneFromAllZones
+ */
+HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAllZones_001, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto interruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(nullptr, interruptService);
+
+    AudioInterrupt fakeAudioInterrupt;
+    fakeAudioInterrupt.pid = CALLER_PID;
+    fakeAudioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    fakeAudioInterrupt.streamId = SESSION_ID_TEST + 1;
+    fakeAudioInterrupt.audioFocusType.isPlay = true;
+    fakeAudioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    auto audioInterruptZone0 = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone0->audioFocusInfoList.emplace_back(fakeAudioInterrupt, AudioFocuState{ACTIVE});
+    interruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone0;
+
+    fakeAudioInterrupt.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    fakeAudioInterrupt.streamId = SESSION_ID_TEST + 2;
+    fakeAudioInterrupt.audioFocusType.isPlay = true;
+    fakeAudioInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    auto audioInterruptZone1 = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone1->audioFocusInfoList.emplace_back(fakeAudioInterrupt, AudioFocuState{ACTIVE});
+    interruptService->zonesMap_[1] = audioInterruptZone1;
+
+    auto audioScene = interruptService->GetHighestPriorityAudioSceneFromAllZones();
+    EXPECT_NE(audioScene, AUDIO_SCENE_DEFAULT);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -33,11 +33,13 @@
 #include "system_ability_definition.h"
 #include "audio_volume_client_manager.h"
 #include "audio_server_death_recipient.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
+const std::string BUNDLE_NAME_SCENE_BOARD = "com.ohos.sceneboard";
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
 mutex g_audioListenerMutex;
@@ -282,6 +284,10 @@ int32_t AudioSystemManager::SetAudioScene(const AudioScene &scene)
 AudioScene AudioSystemManager::GetAudioScene() const
 {
     auto audioScene = AudioPolicyManager::GetInstance().GetAudioScene();
+    std::string bundleName = AppBundleManager::GetBundleNameFromUid(static_cast<int32_t>(getuid()));
+    if (bundleName == BUNDLE_NAME_SCENE_BOARD) {
+        audioScene = AudioPolicyManager::GetInstance().GetAudioSceneFromAllZones();
+    }
     AUDIO_DEBUG_LOG("origin audioScene: %{public}d", audioScene);
     switch (audioScene) {
         case AUDIO_SCENE_CALL_START:

@@ -5715,5 +5715,11 @@ bool AudioPolicyServer::IsPublishCalled() const
 {
     return isPublishCalled_;
 }
+
+int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
+{
+    audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

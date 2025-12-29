@@ -3243,6 +3243,24 @@ void AudioInterruptService::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, i
     AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:%{public}d",
         ret, hintType, uid, streamId);
 }
+
+AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAllZones()
+{
+    AudioScene finalAudioScene = AUDIO_SCENE_DEFAULT;
+    int32_t finalAudioScenePriority = GetAudioScenePriority(finalAudioScene);
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (auto &it : zonesMap_) {
+        AudioScene itAudioScene = GetHighestPriorityAudioScene(it.first);
+        int32_t itAudioScenePriority = GetAudioScenePriority(itAudioScene);
+        AUDIO_INFO_LOG("zoneId : %{public}d, audioScene : %{public}d", it.first, itAudioScene);
+        if (itAudioScenePriority >= finalAudioScenePriority) {
+            finalAudioScene = itAudioScene;
+            finalAudioScenePriority = itAudioScenePriority;
+        }
+    }
+    lock.unlock();
+    return finalAudioScene;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
