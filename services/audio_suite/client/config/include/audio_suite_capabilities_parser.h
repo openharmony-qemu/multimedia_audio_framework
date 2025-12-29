@@ -34,10 +34,15 @@ struct NodeCapability {
     std::string general;
     bool isLoaded = false;
     bool supportedOnThisDevice = false;
-    bool isSupportRealtime = false;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
     float realtimeFactor = 1.0f;
 };
-
 static const std::map<std::string, AudioNodeType>
     NODE_TYPE_MAP = {{"EQUALIZER", NODE_TYPE_EQUALIZER},
         {"NOISE_REDUCTION", NODE_TYPE_NOISE_REDUCTION},
