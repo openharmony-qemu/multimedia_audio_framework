@@ -23,18 +23,12 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-static constexpr AudioSamplingRate ENV_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat ENV_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel ENV_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout ENV_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 const std::string setEnvMode = "EnvironmentType";
 }  // namespace
 
 AudioSuiteEnvNode::AudioSuiteEnvNode()
-    : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT,
-          AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_CHANNEL_COUNT}, ENV_ALGO_SAMPLE_FORMAT, ENV_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(PcmBufferFormat{
-          ENV_ALGO_SAMPLE_RATE, ENV_ALGO_CHANNEL_COUNT, ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT)
 {}
 
 AudioSuiteEnvNode::~AudioSuiteEnvNode()
@@ -54,6 +48,16 @@ int32_t AudioSuiteEnvNode::Init()
     envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
+    InitAudioFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    
+    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        ENV_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEnvNode::Init end");
     return SUCCESS;
