@@ -3675,7 +3675,7 @@ void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType strea
     bool mute = GetStreamMuteInternal(device, streamType);
     volumeEvent.volume = GetStreamVolumeInternal(device, streamType) * (mute ? 0 : 1);
     volumeEvent.volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * (mute ? 0 : 1);
-    volumeEvent.updateUi = true;
+    volumeEvent.updateUi = false;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = device->networkId_;
     volumeEvent.deviceType = device->deviceType_;
