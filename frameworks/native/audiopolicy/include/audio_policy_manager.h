@@ -532,6 +532,8 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId);
 
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);

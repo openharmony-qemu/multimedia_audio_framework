@@ -38,6 +38,7 @@ public:
     
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
     void ReleaseAudioZone(int32_t zoneId);
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     int32_t GetAudioZoneByName(std::string name);
