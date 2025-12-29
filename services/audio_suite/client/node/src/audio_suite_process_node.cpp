@@ -35,6 +35,14 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat
         "node: %{public}d GetNodeCapability failed.", nodeType);
 }
 
+AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
+    : AudioNode(nodeType)
+{
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
+        "node: %{public}d GetNodeCapability failed.", nodeType);
+}
+
 int32_t AudioSuiteProcessNode::DoProcess()
 {
     if (GetAudioNodeDataFinishedFlag()) {
@@ -123,14 +131,22 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    outputStream_.ResetResampleCfg();
+    outputStream_.resetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
-    outputStream_.SetOutputPort(GetSharedInstance());
+    outputStream_ = OutputPort<AudioSuitePcmBuffer*>(GetSharedInstance());
+    return SUCCESS;
+}
+
+int32_t AudioSuiteProcessNode::InitAudioFormat(AudioFormat audioFormat)
+{
+    audioNodeInfo_.audioFormat = audioFormat;
+    audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
+            audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
     return SUCCESS;
 }
 
