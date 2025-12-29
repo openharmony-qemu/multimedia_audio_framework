@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <vector>
 #include <format>
+#include <optional>
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -83,6 +84,7 @@ namespace AudioStandard {
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
+constexpr uint32_t PRIMARY_SINK_LATENCY_MS = 100;
 uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
@@ -3090,7 +3092,9 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
         sink->Init(attr);
     }
-    RegisterSinkLatencyFetcher(renderId);
+
+    (deviceClass == "primary" && idInfo == HDI_ID_INFO_DEFAULT) ?
+        RegisterSinkLatencyFetcher(renderId, PRIMARY_SINK_LATENCY_MS) : RegisterSinkLatencyFetcher(renderId);
     return SUCCESS;
 }
 
@@ -3209,6 +3213,16 @@ int32_t AudioServer::DestroyHdiPort(uint32_t id)
     SinkLatencyFetcherManager::GetInstance().RemoveFetcherById(id);
     HdiAdapterManager::GetInstance().ReleaseId(id);
     return SUCCESS;
+}
+
+void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency)
+{
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId,
+        [sinkLatency] (uint32_t renderId, uint32_t &latency) -> int32_t {
+        latency = sinkLatency;
+        return SUCCESS;
+    });
+    return;
 }
 
 void AudioServer::RegisterSinkLatencyFetcher(uint32_t renderId)
