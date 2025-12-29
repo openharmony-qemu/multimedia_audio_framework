@@ -25,19 +25,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-static constexpr AudioSamplingRate DEFAULT_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat DEFAULT_SAMPLE_FORMAT = SAMPLE_F32LE;
-static constexpr AudioChannel DEFAULT_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout DEFAULT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }
 
 AudioSuiteMixerNode::AudioSuiteMixerNode()
-    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_AUDIO_MIXER,
-          AudioFormat{{DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE}),
-      tmpOutput_(
-          PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT}),
-      mixerOutput_(
-          PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_AUDIO_MIXER)
 {}
 
 AudioSuiteMixerNode::~AudioSuiteMixerNode()
@@ -83,6 +75,20 @@ int32_t AudioSuiteMixerNode::Init()
 
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
+    InitAudioFormat(AudioFormat{{DEFAULT_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    
+    tmpOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        DEFAULT_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    mixerOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        DEFAULT_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = PCM_DATA_DEFAULT_DURATION_20_MS;
 
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init end");
     return SUCCESS;
