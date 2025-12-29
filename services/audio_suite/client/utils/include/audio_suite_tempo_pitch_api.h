@@ -27,12 +27,22 @@ struct PVStruct;
 typedef struct PVStruct *PVParam;
 
 typedef struct {
-    bool currentDeviceSupport;
-    bool realTimeSupport;
-    int sampleRate;
-    int channel; // only support 1 ch
-    int dataFormat; // 0:S24LE,1:S16LE,2:S32LE,3:F32LE
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } AudioPVSpec;
+
+extern PVParam PVCreate(int sampleRate);
+extern void PVDestroypvHandle(PVParam pvHandle);
+extern int PVSetSpeed(PVParam pvHandle, float speed);
+extern int PVChangeSpeed(PVParam pvHandle, const short *dataIn, short *dataOut, int inCount, int outCount);
+extern AudioPVSpec PVGetSpec(void);
 
 #ifdef __cplusplus
 }
