@@ -996,10 +996,13 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
  
     AudioCallBackStreamInfo info = {
-        .needData = false
+        .needData = true
     };
 
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
+
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
 
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
     unit->writeCallback_ = mockWriteCallback;
