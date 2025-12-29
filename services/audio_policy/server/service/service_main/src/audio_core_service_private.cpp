@@ -1214,15 +1214,20 @@ void AudioCoreService::RemoveUnusedRecordPipe()
 std::string AudioCoreService::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
-    std::string adapterName = pipeManager_->GetAdapterNameBySessionId(sessionId);
-    return adapterName;
+    return pipeManager_->GetAdapterNameBySessionId(sessionId);
+
+std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
+    return pipeManager_->GetModuleNameBySessionId(sessionId);
 }
 
 int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int &pin)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
+    pin = policyConfigMananger_.GetAudioPolicyConfigData().DecideAudioPin(deviceInfo.getType(), deviceInfo.getRole());
     return SUCCESS;
 }
 

@@ -93,9 +93,10 @@ public:
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
-        AudioStreamInfo &streamInfo, bool isReloadProcess = false);
+        AudioStreamInfo &streamInfo, int &pin, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream);
+        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, const std::string &adapterName,
+        const int pin, bool isVoipStream);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);

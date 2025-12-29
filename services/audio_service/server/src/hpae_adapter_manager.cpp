@@ -56,7 +56,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERROR_INVALID_PARAM,
         HILOG_COMM_ERROR("[CreateRender]get devicename err: %{public}d", ret));
     if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
-        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        deviceName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
     }
     if (deviceName == "") {
         AUDIO_INFO_LOG("sink name is null");
@@ -242,7 +242,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     if (sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
         sourceType != SOURCE_TYPE_REMOTE_CAST &&
         sourceType != SOURCE_TYPE_WAKEUP) {
-        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        deviceName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
     }
     if (deviceName == "") {
         AUDIO_INFO_LOG("source name is null");

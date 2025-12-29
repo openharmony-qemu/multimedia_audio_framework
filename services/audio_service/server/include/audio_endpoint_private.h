@@ -60,8 +60,8 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, AudioMode audioMode);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-                AudioStreamType streamType) override;
+    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, const std::string &adapterName,
+        const int pin, AudioStreamType streamType) override;
     bool StartDevice(EndpointStatus preferredState = INVALID,
         int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
@@ -204,7 +204,7 @@ private:
 
     std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
     std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type);
-    IAudioSinkAttr InitSinkAttr(const AudioDeviceDescriptor &deviceInfo);
+    IAudioSinkAttr InitSinkAttr(const AudioDeviceDescriptor &deviceInfo, const std::string &adapterName, const int pin);
     IAudioSourceAttr InitSourceAttr(const AudioDeviceDescriptor &deviceInfo);
 
     void InitLatencyMeasurement();

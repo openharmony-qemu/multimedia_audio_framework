@@ -38,6 +38,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
     int32_t audioStreamFlag = 0;
     std::string address;
     std::string aux = "";
+    AudioPin pin = AUDIO_PIN_NONE;
 
     bool Marshalling(Parcel &parcel) const override
     {

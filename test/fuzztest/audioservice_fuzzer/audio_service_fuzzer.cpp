@@ -233,8 +233,10 @@ void AudioServiceCheckInnerCapForProcessFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -252,8 +254,10 @@ void AudioServiceLinkProcessToEndpointFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -271,8 +275,10 @@ void AudioServiceUnlinkProcessToEndpointFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -308,8 +314,10 @@ void AudioServiceGetMaxAmplitudeFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -703,8 +711,10 @@ void AudioServiceNotifyStreamVolumeChangedFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -726,8 +736,10 @@ void AudioServiceDumpFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -785,8 +797,10 @@ void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
     CHECK_AND_RETURN(audioEndpointPtr != nullptr);
 
     std::string dupSinkName;

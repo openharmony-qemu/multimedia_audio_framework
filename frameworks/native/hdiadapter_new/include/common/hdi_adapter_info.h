@@ -62,6 +62,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_ULTRASONIC "ultrasonic"
 #define HDI_ID_INFO_VOICE_RECOGNITION "voice_recognition"
 #define HDI_ID_INFO_RAW_AI "raw_ai"
+#define HDI_ID_INFO_DP_FAST "dp_fast"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

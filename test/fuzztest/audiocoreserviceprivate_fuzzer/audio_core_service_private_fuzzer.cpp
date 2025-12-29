@@ -205,14 +205,14 @@ void AudioCoreServicePrivateFetchDeviceAndRouteFuzzTest()
     audioCoreService->FetchDeviceAndRoute("SetAudioScene", reason);
 }
 
-void AudioCoreServicePrivateGetAdapterNameBySessionIdFuzzTest()
+void AudioCoreServicePrivateGetModuleNameBySessionIdFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     if (audioCoreService == nullptr) {
         return;
     }
     int32_t uid = 0;
-    audioCoreService->GetAdapterNameBySessionId(uid);
+    audioCoreService->GetModuleNameBySessionId(uid);
 }
 
 void AudioCoreServicePrivateAddSessionIdFuzzTest()
@@ -1099,7 +1099,7 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchCapturerPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchDeviceAndRouteFuzzTest,
-    AudioCoreServicePrivateGetAdapterNameBySessionIdFuzzTest,
+    AudioCoreServicePrivateGetModuleNameBySessionIdFuzzTest,
     AudioCoreServicePrivateAddSessionIdFuzzTest,
     AudioCoreServicePrivateDeleteSessionIdFuzzTest,
     AudioCoreServicePrivateOnDeviceStatusUpdatedFuzzTest,
