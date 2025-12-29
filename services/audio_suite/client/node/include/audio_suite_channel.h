@@ -35,7 +35,32 @@ template <typename T>
 class OutputPort {
 public:
     explicit OutputPort(std::shared_ptr<AudioNode> node) : audioNode_(node)
-    {}
+    {
+        if (audioNode_ == nullptr) {
+            AUDIO_ERR_LOG("node is nullptr, initialization failed");
+            return;
+        }
+        uint32_t sourceSepara = 2;
+        convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
+        tmpData_.resize(1);
+        if (audioNode_ && audioNode_->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
+            convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
+            tmpData_.resize(sourceSepara);
+        }
+    }
+
+    OutputPort &operator=(OutputPort &&that) noexcept
+    {
+        if (this != &that) {
+            inputPortSet_ = std::move(that.inputPortSet_);
+            outputData_ = std::move(that.outputData_);
+            audioNode_ = std::move(that.audioNode_);
+            convert_ = std::move(that.convert_);
+            tmpData_ = std::move(that.tmpData_);
+            portType_ = that.portType_;
+        }
+        return *this;
+    }
     OutputPort() = default;
     void WriteDataToOutput(T data);
     OutputPort(const OutputPort &that) = delete;
@@ -46,8 +71,7 @@ public:
     size_t GetInputNum() const;
     void SetPortType(AudioNodePortType type) {portType_ = type;}
     AudioNodePortType GetPortType() {return portType_;}
-    int32_t ResetResampleCfg();
-    int32_t SetOutputPort(std::shared_ptr<AudioNode> node);
+    int32_t resetResampleCfg();
 private:
     std::set<InputPort<T>*> inputPortSet_;
     std::vector<T> outputData_;
@@ -286,29 +310,13 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
 }
 
 template <class T>
-int32_t OutputPort<T>::ResetResampleCfg()
+int32_t OutputPort<T>::resetResampleCfg()
 {
     CHECK_AND_RETURN_RET_LOG(!convert_.empty(), ERROR, "convert_ is empty.");
     for (auto &tmpConvert : convert_) {
         CHECK_AND_RETURN_RET_LOG(tmpConvert != nullptr, ERROR, "tmpConvert is nullptr.");
         tmpConvert->Reset();
     }
-    return SUCCESS;
-}
-
-template <class T>
-int32_t OutputPort<T>::SetOutputPort(std::shared_ptr<AudioNode> node)
-{
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERROR, "node is nullptr, SetOutputPort failed");
-    uint32_t sourceSepara = 2;
-    convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
-    tmpData_.resize(1);
-    if (node && node->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
-        convert_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
-        tmpData_.resize(sourceSepara);
-    }
-    audioNode_ = node;
-    AUDIO_INFO_LOG("SetOutputPort SUCCESS");
     return SUCCESS;
 }
 
