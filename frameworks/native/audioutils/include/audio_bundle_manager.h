@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_BUNDLE_MANAGER_H
 #define ST_AUDIO_BUNDLE_MANAGER_H
 
-#include "app_mgr_client.h"
+#include "bundle_mgr_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,6 +29,7 @@ public:
     static AppExecFwk::BundleInfo GetBundleInfo();
     static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
     static void RemoveBundleInfoByUid(int32_t callingUid);
+    static std::string GetBundleNameByToken(const uint32_t tokenIdNum);
 
 private:
     static std::mutex bundleNameMapMutex_;

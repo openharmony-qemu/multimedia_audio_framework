@@ -17,7 +17,6 @@
 #define I_ST_AUDIO_MANAGER_BASE_H
 
 #include "audio_stutter.h"
-#include "audio_workgroup_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {
