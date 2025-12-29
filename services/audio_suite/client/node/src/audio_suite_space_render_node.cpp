@@ -25,19 +25,11 @@ namespace AudioStandard {
 namespace AudioSuite {
  
 namespace {
-static constexpr AudioSamplingRate SPACE_RENDER_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat SPACE_RENDER_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel SPACE_RENDER_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }  // namespace
 
 AudioSuiteSpaceRenderNode::AudioSuiteSpaceRenderNode()
-    : AudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER,
-          AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_CHANNEL_COUNT},
-              SPACE_RENDER_ALGO_SAMPLE_FORMAT, SPACE_RENDER_ALGO_SAMPLE_RATE}),
-    outPcmBuffer_(PcmBufferFormat{
-        SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
-          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER)
 {
 }
 
@@ -63,6 +55,17 @@ int32_t AudioSuiteSpaceRenderNode::Init()
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
+    InitAudioFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+
+    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        SPACE_RENDER_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::Init end");
     return SUCCESS;
