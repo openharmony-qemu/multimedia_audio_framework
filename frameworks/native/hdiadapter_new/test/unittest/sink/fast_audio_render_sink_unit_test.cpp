@@ -271,16 +271,16 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_011, TestSize.Level1)
     ASSERT_NE(fastAudioRenderSink, nullptr);
 
     struct AudioDeviceDescriptor deviceDesc;
-    deviceDesc = static_cast<AudioPortPin>(AUDIO_PORT_OUT_SPEAKER);
+    deviceDesc.pins = static_cast<AudioPortPin>(AUDIO_PIN_OUT_SPEAKER);
     fastAudioRenderSink->attr_.adapterName = "dp";
-    fastAudioRenderSink->attr_.pin = AUDIO_PORT_OUT_DP;
+    fastAudioRenderSink->attr_.pin = AUDIO_PIN_OUT_DP;
     fastAudioRenderSink->InitDeviceDesc(deviceDesc);
     EXPECT_EQ(deviceDesc.pins, fastAudioRenderSink->attr_.pin);
 
     struct AudioDeviceDescriptor deviceDesc;
-    deviceDesc = static_cast<AudioPortPin>(AUDIO_PORT_OUT_SPEAKER);
+    deviceDesc.pins = static_cast<AudioPortPin>(AUDIO_PIN_OUT_SPEAKER);
     fastAudioRenderSink->attr_.adapterName = "primary";
-    fastAudioRenderSink->attr_.pin = AUDIO_PORT_OUT_DP;
+    fastAudioRenderSink->attr_.pin = AUDIO_PIN_OUT_DP;
     fastAudioRenderSink->InitDeviceDesc(deviceDesc);
     EXPECT_NE(deviceDesc.pins, fastAudioRenderSink->attr_.pin);
 }
