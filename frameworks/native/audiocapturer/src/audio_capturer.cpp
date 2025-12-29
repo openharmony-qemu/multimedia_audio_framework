@@ -2116,7 +2116,9 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
 
 int32_t AudioCapturerPrivate::StartPlaybackCapture()
 {
-    return audioStream_->RequestUserPrivacyAuthority(sessionID_);
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+ 	CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
+    return currentStream->RequestUserPrivacyAuthority(sessionID_);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
