@@ -136,52 +136,6 @@ typedef struct {
     float pad2;              // Padding
 } AudioAinrDataTransferStruct, *AudioAinrDataTransferPointer;
 
-/*******************************************************************************
-*
-*  Part 3: Main Dispatch -- Function Declarations
-*
-*******************************************************************************/
-// =============================================================================
-// Function Name : AudioAinrGetVersion
-// Description   : Gets version information
-// Input Params  : version     -- Algorithm version
-//                 releaseTime -- Algorithm release time
-// Output Params : None
-// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
-// =============================================================================
-signed int AudioAinrGetVersion(unsigned int *version, unsigned int *releaseTime);
-
-// =============================================================================
-// Function Name : AudioAinrGetSize
-// Description   : Gets the channel buffer size
-// Input Params  : chanSize variable address
-// Output Params : chanSize  -- Channel buffer size (corresponds to handle and bufSize)
-// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
-// =============================================================================
-signed int AudioAinrGetSize(signed int *chanSize);
-
-// =============================================================================
-// Function Name : AudioAinrInit
-// Description   : Initializes an algorithm instance (channel variables) and returns its handle
-// Input Params  : handle   -- Object handle
-//                 config   -- System configuration parameters
-//                 bufSize  -- Channel buffer size
-// Output Params : None
-// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
-// =============================================================================
-signed int AudioAinrInit(signed char *handle, AudioAinrPstSysConfig config, unsigned int bufSize);
-
-
-// =============================================================================
-// Function Name : AudioAinrApply
-// Description   : Main algorithm processing function
-// Input Params  : handle     -- Algorithm instance handle
-//                 pAhaData   -- Input/output data structure
-// Output Params : pAhaData's dataOut pointer holds the output buffer
-// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
-// =============================================================================
-signed int AudioAinrApply(signed char *handle, AudioAinrDataTransferPointer pAhaData);
-
 /******************************************************************************
 ******************************************************************************/
 #ifdef __cplusplus
