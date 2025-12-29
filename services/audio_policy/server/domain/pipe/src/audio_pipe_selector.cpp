@@ -73,8 +73,7 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
 
     if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
         newPipe->moduleInfo_.className == "usb" && oldPipe->moduleInfo_.className == "usb" &&
-        newDeviceID != oldDeviceID)
-    {
+        newDeviceID != oldDeviceID) {
         return true;
     }
     return false;
