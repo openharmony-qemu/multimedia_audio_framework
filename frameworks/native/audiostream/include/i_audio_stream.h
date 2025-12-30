@@ -81,6 +81,7 @@ public:
         int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
+        bool streamMuteFlag = false;
 
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
