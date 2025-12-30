@@ -367,7 +367,8 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
         int32_t tryCount = 3;
         while (tryCount-- > 0) {
             AUDIO_INFO_LOG("try to start bluetooth render");
-            CHECK_AND_CALL_FUNC_RETURN(audioRender_ != nullptr, HILOG_COMM_ERROR("[SetAudioParameter]render is nullptr"));
+            CHECK_AND_CALL_FUNC_RETURN(audioRender_ != nullptr,
+                HILOG_COMM_ERROR("[SetAudioParameter]render is nullptr"));
             ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
             if (ret == SUCCESS) {
                 AUDIO_INFO_LOG("start succ");

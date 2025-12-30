@@ -1425,6 +1425,7 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
     MarkStaticFadeOut(true);
 
     if (IsMovieOffloadStream()) {

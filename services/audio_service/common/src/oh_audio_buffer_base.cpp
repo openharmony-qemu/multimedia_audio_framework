@@ -1114,7 +1114,8 @@ void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 
 void OHAudioBufferBase::SetStaticMode(bool state)
 {
-    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr, HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
+        HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
     basicBufferInfo_->isStatic_.store(state);
 }
 

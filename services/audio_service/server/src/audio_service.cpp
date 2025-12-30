@@ -1919,5 +1919,18 @@ void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
     }
 #endif
 }
+
+int32_t AudioService::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
+    std::unique_lock<std::mutex> lock(capturerMapMutex_);
+    if (allCapturerMap_.count(sessionId)) {
+        capturerInServer = allCapturerMap_[sessionId].lock();
+    }
+    lock.unlock();
+    CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, ERROR, "sessionid not in allCapturerMap");
+ 
+    return capturerInServer->RequestUserPrivacyAuthority();
+}
 } // namespace AudioStandard
 } // namespace OHOS

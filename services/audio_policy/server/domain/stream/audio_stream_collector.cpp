@@ -35,6 +35,7 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
 constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
+constexpr uint32_t RECLAIM_DELAY_MS = 30000; //30sec
 constexpr const char *RECLAIM_FILE_STRING = "1";
 constexpr const char *RECLAIM_CONTENT_4 = "4";
 
@@ -798,16 +799,18 @@ void AudioStreamCollector::PostReclaimMemoryTask()
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
         const char *reclaimContent = RECLAIM_FILE_STRING;
+        auto delayTime = TIME_OF_RECLAIM_MEMORY_IN_MS;
         if (!activatedReclaimMemory_ &&
             system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
             reclaimContent = RECLAIM_CONTENT_4;
+            delayTime = RECLAIM_DELAY_MS;
         }
         AUDIO_INFO_LOG("start reclaim[%{public}s] memory task", reclaimContent);
         auto task = [this, reclaimContent]() {
             ReclaimMem(reclaimContent);
             isActivatedMemReclaiTask_.store(false);
         };
-        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, delayTime);
         isActivatedMemReclaiTask_.store(true);
     }
 }

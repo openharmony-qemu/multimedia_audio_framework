@@ -29,6 +29,7 @@
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
+#include "audio_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -646,6 +647,14 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
 {
     std::lock_guard lock(fastStatusChangeCallbackMutex_);
     fastStatusChangeCallback_ = callback;
+}
+
+void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
+    currentStream->SetPlaybackCaptureStartStateCallback(callback);
 }
 
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
@@ -2103,6 +2112,13 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     return ret;
+}
+
+int32_t AudioCapturerPrivate::StartPlaybackCapture()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->RequestUserPrivacyAuthority(sessionID_);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

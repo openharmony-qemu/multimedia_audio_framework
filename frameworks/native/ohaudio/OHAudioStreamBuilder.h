@@ -41,6 +41,8 @@ public:
     OH_AudioStream_Result SetLatencyMode(int32_t latencyMode);
     OH_AudioStream_Result SetChannelLayout(AudioChannelLayout channelLayout);
     OH_AudioStream_Result SetRendererKeepRunning(bool keepRunning);
+    OH_AudioStream_Result SetPlaybackCaptureMode(uint32_t mode);
+    OH_AudioStream_Result StartPlaybackCapture(OH_AudioStream_PlaybackCaptureStartState stateCode);
 
     OH_AudioStream_Result SetRendererInfo(StreamUsage usage);
     OH_AudioStream_Result SetAudioVolumeMode(AudioVolumeMode volumeMode);
@@ -79,6 +81,7 @@ private:
     int32_t streamType_;
     int32_t latencyMode_ = 0; // default value is normal mode
     int32_t preferredFrameSize_ = -1; // undefined clientBufferSizeInFrame
+    uint32_t playbackCaptureMode_ = AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT;
 
     // stream params
     int32_t samplingRate_ = SAMPLE_RATE_48000;
@@ -134,6 +137,7 @@ private:
 
     void ConfigureRenderer(OHAudioRenderer *audioRenderer);
     void ConfigureCapturer(OHAudioCapturer *audioCapturer);
+    void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

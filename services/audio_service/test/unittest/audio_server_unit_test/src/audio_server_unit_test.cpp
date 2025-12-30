@@ -578,11 +578,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckStreamInfoFormat_001, TestSize.Lev
     audioServer->NotifyDeviceInfo(LOCAL_NETWORK_ID, false);
     audioServer->NotifyDeviceInfo("", true);
     audioServer->NotifyDeviceInfo("", false);
+    AudioPlaybackCaptureConfig filterConfig;
 
     AudioProcessConfig config = {};
     config.callerUid = AudioServer::MEDIA_SERVICE_UID;
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
 
     config.audioMode = AUDIO_MODE_RECORD;
     config.streamInfo.channels = CHANNEL_11;
@@ -975,10 +976,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerResetRecordConfig_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
 }
 
 /**
@@ -1837,9 +1839,10 @@ HWTEST_F(AudioServerUnitTest, ResetRecordConfig_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_LIVE;
 
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_LIVE);
 }
 
@@ -1854,8 +1857,9 @@ HWTEST_F(AudioServerUnitTest, ResetRecordConfig_002, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    audioServer->ResetRecordConfig(config);
+    audioServer->ResetRecordConfig(config, filterConfig);
     EXPECT_EQ(config.isInnerCapturer, true);
 }
 

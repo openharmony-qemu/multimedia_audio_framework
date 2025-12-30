@@ -1307,6 +1307,13 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     return SUCCESS;
 }
 
+void AudioInterruptService::UpdateContextForAudioZone(const int32_t zoneId,
+    const AudioZoneContext &context)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    zoneManager_.UpdateContextForAudioZone(zoneId, context);
+}
+
 int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
     std::unique_lock<std::mutex> lock(mutex_);

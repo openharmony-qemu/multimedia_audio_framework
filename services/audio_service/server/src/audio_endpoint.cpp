@@ -874,7 +874,8 @@ void AudioEndpointInner::ReSyncPosition()
     uint64_t curHdiReadPos = 0;
     int64_t readTime = 0;
     bool res = GetDeviceHandleInfo(curHdiReadPos, readTime);
-    CHECK_AND_CALL_FUNC_RETURN(res, HILOG_COMM_ERROR("[ReSyncPosition]ReSyncPosition call GetDeviceHandleInfo failed."));
+    CHECK_AND_CALL_FUNC_RETURN(res,
+        HILOG_COMM_ERROR("[ReSyncPosition]ReSyncPosition call GetDeviceHandleInfo failed."));
     int64_t curTime = ClockTime::GetCurNano();
     int64_t temp = curTime - readTime;
     if (temp > spanDuration_) {

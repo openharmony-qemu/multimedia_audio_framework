@@ -2199,6 +2199,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     res = audioStream->SetDuckVolume(info.duckVolume);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetDuckVolume failed");
     audioStream->SetUnderflowCount(info.underFlowCount);
+    audioStream->SetMute(info.streamMuteFlag, CMD_FROM_SYSTEM);
 
     if (info.userSettedPreferredFrameSize.has_value()) {
         audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);

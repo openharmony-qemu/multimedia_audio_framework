@@ -66,6 +66,18 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
     return ERR_NOT_SUPPORTED;
 }
 
+void FastAudioStream::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t FastAudioStream::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation: RequestUserPrivacyAuthority");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -1005,6 +1017,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
+    info.streamMuteFlag = GetMute();
 
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
     info.defaultOutputDevice = defaultOutputDevice_;

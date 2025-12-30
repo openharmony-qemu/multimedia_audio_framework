@@ -173,6 +173,18 @@ int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCa
     return ERR_NOT_SUPPORTED;
 }
 
+void RendererInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;

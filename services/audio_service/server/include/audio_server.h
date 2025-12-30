@@ -292,6 +292,7 @@ public:
         std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos) override;
     int32_t GetCurrentInputPipeChangeInfos(
         std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
 
     int32_t RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& networkId) override;
     int32_t UnRegistAdapterManagerCallback(const std::string& networkId) override;
@@ -384,8 +385,10 @@ private:
     void RegisterSinkLatencyFetcher(uint32_t renderId);
     void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
 
-    void ResetRecordConfig(AudioProcessConfig &config);
-    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    void ResetRecordConfig(AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
+    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
     bool CheckStreamInfoFormat(const AudioProcessConfig &config);
     bool CheckRendererFormat(const AudioProcessConfig &config);
     bool CheckRecorderFormat(const AudioProcessConfig &config);

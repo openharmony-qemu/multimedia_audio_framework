@@ -57,7 +57,7 @@
         }                                              \
     } while (0)
 
-#define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func)\
+#define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func) \
     do {                                               \
         if (!(cond)) {                                 \
             func;                                      \

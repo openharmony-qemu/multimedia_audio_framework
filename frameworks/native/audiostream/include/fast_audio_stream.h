@@ -66,6 +66,9 @@ public:
     virtual ~FastAudioStream();
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;

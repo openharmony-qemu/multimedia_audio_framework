@@ -99,11 +99,14 @@ int32_t AudioSuiteTempoPitchNode::DeInit()
 
 float ParseStringToSpeedRate(const std::string &str, char delimiter)
 {
-    std::string token;
+    float value;
+    std::string paramValue;
     std::istringstream iss(str);
 
-    if (std::getline(iss, token, delimiter) && !token.empty()) {
-        return std::stof(token);
+    if (std::getline(iss, paramValue, delimiter) && !paramValue.empty()) {
+        CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), 0.0f,
+            "Pure voice change convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+        return value;
     }
 
     return 0.0f;

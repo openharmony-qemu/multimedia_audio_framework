@@ -1770,7 +1770,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     return hapApiVersion;
 }
 
-void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
+void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
@@ -1778,7 +1779,8 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
             AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
             config.innerCapMode = MODERN_INNER_CAP;
-        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID) {
+        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID ||
+            filterConfig.isModernInnerCapturer) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
@@ -1799,7 +1801,8 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     }
 }
 
-AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
+AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AudioProcessConfig resetConfig(config);
 
@@ -1824,7 +1827,7 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     }
 
     if (resetConfig.audioMode == AUDIO_MODE_RECORD) {
-        ResetRecordConfig(resetConfig);
+        ResetRecordConfig(resetConfig, filterConfig);
     }
     return resetConfig;
 }
@@ -2082,7 +2085,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     errorCode = CheckAndWaitAudioPolicyReady();
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
-    AudioProcessConfig resetConfig = ResetProcessConfig(config);
+    AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
     CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
@@ -3477,7 +3480,11 @@ int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32
     return SUCCESS;
 }
 
-
+int32_t AudioServer::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    return AudioService::GetInstance()->RequestUserPrivacyAuthority(sessionId);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

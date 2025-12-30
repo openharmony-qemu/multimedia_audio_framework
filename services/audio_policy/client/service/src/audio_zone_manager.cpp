@@ -34,6 +34,8 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId) override;
 
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
+
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() override;
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) override;
@@ -183,6 +185,13 @@ void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
     AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+void AudioZoneManagerInner::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
+    AudioPolicyManager::GetInstance().UpdateContextForAudioZone(zoneId, context);
 }
 
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()
