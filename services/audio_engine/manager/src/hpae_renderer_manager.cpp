@@ -113,7 +113,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
-    UpdateClusterStreamInfo(nodeInfo.sceneType);
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
@@ -124,6 +123,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
 
     node->OnStreamInfoChange(false);
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
+    UpdateClusterStreamInfo(nodeInfo.sceneType);
 }
 
 void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect)
