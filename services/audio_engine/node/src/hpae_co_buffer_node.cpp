@@ -26,8 +26,10 @@ namespace HPAE {
 static constexpr int32_t DEFAULT_FRAME_LEN = 960;
 static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t MS_PER_SECOND = 1000;
-static constexpr int32_t TEST_LATENCY = 280;
-static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
+static constexpr int32_t TEST_LATENCY = 260;
+static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
+static constexpr int32_t COLLABORATION_CHANNELS = 2;
+
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -47,6 +49,7 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
+    waitCountThreshold_ = DEFAULT_WAIT_COUNT;
 }
 
 HpaeCoBufferNode::~HpaeCoBufferNode()
@@ -67,31 +70,22 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
         inputPcmDumper_->Dump(reinterpret_cast<int8_t*>(buffer->GetPcmDataBuffer()), dumpSize);
     }
 #endif
+
+    // delay alignment
+    if (!DelayAlignmentInner()) {
+        return;
+    }
+
     // process input buffer
     ProcessInputFrameInner(buffer);
-    
-    // process enqueue flag
-    if (enqueueCount_ < ENQUEUE_DONE_FRAME) {
-        enqueueCount_++;
-    } else if (enqueueCount_ == ENQUEUE_DONE_FRAME) {
-        enqueueCount_++;
-        enqueueRunning_ = true;
-        // fill silence frames for latency adjustment
-        HILOG_COMM_INFO("[Enqueue]Filling silence frames for latency adjustment");
-        ringCache_->ResetBuffer();
-        FillSilenceFramesInner(TEST_LATENCY);
-    }
 }
 
 void HpaeCoBufferNode::DoProcess()
 {
     std::unique_lock<std::mutex> lock(mutex_);
     
-    // write silence data if enqueue is not running
-    if (!enqueueRunning_) {
-        outputStream_.WriteDataToOutput(&silenceData_);
-        return;
-    }
+    // return if enqueue is not running
+    CHECK_AND_RETURN_LOG(enqueueRunning_, "Dequeue failed, Enqueue is not running");
     
     // process output buffer
     ProcessOutputFrameInner();
@@ -263,6 +257,45 @@ void HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
 bool HpaeCoBufferNode::IsOutputClusterConnected()
 {
     return isOutputClusterConnected_;
+}
+
+void HpaeCoBufferNode::SetDelayCount(int32_t delayCount)
+{
+    AUDIO_INFO_LOG("SetDelayCount: %{public}d", delayCount);
+    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
+    ringCache_->ResetBuffer();
+    // reset status flag
+    enqueueCount_ = 0;
+    waitCountThreshold_ = delayCount;
+    enqueueRunning_ = false;
+}
+
+bool HpaeCoBufferNode::DelayAlignmentInner()
+{
+    if (enqueueCount_ < waitCountThreshold_) {
+        enqueueCount_++;
+        return false;
+    }
+
+    if (enqueueCount_ == waitCountThreshold_) {
+        enqueueCount_++;
+        enqueueRunning_ = true;
+        // fill silence frame for latency adjustment
+        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment")
+        ringCache_->RestBuffer();
+
+        FillSilenceFramesInner(TEST_LATENCY);
+        // smoothen collaborative data
+        float gain = 0;
+        float deltaGain = 1.0f / DEFAULT_FRAME_LEN;
+        for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++) {
+            coBufferOut_.GetPcmDataBuffer()[COLLABORATION_CHANNELS * i] *= gain;
+            coBufferOut_.GetPcmDataBuffer()[(COLLABORATION_CHANNELS * i) + 1] *= gain;
+            gain += deltaGain;
+        }
+    }
+
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

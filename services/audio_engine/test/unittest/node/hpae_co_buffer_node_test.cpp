@@ -37,6 +37,7 @@ namespace HPAE {
 namespace {
 constexpr uint32_t TEST_FRAME_LEN = 960; // 20ms at 48kHz
 constexpr uint32_t TEST_LATENCY_MS = 280; // 280ms latency for testing
+constexpr int32_t TEST_COLLABORATION_ALIGN_COUNT = 5;
 HpaeNodeInfo GetTestNodeInfo()
 {
     HpaeNodeInfo nodeInfo;
@@ -142,6 +143,49 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
     TestRendererRenderFrame(sinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 }
+
+/**
+ * @tc.name  : Test SetDelayCount
+ * @tc.type  : FUNC
+ * @tc.number: SetDelayCount_001
+ * @tc.desc  : Test SetDelayCount when config in vaild.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, SetDelayCount_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
+    EXPECT_EQ(coBufferNode->enqueueCount_, 0);
+    EXPECT_EQ(coBufferNode->waitCountThreshold_, TEST_COLLABORATION_ALIGN_COUNT);
+    EXPECT_EQ(coBufferNode->enqueueRunning_, false);
+}
+
+/**
+ * @tc.name  : Test DelayAlignmentInner
+ * @tc.type  : FUNC
+ * @tc.number: DelayAlignmentInner_001
+ * @tc.desc  : Test DelayAlignmentInner when config in vaild.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, DelayAlignmentInner_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->SetLatency(TEST_LATENCY_MS);
+    coBufferNode->SetNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    sinkOutputNode->Connect(coBufferNode);
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
+    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
+    coBufferNode->Enqueue(&pcmBuffer);
+    coBufferNode->Enqueue(&pcmBuffer);
+    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
+    coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT - 1;
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
+    coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT;
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), true);
 }
 }
 }
