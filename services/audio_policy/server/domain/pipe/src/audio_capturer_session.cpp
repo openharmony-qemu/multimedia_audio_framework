@@ -27,7 +27,7 @@
 #include "audio_core_service.h"
 #include "audio_zone_service.h"
 namespace {
-    #include "v5_0/iaudio_manager.h"
+    #include "v6_0/iaudio_manager.h"
 }
 
 namespace OHOS {
