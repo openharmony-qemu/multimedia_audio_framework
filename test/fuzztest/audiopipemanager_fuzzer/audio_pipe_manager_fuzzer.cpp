@@ -259,7 +259,7 @@ void GetPipeinfoByNameAndFlagFuzzTest()
     audioPipeManager->GetPipeinfoByNameAndFlag(targetAdapterName, targetRouteFlag);
 }
 
-void GetAdapterNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest()
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -273,7 +273,7 @@ void GetAdapterNameBySessionIdFuzzTest()
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     uint32_t targetSessionId = GetData<uint32_t>();
 
-    audioPipeManager->GetAdapterNameBySessionId(targetSessionId);
+    audioPipeManager->GetModuleNameBySessionId(targetSessionId);
 }
 
 void GetProcessDeviceInfoBySessionIdFuzzTest()
@@ -481,7 +481,7 @@ TestFuncs g_testFuncs[] = {
     IsModemCommunicationIdExistFuzzTest,
     GetModemCommunicationStreamDescByIdFuzzTest,
     GetPipeinfoByNameAndFlagFuzzTest,
-    GetAdapterNameBySessionIdFuzzTest,
+    GetModuleNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
     GetAllOutputStreamDescsFuzzTest,
     GetAllInputStreamDescsFuzzTest,

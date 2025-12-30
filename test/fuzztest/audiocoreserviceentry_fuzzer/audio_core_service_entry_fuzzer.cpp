@@ -193,12 +193,12 @@ void SetDefaultOutputDeviceFuzzTest()
     eventEntry->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
 }
 
-void GetAdapterNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     uint32_t sessionId = 0;
-    eventEntry->GetAdapterNameBySessionId(sessionId);
+    eventEntry->GetModuleNameBySessionId(sessionId);
 }
 
 void GetProcessDeviceInfoBySessionIdFuzzTest()
@@ -208,7 +208,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     uint32_t sessionId = 0;
     AudioDeviceDescriptor deviceInfo;
     AudioStreamInfo info;
-    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info);
+    int32_t pin;
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin);
 }
 
 void GenerateSessionIdFuzzTest()
@@ -616,7 +617,7 @@ TestFuncs g_testFuncs[] = {
     CreateRendererClientFuzzTest,
     CreateCapturerClientFuzzTest,
     SetDefaultOutputDeviceFuzzTest,
-    GetAdapterNameBySessionIdFuzzTest,
+    GetModuleNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
     GenerateSessionIdFuzzTest,
     OnDeviceInfoUpdatedFuzzTest,

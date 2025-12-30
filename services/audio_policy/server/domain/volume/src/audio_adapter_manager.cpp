@@ -1445,6 +1445,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_BLUETOOTH;
             idInfo = HDI_ID_INFO_MMAP;
         }
+    } else if (pipeInfo->adapterName_ == "dp") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_DP_FAST;
+        }
     } else if (pipeInfo->adapterName_ == "usb") {
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;

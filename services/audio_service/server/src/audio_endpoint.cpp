@@ -84,13 +84,14 @@ std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo
 }
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
-    const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
+    const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
+    const std::string &adapterName, const int32_t pin)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
     audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
+    if (!audioEndpoint->Config(deviceInfo, streamInfo, adapterName, pin, clientConfig.streamType)) {
         HILOG_COMM_ERROR("[GenerateEndpointKey]Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
@@ -555,7 +556,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 }
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-                                AudioStreamType streamType)
+    const std::string &adapterName, const int32_t pin, AudioStreamType streamType)
 {
     AUDIO_INFO_LOG("Role %{public}d, format %{public}d", deviceInfo.deviceRole_,
         streamInfo.format);
@@ -576,7 +577,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
         sink->DeInit();
     }
 
-    IAudioSinkAttr attr = InitSinkAttr(deviceInfo);
+    IAudioSinkAttr attr = InitSinkAttr(deviceInfo, adapterName, pin);
     sink->Init(attr);
     if (!sink->IsInited()) {
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
@@ -653,7 +654,8 @@ std::shared_ptr<IAudioRenderSink> AudioEndpointInner::GetFastSink(const AudioDev
     return nullptr;
 }
 
-IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioDeviceDescriptor &deviceInfo)
+IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioDeviceDescriptor &deviceInfo,
+    const std::string &adapterName, const int32_t pin)
 {
     IAudioSinkAttr attr;
     attr.sampleRate = dstStreamInfo_.samplingRate; // 48000hz
@@ -665,6 +667,10 @@ IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioDeviceDescriptor &dev
         attr.adapterName = deviceInfo.deviceType_ == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET ? "usb" : "primary";
     } else {
         attr.adapterName = "remote";
+    }
+    if (adapterName == "dp") {
+        attr.adapterName = adapterName;
+        attr.pin = static_cast<AudioPin>(pin);
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.address = deviceInfo.GetMacAddress();

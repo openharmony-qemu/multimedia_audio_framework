@@ -61,11 +61,19 @@ int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
+int32_t CoreServiceProviderWrapper::GetModuleNameBySessionId(uint32_t sessionID, std::string& name)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isReloadProcess);
+    name = coreServiceWorker_->GetModuleNameBySessionId(sessionID);
+    return SUCCESS;
+}
+
+int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin,
+        isReloadProcess);
 }
 
 int32_t CoreServiceProviderWrapper::GenerateSessionId(uint32_t &sessionId)
