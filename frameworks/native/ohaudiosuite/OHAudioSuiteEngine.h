@@ -137,8 +137,11 @@ public:
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
     template <typename T>
-    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
-                                std::function)
+    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType, 
+                                std::function<int32_t(uint32_t, T)> setter, const char* funcName);
+    template <typename T>
+    int32_t GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType, 
+                                std::function<int32_t(uint32_t, T&)> getter, const char* funcName);
 
 private:
     explicit OHAudioSuiteEngine() {};
@@ -151,6 +154,7 @@ private:
     void RemoveNode(OHAudioNode *node);
     bool IsPipelineExists(OHAudioSuitePipeline *pipeline);
     bool IsNodeExists(OHAudioNode *node);
+    int32_t ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName);
 };
 
 } // namespace AudioStandard
