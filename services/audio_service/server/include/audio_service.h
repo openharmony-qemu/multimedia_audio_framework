@@ -149,6 +149,7 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);

@@ -37,6 +37,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
@@ -533,6 +534,9 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t CapturerInServer::Start()
 {
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
+        filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
+        ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -863,6 +867,27 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
     return stream_->GetLatency(latency);
+}
+
+int32_t CapturerInServer::RequestUserPrivacyAuthority()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    if (status_ == I_STATUS_STARTING || status_ == I_STATUS_STARTED) {
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_FAILED);
+        AUDIO_ERR_LOG("Inner capturer already start");
+        return SUCCESS;
+    }
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+        hasRequestUserPrivacyAuthority_ = true;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
+        AUDIO_INFO_LOG("request user privacy authority success");
+    } else {
+        hasRequestUserPrivacyAuthority_ = false;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
+        AUDIO_ERR_LOG("request user privacy authority failed");
+    }
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)

@@ -154,6 +154,21 @@ struct CapturerCallback {
     OH_AudioCapturer_OnErrorCallback onErrorCallback = {};
 };
 
+class OHAudioCapturerOnPlaybackCaptureStartCallback : public AudioCapturerOnPlaybackCaptureStartCallback {
+public:
+    OHAudioCapturerOnPlaybackCaptureStartCallback(OH_AudioCapturer_OnPlaybackCaptureStartCallback callback,
+        OH_AudioCapturer *audioCapturer, void *userData)
+        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+ 
+    void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override;
+private:
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback_;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
 class OHAudioCapturer {
 public:
     OHAudioCapturer();
@@ -199,6 +214,9 @@ public:
     void SetCapturerWillMuteWhenInterrupted(InterruptStrategy strategy);
     ReadDataCallbackType GetCapturerReadDataCallbackType();
     StreamEventCallbackType GetCapturerStreamEventCallbackType();
+    int32_t StartPlaybackCapture(OH_AudioCapturer* capturer,
+        OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
+    bool IsModernInnerCapturer();
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
@@ -208,6 +226,8 @@ private:
     ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
+    std::shared_ptr<OHAudioCapturerOnPlaybackCaptureStartCallback> capturerOnPlaybackCaptureStartCallback_ = nullptr;
+    bool isModernInnerCapturer_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

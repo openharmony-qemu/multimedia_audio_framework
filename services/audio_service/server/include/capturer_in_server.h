@@ -49,6 +49,7 @@ public:
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);
+    int32_t RequestUserPrivacyAuthority();
 
     int32_t Init();
 
@@ -135,6 +136,7 @@ private:
     std::atomic<IStatus> lastStatus_ = I_STATUS_IDLE;
     std::atomic<bool> lastOverflowStatus_ = false;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
+    bool hasRequestUserPrivacyAuthority_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
