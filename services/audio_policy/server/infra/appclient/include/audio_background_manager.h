@@ -63,7 +63,7 @@ public:
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);
     void WriteAppStateChangeSysEvent(int32_t pid, AppState appState, bool isAdd);
     void RecoryAppState();
-    std::map<int32_t, AppState> GetAppStatesMap();
+    const std::map<int32_t, AppState>& AudioBackgroundManager::GetAppStatesMap() const;
 
 private:
     AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
