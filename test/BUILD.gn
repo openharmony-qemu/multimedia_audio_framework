@@ -344,6 +344,13 @@ group("audio_fuzz_test") {
     "fuzztest/standalonemodemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/rendererinserver_fuzzer:fuzztest",
+    "fuzztest/haudioprocessinserver_fuzzer:fuzztest",
+    "fuzztest/hcoreserviceproviderstub_fuzzer:fuzztest",
+    "fuzztest/hipcstreaminserver_fuzzer:fuzztest",
+    "fuzztest/hstandardaudioservicestub_fuzzer:fuzztest",
+    "fuzztest/haudioworkgroupcallbackimpl_fuzzer:fuzztest",
+    "fuzztest/hipcstreamlistenerimpl_fuzzer:fuzztest",
+    "fuzztest/haudiomanagerlistenerstubimpl_fuzzer:fuzztest",
   ]
 
   if (audio_framework_feature_audiosuite_support) {

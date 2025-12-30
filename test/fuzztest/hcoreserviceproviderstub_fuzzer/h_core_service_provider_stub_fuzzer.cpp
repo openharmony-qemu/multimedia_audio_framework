@@ -66,9 +66,10 @@ void GetProcessDeviceInfoBySessionId(FuzzedDataProvider &provider)
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     AudioDeviceDescriptor deviceInfo;
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
+    int32_t pin = provider.ConsumeIntegral<int32_t>();
     bool isReloadProcess = provider.ConsumeBool();
     AudioStreamInfo info;
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, isReloadProcess);
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, isReloadProcess);
 }
 
 void GenerateSessionId(FuzzedDataProvider &provider)

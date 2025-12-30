@@ -29,6 +29,8 @@ namespace AudioStandard {
 using namespace std;
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
+void FuzzTestOne(FuzzedDataProvider &provider);
+void FuzzTestTwo(FuzzedDataProvider &provider);
 
 void GetAudioParameter(FuzzedDataProvider &provider)
 {
@@ -535,7 +537,7 @@ void SetDeviceConnectedFlag(FuzzedDataProvider &provider)
 void SetDmDeviceType(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint16_t dmDeviceType = provider.ConsumeIntegral<uint32_t>();
+    uint16_t dmDeviceType = provider.ConsumeIntegral<uint16_t>();
     int32_t deviceTypeIn = provider.ConsumeIntegral<int32_t>();
     audioServer->SetDmDeviceType(dmDeviceType, deviceTypeIn);
 }
@@ -689,7 +691,7 @@ void ImproveAudioWorkgroupPrio(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::unordered_map<int32_t, bool> threads;
     int maxScope = 2;
-    for (int i = 0 ; i > maxScope ; i++) {
+    for (int i = 0 ; i < maxScope ; i++) {
         int32_t key = provider.ConsumeIntegral<int32_t>();
         bool value = provider.ConsumeBool();
         threads.insert(std::make_pair(key, value));
@@ -702,7 +704,7 @@ void RestoreAudioWorkgroupPrio(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::unordered_map<int32_t, int32_t> threads;
     int maxScope = 2;
-    for (int i = 0 ; i > maxScope ; i++) {
+    for (int i = 0 ; i < maxScope ; i++) {
         int32_t key = provider.ConsumeIntegral<int32_t>();
         int32_t value = provider.ConsumeIntegral<int32_t>();
         threads.insert(std::make_pair(key, value));
@@ -733,7 +735,7 @@ void SetForegroundList(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::vector<std::string> list;
     int maxScope = 2;
-    for (int i = 0 ; i > maxScope ; i++) {
+    for (int i = 0 ; i < maxScope ; i++) {
         std::string str =  provider.ConsumeRandomLengthString();
         list.push_back(str);
     }
@@ -763,7 +765,7 @@ void FuzzTest(FuzzedDataProvider &provider)
     if (flag) {
         FuzzTestOne(provider);
     } else {
-        FuzzTestOne(provider);
+        FuzzTestTwo(provider);
     }
 }
 

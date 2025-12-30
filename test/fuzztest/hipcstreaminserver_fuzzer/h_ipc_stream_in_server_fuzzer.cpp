@@ -26,6 +26,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
+void ExecutePartOne(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider &provider);
+void ExecutePartTwo(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider &provider);
 
 static AudioProcessConfig InitProcessConfig()
 {
