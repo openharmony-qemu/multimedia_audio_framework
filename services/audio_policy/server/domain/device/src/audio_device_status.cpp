@@ -1660,6 +1660,12 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
             device.volumeBehavior_.controlMode, device.volumeBehavior_.controlInitVolume,
             device.volumeBehavior_.controlInitMute);
     }
+    if (!capability.deviceName_.empty()) {
+        device.deviceName_ = capability.deviceName_;
+    }
+    if (capability.protocol_ == 0) {
+        device.model_ = "hiplay";
+    }
 }
 }
 }
