@@ -89,10 +89,11 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
         return false;
     }
     for (auto &windowState : windowStates) {
-        AUDIO_INFO_LOG("pid:%{public}d, windowState.isVisible_:%{public}d, windowState.state_:%{public}d", pid, windowState.isVisible_, windowState.state_);
         if (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
             windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND) {
             if (windowState.isVisible_) {
+                AUDIO_INFO_LOG("pid:%{public}d app is in the foreground,"
+                    " windowState.state_ = %{public}d", pid, windowState.state_);
                 return true;
             } else {
                 auto appStateMap = AudioBackgroundManager::GetInstance().GetAppStatesMap();
