@@ -315,5 +315,6 @@ interface IAudioPolicy {
     void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
     void IsOtherMediaPlaying([out] boolean retIsExistence);
     void GetAudioSceneFromAllZones([out] int audioScene);
+    void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
 }
 
