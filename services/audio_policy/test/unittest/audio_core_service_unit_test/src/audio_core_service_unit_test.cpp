@@ -1168,26 +1168,26 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
 HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_003, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
-    std:shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->deviceRole_ = INPUT_DEVICE;
     streamDesc->newDeviceDescs_.front()->networkId_ = "LocalDevice";
-    streamDesc->streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    streamDesc->streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo.encoding = ENCODING_AUDIOVIVID;
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.encoding = ENCODING_AUDIOVIVID;
     streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    EXPECT_EQ(GetServerPtr()->coreService_=>IsStreamSupportMultiChannel(streamDesc), false);
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
-    std::make_shared<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
-    deviceInfo->suppirtPipeMap_.insert({AUIDO_OUTPUT_FLAG_MUTICHANNEL, pipeInfo});
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    deviceInfo->supportPipeMap_.insert({AUDIO_OUTPUT_FLAG_MULTICHANNEL, pipeInfo});
     std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet = {deviceInfo};
-    auto deviceKey = std::make_shared<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
-    GetServerPtr()->coreService_->policyConfigManager_.audioPolicyConfig_
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
+    GetServerPtr()->coreService_->policyConfigMananger_.audioPolicyConfig_
         .deviceInfoMap.insert({deviceKey, adapterDeviceInfoSet});
-    EXPECT_EQ(GetServerPtr()->coreService_=>IsStreamSupportMultiChannel(streamDesc), true);
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), true);
 }
 
 /**
