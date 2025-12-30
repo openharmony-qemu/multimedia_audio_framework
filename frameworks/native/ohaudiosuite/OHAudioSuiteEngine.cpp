@@ -421,7 +421,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
     OH_AudioNode *audioNode, OH_SoundFieldType *soundFieldType)
 {
-    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetSoundFiledType, "GetSoundFieldType", soundFieldType);
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetSoundFieldType, "GetSoundFieldType", soundFieldType);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
@@ -1183,12 +1183,12 @@ int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_Environment
                                std::function<int32_t(uint32_t, OH_EnvironmentType&)>(getter), __func__);
 }
 
-int32_t OHAudioSuiteEngine::GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
+int32_t OHAudioSuiteEngine::GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
 {
     auto getter = [](uint32_t nodeId, OH_SoundFieldType& value) {
         SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
-        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundField);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFiledType failed, ret = %{public}d.", ret);
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundField);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed, ret = %{public}d.", ret);
         value = static_cast<OH_SoundFieldType>(soundField);
         return SUCCESS;
     };
