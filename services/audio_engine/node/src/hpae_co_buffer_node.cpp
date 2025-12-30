@@ -281,7 +281,7 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
         enqueueRunning_ = true;
         // fill silence frame for latency adjustment
         AUDIO_INFO_LOG("Fillig silence frames for latency adjustment");
-        ringCache_->RestBuffer();
+        ringCache_->ResetBuffer();
 
         FillSilenceFramesInner(TEST_LATENCY);
         // smoothen collaborative data
