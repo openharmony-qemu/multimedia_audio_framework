@@ -769,9 +769,6 @@ private:
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
-    bool isAudioRendererEventListenerRegistered = false;
-    bool isAudioCapturerEventListenerRegistered = false;
-
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
     std::vector<AudioRendererInfo> rendererInfos_;
     std::vector<AudioCapturerInfo> capturerInfos_;
