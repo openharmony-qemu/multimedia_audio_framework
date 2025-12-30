@@ -878,15 +878,14 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority()
         AUDIO_ERR_LOG("Inner capturer already start");
         return SUCCESS;
     }
-    std::string bundleName = GetBundleNameByToken(processConfig_.appInfo.appTokenId);
     if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
-        AUDIO_INFO_LOG("%{public}s request user privacy authority success", bundleName.c_str());
+        AUDIO_INFO_LOG("request user privacy authority success");
     } else {
         hasRequestUserPrivacyAuthority_ = false;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
-        AUDIO_ERR_LOG("%{public}s request user privacy authority failed", bundleName.c_str());
+        AUDIO_ERR_LOG("request user privacy authority failed");
     }
     return SUCCESS;
 }
