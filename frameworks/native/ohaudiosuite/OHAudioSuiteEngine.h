@@ -136,6 +136,9 @@ public:
     int32_t SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type);
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
+    template <typename T>
+    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
+                                std::function)
 
 private:
     explicit OHAudioSuiteEngine() {};
