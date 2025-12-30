@@ -2083,10 +2083,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
-    CHECK_AND_CALL_RET_FUNC(CheckConfigFormat(resetConfig), nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
-    CHECK_AND_CALL_RET_FUNC(PermissionChecker(resetConfig), nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(PermissionChecker(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission"));
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
@@ -2109,7 +2109,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     }
     if (IsSatellite(resetConfig, callingUid)) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_CALL_RET_FUNC(isSupportSate, nullptr,
+        CHECK_AND_CALL_FUNC_RETURN_RET(isSupportSate, nullptr,
             HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
@@ -2452,7 +2452,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_CALL_RET_FUNC(hasSystemPermission, false,
+        CHECK_AND_CALL_FUNC_RETURN_RET(hasSystemPermission, false,
             HILOG_COMM_ERROR("[CheckRecorderPermission]VOICE_TRANSCRIPTION failed: no system permission."));
     }
 

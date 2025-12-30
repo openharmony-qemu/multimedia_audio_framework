@@ -380,7 +380,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
             streamDesc->newDeviceDescs_[0]->macAddress_) &&
         streamDesc->streamInfo_.channels <= STEREO &&
         streamDesc->streamInfo_.encoding != ENCODING_AUDIOVIVID);
-    CHECK_AND_CALL_RET_FUNC(ret == false, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
     return true;
 }
@@ -604,11 +604,11 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
-    CHECK_AND_CALL_RET_FUNC(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
+    CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Modem communication ring, directly return"));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    CHECK_AND_CALL_RET_FUNC(streamDesc != nullptr, ERR_NULL_POINTER,
+    CHECK_AND_CALL_FUNC_RETURN_RET(streamDesc != nullptr, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]Cannot find session %{public}u", sessionId));
     CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
@@ -619,7 +619,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
         FetchOutputDevicesForDescs(streamDesc, outputDescs);
     }
-    CHECK_AND_CALL_RET_FUNC(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
 
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
@@ -627,7 +627,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
     // [Capturer NOTE 1.0] be careful device may be changed.
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_CALL_RET_FUNC(deviceDesc, ERR_NULL_POINTER, HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER,
+        HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
@@ -1807,9 +1808,9 @@ int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDevi
     int32_t ret = deviceDesc->networkId_ != LOCAL_NETWORK_ID ? FetchOutputDeviceAndRoute("StartClient") : 0;
     JUDGE_AND_WARNING_LOG(ret != SUCCESS, "FetchOutputDeviceAndRoute failed");
     int32_t outputRet = ActivateOutputDevice(streamDesc);
-    CHECK_AND_CALL_RET_FUNC(outputRet != REFETCH_DEVICE, SUCCESS,
+    CHECK_AND_CALL_FUNC_RETURN_RET(outputRet != REFETCH_DEVICE, SUCCESS,
         HILOG_COMM_ERROR("[FetchAndActivateOutputDevice]Activate output device failed, refetch device"));
-    CHECK_AND_CALL_RET_FUNC(outputRet == SUCCESS, outputRet,
+    CHECK_AND_CALL_FUNC_RETURN_RET(outputRet == SUCCESS, outputRet,
         HILOG_COMM_ERROR("[FetchAndActivateOutputDevice]Activate output device failed"));
     return SUCCESS;
 }

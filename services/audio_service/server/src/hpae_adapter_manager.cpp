@@ -53,7 +53,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
     std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERROR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERROR_INVALID_PARAM,
         HILOG_COMM_ERROR("[CreateRender]get devicename err: %{public}d", ret));
     if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
         deviceName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
@@ -65,7 +65,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     deviceName = originDeviceName.has_value() ? std::string(originDeviceName.value()) : deviceName;
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
-    CHECK_AND_CALL_RET_FUNC(rendererStream != nullptr, ERR_DEVICE_INIT,
+    CHECK_AND_CALL_FUNC_RETURN_RET(rendererStream != nullptr, ERR_DEVICE_INIT,
         HILOG_COMM_ERROR("[CreateRender]Failed to init pa stream!"));
     SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
@@ -236,7 +236,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
 
     std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERROR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERROR_INVALID_PARAM,
         HILOG_COMM_ERROR("[CreateRender]get devicename err: %{public}d", ret));
     SourceType &sourceType = processConfig.capturerInfo.sourceType;
     if (sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
@@ -250,7 +250,7 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, deviceName);
-    CHECK_AND_CALL_RET_FUNC(capturerStream != nullptr, ERR_DEVICE_INIT,
+    CHECK_AND_CALL_FUNC_RETURN_RET(capturerStream != nullptr, ERR_DEVICE_INIT,
         HILOG_COMM_ERROR("[CreateCapturer]Failed to init pa stream"));
     capturerStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);

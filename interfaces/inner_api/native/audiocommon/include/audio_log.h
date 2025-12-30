@@ -49,14 +49,15 @@
 #define AUDIO_ERR (-3)
 #define AUDIO_PERMISSION_DENIED (-4)
 
-#define CHECK_AND_CALL_FUNC(cond, func)                \
+#define CHECK_AND_CALL_FUNC_RETURN(cond, func)         \
     do {                                               \
         if (!(cond)) {                                 \
             func;                                      \
+            return;                                    \
         }                                              \
     } while (0)
 
-#define CHECK_AND_CALL_RET_FUNC(cond, ret, func)       \
+#define CHECK_AND_CALL_FUNC_RETURN_RET(cond, ret, func)\
     do {                                               \
         if (!(cond)) {                                 \
             func;                                      \

@@ -872,7 +872,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, adapterName, pin, IsEndpointTypeVoip(config, deviceInfo));
-    CHECK_AND_CALL_RET_FUNC(audioEndpoint != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioEndpoint != nullptr, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
     // if reuse endpoint should keep samplerate same
     audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
@@ -881,22 +881,22 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    CHECK_AND_CALL_RET_FUNC(audioStreamInfo.samplingRate > 0, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStreamInfo.samplingRate > 0, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]Sample rate in server is invalid."));
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
-    CHECK_AND_CALL_RET_FUNC(process != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(process != nullptr, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]AudioProcessInServer create failed."));
     process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]ConfigProcessBuffer failed"));
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]LinkProcessToEndpoint failed"));
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     allProcessInServer_[sessionId] = process;
@@ -929,12 +929,12 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
         AUDIO_ERR_LOG("LinkProcessStream failed, erase endpoint %{public}s", endpointToErase.c_str());
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]LinkProcessStream to endpoint %{public}s failed",
         endpoint->GetEndpointName().c_str()));
 
     ret = process->AddProcessStatusListener(endpoint);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]AddProcessStatusListener failed"));
 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
