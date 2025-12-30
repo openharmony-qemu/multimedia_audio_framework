@@ -1161,6 +1161,36 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
 }
 
 /**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_003
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_003, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = INPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "LocalDevice";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.encoding = ENCODING_AUDIOVIVID;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    deviceInfo->supportPipeMap_.insert({AUDIO_OUTPUT_FLAG_MULTICHANNEL, pipeInfo});
+    std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
+    GetServerPtr()->coreService_->policyConfigMananger_.audioPolicyConfig_
+        .deviceInfoMap.insert({deviceKey, adapterDeviceInfoSet});
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), true);
+}
+
+/**
  * @tc.name: IsForcedNormal_001
  * @tc.number: IsForcedNormal_001
  * @tc.desc: Test IsForcedNormal interface - conditions that should return true and set audioFlag to NORMAL.
