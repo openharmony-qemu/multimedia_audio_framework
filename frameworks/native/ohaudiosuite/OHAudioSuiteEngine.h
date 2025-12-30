@@ -118,7 +118,7 @@ public:
     int32_t SetVoiceBeautifierType(
         OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType);
     int32_t GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType);
-    int32_t GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType);
+    int32_t GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType);
     int32_t GetEqualizerFrequencyBandGains(OHAudioNode *node,
         OH_EqualizerFrequencyBandGains *frequencyBandGains);
     int32_t GetVoiceBeautifierType(OHAudioNode *node,
@@ -137,10 +137,10 @@ public:
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
     template <typename T>
-    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType, 
+    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
                                 std::function<int32_t(uint32_t, T)> setter, const char* funcName);
     template <typename T>
-    int32_t GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType, 
+    int32_t GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
                                 std::function<int32_t(uint32_t, T&)> getter, const char* funcName);
 
 private:

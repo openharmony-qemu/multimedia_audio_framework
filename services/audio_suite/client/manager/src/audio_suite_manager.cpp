@@ -804,9 +804,9 @@ int32_t AudioSuiteManager::GetEnvironmentType(uint32_t nodeId, EnvironmentType &
     return SUCCESS;
 }
 
-int32_t AudioSuiteManager::GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType)
+int32_t AudioSuiteManager::GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType)
 {
-    AUDIO_INFO_LOG("GetSoundFiledType enter.");
+    AUDIO_INFO_LOG("GetSoundFieldType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -815,14 +815,14 @@ int32_t AudioSuiteManager::GetSoundFiledType(uint32_t nodeId, SoundFieldType &so
     std::string name = "SoundFieldType";
     std::string value = "";
     int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSoundFiledType failed, ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSoundFieldType failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetOptions_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSoundFiledType timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetSoundFiledType Error!");
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSoundFieldType timeout");
+    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetSoundFieldType Error!");
     int32_t parseValue = StringToInt32(value);
     if (parseValue < static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_CLOSE)
         || parseValue > static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_WIDE)) {

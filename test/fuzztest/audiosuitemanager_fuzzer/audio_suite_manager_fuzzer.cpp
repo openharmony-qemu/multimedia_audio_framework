@@ -238,7 +238,7 @@ void AudioSuiteManagerGetSoundFieldTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::SoundFieldType soundFieldType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundFieldType);
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundFieldType);
 }
 
 void AudioSuiteManagerGetEnvironmentTypeFuzzTest()

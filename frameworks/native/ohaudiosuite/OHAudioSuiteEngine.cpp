@@ -394,7 +394,8 @@ OH_AudioSuite_Result TemplateGetter(
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(
         suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "%{public}s suiteEngine is nullptr", getterName);
-
+    CHECK_AND_RETURN_RET_LOG(
+        getter != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s getter is nullptr", getterName);
     int32_t error = (suiteEngine->*getter)(node, params...);
     return ConvertError(error);
 }
@@ -427,7 +428,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
     OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains *frequencyBandGains)
 {
-    return TemplateGetter(audioNode, 
+    return TemplateGetter(audioNode,
         &OHAudioSuiteEngine::GetEqualizerFrequencyBandGains, "GetEqualizerFrequencyBandGains", frequencyBandGains);
 }
 
@@ -490,7 +491,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFieldType(OH_AudioNode *audioNo
 OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
     OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains frequencyBandGains)
 {
-    return TemplateSetter(audioNode, 
+    return TemplateSetter(audioNode,
         &OHAudioSuiteEngine::SetEqualizerFrequencyBandGains, "SetEqualizerFrequencyBandGains", frequencyBandGains);
 }
 
@@ -862,9 +863,10 @@ int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *d
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName) {
+int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName)
+{
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "%{public}s failed, node is nullptr.", funcName);
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST, 
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "%{public}s failed, node does not exist.", funcName);
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == expectedType, ERR_NOT_SUPPORTED,
         "%{public}s failed, node type = %{public}d must be %{public}d type.", funcName,
@@ -873,8 +875,9 @@ int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expect
 }
 
 template <typename T>
-int32_t OHAudioSuiteEngine::SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType, 
-                             std::function<int32_t(uint32_t, T)> setter, const char* funcName) {
+int32_t OHAudioSuiteEngine::SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
+                                                 std::function<int32_t(uint32_t, T)> setter, const char* funcName)
+{
     int32_t valid = ValidateNode(node, nodeType, funcName);
     CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
     uint32_t nodeId = node->GetNodeId();
@@ -884,8 +887,9 @@ int32_t OHAudioSuiteEngine::SetAudioNodeProperty(OHAudioNode* node, T value, Aud
 }
 
 template <typename T>
-int32_t OHAudioSuiteEngine::GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType, 
-                             std::function<int32_t(uint32_t, T&)> getter, const char* funcName) {
+int32_t OHAudioSuiteEngine::GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
+                                                 std::function<int32_t(uint32_t, T&)> getter, const char* funcName)
+{
     int32_t valid = ValidateNode(node, nodeType, funcName);
     CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
     CHECK_AND_RETURN_RET_LOG(outValue != nullptr, ERR_INVALID_PARAM, "node set point is nullptr");
@@ -898,7 +902,8 @@ int32_t OHAudioSuiteEngine::GetAudioNodeProperty(OHAudioNode* node, T* outValue,
 }
 
 int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
-    OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains) {
+    OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains)
+{
     auto setter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains value) {
         AudioEqualizerFrequencyBandGains audioGains;
         size_t ohGainsNum = sizeof(value.gains) / sizeof(value.gains[0]);
@@ -912,12 +917,13 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
         }
         return IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
     };
-    return SetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER, 
-                               std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains)>(setter), __func__);
+    return SetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
+                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(
-    OHAudioNode *node, OH_EqualizerFrequencyBandGains *frequencyBandGains) {
+    OHAudioNode *node, OH_EqualizerFrequencyBandGains *frequencyBandGains)
+{
     auto getter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains& value) {
         AudioEqualizerFrequencyBandGains frequency = {
             .gains = {0}
@@ -931,42 +937,46 @@ int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(
         }
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER, 
-                               std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains&)>(getter), __func__);
+    return GetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
+                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSoundFieldType(
-    OHAudioNode *node, OH_SoundFieldType soundFieldType) {
+    OHAudioNode *node, OH_SoundFieldType soundFieldType)
+{
     auto setter = [](uint32_t nodeId, OH_SoundFieldType value) {
         return IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(
             nodeId, static_cast<SoundFieldType>(value));
     };
-    return SetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD, 
-                               std::function<int32_t(uint32_t, OH_SoundFieldType)>(setter), __func__);
+    return SetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
+                                std::function<int32_t(uint32_t, OH_SoundFieldType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetEnvironmentType(
-    OHAudioNode *node, OH_EnvironmentType environmentType) {
+    OHAudioNode *node, OH_EnvironmentType environmentType)
+{
     auto setter = [](uint32_t nodeId, OH_EnvironmentType value) {
         return IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(
             nodeId, static_cast<EnvironmentType>(value));
     };
-    return SetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT, 
-                               std::function<int32_t(uint32_t, OH_EnvironmentType)>(setter), __func__);
+    return SetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
+                                std::function<int32_t(uint32_t, OH_EnvironmentType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
-    OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType) {
+    OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType)
+{
     auto setter = [](uint32_t nodeId, OH_VoiceBeautifierType value) {
         return IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(
             nodeId, static_cast<VoiceBeautifierType>(value));
     };
-    return SetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER, 
-                               std::function<int32_t(uint32_t, OH_VoiceBeautifierType)>(setter), __func__);
+    return SetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
+                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
-    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position) {
+    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position)
+{
     auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams value) {
         CHECK_AND_RETURN_RET_LOG(
             value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
@@ -977,14 +987,15 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
         positionParams.x = value.x;
         positionParams.y = value.y;
         positionParams.z = value.z;
-        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams( nodeId, positionParams);
+        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, positionParams);
     };
     return SetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
         std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderPositionParams(
-    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams *position) {
+    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams *position)
+{
     auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams &value) {
         AudioSpaceRenderPositionParams positionParams;
         int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(
@@ -995,12 +1006,13 @@ int32_t OHAudioSuiteEngine::GetSpaceRenderPositionParams(
         value.z = positionParams.z;
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER, 
+    return GetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
         std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
-    OHAudioNode *node, OH_AudioSuite_SpaceRenderRotationParams rotation) {
+    OHAudioNode *node, OH_AudioSuite_SpaceRenderRotationParams rotation)
+{
     auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams value) {
         CHECK_AND_RETURN_RET_LOG(
             value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
@@ -1031,7 +1043,8 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderRotationParams(
-    OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation) {
+    OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation)
+{
     auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams& value) {
         AudioSpaceRenderRotationParams rotationParams;
         int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(
@@ -1044,12 +1057,13 @@ int32_t OHAudioSuiteEngine::GetSpaceRenderRotationParams(
         value.surroundDirection = static_cast<OH_AudioSuite_SurroundDirection>(rotationParams.surroundDirection);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER, 
+    return GetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER,
         std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderRotationParams&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
-    OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension) {
+    OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension)
+{
     auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams value) {
         CHECK_AND_RETURN_RET_LOG(
             value.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && value.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
@@ -1062,12 +1076,13 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
         extensionParams.extRadius = value.extRadius;
         return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, extensionParams);
     };
-    return SetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER, 
+    return SetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
         std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderExtensionParams(
-    OHAudioNode *node, OH_AudioSuite_SpaceRenderExtensionParams *extension) {
+    OHAudioNode *node, OH_AudioSuite_SpaceRenderExtensionParams *extension)
+{
     auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams &value) {
         AudioSpaceRenderExtensionParams extensionParams;
         int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(
@@ -1077,7 +1092,7 @@ int32_t OHAudioSuiteEngine::GetSpaceRenderExtensionParams(
         value.extAngle = extensionParams.extAngle;
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER, 
+    return GetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
         std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams&)>(getter), __func__);
 }
 
@@ -1091,7 +1106,7 @@ int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, flo
         float speed;
         float pitch;
     } value = {speed, pitch};
-    std::function<int32_t(uint32_t, TempoAndPitch)> setter = 
+    std::function<int32_t(uint32_t, TempoAndPitch)> setter =
         [](uint32_t nodeId, TempoAndPitch value) -> int32_t {
             return IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, value.speed, value.pitch);
         };
@@ -1106,7 +1121,7 @@ int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, fl
         float speed;
         float pitch;
     };
-    std::function<int32_t(uint32_t, TempoAndPitch&)> getter = 
+    std::function<int32_t(uint32_t, TempoAndPitch&)> getter =
         [](uint32_t nodeId, TempoAndPitch& value) -> int32_t {
             return IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(
                 nodeId, value.speed, value.pitch);
@@ -1120,7 +1135,8 @@ int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, fl
 }
 
 int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
-    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option) {
+    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option)
+{
     auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
         AudioPureVoiceChangeOption optionParams;
         optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(value.optionGender);
@@ -1128,12 +1144,13 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
         optionParams.pitch = static_cast<float>(value.pitch);
         return IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
     };
-    return SetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE, 
+    return SetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
         std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(
-    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option) {
+    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option)
+{
     auto getter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption& value) {
         AudioPureVoiceChangeOption optionParams;
         int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, optionParams);
@@ -1143,7 +1160,7 @@ int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(
         value.pitch = static_cast<float>(optionParams.pitch);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE, 
+    return GetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
         std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption&)>(getter), __func__);
 }
 
@@ -1153,7 +1170,7 @@ int32_t OHAudioSuiteEngine::SetGeneralVoiceChangeType(OHAudioNode* node, OH_Audi
         return IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(
             nodeId, static_cast<AudioGeneralVoiceChangeType>(value));
     };
-    return SetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE, 
+    return SetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
         std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType)>(setter), __func__);
 }
 
@@ -1166,7 +1183,7 @@ int32_t OHAudioSuiteEngine::GetGeneralVoiceChangeType(OHAudioNode* node, OH_Audi
         value = static_cast<OH_AudioSuite_GeneralVoiceChangeType>(typeParam);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE, 
+    return GetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
         std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType&)>(getter), __func__);
 }
 
@@ -1179,8 +1196,8 @@ int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_Environment
         value = static_cast<OH_EnvironmentType>(environment);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT, 
-                               std::function<int32_t(uint32_t, OH_EnvironmentType&)>(getter), __func__);
+    return GetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
+                                std::function<int32_t(uint32_t, OH_EnvironmentType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
@@ -1192,8 +1209,8 @@ int32_t OHAudioSuiteEngine::GetSoundFieldType(OHAudioNode *node, OH_SoundFieldTy
         value = static_cast<OH_SoundFieldType>(soundField);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD, 
-                               std::function<int32_t(uint32_t, OH_SoundFieldType&)>(getter), __func__);
+    return GetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
+                                std::function<int32_t(uint32_t, OH_SoundFieldType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
@@ -1206,8 +1223,8 @@ int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
         value = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
         return SUCCESS;
     };
-    return GetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER, 
-                               std::function<int32_t(uint32_t, OH_VoiceBeautifierType&)>(getter), __func__);
+    return GetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
+                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
