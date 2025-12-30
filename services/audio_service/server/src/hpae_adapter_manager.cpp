@@ -27,6 +27,7 @@
 #include "core_service_handler.h"
 #include "policy_handler.h"
 #include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
