@@ -93,12 +93,8 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Release [%{public}d] type render:[%{public}u]", managerType_, streamIndex);
     std::unique_lock<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    std::shared_ptr<IRendererStream> currentRender = rendererStreamMap_[streamIndex];
+    auto currentRender = SafeGetMap(rendererStreamMap_, streamIndex);
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
@@ -134,49 +130,37 @@ int32_t HpaeAdapterManager::StartRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StartRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Start();
+    auto currentRender = SafeGetMap(rendererStreamMap_, streamIndex);
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return currentRender->Start();
 }
 
 int32_t HpaeAdapterManager::StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)
 {
     AUDIO_DEBUG_LOG("Enter StartRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return syncId > 0 ? rendererStreamMap_[streamIndex]->StartWithSyncId(syncId) :
-        rendererStreamMap_[streamIndex]->Start();
+    auto currentRender = SafeGetMap(rendererStreamMap_, streamIndex);
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return syncId > 0 ? currentRender->StartWithSyncId(syncId) :
+        currentRender->Start();
 }
 
 int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StopRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Stop();
+    auto currentRender = SafeGetMap(rendererStreamMap_, streamIndex);
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return currentRender->Stop();
 }
 
 int32_t HpaeAdapterManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     AUDIO_DEBUG_LOG("Enter PauseRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->Pause();
+    auto currentRender = SafeGetMap(rendererStreamMap_, streamIndex);
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    currentRender->Pause();
     return SUCCESS;
 }
 
