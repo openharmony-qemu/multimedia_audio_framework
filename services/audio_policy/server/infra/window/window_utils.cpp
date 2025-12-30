@@ -95,14 +95,13 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
                 AUDIO_INFO_LOG("pid:%{public}d app is in the foreground,"
                     " windowState.state_ = %{public}d", pid, windowState.state_);
                 return true;
-            } else {
-                auto appStateMap = AudioBackgroundManager::GetInstance().GetAppStatesMap();
-                auto appStateIt = appStateMap.find(pid);
-                if (appStateIt != appStateMap.end() && !appStateIt->second.isBack) {
-                    AUDIO_INFO_LOG("pid:%{public}d app is in the foreground, appIsBack: %{public}d",
-                        pid, appStateIt->second.isBack);
-                    return true;
-                }
+            }
+            auto appStateMap = AudioBackgroundManager::GetInstance().GetAppStatesMap();
+            auto appStateIt = appStateMap.find(pid);
+            if (appStateIt != appStateMap.end() && !appStateIt->second.isBack) {
+                AUDIO_INFO_LOG("pid:%{public}d app is in the foreground, appIsBack: %{public}d",
+                    pid, appStateIt->second.isBack);
+                return true;
             }
         }
     }
