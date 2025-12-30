@@ -340,7 +340,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
-        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
+        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD) &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream, deviceType: %{public}d",
             streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
