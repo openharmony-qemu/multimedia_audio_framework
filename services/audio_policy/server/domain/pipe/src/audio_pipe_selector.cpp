@@ -630,7 +630,6 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
-    info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
         info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
@@ -649,6 +648,9 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         "info.moduleInfo_.channelLayout: %{public}s", info.moduleInfo_.channels.c_str(),
         info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
+
+    info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
 
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
