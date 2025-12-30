@@ -71,8 +71,6 @@ static void GetPermission()
 void AudioCoreServiceExtUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceExtUnitTest::SetUpTestCase start-end");
-    AudioPolicyServer* server = GetServerPtr();
-    server->isUT_ = true;
     GetPermission();
     GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
 }

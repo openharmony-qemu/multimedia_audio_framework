@@ -42,7 +42,7 @@ public:
     {}
     ~MockInputNode() {}
     MOCK_METHOD(int32_t, DoProcess, (), ());
-    MOCK_METHOD(std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>>, GetOutputPort, ());
+    MOCK_METHOD(OutputPort<AudioSuitePcmBuffer*>*, GetOutputPort, ());
     MOCK_METHOD(int32_t, Flush, (), ());
     MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type), ());
     MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode), ());
@@ -91,16 +91,16 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
 
     std::string option_value = std::to_string(speed) + "," + std::to_string(pitch);
     int32_t ret = node->SetOptions("speedAndPitch", option_value);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     node->Connect(mockInputNode_);
     CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 1, ERROR);
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
-        node->GetOutputPort();
+    OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
 
     size_t frameSizeInput = buffer->GetDataSize();
     CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
@@ -203,13 +203,13 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, DoProcessPreOutputsTest_002, TestSize.Lev
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
         std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(mockInputNode_);
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
 
     node->Connect(mockInputNode_);
     EXPECT_EQ(1, inputNodeOutputPort->GetInputNum());
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
-        node->GetOutputPort();
+    OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
     EXPECT_CALL(*mockInputNode_, DoProcess())
             .WillRepeatedly(::testing::Invoke([&]() {
             std::vector<uint8_t> tempData(1920, 0);

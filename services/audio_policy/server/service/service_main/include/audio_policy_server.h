@@ -665,6 +665,8 @@ public:
 
     int32_t RestoreDistributedDeviceInfo() override;
 
+    bool IsPublishCalled() const;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -735,6 +737,7 @@ public:
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     void HandleDataShareReadyEvent();
+    int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -952,6 +955,7 @@ private:
 
     int32_t sessionIdByRemote_ = -1;
     bool isUT_ = false;
+    bool isPublishCalled_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;

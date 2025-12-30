@@ -141,7 +141,7 @@ int32_t AudioRenderSink::Start(void)
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
             "local start failed, halName_:" + halName_);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
@@ -319,14 +319,6 @@ std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const st
     std::lock_guard<std::mutex> lock(sinkMutex_);
     HILOG_COMM_INFO("[GetAudioParameter]key: %{public}d, condition: %{public}s, halName: %{public}s",
         key, condition.c_str(), halName_.c_str());
-    if (condition.starts_with("get_usb_info#C") && halName_ == HDI_ID_INFO_USB) {
-        // init adapter to get parameter before load sink module (need fix)
-        adapterNameCase_ = "usb";
-        HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, "", "deviceManager is nullptr");
-        return deviceManager->GetAudioParameter(adapterNameCase_, key, condition);
-    }
     if (key == AudioParamKey::GET_DP_DEVICE_INFO && halName_ == HDI_ID_INFO_DP) {
         // init adapter and render to get parameter before load sink module (need fix)
         return GetDPDeviceInfo(condition);
@@ -645,11 +637,6 @@ int32_t AudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return SUCCESS;
 }
 
-void AudioRenderSink::SetAddress(const std::string &address)
-{
-    address_ = address;
-}
-
 void AudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: PrimarySink\tstarted: " + std::string(started_ ? "true" : "false") + "\thalName: " + halName_ +
@@ -854,11 +841,8 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 
 void AudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
-    if (halName_ == HDI_ID_INFO_USB) {
-        deviceDesc.desc = const_cast<char *>(address_.c_str());
-    } else {
-        deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
-    }
+    address_ = attr_.address.c_str();
+    deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
     deviceDesc.pins = GetAudioPortPin();
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
@@ -1263,6 +1247,11 @@ void AudioRenderSink::WaitForDataLinkConnected()
         isDataLinkConnected_ = true;
     }
     dataConnectionWaitLock.unlock();
+}
+
+bool AudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
 }
 
 } // namespace AudioStandard

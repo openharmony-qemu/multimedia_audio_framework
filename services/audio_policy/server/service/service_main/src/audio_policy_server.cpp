@@ -297,6 +297,7 @@ void AudioPolicyServer::OnStart()
     bool res = false;
     if (!isUT_) {
         res = Publish(this);
+        isPublishCalled_ = true;
     }
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -2625,7 +2626,7 @@ int32_t AudioPolicyServer::SetAudioInterruptCallback(uint32_t sessionID, const s
     uint32_t clientUid, int32_t zoneID)
 {
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr!");
+        HILOG_COMM_ERROR("[SetAudioInterruptCallback]The interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
     if (coreService_ == nullptr) {
@@ -2837,7 +2838,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
     if (interruptService_ == nullptr) {
-        AUDIO_ERR_LOG("The interruptService_ is nullptr");
+        HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
         return ERR_UNKNOWN;
     }
 
@@ -3523,7 +3524,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
 void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
 {
     CHECK_AND_RETURN_LOG(enable, "route unenable");
-    server_->coreService_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
+    server_->eventEntry_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
@@ -5707,6 +5708,17 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t device
 {
     volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType),
         static_cast<DeviceType>(deviceType));
+    return SUCCESS;
+}
+
+bool AudioPolicyServer::IsPublishCalled() const
+{
+    return isPublishCalled_;
+}
+
+int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
+{
+    audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
     return SUCCESS;
 }
 } // namespace AudioStandard

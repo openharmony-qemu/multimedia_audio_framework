@@ -36,6 +36,7 @@ constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
 constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
 constexpr const char *RECLAIM_FILE_STRING = "1";
+constexpr const char *RECLAIM_CONTENT_4 = "4";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
@@ -796,13 +797,14 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        const char *reclaimContent = RECLAIM_FILE_STRING;
         if (!activatedReclaimMemory_ &&
             system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
-            return;
+            reclaimContent = RECLAIM_CONTENT_4;
         }
-        AUDIO_INFO_LOG("start reclaim memory task");
-        auto task = [this]() {
-            ReclaimMem();
+        AUDIO_INFO_LOG("start reclaim[%{public}s] memory task", reclaimContent);
+        auto task = [this, reclaimContent]() {
+            ReclaimMem(reclaimContent);
             isActivatedMemReclaiTask_.store(false);
         };
         audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
@@ -810,11 +812,10 @@ void AudioStreamCollector::PostReclaimMemoryTask()
     }
 }
 
-void AudioStreamCollector::ReclaimMem()
+void AudioStreamCollector::ReclaimMem(const std::string &reclaimContent)
 {
     std::lock_guard<std::mutex> lock(clearMemoryMutex_);
     std::string reclaimPath = "/proc/" + std::to_string(getpid()) + "/reclaim";
-    std::string reclaimContent = RECLAIM_FILE_STRING;
     AUDIO_INFO_LOG("start reclaim file = %{public}s", reclaimPath.c_str());
     std::ofstream outfile(reclaimPath);
     if (outfile.is_open()) {

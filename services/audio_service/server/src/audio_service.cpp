@@ -47,6 +47,7 @@ static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
+static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
@@ -185,6 +186,9 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
+    if (isSwitchStream && endpoint->GetDeviceInfo().deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS;
+    }
     if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
         return isRecord ? VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME : VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
@@ -866,7 +870,8 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
-    CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
+    CHECK_AND_CALL_RET_FUNC(audioEndpoint != nullptr, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
     // if reuse endpoint should keep samplerate same
     audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
 
@@ -874,19 +879,23 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    CHECK_AND_RETURN_RET_LOG(audioStreamInfo.samplingRate > 0, nullptr, "Sample rate in server is invalid.");
+    CHECK_AND_CALL_RET_FUNC(audioStreamInfo.samplingRate > 0, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]Sample rate in server is invalid."));
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
+    CHECK_AND_CALL_RET_FUNC(process != nullptr, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]AudioProcessInServer create failed."));
     process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]ConfigProcessBuffer failed"));
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]LinkProcessToEndpoint failed"));
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     allProcessInServer_[sessionId] = process;
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -918,11 +927,13 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
         AUDIO_ERR_LOG("LinkProcessStream failed, erase endpoint %{public}s", endpointToErase.c_str());
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream to endpoint %{public}s failed",
-        endpoint->GetEndpointName().c_str());
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[LinkProcessToEndpoint]LinkProcessStream to endpoint %{public}s failed",
+        endpoint->GetEndpointName().c_str()));
 
     ret = process->AddProcessStatusListener(endpoint);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "AddProcessStatusListener failed");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[LinkProcessToEndpoint]AddProcessStatusListener failed"));
 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     if (releasingEndpointSet_.count(endpoint->GetEndpointName())) {
@@ -988,7 +999,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream use format:%{public}d", streamInfo.format);
+            AUDIO_INFO_LOG("Fast stream use rate:%{public}d format:%{public}d", streamInfo.samplingRate,
+                streamInfo.format);
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;

@@ -25,6 +25,7 @@
 #include "audio_performance_monitor.h"
 #include "manager/hdi_adapter_manager.h"
 #include "i_hpae_manager.h"
+#include "audio_bundle_manager.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
@@ -343,7 +344,7 @@ static void TransHpaeInputOutputInfoToStr(const HpaeInputOutputInfo &info, const
     oss << "  Stream " << idx << "\n"
         << "  - Stream Id: " << info.sessionId << "\n"
         << "  - Device Name: " << info.deviceName << "\n"
-        << "  - Application Name: " << GetBundleNameByToken(info.tokenId) << "\n"
+        << "  - Application Name: " << AudioBundleManager::GetBundleNameByToken(info.tokenId) << "\n"
         << "  - Process Id: " << info.pid << "\n"
         << "  - User Id: " << info.uid << "\n"
         << "  - Offload Enable: " << (info.offloadEnable ? "true" : "false") << "\n"

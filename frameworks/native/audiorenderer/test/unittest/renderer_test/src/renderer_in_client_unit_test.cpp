@@ -1465,6 +1465,10 @@ HWTEST(RendererInClientInnerUnitTest, WriteRawBuffer_001, TestSize.Level1)
     bufferDesc.dataLength = 1;
     ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
     EXPECT_NE(ptrRendererInClientInner->sleepCount_, 0);
+
+    ptrRendererInClientInner->AudioServerDied(0, 0);
+    ret = ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
+    EXPECT_NE(ret, ERR_WRITE_BUFFER);
 }
 
 /**

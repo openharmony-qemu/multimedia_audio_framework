@@ -17,7 +17,6 @@
 #include "audio_common_log.h"
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_service_proxy.h"
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
 
@@ -289,6 +288,36 @@ bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
 }
 
+
+bool AudioVolumeClientManager::IsStreamActive(AudioVolumeType volumeType) const
+{
+    switch (volumeType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_NOTIFICATION:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_SYSTEM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_RING:
+        case STREAM_CAMCORDER:
+            break;
+        case STREAM_ULTRASONIC:{
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
+            break;
+        }
+        case STREAM_ALL:
+        default:
+            AUDIO_ERR_LOG("volumeType=%{public}d not supported", volumeType);
+            return false;
+    }
+
+    return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
+}
+
 float AudioVolumeClientManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device)
 {
     AUDIO_INFO_LOG("enter AudioVolumeClientManager::GetVolumeInUnitOfDb");
@@ -400,17 +429,6 @@ int32_t AudioVolumeClientManager::UnregisterSystemVolumeChangeCallback(const int
     if (!ret) {
         AUDIO_DEBUG_LOG("UnsetSystemVolumeChangeCallback success");
     }
-    return ret;
-}
-
-int32_t AudioVolumeClientManager::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
-{
-    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gasp->GetVolumeBySessionId(sessionId, volume);
-    IPCSkeleton::SetCallingIdentity(identity);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
     return ret;
 }
 

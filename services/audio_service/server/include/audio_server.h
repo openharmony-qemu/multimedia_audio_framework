@@ -382,6 +382,7 @@ private:
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
 
     void ResetRecordConfig(AudioProcessConfig &config);
     AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
@@ -447,7 +448,8 @@ private:
     int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId) override;
     int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
     int32_t StopGroup(int32_t workgroupId) override;
-
+    bool NeedDelayCreateSink(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
+    bool NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);

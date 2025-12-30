@@ -425,7 +425,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
     // Use speaker streaminfo for all output devices cap
-    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID) {
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID &&
+        updatedDesc.deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET) {
         auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
         if (itr != nullptr) {
             audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
@@ -497,9 +498,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = INPUT_DEVICE;
     // Use mic streaminfo for all input devices cap
-    auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_MIC);
-    if (itr != nullptr) {
-        audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET) {
+        auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_MIC);
+        if (itr != nullptr) {
+            audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+        }
     }
     bool wasVirtualConnected = audioDeviceManager_.IsVirtualConnectedDevice(audioDescriptor);
     if (!wasVirtualConnected) {

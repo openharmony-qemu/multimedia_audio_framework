@@ -650,5 +650,13 @@ void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_p
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->HandleDeviceConfigChanged(selectedAudioDevice);
 }
+
+void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType,
+    bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
+}
 }
 }

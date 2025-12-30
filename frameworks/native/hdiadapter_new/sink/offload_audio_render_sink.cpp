@@ -818,5 +818,17 @@ void OffloadAudioRenderSink::SetSpeed(float speed)
     std::string parameters = "pcm_offload_play_speed=" + std::to_string(hdiSpeed) + ";";
     deviceManager->SetAudioParameter(attr_.adapterName, NONE, "pcm_offload_play_speed", parameters);
 }
+
+int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
+    currentActiveDevice_ = outputDevices[0];
+    return SUCCESS;
+}
+
+bool OffloadAudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+}
 } // namespace AudioStandard
 } // namespace OHOS

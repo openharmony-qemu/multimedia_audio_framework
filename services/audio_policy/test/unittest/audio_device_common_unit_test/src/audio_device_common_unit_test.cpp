@@ -534,6 +534,47 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_033, TestSize.Level1)
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
+/**    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_033
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.connectState_ = VIRTUAL_CONNECTED;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_030
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForInputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
+}
+
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_036

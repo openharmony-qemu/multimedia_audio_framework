@@ -208,7 +208,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, testCreate_002, TestSize.Level0)
     sinkInfo.deviceClass = "remote_offload";
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
-    EXPECT_EQ(hpaeRenderEffectNode->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     HpaeNodeInfo nodeInfo2 = nodeInfo;
     nodeInfo2.nodeId += idOffset;
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo2), 0);

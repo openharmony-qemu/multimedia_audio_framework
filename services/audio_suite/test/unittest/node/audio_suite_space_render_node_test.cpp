@@ -244,7 +244,6 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderDoProcess001, TestSize.Level0)
     EXPECT_EQ(SUCCESS, ret);
  
     node->SetAudioNodeDataFinishedFlag(false);
-    node->outputStream_ = nullptr;
     ret = node->DoProcess();
     EXPECT_EQ(ERROR, ret);
 }

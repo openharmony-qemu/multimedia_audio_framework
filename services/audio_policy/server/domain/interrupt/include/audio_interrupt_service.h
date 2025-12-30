@@ -153,6 +153,8 @@ public:
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
     std::future<void> stopFuture_;
 
+    AudioScene GetHighestPriorityAudioSceneFromAllZones();
+
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr int32_t ZONEID_INVALID = -1;

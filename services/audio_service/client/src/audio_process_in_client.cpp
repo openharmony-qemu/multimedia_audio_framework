@@ -391,7 +391,8 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
         "CheckIfSupport failed!");
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
+    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, nullptr,
+        HILOG_COMM_ERROR("[Create]Create failed, can not get service."));
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType);
 
@@ -863,7 +864,8 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 // the buffer will be used by client
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "%{public}s not inited!", __func__);
+    CHECK_AND_CALL_RET_FUNC(isInited_, ERR_ILLEGAL_STATE,
+        HILOG_COMM_ERROR("[GetBufferDesc]not inited!"));
     Trace trace("AudioProcessInClient::GetBufferDesc");
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {

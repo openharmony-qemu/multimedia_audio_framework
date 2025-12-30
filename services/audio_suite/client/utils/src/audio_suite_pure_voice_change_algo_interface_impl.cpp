@@ -25,6 +25,7 @@
 #include <cstdint>
 #include "audio_suite_log.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -72,11 +73,9 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
     std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());
-        return ERROR;
-    }
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
         AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
@@ -172,7 +171,10 @@ static std::vector<float> ParseStringToIntArray(const std::string &str, char del
 
     while (std::getline(iss, token, delimiter)) {
         if (!token.empty()) {
-            result.push_back(std::stof(token));
+            float value;
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(token, value), result,
+                "Pure voice change convert string to float value error, invalid data is %{public}s", token.c_str());
+            result.push_back(value);
         }
     }
 

@@ -157,7 +157,7 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_007, TestSize.Level1)
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_008, TestSize.Level1)
 {
     auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
-    EXPECT_NE(fastAudioRenderSink, nullptr);
+    ASSERT_NE(fastAudioRenderSink, nullptr);
 
     AudioSampleFormat format = SAMPLE_U8;
     auto ret = fastAudioRenderSink->PcmFormatToBit(format);
@@ -192,7 +192,7 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_008, TestSize.Level1)
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_009, TestSize.Level1)
 {
     auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
-    EXPECT_NE(fastAudioRenderSink, nullptr);
+    ASSERT_NE(fastAudioRenderSink, nullptr);
 
     AudioSampleFormat format = SAMPLE_U8;
     auto ret = fastAudioRenderSink->ConvertToHdiFormat(format);
@@ -227,7 +227,7 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_009, TestSize.Level1)
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_010, TestSize.Level1)
 {
     auto fastAudioRenderSink = std::make_shared<FastAudioRenderSink>();
-    EXPECT_NE(fastAudioRenderSink, nullptr);
+    ASSERT_NE(fastAudioRenderSink, nullptr);
 
     struct AudioDeviceDescriptor deviceDesc;
 
@@ -251,9 +251,29 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_010, TestSize.Level1)
     fastAudioRenderSink->InitDeviceDesc(deviceDesc);
     EXPECT_EQ(deviceDesc.pins, PIN_OUT_BLUETOOTH_SCO);
 
+    fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    fastAudioRenderSink->InitDeviceDesc(deviceDesc);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_HEADSET);
+
     fastAudioRenderSink->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     fastAudioRenderSink->InitDeviceDesc(deviceDesc);
     EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+}
+
+/**
+ * @tc.name   : Test FastSink API
+ * @tc.number : EnableSyncInfo_001
+ * @tc.desc   : Test EnableSyncInfo()
+ */
+HWTEST_F(FastAudioRenderSinkUnitTest, EnableSyncInfo_001, TestSize.Level2)
+{
+    auto testSink = std::make_shared<FastAudioRenderSink>();
+
+    testSink->EnableSyncInfo(0);
+    EXPECT_EQ(testSink->syncInfoSize_, 0);
+
+    testSink->EnableSyncInfo(1);
+    EXPECT_EQ(testSink->syncInfoSize_, 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

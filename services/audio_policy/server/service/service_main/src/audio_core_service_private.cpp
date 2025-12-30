@@ -525,7 +525,8 @@ void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, co
     if (!hearingAidCallFlag_) {
         if (isModemCallRunning && type == DEVICE_TYPE_HEARING_AID) {
             uint32_t paIndex = 0;
-            CHECK_AND_RETURN_LOG(CheckModuleForHearingAid(paIndex) == SUCCESS, "openAudioPort failed");
+            CHECK_AND_CALL_FUNC(CheckModuleForHearingAid(paIndex) == SUCCESS,
+                HILOG_COMM_ERROR("[CheckOpenHearingAidCall]openAudioPort failed"));
 
             std::shared_ptr<AudioPipeInfo> pipeInfoOutput = pipeManager_->GetPipeinfoByNameAndFlag("hearing_aid",
                 AUDIO_OUTPUT_FLAG_NORMAL);
@@ -560,10 +561,10 @@ int32_t AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
             pipeManager_->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
         if (pipeInfoInput == nullptr) {
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
-                "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
-            CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-                "OpenAudioPort failed paId[%{public}u]", paIndex);
+            CHECK_AND_CALL_RET_FUNC(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+                HILOG_COMM_ERROR("[CheckModuleForHearingAid]OpenAudioPort failed ioHandle[%{public}u]", ioHandle));
+            CHECK_AND_CALL_RET_FUNC(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+                HILOG_COMM_ERROR("[CheckModuleForHearingAid]OpenAudioPort failed paId[%{public}u]", paIndex));
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
             std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
             pipeInfo->name_ = "primary_input";
@@ -762,10 +763,10 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
             uint32_t paIndex = 0;
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID,
-                ERR_INVALID_HANDLE, "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
-            CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE,
-                ERR_OPERATION_FAILED, "OpenAudioPort failed paId[%{public}u]", paIndex);
+            CHECK_AND_CALL_RET_FUNC(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+                HILOG_COMM_ERROR("[LoadA2dpModule]OpenAudioPort failed ioHandle[%{public}u]", ioHandle));
+            CHECK_AND_CALL_RET_FUNC(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+                HILOG_COMM_ERROR("[LoadA2dpModule]OpenAudioPort failed paId[%{public}u]", paIndex));
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
             std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -860,16 +861,16 @@ AudioIOHandle AudioCoreService::ReloadOrOpenAudioPort(int32_t engineFlag, AudioM
     AudioIOHandle ioHandle;
     if (engineFlag == 1) {
         ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
-        CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
-            "ReloadAudioPort failed ioHandle[%{public}u]", ioHandle);
-        CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-            "ReloadAudioPort failed paId[%{public}u]", paIndex);
+        CHECK_AND_CALL_RET_FUNC(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+            HILOG_COMM_ERROR("[ReloadOrOpenAudioPort]ReloadAudioPort failed ioHandle[%{public}u]", ioHandle));
+        CHECK_AND_CALL_RET_FUNC(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+            HILOG_COMM_ERROR("[ReloadOrOpenAudioPort]ReloadAudioPort failed paId[%{public}u]", paIndex));
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-        CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
-            "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
-        CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-            "OpenAudioPort failed paId[%{public}u]", paIndex);
+        CHECK_AND_CALL_RET_FUNC(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+            HILOG_COMM_ERROR("[ReloadOrOpenAudioPort]OpenAudioPort failed ioHandle[%{public}u]", ioHandle));
+        CHECK_AND_CALL_RET_FUNC(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+            HILOG_COMM_ERROR("[ReloadOrOpenAudioPort]OpenAudioPort failed paId[%{public}u]", paIndex));
     }
     return ioHandle;
 }
@@ -880,10 +881,11 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
     int32_t engineFlag = GetEngineFlag();
     uint32_t paIndex = HDI_INVALID_ID;
-    CHECK_AND_RETURN_LOG(engineFlag == 1, "not find proaudio port");
+    CHECK_AND_CALL_FUNC(engineFlag == 1, HILOG_COMM_ERROR("[ProcessOutputPipeReload]not find proaudio port"));
 
     audioPolicyManager_.ReloadAudioPort(pipeInfo->moduleInfo_, paIndex);
-    CHECK_AND_RETURN_LOG(paIndex != HDI_INVALID_ID, "ReloadAudioPort failed paId[%{public}u]", paIndex);
+    CHECK_AND_CALL_FUNC(paIndex != HDI_INVALID_ID,
+        HILOG_COMM_ERROR("[ProcessOutputPipeReload]ReloadAudioPort failed paId[%{public}u]", paIndex));
 
     pipeInfo->paIndex_ = paIndex;
     ProcessOutputPipeUpdate(pipeInfo, flag, reason);
@@ -1380,13 +1382,15 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     if (isNeedTriggerCallback && audioPolicyServerHandler_) {
         std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(*newDeviceDesc);
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+        AudioStreamDeviceChangeReasonExt newReason = UpdateRemoteDeviceChangeReason(streamDesc, reason);
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->callerPid_,
-            streamDesc->sessionId_, callbackDesc, reason);
+            streamDesc->sessionId_, callbackDesc, newReason);
     }
 
     SleepForSwitchDevice(streamDesc, reason);
 
-    CHECK_AND_RETURN_LOG(IsNewDevicePlaybackSupported(streamDesc), "new device not support playback");
+    CHECK_AND_CALL_FUNC(IsNewDevicePlaybackSupported(streamDesc),
+        HILOG_COMM_ERROR("[MoveToNewOutputDevice]new device not support playback"));
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
@@ -2372,14 +2376,6 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, descs.front()->networkId_);
     }
-    if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        string condition = string("address=") + descs.front()->macAddress_ + " role=" + to_string(OUTPUT_DEVICE);
-        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
-            condition);
-        if (!deviceInfo.empty()) {
-            AUDIO_DEBUG_LOG("[GetAudioParameterProxy]deviceInfo: %{public}s", deviceInfo.c_str());
-        }
-    }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(), reason);
     return SUCCESS;
 }
@@ -2401,7 +2397,7 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentInputDevice(*desc);
     if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.PresetArmIdleInput(desc->macAddress_);
+        audioEcManager_.PresetArmIdleInput(desc);
     }
     DeviceType deviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", deviceType);
@@ -2941,7 +2937,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+        audioEcManager_.ActivateArmDevice(deviceDesc);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
@@ -2965,7 +2961,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+        audioEcManager_.ActivateArmDevice(deviceDesc);
     }
 
     return SUCCESS;
@@ -3299,10 +3295,10 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
             GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
             uint32_t paIndex = 0;
             AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
-            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID,
-                ERR_INVALID_HANDLE, "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
-            CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE,
-                ERR_OPERATION_FAILED, "OpenAudioPort failed paId[%{public}u]", paIndex);
+            CHECK_AND_CALL_RET_FUNC(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+                HILOG_COMM_ERROR("[LoadHearingAidModule]OpenAudioPort failed ioHandle[%{public}u]", ioHandle));
+            CHECK_AND_CALL_RET_FUNC(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
+                HILOG_COMM_ERROR("[LoadHearingAidModule]OpenAudioPort failed paId[%{public}u]", paIndex));
             audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
             std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -3558,10 +3554,24 @@ void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<A
 void AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
 {
     if ((lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING) &&
-        (audioScene == AUDIO_SCENE_DEFAULT || AUDIO_SCENE_PHONE_CALL || AUDIO_SCENE_PHONE_CHAT)) {
+        (audioScene == AUDIO_SCENE_DEFAULT || audioScene == AUDIO_SCENE_PHONE_CALL ||
+            audioScene == AUDIO_SCENE_PHONE_CHAT)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to non-ring");
         isRingDualToneOnPrimarySpeaker_ = false;
     }
+}
+
+AudioStreamDeviceChangeReasonExt AudioCoreService::UpdateRemoteDeviceChangeReason(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, const AudioStreamDeviceChangeReasonExt reason)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->oldDeviceDescs_.size() != 0, reason,
+        "Invalid params");
+    std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = streamDesc->oldDeviceDescs_.front();
+    CHECK_AND_RETURN_RET_LOG(oldDeviceDesc != nullptr, reason, "oldDeviceDesc is nullptr");
+    AudioStreamDeviceChangeReasonExt newReason = (oldDeviceDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
+        reason.IsDistributedDeviceUnavailable()) ?
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE : reason;
+    return newReason;
 }
 } // namespace AudioStandard
 } // namespace OHOS

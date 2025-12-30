@@ -1185,7 +1185,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, PostReclaimMemoryTask_001, TestSize.Level
     system::SetParameter("persist.ace.testmode.enabled", "1");
     collector.activatedReclaimMemory_ = true;
     collector.PostReclaimMemoryTask();
-    collector.ReclaimMem();
+    collector.ReclaimMem("1");
     collector.isActivatedMemReclaiTask_ = true;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     EXPECT_NE(rendererChangeInfo, nullptr);

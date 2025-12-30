@@ -69,6 +69,29 @@ static const char *DeviceTypeToString(DeviceType type)
     return "UNKNOWN";
 }
 
+static std::string ParseAudioFormat(std::string format)
+{
+    if (format == "AUDIO_FORMAT_PCM_16_BIT") {
+        return "s16le";
+    } else if (format == "AUDIO_FORMAT_PCM_24_BIT" || format == "AUDIO_FORMAT_PCM_24_BIT_PACKED") {
+        return "s24le";
+    } else if (format == "AUDIO_FORMAT_PCM_32_BIT") {
+        return "s32le";
+    } else {
+        return "s16le";
+    }
+}
+
+static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
+    {"s8", SAMPLE_U8},
+    {"s16", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32le", SAMPLE_S32LE},
+};
+
 static void CheckDeviceInfoSize(size_t &size)
 {
     CHECK_AND_RETURN(size > AUDIO_DEVICE_INFO_SIZE_LIMIT);
@@ -258,6 +281,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
+    deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -299,11 +323,100 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor->volumeBehavior_;
+    deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
 {
     return deviceType_;
+}
+
+int32_t AudioDeviceDescriptor::GetDeviceId() const
+{
+    return deviceId_;
+}
+
+std::string AudioDeviceDescriptor::GetMacAddress() const
+{
+    return macAddress_;
+}
+
+std::list<DeviceStreamInfo> AudioDeviceDescriptor::GetAudioStreamInfo() const
+{
+    return audioStreamInfo_;
+}
+
+void AudioDeviceDescriptor::SetDeviceSupportMmap(const uint32_t deviceSupportMmap)
+{
+    deviceSupportMmap_ = deviceSupportMmap;
+}
+
+uint32_t AudioDeviceDescriptor::GetDeviceSupportMmap() const
+{
+    return deviceSupportMmap_;
+}
+
+uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key)
+{
+    CHECK_AND_RETURN_RET_LOG(!audioParameters.empty(), 0, "audioParameters is empty, can not parse");
+    std::string keyStr = "";
+    DeviceRole role = getRole();
+    switch (role) {
+        case DeviceRole::OUTPUT_DEVICE:
+            keyStr = "sink_";
+            break;
+        case DeviceRole::INPUT_DEVICE:
+            keyStr = "source_";
+            break;
+        default:
+            return 0;
+    }
+    switch (key) {
+        case AudioParametersKey::SAMPLE_RATE:
+            keyStr += "rate:";
+            break;
+        case AudioParametersKey::FORMAT:
+            keyStr += "format:";
+            break;
+        case AudioParametersKey::SUPPORT_MMAP:
+            keyStr += "mmap:";
+            break;
+        default:
+            return 0;
+    }
+
+    const std::string sep = ";";
+    auto itBegin = audioParameters.find(keyStr);
+    auto itEnd = audioParameters.find_first_of(sep, itBegin);
+    CHECK_AND_RETURN_RET(itBegin != itEnd, 0);
+    std::string parseRet = audioParameters.substr(itBegin + keyStr.size(), itEnd - itBegin - keyStr.size());
+    uint32_t ret = 0;
+    AUDIO_INFO_LOG("parseRet:%{public}s", parseRet.c_str());
+    if (key == AudioParametersKey::FORMAT) {
+        parseRet = ParseAudioFormat(parseRet);
+        AUDIO_INFO_LOG("parseRet:%{public}s, format: %{public}u", parseRet.c_str(),
+            static_cast<uint32_t>(formatStrToEnum[parseRet]));
+        return static_cast<uint32_t>(formatStrToEnum[parseRet]);
+    }
+    CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
+    ret = static_cast<uint32_t>(std::stoi(parseRet));
+    return ret;
+}
+
+void AudioDeviceDescriptor::ParseAudioParameters(const std::string &audioParameters)
+{
+    if (getType() == DeviceType::DEVICE_TYPE_USB_ARM_HEADSET) {
+        DeviceStreamInfo streamInfo = {};
+        streamInfo.samplingRate.insert(
+            static_cast<AudioSamplingRate>(ParseArmUsbAudioParameters(audioParameters,
+            AudioParametersKey::SAMPLE_RATE)));
+        streamInfo.format =
+            static_cast<AudioSampleFormat>(ParseArmUsbAudioParameters(audioParameters, AudioParametersKey::FORMAT));
+        audioStreamInfo_.push_back(streamInfo);
+
+        deviceSupportMmap_ = AudioDeviceDescriptor::ParseArmUsbAudioParameters(audioParameters,
+            AudioParametersKey::SUPPORT_MMAP);
+    }
 }
 
 DeviceRole AudioDeviceDescriptor::getRole() const

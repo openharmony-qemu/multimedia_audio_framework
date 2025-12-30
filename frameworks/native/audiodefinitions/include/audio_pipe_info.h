@@ -101,6 +101,16 @@ public:
             (routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL) : (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
     }
 
+    bool IsRouteFast() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
+    }
+
+    bool IsRouteDirect() const
+    {
+        return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;
+    }
+
     bool IsRenderPipeNeedMoveToNormal() const
     {
         return ((routeFlag_ & AUDIO_OUTPUT_FLAG_MULTICHANNEL) || (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER));

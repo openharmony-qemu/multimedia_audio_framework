@@ -289,6 +289,23 @@ enum InterruptEventCallbackType {
     INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
 };
 
+enum PlayerType : int32_t {
+    PLAYER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    PLAYER_TYPE_OH_AUDIO_RENDERER = 100,
+    PLAYER_TYPE_ARKTS_AUDIO_RENDERER = 101,
+    PLAYER_TYPE_CJ_AUDIO_RENDERER = 102,
+    PLAYER_TYPE_OPENSL_ES = 103,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    PLAYER_TYPE_SOUND_POOL = 1000,
+    PLAYER_TYPE_AV_PLAYER = 1001,
+    PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+    PLAYER_TYPE_TONE_PLAYER = 1003,
+};
+
+// This structure has compatibility constraints with the cast and cannot be modified arbitrarily.
 class AudioInterrupt : public Parcelable {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;

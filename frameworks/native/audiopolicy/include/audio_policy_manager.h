@@ -742,6 +742,7 @@ public:
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    AudioScene GetAudioSceneFromAllZones();
 
 private:
     AudioPolicyManager() {}

@@ -45,7 +45,8 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     ret = PrepareMmapBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED,
+        HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
     sourceInited_ = true;
     InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST,
         { static_cast<DeviceType>(attr_.deviceType) });
@@ -451,6 +452,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
 
 void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
+    deviceDesc.desc = const_cast<char *>("");
     switch (static_cast<DeviceType>(attr_.deviceType)) {
         case DEVICE_TYPE_MIC:
             deviceDesc.pins = PIN_IN_MIC;
@@ -464,12 +466,15 @@ void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &device
         case DEVICE_TYPE_BLUETOOTH_SCO:
             deviceDesc.pins = PIN_IN_BLUETOOTH_SCO_HEADSET;
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
+            deviceDesc.pins = PIN_OUT_USB_HEADSET;
+            break;
         default:
             AUDIO_WARNING_LOG("unsupport, use default, deviceType: %{public}d", attr_.deviceType);
             deviceDesc.pins = PIN_IN_MIC;
             break;
     }
-    deviceDesc.desc = const_cast<char *>("");
 }
 
 void FastAudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene)
@@ -486,8 +491,9 @@ int32_t FastAudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create capture, type: %{public}d, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "device: %{public}u", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
+    AUDIO_INFO_LOG("create capture, adapterName %{public}s type: %{public}d, rate: %{public}u, channel: %{public}u, "
+        "format: %{public}u, device: %{public}u",
+        attr_.adapterName.c_str(), param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
@@ -512,6 +518,16 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     return ret;
 }
 
+void FastAudioCaptureSource::EnableSyncInfo(const int32_t syncInfoSize)
+{
+    if (syncInfoSize == 0) {
+        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
+        return;
+    }
+    syncInfoSize_ = syncInfoSize;
+    AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", syncInfoSize);
+}
+
 int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
 {
     uint32_t totalBufferInMs = 40; // 40: 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency
@@ -520,7 +536,8 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
 
     int32_t ret = audioCapture_->ReqMmapBuffer(audioCapture_, reqBufferFrameSize, &desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret: %{public}d", ret));
     AUDIO_INFO_LOG("memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
         "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryFd,
         desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
@@ -537,8 +554,8 @@ int32_t FastAudioCaptureSource::PrepareMmapBuffer(void)
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "buffer size will overflow");
-
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte;
+    EnableSyncInfo(desc.syncInfoSize);
     return SUCCESS;
 }
 
@@ -577,7 +594,8 @@ int32_t FastAudioCaptureSource::CheckPositionTime(void)
     AUDIO_ERR_LOG("fail, stop capture");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->Stop(audioCapture_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[CheckPositionTime]stop fail, ret: %{public}d", ret));
     return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard

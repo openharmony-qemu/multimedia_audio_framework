@@ -37,6 +37,7 @@ AudioGroupManager::~AudioGroupManager()
     AUDIO_DEBUG_LOG("AudioGroupManager start");
     if (cbClientId_ != -1) {
         UnsetRingerModeCallback(cbClientId_);
+        cbClientId_ = -1;
     }
 }
 

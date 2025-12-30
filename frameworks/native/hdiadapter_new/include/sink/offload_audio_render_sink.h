@@ -74,6 +74,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -149,6 +151,8 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
+
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
 #ifdef SUPPORT_OLD_ENGINE
     std::shared_ptr<std::thread> flushThread_;
 #endif
