@@ -30,7 +30,6 @@ static constexpr int32_t TEST_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
 
-
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
       outputStream_(this),
@@ -281,7 +280,7 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frame for latency adjustment
-        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment")
+        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment");
         ringCache_->RestBuffer();
 
         FillSilenceFramesInner(TEST_LATENCY);

@@ -36,7 +36,7 @@ static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX = 3;
 static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
-static constexpr int64_t SMALL_SIGNAL_NUM = 1e-6;
+static constexpr float SMALL_SIGNAL_NUM = 1e-6;
 
 namespace OHOS {
 namespace AudioStandard {
