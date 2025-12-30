@@ -332,7 +332,7 @@ bool AudioBackgroundManager::FindKeyInMap(int32_t pid)
     return appStatesMap_.find(pid) != appStatesMap_.end();
 }
 
-std::map<int32_t, AppState> AudioBackgroundManager::GetAppStatesMap()
+const std::map<int32_t, AppState>& AudioBackgroundManager::GetAppStatesMap() const
 {
     return appStatesMap_;
 }
