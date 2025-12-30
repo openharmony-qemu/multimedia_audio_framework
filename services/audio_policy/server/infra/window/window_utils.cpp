@@ -17,10 +17,11 @@
 
 #include "window_utils.h"
 
-#include "audio_log.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "session_manager_lite.h"
 #include "window_manager_lite.h"
+#include "audio_background_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,12 +89,20 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
         return false;
     }
     for (auto &windowState : windowStates) {
-        if (windowState.isVisible_ &&
-            (windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_ACTIVE) ||
-            windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_FOREGROUND))) {
-            AUDIO_INFO_LOG("pid:%{public}d app is in the foreground,"
-                " windowState.state_ = %{public}d", pid, windowState.state_);
-            return true;
+        AUDIO_INFO_LOG("pid:%{public}d, windowState.isVisible_:%{public}d, windowState.state_:%{public}d", pid, windowState.isVisible_, windowState.state_);
+        if (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
+            windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND) {
+            if (windowState.isVisible_) {
+                return true;
+            } else {
+                auto appStateMap = AudioBackgroundManager::GetInstance().GetAppStatesMap();
+                auto appStateIt = appStateMap.find(pid);
+                if (appStateIt != appStateMap.end() && !appStateIt->second.isBack) {
+                    AUDIO_INFO_LOG("pid:%{public}d app is in the foreground, appIsBack: {public}d",
+                        pid, appStateIt->second.isBack);
+                    return true;
+                }
+            }
         }
     }
     return false;
