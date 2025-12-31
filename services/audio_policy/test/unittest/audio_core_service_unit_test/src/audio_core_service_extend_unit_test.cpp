@@ -1156,6 +1156,22 @@ HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_002, TestSize.
 }
 
 /**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_004
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface, return false.
+ */
+HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_004, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->streamInfo_.channels = STEREO;
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
  * @tc.name: IsForcedNormal_001
  * @tc.number: IsForcedNormal_001
  * @tc.desc: Test IsForcedNormal interface - conditions that should return true and set audioFlag to NORMAL.
