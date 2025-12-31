@@ -1333,6 +1333,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_001, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
+    rendererInServer->offloadEnable_ = true;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
@@ -1354,6 +1355,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_002, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
+    rendererInServer->offloadEnable_ = false;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(SUCCESS, ret);

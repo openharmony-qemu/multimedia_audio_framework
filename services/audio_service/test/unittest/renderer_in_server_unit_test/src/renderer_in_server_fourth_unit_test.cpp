@@ -1752,5 +1752,37 @@ HWTEST_F(RendererInServerFourthUnitTest, RendererInServerSetLoudnessGain_001, Te
     int32_t ret = server->SetLoudnessGain(0.5);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: HandleOperationStarted_002
+ * @tc.desc  : Test HandleOperationStarted API
+ */
+HWTEST_F(RendererInServerFourthUnitTest, HandleOperationStarted_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    rendererInServer->standByEnable_ = true;
+    rendererInServer->HandleOperationStarted();
+    EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+
+    rendererInServer->offloadEnable_ = true;
+    ret = rendererInServer->InitDupStream(1);
+    rendererInServer->offloadEnable_ = false;
+    ret = rendererInServer->InitDupStream(1 + 1);
+    rendererInServer->HandleOperationStarted();
+    EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+}
 } // namespace AudioStandard
 } // namespace OHOS
