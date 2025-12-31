@@ -74,8 +74,6 @@ namespace {
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
-    // Dual tone substream starts forwarding on the main stream's second frame
-    constexpr size_t DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT = 2;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -907,8 +905,6 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
-            CHECK_AND_RETURN(writeCount_.load() >= DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT);
-            dualToneStream_->SetSendDataEnabled(true);
         }
     }
 }
@@ -1209,7 +1205,6 @@ void RendererInServer::dualToneStreamInStart()
         if (dualToneStream_ != nullptr) {
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
-            dualToneStream_->SetSendDataEnabled(false);
             dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
@@ -1398,7 +1393,6 @@ int32_t RendererInServer::Drain(bool stopFlag)
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
-            dualToneStream_->SetSendDataEnabled(true);
             dualToneStream_->Drain(stopFlag);
         }
     }
@@ -1855,7 +1849,6 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
-        dualToneStream_->SetSendDataEnabled(false);
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,

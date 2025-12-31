@@ -32,6 +32,7 @@ namespace AudioStandard {
 
 const char* PRO_INNER_CAPTURER_SOURCE = "Speaker";
 const char* PRO_DUAL_PLAYBACK_SINK = "Speaker";
+static constexpr uint64_t DUAL_STREAM_PREBUF_TIME_MS = 60;
 
 HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
 {
@@ -296,6 +297,7 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     bool isCallbackMode = true;
     bool isMoveAble = true;
+    size_t preBufSizeInBytes = 0;
     if (managerType_ == DUP_PLAYBACK) {
         // todo check
         processConfig.isInnerCapturer = true;
@@ -304,9 +306,14 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     } else if (managerType_ == DUAL_PLAYBACK) {
         isCallbackMode = false;
         isMoveAble = false;
+        uint32_t sampleRate = processConfig.streamInfo.customSampleRate == 0 ?
+            processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate;
+        size_t byteSizePerFrame = processConfig.streamInfo.channels *
+            static_cast<size_t>(Util::GetSamplePerFrame(processConfig.streamInfo.format));
+        preBufSizeInBytes = DUAL_STREAM_PREBUF_TIME_MS * sampleRate * byteSizePerFrame / AUDIO_MS_PER_S;
     }
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
-        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
+        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode, preBufSizeInBytes);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
         HILOG_COMM_ERROR("[CreateRendererStream]Create rendererStream Failed");
         return nullptr;
