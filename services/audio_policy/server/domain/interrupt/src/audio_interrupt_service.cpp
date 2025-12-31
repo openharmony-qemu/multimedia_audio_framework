@@ -563,10 +563,6 @@ bool AudioInterruptService::IsOtherMediaPlaying()
         if (iter->second != ACTIVE && iter->second != DUCK) {
             continue;
         }
-        if (iter->first.api == PLAYER_TYPE_SOUND_POOL &&
-            iter->first.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-            continue;
-        }
         if (iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC ||
             iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MOVIE ||
             iter->first.audioFocusType.streamType == AudioStreamType::STREAM_GAME ||
