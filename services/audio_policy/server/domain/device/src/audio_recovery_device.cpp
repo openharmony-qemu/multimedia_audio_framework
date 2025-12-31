@@ -210,7 +210,8 @@ void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDev
 }
 
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode,
+    const bool isNeedNotifyBt)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !selectedDesc.empty() && selectedDesc[0] != nullptr,
         ERROR, "ptr exception");
@@ -260,7 +261,9 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         return ret;
     }
 
-    audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
+    if (isNeedNotifyBt) {
+        audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
+    }
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     if (selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
         audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
