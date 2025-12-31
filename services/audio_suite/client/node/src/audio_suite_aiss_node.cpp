@@ -89,7 +89,10 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     if (!aissAlgo_) {
         aissAlgo_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
@@ -99,7 +102,10 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
     }
-    InitAudioFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeCapability.inChannels},
+    AUDIO_ERR_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  frameLen:%{public}d", nodeCapability.inChannels, nodeCapability.inFormat, nodeCapability.inSampleRate, nodeCapability.frameLen);
+    AUDIO_ERR_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d", nodeCapability.outChannels, nodeCapability.outFormat, nodeCapability.outSampleRate);
+
+    SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
     
@@ -108,11 +114,11 @@ int32_t AudioSuiteAissNode::Init()
         CH_LAYOUT_QUAD,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     tmpHumanSoundOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+        nodeCapability.inChannels,
         CH_LAYOUT_STEREO,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     tmpBkgSoundOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+        nodeCapability.inChannels,
         CH_LAYOUT_STEREO,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
