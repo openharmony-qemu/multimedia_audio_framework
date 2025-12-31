@@ -46,7 +46,10 @@ AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
 int32_t AudioSuiteSoundFieldNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeCapability);
@@ -55,7 +58,7 @@ int32_t AudioSuiteSoundFieldNode::Init()
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init soundField algorithm");
 
-    InitAudioFormat(AudioFormat{{SOUNDFIELD_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{SOUNDFIELD_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
