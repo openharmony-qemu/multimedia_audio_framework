@@ -224,9 +224,6 @@ public:
         return audioNodeInfo_.workMode;
     }
 
-protected:
-    AudioNodeInfo audioNodeInfo_;
-
 private:
     static uint32_t GenerateAudioNodeId()
     {
@@ -241,6 +238,7 @@ private:
     }
 
 private:
+    AudioNodeInfo audioNodeInfo_;
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
 };
