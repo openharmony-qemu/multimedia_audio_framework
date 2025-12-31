@@ -921,6 +921,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_003, TestSize.Level4)
     EXPECT_EQ(0, pipeInfo->GetStreams().size());
 
     DeInitPrimarySource();
-}x
+}
 } // namespace AudioStandard
 } // namespace OHOS
