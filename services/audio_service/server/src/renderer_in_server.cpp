@@ -374,7 +374,7 @@ void RendererInServer::HandleOperationStarted()
             CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
                 "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
             innerCapIdToDupStreamCallbackMap_[capInfo.first]->SetFirstWriteDataFlag(true);
-            innerCapIdToDupStreamCallbackMap_[capInfo.first].store(0);
+            innerCapFirstWriteMap_[capInfo.first].store(0);
         }
     }
 }
@@ -945,7 +945,7 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
 
     if (innerCapFirstWriteMap_[innerCapId].load() < 1) {
-        innerCapFirstWriteMap_[innerCapId].fech_add(1);
+        innerCapFirstWriteMap_[innerCapId].fetch_add(1);
     }
 }
 
