@@ -98,8 +98,7 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
             }
             auto isBackState = AudioBackgroundManager::GetInstance().IsAppInBackState(pid);
             if (!isBackState) {
-                AUDIO_INFO_LOG("pid:%{public}d app is in the foreground, isBackState: %{public}d",
- 	                pid, isBackState);
+                AUDIO_INFO_LOG("pid:%{public}d app is in the foreground, isBackState: %{public}d", pid, isBackState);
                 return true;
             }
         }
