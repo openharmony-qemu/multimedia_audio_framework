@@ -41,7 +41,7 @@ int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
         nc.frameLen = specs.frameLen;
     }
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -58,13 +58,15 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = specs.isSupport;
     if (specs.frameLen != 0) {
         nc.frameLen = specs.frameLen;
+        AUDIO_ERR_LOG("framelen: %{public}d", specs.frameLen);
     }
     nc.inSampleRate = specs.inSampleRate;
     nc.inChannels = specs.inChannels;     
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
-    nc.outFormat = specs.outFormat;eturn SUCCESS;
+    nc.outFormat = specs.outFormat;
+    return SUCCESS;
 }
 
 int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
@@ -134,7 +136,6 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
     nc.outFormat = specs.outFormat;
-
     dlclose(libHandle);
     libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
@@ -187,7 +188,7 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = supportConfig.isSupport;
     nc.frameLen = supportConfig.frameLen;
     nc.inSampleRate = supportConfig.inSampleRate;
-    nc.inChannels = supportConfig.inChannels;     
+    nc.inChannels = supportConfig.inChannels;
     nc.inFormat = supportConfig.inFormat;
     nc.outSampleRate = supportConfig.outSampleRate;
     nc.outChannels = supportConfig.outChannels;
@@ -268,14 +269,14 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     nc.outSampleRate = spec.outSampleRate;
     nc.outChannels = spec.outChannels;
     nc.outFormat = spec.outFormat;
+
     dlclose(tempoSoHandle);
     tempoSoHandle = nullptr;
     // pitch
     std::string pitchSoPath = nc.soPath + pitchSoName;
-    void *pitchSoHandle = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr,
-        ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-        pitchSoPath.c_str(), dlerror());
+    void *pitchSoHandle = algoLibrary_.LoadLibrary(pitchSoPath);
+    CHECK_AND_RETURN_RET_LOG(pitchSoHandle != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
     AudioEffectLibrary *audioEffectLibHandle =
         static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle, PITCH_LIBRARY_INFO_SYM_AS_STR.c_str()));
     if (audioEffectLibHandle == nullptr) {
@@ -288,7 +289,6 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     nc.supportedOnThisDevice &= supportConfig.isSupport;
-    nc.isSupportRealtime &= supportConfig.isRealTime;
     dlclose(pitchSoHandle);
     pitchSoHandle = nullptr;
     AUDIO_INFO_LOG("LoadTempoPitchCapability end.");
@@ -393,6 +393,16 @@ int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCa
         nc.isLoaded = true;
     }
     nodeCapability = nc;
+    AUDIO_DEBUG_LOG("nodeType: %{public}d, inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  ",
+        nodeType,
+        nodeCapability.inChannels,
+        nodeCapability.inFormat,
+        nodeCapability.inSampleRate);
+    AUDIO_DEBUG_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d, frameLen:%{public}d",
+        nodeCapability.outChannels,
+        nodeCapability.outFormat,
+        nodeCapability.outSampleRate,
+        nodeCapability.frameLen);
     return SUCCESS;
 }
 
