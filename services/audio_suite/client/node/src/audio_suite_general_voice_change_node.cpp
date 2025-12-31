@@ -44,12 +44,15 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create General Voice Change algoInterface");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to Init General Voice Change Algo");
 
-    InitAudioFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
     
