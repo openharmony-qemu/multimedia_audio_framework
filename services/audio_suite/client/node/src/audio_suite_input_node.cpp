@@ -46,7 +46,7 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
-    outputStream_ = OutputPort<AudioSuitePcmBuffer*>(GetSharedInstance());
+    outputStream_.SetOutputPort(GetSharedInstance());
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
@@ -79,7 +79,7 @@ int32_t AudioInputNode::Flush()
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
-    outputStream_.resetResampleCfg();
+    outputStream_.ResetResampleCfg();
     return SUCCESS;
 }
 
@@ -95,7 +95,7 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
     return ERROR;
 }
 
-OutputPort<AudioSuitePcmBuffer*>*  AudioInputNode::GetOutputPort()
+OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
 {
     return &outputStream_;
 }
