@@ -225,7 +225,6 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
         pipeInfoInput->streamDescMap_.clear();
         pipeInfoInput->streamDescriptors_.clear();
         pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
-        return SUCCESS;
     }
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
