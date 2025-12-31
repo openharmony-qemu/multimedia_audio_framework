@@ -1157,10 +1157,10 @@ HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_002, TestSize.
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
- * @tc.number : IsStreamSupportMultiChannel_003
+ * @tc.number : IsStreamSupportMultiChannel_004
  * @tc.desc   : Test IsStreamSupportMultiChannel interface, return false.
  */
-HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_003, TestSize.Level1)
+HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_004, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
