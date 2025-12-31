@@ -47,7 +47,10 @@ int32_t AudioSuiteSpaceRenderNode::Init()
         return ERROR;
     }
     
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER,
         nodeCapability);
@@ -55,7 +58,7 @@ int32_t AudioSuiteSpaceRenderNode::Init()
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
-    InitAudioFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
