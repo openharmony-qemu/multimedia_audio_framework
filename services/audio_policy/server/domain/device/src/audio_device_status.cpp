@@ -1212,7 +1212,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     auto devDescs = audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
     for (auto &devDesc : devDescs) {
         if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
-            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc});
+            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc}, 0, false);
         }
     }
 }
