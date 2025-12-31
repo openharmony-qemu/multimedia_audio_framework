@@ -114,7 +114,7 @@ int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
     AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
     CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "Eq BandGains is empty");
-    
+
     value = paraValue_;
     AUDIO_INFO_LOG("GetOptions SUCCESS");
     return SUCCESS;
