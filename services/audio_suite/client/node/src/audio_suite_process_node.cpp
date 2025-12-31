@@ -138,15 +138,9 @@ int32_t AudioSuiteProcessNode::Flush()
 
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
-    outputStream_.SetOutputPort(GetSharedInstance());
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::InitAudioFormat(AudioFormat audioFormat)
-{
-    audioNodeInfo_.audioFormat = audioFormat;
-    audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
-            audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
+    CHECK_AND_RETURN_RET_LOG(GetSharedInstance() != nullptr, ERROR, "GetSharedInstance returns a nullptr");
+    int32_t ret = outputStream_.SetOutputPort(GetSharedInstance());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOutputPort failed.");
     return SUCCESS;
 }
 
