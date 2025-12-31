@@ -104,9 +104,8 @@ int32_t AudioSuiteTempoPitchNode::DeInit()
 
 float ParseStringToSpeedRate(const std::string &str, char delimiter)
 {
-    std::string token;	 
-
-    std::istringstream iss(str);	 
+    std::string token;
+    std::istringstream iss(str); 
 
     if (std::getline(iss, token, delimiter) && !token.empty()) {	 
         return std::stof(token);	 
