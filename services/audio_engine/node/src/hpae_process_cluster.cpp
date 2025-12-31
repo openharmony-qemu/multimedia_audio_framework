@@ -51,7 +51,16 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
     // so we need to make a prediction here on the output of the formatConverter node.
     // don't worry, Nodeinfo will still be modified during DoProcess.
-    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
+    if (nodeInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || nodeInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        HpaeNodeInfo tempNodeInfo(nodeInfo);
+        tempNodeInfo.channels = sinkInfo.channels;
+        tempNodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo.channelLayout);
+        mixerNode_ = std::make_shared<HpaeMixerNode>(tempNodeInfo);
+        AUDIO_INFO_LOG("because processCluster is open limiter,so change channels to %{public}u",
+            tempNodeInfo.channels);
+    } else {
+        mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
+    }
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
         renderNoneEffectNode_ = nullptr;

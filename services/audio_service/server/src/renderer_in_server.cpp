@@ -62,7 +62,8 @@ namespace {
     static constexpr int32_t ONE_MINUTE = 60;
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
-    const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    const int32_t OFFLOAD_INNER_CAP_PREBUF = 3; // 3 frame
+    const int32_t DEFAULT_INNER_CAP_PREBUF = 1; // 1 frame
     const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
@@ -363,6 +364,19 @@ void RendererInServer::HandleOperationStarted()
         std::chrono::system_clock::now().time_since_epoch()).count();
     lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame());
     lastWriteMuteFrame_ = 0;
+
+    std::lock_guard<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (IsEnabledAndValidDupStream(capInfo.second)) {
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                innerCapIdToDupStreamCallbackMap_.end(),
+                "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
+            innerCapIdToDupStreamCallbackMap_[capInfo.first]->SetFirstWriteDataFlag(true);
+            innerCapFirstWriteMap_[capInfo.first].store(0);
+        }
+    }
 }
 
 // LCOV_EXCL_START
@@ -902,6 +916,7 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
     int32_t innerCapId)
 {
+    bool innerCapWriteRet = SUCCESS;
     int32_t engineFlag = GetEngineFlag();
     if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) !=
         renderEmptyCountForInnerCapToInnerCapIdMap_.end() &&
@@ -920,9 +935,17 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("OtherStreamEnqueue running");
-        WriteDupBufferInner(bufferDesc, innerCapId);
+        innerCapWriteRet = WriteDupBufferInner(bufferDesc, innerCapId);
     } else {
         captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+    }
+
+    if (innerCapFirstWriteMap_[innerCapId].load() == 1 && innerCapWriteRet == SUCCESS) {
+        innerCapIdToDupStreamCallbackMap_[innerCapId]->SetFirstWriteDataFlag(false);
+    }
+
+    if (innerCapFirstWriteMap_[innerCapId].load() < 1) {
+        innerCapFirstWriteMap_[innerCapId].fetch_add(1);
     }
 }
 
@@ -1317,7 +1340,11 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
-                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
+                if (offloadEnable_) {
+                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
+                } else {
+                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
+                }
                 InitDupBufferInner(capInfo.first);
             }
         }
@@ -1750,10 +1777,11 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         capInfo.dupStream->Start();
-
-        if (offloadEnable_) {
-            renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
-        }
+    }
+    if (offloadEnable_) {
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
+    } else {
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = DEFAULT_INNER_CAP_PREBUF;
     }
     return SUCCESS;
 }
@@ -1898,7 +1926,9 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 
 int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
-    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
+    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
+        "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
+    CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
         std::unique_ptr<AudioRingCache> &dupBuffer = dupRingBuffer_;
@@ -1926,6 +1956,11 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
+}
+
+void StreamCallbacks::SetFirstWriteDataFlag(bool isFirstWriteDataFlag)
+{
+    isFirstWriteDataFlag_ = isFirstWriteDataFlag;
 }
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)
