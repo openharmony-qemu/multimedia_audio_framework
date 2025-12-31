@@ -48,14 +48,19 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         AUDIO_ERR_LOG("AudioSuitePureVoiceChangeNode::Init failed, already inited");
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+        AUDIO_ERR_LOG("InitOutputStream SUCCESS");
+    }
     algoInterfaceImpl_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "Failed to create nr algoInterface");
     int32_t ret = algoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterfaceImpl_ Init failed");
-
-    InitAudioFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    nodeCapability.inChannels = STEREO;
+    nodeCapability.outChannels = STEREO;
+    SetAudioNodeFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
@@ -65,15 +70,16 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         nodeCapability.outChannels,
         VMPH_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-                                            nodeCapability.outChannels,
-                                            VMPH_ALGO_CHANNEL_LAYOUT,
-                                            static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
-        PCM_DATA_DURATION_40_MS);
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-                                            nodeCapability.outChannels,
-                                            VMPH_ALGO_CHANNEL_LAYOUT,
-                                            static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+    postProcessedPcmBuffer_ =
+        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+                                nodeCapability.outChannels,
+                                VMPH_ALGO_CHANNEL_LAYOUT,
+                                static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+            PCM_DATA_DURATION_40_MS);
+    tempPcmData_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+                                           nodeCapability.outChannels,
+                                           VMPH_ALGO_CHANNEL_LAYOUT,
+                                           static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
         PCM_DATA_DURATION_40_MS);
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::Init end");
@@ -156,6 +162,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
 
     uint32_t srcSize = preOutputsFirst[0]->GetDataSize();
     uint32_t dstSize = tempPcmData_.GetDataSize();
+    AUDIO_INFO_LOG("srcSize:%{public}d, dstSize:%{public}d", srcSize, dstSize);
     CHECK_AND_RETURN_RET_LOG(srcSize <= dstSize, rawPcmData_, "Source buffer too large for destination");
 
     int32_t ret = memcpy_s(tempPcmData_.GetPcmData(), dstSize,   // Copy the first frame 20ms data
