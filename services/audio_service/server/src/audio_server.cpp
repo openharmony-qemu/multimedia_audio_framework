@@ -2390,7 +2390,12 @@ bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
 bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
 {
     StreamUsage streamUsage = config.rendererInfo.streamUsage;
-
+    if (config.rendererInfo.playerType == PLAYER_TYPE_SYSTEM_SOUND_PLAYER &&
+        streamUsage == STREAM_USAGE_ENFORCED_TONE) {
+        AUDIO_INFO_LOG("rendererInfo playerType = %{public}d, streamUsage = %{public}d",
+            config.rendererInfo.playerType, streamUsage);
+        return true;
+    }
     bool needVerifyPermission = false;
     for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
         if (streamUsage == item) {

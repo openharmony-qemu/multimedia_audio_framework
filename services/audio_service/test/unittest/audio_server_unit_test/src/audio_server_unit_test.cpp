@@ -1220,6 +1220,66 @@ HWTEST_F(AudioServerUnitTest, IsSatellite_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_001
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    bool ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_002
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    bool ret;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.callerUid = 0;
+    config.rendererInfo.streamUsage = STREAM_USAGE_ULTRASONIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, false);
+
+    config.callerUid = 6699; // msdp
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_ENFORCED_TONE;
+    config.rendererInfo.playerType = PLAYER_TYPE_SYSTEM_SOUND_PLAYER;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
  * @tc.name  : Test SetVoiceVolume API
  * @tc.type  : FUNC
  * @tc.number: SetVoiceVolume_001
@@ -2163,61 +2223,6 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 
     config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_UNKNOWN);
-}
-
-/**
- * @tc.name  : Test CheckPlaybackPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaybackPermission_001
- * @tc.desc  : Test CheckPlaybackPermission interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    bool ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test CheckPlaybackPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaybackPermission_002
- * @tc.desc  : Test CheckPlaybackPermission interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
-    bool ret;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.callerUid = 0;
-    config.rendererInfo.streamUsage = STREAM_USAGE_ULTRASONIC;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, false);
-
-    config.callerUid = 6699; // msdp
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
 }
 
 /**

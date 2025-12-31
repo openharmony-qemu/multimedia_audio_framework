@@ -303,6 +303,7 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
     PLAYER_TYPE_TONE_PLAYER = 1003,
+    PLAYER_TYPE_SYSTEM_SOUND_PLAYER = 1004,
 };
 
 // This structure has compatibility constraints with the cast and cannot be modified arbitrarily.
