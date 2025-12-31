@@ -38,7 +38,10 @@ AudioSuiteNrNode::~AudioSuiteNrNode()
 int32_t AudioSuiteNrNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init begin");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nodeCapability);
@@ -47,10 +50,10 @@ int32_t AudioSuiteNrNode::Init()
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init nr algorithm");
 
-    InitAudioFormat(AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
-
+    AUDIO_ERR_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  frameLen:%{public}d", nodeCapability.outChannels, nodeCapability.outFormat, nodeCapability.outSampleRate, nodeCapability.frameLen);
     outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         NR_ALGO_CHANNEL_LAYOUT,
