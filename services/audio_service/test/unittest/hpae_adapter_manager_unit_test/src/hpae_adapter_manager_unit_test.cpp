@@ -840,5 +840,32 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_036, TestSize.Level1)
     int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
     EXPECT_NE(ERROR, result);
 }
+
+/**
+* @tc.name   : Test StartRenderWithSyncId API
+* @tc.number : HpaeAdapterManager_037
+* @tc.desc   : Test StartRenderWithSyncId interface.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_037, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    std::string deviceName = "Speaker";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, deviceName);
+    ASSERT_TRUE(rendererStream != nullptr);
+
+    int32_t rendererStreamMap = MAP_NUM;
+    adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
+    uint32_t streamIndex = MAP_NUM;
+    int32_t syncId = 123;
+    int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
+    EXPECT_NE(ERROR, result);
+    syncId = 0;
+    int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
+    EXPECT_NE(ERROR, result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

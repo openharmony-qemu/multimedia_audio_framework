@@ -259,10 +259,8 @@ int32_t HpaeAdapterManager::ReleaseCapturer(uint32_t streamIndex)
     auto currentCapture = SafeGetMap(capturerStreamMap_, static_cast<int32_t>(streamIndex));
     CHECK_AND_RETURN_RET_LOG(currentCapture != nullptr, SUCCESS, "No matching stream");
 
-    if (currentCapture->Release() < 0) {
-        AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(currentCapture->Release() == SUCCESS, ERR_OPERATION_FAILED,
+        "Release stream %{public}d failed", streamIndex);
 
     capturerStreamMap_[streamIndex] = nullptr;
     capturerStreamMap_.erase(streamIndex);
