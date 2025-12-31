@@ -44,11 +44,14 @@ int32_t AudioSuiteEnvNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
-    InitAudioFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
     
