@@ -839,7 +839,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_011, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_RAW_AI_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT * UNIQUE_ID_INTERVAL);
 }
 
 
