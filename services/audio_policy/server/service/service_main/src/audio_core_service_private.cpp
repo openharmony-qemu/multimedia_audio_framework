@@ -2677,7 +2677,11 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
         // running stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
 #ifndef MUTE_SINK_DISABLE
-            MuteSinkPortForSwitchDevice(streamDesc, reason);
+            AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
+            AudioScene audioScene = audioSceneManager_.GetAudioScene();
+            auto muteReason = reason.IsSetAudioScene() && IsCallOrRingToDefault(lastAudioScene, audioScene) ?
+                AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
+            MuteSinkPortForSwitchDevice(streamDesc, muteReason);
 #endif
         }
     }
@@ -2872,7 +2876,7 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
@@ -3564,6 +3568,13 @@ void AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene,
         AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to non-ring");
         isRingDualToneOnPrimarySpeaker_ = false;
     }
+}
+
+bool AudioCoreService::IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene)
+{
+    return (lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING ||
+        lastAudioScene == AUDIO_SCENE_PHONE_CALL || lastAudioScene == AUDIO_SCENE_PHONE_CHAT) &&
+        audioScene == AUDIO_SCENE_DEFAULT;
 }
 
 AudioStreamDeviceChangeReasonExt AudioCoreService::UpdateRemoteDeviceChangeReason(
