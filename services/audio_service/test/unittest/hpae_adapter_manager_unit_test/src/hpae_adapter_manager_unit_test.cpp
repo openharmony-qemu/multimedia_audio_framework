@@ -846,7 +846,7 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_036, TestSize.Level1)
 * @tc.number : HpaeAdapterManager_037
 * @tc.desc   : Test StartRenderWithSyncId interface.
 */
-HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_037, TestSize.Level1)
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_037, TestSize.Level0)
 {
     HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
@@ -864,7 +864,7 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_037, TestSize.Level1)
     int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
     EXPECT_NE(ERROR, result);
     syncId = 0;
-    int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
+    result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
     EXPECT_NE(ERROR, result);
 }
 } // namespace AudioStandard
