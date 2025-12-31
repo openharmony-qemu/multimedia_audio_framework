@@ -332,11 +332,6 @@ bool AudioBackgroundManager::FindKeyInMap(int32_t pid)
     return appStatesMap_.find(pid) != appStatesMap_.end();
 }
 
-const std::map<int32_t, AppState>& AudioBackgroundManager::GetAppStatesMap() const
-{
-    return appStatesMap_;
-}
-
 bool AudioBackgroundManager::IsAppInBackState(int32_t pid)
 {
     std::lock_guard<std::mutex> lock(appStatesMapMutex_);
