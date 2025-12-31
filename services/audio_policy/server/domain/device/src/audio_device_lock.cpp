@@ -54,7 +54,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferre
     if (ownerUid == 0) {
         return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, callingUid);
     } else {
-        return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, ownerUid);
+        return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
     }
 }
 
