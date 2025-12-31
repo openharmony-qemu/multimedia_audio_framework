@@ -113,7 +113,7 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
     std::string algoSoPath = nc.soPath + nc.soName;
     void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
     CHECK_AND_RETURN_RET_LOG(
-        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{public}s", algoSoPath.c_str());
+        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
 
     using FunSpaceRenderGetSpeces = SpaceRenderSpeces (*)();
     FunSpaceRenderGetSpeces getSpecsFunc =
