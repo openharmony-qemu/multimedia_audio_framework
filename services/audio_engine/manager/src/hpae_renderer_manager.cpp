@@ -44,6 +44,7 @@ namespace {
     const std::string REMOTE_DEVICE_CLASS = "remote";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = 5000;
+    constexpr int32_t COLL_ALING_COUNT = 5;
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -713,6 +714,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             // for collaboration
             if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
                 hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+                hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
                 TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             }
             if (toBeStoppedSceneTypeToSessionMap_.count(sceneType) &&

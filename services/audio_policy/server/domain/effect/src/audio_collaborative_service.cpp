@@ -18,6 +18,7 @@
 #include <cstring>
 #include "audio_collaborative_service.h"
 #include "media_monitor_manager.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,6 +27,7 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIV
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
+static constexpr int32_t SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE_TIMEOUT = 15;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -64,7 +66,8 @@ bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
 
 void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice)
 {
-    AUDIO_INFO_LOG("UpdateCurrentDevice Entered!");
+    AUDIO_INFO_LOG("UpdateCurrentDevice Entered, seletedAudioDevice.deviceType_: %{public}d",
+        selectedAudioDevice.deviceType_);
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     
     if (selectedAudioDevice.macAddress_ != curDeviceAddress_) {
@@ -94,12 +97,25 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled)
 {
     AUDIO_INFO_LOG("SetCollaborativePlaybackEnabledForDevice Entered!");
-    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    std::string deviceAddress = selectedAudioDevice->macAddress_;
-    AUDIO_INFO_LOG("Device Collaborative Enabled should be set to: %{public}d", enabled);
-    addressToCollaborativeEnabledMap_[deviceAddress] = enabled ? COLLABORATIVE_OPENED : COLLABORATIVE_CLOSED;
-    WriteCollaborativeStateSysEvents(deviceAddress, addressToCollaborativeEnabledMap_[deviceAddress]);
-    return UpdateCollaborativeStateReal();
+    int32_t ret;
+    {
+        std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+        std::string deviceAddress = selectedAudioDevice->macAddress_;
+        AUDIO_INFO_LOG("Device Collaborative Enabled should be set to: %{public}d", enabled);
+        addressToCollaborativeEnabledMap_[deviceAddress] = enabled ? COLLABORATIVE_OPENED : COLLABORATIVE_CLOSED;
+        WriteCollaborativeStateSysEvents(deviceAddress, addressToCollaborativeEnabledMap_[deviceAddress]);
+        ret = UpdateCollaborativeStateReal();
+    }
+    
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UpdateCollaborativeStateReal failed!");
+    AudioXCollie AudioXCollie("AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice",
+        SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetCollaborativePlaybackEnabledForDevice timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    AudioCoreService::GetCoreService()->GetEventEntry()->
+        FetchOutputDeviceAndRoute("SetCollaborativePlaybackEnabledForDevice");
+    return SUCCESS;
 }
 
 bool AudioCollaborativeService::IsCollaborativePlaybackEnabledForDevice(

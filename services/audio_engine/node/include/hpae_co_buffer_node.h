@@ -51,6 +51,8 @@ public:
     void SetLatency(uint32_t latency);
     void SetOutputClusterConnected(bool isConnect);
     bool IsOutputClusterConnected();
+    bool DelayAlignmentInner();
+    void SetDelayCount(int32_t delayCount);
 private:
     void FillSilenceFramesInner(uint32_t latencyMs);
     void ProcessInputFrameInner(HpaePcmBuffer* buffer);
@@ -67,6 +69,7 @@ private:
     uint64_t latency_  = 0; // in ms
     bool isOutputClusterConnected_ = false;
     std::set<HpaeProcessorType> connectedProcessCluster_;
+    int32_t waitCountThreshold_ = 0;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
