@@ -336,5 +336,15 @@ const std::map<int32_t, AppState>& AudioBackgroundManager::GetAppStatesMap() con
 {
     return appStatesMap_;
 }
+
+bool AudioBackgroundManager::IsAppInBackState(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+    auto appStateIt = appStatesMap_.find(pid);
+    if (appStateIt != appStatesMap_.end()) {
+        return appStateIt->second.isBack;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
