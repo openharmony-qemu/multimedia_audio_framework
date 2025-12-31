@@ -49,14 +49,17 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteTempoPitchAlgoInterfaceImpl Init failed");
 
-    InitAudioFormat(AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
@@ -101,11 +104,14 @@ int32_t AudioSuiteTempoPitchNode::DeInit()
 
 float ParseStringToSpeedRate(const std::string &str, char delimiter)
 {
-    std::string token;
+    float value;
+    std::string paramValue;
     std::istringstream iss(str);
 
-    if (std::getline(iss, token, delimiter) && !token.empty()) {
-        return std::stof(token);
+    if (std::getline(iss, paramValue, delimiter) && !paramValue.empty()) {
+        CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), 0.0f,
+            "Pure voice change convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+        return value;
     }
 
     return 0.0f;
@@ -184,7 +190,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
-            "ReadProcessNodePreOutputData failed, preOutputs[0] is nullptr");
+            "Failed to get data from the previous node.");
         int32_t ret = SplitDataToQueue(preOutputs[0]->GetPcmData(), preOutputs[0]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AudioSuiteTempoPitchNode SplitDataToQueue failed");
     } else {
