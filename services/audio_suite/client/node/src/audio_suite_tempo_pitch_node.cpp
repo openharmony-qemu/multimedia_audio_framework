@@ -110,6 +110,7 @@ float ParseStringToSpeedRate(const std::string &str, char delimiter)
     if (std::getline(iss, token, delimiter) && !token.empty()) {
         return std::stof(token);
     }
+
     return 0.0f;
 }
 
