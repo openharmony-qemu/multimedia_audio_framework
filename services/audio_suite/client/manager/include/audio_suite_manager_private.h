@@ -86,7 +86,7 @@ public:
     int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) override;
     int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) override;
     int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) override;
-    int32_t GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType) override;
+    int32_t GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType) override;
     int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
         AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
     int32_t GetVoiceBeautifierType(uint32_t nodeId,

@@ -199,7 +199,7 @@ public:
         return "";
     }
 
-    virtual std::string GetSoundFiledType()
+    virtual std::string GetSoundFieldType()
     {
         return "";
     }
