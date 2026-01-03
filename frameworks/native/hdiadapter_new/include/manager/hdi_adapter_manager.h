@@ -58,6 +58,7 @@ public:
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
     std::shared_ptr<IAudioCaptureSource> GetCaptureSource(uint32_t captureId, bool tryCreate = false);
+    std::shared_ptr<IAudioRenderSink> GetAuxiliarySinkInstance();
 
     int32_t LoadAdapter(HdiDeviceManagerType type, const std::string &adapterName);
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
@@ -114,6 +115,7 @@ private:
     std::mutex renderSinkMtx_;
     std::mutex captureSourceMtx_;
     std::mutex deviceManagerMtx_;
+    std::shared_ptr<IAudioRenderSink> auxiliarySink_ = nullptr;
     // callback
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;

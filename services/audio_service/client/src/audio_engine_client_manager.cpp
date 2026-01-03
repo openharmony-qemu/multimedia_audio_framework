@@ -171,6 +171,15 @@ int32_t AudioEngineClientManager::UnregisterInputPipeChangeCallback(std::shared_
     return SUCCESS;
 }
 
+int32_t AudioEngineClientManager::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    AUDIO_INFO_LOG("set to isEnabled:%{public}s", isEnabled ? "true" : "false");
+    const sptr<IStandardAudioService> proxy = InitAndGetAudioServiceProxy();
+    CHECK_AND_RETURN_RET_LOG(proxy != nullptr, ERR_IPC, "can not get audio proxy");
+    proxy->SetAuxiliarySinkEnable(isEnabled);
+    return SUCCESS;
+}
+
 bool AudioEngineClientManager::CallbackHandle::AddOutputPipeChangeCallback(
     std::shared_ptr<AudioOutputPipeCallback> &callback)
 {

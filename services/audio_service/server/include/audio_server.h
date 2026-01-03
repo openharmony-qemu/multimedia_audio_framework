@@ -300,6 +300,7 @@ public:
         std::string condition, std::string value) override;
     int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
