@@ -700,9 +700,13 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
-    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(),
-        "Find no support pipe for stream %{public}u, route %{public}u",
-        desc->GetSessionId(), desc->GetRoute());
+    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find no support pipe for stream %{public}u, "
+        "route %{public}u", desc->GetSessionId(), desc->GetRoute());
+
+    if (desc->routeFlag_ & AUDIO_OUTPUT_FLAG_HWDECODING) {
+        info = pipeIt->second->streamPropInfos_.front();
+        return;
+    }
 
     AudioStreamInfo temp = desc->streamInfo_;
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);

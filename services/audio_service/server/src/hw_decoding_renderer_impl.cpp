@@ -44,6 +44,7 @@ HWDecodingRendererStream::HWDecodingRendererStream(AudioProcessConfig &processCo
 HWDecodingRendererStream::~HWDecodingRendererStream()
 {
     AUDIO_INFO_LOG("destor");
+    HdiAdapterManager::GetInstance().ReleaseId(renderId_);
 }
 
 int32_t HWDecodingRendererStream::Init()
@@ -62,14 +63,6 @@ int32_t HWDecodingRendererStream::Init()
 int32_t HWDecodingRendererStream::InitSink(AudioStreamInfo streamInfo)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    std::string sinkName = HW_DECODING_SINK;
-    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, sinkName, true);
-    sink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
-    if (sink_ == nullptr) {
-        AUDIO_ERR_LOG("get render fail, sinkName: %{public}s", sinkName.c_str());
-        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
-        return ERR_INVALID_HANDLE;
-    }
     IAudioSinkAttr attr = {};
     attr.adapterName = "dp";
     attr.encodingType = streamInfo.encoding; // used for HW decoding
@@ -80,16 +73,29 @@ int32_t HWDecodingRendererStream::InitSink(AudioStreamInfo streamInfo)
     attr.deviceType = DEVICE_TYPE_DP; // in plan
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
+    std::string sinkName = HW_DECODING_SINK;
     AUDIO_INFO_LOG("sinkName:%{public}s,device:%{public}d,sample rate:%{public}d,format:%{public}d,channel:%{public}d",
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
-    int32_t ret = sink_->Init(attr);
 
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init sink fail, sinkName: %{public}s", sinkName.c_str());
+    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_HWDECODE, sinkName, true);
+    sink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
+    int32_t ret = IsSinkInitted(attr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sink is not inited:%{public}d", ret);
+
+    return SUCCESS;
+}
+
+int32_t HWDecodingRendererStream::IsSinkInitted(IAudioSinkAttr &attr)
+{
+    if (sink_ == nullptr || sink_->Init(attr) != SUCCESS) {
+        AUDIO_ERR_LOG("sink is null or sink init failed!");
+        HdiAdapterManager::GetInstance().ReleaseId(renderId_);
+        return ERR_INVALID_HANDLE;
+    }
 
     float volume = 1.0f;
     sink_->SetVolume(volume, volume);
-
-    return ret;
+    return SUCCESS;
 }
 
 int32_t HWDecodingRendererStream::InitBuffer()

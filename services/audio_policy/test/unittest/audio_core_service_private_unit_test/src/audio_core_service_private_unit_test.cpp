@@ -2729,6 +2729,39 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Leve
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_126
+ * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_126, TestSize.Level1)
+{
+    uint32_t sessionIDTest = 0;
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipeInfo, nullptr);
+
+    auto audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    audioStreamDescriptor->routeFlag_ = AUDIO_OUTPUT_FLAG_HWDECODING;
+    audioStreamDescriptor->sessionId_ = sessionIDTest;
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+
+    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    uint32_t paIndex = 0;
+    auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+
+    EXPECT_NE(ret, sessionIDTest);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: IsRingerOrAlarmerDualDevicesRange_001.
  * @tc.desc  : Test IsRingerOrAlarmerDualDevicesRange.
  */
