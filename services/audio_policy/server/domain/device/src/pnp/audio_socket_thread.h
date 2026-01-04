@@ -20,7 +20,7 @@
 
 #include "hdf_device_desc.h"
 #include "hdf_types.h"
-#include "v5_0/audio_types.h"
+#include "v6_0/audio_types.h"
 #include "audio_pnp_param.h"
 
 namespace OHOS {

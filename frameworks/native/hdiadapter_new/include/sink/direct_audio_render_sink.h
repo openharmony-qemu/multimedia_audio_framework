@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include <thread>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
