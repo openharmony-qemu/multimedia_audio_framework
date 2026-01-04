@@ -1795,5 +1795,36 @@ HWTEST_F(AudioDeviceStatusUnitTest, CheckAndActiveHfpDevice_001, TestSize.Level1
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     audioDeviceStatus.CheckAndActiveHfpDevice(deviceDesc);
 }
+
+/**
+* @tc.name  : Test CheckIsIndexValidAndHandleErr.
+* @tc.number: CheckIsIndexValidAndHandleErr_001
+* @tc.desc  : Test CheckIsIndexValidAndHandleErr
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, CheckIsIndexValidAndHandleErr_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioDeviceDescriptor deviceDesc;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(desc, nullptr);
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::string currentActivePort = "";
+    uint32_t paIndex = OPEN_PORT_FAILURE;
+    AudioIOHandle ioHandle = HDI_INVALID_ID;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = 1280;
+    ioHandle = HDI_INVALID_ID;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = OPEN_PORT_FAILURE;
+    ioHandle = 1280;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = 1280;
+    ioHandle = 1280;
+    EXPECT_TRUE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+}
 } // namespace AudioStandard
 } // namespace OHOS
