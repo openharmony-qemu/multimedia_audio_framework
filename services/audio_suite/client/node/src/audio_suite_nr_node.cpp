@@ -53,7 +53,6 @@ int32_t AudioSuiteNrNode::Init()
     SetAudioNodeFormat(AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
-    AUDIO_ERR_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  frameLen:%{public}d", nodeCapability.outChannels, nodeCapability.outFormat, nodeCapability.outSampleRate, nodeCapability.frameLen);
     outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         NR_ALGO_CHANNEL_LAYOUT,
