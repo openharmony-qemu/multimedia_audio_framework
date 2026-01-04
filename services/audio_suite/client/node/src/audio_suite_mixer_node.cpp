@@ -85,8 +85,7 @@ int32_t AudioSuiteMixerNode::Init()
     }
 
     int32_t ret = InitAudioLimiter();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");    
-
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
     pcmDurationMs_ = PCM_DATA_DEFAULT_DURATION_20_MS;
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init end");
     return SUCCESS;
