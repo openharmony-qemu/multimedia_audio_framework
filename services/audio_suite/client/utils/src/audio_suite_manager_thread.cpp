@@ -42,7 +42,7 @@ void AudioSuiteManagerThread::ActivateThread(IAudioSuiteManagerThread *audioSuit
     m_audioSuiteManager = audioSuiteManager;
     auto threadFunc = std::bind(&AudioSuiteManagerThread::Run, this);
     thread_ = std::thread(threadFunc);
-    pthread_setname_np(thread_.native_handle(), threadName.c_str());
+    int ret = pthread_setname_np(thread_.native_handle(), threadName.c_str());
     CHECK_AND_RETURN_LOG(ret == 0, "Failed to set thread name: %s", strerror(ret));
 }
 
