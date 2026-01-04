@@ -181,7 +181,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_028, TestSize.Level1)
     EXPECT_NE(audioDeviceLock, nullptr);
     AudioRendererInfo newRendererInfo;
     AudioDeviceLock& deviceLock(AudioDeviceLock::GetInstance());
-    devicelock.audioStateManager_.SetAudioSceneOwnerUid(0);
+    deviceLock.audioStateManager_.SetAudioSceneOwnerUid(0);
     EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
 }
 
@@ -195,7 +195,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
     EXPECT_NE(audioDeviceLock, nullptr);
     AudioRendererInfo newRendererInfo;
     AudioDeviceLock& deviceLock(AudioDeviceLock::GetInstance());
-    devicelock.audioStateManager_.SetAudioSceneOwnerUid(1);
+    deviceLock.audioStateManager_.SetAudioSceneOwnerUid(1);
     EXPECT_NO_THROW(audioDeviceLock->GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID));
 }
 } // namespace AudioStandard
