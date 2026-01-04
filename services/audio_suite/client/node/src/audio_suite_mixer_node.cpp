@@ -20,7 +20,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_mixer_node.h"
-#include <iostream>
+
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
