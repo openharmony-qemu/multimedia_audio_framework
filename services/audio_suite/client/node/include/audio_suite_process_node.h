@@ -68,7 +68,7 @@ protected:
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
     void CheckEffectNodeOvertimeCount();
     int32_t InitOutputStream();
-    int32_t InitAudioFormat(AudioFormat audioFormat);
+    bool isOutputPortInit_ = false;
     uint32_t pcmDurationMs_;
 
 private:
