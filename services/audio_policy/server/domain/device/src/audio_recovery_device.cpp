@@ -520,6 +520,17 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         userSelectedDevice = audioStateManager_.GetPreferredCallRenderDevice();
         preferredType = AUDIO_CALL_RENDER;
     }
+    if (audioDevUsage == ALL_MEDIA_DEVICES) {
+        audioDeviceDescriptors.clear();
+        vector<shared_ptr<AudioDeviceDescriptor>> allDevices = audioDeviceManager_.GetConnectedDevices();
+        for (const auto &desc : allDevices) {
+            if (!desc->macAddress_.empty() &&
+                desc->macAddress_ == audioDeviceDescriptors.front()->macAddress_ &&
+                desc->deviceRole_ == OUTPUT_DEVICE) {
+                audioDeviceDescriptors.push_back(desc);
+            }
+        }
+    }
     for (const auto &desc : audioDeviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         ClearActiveHfpDevice(desc);
