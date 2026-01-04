@@ -114,7 +114,7 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = specs->isSupport;
     nc.frameLen = specs->frameLen;
     nc.inSampleRate = specs->inSampleRate;
-    nc.inChannels = specs->inChannels;     
+    nc.inChannels = specs->inChannels;
     nc.inFormat = specs->inFormat;
     nc.outSampleRate = specs->outSampleRate;
     nc.outChannels = specs->outChannels;
