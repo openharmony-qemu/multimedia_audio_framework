@@ -80,7 +80,7 @@ int32_t AudioSuitePipeline::Init()
         return ERR_ILLEGAL_STATE;
     }
     pipelineThread_ = std::make_unique<AudioSuiteManagerThread>();
-    pipelineThread_->ActivateThread(this);
+    pipelineThread_->ActivateThread(this, "SuitePipeline");
     isInit_.store(true);
     CreateDdlGroup();
     AUDIO_INFO_LOG("AudioSuitePipeline::Init end");
