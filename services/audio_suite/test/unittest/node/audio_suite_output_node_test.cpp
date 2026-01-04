@@ -88,16 +88,16 @@ static FormatConversionInfo g_info[] = {
         {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_11025}},
 };
 
- static FormatConversionInfo g_inputInfo[] = {	 
-     {"in_8000_1_u8.wav", "inout1.pcm", "compare_44100_2_s16le_3.pcm",	 
-         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_8000},	 
-         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},	 
-     {"in_48000_2_s16le.wav", "inout2.pcm", "compare_48000_2_s24le.pcm",	 
-         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_48000},	 
-         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_48000}},	 
-     {"in_44100_2_s24le.wav", "inout3.pcm", "compare_192000_2_f32le.pcm",	 
-         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_44100},	 
-         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_192000}},	 
+ static FormatConversionInfo g_inputInfo[] = {
+     {"in_8000_1_u8.wav", "inout1.pcm", "compare_44100_2_s16le_3.pcm",
+         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_8000},
+         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},
+     {"in_48000_2_s16le.wav", "inout2.pcm", "compare_48000_2_s24le.pcm",
+         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_48000},
+         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_48000}},
+     {"in_44100_2_s24le.wav", "inout3.pcm", "compare_192000_2_f32le.pcm",
+         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_44100},
+         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_192000}},
      {"in_16000_1_s16le.wav", "inout4.pcm", "compare_48000_2_s16le.pcm",	 
          {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_16000},	 
          {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_48000}},	 
