@@ -76,6 +76,30 @@ private:
         return SUCCESS;
     }
 
+    template <typename T>
+    int32_t SetAudioParameters(NodeCapability &nc, T &specs)
+    {
+        nc.supportedOnThisDevice = specs.isSupport;
+        if (specs.frameLen != 0) {
+            nc.frameLen = specs.frameLen;
+        }
+        nc.inSampleRate = specs.inSampleRate;
+        nc.inChannels = specs.inChannels;
+        nc.inFormat = specs.inFormat;
+        nc.outSampleRate = specs.outSampleRate;
+        nc.outChannels = specs.outChannels;
+        nc.outFormat = specs.outFormat;
+        AUDIO_INFO_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  ",
+            nc.inChannels,
+            nc.inFormat,
+            nc.inSampleRate);
+        AUDIO_INFO_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d, frameLen:%{public}d",
+            nc.outChannels,
+            nc.outFormat,
+            nc.outSampleRate,
+            nc.frameLen);
+        return SUCCESS;
+    }
     int32_t LoadVbCapability(NodeCapability &nc);
     int32_t LoadEqCapability(NodeCapability &nc);
     int32_t LoadAinrCapability(NodeCapability &nc);
