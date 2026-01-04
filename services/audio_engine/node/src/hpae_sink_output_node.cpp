@@ -35,15 +35,19 @@ static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static const std::string BT_SINK_NAME = "a2dp";
 static const std::string USB_SINK_NAME = "usb";
-
 static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
     BT_SINK_NAME,
     USB_SINK_NAME
 };
-
-static inline const std::unordered_set<StreamUsage> AUXILIARY_STREAMUSAGE_FILTER = {
+static inline const std::unordered_set<StreamUsage> VALID_STREAMUSAGE_AUXILIARY_FILTER = {
+    STREAM_USAGE_VOICE_MEDIA,
+    STREAM_USAGE_VOICE_MUSIC,
+    STREAM_USAGE_VIDEO_MOVIE,
+    STREAM_USAGE_VOICE_GAME,
+    STREAM_USAGE_VOICE_AUDIOBOOK
+};
+static inline const std::unordered_set<StreamUsage> INVALID_STREAMUSAGE_AUXILIARY_FILTER = {
     STREAM_USAGE_VOICE_COMMUNICATION,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
     STREAM_USAGE_VIDEO_COMMUNICATION
 };
 }
@@ -453,20 +457,39 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
     uint32_t sessionId, StreamUsage usage, RendererState state)
 {
     CHECK_AND_RETURN(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
-    CHECK_AND_RETURN_LOG(AUXILIARY_STREAMUSAGE_FILTER.count(usage) > 0,
+    CHECK_AND_RETURN_LOG(VALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0 ||
+        INVALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0,
         "sessionId:%{public}u usage:%{public}d", sessionId, usage);
-    if ((change == STREAM_CHANGE_TYPE_ADD || change == STREAM_CHANGE_TYPE_STATE_CHANGE) &&
-        state == RENDERER_RUNNING) {
-        AUDIO_INFO_LOG("add sessionId:%{public}d", sessionId);
-        sessionsWithAuxiliarySinkFilter_[sessionId] = usage;
-    } else {
-        CHECK_AND_RETURN_LOG(sessionsWithAuxiliarySinkFilter_.find(sessionId) !=
-            sessionsWithAuxiliarySinkFilter_.end(), "sessionId:%{public}u is not in filter_, "
-            "change:%{public}d state:%{public}d usage:%{public}d", sessionId, change, state, usage);
-        AUDIO_INFO_LOG("remove sessionId:%{public}d", sessionId);
-        sessionsWithAuxiliarySinkFilter_.erase(sessionId);
+
+    if (VALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0) {
+        if ((change == STREAM_CHANGE_TYPE_ADD || change == STREAM_CHANGE_TYPE_STATE_CHANGE) &&
+            state == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("add valid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkValidFilter_[sessionId] = usage;
+        } else {
+            CHECK_AND_RETURN_LOG(sessionsWithAuxSinkValidFilter_.find(sessionId) !=
+                sessionsWithAuxSinkValidFilter_.end(), "sessionId:%{public}u is not in filter_, "
+                "change:%{public}d state:%{public}d usage:%{public}d", sessionId, change, state, usage);
+            AUDIO_INFO_LOG("remove valid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkValidFilter_.erase(sessionId);
+        }
     }
-    auto auxState = sessionsWithAuxiliarySinkFilter_.empty() ? STREAM_MANAGER_RUNNING : STREAM_MANAGER_IDLE;
+
+    if (INVALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0) {
+        if ((change == STREAM_CHANGE_TYPE_ADD || change == STREAM_CHANGE_TYPE_STATE_CHANGE) &&
+            state == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("add invalid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkInvalidFilter_[sessionId] = usage;
+        } else {
+            CHECK_AND_RETURN_LOG(sessionsWithAuxSinkInvalidFilter_.find(sessionId) !=
+                sessionsWithAuxSinkInvalidFilter_.end(), "sessionId:%{public}u is not in filter_, "
+                "change:%{public}d state:%{public}d usage:%{public}d", sessionId, change, state, usage);
+            AUDIO_INFO_LOG("remove invalid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkInvalidFilter_.erase(sessionId);
+        }
+    }
+    bool isRunning = sessionsWithAuxSinkInvalidFilter_.empty() && !sessionsWithAuxSinkValidFilter_.empty()
+    auto auxState = isRunning ? STREAM_MANAGER_RUNNING : STREAM_MANAGER_IDLE;
     AUDIO_INFO_LOG("auxSinkState_ change:[%{public}s]-->[%{public}s] with sessionId:%{public}u change:%{public}d"
         " state:%{public}d usage:%{public}d", ConvertStreamManagerState2Str(auxSinkState_).c_str(),
         ConvertStreamManagerState2Str(auxState).c_str(), sessionId, change, state, usage);

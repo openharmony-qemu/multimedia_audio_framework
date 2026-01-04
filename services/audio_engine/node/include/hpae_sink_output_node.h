@@ -80,7 +80,8 @@ private:
     std::shared_ptr<IAudioRenderSink> auxiliarySink_ = nullptr;
     std::atomic<bool> auxSinkEnable_ = false;
     StreamManagerState auxSinkState_ = STREAM_MANAGER_RUNNING;
-    std::unordered_map<uint32_t, StreamUsage> sessionsWithAuxiliarySinkFilter_;
+    std::unordered_map<uint32_t, StreamUsage> sessionsWithAuxSinkInvalidFilter_;
+    std::unordered_map<uint32_t, StreamUsage> sessionsWithAuxSinkValidFilter_;
     
     std::vector<float> interleveData_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
