@@ -17,6 +17,7 @@
 #define AUXILIARY_SINK_H
 
 #include "sink/i_audio_render_sink.h"
+#include "adapter/i_device_manager.h"
 #include <iostream>
 #include <cstring>
 #include <mutex>
@@ -44,7 +45,7 @@ public:
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
 
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -66,8 +67,8 @@ private:
     void ReleaseMmapBuffer(void);
 
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
-    static uint32_t PcmFormatToBit(AudioSampleFormat format);
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
+    static uint32_t PcmFormatToBit(AudioSampleFormat format);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -83,7 +84,7 @@ private:
     static constexpr const char *AUXILIARY_SINK_FILENAME = "dump_auxiliary_sink";
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
-    std::string logTag_ = "AuxSink"
+    std::string logTag_ = "AuxSink";
     mutable int64_t volumeDataCount_ = 0;
     std::string halName_ = "AuxSink";
     int32_t sinkId_ = HDI_INVALID_ID;
