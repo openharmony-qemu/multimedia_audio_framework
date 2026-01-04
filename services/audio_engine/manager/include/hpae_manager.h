@@ -208,7 +208,7 @@ public:
     void updateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
 
-    int32_t SetAuxiliarySinkEnable();
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
