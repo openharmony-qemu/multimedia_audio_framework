@@ -61,7 +61,7 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
         AUDIO_ERR_LOG("framelen: %{public}d", specs.frameLen);
     }
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -80,7 +80,7 @@ int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
         nc.frameLen = specs.frameLen;
     }
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -99,7 +99,7 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
         nc.frameLen = specs.frameLen;
     }
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -131,7 +131,7 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
         nc.frameLen = specs.frameLen;
     }
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -160,7 +160,7 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = specs->isSupport;
     nc.frameLen = specs->frameLen;
     nc.inSampleRate = specs->inSampleRate;
-    nc.inChannels = specs->inChannels;     
+    nc.inChannels = specs->inChannels;
     nc.inFormat = specs->inFormat;
     nc.outSampleRate = specs->outSampleRate;
     nc.outChannels = specs->outChannels;
@@ -209,7 +209,7 @@ int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = specs.isSupport;
     nc.frameLen = specs.frameLen;
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
@@ -226,7 +226,7 @@ int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
     nc.supportedOnThisDevice = specs.isSupport;
     nc.frameLen = specs.frameLen;
     nc.inSampleRate = specs.inSampleRate;
-    nc.inChannels = specs.inChannels;     
+    nc.inChannels = specs.inChannels;
     nc.inFormat = specs.inFormat;
     nc.outSampleRate = specs.outSampleRate;
     nc.outChannels = specs.outChannels;
