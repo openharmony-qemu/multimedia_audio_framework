@@ -120,7 +120,7 @@ void HpaeSourceInputNode::SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo)
         "HpaeSourceInputNodeIn_id" + std::to_string(GetSessionId()) +
         "_ch_" + std::to_string(nodeInfo.channels) +
         "_rate_" + std::to_string(nodeInfo.samplingRate) +
-        "_bit_1_" + TransSourceBufferTypeToString(sourceBufferType) + ".pcm"));
+        "_bit_1_" + TransSourceBufferTypeToString(nodeInfo.sourceBufferType) + ".pcm"));
 #endif
 }
 
