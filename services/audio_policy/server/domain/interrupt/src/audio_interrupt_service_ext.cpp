@@ -400,20 +400,27 @@ void AudioInterruptService::DelayRemoveMuteSuggestionRecord(uint32_t currentpid)
     AUDIO_INFO_LOG("Started unmute suggestion for currentpid %{public}d with 1s delay", currentpid);
 }
  
+void AudioInterruptService::UpdateMuteSuggestionRecords(uint32_t currentpid)
+{
+    for (auto record = suggestionPidRecords_.begin(); record != suggestionPidRecords_.end(); ++record) {
+        if (record->first != currentpid) {
+            record->second.insert(currentpid);
+        }
+    }
+}
+
 void AudioInterruptService::RemoveMuteSuggestionRecord()
 {
     for (auto it = suggestionInterrupts_.begin(); it != suggestionInterrupts_.end(); ++it) {
         auto currentpid = it->first;
         if (!HasMuteSuggestionRecord(currentpid)) {
             DelayRemoveMuteSuggestionRecord(currentpid);
-            for (auto record = suggestionPidRecords_.begin(); record != suggestionPidRecords_.end(); ++record) {
-                record->second.insert(currentpid);
-            }
+            UpdateMuteSuggestionRecords(currentpid);
             return;
         }
     }
 }
- 
+
 void AudioInterruptService::AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry,
     const AudioInterrupt &muteInterrupt, const AudioInterrupt &recordInterrupt)
 {
