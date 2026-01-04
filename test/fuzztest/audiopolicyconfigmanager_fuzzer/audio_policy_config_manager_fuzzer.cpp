@@ -17,7 +17,7 @@
 #include "audio_ec_manager.h"
 #include "iaudio_policy_client.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -25,7 +25,7 @@ using namespace std;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 typedef void (*TestFuncs)();
 
-void UpdateAndClearStreamPropInfoFuzztest()
+void UpdateAndClearStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string adapterName = "adapterName";
     std::string pipeName = "pipeName";
@@ -39,14 +39,14 @@ void UpdateAndClearStreamPropInfoFuzztest()
     AudioPolicyConfigManager::GetInstance().ClearStreamPropInfo(adapterName, pipeName);
 }
 
-void UpdateDynamicCapturerConfigFuzztest()
+void UpdateDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioModuleInfo moduleInfo;
     AudioPolicyConfigManager::GetInstance().GetAdapterInfoFlag();
     AudioPolicyConfigManager::GetInstance().UpdateDynamicCapturerConfig(g_fuzzUtils.GetData<ClassType>(), moduleInfo);
 }
 
-void GetMaxCapturersInstancesFuzzTest()
+void GetMaxCapturersInstancesFuzzTest(FuzzedDataProvider& fdp)
 {
     PolicyGlobalConfigs globalConfigs;
     PolicyConfigInfo policyConfigInfo;
@@ -59,7 +59,7 @@ void GetMaxCapturersInstancesFuzzTest()
     AudioPolicyConfigManager::GetInstance().GetMaxCapturersInstances();
 }
 
-void GetMaxFastRenderersInstancesFuzzTest()
+void GetMaxFastRenderersInstancesFuzzTest(FuzzedDataProvider& fdp)
 {
     PolicyGlobalConfigs globalConfigs;
     PolicyConfigInfo policyConfigInfo;
@@ -72,7 +72,7 @@ void GetMaxFastRenderersInstancesFuzzTest()
     AudioPolicyConfigManager::GetInstance().GetMaxFastRenderersInstances();
 }
 
-void GetVoipRendererFlagFuzzTest()
+void GetVoipRendererFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyConfigManager::GetInstance().SetNormalVoipFlag(g_fuzzUtils.GetData<bool>());
     AudioPolicyConfigManager::GetInstance().GetNormalVoipFlag();
@@ -82,31 +82,31 @@ void GetVoipRendererFlagFuzzTest()
                                                                 g_fuzzUtils.GetData<AudioSamplingRate>());
 }
 
-void SetAndGetAudioLatencyFromXmlFuzzTest()
+void SetAndGetAudioLatencyFromXmlFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyConfigManager::GetInstance().OnAudioLatencyParsed(g_fuzzUtils.GetData<uint64_t>());
     AudioPolicyConfigManager::GetInstance().GetAudioLatencyFromXml();
 }
 
-void GetAdapterInfoByTypeFuzzTest()
+void GetAdapterInfoByTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<PolicyAdapterInfo> info = nullptr;
     AudioPolicyConfigManager::GetInstance().GetAdapterInfoByType(g_fuzzUtils.GetData<AudioAdapterType>(), info);
 }
 
-void GetStreamPropInfoSizeFuzzTest()
+void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyConfigManager::GetInstance().GetStreamPropInfoSize("primary", "");
 }
 
-void GetTargetSourceTypeAndMatchingFlagFuzzTest()
+void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     bool useMatchingPropInfo = false;
     AudioPolicyConfigManager::GetInstance().GetTargetSourceTypeAndMatchingFlag(g_fuzzUtils.GetData<SourceType>(),
                                                                                useMatchingPropInfo);
 }
 
-void ParseFormatFuzzTest()
+void ParseFormatFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string format = "";
     if (g_fuzzUtils.GetData<bool>()) {
@@ -115,7 +115,7 @@ void ParseFormatFuzzTest()
     AudioPolicyConfigManager::GetInstance().ParseFormat(format);
 }
 
-void CheckDynamicCapturerConfigFuzzTest()
+void CheckDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
@@ -126,7 +126,7 @@ void CheckDynamicCapturerConfigFuzzTest()
     AudioPolicyConfigManager::GetInstance().CheckDynamicCapturerConfig(desc, info);
 }
 
-void GetStreamPropInfoForRecordFuzzTest()
+void GetStreamPropInfoForRecordFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
@@ -147,7 +147,7 @@ void GetStreamPropInfoForRecordFuzzTest()
     AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempStreamInfo);
 }
 
-void GetNormalRecordAdapterInfoFuzzTest()
+void GetNormalRecordAdapterInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
@@ -156,7 +156,7 @@ void GetNormalRecordAdapterInfoFuzzTest()
     std::shared_ptr<AdapterPipeInfo> info = AudioPolicyConfigManager::GetInstance().GetNormalRecordAdapterInfo(desc);
 }
 
-void UpdateBasicStreamInfoFuzzTest()
+void UpdateBasicStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> desc = nullptr;
     std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
@@ -181,7 +181,7 @@ void UpdateBasicStreamInfoFuzzTest()
     AudioPolicyConfigManager::GetInstance().UpdateBasicStreamInfo(desc, pipeInfo, streamInfo);
 }
 
-void GetDynamicStreamPropInfoFromPipeFuzzTest()
+void GetDynamicStreamPropInfoFromPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(info != nullptr);
@@ -200,7 +200,7 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest()
         AudioPolicyConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipe(info, streamInfo);
 }
 
-void IsStreamPropMatchFuzzTest()
+void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamInfo streamInfo;
     streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
@@ -217,7 +217,9 @@ void IsStreamPropMatchFuzzTest()
     AudioPolicyConfigManager::GetInstance().IsStreamPropMatch(streamInfo, infos);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     UpdateAndClearStreamPropInfoFuzztest,
     UpdateDynamicCapturerConfigFuzztest,
     GetMaxCapturersInstancesFuzzTest,
@@ -231,14 +233,23 @@ vector<TestFuncs> g_testFuncs = {
     GetNormalRecordAdapterInfoFuzzTest,
     GetDynamicStreamPropInfoFromPipeFuzzTest,
     IsStreamPropMatchFuzzTest,
-};
-
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

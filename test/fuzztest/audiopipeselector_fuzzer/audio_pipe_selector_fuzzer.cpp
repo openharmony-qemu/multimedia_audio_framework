@@ -32,7 +32,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -74,14 +74,14 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void GetPipeTypeFuzzTest()
+void GetPipeTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioMode selectedAudioMode = static_cast<AudioMode>(GetData<int32_t>() % AUDIO_MODE_COUNT);
     uint32_t selectedFlag = static_cast<uint32_t>(GetData<int32_t>() % AUDIO_FLAG_COUNT);
     AudioPipeSelector::GetPipeSelector()->GetPipeType(selectedFlag, selectedAudioMode);
 }
 
-void GetAdapterNameByStreamDescFuzzTest()
+void GetAdapterNameByStreamDescFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
@@ -95,7 +95,7 @@ void GetAdapterNameByStreamDescFuzzTest()
     std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
 }
 
-void ConvertStreamDescToPipeInfoFuzzTest()
+void ConvertStreamDescToPipeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->routeFlag_ = 1;
@@ -129,7 +129,7 @@ void ConvertStreamDescToPipeInfoFuzzTest()
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
 }
 
-void JudgeStreamActionFuzzTest()
+void JudgeStreamActionFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
     uint8_t newRandomNum = GetData<uint8_t>();
@@ -158,7 +158,7 @@ void JudgeStreamActionFuzzTest()
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
 }
 
-void FetchPipeAndExecuteFuzzTest()
+void FetchPipeAndExecuteFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
@@ -182,14 +182,14 @@ void FetchPipeAndExecuteFuzzTest()
     std::vector<std::shared_ptr<AudioPipeInfo>> result = audioPipeSelector->FetchPipeAndExecute(streamDesc);
 }
 
-void FetchPipesAndExecuteFuzzTest()
+void FetchPipesAndExecuteFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->FetchPipesAndExecute(streamDescs);
 }
 
-void ProcessConcurrencyFuzzTest()
+void ProcessConcurrencyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> existingStream = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(existingStream != nullptr);
@@ -205,7 +205,9 @@ void ProcessConcurrencyFuzzTest()
     audioPipeSelector->ProcessConcurrency(existingStream, incomingStream, streamsToMove);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     GetPipeTypeFuzzTest,
     GetAdapterNameByStreamDescFuzzTest,
     ConvertStreamDescToPipeInfoFuzzTest,
@@ -213,28 +215,20 @@ TestFuncs g_testFuncs[] = {
     FetchPipeAndExecuteFuzzTest,
     FetchPipesAndExecuteFuzzTest,
     ProcessConcurrencyFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -245,7 +239,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

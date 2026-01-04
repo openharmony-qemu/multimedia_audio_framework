@@ -28,6 +28,7 @@
 #include "token_setproc.h"
 #include "access_token.h"
 #include "audio_policy_utils.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -253,7 +254,7 @@ void AudioPolicyServiceThirdTest()
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CheckWiredActiveMusicTime(safeVolume);
 }
 
-void AudioPolicyServiceTest()
+void AudioPolicyServiceTest(FuzzedDataProvider& fdp)
 {
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -297,7 +298,7 @@ void AudioPolicyServiceTest()
     AudioPolicyServiceThirdTest();
 }
 
-void AudioPolicyServiceTestII()
+void AudioPolicyServiceTestII(FuzzedDataProvider& fdp)
 {
     int32_t volumeLevel = GetData<int32_t>();
     bool isA2dpDevice = GetData<bool>();
@@ -343,7 +344,7 @@ void AudioPolicyServiceTestII()
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", playingState);
 }
 
-void AudioPolicyServiceTestIII()
+void AudioPolicyServiceTestIII(FuzzedDataProvider& fdp)
 {
     uint32_t rotate = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.SetRotationToEffect(rotate);
@@ -384,7 +385,7 @@ void AudioPolicyServiceTestIII()
     GetServerPtr()->audioPolicyService_.RestoreSession(sessionId, restoreInfo);
 }
 
-void AudioPolicyServiceTestIV()
+void AudioPolicyServiceTestIV(FuzzedDataProvider& fdp)
 {
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     if (audioRendererFilter == nullptr) {return;}
@@ -410,35 +411,27 @@ void AudioPolicyServiceTestIV()
     AudioPolicyUtils::GetInstance().GetSinkName(ads, sessionId);
 }
 
-typedef void (*TestFuncs[4])();
-
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioPolicyServiceTest,
     AudioPolicyServiceTestII,
     AudioPolicyServiceTestIII,
     AudioPolicyServiceTestIV,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -446,6 +439,7 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::AudioFuzzTestGetPermission();
+    OHOS::AudioStandard::Init();
     return 0;
 }
 
@@ -455,7 +449,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
 }

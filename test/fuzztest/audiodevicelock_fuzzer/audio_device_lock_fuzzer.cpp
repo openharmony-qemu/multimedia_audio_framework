@@ -39,7 +39,7 @@
 #include "device_status_listener.h"
 #include "audio_policy_service.h"
 #include "bluetooth_host.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -144,7 +144,7 @@ void OnStop()
     Bluetooth::BluetoothHost::GetDefaultHost().Close();
 }
 
-void RegisterTrackerFuzzTest()
+void RegisterTrackerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
@@ -155,7 +155,7 @@ void RegisterTrackerFuzzTest()
     OnStop();
 }
 
-void SendA2dpConnectedWhileRunningFuzzTest()
+void SendA2dpConnectedWhileRunningFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t rendererStateCount =
@@ -166,7 +166,7 @@ void SendA2dpConnectedWhileRunningFuzzTest()
     OnStop();
 }
 
-void HandleAudioCaptureStateFuzzTest()
+void HandleAudioCaptureStateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
@@ -180,7 +180,7 @@ void HandleAudioCaptureStateFuzzTest()
     OnStop();
 }
 
-void UpdateTrackerFuzzTest()
+void UpdateTrackerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
@@ -193,7 +193,7 @@ void UpdateTrackerFuzzTest()
     OnStop();
 }
 
-void RegisteredTrackerClientDiedFuzzTest()
+void RegisteredTrackerClientDiedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_OUT_VOIP) + 1;
@@ -201,7 +201,7 @@ void RegisteredTrackerClientDiedFuzzTest()
     OnStop();
 }
 
-void OnDeviceStatusUpdatedFuzzTest()
+void OnDeviceStatusUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     AudioDeviceDescriptor updatedDesc;
@@ -214,7 +214,7 @@ void OnDeviceStatusUpdatedFuzzTest()
     OnStop();
 }
 
-void GetCurrentRendererChangeInfosFuzzTest()
+void GetCurrentRendererChangeInfosFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos = {
@@ -225,14 +225,14 @@ void GetCurrentRendererChangeInfosFuzzTest()
     OnStop();
 }
 
-void GetVolumeGroupInfosFuzzTest()
+void GetVolumeGroupInfosFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(GetData<uint32_t>() % NUM_2);
     OnStop();
 }
 
-void SetAudioSceneFuzzTest()
+void SetAudioSceneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t audioSceneCount = static_cast<int32_t>(AudioScene::AUDIO_SCENE_MAX - AudioScene::AUDIO_SCENE_INVALID) + 1;
@@ -240,7 +240,7 @@ void SetAudioSceneFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockGetDevicesFuzzTest()
+void AudioDeviceLockGetDevicesFuzzTest(FuzzedDataProvider& fdp)
 {
     vector<DeviceFlag> testDeviceFlags = {
         NONE_DEVICES_FLAG,
@@ -262,7 +262,7 @@ void AudioDeviceLockGetDevicesFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest()
+void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -274,7 +274,7 @@ void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest()
+void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -286,7 +286,7 @@ void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockUpdateAppVolumeFuzzTest()
+void AudioDeviceLockUpdateAppVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -298,7 +298,7 @@ void AudioDeviceLockUpdateAppVolumeFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest()
+void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<DeviceInfoUpdateCommand> testDeviceInfoUpdateCommands = {
         CATEGORY_UPDATE,
@@ -317,7 +317,7 @@ void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest()
+void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -330,7 +330,7 @@ void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockGetExcludedDevicesFuzzTest()
+void AudioDeviceLockGetExcludedDevicesFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr || AudioDeviceUsageVec.size() == 0) {
@@ -342,7 +342,7 @@ void AudioDeviceLockGetExcludedDevicesFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
+void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -355,7 +355,7 @@ void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
     OnStop();
 }
 
-void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
+void AudioDeviceLockUpdateSpatializationSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     if (audioDeviceLock == nullptr) {
@@ -368,7 +368,7 @@ void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
     OnStop();
 }
 
-void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()
+void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     Parcel parcel;
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -383,7 +383,9 @@ void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()
     OnStop();
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     RegisterTrackerFuzzTest,
     SendA2dpConnectedWhileRunningFuzzTest,
     HandleAudioCaptureStateFuzzTest,
@@ -403,28 +405,20 @@ TestFuncs g_testFuncs[] = {
     AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest,
     AudioDeviceLockUpdateSpatializationSupportedFuzzTest,
     AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -436,6 +430,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

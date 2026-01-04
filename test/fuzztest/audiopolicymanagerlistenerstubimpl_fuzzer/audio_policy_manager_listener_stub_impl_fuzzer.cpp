@@ -18,7 +18,7 @@
 #include <cstdint>
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -87,7 +87,7 @@ public:
     void OnRouteUpdate(uint32_t routeFlag, const std::string &networkId) override {};
 };
 
-void OnInterruptFuzzTest()
+void OnInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -100,7 +100,7 @@ void OnInterruptFuzzTest()
     policyListenerStub->OnInterrupt(interruptEvent);
 }
 
-void OnAvailableDeviceChangeFuzzTest()
+void OnAvailableDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -114,7 +114,7 @@ void OnAvailableDeviceChangeFuzzTest()
     policyListenerStub->OnAvailableDeviceChange(usage, deviceChangeAction);
 }
 
-void OnQueryClientTypeFuzzTest()
+void OnQueryClientTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -128,7 +128,7 @@ void OnQueryClientTypeFuzzTest()
     policyListenerStub->OnQueryClientType(bundleName, uid, ret);
 }
 
-void OnCheckClientInfoFuzzTest()
+void OnCheckClientInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -143,7 +143,7 @@ void OnCheckClientInfoFuzzTest()
     policyListenerStub->OnCheckClientInfo(bundleName, uid, pid, ret);
 }
 
-void OnQueryAllowedPlaybackFuzzTest()
+void OnQueryAllowedPlaybackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -158,7 +158,7 @@ void OnQueryAllowedPlaybackFuzzTest()
     policyListenerStub->OnQueryAllowedPlayback(uid, pid, ret);
 }
 
-void OnBackgroundMuteFuzzTest()
+void OnBackgroundMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -170,7 +170,7 @@ void OnBackgroundMuteFuzzTest()
     policyListenerStub->OnBackgroundMute(uid);
 }
 
-void OnQueryDeviceVolumeBehaviorFuzzTest()
+void OnQueryDeviceVolumeBehaviorFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -183,7 +183,7 @@ void OnQueryDeviceVolumeBehaviorFuzzTest()
     policyListenerStub->OnQueryDeviceVolumeBehavior(volumeBehavior);
 }
 
-void OnQueryBundleNameIsInListFuzzTest()
+void OnQueryBundleNameIsInListFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -198,7 +198,7 @@ void OnQueryBundleNameIsInListFuzzTest()
     policyListenerStub->OnQueryBundleNameIsInList(bundleName, listType, ret);
 }
 
-void OnRouteUpdateFuzzTest()
+void OnRouteUpdateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -211,7 +211,7 @@ void OnRouteUpdateFuzzTest()
     policyListenerStub->OnRouteUpdate(routeFlag, networkId);
 }
 
-void SetInterruptCallbackFuzzTest()
+void SetInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -221,7 +221,7 @@ void SetInterruptCallbackFuzzTest()
     policyListenerStub->SetInterruptCallback(callback);
 }
 
-void SetQueryClientTypeCallbackFuzzTest()
+void SetQueryClientTypeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -229,7 +229,7 @@ void SetQueryClientTypeCallbackFuzzTest()
     policyListenerStub->SetQueryClientTypeCallback(audioQueryClientTypeCallback);
 }
 
-void SetQueryBundleNameListCallbackFuzzTest()
+void SetQueryBundleNameListCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -237,7 +237,7 @@ void SetQueryBundleNameListCallbackFuzzTest()
     policyListenerStub->SetQueryBundleNameListCallback(audioQueryBundleNameListCallback);
 }
 
-void SetQueryDeviceVolumeBehaviorCallbackFuzzTest()
+void SetQueryDeviceVolumeBehaviorCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -247,7 +247,7 @@ void SetQueryDeviceVolumeBehaviorCallbackFuzzTest()
     policyListenerStub->SetQueryDeviceVolumeBehaviorCallback(callback);
 }
 
-void SetAudioRouteCallbackFuzzTest()
+void SetAudioRouteCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -258,7 +258,7 @@ void SetAudioRouteCallbackFuzzTest()
     policyListenerStub->SetAudioRouteCallback(callback);
 }
 
-void SetAudioClientInfoMgrCallbackFuzzTest()
+void SetAudioClientInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -270,7 +270,7 @@ void SetAudioClientInfoMgrCallbackFuzzTest()
     policyListenerStub->SetAudioClientInfoMgrCallback(callback);
 }
 
-void SetQueryAllowedPlaybackCallbackFuzzTest()
+void SetQueryAllowedPlaybackCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -282,7 +282,7 @@ void SetQueryAllowedPlaybackCallbackFuzzTest()
     policyListenerStub->SetQueryAllowedPlaybackCallback(callback);
 }
 
-void SetBackgroundMuteCallbackFuzzTest()
+void SetBackgroundMuteCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
@@ -294,7 +294,9 @@ void SetBackgroundMuteCallbackFuzzTest()
     policyListenerStub->SetBackgroundMuteCallback(callback);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     OnInterruptFuzzTest,
     OnAvailableDeviceChangeFuzzTest,
     OnQueryClientTypeFuzzTest,
@@ -312,13 +314,23 @@ vector<TestFuncs> g_testFuncs = {
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetQueryAllowedPlaybackCallbackFuzzTest,
     SetBackgroundMuteCallbackFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

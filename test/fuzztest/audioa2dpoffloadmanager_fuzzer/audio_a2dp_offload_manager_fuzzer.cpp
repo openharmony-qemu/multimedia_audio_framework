@@ -34,7 +34,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
 #include "bluetooth_host.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -43,7 +43,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-
+shared_ptr<AudioA2dpOffloadManager> manager;
 typedef void (*TestFuncs)();
 
 template<class T>
@@ -107,9 +107,8 @@ void OnStop()
     Bluetooth::BluetoothHost::GetDefaultHost().Close();
 }
 
-void OffloadStartPlayingFuzzTest()
+void OffloadStartPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
@@ -124,9 +123,8 @@ void OffloadStartPlayingFuzzTest()
     OnStop();
 }
 
-void OffloadStopPlayingFuzzTest()
+void OffloadStopPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
@@ -136,9 +134,8 @@ void OffloadStopPlayingFuzzTest()
     OnStop();
 }
 
-void HandleA2dpDeviceOutOffloadFuzzTest()
+void HandleA2dpDeviceOutOffloadFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     AudioDeviceDescriptor descriptor;
     descriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -152,9 +149,8 @@ void HandleA2dpDeviceOutOffloadFuzzTest()
     OnStop();
 }
 
-void HandleA2dpDeviceInOffloadFuzzTest()
+void HandleA2dpDeviceInOffloadFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
@@ -175,9 +171,8 @@ void HandleA2dpDeviceInOffloadFuzzTest()
     OnStop();
 }
 
-void GetA2dpOffloadCodecAndSendToDspFuzzTest()
+void GetA2dpOffloadCodecAndSendToDspFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -186,7 +181,7 @@ void GetA2dpOffloadCodecAndSendToDspFuzzTest()
     OnStop();
 }
 
-void OnA2dpPlayingStateChangedFuzzTest()
+void OnA2dpPlayingStateChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
@@ -201,7 +196,7 @@ void OnA2dpPlayingStateChangedFuzzTest()
     OnStop();
 }
 
-void IsA2dpOffloadConnectingFuzzTest()
+void IsA2dpOffloadConnectingFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
@@ -215,36 +210,30 @@ void IsA2dpOffloadConnectingFuzzTest()
     OnStop();
 }
 
-TestFuncs g_testFuncs[] = {
-    OffloadStartPlayingFuzzTest,
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({OffloadStartPlayingFuzzTest,
     OffloadStopPlayingFuzzTest,
     HandleA2dpDeviceOutOffloadFuzzTest,
     HandleA2dpDeviceInOffloadFuzzTest,
     GetA2dpOffloadCodecAndSendToDspFuzzTest,
     OnA2dpPlayingStateChangedFuzzTest,
     IsA2dpOffloadConnectingFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
+     manager = std::make_shared<AudioA2dpOffloadManager>();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -255,7 +244,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
 }
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
+}
+

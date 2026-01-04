@@ -27,6 +27,7 @@
 #include "i_hpae_manager.h"
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -107,7 +108,7 @@ void AudioFuzzTestGetPermission()
     }
 }
 
-void MoreFuzzTest()
+void MoreFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     interruptService->GetAudioServerProxy();
@@ -118,7 +119,7 @@ void MoreFuzzTest()
     interruptService->HandleSessionTimeOutEvent(pid);
 }
 
-void AddAudioSessionFuzzTest()
+void AddAudioSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t sessionStrategy = 0;
 
@@ -138,7 +139,7 @@ void AddAudioSessionFuzzTest()
     interruptService->IsActiveStreamLowPriority(focusEntry);
 }
 
-void AddSetAudioManagerInterruptCallbackFuzzTest()
+void AddSetAudioManagerInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
@@ -158,42 +159,35 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     interruptService->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
-void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
+void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     int id = GetData<int>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(id, 1);
 }
 
-typedef void (*TestFuncs[4])();
 
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     MoreFuzzTest,
     AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+});
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -205,7 +199,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

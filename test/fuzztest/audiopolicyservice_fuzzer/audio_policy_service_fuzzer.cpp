@@ -23,6 +23,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -909,93 +910,112 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
     AudioDeviceDescriptor deviceInfo;
     GetServerPtr()->audioPolicyService_.IsDevicePlaybackSupported(config, deviceInfo);
 }
+
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
+	AudioPolicyServiceDumpTest,
+	AudioPolicyServiceDeviceTest,
+	AudioPolicyServiceAccountTest,
+	AudioPolicyServiceSafeVolumeTest,
+	AudioPolicyServiceInterfaceTest,
+	AudioDeviceConnectTest,
+	AudioPolicyServiceSubscribeSafeVolumeEventFuzztest,
+	AudioPolicyServiceOnReceiveEventFuzztest,
+	AudioPolicyServiceSetAppVolumeLevelFuzztest,
+	AudioPolicyServiceSetSourceOutputStreamMuteFuzztest,
+	AudioPolicyServiceGetSelectedDeviceInfoFuzztest,
+	AudioPolicyServiceGetDistributedRoutingRoleInfoFuzztest,
+	AudioPolicyServiceNotifyCapturerAddedFuzztest,
+	AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,
+	AudioPolicyServiceIsAbsVolumeSupportedFuzztest,
+	AudioPolicyServiceGetDevicesFuzztest,
+	AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest,
+	AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest,
+	AudioPolicyServiceGetOutputDeviceFuzztest,
+	AudioPolicyServiceGetInputDeviceFuzztest,
+	AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest,
+	AudioPolicyServiceOnUpdateAnahsSupportFuzztest,
+	AudioPolicyServiceOnPnpDeviceStatusUpdatedFuzztest,
+	AudioPolicyServiceOnDeviceStatusUpdatedFuzztest,
+	AudioPolicyServiceUpdateA2dpOffloadFlagBySpatialServiceFuzztest,
+	AudioPolicyServiceRegisterRemoteDevStatusCallbackFuzztest,
+	AudioPolicyServiceGetAllSinkInputsFuzztest,
+	AudioPolicyServiceRegisterAccessibilityMonitorHelperFuzztest,
+	AudioPolicyServiceOnServiceConnectedFuzztest,
+	AudioPolicyServiceOnServiceDisconnectedFuzztest,
+	AudioPolicyServiceOnForcedDeviceSelectedFuzztest,
+	AudioPolicyServiceSetAvailableDeviceChangeCallbackFuzztest,
+	AudioPolicyServiceSetQueryClientTypeCallbackFuzztest,
+	AudioPolicyServiceSetQueryDeviceVolumeBehaviorCallbackFuzztest,
+	AudioPolicyServiceUpdateCapturerInfoWhenNoPermissionFuzztest,
+	AudioPolicyServiceGetCurrentCapturerChangeInfosFuzztest,
+	AudioPolicyServiceUpdateDescWhenNoBTPermissionFuzztest,
+	AudioPolicyServiceGetProcessDeviceInfoFuzztest,
+	AudioPolicyServiceGetVoipDeviceInfoFuzztest,
+	AudioPolicyServiceInitSharedVolumeFuzztest,
+	AudioPolicyServiceGetMaxRendererInstancesFuzztest,
+	AudioPolicyServiceRegisterBluetoothListenerFuzztest,
+	AudioPolicyServiceUnregisterBluetoothListenerFuzztest,
+	AudioPolicyServiceSubscribeAccessibilityConfigObserverFuzztest,
+	AudioPolicyServiceQueryEffectManagerSceneModeFuzztest,
+	AudioPolicyServiceRegisterDataObserverFuzztest,
+	AudioPolicyServiceGetHardwareOutputSamplingRateFuzztest,
+	AudioPolicyServiceDeviceFilterByUsageInnerFuzztest,
+	AudioPolicyServiceOffloadGetRenderPositionFuzztest,
+	AudioPolicyServiceNearlinkGetRenderPositionFuzztest,
+	AudioPolicyServiceGetAndSaveClientTypeFuzztest,
+	AudioPolicyServiceOnDeviceInfoUpdatedFuzztest,
+	AudioPolicyServiceNotifyAccountsChangedFuzztest,
+	AudioPolicyServiceLoadHdiEffectModelFuzztest,
+	AudioPolicyServiceGetSupportedAudioEffectPropertyFuzztest,
+	AudioPolicyServiceGetSupportedEffectPropertyFuzztest,
+	AudioPolicyServiceGetSupportedEffectPropertyFuzztest,
+	AudioPolicyServiceCheckSupportedAudioEffectPropertyFuzztest,
+	AudioPolicyServiceSetAudioEffectPropertyFuzztest,
+	AudioPolicyServiceGetAudioEnhancePropertyFuzztest,
+	AudioPolicyServiceGetAudioEffectPropertyFuzztest,
+	AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest,
+	AudioPolicyServiceSetAudioEnhancePropertyFuzztest,
+	AudioPolicyServiceGetA2dpOffloadFlagFuzztest,
+	AudioPolicyServiceSetSleAudioOperationCallbackFuzztest,
+	AudioPolicyServiceNotifyCapturerRemovedFuzztest,
+	AudioPolicyServiceUpdateSpatializationSupportedFuzztest,
+	AudioPolicyServiceIsDevicePlaybackSupportedFuzztest,
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
+{
+    if(data==nullptr){
+        return;
+    }
+    RAW_DATA = data;
+    g_dataSize = size;
+    g_pos = 0;
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    OHOS::AudioStandard::GetServerPtr();
+    OHOS::AudioStandard::Init();
+    return 0;
+}
 
-OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioPolicyServiceDumpTest,
-    OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
-    OHOS::AudioStandard::AudioPolicyServiceAccountTest,
-    OHOS::AudioStandard::AudioPolicyServiceSafeVolumeTest,
-    OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
-    OHOS::AudioStandard::AudioDeviceConnectTest,
-    OHOS::AudioStandard::AudioPolicyServiceSubscribeSafeVolumeEventFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnReceiveEventFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAppVolumeLevelFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetSourceOutputStreamMuteFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSelectedDeviceInfoFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetDistributedRoutingRoleInfoFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerAddedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceIsAbsVolumeSupportedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetDevicesFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetPreferredOutputDeviceDescInnerFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetOutputDeviceFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetInputDeviceFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetActiveOutputDeviceDescriptorFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnUpdateAnahsSupportFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnPnpDeviceStatusUpdatedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnDeviceStatusUpdatedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceUpdateA2dpOffloadFlagBySpatialServiceFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceRegisterRemoteDevStatusCallbackFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetAllSinkInputsFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceRegisterAccessibilityMonitorHelperFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnServiceConnectedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnServiceDisconnectedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnForcedDeviceSelectedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAvailableDeviceChangeCallbackFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetQueryClientTypeCallbackFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetQueryDeviceVolumeBehaviorCallbackFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceUpdateCapturerInfoWhenNoPermissionFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetCurrentCapturerChangeInfosFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceUpdateDescWhenNoBTPermissionFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetProcessDeviceInfoFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetVoipDeviceInfoFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceInitSharedVolumeFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetMaxRendererInstancesFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceRegisterBluetoothListenerFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceUnregisterBluetoothListenerFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSubscribeAccessibilityConfigObserverFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceQueryEffectManagerSceneModeFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceRegisterDataObserverFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetHardwareOutputSamplingRateFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceDeviceFilterByUsageInnerFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOffloadGetRenderPositionFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceNearlinkGetRenderPositionFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetAndSaveClientTypeFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnDeviceInfoUpdatedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceNotifyAccountsChangedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceLoadHdiEffectModelFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceCheckSupportedAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetAudioEffectPropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSupportedAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetAudioEnhancePropertyFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetA2dpOffloadFlagFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceSetSleAudioOperationCallbackFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceUpdateSpatializationSupportedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceIsDevicePlaybackSupportedFuzztest,
-};
-
+/* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
-        return 0;
-    }
-    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
-    uint8_t firstByte = *data % funcSize;
-    if (firstByte >= funcSize) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
     data = data + 1;
     size = size - 1;
-    g_testPtrs[firstByte](data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
 }

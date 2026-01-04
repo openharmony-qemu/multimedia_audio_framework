@@ -17,7 +17,7 @@
 
 #include "audio_common_log.h"
 #include "audio_offload_stream.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -28,13 +28,13 @@ typedef void (*TestPtr)();
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 static const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
-void FuzzTestGetOffloadSessionId()
+void FuzzTestGetOffloadSessionId(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.GetOffloadSessionId(g_fuzzUtils.GetData<OffloadAdapter>());
 }
 
-void FuzzTestSetOffloadStatus()
+void FuzzTestSetOffloadStatus(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.SetOffloadStatus(
@@ -42,19 +42,19 @@ void FuzzTestSetOffloadStatus()
         g_fuzzUtils.GetData<uint32_t>());
 }
 
-void FuzzTestUnsetOffloadStatus()
+void FuzzTestUnsetOffloadStatus(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.UnsetOffloadStatus(g_fuzzUtils.GetData<uint32_t>());
 }
 
-void FuzzTestHandlePowerStateChanged()
+void FuzzTestHandlePowerStateChanged(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.HandlePowerStateChanged(g_fuzzUtils.GetData<PowerMgr::PowerState>());
 }
 
-void FuzzTestUpdateOffloadStatusFromUpdateTracker()
+void FuzzTestUpdateOffloadStatusFromUpdateTracker(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     testModule.UpdateOffloadStatusFromUpdateTracker(
@@ -62,32 +62,39 @@ void FuzzTestUpdateOffloadStatusFromUpdateTracker()
         g_fuzzUtils.GetData<RendererState>());
 }
 
-void FuzzTestDump()
+void FuzzTestDump(FuzzedDataProvider& fdp)
 {
     AudioOffloadStream &testModule = AudioOffloadStream::GetInstance();
     std::string fuzzStr = std::to_string(g_fuzzUtils.GetData<uint32_t>());
     testModule.Dump(fuzzStr);
 }
 
-vector<TestPtr> g_testPtrs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     FuzzTestGetOffloadSessionId,
     FuzzTestSetOffloadStatus,
     FuzzTestUnsetOffloadStatus,
     FuzzTestHandlePowerStateChanged,
     FuzzTestUpdateOffloadStatusFromUpdateTracker,
     FuzzTestDump,
-};
-
+});
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
-        return 0;
-    }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testPtrs);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

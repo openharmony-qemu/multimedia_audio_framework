@@ -42,7 +42,7 @@
 #include "audio_device_info.h"
 #include "audio_spatialization_service.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -51,7 +51,7 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 typedef void (*TestFuncs)();
 
-void AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest()
+void AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     if (audioInterruptZoneManager == nullptr) {
@@ -70,7 +70,7 @@ void AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest()
     audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
 }
 
-void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest()
+void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     if (audioInterruptZoneManager == nullptr) {
@@ -90,7 +90,7 @@ void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest()
     audioInterruptZoneManager->ForceStopAudioFocusInZone(zoneId, interrupt);
 }
 
-void AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest()
+void AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     std::shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
@@ -108,7 +108,7 @@ void AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest()
     audioInterruptZoneManager->ForceStopAllAudioFocusInZone(zone);
 }
 
-void AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest()
+void AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     if (audioInterruptZoneManager == nullptr) {
@@ -129,7 +129,7 @@ void AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest()
     audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
 }
 
-void AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest()
+void AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
@@ -152,7 +152,7 @@ void AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest()
     audioInterruptZoneManager->QueryAudioFocusFromZone(zoneId, deviceTag);
 }
 
-void AudioInterruptZoneManagerTryActiveAudioFocusForZoneFuzzTest()
+void AudioInterruptZoneManagerTryActiveAudioFocusForZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
     shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
@@ -179,24 +179,35 @@ void AudioInterruptZoneManagerTryActiveAudioFocusForZoneFuzzTest()
     audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, activeFocusList);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest,
     AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest,
     AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest,
     AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest,
     AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest,
     AudioInterruptZoneManagerTryActiveAudioFocusForZoneFuzzTest,
-};
+});
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

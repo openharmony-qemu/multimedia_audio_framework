@@ -41,7 +41,7 @@
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_spatialization_service.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -79,7 +79,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void FlushDfxMsgFuzzTest()
+void FlushDfxMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioInterruptDfxCollector dfxCollector;
     uint32_t index = 0;
@@ -89,7 +89,7 @@ void FlushDfxMsgFuzzTest()
     dfxCollector.FlushDfxMsg(index, appUid);
 }
 
-void WriteEffectMsgFuzzTest()
+void WriteEffectMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     InterruptDfxBuilder dfxBuilder;
     uint8_t appstate = GetData<uint32_t>();
@@ -100,7 +100,7 @@ void WriteEffectMsgFuzzTest()
     dfxBuilder.WriteEffectMsg(appstate, bundleName, audioInterrupt, hintType);
 }
 
-void GetDfxIndexesFuzzTest()
+void GetDfxIndexesFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioInterruptDfxCollector dfxCollector;
     uint32_t index = 0;
@@ -109,7 +109,7 @@ void GetDfxIndexesFuzzTest()
     dfxCollector.GetDfxIndexes(index);
 }
 
-void WriteActionMsgFuzzTest()
+void WriteActionMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     InterruptDfxBuilder dfxBuilder;
     uint8_t infoIndex = GetData<uint32_t>();
@@ -118,7 +118,7 @@ void WriteActionMsgFuzzTest()
     dfxBuilder.WriteActionMsg(infoIndex, effectIdx, stage);
 }
 
-void WriteInfoMsgFuzzTest()
+void WriteInfoMsgFuzzTest(FuzzedDataProvider& fdp)
 {
     InterruptDfxBuilder dfxBuilder;
     AudioInterrupt audioInterrupt;
@@ -127,7 +127,7 @@ void WriteInfoMsgFuzzTest()
     dfxBuilder.WriteInfoMsg(audioInterrupt, strategy, interruptType);
 }
 
-void GetFloatValueFuzzTest()
+void GetFloatValueFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     float value = GetData<float>();
@@ -136,28 +136,28 @@ void GetFloatValueFuzzTest()
     settingProvider.GetFloatValue(key, value, tableType);
 }
 
-void IsValidKeyFuzzTest()
+void IsValidKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     std::string key = "test";
     settingProvider.IsValidKey(key);
 }
 
-void SetDataShareReadyFuzzTest()
+void SetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     bool isDataShareReady = false;
     settingProvider.SetDataShareReady(isDataShareReady);
 }
 
-void ParseJsonArrayFuzzTest()
+void ParseJsonArrayFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     std::string input = "{'aa':'bb'}";
     settingProvider.ParseJsonArray(input);
 }
 
-void ParseFirstOfKeyFuzzTest()
+void ParseFirstOfKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     size_t pos = 0;
@@ -166,7 +166,7 @@ void ParseFirstOfKeyFuzzTest()
     settingProvider.ParseFirstOfKey(pos, len, input);
 }
 
-void ParseSecondOfValueFuzzTest()
+void ParseSecondOfValueFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     size_t pos = 0;
@@ -175,7 +175,9 @@ void ParseSecondOfValueFuzzTest()
     settingProvider.ParseSecondOfValue(pos, len, input);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     FlushDfxMsgFuzzTest,
     WriteEffectMsgFuzzTest,
     GetDfxIndexesFuzzTest,
@@ -187,28 +189,20 @@ TestFuncs g_testFuncs[] = {
     ParseJsonArrayFuzzTest,
     ParseFirstOfKeyFuzzTest,
     ParseSecondOfValueFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -220,6 +214,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }

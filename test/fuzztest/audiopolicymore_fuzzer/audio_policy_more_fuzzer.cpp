@@ -28,7 +28,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -166,7 +166,7 @@ AudioPnpServer* GetPnpServerPtr()
 }
 #endif
 
-void InitFuzzTest()
+void InitFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<AudioPolicyServer> server = nullptr;
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -176,7 +176,7 @@ void InitFuzzTest()
     interruptService->Init(server);
 }
 
-void GetHighestPriorityAudioSceneFuzzTest()
+void GetHighestPriorityAudioSceneFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     int32_t zoneId = GetData<int32_t>();
@@ -186,7 +186,7 @@ void GetHighestPriorityAudioSceneFuzzTest()
     interruptService->GetHighestPriorityAudioScene(zoneId);
 }
 
-void AudioInterruptZoneDumpFuzzTest()
+void AudioInterruptZoneDumpFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     std::string dumpString = "";
@@ -196,7 +196,7 @@ void AudioInterruptZoneDumpFuzzTest()
     interruptService->AudioInterruptZoneDump(dumpString);
 }
 
-void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
+void ClearAudioFocusInfoListOnAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     int zoneId = GetData<int32_t>();
@@ -206,7 +206,7 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(zoneId, 1);
 }
 
-void GetStreamTypePriorityFuzzTest()
+void GetStreamTypePriorityFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     OHOS::AudioStandard::AudioStreamType streamType = GetData<AudioStreamType>();
@@ -216,7 +216,7 @@ void GetStreamTypePriorityFuzzTest()
     interruptService->GetStreamTypePriority(streamType);
 }
 
-void SendInterruptEventFuzzTest()
+void SendInterruptEventFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioFocuState oldState = GetData<AudioFocuState>();
     AudioFocuState newState = GetData<AudioFocuState>();
@@ -242,7 +242,7 @@ void SendInterruptEventFuzzTest()
     interruptService->SendInterruptEvent(oldState, newState, it, removeFocusInfo);
 }
 
-void IsSameAppInShareModeFuzzTest()
+void IsSameAppInShareModeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioInterrupt incomingInterrupt;
@@ -259,7 +259,7 @@ void IsSameAppInShareModeFuzzTest()
     interruptService->IsSameAppInShareMode(incomingInterrupt, activateInterrupt);
 }
 
-void SendFocusChangeEventFuzzTest()
+void SendFocusChangeEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioInterrupt audioInterrupt;
@@ -274,7 +274,7 @@ void SendFocusChangeEventFuzzTest()
     interruptService->SendFocusChangeEvent(zoneId, callbackCategory, audioInterrupt);
 }
 
-void GetAudioFocusInfoListFuzzTest()
+void GetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList = {};
     std::pair<AudioInterrupt, AudioFocuState> focusInfo = {};
@@ -297,7 +297,7 @@ void GetAudioFocusInfoListFuzzTest()
     interruptService->GetAudioFocusInfoList(zoneId, focusInfoList);
 }
 
-void AudioVolumeMoreFuzzTest()
+void AudioVolumeMoreFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamType streamType = GetData<AudioStreamType>();
     VolumeAdjustType adjustType = GetData<VolumeAdjustType>();
@@ -326,7 +326,7 @@ void AudioVolumeMoreFuzzTest()
     GetServerPtr()->GetSelectedDeviceInfo(uid, pid, streamType);
 }
 
-void AudioDeviceMoreFuzzTest()
+void AudioDeviceMoreFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceFlag flag = GetData<DeviceFlag>();
     MessageParcel data;
@@ -366,7 +366,7 @@ void AudioDeviceMoreFuzzTest()
     GetServerPtr()->GetDirectPlaybackSupport(audioStreamInfo, streamUsage);
 }
 
-void AudioPolicyOtherMoreFuzzTest()
+void AudioPolicyOtherMoreFuzzTest(FuzzedDataProvider& fdp)
 {
     int pid = GetData<int>();
     GetServerPtr()->RegisteredTrackerClientDied(pid, 0);
@@ -380,7 +380,7 @@ void AudioPolicyOtherMoreFuzzTest()
     GetServerPtr()->SetHighResolutionExist(highResExist);
 }
 
-void AudioVolumeKeyCallbackStubMoreFuzzTest()
+void AudioVolumeKeyCallbackStubMoreFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<AudioPolicyClientStub> listener =
         static_cast<sptr<AudioPolicyClientStub>>(new(std::nothrow) AudioPolicyClientStubImpl());
@@ -404,7 +404,7 @@ void AudioVolumeKeyCallbackStubMoreFuzzTest()
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
 
-void AudioPolicyManagerFuzzTest()
+void AudioPolicyManagerFuzzTest(FuzzedDataProvider& fdp)
 {
 #ifdef AUDIO_WIRED_DETECT
     AudioEvent audioEvent;
@@ -433,7 +433,7 @@ void AudioPolicyManagerFuzzTest()
 #endif
 }
 
-void ForceVolumeKeyControlTypeFuzzTest()
+void ForceVolumeKeyControlTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     int32_t volumeType = GetData<int32_t>();
@@ -446,7 +446,9 @@ void ForceVolumeKeyControlTypeFuzzTest()
 
 typedef void (*TestFuncs[16])();
 
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     InitFuzzTest,
     GetHighestPriorityAudioSceneFuzzTest,
     AudioInterruptZoneDumpFuzzTest,
@@ -461,37 +463,24 @@ TestFuncs g_testFuncs = {
     AudioVolumeKeyCallbackStubMoreFuzzTest,
     AudioPolicyManagerFuzzTest,
     ForceVolumeKeyControlTypeFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if(data==nullptr){
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
+     manager = std::make_shared<AudioA2dpOffloadManager>();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
-
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    return 0;
-}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
@@ -499,7 +488,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data,size);
+    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
 }
