@@ -38,7 +38,10 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create voice beautifier algoInterface");
