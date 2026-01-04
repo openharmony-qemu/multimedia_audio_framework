@@ -76,8 +76,12 @@ private:
     void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
     void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void UpdateSourceInputMapCancatMicEc();
+    void SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo);
     void ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc);
     void DoProcessInnerMicAndEc(const uint64_t &replyBytes, const uint64_t replyBytesEc);
+    void DumpInput(HpaeSourceBufferType &micType, HpaeSourceBufferType &ecType,
+        const uint64_t &replyBytes, const uint64_t &replyBytesEc);
+    void DumpOutput(HpaeSourceBufferType &micType);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
