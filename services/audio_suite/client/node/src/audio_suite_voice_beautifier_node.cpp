@@ -52,7 +52,7 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
         DeInit();
         return ret;
     }
-    InitAudioFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
