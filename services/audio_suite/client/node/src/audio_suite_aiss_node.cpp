@@ -113,14 +113,16 @@ int32_t AudioSuiteAissNode::Init()
         nodeCapability.outChannels,
         CH_LAYOUT_QUAD,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    tmpHumanSoundOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.inChannels,
-        CH_LAYOUT_STEREO,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    tmpBkgSoundOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.inChannels,
-        CH_LAYOUT_STEREO,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    tmpHumanSoundOutput_ =
+        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+            nodeCapability.inChannels,
+            CH_LAYOUT_STEREO,
+            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    tmpBkgSoundOutput_ =
+        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+            nodeCapability.inChannels,
+            CH_LAYOUT_STEREO,
+            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
     isInit_ = true;
