@@ -102,8 +102,6 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
     }
-    AUDIO_ERR_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  frameLen:%{public}d", nodeCapability.inChannels, nodeCapability.inFormat, nodeCapability.inSampleRate, nodeCapability.frameLen);
-    AUDIO_ERR_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d", nodeCapability.outChannels, nodeCapability.outFormat, nodeCapability.outSampleRate);
 
     SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeCapability.inChannels},
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
