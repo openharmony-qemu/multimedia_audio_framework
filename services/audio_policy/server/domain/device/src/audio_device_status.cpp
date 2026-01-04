@@ -466,8 +466,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
             updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load dp failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
-    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
         std::string condition =
             string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
