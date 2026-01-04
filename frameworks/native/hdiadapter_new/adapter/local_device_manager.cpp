@@ -582,7 +582,7 @@ int32_t LocalDeviceManager::CreateCognitionStream(const std::string &adapterName
 {
     CHECK_AND_RETURN_RET_LOG(param != nullptr && buffer != nullptr, ERROR, "param or buffer is nullptr");
     struct AudioSampleAttributes *localParam = static_cast<struct AudioSampleAttributes *>(param);
-    struct AudioMMapBufferDescriptor *localBuffer = static_cast<struct AudioMMapBufferDescriptor *>(buffer);
+    struct AudioMmapBufferDescriptor *localBuffer = static_cast<struct AudioMmapBufferDescriptor *>(buffer);
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR,
@@ -590,35 +590,36 @@ int32_t LocalDeviceManager::CreateCognitionStream(const std::string &adapterName
     
     Trace trace("LocalDeviceManager::CreateCognitionStream");
 
-    int32_t ret = wrapper->adapter_->CreateCognitionStream(wrapper->adapter_, localParam, &sinkId, localBuffer);
+    int32_t ret = wrapper->adapter_->CreateCognitionStream(wrapper->adapter_, localParam,
+        &sinkId, localBuffer);
     if (ret != SUCCESS || sinkId == HDI_INVALID_ID) {
         AUDIO_ERR_LOG("create CogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create CogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
-        return nullptr;
+        return ret;
     }
     AUDIO_INFO_LOG("create cogStream:%{public}d for auxiliarySink success, ret:%{public}d", sinkId, ret);
     return ret;
 }
 
-int32_t LocalDeviceManager::DestoryCognitionStream(const std::string &adapterName, const int32_t &sinkId)
+int32_t LocalDeviceManager::DestroyCognitionStream(const std::string &adapterName, const int32_t &sinkId)
 {
     CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
         "adapter:%{public}s is nullptr", adapterName.c_str());
     
-    Trace trace("LocalDeviceManager::DestoryCognitionStream[" + std::to_string(sinkId) + "]");
+    Trace trace("LocalDeviceManager::DestroyCognitionStream[" + std::to_string(sinkId) + "]");
 
-    int32_t ret = wrapper->adapter_->DestoryCognitionStream(wrapper->adapter_, sinkId);
+    int32_t ret = wrapper->adapter_->DestroyCognitionStream(wrapper->adapter_, sinkId);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("destory cogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
+        AUDIO_ERR_LOG("destroy cogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
-            " destory cogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
-        return nullptr;
+            " destroy cogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
+        return ret;
     }
-    AUDIO_INFO_LOG("destory cogStream:%{public}d for auxiliarySink success, ret:%{public}d", sinkId, ret);
+    AUDIO_INFO_LOG("destroy cogStream:%{public}d for auxiliarySink success, ret:%{public}d", sinkId, ret);
     return ret;
 }
 
@@ -628,21 +629,21 @@ int32_t LocalDeviceManager::NotifyCognitionData(const std::string &adapterName, 
     CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
         "adapter:%{public}s is nullptr", adapterName.c_str());
     
-    Trace trace("LocalDeviceManager::NotifyCognitionData[" + std::to_string(sinkId) + "]_["
-        std::to_string(size) +"]_[" std::to_string(offset) +"]");
+    Trace trace("LocalDeviceManager::NotifyCognitionData[" + std::to_string(sinkId) + "]_[" +
+        std::to_string(size) + "]_[" + std::to_string(offset) + "]");
 
-    int32_t ret = wrapper->adapter_->DestoryCognitionStream(wrapper->adapter_, sinkId, size, offset);
+    int32_t ret = wrapper->adapter_->NotifyCognitionData(wrapper->adapter_, sinkId, size, offset);
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("notify cogStream:%{public}d data fail, ret:%{public}d", sinkId, ret);
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " notify cogStream:" + std::to_string(sinkId) + " data fail, ret:" + std::to_string(ret)));
-        return nullptr;
+        return ret;
     }
     AUDIO_DEBUG_LOG("notify cogStream:%{public}d data for auxiliarySink success, size:%{public}u "
-        "offset:%{public}u ret:%{public}d", sinkId, size, offset,ret);
+        "offset:%{public}u ret:%{public}d", sinkId, size, offset, ret);
     return ret;
 }
 

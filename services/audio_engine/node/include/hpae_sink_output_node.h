@@ -71,7 +71,7 @@ private:
     std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
     
     // only for auxiliarysink
-    int32_t GetAuxiliarySinkInstance(const std::string &deviceClsee);
+    int32_t GetAuxiliarySink(const std::string &deviceClass);
     int32_t AuxiliarySinkInit();
     int32_t AuxiliarySinkDeInit();
     void RenderFrameForAuxiliarySink();

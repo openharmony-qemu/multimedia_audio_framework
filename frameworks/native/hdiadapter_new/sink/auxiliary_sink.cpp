@@ -137,7 +137,7 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
     }
     curWritePos_ = (curWritePos_ == 0) ? eachSpanFramesSize_ : 0;
 
-    HdiDfxUtils::PrintSinkVolInfo(static_cast<char *>(&data), writeLen, attr_, logTag_, volumDataCount_);
+    HdiDfxUtils::PrintSinkVolInfo(static_cast<char *>(&data), writeLen, attr_, logTag_, volumeDataCount_);
     HdiDfxUtils::DumpData(static_cast<char *>(&data), writeLen, dumpFile_, dumpFileName_);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
@@ -292,54 +292,13 @@ void AuxiliarySink::DumpInfo(std::string &dumpString)
 {   
     dumpString += "type: AuxSink\tInitState: " + std::string(sinkInited_ ? "true" : "false") +
         "\n param:[" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) +
-        + std::to_string(attr_.format) + "]";
+        std::to_string(attr_.format) + "]";
 }
 
-int32_t AuxiliarySink::SetPriPaPower(void)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
-void AuxiliarySink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_WARNING_LOG("not supported");
-}
-
-int32_t AuxiliarySink::SetPaPower(int32_t flag)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AuxiliarySink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AuxiliarySink::GetAudioScene(void)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t AuxiliarySink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
-int64_t AuxiliarySink::GetVolumeDataCount()
+int32_t AuxiliarySink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;
-}
-
-void AuxiliarySink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-    AUDIO_WARNING_LOG("not supported");
 }
 
 int32_t AuxiliarySink::SetVolume(float left, float right)
