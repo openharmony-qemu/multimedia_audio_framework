@@ -30,6 +30,8 @@
 #include "audio_stream_enum.h"
 #include "util/hdi_dfx_utils.h"
 
+constexpr int32_t MAX_AUXILIARY_BUFFERSIZE = 32768;
+
 namespace OHOS {
 namespace AudioStandard {
 AuxiliarySink::~AuxiliarySink()
@@ -67,7 +69,7 @@ int32_t AuxiliarySink::Init(const IAudioSinkAttr &attr)
 
 int32_t AuxiliarySink::PrepareMmapBuffer(void)
 {
-    int32_t streamId = HDI_INVALID_ID; 
+    int32_t streamId = HDI_INVALID_ID;
     struct AudioMmapBufferDescriptor buffer;
     struct AudioSampleAttributes params;
     InitAudioSampleAttr(params);
@@ -102,7 +104,8 @@ int32_t AuxiliarySink::PrepareMmapBuffer(void)
 
     bufferSize_ = totalBufferFrames_ * frameSizeInByte_;
     dupBufferFd_ = dup(bufferFd_);
-    bufferAddress_ = (char *)mmap(nullptr, 32*1024, PROT_READ | PROT_WRITE, MAP_SHARED, dupBufferFd_, 0);
+    bufferAddress_ = (char *)mmap(nullptr, MAX_AUXILIARY_BUFFERSIZE,
+        PROT_READ | PROT_WRITE, MAP_SHARED, dupBufferFd_, 0);
     CHECK_AND_RETURN_RET_LOG(bufferAddress_ != nullptr && bufferAddress_ != MAP_FAILED, ERR_OPERATION_FAILED,
         "mmap buffer fail");
     return SUCCESS;
@@ -128,7 +131,7 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
     if (ret != EOK) {
         AUDIO_DEBUG_LOG("CogStream:%{public}d copy data fail, ret:%{public}d", sinkId_, ret);
         return ERR_WRITE_FAILED;
-    } 
+    }
     writeLen = writeLenth;
     ret = deviceManager_->NotifyCognitionData("primary", sinkId_, writeLen, curWritePos_);
     if (ret != SUCCESS) {

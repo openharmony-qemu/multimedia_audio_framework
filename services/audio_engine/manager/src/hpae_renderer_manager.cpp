@@ -1706,14 +1706,14 @@ int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
 {
     AUDIO_INFO_LOG("set to isEnabled:%{public}s", isEnabled ? "true" : "false");
     auto request = [this, isEnabled]() {
-        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) &&
-            (sinkInfo_.deviceClass == BT_SINK_NAME || sinkInfo_.deviceClass == USB_SINK_NAME),
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (sinkInfo_.deviceClass == BT_SINK_NAME ||
+            sinkInfo_.deviceClass == USB_SINK_NAME),
             "outputCluster is nullptr or sink:%{public}s is not usb and bt",
             sinkInfo_.deviceClass.c_str());
         outputCluster_->SetAuxiliarySinkEnable(isEnabled);
- 	};
- 	SendRequest(request, __func__);
- 	return SUCCESS;
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

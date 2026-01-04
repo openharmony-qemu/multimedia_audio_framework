@@ -2843,7 +2843,7 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
     
     auto request = [this, isEnabled]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetAuxiliaryRendererManager();
-        CHECK_AND_RETURN_LOG( rendererManager != nullptr, "can not find bt_speaker and usb_speaker");
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr, "can not find bt_speaker and usb_speaker");
         rendererManager->SetAuxiliarySinkEnable(isEnabled);
     };
     SendRequest(request, __func__);

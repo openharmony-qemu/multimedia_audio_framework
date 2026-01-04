@@ -321,7 +321,7 @@ int32_t HpaeSinkOutputNode::AuxiliarySinkDeInit(void)
     AUDIO_INFO_LOG("spkName:%{public}s, isEnabled:%{public}s", sinkOutAttr_.sinkName.c_str(), auxSinkEnable_);
     Trace trace("HpaeSinkOutputNode::AuxiliarySinkDeInit spkName:" + sinkOutAttr_.sinkName + "isEnabled:" +
         std::to_string(auxSinkEnable_));
-    CHECK_AND_RETURN_RET(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0 , ERROR);
+    CHECK_AND_RETURN_RET(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0, ERROR);
     CHECK_AND_RETURN_RET_LOG(auxiliarySink_ != nullptr, ERROR, "auxiliarySink is null");
     if (!auxiliarySink_->IsInited()) {
         AUDIO_WARNING_LOG("auxiliarySink is already DeInited");
