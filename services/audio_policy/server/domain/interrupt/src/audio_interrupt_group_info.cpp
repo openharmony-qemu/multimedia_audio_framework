@@ -58,6 +58,3 @@ InterruptGroupInfo *InterruptGroupInfo::Unmarshalling(Parcel &in)
 }
 } // namespace AudioStandard
 } // namespace OHOS
-if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
-        RemoveStreamIdSuggestionRecord(streamId);
-    }
