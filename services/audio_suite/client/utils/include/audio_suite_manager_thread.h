@@ -31,7 +31,7 @@ public:
     AudioSuiteManagerThread() : running_(false)
     {}
     ~AudioSuiteManagerThread();
-    void ActivateThread(IAudioSuiteManagerThread *audioSuiteManager);
+    void ActivateThread(IAudioSuiteManagerThread *audioSuiteManager, const std::string &threadName);
     void DeactivateThread();
     void Run();
     void Notify();
