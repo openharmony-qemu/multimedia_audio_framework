@@ -135,7 +135,6 @@ interface IStandardAudioService {
     void StartGroup([in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
     void StopGroup([in] int workgroupId);
     void SetBtHdiInvalidState();
-    void SetAuxiliarySinkEnable([in] boolean isEnabled);
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] Map<int, boolean> threads);
@@ -150,6 +149,7 @@ interface IStandardAudioService {
     void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
     void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
     void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
+    void SetAuxiliarySinkEnable([in] boolean isEnabled);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

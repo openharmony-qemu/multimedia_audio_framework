@@ -72,7 +72,7 @@ int32_t AuxiliarySink::PrepareMmapBuffer(void)
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is null");
 
     int32_t ret = deviceManager->CreateCognitionStream("primary", &params, streamId, &buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "create cogStream:%{public}d fail,"
@@ -136,7 +136,7 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is null");
     ret = deviceManager->NotifyCognitionData("primary", sinkId_, writeLen, curWritePos_);
     if (ret != SUCCESS) {
         AUDIO_DEBUG_LOG("notify CogStream:%{public}d data fail, ret:%{public}d", sinkId_, ret);
@@ -206,7 +206,7 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is null");
 
     uint32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);

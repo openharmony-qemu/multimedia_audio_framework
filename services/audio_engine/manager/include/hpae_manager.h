@@ -278,7 +278,7 @@ private:
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
     void UpdateBypassSpatializationForStereo();
     void HandleBypassSpatializationForStereo();
-    std::<IHpaeRendererManager> GetAuxiliaryRendererManager();
+    std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
