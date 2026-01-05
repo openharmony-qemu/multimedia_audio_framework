@@ -154,7 +154,6 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
     auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
-    return;
 }
 
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
