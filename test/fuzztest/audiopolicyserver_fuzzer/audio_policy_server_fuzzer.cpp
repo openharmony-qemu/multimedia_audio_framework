@@ -35,7 +35,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
 #include "bluetooth_host.h"
-#include <fuzzer/FuzzedDataProvider.h>
+
 using namespace std;
 
 namespace OHOS {
@@ -181,14 +181,14 @@ sptr<AudioPolicyServer> GetServerPtr()
     return server;
 }
 
-void AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->RegisterDefaultVolumeTypeListener();
 }
 
-void AudioPolicyServerOnAddSystemAbilityExtractFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerOnAddSystemAbilityExtractFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -199,7 +199,7 @@ void AudioPolicyServerOnAddSystemAbilityExtractFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->OnAddSystemAbilityExtract(systemAbilityId1, deviceId);
 }
 
-void AudioPolicyServerOnRemoveSystemAbilityFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerOnRemoveSystemAbilityFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -208,7 +208,7 @@ void AudioPolicyServerOnRemoveSystemAbilityFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->OnRemoveSystemAbility(systemAbilityId, deviceId);
 }
 
-void AudioPolicyServerMaxOrMinVolumeOptionFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerMaxOrMinVolumeOptionFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -218,7 +218,7 @@ void AudioPolicyServerMaxOrMinVolumeOptionFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
 }
 
-void AudioPolicyServerChangeVolumeOnVoiceAssistantFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerChangeVolumeOnVoiceAssistantFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -226,21 +226,21 @@ void AudioPolicyServerChangeVolumeOnVoiceAssistantFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->ChangeVolumeOnVoiceAssistant(streamInFocus);
 }
 
-void AudioPolicyServerIsContinueAddVolFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsContinueAddVolFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->IsContinueAddVol();
 }
 
-void AudioPolicyServerTriggerMuteCheckFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerTriggerMuteCheckFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->TriggerMuteCheck();
 }
 
-void AudioPolicyServerProcessVolumeKeyEventsFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerProcessVolumeKeyEventsFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -248,7 +248,7 @@ void AudioPolicyServerProcessVolumeKeyEventsFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->ProcessVolumeKeyEvents(keyType);
 }
 
-void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -258,7 +258,7 @@ void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest(FuzzedDataProvider& fd
     audioPolicyServer->SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
 }
 
-void AudioPolicyServerSubscribeSafeVolumeEventFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSubscribeSafeVolumeEventFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -268,7 +268,7 @@ void AudioPolicyServerSubscribeSafeVolumeEventFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SubscribeSafeVolumeEvent();
 }
 
-void AudioPolicyServerIsVolumeTypeValidFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsVolumeTypeValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -276,7 +276,7 @@ void AudioPolicyServerIsVolumeTypeValidFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsVolumeTypeValid(streamInFocus);
 }
 
-void AudioPolicyServerIsVolumeLevelValidFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsVolumeLevelValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -285,7 +285,7 @@ void AudioPolicyServerIsVolumeLevelValidFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsVolumeLevelValid(streamInFocus, volumeLevel);
 }
 
-void AudioPolicyServerIsRingerModeValidFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsRingerModeValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -293,21 +293,21 @@ void AudioPolicyServerIsRingerModeValidFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsRingerModeValid(ringMode);
 }
 
-void AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->SubscribeOsAccountChangeEvents();
 }
 
-void AudioPolicyServerAddRemoteDevstatusCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAddRemoteDevstatusCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->AddRemoteDevstatusCallback();
 }
 
-void AudioPolicyServerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerOnReceiveEventFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -315,35 +315,35 @@ void AudioPolicyServerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->OnReceiveEvent(eventData);
 }
 
-void AudioPolicyServerSubscribeBackgroundTaskFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSubscribeBackgroundTaskFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->SubscribeBackgroundTask();
 }
 
-void AudioPolicyServerSubscribeCommonEventExecuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSubscribeCommonEventExecuteFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->SubscribeCommonEventExecute();
 }
 
-void AudioPolicyServerCheckSubscribePowerStateChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCheckSubscribePowerStateChangeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->CheckSubscribePowerStateChange();
 }
 
-void AudioPolicyServerNotifySettingsDataReadyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerNotifySettingsDataReadyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->NotifySettingsDataReady();
 }
 
-void AudioPolicyServerGetMaxVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMaxVolumeLevelFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -353,7 +353,7 @@ void AudioPolicyServerGetMaxVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
 }
 
-void AudioPolicyServerGetMinVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMinVolumeLevelFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -363,7 +363,7 @@ void AudioPolicyServerGetMinVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
 }
 
-void AudioPolicyServerSetSystemVolumeLevelLegacyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSystemVolumeLevelLegacyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -372,7 +372,7 @@ void AudioPolicyServerSetSystemVolumeLevelLegacyFuzzTest(FuzzedDataProvider& fdp
     audioPolicyServer->SetSystemVolumeLevelLegacy(streamTypeIn, volumeLevel);
 }
 
-void AudioPolicyServerSetAdjustVolumeForZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAdjustVolumeForZoneFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -380,7 +380,7 @@ void AudioPolicyServerSetAdjustVolumeForZoneFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetAdjustVolumeForZone(zoneId);
 }
 
-void AudioPolicyServerGetSelfAppVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSelfAppVolumeLevelFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -388,7 +388,7 @@ void AudioPolicyServerGetSelfAppVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetSelfAppVolumeLevel(volumeLevel);
 }
 
-void AudioPolicyServerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSystemVolumeLevelFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -398,7 +398,7 @@ void AudioPolicyServerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetSystemVolumeLevel(streamType, uid, volumeLevel);
 }
 
-void AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -406,7 +406,7 @@ void AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest(FuzzedDataProvider
     audioPolicyServer->GetSystemVolumeLevelNoMuteState(streamInFocus);
 }
 
-void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -415,7 +415,7 @@ void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->GetSystemVolumeLevelInternal(streamInFocus, zoneId);
 }
 
-void AudioPolicyServerGetAppVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAppVolumeLevelInternalFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -424,7 +424,7 @@ void AudioPolicyServerGetAppVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetAppVolumeLevelInternal(appUid, volumeLevel);
 }
 
-void AudioPolicyServerSetLowPowerVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -433,7 +433,7 @@ void AudioPolicyServerSetLowPowerVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetLowPowerVolume(streamId, volume);
 }
 
-void AudioPolicyServerGetLowPowerVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -442,7 +442,7 @@ void AudioPolicyServerGetLowPowerVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetLowPowerVolume(streamId, outVolume);
 }
 
-void AudioPolicyServerGetSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSingleStreamVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -451,7 +451,7 @@ void AudioPolicyServerGetSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetSingleStreamVolume(streamId, outVolume);
 }
 
-void AudioPolicyServerIsVolumeUnadjustableFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsVolumeUnadjustableFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -459,7 +459,7 @@ void AudioPolicyServerIsVolumeUnadjustableFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsVolumeUnadjustable(unadjustable);
 }
 
-void AudioPolicyServerCheckCanMuteVolumeTypeByStepFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCheckCanMuteVolumeTypeByStepFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -468,7 +468,7 @@ void AudioPolicyServerCheckCanMuteVolumeTypeByStepFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->CheckCanMuteVolumeTypeByStep(volumeType, volumeLevel);
 }
 
-void AudioPolicyServerGetSystemVolumeInDbFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSystemVolumeInDbFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -479,7 +479,7 @@ void AudioPolicyServerGetSystemVolumeInDbFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetSystemVolumeInDb(volumeTypeIn, volumeLevel, deviceTypeIn, volume);
 }
 
-void AudioPolicyServerSetStreamMuteLegacyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetStreamMuteLegacyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -489,7 +489,7 @@ void AudioPolicyServerSetStreamMuteLegacyFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetStreamMuteLegacy(streamTypeIn, mute, deviceTypeIn);
 }
 
-void AudioPolicyServerSetStreamMuteInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetStreamMuteInternalFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -501,7 +501,7 @@ void AudioPolicyServerSetStreamMuteInternalFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetStreamMuteInternal(streamType, mute, isUpdateUi, deviceType, zoneId);
 }
 
-void AudioPolicyServerUpdateSystemMuteStateAccordingMusicStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateSystemMuteStateAccordingMusicStateFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -511,7 +511,7 @@ void AudioPolicyServerUpdateSystemMuteStateAccordingMusicStateFuzzTest(FuzzedDat
     audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
 }
 
-void AudioPolicyServerSendMuteKeyEventCbWithUpdateUiOrNotFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSendMuteKeyEventCbWithUpdateUiOrNotFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -521,7 +521,7 @@ void AudioPolicyServerSendMuteKeyEventCbWithUpdateUiOrNotFuzzTest(FuzzedDataProv
     audioPolicyServer->SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
 }
 
-void AudioPolicyServerSetSingleStreamMuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSingleStreamMuteFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -533,7 +533,7 @@ void AudioPolicyServerSetSingleStreamMuteFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetSingleStreamMute(streamType, mute, isUpdateUi, deviceType, zoneId);
 }
 
-void AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -542,7 +542,7 @@ void AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest(FuzzedDataProvider& fd
     audioPolicyServer->ProcUpdateRingerModeForMute(updateRingerMode, mute);
 }
 
-void AudioPolicyServerGetSystemVolumeDbFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSystemVolumeDbFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -550,7 +550,7 @@ void AudioPolicyServerGetSystemVolumeDbFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetSystemVolumeDb(streamType);
 }
 
-void AudioPolicyServerSetSelfAppVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSelfAppVolumeLevelFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -559,7 +559,7 @@ void AudioPolicyServerSetSelfAppVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
 }
 
-void AudioPolicyServerSetAppVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAppVolumeLevelInternalFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -569,7 +569,7 @@ void AudioPolicyServerSetAppVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetAppVolumeLevelInternal(appUid, muted, isUpdateUi);
 }
 
-void AudioPolicyServerSetSystemVolumeLevelInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -580,7 +580,7 @@ void AudioPolicyServerSetSystemVolumeLevelInternalFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, isUpdateUi, zoneId);
 }
 
-void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -591,7 +591,7 @@ void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzzTest(FuzzedDataP
     audioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
-void AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -601,7 +601,7 @@ void AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzzTest(FuzzedDataPr
     audioPolicyServer->SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
 }
 
-void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -618,7 +618,7 @@ void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzzTest(FuzzedDataProvi
     audioPolicyServer->UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
 }
 
-void AudioPolicyServerProcUpdateRingerModeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerProcUpdateRingerModeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -628,7 +628,7 @@ void AudioPolicyServerProcUpdateRingerModeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->ProcUpdateRingerMode();
 }
 
-void AudioPolicyServerSetAppSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAppSingleStreamVolumeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -638,7 +638,7 @@ void AudioPolicyServerSetAppSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
 }
 
-void AudioPolicyServerSetSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSingleStreamVolumeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -652,7 +652,7 @@ void AudioPolicyServerSetSingleStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
         option);
 }
 
-void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -664,7 +664,7 @@ void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzzTest(FuzzedDataProvider
     audioPolicyServer->SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
-void AudioPolicyServerGetStreamMuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamMuteFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -673,7 +673,7 @@ void AudioPolicyServerGetStreamMuteFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetStreamMute(streamTypeIn, mute);
 }
 
-void AudioPolicyServerMapExternalToInternalDeviceTypeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerMapExternalToInternalDeviceTypeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -688,7 +688,7 @@ void AudioPolicyServerMapExternalToInternalDeviceTypeFuzzTest(FuzzedDataProvider
     audioPolicyServer->MapExternalToInternalDeviceType(desc);
 }
 
-void AudioPolicyServerGetPreferredOutputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetPreferredOutputDeviceDescriptorsFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -700,7 +700,7 @@ void AudioPolicyServerGetPreferredOutputDeviceDescriptorsFuzzTest(FuzzedDataProv
     audioPolicyServer->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceDescs);
 }
 
-void AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -711,7 +711,7 @@ void AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvi
     audioPolicyServer->GetPreferredInputDeviceDescriptors(capturerInfo, deviceDescs);
 }
 
-void AudioPolicyServerIsFastRecordingSupportedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsFastRecordingSupportedFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -721,7 +721,7 @@ void AudioPolicyServerIsFastRecordingSupportedFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsFastRecordingSupported(streamInfo, source, support);
 }
 
-void AudioPolicyServerSetRingerModeInternalFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetRingerModeInternalFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -730,7 +730,7 @@ void AudioPolicyServerSetRingerModeInternalFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetRingerModeInternal(inputRingerMode, hasUpdatedVolume);
 }
 
-void AudioPolicyServerInitMicrophoneMuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerInitMicrophoneMuteFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -740,7 +740,7 @@ void AudioPolicyServerInitMicrophoneMuteFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->InitMicrophoneMute();
 }
 
-void AudioPolicyServerSetMicrophoneMuteAudioConfigFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetMicrophoneMuteAudioConfigFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -748,7 +748,7 @@ void AudioPolicyServerSetMicrophoneMuteAudioConfigFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->SetMicrophoneMuteAudioConfig(isMute);
 }
 
-void AudioPolicyServerSetMicrophoneMutePersistentFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetMicrophoneMutePersistentFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -757,7 +757,7 @@ void AudioPolicyServerSetMicrophoneMutePersistentFuzzTest(FuzzedDataProvider& fd
     audioPolicyServer->SetMicrophoneMutePersistent(isMute, typeIn);
 }
 
-void AudioPolicyServerSetAudioSceneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAudioSceneFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -769,7 +769,7 @@ void AudioPolicyServerSetAudioSceneFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetAudioScene(audioSceneIn);
 }
 
-void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -781,7 +781,7 @@ void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzzTest(FuzzedDataProvid
     audioPolicyServer->UnsetAudioInterruptCallback(sessionID, zoneID);
 }
 
-void AudioPolicyServerVerifySessionIdFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerVerifySessionIdFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -790,7 +790,7 @@ void AudioPolicyServerVerifySessionIdFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->VerifySessionId(sessionId, clientUid);
 }
 
-void AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -801,14 +801,14 @@ void AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzzTest(FuzzedDataProvider& 
     audioPolicyServer->UnsetAudioRouteCallback(sessionId);
 }
 
-void AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->SubscribeAccessibilityConfigObserver();
 }
 
-void AudioPolicyServerGetMinStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMinStreamVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -817,7 +817,7 @@ void AudioPolicyServerGetMinStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMinStreamVolume(volume);
 }
 
-void AudioPolicyServerGetMaxStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMaxStreamVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -826,7 +826,7 @@ void AudioPolicyServerGetMaxStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMaxStreamVolume(volume);
 }
 
-void AudioPolicyServerGetMaxRendererInstancesFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMaxRendererInstancesFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -836,7 +836,7 @@ void AudioPolicyServerGetMaxRendererInstancesFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMaxRendererInstances(ret);
 }
 
-void AudioPolicyServerRegisterDataObserverFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisterDataObserverFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -844,7 +844,7 @@ void AudioPolicyServerRegisterDataObserverFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->RegisterDataObserver();
 }
 
-void AudioPolicyServerQueryEffectSceneModeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerQueryEffectSceneModeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -853,7 +853,7 @@ void AudioPolicyServerQueryEffectSceneModeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->QueryEffectSceneMode(supportedEffectConfig);
 }
 
-void AudioPolicyServerGetHardwareOutputSamplingRateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetHardwareOutputSamplingRateFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -863,7 +863,7 @@ void AudioPolicyServerGetHardwareOutputSamplingRateFuzzTest(FuzzedDataProvider& 
     audioPolicyServer->GetHardwareOutputSamplingRate(desc, ret);
 }
 
-void AudioPolicyServerGetAudioCapturerMicrophoneDescriptorsFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAudioCapturerMicrophoneDescriptorsFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -873,7 +873,7 @@ void AudioPolicyServerGetAudioCapturerMicrophoneDescriptorsFuzzTest(FuzzedDataPr
     audioPolicyServer->GetAudioCapturerMicrophoneDescriptors(sessionId, micDescs);
 }
 
-void AudioPolicyServerGetAvailableMicrophonesFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAvailableMicrophonesFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -882,7 +882,7 @@ void AudioPolicyServerGetAvailableMicrophonesFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetAvailableMicrophones(retMicList);
 }
 
-void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -892,7 +892,7 @@ void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest(FuzzedDataProvider& fd
     audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
-void AudioPolicyServerIsAbsVolumeSceneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsAbsVolumeSceneFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -901,7 +901,7 @@ void AudioPolicyServerIsAbsVolumeSceneFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsAbsVolumeScene(ret);
 }
 
-void AudioPolicyServerSetA2dpDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetA2dpDeviceVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -912,7 +912,7 @@ void AudioPolicyServerSetA2dpDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
-void AudioPolicyServerSetNearlinkDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetNearlinkDeviceVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -924,7 +924,7 @@ void AudioPolicyServerSetNearlinkDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
 }
 
-void AudioPolicyServerGetAvailableDevicesFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAvailableDevicesFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -934,7 +934,7 @@ void AudioPolicyServerGetAvailableDevicesFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetAvailableDevices(usageIn, descs);
 }
 
-void AudioPolicyServerSetAvailableDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAvailableDeviceChangeCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -946,7 +946,7 @@ void AudioPolicyServerSetAvailableDeviceChangeCallbackFuzzTest(FuzzedDataProvide
     audioPolicyServer->SetAvailableDeviceChangeCallback(clientId, usageIn, object);
 }
 
-void AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -957,7 +957,7 @@ void AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest(FuzzedDataProvi
     audioPolicyServer->UnsetAvailableDeviceChangeCallback(clientId, usageIn);
 }
 
-void AudioPolicyServerCheckAudioSessionStrategyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCheckAudioSessionStrategyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -968,7 +968,7 @@ void AudioPolicyServerCheckAudioSessionStrategyFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->CheckAudioSessionStrategy(sessionStrategy);
 }
 
-void AudioPolicyServerSetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetAudioSessionSceneFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -978,7 +978,7 @@ void AudioPolicyServerSetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetAudioSessionScene(audioSessionScene);
 }
 
-void AudioPolicyServerGetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetDefaultOutputDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -989,7 +989,7 @@ void AudioPolicyServerGetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetDefaultOutputDevice(deviceType);
 }
 
-void AudioPolicyServerSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetDefaultOutputDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -999,7 +999,7 @@ void AudioPolicyServerSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetDefaultOutputDevice(deviceType);
 }
 
-void AudioPolicyServerLoadSplitModuleFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerLoadSplitModuleFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1010,7 +1010,7 @@ void AudioPolicyServerLoadSplitModuleFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->LoadSplitModule(splitArgs, networkId);
 }
 
-void AudioPolicyServerIsAllowedPlaybackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsAllowedPlaybackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1025,7 +1025,7 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
 }
 
-void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1035,7 +1035,7 @@ void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetVoiceRingtoneMute(isMute);
 }
 
-void AudioPolicyServerNotifySessionStateChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerNotifySessionStateChangeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1047,7 +1047,7 @@ void AudioPolicyServerNotifySessionStateChangeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->NotifySessionStateChange(uid, pid, hasSession);
 }
 
-void AudioPolicyServerNotifyFreezeStateChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerNotifyFreezeStateChangeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1059,7 +1059,7 @@ void AudioPolicyServerNotifyFreezeStateChangeFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->NotifyFreezeStateChange(pidList, isFreeze);
 }
 
-void AudioPolicyServerResetAllProxyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerResetAllProxyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1067,7 +1067,7 @@ void AudioPolicyServerResetAllProxyFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->ResetAllProxy();
 }
 
-void AudioPolicyServerNotifyProcessBackgroundStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerNotifyProcessBackgroundStateFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1078,7 +1078,7 @@ void AudioPolicyServerNotifyProcessBackgroundStateFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->NotifyProcessBackgroundState(uid, pid);
 }
 
-void AudioPolicyServerSetVirtualCallFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetVirtualCallFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1088,7 +1088,7 @@ void AudioPolicyServerSetVirtualCallFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetVirtualCall(isVirtual);
 }
 
-void AudioPolicyServerSetDeviceConnectionStatusFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetDeviceConnectionStatusFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1099,7 +1099,7 @@ void AudioPolicyServerSetDeviceConnectionStatusFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetDeviceConnectionStatus(desc, isConnected);
 }
 
-void AudioPolicyServerSetQueryAllowedPlaybackCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetQueryAllowedPlaybackCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1109,7 +1109,7 @@ void AudioPolicyServerSetQueryAllowedPlaybackCallbackFuzzTest(FuzzedDataProvider
     audioPolicyServer->SetQueryAllowedPlaybackCallback(object);
 }
 
-void AudioPolicyServerSetBackgroundMuteCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetBackgroundMuteCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1119,7 +1119,7 @@ void AudioPolicyServerSetBackgroundMuteCallbackFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetBackgroundMuteCallback(object);
 }
 
-void AudioPolicyServerGetDirectPlaybackSupportFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetDirectPlaybackSupportFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1131,7 +1131,7 @@ void AudioPolicyServerGetDirectPlaybackSupportFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetDirectPlaybackSupport(streamInfo, streamUsage, retMod);
 }
 
-void AudioPolicyServerGetMaxVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMaxVolumeLevelByUsageFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1142,7 +1142,7 @@ void AudioPolicyServerGetMaxVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMaxVolumeLevelByUsage(streamUsage, retMaxVolumeLevel);
 }
 
-void AudioPolicyServerGetMinVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMinVolumeLevelByUsageFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1153,7 +1153,7 @@ void AudioPolicyServerGetMinVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetMinVolumeLevelByUsage(streamUsage, retMinVolumeLevel);
 }
 
-void AudioPolicyServerGetVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetVolumeLevelByUsageFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1164,7 +1164,7 @@ void AudioPolicyServerGetVolumeLevelByUsageFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetVolumeLevelByUsage(streamUsage, retVolumeLevel);
 }
 
-void AudioPolicyServerGetStreamMuteByUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamMuteByUsageFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1175,7 +1175,7 @@ void AudioPolicyServerGetStreamMuteByUsageFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetStreamMuteByUsage(streamUsage, isMute);
 }
 
-void AudioPolicyServerGetVolumeInDbByStreamFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetVolumeInDbByStreamFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1188,7 +1188,7 @@ void AudioPolicyServerGetVolumeInDbByStreamFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->GetVolumeInDbByStream(streamUsageIn, volumeLevel, deviceType, ret);
 }
 
-void AudioPolicyServerGetSupportedAudioVolumeTypesFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSupportedAudioVolumeTypesFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1198,7 +1198,7 @@ void AudioPolicyServerGetSupportedAudioVolumeTypesFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->GetSupportedAudioVolumeTypes(ret);
 }
 
-void AudioPolicyServerGetAudioVolumeTypeByStreamUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAudioVolumeTypeByStreamUsageFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1208,7 +1208,7 @@ void AudioPolicyServerGetAudioVolumeTypeByStreamUsageFuzzTest(FuzzedDataProvider
     audioPolicyServer->GetAudioVolumeTypeByStreamUsage(streamUsageIn, ret);
 }
 
-void AudioPolicyServerGetStreamUsagesByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamUsagesByVolumeTypeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1218,7 +1218,7 @@ void AudioPolicyServerGetStreamUsagesByVolumeTypeFuzzTest(FuzzedDataProvider& fd
     audioPolicyServer->GetStreamUsagesByVolumeType(audioVolumeTypeIn, ret);
 }
 
-void AudioPolicyServerSetCallbackStreamUsageInfoFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetCallbackStreamUsageInfoFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1228,7 +1228,7 @@ void AudioPolicyServerSetCallbackStreamUsageInfoFuzzTest(FuzzedDataProvider& fdp
     audioPolicyServer->SetCallbackStreamUsageInfo(streamUsages);
 }
 
-void AudioPolicyServerForceStopAudioStreamFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerForceStopAudioStreamFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1237,7 +1237,7 @@ void AudioPolicyServerForceStopAudioStreamFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->ForceStopAudioStream(audioTypeIn);
 }
 
-void AudioPolicyServerIsCapturerFocusAvailableFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsCapturerFocusAvailableFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1250,7 +1250,7 @@ void AudioPolicyServerIsCapturerFocusAvailableFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->IsCapturerFocusAvailable(capturerInfo, ret);
 }
 
-void AudioPolicyServerUpdateDefaultOutputDeviceWhenStartingFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateDefaultOutputDeviceWhenStartingFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1260,7 +1260,7 @@ void AudioPolicyServerUpdateDefaultOutputDeviceWhenStartingFuzzTest(FuzzedDataPr
     audioPolicyServer->UpdateDefaultOutputDeviceWhenStarting(sessionID);
 }
 
-void AudioPolicyServerUpdateDefaultOutputDeviceWhenStoppingFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateDefaultOutputDeviceWhenStoppingFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1270,7 +1270,7 @@ void AudioPolicyServerUpdateDefaultOutputDeviceWhenStoppingFuzzTest(FuzzedDataPr
     audioPolicyServer->UpdateDefaultOutputDeviceWhenStopping(sessionID);
 }
 
-void AudioPolicyServerIsAcousticEchoCancelerSupportedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsAcousticEchoCancelerSupportedFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1281,7 +1281,7 @@ void AudioPolicyServerIsAcousticEchoCancelerSupportedFuzzTest(FuzzedDataProvider
     audioPolicyServer->IsAcousticEchoCancelerSupported(sourceType, ret);
 }
 
-void AudioPolicyServerSetKaraokeParametersFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetKaraokeParametersFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1292,7 +1292,7 @@ void AudioPolicyServerSetKaraokeParametersFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetKaraokeParameters(parameters, ret);
 }
 
-void AudioPolicyServerUpdateDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateDeviceInfoFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1303,7 +1303,7 @@ void AudioPolicyServerUpdateDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->UpdateDeviceInfo(deviceDesc, command);
 }
 
-void AudioPolicyServerSetSleAudioOperationCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetSleAudioOperationCallbackFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1312,7 +1312,7 @@ void AudioPolicyServerSetSleAudioOperationCallbackFuzzTest(FuzzedDataProvider& f
     audioPolicyServer->SetSleAudioOperationCallback(object);
 }
 
-void AudioPolicyServerSetCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetCollaborativePlaybackEnabledForDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1323,7 +1323,7 @@ void AudioPolicyServerSetCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDat
     audioPolicyServer->SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
 }
 
-void AudioPolicyServerIsCollaborativePlaybackSupportedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsCollaborativePlaybackSupportedFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1333,7 +1333,7 @@ void AudioPolicyServerIsCollaborativePlaybackSupportedFuzzTest(FuzzedDataProvide
     audioPolicyServer->IsCollaborativePlaybackSupported(ret);
 }
 
-void AudioPolicyServerIsCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsCollaborativePlaybackEnabledForDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1344,7 +1344,7 @@ void AudioPolicyServerIsCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedData
     audioPolicyServer->IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
 }
 
-void AudioPolicyServerCallRingtoneLibraryFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCallRingtoneLibraryFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -1352,7 +1352,7 @@ void AudioPolicyServerCallRingtoneLibraryFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->CallRingtoneLibrary();
 }
 
-void SetAndUnsetDistributedRoutingRoleCallbackFuzzTest(FuzzedDataProvider& fdp)
+void SetAndUnsetDistributedRoutingRoleCallbackFuzzTest()
 {
     sptr<RemoteObjectFuzzTestStub> remoteObjectStub = sptr<RemoteObjectFuzzTestStub>();
     CHECK_AND_RETURN(remoteObjectStub != nullptr);
@@ -1362,7 +1362,7 @@ void SetAndUnsetDistributedRoutingRoleCallbackFuzzTest(FuzzedDataProvider& fdp)
     server->UnsetDistributedRoutingRoleCallback();
 }
 
-void OnDistributedRoutingRoleChangeFuzzTest(FuzzedDataProvider& fdp)
+void OnDistributedRoutingRoleChangeFuzzTest()
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
@@ -1372,7 +1372,7 @@ void OnDistributedRoutingRoleChangeFuzzTest(FuzzedDataProvider& fdp)
     server->OnDistributedRoutingRoleChange(desc, castTypeValue);
 }
 
-void RegisterAndUnRegisterPowerStateListenerFuzzTest(FuzzedDataProvider& fdp)
+void RegisterAndUnRegisterPowerStateListenerFuzzTest()
 {
     sptr<AudioPolicyServer> server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1380,14 +1380,14 @@ void RegisterAndUnRegisterPowerStateListenerFuzzTest(FuzzedDataProvider& fdp)
     server->UnRegisterPowerStateListener();
 }
 
-void RegisterAppStateListenerFuzzTest(FuzzedDataProvider& fdp)
+void RegisterAppStateListenerFuzzTest()
 {
     sptr<AudioPolicyServer> server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->RegisterAppStateListener();
 }
 
-void RegisterAndUnRegisterSyncHibernateListenerFuzzTest(FuzzedDataProvider& fdp)
+void RegisterAndUnRegisterSyncHibernateListenerFuzzTest()
 {
     sptr<AudioPolicyServer> server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1395,7 +1395,7 @@ void RegisterAndUnRegisterSyncHibernateListenerFuzzTest(FuzzedDataProvider& fdp)
     server->UnRegisterSyncHibernateListener();
 }
 
-void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest()
 {
     uint32_t sessionID = GetData<uint32_t>();
     int32_t streamUsageIn = GetData<int32_t>();
@@ -1408,7 +1408,7 @@ void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest(FuzzedDat
     server->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioPolicyServerRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisterAudioZoneClientFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1417,7 +1417,7 @@ void AudioPolicyServerRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
     server->RegisterAudioZoneClient(object);
 }
 
-void AudioPolicyServerAudioZoneQueryFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAudioZoneQueryFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1438,7 +1438,7 @@ void AudioPolicyServerAudioZoneQueryFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1461,7 +1461,7 @@ void AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest(FuzzedDataProvider& fd
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerEnableAudioZoneReportFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerEnableAudioZoneReportFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1479,7 +1479,7 @@ void AudioPolicyServerEnableAudioZoneReportFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1495,7 +1495,7 @@ void AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerAddStreamToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAddStreamToAudioZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1513,7 +1513,7 @@ void AudioPolicyServerAddStreamToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerAddStreamsToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAddStreamsToAudioZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1536,7 +1536,7 @@ void AudioPolicyServerAddStreamsToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerSetZoneDeviceVisibleFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetZoneDeviceVisibleFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1544,7 +1544,7 @@ void AudioPolicyServerSetZoneDeviceVisibleFuzzTest(FuzzedDataProvider& fdp)
     server->SetZoneDeviceVisible(visible);
 }
 
-void AudioPolicyServerEnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerEnableSystemVolumeProxyFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1557,7 +1557,7 @@ void AudioPolicyServerEnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerGetAudioInterruptForZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAudioInterruptForZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1572,7 +1572,7 @@ void AudioPolicyServerGetAudioInterruptForZoneFuzzTest(FuzzedDataProvider& fdp)
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerGetMaxAmplitudeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetMaxAmplitudeFuzzTest()
 {
     int32_t deviceId = GetData<int32_t>();
     float ret = GetData<float>();
@@ -1581,7 +1581,7 @@ void AudioPolicyServerGetMaxAmplitudeFuzzTest(FuzzedDataProvider& fdp)
     server->GetMaxAmplitude(deviceId, ret);
 }
 
-void AudioPolicyServerIsHeadTrackingDataRequestedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerIsHeadTrackingDataRequestedFuzzTest()
 {
     std::string macAddress = "test";
     bool ret = GetData<bool>();
@@ -1590,14 +1590,14 @@ void AudioPolicyServerIsHeadTrackingDataRequestedFuzzTest(FuzzedDataProvider& fd
     server->IsHeadTrackingDataRequested(macAddress, ret);
 }
 
-void AudioPolicyServerUnsetAudioDeviceRefinerCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUnsetAudioDeviceRefinerCallbackFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->UnsetAudioDeviceRefinerCallback();
 }
 
-void AudioPolicyServerTriggerFetchDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerTriggerFetchDeviceFuzzTest()
 {
     AudioStreamDeviceChangeReasonExt reason = GetData<AudioStreamDeviceChangeReason>();
     auto server = GetServerPtr();
@@ -1605,7 +1605,7 @@ void AudioPolicyServerTriggerFetchDeviceFuzzTest(FuzzedDataProvider& fdp)
     server->TriggerFetchDevice(reason);
 }
 
-void AudioPolicyServerSetPreferredDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetPreferredDeviceFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1616,7 +1616,7 @@ void AudioPolicyServerSetPreferredDeviceFuzzTest(FuzzedDataProvider& fdp)
     server->SetPreferredDevice(preferredTypeIn, audioDeviceDescriptor, uid);
 }
 
-void AudioPolicyServerSetDeviceVolumeBehaviorFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetDeviceVolumeBehaviorFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1626,21 +1626,21 @@ void AudioPolicyServerSetDeviceVolumeBehaviorFuzzTest(FuzzedDataProvider& fdp)
     server->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
-void AudioPolicyServerUnsetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUnsetAudioDeviceAnahsCallbackFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->UnsetAudioDeviceAnahsCallback();
 }
 
-void AudioPolicyServerSendVolumeKeyEventToRssWhenAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSendVolumeKeyEventToRssWhenAccountsChangedFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->SendVolumeKeyEventToRssWhenAccountsChanged();
 }
 
-void AudioPolicyServerNotifyAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerNotifyAccountsChangedFuzzTest()
 {
     const int32_t id = GetData<int32_t>();
     auto server = GetServerPtr();
@@ -1648,35 +1648,35 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
     server->NotifyAccountsChanged(id, 1);
 }
 
-void AudioPolicyServerCheckHibernateStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCheckHibernateStateFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->CheckHibernateState(GetData<bool>());
 }
 
-void AudioPolicyServerUpdateSafeVolumeByS4FuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateSafeVolumeByS4FuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->UpdateSafeVolumeByS4();
 }
 
-void AudioPolicyServerCheckConnectedDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCheckConnectedDeviceFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->CheckConnectedDevice();
 }
 
-void AudioPolicyServerSetDeviceConnectedFlagFalseAfterDurationFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetDeviceConnectedFlagFalseAfterDurationFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->SetDeviceConnectedFlagFalseAfterDuration();
 }
 
-void AudioPolicyServerInjectInterruptionFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerInjectInterruptionFuzzTest()
 {
     InterruptEvent event;
     event.eventType = GetData<InterruptType>();
@@ -1689,7 +1689,7 @@ void AudioPolicyServerInjectInterruptionFuzzTest(FuzzedDataProvider& fdp)
     server->InjectInterruption(a, event);
 }
 
-void AudioPolicyServerProcessRemoteInterruptFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerProcessRemoteInterruptFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1701,7 +1701,7 @@ void AudioPolicyServerProcessRemoteInterruptFuzzTest(FuzzedDataProvider& fdp)
     server->ProcessRemoteInterrupt(sessionIds, interruptEvent);
 }
 
-void AudioPolicyServerGetStreamIdsForAudioSessionByStreamUsageFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamIdsForAudioSessionByStreamUsageFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1710,7 +1710,7 @@ void AudioPolicyServerGetStreamIdsForAudioSessionByStreamUsageFuzzTest(FuzzedDat
     server->GetStreamIdsForAudioSessionByStreamUsage(zoneId, streamUsageSet);
 }
 
-void AudioPolicyServerActivateAudioInterruptFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerActivateAudioInterruptFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1720,7 +1720,7 @@ void AudioPolicyServerActivateAudioInterruptFuzzTest(FuzzedDataProvider& fdp)
     server->ActivateAudioInterrupt(audioInterruptIn, zoneID, isUpdatedAudioStrategy);
 }
 
-void AudioPolicyServerDeactivateAudioInterruptFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerDeactivateAudioInterruptFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1729,21 +1729,21 @@ void AudioPolicyServerDeactivateAudioInterruptFuzzTest(FuzzedDataProvider& fdp)
     server->DeactivateAudioInterrupt(audioInterruptIn, zoneID);
 }
 
-void AudioPolicyServerActivatePreemptModeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerActivatePreemptModeFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->ActivatePreemptMode();
 }
 
-void AudioPolicyServerDeactivatePreemptModeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerDeactivatePreemptModeFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->DeactivatePreemptMode();
 }
 
-void AudioPolicyServerGetStreamInFocusFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamInFocusFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1752,7 +1752,7 @@ void AudioPolicyServerGetStreamInFocusFuzzTest(FuzzedDataProvider& fdp)
     server->GetStreamInFocus(zoneID, streamType);
 }
 
-void AudioPolicyServerGetSessionInfoInFocusFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetSessionInfoInFocusFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1761,7 +1761,7 @@ void AudioPolicyServerGetSessionInfoInFocusFuzzTest(FuzzedDataProvider& fdp)
     server->GetSessionInfoInFocus(audioInterrupt, zoneID);
 }
 
-void AudioPolicyServerGetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetAudioFocusInfoListFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1775,7 +1775,7 @@ void AudioPolicyServerGetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
     server->GetAudioFocusInfoList(focusInfoList, zoneID);
 }
 
-void AudioPolicyServerVerifyPermissionFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerVerifyPermissionFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1785,7 +1785,7 @@ void AudioPolicyServerVerifyPermissionFuzzTest(FuzzedDataProvider& fdp)
     server->VerifyPermission(permissionName, tokenId, isRecording);
 }
 
-void AudioPolicyServerGetStreamVolumeInfoMapFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetStreamVolumeInfoMapFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1793,7 +1793,7 @@ void AudioPolicyServerGetStreamVolumeInfoMapFuzzTest(FuzzedDataProvider& fdp)
     server->GetStreamVolumeInfoMap(streamVolumeInfos);
 }
 
-void AudioPolicyServerDumpFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerDumpFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1809,14 +1809,14 @@ void AudioPolicyServerDumpFuzzTest(FuzzedDataProvider& fdp)
     server->Dump(fd, args);
 }
 
-void AudioPolicyServerInitPolicyDumpMapFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerInitPolicyDumpMapFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->InitPolicyDumpMap();
 }
 
-void AudioPolicyServerPolicyDataDumpFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerPolicyDataDumpFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1824,7 +1824,7 @@ void AudioPolicyServerPolicyDataDumpFuzzTest(FuzzedDataProvider& fdp)
     server->PolicyDataDump(dumpString);
 }
 
-void AudioPolicyServerArgInfoDumpFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerArgInfoDumpFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1833,7 +1833,7 @@ void AudioPolicyServerArgInfoDumpFuzzTest(FuzzedDataProvider& fdp)
     server->ArgInfoDump(dumpString, argQue);
 }
 
-void AudioPolicyServerInfoDumpHelpFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerInfoDumpHelpFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1841,7 +1841,7 @@ void AudioPolicyServerInfoDumpHelpFuzzTest(FuzzedDataProvider& fdp)
     server->InfoDumpHelp(dumpString);
 }
 
-void AudioPolicyServerCreateRendererClientFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCreateRendererClientFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1855,7 +1855,7 @@ void AudioPolicyServerCreateRendererClientFuzzTest(FuzzedDataProvider& fdp)
     server->CreateRendererClient(streamDesc, flag, sessionId, networkId);
 }
 
-void AudioPolicyServerCreateCapturerClientFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerCreateCapturerClientFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1868,7 +1868,7 @@ void AudioPolicyServerCreateCapturerClientFuzzTest(FuzzedDataProvider& fdp)
     server->CreateCapturerClient(streamDesc, flag, sessionId);
 }
 
-void AudioPolicyServerRegisterTrackerFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisterTrackerFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1880,7 +1880,7 @@ void AudioPolicyServerRegisterTrackerFuzzTest(FuzzedDataProvider& fdp)
     server->RegisterTracker(modeIn, streamChangeInfoIn, object);
 }
 
-void AudioPolicyServerUpdateTrackerFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateTrackerFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1889,7 +1889,7 @@ void AudioPolicyServerUpdateTrackerFuzzTest(FuzzedDataProvider& fdp)
     server->UpdateTracker(modeIn, streamChangeInfoIn);
 }
 
-void AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1902,7 +1902,7 @@ void AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest(FuzzedDataProvider& 
     server->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 }
 
-void AudioPolicyServerGetCurrentCapturerChangeInfosFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetCurrentCapturerChangeInfosFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1915,7 +1915,7 @@ void AudioPolicyServerGetCurrentCapturerChangeInfosFuzzTest(FuzzedDataProvider& 
     server->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
-void AudioPolicyServerRegisteredTrackerClientDiedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisteredTrackerClientDiedFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1924,7 +1924,7 @@ void AudioPolicyServerRegisteredTrackerClientDiedFuzzTest(FuzzedDataProvider& fd
     server->RegisteredTrackerClientDied(pid, uid);
 }
 
-void AudioPolicyServerRegisteredStreamListenerClientDiedFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerRegisteredStreamListenerClientDiedFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1933,14 +1933,14 @@ void AudioPolicyServerRegisteredStreamListenerClientDiedFuzzTest(FuzzedDataProvi
     server->RegisteredStreamListenerClientDied(pid, uid);
 }
 
-void AudioPolicyServerResumeStreamStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerResumeStreamStateFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->ResumeStreamState();
 }
 
-void AudioPolicyServerGetNetworkIdByGroupIdFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerGetNetworkIdByGroupIdFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -1949,7 +1949,7 @@ void AudioPolicyServerGetNetworkIdByGroupIdFuzzTest(FuzzedDataProvider& fdp)
     server->GetNetworkIdByGroupId(groupId, networkId);
 }
 
-void AudioPolicyServerOnAudioParameterChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerOnAudioParameterChangeFuzzTest()
 {
     std::string networkId = "network_id";
     uint32_t index = GetData<uint32_t>() % g_testAudioParamKeys.size();
@@ -1965,7 +1965,7 @@ void AudioPolicyServerOnAudioParameterChangeFuzzTest(FuzzedDataProvider& fdp)
     callback->OnAudioParameterChange(networkId, key, condition, value);
 }
 
-void AudioPolicyServerVolumeOnChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerVolumeOnChangeFuzzTest()
 {
     std::string networkId = "network_id";
     std::string condition = "condition";
@@ -1978,7 +1978,7 @@ void AudioPolicyServerVolumeOnChangeFuzzTest(FuzzedDataProvider& fdp)
     callback->VolumeOnChange(networkId, condition);
 }
 
-void AudioPolicyServerInterruptOnChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerInterruptOnChangeFuzzTest()
 {
     std::string networkId = "network_id";
     std::string condition = "condition";
@@ -1991,7 +1991,7 @@ void AudioPolicyServerInterruptOnChangeFuzzTest(FuzzedDataProvider& fdp)
     callback->InterruptOnChange(networkId, condition);
 }
 
-void AudioPolicyServerStateOnChangeFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerStateOnChangeFuzzTest()
 {
     std::string networkId = "network_id";
     std::string condition = "condition";
@@ -2005,7 +2005,7 @@ void AudioPolicyServerStateOnChangeFuzzTest(FuzzedDataProvider& fdp)
     callback->StateOnChange(networkId, condition, value);
 }
 
-void AudioPolicyServerPermStateChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerPermStateChangeCallbackFuzzTest()
 {
     Security::AccessToken::PermStateChangeScope scopeInfo;
     sptr<AudioPolicyServer> server = GetServerPtr();
@@ -2018,7 +2018,7 @@ void AudioPolicyServerPermStateChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
     callback->PermStateChangeCallback(result);
 }
 
-void AudioPolicyServerSetActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerSetActiveHfpDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -2027,7 +2027,7 @@ void AudioPolicyServerSetActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioPolicyServer->SetActiveHfpDevice(macAddress);
 }
 
-void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest()
 {
     Security::AccessToken::PermStateChangeScope scopeInfo;
     sptr<AudioPolicyServer> server = GetServerPtr();
@@ -2042,7 +2042,7 @@ void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest(FuzzedDataProvider
     callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid);
 }
 
-void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
+void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -2062,9 +2062,7 @@ void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest(FuzzedDataProvider& 
     server->ReleaseAudioZone(zoneId);
 }
 
-void Test(FuzzedDataProvider& fdp)
-{
-    auto func = fdp.PickValueInArray({
+TestFuncs g_testFuncs[] = {
     AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest,
     AudioPolicyServerOnAddSystemAbilityExtractFuzzTest,
     AudioPolicyServerOnRemoveSystemAbilityFuzzTest,
@@ -2106,28 +2104,28 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerSetSingleStreamMuteFuzzTest,
     AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest,
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
-    AudioPolicyServerSetSelfAppVolumeLevelFuzzTest,
-    AudioPolicyServerSetAppVolumeLevelInternalFuzzTest,
-    AudioPolicyServerSetSystemVolumeLevelInternalFuzzTest,
-    AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzzTest,
-    AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzzTest,
-    AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzzTest,
-    AudioPolicyServerProcUpdateRingerModeFuzzTest,
-    AudioPolicyServerSetAppSingleStreamVolumeFuzzTest,
-    AudioPolicyServerSetSingleStreamVolumeFuzzTest,
-    AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzzTest,
-    AudioPolicyServerGetStreamMuteFuzzTest,
-    AudioPolicyServerMapExternalToInternalDeviceTypeFuzzTest,
-    AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzzTest,
-    AudioPolicyServerIsFastRecordingSupportedFuzzTest,
-    AudioPolicyServerSetRingerModeInternalFuzzTest,
-    AudioPolicyServerInitMicrophoneMuteFuzzTest,
-    AudioPolicyServerSetMicrophoneMuteAudioConfigFuzzTest,
-    AudioPolicyServerSetMicrophoneMutePersistentFuzzTest,
-    AudioPolicyServerSetAudioSceneFuzzTest,
-    AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzzTest,
-    AudioPolicyServerVerifySessionIdFuzzTest,
-    AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzzTest,
+    AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
+    AudioPolicyServerSetAppVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
+    AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
+    AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,
+    AudioPolicyServerProcUpdateRingerModeFuzztest,
+    AudioPolicyServerSetAppSingleStreamVolumeFuzztest,
+    AudioPolicyServerSetSingleStreamVolumeFuzztest,
+    AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest,
+    AudioPolicyServerGetStreamMuteFuzztest,
+    AudioPolicyServerMapExternalToInternalDeviceTypeFuzztest,
+    AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest,
+    AudioPolicyServerIsFastRecordingSupportedFuzztest,
+    AudioPolicyServerSetRingerModeInternalFuzztest,
+    AudioPolicyServerInitMicrophoneMuteFuzztest,
+    AudioPolicyServerSetMicrophoneMuteAudioConfigFuzztest,
+    AudioPolicyServerSetMicrophoneMutePersistentFuzztest,
+    AudioPolicyServerSetAudioSceneFuzztest,
+    AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest,
+    AudioPolicyServerVerifySessionIdFuzztest,
+    AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzztest,
     AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest,
     AudioPolicyServerGetMinStreamVolumeFuzzTest,
     AudioPolicyServerGetMaxStreamVolumeFuzzTest,
@@ -2244,20 +2242,28 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerStateOnChangeFuzzTest,
     AudioPolicyServerSetActiveHfpDeviceFuzzTest,
     AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest,
-    });
-    func(fdp);
-}
-void Init(const uint8_t* data, size_t size)
+};
+
+bool FuzzTest(const uint8_t* rawData, size_t size)
 {
-    if (data == nullptr) {
-        return;
+    if (rawData == nullptr) {
+        return false;
     }
-    RAW_DATA = data;
+
+    // initialize data
+    RAW_DATA = rawData;
     g_dataSize = size;
     g_pos = 0;
-}
-void Init()
-{
+
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testFuncs);
+    if (len > 0) {
+        g_testFuncs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+
+    return true;
 }
 } // namespace AudioStandard
 
@@ -2273,14 +2279,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data, size);
-    FuzzedDataProvider fdp(data, size);
-    OHOS::AudioStandard::Test(fdp);
+
+    OHOS::AudioStandard::FuzzTest(data, size);
     OHOS::OnStop();
-    return 0;
-}
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
-{
-    OHOS::AudioStandard::Init();
     return 0;
 }
