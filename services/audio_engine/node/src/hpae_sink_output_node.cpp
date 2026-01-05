@@ -604,7 +604,7 @@ int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
     auxSinkEnable_ = isEnabled;
     if (auxSinkEnable_) {
         if (auxiliarySink_ == nullptr) {
-            AUDIO_WARNING_LOG("auxiliarySink_ is null, need get auxiliarySink");
+            AUDIO_ERROR_LOG("auxiliarySink_ is null, need get auxiliarySink");
             GetAuxiliarySink(sinkOutAttr_.sinkName);
         }
         AuxiliarySinkInit();

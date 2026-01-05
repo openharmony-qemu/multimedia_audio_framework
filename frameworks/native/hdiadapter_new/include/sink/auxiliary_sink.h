@@ -17,7 +17,6 @@
 #define AUXILIARY_SINK_H
 
 #include "sink/i_audio_render_sink.h"
-#include "adapter/i_device_manager.h"
 #include <iostream>
 #include <cstring>
 #include <mutex>
@@ -74,6 +73,11 @@ private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
     static constexpr uint32_t DEEP_BUFFER_RENDER_PERIOD_SIZE = 3840;
+    static constexpr uint32_t DEFAULT_FRAME_SIZE_IN_BYTE = 4;
+    static constexpr uint32_t DEFAULT_TOTAL_BUFFERFRAMES = 1764;
+    static constexpr uint32_t DEFAULT_EACH_SPAN_FRAMES = 882;
+    static constexpr uint32_t DEFAULT_EACH_SPAN_FRAMESIZE = 3528;
+    static constexpr uint32_t DEFAULT_BUFFERSIZE = 7056;
     static constexpr float DEFAULT_VOLUME_LEVEL = 1.0f;
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr int32_t MAX_GET_POSITION_TRY_COUNT = 50;
@@ -89,17 +93,16 @@ private:
     std::string halName_ = "AuxSink";
     int32_t sinkId_ = HDI_INVALID_ID;
     IAudioSinkAttr attr_ = {};
-    std::shared_ptr<IDeviceManager> deviceManager_ = nullptr;
     bool sinkInited_ = false;
 
     struct AudioMmapBufferDescriptor buffer_ = {};
     int32_t bufferFd_ = INVALID_FD;
-    uint32_t frameSizeInByte_ = 4; // 16bit * 2ch / 8bit
-    uint32_t totalBufferFrames_ = 1764; // 44.1K / 1K * 20ms *2
-    uint32_t eachSpanFrames_ = 882; // 44.1K / 1K * 20ms
-    uint32_t eachSpanFramesSize_ = 3528;
+    uint32_t frameSizeInByte_ = DEFAULT_FRAME_SIZE_IN_BYTE; // 16bit * 2ch / 8bit
+    uint32_t totalBufferFrames_ = DEFAULT_TOTAL_BUFFERFRAMES; // 44.1K / 1K * 20ms *2
+    uint32_t eachSpanFrames_ = DEFAULT_EACH_SPAN_FRAMES; // 44.1K / 1K * 20ms
+    uint32_t eachSpanFramesSize_ = DEFAULT_EACH_SPAN_FRAMESIZE;
     uint32_t syncInfoSize_ = 0;
-    size_t bufferSize_ = 7056;
+    size_t bufferSize_ = DEFAULT_BUFFERSIZE;
     int32_t dupBufferFd_ = INVALID_FD;
     char *bufferAddress_ = nullptr;
     uint32_t curWritePos_ = 0;
