@@ -153,7 +153,7 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
     CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
-    auto ret = auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
+    auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     return;
 }
 
@@ -317,7 +317,8 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 
 int32_t HpaeSinkOutputNode::AuxiliarySinkDeInit(void)
 {
-    AUDIO_INFO_LOG("spkName:%{public}s, isEnabled:%{public}s", sinkOutAttr_.sinkName.c_str(), auxSinkEnable_);
+    AUDIO_INFO_LOG("spkName:%{public}s, isEnabled:%{public}s", sinkOutAttr_.sinkName.c_str(),
+        auxSinkEnable_ ? "true" : "false");
     Trace trace("HpaeSinkOutputNode::AuxiliarySinkDeInit spkName:" + sinkOutAttr_.sinkName + "isEnabled:" +
         std::to_string(auxSinkEnable_));
     CHECK_AND_RETURN_RET(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0, ERROR);
@@ -328,7 +329,7 @@ int32_t HpaeSinkOutputNode::AuxiliarySinkDeInit(void)
         return SUCCESS;
     }
 
-    auto ret = auxiliarySink_->DeInit();
+    auxiliarySink_->DeInit();
     CHECK_AND_RETURN_RET_LOG(!auxiliarySink_->IsInited(), ERROR, "auxiliarySink_ deinit fail");
     return SUCCESS;
 }
@@ -487,7 +488,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
             sessionsWithAuxSinkInvalidFilter_.erase(sessionId);
         }
     }
-    bool isRunning = sessionsWithAuxSinkInvalidFilter_.empty() && !sessionsWithAuxSinkValidFilter_.empty()
+    bool isRunning = sessionsWithAuxSinkInvalidFilter_.empty() && !sessionsWithAuxSinkValidFilter_.empty();
     auto auxState = isRunning ? STREAM_MANAGER_RUNNING : STREAM_MANAGER_IDLE;
     AUDIO_INFO_LOG("auxSinkState_ change:[%{public}s]-->[%{public}s] with sessionId:%{public}u change:%{public}d"
         " state:%{public}d usage:%{public}d", ConvertStreamManagerState2Str(auxSinkState_).c_str(),
@@ -603,7 +604,7 @@ int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
     auxSinkEnable_ = isEnabled;
     if (auxSinkEnable_) {
         if (auxiliarySink_ == nullptr) {
-            AUDIO_ERROR_LOG("auxiliarySink_ is null, need get auxiliarySink");
+            AUDIO_ERR_LOG("auxiliarySink_ is null, need get auxiliarySink");
             GetAuxiliarySink(sinkOutAttr_.sinkName);
         }
         AuxiliarySinkInit();
