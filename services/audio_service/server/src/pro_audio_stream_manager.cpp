@@ -89,7 +89,7 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
     }
     currentRender = rendererStreamMap_[streamIndex];
     int32_t result = currentRender->Start();
-    CHECK_AND_CALL_RET_FUNC(result == SUCCESS, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
         HILOG_COMM_ERROR("[StartRender]Failed to start rendererStream"));
     if (playbackEngine_) {
         playbackEngine_->Start();

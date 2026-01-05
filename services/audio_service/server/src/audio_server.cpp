@@ -123,6 +123,8 @@ const int32_t AAM_CONN_SVC_UID = 7878;
 constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
+static const int32_t INVALID_APP_UID = -1;
+static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -1770,7 +1772,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     return hapApiVersion;
 }
 
-void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
+void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
@@ -1778,7 +1781,8 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
             AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
             config.innerCapMode = MODERN_INNER_CAP;
-        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID) {
+        } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID ||
+            filterConfig.isModernInnerCapturer) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
@@ -1799,7 +1803,8 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     }
 }
 
-AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
+AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config,
+    const AudioPlaybackCaptureConfig &filterConfig)
 {
     AudioProcessConfig resetConfig(config);
 
@@ -1824,7 +1829,7 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
     }
 
     if (resetConfig.audioMode == AUDIO_MODE_RECORD) {
-        ResetRecordConfig(resetConfig);
+        ResetRecordConfig(resetConfig, filterConfig);
     }
     return resetConfig;
 }
@@ -1945,6 +1950,16 @@ int32_t AudioServer::CheckMaxRendererInstances()
     }
     if (AudioService::GetInstance()->GetCurrentRendererStreamCnt() >= maxRendererInstances) {
         AUDIO_ERR_LOG("Current audio renderer stream num is greater than the maximum num of configured instances");
+        int32_t mostAppUid = INVALID_APP_UID;
+        int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
+        AudioService::GetInstance()->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
+        std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+            Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
+            Media::MediaMonitor::EventType::FAULT_EVENT);
+        bean->Add("CLIENT_UID", mostAppUid);
+        bean->Add("TIMES", mostAppNum);
+        bean->Add("EXCEEDED_SCENE", "System");
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         return ERR_EXCEED_MAX_STREAM_CNT;
     }
     return SUCCESS;
@@ -2082,11 +2097,11 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     errorCode = CheckAndWaitAudioPolicyReady();
     CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
-    AudioProcessConfig resetConfig = ResetProcessConfig(config);
-    CHECK_AND_CALL_RET_FUNC(CheckConfigFormat(resetConfig), nullptr,
+    AudioProcessConfig resetConfig = ResetProcessConfig(config, filterConfig);
+    CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
-    CHECK_AND_CALL_RET_FUNC(PermissionChecker(resetConfig), nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(PermissionChecker(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission"));
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
@@ -2109,7 +2124,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     }
     if (IsSatellite(resetConfig, callingUid)) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
-        CHECK_AND_CALL_RET_FUNC(isSupportSate, nullptr,
+        CHECK_AND_CALL_FUNC_RETURN_RET(isSupportSate, nullptr,
             HILOG_COMM_ERROR("[CreateAudioProcessInner]Do not support satellite"));
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
@@ -2387,7 +2402,12 @@ bool AudioServer::PermissionChecker(const AudioProcessConfig &config)
 bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
 {
     StreamUsage streamUsage = config.rendererInfo.streamUsage;
-
+    if (config.rendererInfo.playerType == PLAYER_TYPE_SYSTEM_SOUND_PLAYER &&
+        streamUsage == STREAM_USAGE_ENFORCED_TONE) {
+        AUDIO_INFO_LOG("rendererInfo playerType = %{public}d, streamUsage = %{public}d",
+            config.rendererInfo.playerType, streamUsage);
+        return true;
+    }
     bool needVerifyPermission = false;
     for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
         if (streamUsage == item) {
@@ -2452,7 +2472,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-        CHECK_AND_CALL_RET_FUNC(hasSystemPermission, false,
+        CHECK_AND_CALL_FUNC_RETURN_RET(hasSystemPermission, false,
             HILOG_COMM_ERROR("[CheckRecorderPermission]VOICE_TRANSCRIPTION failed: no system permission."));
     }
 
@@ -3477,7 +3497,11 @@ int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32
     return SUCCESS;
 }
 
-
+int32_t AudioServer::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    return AudioService::GetInstance()->RequestUserPrivacyAuthority(sessionId);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

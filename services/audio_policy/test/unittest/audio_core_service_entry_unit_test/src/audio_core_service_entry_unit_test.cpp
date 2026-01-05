@@ -247,7 +247,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_010, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_011
- * @tc.desc  : Test AudioCoreService::EventEntry::GetAdapterNameBySessionId()
+ * @tc.desc  : Test AudioCoreService::EventEntry::GetModuleNameBySessionId()
  */
 HWTEST(AudioCoreServiceEntryTest, AudioCoreService_011, TestSize.Level1)
 {
@@ -258,7 +258,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_011, TestSize.Level1)
 
     uint32_t sessionId = 0;
 
-    auto ret = eventEntry->GetAdapterNameBySessionId(sessionId);
+    auto ret = eventEntry->GetModuleNameBySessionId(sessionId);
     EXPECT_EQ(ret, "");
 }
 
@@ -277,10 +277,11 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_012, TestSize.Level1)
     uint32_t sessionId = 0;
     AudioDeviceDescriptor deviceInfo;
     AudioStreamInfo info;
-    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info);
+    int32_t pin;
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, true);
+    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 

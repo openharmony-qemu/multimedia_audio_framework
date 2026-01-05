@@ -206,11 +206,11 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
-        CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
     } else {
-        CHECK_AND_CALL_RET_FUNC(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
     }
@@ -218,14 +218,14 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
     }
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream(config);
-    CHECK_AND_CALL_RET_FUNC(initRet == SUCCESS, initRet,
+    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
@@ -515,7 +515,7 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     AudioProcessConfig config = ConstructConfig();
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = nullptr;
@@ -1159,6 +1159,45 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
     return true;
+}
+
+void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    playbackCaptureStartCallback_ = callback;
+}
+ 
+int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return ERROR;
+    }
+    gasp->RequestUserPrivacyAuthority(sessionId);
+ 
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
+    });
+    Operation operation = notifiedOperation_;
+    int64_t result = notifiedResult_;
+    waitLock.unlock();
+ 
+    std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    if (operation != USER_PRIVACY_AUTHORITY) {
+        AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), operation, result);
+        playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(START_STATE_FAILED);
+        return ERROR;
+    }
+    playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(
+        static_cast<PlaybackCaptureStartState>(notifiedResult_));
+    lock.unlock();
+ 
+    return SUCCESS;
 }
 
 bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)

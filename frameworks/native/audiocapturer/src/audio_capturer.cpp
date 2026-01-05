@@ -29,6 +29,7 @@
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
+#include "audio_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -358,7 +359,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams);
     }
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret, HILOG_COMM_ERROR("[SetParams]InitAudioStream failed"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, HILOG_COMM_ERROR("[SetParams]InitAudioStream failed"));
 
     RegisterCapturerPolicyServiceDiedCallback();
 
@@ -506,7 +507,7 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
 
     audioStream_->SetCapturerSource(capturerInfo_.sourceType);
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, capturerProxyObj_, filterConfig_);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[InitAudioStream]SetAudioStreamInfo failed"));
     // for inner-capturer
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -646,6 +647,14 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
 {
     std::lock_guard lock(fastStatusChangeCallbackMutex_);
     fastStatusChangeCallback_ = callback;
+}
+
+void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
+    currentStream->SetPlaybackCaptureStartStateCallback(callback);
 }
 
 int32_t AudioCapturerPrivate::GetParams(AudioCapturerParams &params) const
@@ -789,7 +798,7 @@ bool AudioCapturerPrivate::IsRestoreOrStopNeeded()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
-    CHECK_AND_CALL_RET_FUNC(audioStream_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, false,
         HILOG_COMM_ERROR("[IsRestoreOrStopNeeded]audio stream is null"));
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
@@ -846,7 +855,7 @@ bool AudioCapturerPrivate::Start()
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
-    CHECK_AND_CALL_RET_FUNC(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
@@ -1529,7 +1538,7 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     audioStream->SetClientID(info.clientPid, info.clientUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, capturerProxyObj_);
-    CHECK_AND_CALL_RET_FUNC(res == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(res == SUCCESS, ERROR,
         HILOG_COMM_ERROR("[SetSwitchInfo]SetAudioStreamInfo failed"));
     audioStream->SetCaptureMode(info.captureMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
@@ -1628,7 +1637,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
             streamDesc, flag, switchInfo.params.originalSessionId);
-        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, false,
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
             HILOG_COMM_ERROR("[GenerateNewStream]CreateRendererClient failed"));
 
         newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
@@ -2103,6 +2112,13 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     audioStream_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     return ret;
+}
+
+int32_t AudioCapturerPrivate::StartPlaybackCapture()
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->RequestUserPrivacyAuthority(sessionID_);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

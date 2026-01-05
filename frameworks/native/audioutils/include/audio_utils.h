@@ -389,6 +389,14 @@ auto SafeGetMap(const std::unordered_map<Key, std::shared_ptr<T>>& map, Key key)
     return (it != map.end() && it->second) ? it->second : nullptr;
 }
 
+template <typename Key, typename T>
+auto SafeGetMap(const std::map<Key, std::shared_ptr<T>>& map, Key key)
+    -> std::shared_ptr<T>
+{
+    auto it = map.find(key);
+    return (it != map.end() && it->second) ? it->second : nullptr;
+}
+
 std::string GetTime();
 std::string GetField(const std::string &src, const char* field, const char sep);
 int32_t GetFormatByteSize(int32_t format);

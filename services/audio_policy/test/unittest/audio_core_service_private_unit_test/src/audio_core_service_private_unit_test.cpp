@@ -4269,6 +4269,25 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_002, TestSize.Level1)
 
     audioCoreService->a2dpNeedSuspend_ = false;
     audioCoreService->HandleA2dpSuspend();
+    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+    usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
+    audioCoreService->HandleA2dpRestore();
+    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
+ * @tc.number : HandleA2dpSuspend_003
+ * @tc.desc   : Test HandleA2dpSuspend when a2dp needn't suspend after restore
+ */
+HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    audioCoreService->a2dpNeedSuspend_ = true;
+    audioCoreService->HandleA2dpSuspend();
     EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
     const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
     usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);

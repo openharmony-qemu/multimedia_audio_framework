@@ -137,7 +137,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     if (!scratchBuf_) {
         AUDIO_ERR_LOG("Init scratchBuf_ fail");
         delete memSize;
-        delete handle_;
+        delete[] handle_;
         memSize = nullptr;
         handle_ = nullptr;
         return ERROR;
@@ -166,14 +166,15 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
 static std::vector<float> ParseStringToIntArray(const std::string &str, char delimiter)
 {
     std::vector<float> result;
-    std::string token;
+    std::string paramValue;
     std::istringstream iss(str);
 
-    while (std::getline(iss, token, delimiter)) {
-        if (!token.empty()) {
+    while (std::getline(iss, paramValue, delimiter)) {
+        if (!paramValue.empty()) {
             float value;
-            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(token, value), result,
-                "Pure voice change convert string to float value error, invalid data is %{public}s", token.c_str());
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
+                "Pure voice change convert string to float value error, invalid data is %{public}s",
+                paramValue.c_str());
             result.push_back(value);
         }
     }

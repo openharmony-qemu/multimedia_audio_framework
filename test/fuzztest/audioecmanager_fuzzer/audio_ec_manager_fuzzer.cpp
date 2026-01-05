@@ -44,7 +44,7 @@
 #include "suspend/sync_sleep_callback_ipc_interface_code.h"
 #include "hibernate/sync_hibernate_callback_ipc_interface_code.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -57,7 +57,7 @@ const size_t THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
 
-void GetEcSamplingRateFuzzTest()
+void GetEcSamplingRateFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<const char*> deviceList = {
         USB_CLASS,
@@ -71,7 +71,7 @@ void GetEcSamplingRateFuzzTest()
     ecManager.GetEcSamplingRate(halName, outModuleInfo);
 }
 
-void GetEcChannelsFuzzTest()
+void GetEcChannelsFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<const char*> deviceList = {
         USB_CLASS,
@@ -88,7 +88,7 @@ void GetEcChannelsFuzzTest()
     ecManager.GetEcChannels(halName, outModuleInfo);
 }
 
-void GetEcFormatFuzzTest()
+void GetEcFormatFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<const char*> deviceList = {
         USB_CLASS,
@@ -105,20 +105,20 @@ void GetEcFormatFuzzTest()
     ecManager.GetEcFormat(halName, outModuleInfo);
 }
 
-void CloseNormalSourceFuzzTest()
+void CloseNormalSourceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.CloseNormalSource();
 }
 
-void UpdateEnhanceEffectStateFuzzTest()
+void UpdateEnhanceEffectStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     SourceType source = g_fuzzUtils.GetData<SourceType>();
     ecManager.UpdateEnhanceEffectState(source);
 }
 
-void UpdatePrimaryMicModuleInfoFuzzTest()
+void UpdatePrimaryMicModuleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     SourceType source = g_fuzzUtils.GetData<SourceType>();
@@ -127,7 +127,7 @@ void UpdatePrimaryMicModuleInfoFuzzTest()
     ecManager.UpdatePrimaryMicModuleInfo(pipeInfo, source);
 }
 
-void UpdateStreamCommonInfoFuzzTest()
+void UpdateStreamCommonInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
@@ -139,7 +139,7 @@ void UpdateStreamCommonInfoFuzzTest()
     ecManager.UpdateStreamCommonInfo(moduleInfo, targetInfo, sourceType);
 }
 
-void GetPipeNameByDeviceForEcFuzzTest()
+void GetPipeNameByDeviceForEcFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<string> roleList = {
         "source",
@@ -151,7 +151,7 @@ void GetPipeNameByDeviceForEcFuzzTest()
     ecManager.GetPipeNameByDeviceForEc(roleList[index], deviceType);
 }
 
-void GetPipeInfoByDeviceTypeForEcFuzzTest()
+void GetPipeInfoByDeviceTypeForEcFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<string> roleList = {
         "source",
@@ -165,7 +165,7 @@ void GetPipeInfoByDeviceTypeForEcFuzzTest()
     ecManager.GetPipeInfoByDeviceTypeForEc(roleList[index], deviceType, pipeInfo);
 }
 
-void GetEcTypeFuzzTest()
+void GetEcTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType inputDevice = g_fuzzUtils.GetData<DeviceType>();
     DeviceType outputDevice = g_fuzzUtils.GetData<DeviceType>();
@@ -173,7 +173,7 @@ void GetEcTypeFuzzTest()
     ecManager.GetEcType(inputDevice, outputDevice);
 }
 
-void UpdateAudioEcInfoFuzzTest()
+void UpdateAudioEcInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioDeviceDescriptor inputDevice;
     AudioDeviceDescriptor outputDevice;
@@ -184,7 +184,7 @@ void UpdateAudioEcInfoFuzzTest()
     ecManager.UpdateAudioEcInfo(inputDevice, outputDevice);
 }
 
-void ShouldOpenMicRefFuzzTest()
+void ShouldOpenMicRefFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     SourceType source = g_fuzzUtils.GetData<SourceType>();
@@ -194,14 +194,14 @@ void ShouldOpenMicRefFuzzTest()
     ecManager.ShouldOpenMicRef(source);
 }
 
-void GetAudioEcInfoFuzzTest()
+void GetAudioEcInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.GetAudioEcInfo();
     ecManager.ResetAudioEcInfo();
 }
 
-void PresetArmIdleInputFuzzTest()
+void PresetArmIdleInputFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
@@ -210,7 +210,7 @@ void PresetArmIdleInputFuzzTest()
     ecManager.PresetArmIdleInput(deviceDesc);
 }
 
-void ActivateArmDeviceFuzzTest()
+void ActivateArmDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
@@ -219,7 +219,7 @@ void ActivateArmDeviceFuzzTest()
     ecManager.ActivateArmDevice(deviceDesc);
 }
 
-void CloseUsbArmDeviceFuzzTest()
+void CloseUsbArmDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioDeviceDescriptor device;
     device.deviceRole_ = g_fuzzUtils.GetData<DeviceRole>();
@@ -227,7 +227,7 @@ void CloseUsbArmDeviceFuzzTest()
     ecManager.CloseUsbArmDevice(device);
 }
 
-void UpdateArmModuleInfoFuzzTest()
+void UpdateArmModuleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::string> addressList = {
         "12:34:56:78:90:AB",
@@ -248,7 +248,7 @@ void UpdateArmModuleInfoFuzzTest()
     ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
 }
 
-void GetTargetSourceTypeAndMatchingFlagFuzzTest()
+void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     SourceType source = g_fuzzUtils.GetData<SourceType>();
     SourceType targetSource;
@@ -257,14 +257,14 @@ void GetTargetSourceTypeAndMatchingFlagFuzzTest()
     ecManager.GetTargetSourceTypeAndMatchingFlag(source, targetSource, useMatchingPropInfo);
 }
 
-void ReloadSourceForSessionFuzzTest()
+void ReloadSourceForSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     SessionInfo sessionInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.ReloadSourceForSession(sessionInfo);
 }
 
-void FetchTargetInfoForSessionAddFuzzTest()
+void FetchTargetInfoForSessionAddFuzzTest(FuzzedDataProvider& fdp)
 {
     SessionInfo sessionInfo;
     sessionInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
@@ -287,26 +287,26 @@ void FetchTargetInfoForSessionAddFuzzTest()
     ecManager.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
 }
 
-void SetDpSinkModuleInfoFuzzTest()
+void SetDpSinkModuleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioModuleInfo moduleInfo;
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.SetDpSinkModuleInfo(moduleInfo);
 }
 
-void GetSourceOpenedFuzzTest()
+void GetSourceOpenedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.GetSourceOpened();
 }
 
-void GetMicRefFeatureEnableFuzzTest()
+void GetMicRefFeatureEnableFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.GetMicRefFeatureEnable();
 }
 
-void GetHalNameForDeviceFuzzTest()
+void GetHalNameForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<string> roleList = {
         "source",
@@ -318,7 +318,7 @@ void GetHalNameForDeviceFuzzTest()
     ecManager.GetHalNameForDevice(roleList[index], deviceType);
 }
 
-void PrepareNormalSourceFuzzTest()
+void PrepareNormalSourceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     CHECK_AND_RETURN(pipeInfo != nullptr);
@@ -328,13 +328,13 @@ void PrepareNormalSourceFuzzTest()
     ecManager.PrepareNormalSource(pipeInfo, streamDesc);
 }
 
-void GetOpenedNormalSourceSessionIdFuzzTest()
+void GetOpenedNormalSourceSessionIdFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
     ecManager.GetOpenedNormalSourceSessionId();
 }
 
-void ReloadNormalSourceFuzzTest()
+void ReloadNormalSourceFuzzTest(FuzzedDataProvider& fdp)
 {
     SessionInfo sessionInfo;
     PipeStreamPropInfo targetInfo;
@@ -346,7 +346,9 @@ void ReloadNormalSourceFuzzTest()
     ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     GetEcSamplingRateFuzzTest,
     GetEcChannelsFuzzTest,
     GetEcFormatFuzzTest,
@@ -373,14 +375,38 @@ vector<TestFuncs> g_testFuncs = {
     PrepareNormalSourceFuzzTest,
     GetOpenedNormalSourceSessionIdFuzzTest,
     ReloadNormalSourceFuzzTest,
-};
-
+});
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return;
+    }
+    RAW_DATA = data;
+    g_dataSize = size;
+    g_pos = 0;
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

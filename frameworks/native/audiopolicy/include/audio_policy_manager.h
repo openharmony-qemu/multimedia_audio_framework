@@ -532,6 +532,8 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId);
 
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
@@ -766,9 +768,6 @@ private:
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
-
-    bool isAudioRendererEventListenerRegistered = false;
-    bool isAudioCapturerEventListenerRegistered = false;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
     std::vector<AudioRendererInfo> rendererInfos_;

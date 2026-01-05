@@ -514,12 +514,12 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoByNameAndFlag_003, TestSize.Level1
 }
 
 /**
- * @tc.name: GetAdapterNameBySessionId_001
- * @tc.desc: Test GetAdapterNameBySessionId when finding a matching sessionId.
+ * @tc.name: GetModuleNameBySessionId_001
+ * @tc.desc: Test GetModuleNameBySessionId when finding a matching sessionId.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_001, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetModuleNameBySessionId_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -534,17 +534,17 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_001, TestSize.Level
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     uint32_t targetSessionId = 123;
 
-    std::string result = audioPipeManager->GetAdapterNameBySessionId(targetSessionId);
+    std::string result = audioPipeManager->GetModuleNameBySessionId(targetSessionId);
     EXPECT_EQ(result, "TestAdapter");
 }
 
 /**
- * @tc.name: GetAdapterNameBySessionId_002
- * @tc.desc: Test GetAdapterNameBySessionId when not finding a matching sessionId.
+ * @tc.name: GetModuleNameBySessionId_002
+ * @tc.desc: Test GetModuleNameBySessionId when not finding a matching sessionId.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_002, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetModuleNameBySessionId_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -559,7 +559,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_002, TestSize.Level
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     uint32_t targetSessionId = 456;
 
-    std::string result = audioPipeManager->GetAdapterNameBySessionId(targetSessionId);
+    std::string result = audioPipeManager->GetModuleNameBySessionId(targetSessionId);
     EXPECT_EQ(result, "");
 }
 

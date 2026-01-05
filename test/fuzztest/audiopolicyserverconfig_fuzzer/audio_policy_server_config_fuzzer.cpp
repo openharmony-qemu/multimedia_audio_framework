@@ -24,22 +24,27 @@
 #include "access_token.h"
 #include "audio_info.h"
 #include "audio_concurrency_parser.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 const int32_t LIMITSIZE = 4;
 
-void AudioConcurrencyParserLoadConfigFuzzTest(const uint8_t* rawData, size_t size)
+void AudioConcurrencyParserLoadConfigFuzzTest(FuzzedDataProvider& fdp)
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyMap;
     concurrencyMap[std::make_pair(PIPE_TYPE_UNKNOWN, PIPE_TYPE_UNKNOWN)] = PLAY_BOTH;
     concurrencyMap[std::make_pair(PIPE_TYPE_OUT_NORMAL, PIPE_TYPE_OUT_NORMAL)] = CONCEDE_EXISTING;
     AudioConcurrencyParser audioConcurrencyParser;
     audioConcurrencyParser.LoadConfig(concurrencyMap);
+}
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
+    AudioConcurrencyParserLoadConfigFuzzTest,
+    });
+    func(fdp);
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -48,6 +53,10 @@ void AudioConcurrencyParserLoadConfigFuzzTest(const uint8_t* rawData, size_t siz
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioConcurrencyParserLoadConfigFuzzTest(data, size);
+    if (data == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
 }

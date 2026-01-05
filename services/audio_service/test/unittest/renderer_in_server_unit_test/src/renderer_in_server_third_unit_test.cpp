@@ -1024,6 +1024,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureEnqueueBuffe
     rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 1;
     rendererInServer->spanSizeInByte_ = 10;
     rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
+    rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
+    rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
     EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId], 0);
 }
 

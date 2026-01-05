@@ -367,6 +367,11 @@ bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
     return false;
 }
 
+int32_t AudioStateManager::GetAudioSceneOwnerUid()
+{
+    return ownerUid_;
+}
+
 void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
 {
     AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);

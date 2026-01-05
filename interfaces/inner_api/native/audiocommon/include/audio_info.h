@@ -545,6 +545,23 @@ struct A2dpDeviceConfigInfo {
     bool mute = false;
 };
 
+enum PlayerType : int32_t {
+    PLAYER_TYPE_DEFAULT = 0,
+
+    // AudioFramework internal type.
+    PLAYER_TYPE_OH_AUDIO_RENDERER = 100,
+    PLAYER_TYPE_ARKTS_AUDIO_RENDERER = 101,
+    PLAYER_TYPE_CJ_AUDIO_RENDERER = 102,
+    PLAYER_TYPE_OPENSL_ES = 103,
+
+    // Indicates a type from the system internals, but not from the AudioFramework.
+    PLAYER_TYPE_SOUND_POOL = 1000,
+    PLAYER_TYPE_AV_PLAYER = 1001,
+    PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
+    PLAYER_TYPE_TONE_PLAYER = 1003,
+    PLAYER_TYPE_SYSTEM_SOUND_PLAYER = 1004,
+};
+
 enum RecorderType : int32_t {
     RECORDER_TYPE_DEFAULT = 0,
 
@@ -983,6 +1000,7 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1021,6 +1039,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         parcel.WriteBool(silentCapture);
+        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1081,6 +1100,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         config->silentCapture = parcel.ReadBool();
+
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         return config;
     }
@@ -1247,6 +1268,15 @@ enum FastStatus {
     FASTSTATUS_NORMAL,
     /** Fast status */
     FASTSTATUS_FAST
+};
+
+enum PlaybackCaptureStartState {
+    /* Internal recording started successfully. */
+    START_STATE_SUCCESS = 0,
+    /* Start playback capture failed */
+    START_STATE_FAILED = 1,
+    /* Start playback capture but user not authorized state. */
+    START_STATE_NOT_AUTHORIZED = 2
 };
 
 struct StreamSwitchingInfo {

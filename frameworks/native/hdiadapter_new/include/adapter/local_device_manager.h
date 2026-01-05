@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <vector>
 #include <mutex>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "hdf_remote_service.h"
 #include "adapter/i_device_manager.h"
 

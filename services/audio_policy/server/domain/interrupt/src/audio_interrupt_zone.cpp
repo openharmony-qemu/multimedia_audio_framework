@@ -18,6 +18,7 @@
 
 #include "audio_interrupt_zone.h"
 #include "audio_interrupt_service.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -133,6 +134,7 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
         service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
     }
 
+    AudioVolume::GetInstance()->SetStreamVolumeMute(interrupt.streamId, true);
     service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
@@ -175,8 +177,12 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
             continue;
         }
         if (itFocus->second == ACTIVE || itFocus->second == DUCK) {
-            service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
-            SendInterruptEventForMigration(*itFocus, toZoneId);
+            if (tempMap[zoneId]->context.backStrategy_ == MediaBackStrategy::STOP) {
+                ForceStopAudioFocusInZone(zoneId, itFocus->first);
+            } else {
+                service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
+                SendInterruptEventForMigration(*itFocus, toZoneId);
+            }
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
         }
@@ -380,5 +386,20 @@ bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
     AUDIO_INFO_LOG("audiointerruptzone permission: %{public}d", PermissionUtil::VerifySystemPermission());
     return PermissionUtil::VerifySystemPermission();
 }
+
+void AudioInterruptZoneManager::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
+    CHECK_AND_RETURN_LOG(CheckAudioInterruptZonePermission(), "audio zone permission deny");
+
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_LOG(tempMap.find(zoneId) != tempMap.end() &&
+        tempMap[zoneId] != nullptr, "zone %{public}d not exist", zoneId);
+
+    tempMap[zoneId]->context = context;
+    AUDIO_INFO_LOG("update zone %{public}d context as %{public}d:%{public}d", zoneId,
+        tempMap[zoneId]->context.focusStrategy_, tempMap[zoneId]->context.backStrategy_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

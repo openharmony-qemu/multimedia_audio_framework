@@ -62,7 +62,8 @@ static constexpr uint32_t DUCK_UNDUCK_STEP_TIME = 20;
 static constexpr uint32_t DUCK_UNDUCK_STEP_TIME_US = 20000;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
-HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
+HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode,
+    size_t preBufSizeInBytes) : preBufSizeInBytes_(preBufSizeInBytes)
 {
     processConfig_ = processConfig;
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
@@ -156,6 +157,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    preBufDone_.store(false);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (processConfig_.streamInfo.customSampleRate != 0) {
@@ -173,6 +175,7 @@ int32_t HpaeRendererStreamImpl::Start()
 int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter syncId: %{public}d", streamIndex_, syncId);
+    preBufDone_.store(false);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
@@ -211,6 +214,7 @@ int32_t HpaeRendererStreamImpl::Flush()
 int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter %{public}d", streamIndex_, stopFlag);
+    preBufDone_.store(true);
     int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
@@ -994,6 +998,14 @@ int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(bool forceData, int8_t *
     OptResult result = ringBuffer_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
         "RingBuffer get readable size failed, size is:%{public}zu", result.size);
+    if (preBufSizeInBytes_ > 0 && !preBufDone_.load()) {
+        if (result.size < preBufSizeInBytes_) {
+            AUDIO_INFO_LOG("preBuf not ready, readable:%{public}zu preBuf:%{public}zu, sessionId %{public}u",
+                result.size, preBufSizeInBytes_, streamIndex_);
+            return ERROR;
+        }
+        preBufDone_.store(true);
+    }
     CHECK_AND_RETURN_RET_LOG(result.size != 0, ERROR,
         "Readable size is invalid, result.size:%{public}zu, requestDataLen:%{public}zu, buffer underflow.",
         result.size, requestDataLen);

@@ -84,11 +84,20 @@ std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
     return ret;
 }
 
+std::string CoreServiceHandler::GetModuleNameBySessionId(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr!");
+    std::string ret{};
+    iCoreServiceProvider_->GetModuleNameBySessionId(sessionId, ret);
+    return ret;
+}
+
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-    AudioStreamInfo &streamInfo, bool isReloadProcess)
+    AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isReloadProcess);
+    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin,
+        isReloadProcess);
 }
 
 uint32_t CoreServiceHandler::GenerateSessionId()

@@ -597,7 +597,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
         return sVolumeLevel;
     }
     DeviceType curOutputDeviceType = (deviceType == DEVICE_TYPE_NONE) ?
-        audioActiveDevice_.GetCurrentOutputDeviceType() : deviceType;
+        audioActiveDevice_.GetDeviceForVolume(streamType)->deviceType_ : deviceType;
     DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
     if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         switch (curOutputDeviceType) {

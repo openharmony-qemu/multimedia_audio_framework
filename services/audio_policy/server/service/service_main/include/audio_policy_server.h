@@ -497,6 +497,8 @@ public:
 
     int32_t ReleaseAudioZone(int32_t zoneId) override;
 
+    int32_t UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
+
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs) override;
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc) override;

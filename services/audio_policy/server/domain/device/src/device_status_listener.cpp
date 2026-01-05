@@ -22,7 +22,7 @@
 #include "hdf_device_class.h"
 
 namespace {
-    #include "v5_0/audio_types.h"
+    #include "v6_0/audio_types.h"
 }
 
 

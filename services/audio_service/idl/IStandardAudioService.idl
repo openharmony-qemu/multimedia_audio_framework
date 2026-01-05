@@ -158,4 +158,5 @@ interface IStandardAudioService {
     void RegistAdapterManagerCallback([in] IRemoteObject object, [in] String networkId);
     void UnRegistAdapterManagerCallback([in] String networkId);
     void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
+    [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
 }

@@ -66,6 +66,8 @@ public:
     static bool testFlag;
     void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) override
     {
+        (void)audioData;
+        (void)audioDataSize;
         testFlag = true;
     }
 };

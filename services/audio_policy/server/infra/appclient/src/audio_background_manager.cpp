@@ -331,5 +331,15 @@ bool AudioBackgroundManager::FindKeyInMap(int32_t pid)
 {
     return appStatesMap_.find(pid) != appStatesMap_.end();
 }
+
+bool AudioBackgroundManager::IsAppInBackState(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+    auto appStateIt = appStatesMap_.find(pid);
+    if (appStateIt != appStatesMap_.end()) {
+        return appStateIt->second.isBack;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,7 +19,7 @@
 #include "audio_log.h"
 #include "audio_collaborative_service.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -31,7 +31,7 @@ static const std::string AUDIO_COLLABORATIVE_SERVICE_LABEL = "COLLABORATIVE";
 static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIVE";
 typedef void (*TestPtr)();
 
-void AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest()
+void AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     std::vector<std::string> applyVec;
@@ -43,7 +43,7 @@ void AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest()
     audioCollaborativeService.IsCollaborativePlaybackSupported();
 }
 
-void AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest()
+void AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     AudioDeviceDescriptor selectedAudioDevice;
@@ -62,7 +62,7 @@ void AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest()
     audioCollaborativeService.UpdateCurrentDevice(selectedAudioDevice);
 }
 
-void AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest()
+void AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -70,7 +70,7 @@ void AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest()
     audioCollaborativeService.SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
 }
 
-void AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest()
+void AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
@@ -89,7 +89,7 @@ void AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest()
     audioCollaborativeService.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
 }
 
-void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest()
+void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     audioCollaborativeService.isCollaborativePlaybackSupported_ = g_fuzzUtils.GetData<bool>();
@@ -105,22 +105,28 @@ void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest()
     audioCollaborativeService.UpdateCollaborativeStateReal();
 }
 
-void AudioCollaborativeServiceIsCollaborativePlaybackSupportedSimpleFuzzTest()
+void AudioCollaborativeServiceIsCollaborativePlaybackSupportedSimpleFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     audioCollaborativeService.isCollaborativePlaybackSupported_ = g_fuzzUtils.GetData<bool>();
     bool result = audioCollaborativeService.IsCollaborativePlaybackSupported();
 }
 
-vector<TestPtr> g_testPtrs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest,
     AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest,
     AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest,
     AudioCollaborativeServiceIsCollaborativePlaybackSupportedSimpleFuzzTest,
-};
-
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -130,7 +136,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testPtrs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

@@ -4441,6 +4441,14 @@ int32_t AudioPolicyServer::ReleaseAudioZone(int32_t zoneId)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    AudioZoneService::GetInstance().UpdateContextForAudioZone(zoneId, context);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs)
 {
     descs = AudioZoneService::GetInstance().GetAllAudioZone();

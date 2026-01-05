@@ -19,7 +19,7 @@
 #include "audio_client_tracker_callback_listener.h"
 #include "audio_client_tracker_callback_service.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -28,7 +28,7 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 typedef void (*TestFuncs)();
 
-void ClientTrackerCallbackListenerMuteStreamImplFuzzTest()
+void ClientTrackerCallbackListenerMuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IRemoteObject> object;
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -41,7 +41,7 @@ void ClientTrackerCallbackListenerMuteStreamImplFuzzTest()
     callback->ResumeStreamImpl(streamSetStateEventInternal);
 }
 
-void ClientTrackerCallbackListenerGetSingleStreamVolumeImplFuzzTest()
+void ClientTrackerCallbackListenerGetSingleStreamVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IRemoteObject> object;
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -53,7 +53,7 @@ void ClientTrackerCallbackListenerGetSingleStreamVolumeImplFuzzTest()
     callback->GetSingleStreamVolumeImpl(volume);
 }
 
-void ClientTrackerCallbackListenerSetOffloadModeImplFuzzTest()
+void ClientTrackerCallbackListenerSetOffloadModeImplFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IRemoteObject> object;
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
@@ -64,13 +64,13 @@ void ClientTrackerCallbackListenerSetOffloadModeImplFuzzTest()
     callback->SetOffloadModeImpl(state, isAppBack);
 }
 
-void AudioClientTrackerCallbackServiceUnsetClientTrackerCallbackFuzzTest()
+void AudioClientTrackerCallbackServiceUnsetClientTrackerCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     service.UnsetClientTrackerCallback();
 }
 
-void AudioClientTrackerCallbackServiceMuteStreamImplFuzzTest()
+void AudioClientTrackerCallbackServiceMuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     StreamSetStateEventInternal streamSetStateEventInternal;
@@ -78,28 +78,28 @@ void AudioClientTrackerCallbackServiceMuteStreamImplFuzzTest()
     service.UnmuteStreamImpl(streamSetStateEventInternal);
 }
 
-void AudioClientTrackerCallbackServicePausedStreamImplFuzzTest()
+void AudioClientTrackerCallbackServicePausedStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     StreamSetStateEventInternal streamSetStateEventInternal;
     service.PausedStreamImpl(streamSetStateEventInternal);
 }
 
-void AudioClientTrackerCallbackServiceSetLowPowerVolumeImplFuzzTest()
+void AudioClientTrackerCallbackServiceSetLowPowerVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     float volume = g_fuzzUtils.GetData<float>();
     service.SetLowPowerVolumeImpl(volume);
 }
 
-void AudioClientTrackerCallbackServiceResumeStreamImplFuzzTest()
+void AudioClientTrackerCallbackServiceResumeStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     StreamSetStateEventInternal streamSetStateEventInternal;
     service.ResumeStreamImpl(streamSetStateEventInternal);
 }
 
-void AudioClientTrackerCallbackServiceSetOffloadModeImplFuzzTest()
+void AudioClientTrackerCallbackServiceSetOffloadModeImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     int32_t state = g_fuzzUtils.GetData<int32_t>();
@@ -107,7 +107,7 @@ void AudioClientTrackerCallbackServiceSetOffloadModeImplFuzzTest()
     service.SetOffloadModeImpl(state, isAppBack);
 }
 
-void AudioClientTrackerCallbackServiceGetSingleStreamVolumeImplFuzzTest()
+void AudioClientTrackerCallbackServiceGetSingleStreamVolumeImplFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioClientTrackerCallbackService service;
     float volume = g_fuzzUtils.GetData<float>();
@@ -116,7 +116,9 @@ void AudioClientTrackerCallbackServiceGetSingleStreamVolumeImplFuzzTest()
     service.GetSingleStreamVolumeImpl(volume);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     ClientTrackerCallbackListenerMuteStreamImplFuzzTest,
     ClientTrackerCallbackListenerGetSingleStreamVolumeImplFuzzTest,
     ClientTrackerCallbackListenerSetOffloadModeImplFuzzTest,
@@ -126,14 +128,23 @@ vector<TestFuncs> g_testFuncs = {
     AudioClientTrackerCallbackServiceResumeStreamImplFuzzTest,
     AudioClientTrackerCallbackServiceSetOffloadModeImplFuzzTest,
     AudioClientTrackerCallbackServiceGetSingleStreamVolumeImplFuzzTest,
-};
-
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

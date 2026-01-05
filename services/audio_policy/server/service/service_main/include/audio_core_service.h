@@ -97,8 +97,9 @@ public:
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
+        std::string GetModuleNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-            AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
+            AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
@@ -231,8 +232,9 @@ private:
         const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
         bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
+    std::string GetModuleNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-        AudioStreamInfo &streamInfo);
+        AudioStreamInfo &streamInfo, int32_t &pin);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
@@ -269,7 +271,8 @@ private:
     bool ConnectServiceAdapter();
     void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0,
+        const bool isNeedNotifyBt = true);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
@@ -289,6 +292,7 @@ private:
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
+    bool IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
     int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);

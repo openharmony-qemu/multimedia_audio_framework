@@ -590,5 +590,24 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, SetVersion_001, TestSize.Level1)
     std::string version = "";
     EXPECT_NO_THROW(audioPolicyConfigData->SetVersion(version));
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: DecideAudioPin_001
+* @tc.desc  : Test SSetVersion
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, DecideAudioPin_001, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    auto adapterDeviceInfo = std::make_shared<AdapterDeviceInfo>();
+    adapterDeviceInfo->type_ = DEVICE_TYPE_DP;
+    adapterDeviceInfo->pin_ = AUDIO_PIN_OUT_DP;
+    adapterDeviceInfo->role_ = OUTPUT_DEVICE;
+    auto tmp = std::make_pair(DEVICE_TYPE_DP, OUTPUT_DEVICE);
+    audioPolicyConfigData->deviceInfoMap[tmp].insert(adapterDeviceInfo);
+
+    EXPECT_EQ(audioPolicyConfigData->DecideAudioPin(DEVICE_TYPE_DP, OUTPUT_DEVICE), AUDIO_PIN_OUT_DP);
+}
 } // namespace AudioStandard
 } // namespace OHOS

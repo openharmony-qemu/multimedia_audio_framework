@@ -62,7 +62,8 @@ namespace {
     static constexpr int32_t ONE_MINUTE = 60;
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
-    const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    const int32_t OFFLOAD_INNER_CAP_PREBUF = 3; // 3 frame
+    const int32_t DEFAULT_INNER_CAP_PREBUF = 1; // 1 frame
     const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
@@ -73,8 +74,6 @@ namespace {
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
-    // Dual tone substream starts forwarding on the main stream's second frame
-    constexpr size_t DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT = 2;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -156,7 +155,7 @@ int32_t RendererInServer::ConfigServerBuffer()
         processConfig_.streamInfo.customSampleRate) / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    CHECK_AND_CALL_RET_FUNC(spanSizeInByte_ != 0, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(spanSizeInByte_ != 0, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[ConfigServerBuffer]Config oh audio buffer failed!"));
     AUDIO_INFO_LOG("engineTotalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu, byteSizePerFrame_:%{public}zu "
         "spanSizeInByte_: %{public}zu, bufferTotalSizeInFrame_: %{public}zu", engineTotalSizeInFrame_,
@@ -219,7 +218,7 @@ int32_t RendererInServer::Init()
         ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
         AUDIO_INFO_LOG("high resolution create failed use normal replace");
     }
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[Init]Construct rendererInServer failed: %{public}d", ret));
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     StreamVolumeParams streamVolumeParams = { streamIndex_, processConfig_.streamType,
@@ -228,7 +227,7 @@ int32_t RendererInServer::Init()
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[Init]Construct rendererInServer failed: %{public}d", ret));
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterWriteCallback(shared_from_this());
@@ -363,6 +362,19 @@ void RendererInServer::HandleOperationStarted()
         std::chrono::system_clock::now().time_since_epoch()).count();
     lastWriteFrame_ = static_cast<int64_t>(audioServerBuffer_->GetCurReadFrame());
     lastWriteMuteFrame_ = 0;
+
+    std::lock_guard<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (IsEnabledAndValidDupStream(capInfo.second)) {
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                innerCapIdToDupStreamCallbackMap_.end(),
+                "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
+            innerCapIdToDupStreamCallbackMap_[capInfo.first]->SetFirstWriteDataFlag(true);
+            innerCapFirstWriteMap_[capInfo.first].store(0);
+        }
+    }
 }
 
 // LCOV_EXCL_START
@@ -713,7 +725,7 @@ int32_t RendererInServer::WriteData()
     if (currentReadFrame >= currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
-            CHECK_AND_CALL_RET_FUNC(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+            CHECK_AND_CALL_FUNC_RETURN_RET(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[WriteData]invalid write and read position."));
             uint64_t dataSize = currentWriteFrame - currentReadFrame;
             HILOG_COMM_INFO("[WriteData]sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
@@ -834,14 +846,14 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
     std::lock_guard lock(writeLock_);
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    CHECK_AND_CALL_RET_FUNC(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[WriteData]invalid span size"));
     int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / static_cast<int64_t>(spanSizeInFrame_);
     Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
-            CHECK_AND_CALL_RET_FUNC(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
+            CHECK_AND_CALL_FUNC_RETURN_RET(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[WriteData]invalid write and read position."));
             uint64_t dataSize = currentWriteFrame - currentReadFrame;
             AUDIO_INFO_LOG("sessionId: %{public}u OHAudioBuffer %{public}" PRIu64 "size is not enough",
@@ -852,9 +864,9 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     int32_t ret = audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[WriteData]WriteData GetReadbuffer failed"));
-    CHECK_AND_CALL_RET_FUNC(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[WriteData]data not enouth"));
 
     ringBufferDesc.dataLength = requestDataLen;
@@ -893,8 +905,6 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
-            CHECK_AND_RETURN(writeCount_.load() >= DUAL_TONE_SUBSTREAM_ACTIVATE_WRITE_COUNT);
-            dualToneStream_->SetSendDataEnabled(true);
         }
     }
 }
@@ -902,6 +912,7 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
     int32_t innerCapId)
 {
+    bool innerCapWriteRet = SUCCESS;
     int32_t engineFlag = GetEngineFlag();
     if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) !=
         renderEmptyCountForInnerCapToInnerCapIdMap_.end() &&
@@ -920,9 +931,17 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("OtherStreamEnqueue running");
-        WriteDupBufferInner(bufferDesc, innerCapId);
+        innerCapWriteRet = WriteDupBufferInner(bufferDesc, innerCapId);
     } else {
         captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
+    }
+
+    if (innerCapFirstWriteMap_[innerCapId].load() == 1 && innerCapWriteRet == SUCCESS) {
+        innerCapIdToDupStreamCallbackMap_[innerCapId]->SetFirstWriteDataFlag(false);
+    }
+
+    if (innerCapFirstWriteMap_[innerCapId].load() < 1) {
+        innerCapFirstWriteMap_[innerCapId].fetch_add(1);
     }
 }
 
@@ -1094,7 +1113,7 @@ int32_t RendererInServer::StartInnerDuringStandby()
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInnerDuringStandby]Policy start client failed, reason: %{public}d", ret));
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
@@ -1132,7 +1151,7 @@ int32_t RendererInServer::StartInner()
     MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
 
     // Bluetooth connection may take a long time, which may cause the data before and after the connection
@@ -1143,7 +1162,7 @@ int32_t RendererInServer::StartInner()
 
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInner]Start stream failed, reason: %{public}d", ret));
 
     startedTime_ = ClockTime::GetCurNano();
@@ -1186,7 +1205,6 @@ void RendererInServer::dualToneStreamInStart()
         if (dualToneStream_ != nullptr) {
             //Since there was no lock protection before the last time it was awarded dualToneStream_ it was
             //modified elsewhere, it was decided again after the lock was awarded.
-            dualToneStream_->SetSendDataEnabled(false);
             dualToneStream_->SetAudioEffectMode(EFFECT_NONE);
             dualToneStream_->Start();
         }
@@ -1317,7 +1335,11 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
-                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
+                if (offloadEnable_) {
+                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
+                } else {
+                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
+                }
                 InitDupBufferInner(capInfo.first);
             }
         }
@@ -1371,7 +1393,6 @@ int32_t RendererInServer::Drain(bool stopFlag)
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
-            dualToneStream_->SetSendDataEnabled(true);
             dualToneStream_->Drain(stopFlag);
         }
     }
@@ -1425,6 +1446,7 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
+    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
     MarkStaticFadeOut(true);
 
     if (IsMovieOffloadStream()) {
@@ -1478,7 +1500,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
@@ -1749,10 +1771,11 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         capInfo.dupStream->Start();
-
-        if (offloadEnable_) {
-            renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
-        }
+    }
+    if (offloadEnable_) {
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
+    } else {
+        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = DEFAULT_INNER_CAP_PREBUF;
     }
     return SUCCESS;
 }
@@ -1826,7 +1849,6 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
-        dualToneStream_->SetSendDataEnabled(false);
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
@@ -1897,7 +1919,9 @@ int32_t StreamCallbacks::OnWriteData(size_t length)
 
 int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
-    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
+    Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
+        "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
+    CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
         std::unique_ptr<AudioRingCache> &dupBuffer = dupRingBuffer_;
@@ -1925,6 +1949,11 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
+}
+
+void StreamCallbacks::SetFirstWriteDataFlag(bool isFirstWriteDataFlag)
+{
+    isFirstWriteDataFlag_ = isFirstWriteDataFlag;
 }
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)

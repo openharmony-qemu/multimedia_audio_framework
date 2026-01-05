@@ -47,8 +47,8 @@
 #include "audio_source_type.h"
 #include "common/hdi_adapter_info.h"
 #include "source/source_intf.h"
-#include "v5_0/audio_types.h"
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/audio_types.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_enhance_chain_adapter.h"
 #include "audio_utils_c.h"
 

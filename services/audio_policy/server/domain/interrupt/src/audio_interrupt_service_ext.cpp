@@ -197,7 +197,7 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_CALL_RET_FUNC(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
+        CHECK_AND_CALL_FUNC_RETURN_RET(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM,
             HILOG_COMM_ERROR("[ProcessActiveStreamFocus]no focus cfg, active stream type = %{public}d, "
                 "incoming stream type = %{public}d",
                 static_cast<int32_t>(focusPair.first.streamType),
@@ -265,7 +265,7 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
     incomingInterrupt.audioFocusType.isPlay = false;
     AudioFocuState incomingState = ACTIVE;
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_RET_FUNC(itZone != zonesMap_.end(), false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(itZone != zonesMap_.end(), false,
         HILOG_COMM_ERROR("[IsCapturerFocusAvailable]can not find zoneid"));
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
     if (itZone->second != nullptr) {
@@ -400,20 +400,27 @@ void AudioInterruptService::DelayRemoveMuteSuggestionRecord(uint32_t currentpid)
     AUDIO_INFO_LOG("Started unmute suggestion for currentpid %{public}d with 1s delay", currentpid);
 }
  
+void AudioInterruptService::UpdateMuteSuggestionRecords(uint32_t currentpid)
+{
+    for (auto record = suggestionPidRecords_.begin(); record != suggestionPidRecords_.end(); ++record) {
+        if (record->first != currentpid) {
+            record->second.insert(currentpid);
+        }
+    }
+}
+
 void AudioInterruptService::RemoveMuteSuggestionRecord()
 {
     for (auto it = suggestionInterrupts_.begin(); it != suggestionInterrupts_.end(); ++it) {
         auto currentpid = it->first;
         if (!HasMuteSuggestionRecord(currentpid)) {
             DelayRemoveMuteSuggestionRecord(currentpid);
-            for (auto record = suggestionPidRecords_.begin(); record != suggestionPidRecords_.end(); ++record) {
-                record->second.insert(currentpid);
-            }
+            UpdateMuteSuggestionRecords(currentpid);
             return;
         }
     }
 }
- 
+
 void AudioInterruptService::AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry,
     const AudioInterrupt &muteInterrupt, const AudioInterrupt &recordInterrupt)
 {

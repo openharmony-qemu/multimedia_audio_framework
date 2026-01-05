@@ -63,6 +63,7 @@ public:
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);
     void WriteAppStateChangeSysEvent(int32_t pid, AppState appState, bool isAdd);
     void RecoryAppState();
+    bool IsAppInBackState(int32_t pid);
 
 private:
     AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

@@ -46,7 +46,8 @@ class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererS
                                public IStreamCallback,
                                public IRendererStream {
 public:
-    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true);
+    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true,
+        size_t preBufSizeInBytes = 0);
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
@@ -172,6 +173,8 @@ private:
     bool isMoveAble_ = true;
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
     FILE *dumpEnqueueIn_ = nullptr;
+    const size_t preBufSizeInBytes_ = 0;
+    std::atomic<bool> preBufDone_ = false;
     // buffer mode, write or callback end
 
     std::atomic<size_t> mutePaddingFrames_ = 0;

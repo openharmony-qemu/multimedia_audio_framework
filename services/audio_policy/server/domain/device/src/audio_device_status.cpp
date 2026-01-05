@@ -466,8 +466,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
             updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load dp failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
-    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
         std::string condition =
             string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
@@ -1212,7 +1211,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     auto devDescs = audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
     for (auto &devDesc : devDescs) {
         if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
-            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc});
+            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc}, 0, false);
         }
     }
 }
@@ -1659,6 +1658,12 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         AUDIO_INFO_LOG("Update volumeBehavior success, mode: %{public}d, volume: %{public}d, mute: %{public}d",
             device.volumeBehavior_.controlMode, device.volumeBehavior_.controlInitVolume,
             device.volumeBehavior_.controlInitMute);
+    }
+    if (!capability.deviceName_.empty()) {
+        device.deviceName_ = capability.deviceName_;
+    }
+    if (capability.protocol_ == 0) {
+        device.model_ = "hiplay";
     }
 }
 }

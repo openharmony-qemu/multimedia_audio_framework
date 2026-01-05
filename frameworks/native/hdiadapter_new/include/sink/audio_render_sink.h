@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include "ctime"
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "adapter/i_device_manager.h"

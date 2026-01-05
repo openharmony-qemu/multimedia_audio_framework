@@ -72,6 +72,8 @@ public:
 
     virtual void ReleaseAudioZone(int32_t zoneId) = 0;
 
+    virtual void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) = 0;
+
     virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
 
     virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
