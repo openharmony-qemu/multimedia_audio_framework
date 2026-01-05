@@ -89,7 +89,7 @@ T GetData()
         return object;
     }
     errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if(ret != EOK) {
+    if (ret != EOK) {
     return {};
     }
     g_pos += objectSize;

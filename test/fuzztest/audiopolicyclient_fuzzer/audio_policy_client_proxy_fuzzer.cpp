@@ -585,7 +585,6 @@ void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest(FuzzedDataProvider& f
 
 void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest(FuzzedDataProvider& fdp)
 {
-
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {

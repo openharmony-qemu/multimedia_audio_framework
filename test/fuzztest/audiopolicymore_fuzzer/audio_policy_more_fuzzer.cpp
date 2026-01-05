@@ -477,7 +477,7 @@ void Init(const uint8_t* data, size_t size)
 }
 void Init()
 {
-     manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager = std::make_shared<AudioA2dpOffloadManager>();
 }
 } // namespace AudioStandard
 } // namesapce OHOS

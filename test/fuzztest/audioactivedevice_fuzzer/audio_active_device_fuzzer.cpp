@@ -417,7 +417,7 @@ void Init(const uint8_t* data, size_t size)
 }
 void Init()
 {
-     audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    audioActiveDevice = std::make_shared<AudioActiveDevice>();
 }
 } // namespace AudioStandard
 } // namesapce OHOS

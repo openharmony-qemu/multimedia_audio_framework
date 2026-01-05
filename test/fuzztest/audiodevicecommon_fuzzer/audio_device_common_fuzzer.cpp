@@ -980,7 +980,7 @@ void Init()
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
-    HOS::AudioStandard::Init();
+    OHOS::AudioStandard::Init();
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest(fdp);
     OHOS::AudioStandard::FetchOutputDeviceFuzzTest(fdp);
