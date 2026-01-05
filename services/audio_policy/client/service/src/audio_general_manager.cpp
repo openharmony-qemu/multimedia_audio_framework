@@ -105,6 +105,13 @@ int32_t AudioGeneralManager::SetPreferredDevice(const PreferredType preferredTyp
     return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
 }
 
+int32_t AudioGeneralManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioGeneralManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrVoiceMuteMode(static_cast<int32_t>(asrVoiceMuteMode), on);
+}
+
 int32_t AudioGeneralManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
 {
