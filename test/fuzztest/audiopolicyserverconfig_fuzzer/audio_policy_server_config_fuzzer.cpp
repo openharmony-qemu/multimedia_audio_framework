@@ -33,7 +33,6 @@ const int32_t LIMITSIZE = 4;
 
 void AudioConcurrencyParserLoadConfigFuzzTest(FuzzedDataProvider& fdp)
 {
-    
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyMap;
     concurrencyMap[std::make_pair(PIPE_TYPE_UNKNOWN, PIPE_TYPE_UNKNOWN)] = PLAY_BOTH;
     concurrencyMap[std::make_pair(PIPE_TYPE_OUT_NORMAL, PIPE_TYPE_OUT_NORMAL)] = CONCEDE_EXISTING;

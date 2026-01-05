@@ -85,7 +85,7 @@ T GetData()
 {
     T object{};
     size_t objectSize = sizeof(object);
-    if(RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
         return object;
     }
     errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);

@@ -247,7 +247,6 @@ void UnsetAudioInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
 
 void AddAudioInterruptZonePidsFuzzTest(FuzzedDataProvider& fdp)
 {
-
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
     MessageParcel data;

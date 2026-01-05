@@ -240,13 +240,13 @@ void IsFastFromA2dpToA2dpFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
+void SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.SetDeviceConnectedFlagWhenFetchOutputDevice();
 }
 
-void FetchOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
+void FetchOutputDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
@@ -280,7 +280,7 @@ void FetchOutputEndFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void FetchOutputDeviceWhenNoRunningStreamFuzzTest(FuzzedDataProvider& fdp)
+void FetchOutputDeviceWhenNoRunningStreamFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
@@ -337,7 +337,7 @@ void MuteSinkForSwitchBluetoothDeviceFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void SetVoiceCallMuteForSwitchDeviceFuzzTest(FuzzedDataProvider& fdp)
+void SetVoiceCallMuteForSwitchDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.SetVoiceCallMuteForSwitchDevice();
@@ -370,7 +370,7 @@ void ActivateA2dpDeviceWhenDescEnabledFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void ActivateA2dpDeviceFuzzTest(FuzzedDataProvider& fdp)
+void ActivateA2dpDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -383,7 +383,7 @@ void ActivateA2dpDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioDeviceCommon.ActivateA2dpDevice(desc, rendererChangeInfos, reason);
 }
 
-void HandleScoOutputDeviceFetchedFuzzTest(FuzzedDataProvider& fdp)
+void HandleScoOutputDeviceFetchedFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -572,7 +572,7 @@ void HandleBluetoothInputDeviceFetchedFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void NotifyRecreateCapturerStreamFuzzTest(FuzzedDataProvider& fdp)
+void NotifyRecreateCapturerStreamFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = true;
@@ -613,7 +613,7 @@ void ScoInputDeviceFetchedForRecongnitionFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void CheckAndNotifyUserSelectedDeviceFuzzTest(FuzzedDataProvider& fdp)
+void CheckAndNotifyUserSelectedDeviceFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -648,7 +648,7 @@ void GetSpatialDeviceTypeFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void IsDeviceConnectedFuzzTest(FuzzedDataProvider& fdp)
+void IsDeviceConnectedFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
@@ -679,19 +679,19 @@ void IsSameDeviceFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void GetSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
+void GetSourceOutputsFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.GetSourceOutputs();
 }
 
-void ClientDiedDisconnectScoNormalFuzzTest(FuzzedDataProvider& fdp)
+void ClientDiedDisconnectScoNormalFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.ClientDiedDisconnectScoNormal();
 }
 
-void ClientDiedDisconnectScoRecognitionFuzzTest(FuzzedDataProvider& fdp)
+void ClientDiedDisconnectScoRecognitionFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
@@ -763,7 +763,7 @@ void RingToneVoiceControlFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void SetFirstScreenOnFuzzTest(FuzzedDataProvider& fdp)
+void SetFirstScreenOnFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.SetFirstScreenOn();
@@ -974,6 +974,19 @@ void Init(const uint8_t* data, size_t size)
 }
 void Init()
 {
+    SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest();
+    FetchOutputDeviceFuzzTest();
+    FetchOutputDeviceWhenNoRunningStreamFuzzTest();
+    SetVoiceCallMuteForSwitchDeviceFuzzTest();
+    ActivateA2dpDeviceFuzzTest();
+    NotifyRecreateCapturerStreamFuzzTest();
+    CheckAndNotifyUserSelectedDeviceFuzzTest();
+    IsDeviceConnectedFuzzTest();
+    GetSourceOutputsFuzzTest();
+    SetFirstScreenOnFuzzTest();
+    HandleScoOutputDeviceFetchedFuzzTest();
+    ClientDiedDisconnectScoNormalFuzzTest();
+    ClientDiedDisconnectScoRecognitionFuzzTest();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -981,20 +994,6 @@ void Init()
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::Init();
-    FuzzedDataProvider fdp(data, size);
-    OHOS::AudioStandard::SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest(fdp);
-    OHOS::AudioStandard::FetchOutputDeviceFuzzTest(fdp);
-    OHOS::AudioStandard::FetchOutputDeviceWhenNoRunningStreamFuzzTest(fdp);
-    OHOS::AudioStandard::SetVoiceCallMuteForSwitchDeviceFuzzTest(fdp);
-    OHOS::AudioStandard::ActivateA2dpDeviceFuzzTest(fdp);
-    OHOS::AudioStandard::NotifyRecreateCapturerStreamFuzzTest(fdp);
-    OHOS::AudioStandard::CheckAndNotifyUserSelectedDeviceFuzzTest(fdp);
-    OHOS::AudioStandard::IsDeviceConnectedFuzzTest(fdp);
-    OHOS::AudioStandard::GetSourceOutputsFuzzTest(fdp);
-    OHOS::AudioStandard::SetFirstScreenOnFuzzTest(fdp);
-    OHOS::AudioStandard::HandleScoOutputDeviceFetchedFuzzTest(fdp);
-    OHOS::AudioStandard::ClientDiedDisconnectScoNormalFuzzTest(fdp);
-    OHOS::AudioStandard::ClientDiedDisconnectScoRecognitionFuzzTest(fdp);
     OHOS::AudioStandard::OnStop();
     return 0;
 }

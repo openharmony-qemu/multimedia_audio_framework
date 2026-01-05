@@ -369,7 +369,7 @@ void AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest(FuzzedDataPro
 }
 
 void AudioCoreServiceEventEntryGetAvailableMicrophonesFuzzTest(FuzzedDataProvider& fdp)
-{ 
+{
     eventEntry->GetAvailableMicrophones();
 }
 

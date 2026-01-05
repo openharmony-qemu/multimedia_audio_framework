@@ -902,7 +902,7 @@ void AudioCoreServicePrivateOpenNewAudioPortAndRouteFuzzTest(FuzzedDataProvider&
 }
 
 void AudioCoreServicePrivateHandleFetchInputWhenNoRunningStreamFuzzTest(FuzzedDataProvider& fdp)
-{ 
+{
     audioCoreService->HandleFetchInputWhenNoRunningStream();
 }
 
@@ -951,7 +951,7 @@ void AudioCoreServicePrivateUpdateTrackerFuzzTest(FuzzedDataProvider& fdp)
 }
 
 void AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest(FuzzedDataProvider& fdp)
-{ 
+{
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
