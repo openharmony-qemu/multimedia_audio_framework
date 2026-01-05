@@ -2292,7 +2292,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
     if (!isFirstBoot) {
         LoadVolumeMap();
-        UpdateSafeVolume();
         return;
     }
     bool resetFirstFlag = false;
@@ -2364,6 +2363,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
             // clone data to VolumeToShareData
             SaveVolumeData(desc, streamType, volumeLevel, true);
         }
+        UpdateSafeVolumeInner(desc);
     }
 
     isNeedCopyVolumeData_ = false;
