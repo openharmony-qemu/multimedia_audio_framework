@@ -35,6 +35,7 @@ static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static const std::string BT_SINK_NAME = "a2dp";
 static const std::string USB_SINK_NAME = "usb";
+
 static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
     BT_SINK_NAME,
     USB_SINK_NAME

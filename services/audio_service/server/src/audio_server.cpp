@@ -1029,9 +1029,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
 int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
 {
     uid_t callingUid = IPCSkeleton::GetCallingUid();
-    int32_t engineFlag = GetEngineFlag();
-    CHECK_AND_RETURN_RET_LOG(engineFlag == 1, ERROR, "engineFlag:%{public}d invalid, not support", engineFlag);
- 	 
+
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // root user case for auto test
     if (callingUid == ROOT_UID) {
