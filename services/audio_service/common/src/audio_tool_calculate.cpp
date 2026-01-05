@@ -194,12 +194,15 @@ std::vector<int32_t> SumS16SingleAbsNeno(const int16_t* pcm, uint32_t num_sample
 #if USE_ARM_NEON == 1
     int32x4_t sum_vec = vdupq_n_s32(0);  // 32-bit accumulator
     for (uint32_t i = 0; i + DEFAULT_OFFSET_7 <= num_samples; i += DEFAULT_STEP_BY_8) {
-    int16x8_t v = vld1q_s16(&pcm[i]);           // load 8 int16 samples
-    int16x8_t abs_v = vabsq_s16(v);             // absolute values（S16）
-    int32x4_t vabs_lo = vmovl_s16(vget_low_s16(abs_v));  // first 4 samples
-    int32x4_t vabs_hi = vmovl_s16(vget_high_s16(abs_v)); // last 4 samples
-    sum_vec = vaddq_s32(sum_vec, vabs_lo);
-    sum_vec = vaddq_s32(sum_vec, vabs_hi);
+        int16x8_t v = vld1q_s16(&pcm[i]);           // load 8 int16 samples
+
+        uint16x8_t mask = vcltq_s16(v, vdupq_n_s16(0));
+        uint16x8_t abs_v = vsubq_u16(vreinterpretq_u16_s16(v) ^ mask, mask);
+
+        int32x4_t vabs_lo = vmovl_s16(vreinterpret_s16_u16(vget_low_u16(abs_v)));  // first 4 samples
+        int32x4_t vabs_hi = vmovl_s16(vreinterpret_s16_u16(vget_high_u16(abs_v))); // last 4 samples
+        sum_vec = vaddq_s32(sum_vec, vabs_lo);
+        sum_vec = vaddq_s32(sum_vec, vabs_hi);
     }
     sum[0] = SafeVaddvqS32(sum_vec);
 #endif
@@ -218,13 +221,16 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
         pcm += DEFAULT_STEP_BY_16;
 
         // absolute values
-        int16x8_t left_abs = vabsq_s16(samples.val[0]);
-        int16x8_t right_abs = vabsq_s16(samples.val[1]);
+        uint16x8_t mask_l = vcltq_s16(samples.val[0], vdupq_n_s16(0));
+        uint16x8_t mask_r = vcltq_s16(samples.val[1], vdupq_n_s16(0));
+    
+        uint16x8_t left_abs = vsubq_u16(vreinterpretq_u16_s16(samples.val[0]) ^ mask_l, mask_l);
+        uint16x8_t right_abs = vsubq_u16(vreinterpretq_u16_s16(samples.val[1]) ^ mask_r, mask_r);
 
         // zero-overhead extension to 32-bit
-        uint32x4_t left_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(left_abs)));
+        uint32x4_t left_low = vmovl_u16(vget_low_u16(left_abs));
         uint32x4_t left_high = Extension16bitTo32bit(left_abs);
-        uint32x4_t right_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(right_abs)));
+        uint32x4_t right_low = vmovl_u16(vget_low_u16(right_abs));
         uint32x4_t right_high = Extension16bitTo32bit(right_abs);
 
         // accumulate
