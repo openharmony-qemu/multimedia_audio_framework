@@ -987,7 +987,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr){
+    if(data == nullptr) {
         return;
     }
     RAW_DATA = data;
@@ -1011,8 +1011,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     data = data + 1;
     size = size - 1;
-    OHOS::AudioStandard::Init(data,size);
-    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }

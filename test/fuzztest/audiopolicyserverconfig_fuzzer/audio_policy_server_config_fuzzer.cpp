@@ -57,7 +57,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size < LIMITSIZE) {
         return;
     }
-    FuzzedDataProvider fdp(data,size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }

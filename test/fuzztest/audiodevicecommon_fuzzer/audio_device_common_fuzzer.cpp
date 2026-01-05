@@ -965,7 +965,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr){
+    if(data == nullptr) {
         return;
     }
     RAW_DATA = data;
@@ -981,7 +981,7 @@ void Init()
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     HOS::AudioStandard::Init();
-    FuzzedDataProvider fdp(data,size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest(fdp);
     OHOS::AudioStandard::FetchOutputDeviceFuzzTest(fdp);
     OHOS::AudioStandard::FetchOutputDeviceWhenNoRunningStreamFuzzTest(fdp);
@@ -1005,8 +1005,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::Init(data,size);
-    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }

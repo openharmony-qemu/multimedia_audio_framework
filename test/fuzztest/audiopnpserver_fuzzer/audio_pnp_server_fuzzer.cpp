@@ -85,11 +85,11 @@ T GetData()
 {
     T object{};
     size_t objectSize = sizeof(object);
-    if(RAW_DATA ==nullptr || objectSize > g_dataSize - g_pos){
+    if(RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
         return object;
     }
     errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if(ret != EOK){
+    if(ret != EOK) {
     return {};
     }
     g_pos += objectSize;
@@ -293,7 +293,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr){
+    if(data == nullptr) {
         return;
     }
     RAW_DATA = data;
@@ -308,17 +308,18 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (size < OHOS::AudioStandard::THRESHOLD) {
+    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
     data = data + 1;
     size = size - 1;
-    OHOS::AudioStandard::Init(data,size);
-    FuzzedDataProvider fdp(data,size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
     OHOS::AudioStandard::Init();
+    return 0;
 }

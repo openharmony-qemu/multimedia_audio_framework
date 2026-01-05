@@ -136,11 +136,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-    FuzzedDataProvider fdp(data,size);
+    FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
     return 0;
 }
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
     OHOS::AudioStandard::Init();
+    return 0;
 }
