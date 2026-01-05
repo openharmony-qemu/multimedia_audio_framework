@@ -760,7 +760,7 @@ void GetPrivacyTypeAudioServer(FuzzedDataProvider &provider)
     audioServer->GetPrivacyTypeAudioServer(sessionId, privacyType, ret);
 }
 
-FuzzFuncPtr fuzzFuncArray[] = {
+FuzzFuncPtr g_fuzzFuncArray[] = {
     GetAudioParameter,
     SetAudioParameter,
     GetExtraParameters,
@@ -853,7 +853,7 @@ FuzzFuncPtr fuzzFuncArray[] = {
 
 void FuzzTest(FuzzedDataProvider &provider)
 {
-    auto func = provider.PickValueInArray(fuzzFuncArray);
+    auto func = provider.PickValueInArray(g_fuzzFuncArray);
     func(provider);
 }
 } // namespace AudioStandard
