@@ -96,12 +96,15 @@ typedef struct {
 } AudioAinrStruSysConfig, *AudioAinrPstSysConfig;
 
 typedef struct {
-    bool supportCurrdevice;                        // Supports current device
-    bool supportRealtimeProc;                      // Supports real-time processing
-    signed short sampleRate;                       // Sample rate
-    signed short bitdepth;                         // Bit depth
-    signed short channelNum;                       // Number of channels
-    signed short frameLenth;                       // Frame length
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } AudioAinrSpecStruct, *AudioAinrSpecPointer;
 
 /* PCM Data Sample Rates */

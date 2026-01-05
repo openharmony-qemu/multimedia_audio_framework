@@ -23,18 +23,12 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-static constexpr AudioSamplingRate EQ_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat EQ_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel EQ_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout EQ_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 const std::string setBandGains = "AudioEqualizerFrequencyBandGains";
 }  // namespace
 
 AudioSuiteEqNode::AudioSuiteEqNode()
-    : AudioSuiteProcessNode(NODE_TYPE_EQUALIZER,
-          AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_CHANNEL_COUNT}, EQ_ALGO_SAMPLE_FORMAT, EQ_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(
-          PcmBufferFormat{EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_EQUALIZER)
 {}
 
 AudioSuiteEqNode::~AudioSuiteEqNode()
@@ -50,9 +44,21 @@ int32_t AudioSuiteEqNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     eqAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nodeCapability);
     eqAlgoInterfaceImpl_->Init();
+    SetAudioNodeFormat(AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        EQ_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
     isEqNodeInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEqNode::Init end");
     return SUCCESS;

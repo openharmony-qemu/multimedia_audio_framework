@@ -25,18 +25,12 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-static constexpr AudioSamplingRate VM_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat VM_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel VM_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VM_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 const std::string setVoiceChangeMode = "AudioGeneralVoiceChangeType";
 }
 
 AudioSuiteGeneralVoiceChangeNode::AudioSuiteGeneralVoiceChangeNode()
-    : AudioSuiteProcessNode(NODE_TYPE_GENERAL_VOICE_CHANGE,
-          AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT}, VM_ALGO_SAMPLE_FORMAT, VM_ALGO_SAMPLE_RATE}),
-      pcmBufferOutput_(PcmBufferFormat{
-          VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_GENERAL_VOICE_CHANGE)
 {}
 
 AudioSuiteGeneralVoiceChangeNode::~AudioSuiteGeneralVoiceChangeNode()
@@ -50,10 +44,24 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create General Voice Change algoInterface");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to Init General Voice Change Algo");
+
+    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    
+    pcmBufferOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        VM_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
 
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode Init end");
     return SUCCESS;

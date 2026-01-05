@@ -23,17 +23,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr AudioSamplingRate VM_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat VM_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel VM_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VM_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 static std::string VOICE_BEAUTIFIER_TYPE = "VoiceBeautifierType";
 
 AudioSuiteVoiceBeautifierNode::AudioSuiteVoiceBeautifierNode()
-    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER,
-          AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT}, VM_ALGO_SAMPLE_FORMAT, VM_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(
-          PcmBufferFormat{VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER)
 {}
 
 AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
@@ -44,7 +38,10 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create voice beautifier algoInterface");
@@ -55,7 +52,16 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
         DeInit();
         return ret;
     }
+    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
+    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        VM_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init end");
     return SUCCESS;
 }

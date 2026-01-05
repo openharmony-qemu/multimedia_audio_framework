@@ -36,8 +36,7 @@ int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadVbCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
 
@@ -47,8 +46,7 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("iMedia_Eq_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadEqCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
 
@@ -58,8 +56,7 @@ int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("iMedia_Surround_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadSfCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
 
@@ -69,8 +66,7 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("iMedia_Env_GetSPECS", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadEnvCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
 
@@ -93,8 +89,7 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
         return ERROR;
     }
     SpaceRenderSpeces specs = getSpecsFunc();
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     dlclose(libHandle);
     libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
@@ -116,8 +111,14 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     AudioAinrSpecPointer specs = getSpecsFunc();
     CHECK_AND_RETURN_RET_LOG(specs != nullptr,
         ERROR, "function: %{public}s return a nullptr.", "AudioAinrGetSpec");
-    nc.supportedOnThisDevice = specs->supportCurrdevice;
-    nc.isSupportRealtime = specs->supportRealtimeProc;
+    nc.supportedOnThisDevice = specs->isSupport;
+    nc.frameLen = specs->frameLen;
+    nc.inSampleRate = specs->inSampleRate;
+    nc.inChannels = specs->inChannels;
+    nc.inFormat = specs->inFormat;
+    nc.outSampleRate = specs->outSampleRate;
+    nc.outChannels = specs->outChannels;
+    nc.outFormat = specs->outFormat;
     dlclose(libHandle);
     libHandle = nullptr;
     AUDIO_INFO_LOG("loadCapability end.");
@@ -138,8 +139,7 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
         algoSoPath.c_str(), AISS_LIBRARY_INFO_SYM_AS_STR.c_str());
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
-    nc.supportedOnThisDevice = supportConfig.isSupport;
-    nc.isSupportRealtime = supportConfig.isRealTime;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, supportConfig) == SUCCESS, ERROR, "SetAudioParameters failed.");
 
     dlclose(libHandle);
     libHandle = nullptr;
@@ -153,8 +153,7 @@ int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("AudioVoiceMorphingGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadGeneralCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
  
@@ -164,8 +163,7 @@ int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
     CHECK_AND_RETURN_RET_LOG(
         LoadCapability("AudioVoiceMphTradGetSpec", nc.soPath + nc.soName, specs) == SUCCESS,
         ERROR, "LoadPureCapability failed.");
-    nc.supportedOnThisDevice = specs.currentDeviceSupport;
-    nc.isSupportRealtime = specs.realTimeSupport;
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     return SUCCESS;
 }
 
@@ -182,8 +180,8 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     // tempo
     std::string tempoSoPath = nc.soPath + tempoSoName;
     void *tempoSoHandle = algoLibrary_.LoadLibrary(tempoSoPath);
-    CHECK_AND_RETURN_RET_LOG(tempoSoHandle != nullptr, ERROR,
-        "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
+    CHECK_AND_RETURN_RET_LOG(
+        tempoSoHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
     using GET_SPEC_FUNC = AudioPVSpec(*)(void);
     GET_SPEC_FUNC pvGetSpecFunc = reinterpret_cast<GET_SPEC_FUNC>(dlsym(tempoSoHandle, "PVGetSpec"));
     if (pvGetSpecFunc == nullptr) {
@@ -193,9 +191,8 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
             tempoSoPath.c_str(), "PVGetSpec");
         return ERROR;
     }
-    AudioPVSpec spec = pvGetSpecFunc();
-    nc.supportedOnThisDevice = spec.currentDeviceSupport;
-    nc.isSupportRealtime = spec.realTimeSupport;
+    AudioPVSpec specs = pvGetSpecFunc();
+    CHECK_AND_RETURN_RET_LOG(SetAudioParameters(nc, specs) == SUCCESS, ERROR, "SetAudioParameters failed.");
     dlclose(tempoSoHandle);
     tempoSoHandle = nullptr;
     // pitch
@@ -215,7 +212,6 @@ int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
     struct AlgoSupportConfig supportConfig = {};
     audioEffectLibHandle->supportEffect(&supportConfig);
     nc.supportedOnThisDevice &= supportConfig.isSupport;
-    nc.isSupportRealtime &= supportConfig.isRealTime;
     dlclose(pitchSoHandle);
     pitchSoHandle = nullptr;
     AUDIO_INFO_LOG("LoadTempoPitchCapability end.");

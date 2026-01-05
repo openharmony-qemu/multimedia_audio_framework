@@ -27,11 +27,15 @@ struct PVStruct;
 typedef struct PVStruct *PVParam;
 
 typedef struct {
-    bool currentDeviceSupport;
-    bool realTimeSupport;
-    int sampleRate;
-    int channel; // only support 1 ch
-    int dataFormat; // 0:S24LE,1:S16LE,2:S32LE,3:F32LE
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } AudioPVSpec;
 
 #ifdef __cplusplus
