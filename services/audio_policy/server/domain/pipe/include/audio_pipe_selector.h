@@ -89,6 +89,8 @@ private:
     bool IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
     void UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
         AudioModuleInfo &moduleInfo);
+    bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
 
     AudioPolicyConfigManager& configManager_;
 };
