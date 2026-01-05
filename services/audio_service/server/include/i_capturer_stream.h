@@ -44,6 +44,7 @@ public:
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual int32_t DropBuffer() = 0;
+    virtual void TriggerAppsUidUpdate() { return; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

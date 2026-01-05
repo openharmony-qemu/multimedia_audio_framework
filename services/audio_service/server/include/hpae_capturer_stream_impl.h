@@ -52,6 +52,7 @@ public:
     void AbortCallback(int32_t abortTimes);
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+    void TriggerAppsUidUpdate() override;
 
 private:
 

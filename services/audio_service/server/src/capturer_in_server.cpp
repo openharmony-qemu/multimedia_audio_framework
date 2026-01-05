@@ -575,6 +575,12 @@ int32_t CapturerInServer::StartInner()
     }
     AudioService::GetInstance()->NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = CoreServiceHandler::GetInstance().GetDeviceBySessionId(
+        streamIndex_);
+    if (deviceDesc != nullptr && deviceDesc->isRemote()) {
+        stream_->TriggerAppsUidUpdate();
+    }
+
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }

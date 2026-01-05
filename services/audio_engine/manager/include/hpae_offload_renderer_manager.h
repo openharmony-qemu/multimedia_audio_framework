@@ -96,6 +96,7 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     bool IsBypassSpatializationForStereo() override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();

@@ -2763,4 +2763,83 @@ HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_007, TestSize.
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
 }
+
+/**
+ * @tc.name  : Test TriggerAppsUidUpdate
+ * @tc.type  : FUNC
+ * @tc.number: TriggerAppsUidUpdate_001
+ * @tc.desc  : Test update apps uid.
+ */
+HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+
+    EXPECT_EQ(hpaeRendererManager->CreateInputSession(streamInfo), SUCCESS);
+    auto sinkInputNode = hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId];
+    EXPECT_NE(sinkInputNode, nullptr);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
+    hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_STOPPED;
+    hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test TriggerAppsUidUpdate
+ * @tc.type  : FUNC
+ * @tc.number: TriggerAppsUidUpdate_002
+ * @tc.desc  : Test offload update apps uid.
+ */
+HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->appUid_ = 123;
+    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    sinkInputNode->state_ = HPAE_SESSION_STOPPED;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+}
 }  // namespace

@@ -1087,5 +1087,10 @@ int32_t HpaeRendererStreamImpl::FetchSinkLatency(uint32_t &sinkLatency)
     return fetcher(sinkLatency);
 }
 
+void HpaeRendererStreamImpl::TriggerAppsUidUpdate()
+{
+    AUDIO_INFO_LOG("%{public}u Enter", streamIndex_);
+    IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -47,6 +47,7 @@ public:
         uint64_t &sendDataSize, uint32_t &timeStamp, int32_t &ret) override;
     int32_t OnCheckActiveMusicTime(const std::string &reason) override;
     int32_t CaptureConcurrentCheck(const uint32_t sessionId) override;
+    int32_t GetDeviceBySessionId(uint32_t sessionId, std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

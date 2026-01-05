@@ -377,6 +377,8 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
 
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->TriggerAppsUidUpdate(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
@@ -793,6 +795,8 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(sessionInfo.streamInfo.streamClassType, streamInfo.streamClassType);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->TriggerAppsUidUpdate(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);

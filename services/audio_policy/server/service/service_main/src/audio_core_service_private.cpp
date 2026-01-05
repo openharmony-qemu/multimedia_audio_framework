@@ -3589,5 +3589,11 @@ AudioStreamDeviceChangeReasonExt AudioCoreService::UpdateRemoteDeviceChangeReaso
         AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE : reason;
     return newReason;
 }
+
+std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetDeviceBySessionId(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
+    return pipeManager_->GetDeviceBySessionId(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

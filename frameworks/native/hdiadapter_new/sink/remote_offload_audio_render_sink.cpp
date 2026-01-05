@@ -137,6 +137,7 @@ int32_t RemoteOffloadAudioRenderSink::Start(void)
     AudioXCollie audioXCollie("RemoteOffloadAudioRenderSink::Start", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    SetAudioParameter(AudioParamKey::NONE, "", GenerateAppsUidStr(appsUid_));
     int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     UpdateSinkState(true);

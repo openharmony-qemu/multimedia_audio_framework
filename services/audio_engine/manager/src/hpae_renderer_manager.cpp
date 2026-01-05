@@ -452,6 +452,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     }
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         noneStreamTime_ = 0;
+        UpdateAppsUid();
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -925,6 +926,7 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             }
         } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING &&
             CheckIsStreamRunning()) {
+            UpdateAppsUid();
             outputCluster_->Start();
         }
     };
@@ -1696,6 +1698,18 @@ bool HpaeRendererManager::IsBypassSpatializationForStereo()
         break;
     }
     return bypass;
+}
+
+void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
+{
+    appsUid_.clear();
+    for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
+        if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
+            sinkInputNodePair.first == sessionId) {
+            appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
+        }
+    }
+    outputCluster_->UpdateAppsUid(appsUid_);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

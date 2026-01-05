@@ -116,6 +116,7 @@ public:
     {
         return true;
     }
+    virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; }
 
 private:
 #ifdef ENABLE_HIDUMP_DFX

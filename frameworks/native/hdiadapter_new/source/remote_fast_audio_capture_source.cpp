@@ -124,6 +124,7 @@ int32_t RemoteFastAudioCaptureSource::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    SetAudioParameter(AudioParamKey::NONE, "", GenerateAppsUidStr(appsUid_));
     int32_t ret = audioCapture_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     ret = CheckPositionTime();
@@ -201,6 +202,15 @@ int32_t RemoteFastAudioCaptureSource::Reset(void)
     int32_t ret = audioCapture_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "reset fail, ret: %{public}d", ret);
     return SUCCESS;
+}
+
+void RemoteFastAudioCaptureSource::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
+{
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    CHECK_AND_RETURN_LOG(audioCapture_ != nullptr, "capture is nullptr");
+    int32_t ret = audioCapture_->SetExtraParams(value.c_str());
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
 }
 
 int32_t RemoteFastAudioCaptureSource::SetVolume(float left, float right)
@@ -299,7 +309,20 @@ int32_t RemoteFastAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX
 
 int32_t RemoteFastAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    return ERR_NOT_SUPPORTED;
+    Trace trace("RemoteFastAudioCaptureSource:UpdateAppsUid");
+    std::unordered_set<int32_t> lastAppsUid = appsUid_;
+    std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
+    appsUid_ = std::move(appsUidSet);
+    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
+        appInfoNeedReset_ = true;
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "audioCapture_ is null");
+        std::string appInfoStr = GenerateAppsUidStr(appsUid_);
+        int32_t ret = audioCapture_->SetExtraParams(appInfoStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
+        appInfoNeedReset_ = false;
+    }
+    return SUCCESS;
 }
 
 void RemoteFastAudioCaptureSource::DumpInfo(std::string &dumpString)

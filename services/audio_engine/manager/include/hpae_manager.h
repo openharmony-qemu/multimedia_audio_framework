@@ -207,6 +207,7 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     void updateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
+    void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);

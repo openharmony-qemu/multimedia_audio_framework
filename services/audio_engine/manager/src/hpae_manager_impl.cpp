@@ -641,6 +641,12 @@ void HpaeManagerImpl::LoadCollaborationConfig()
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->LoadCollaborationConfig();
 }
+
+void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->TriggerAppsUidUpdate(streamClassType, sessionId);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

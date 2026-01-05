@@ -50,6 +50,8 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
+
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -113,6 +115,8 @@ private:
     sptr<Ashmem> ashmemSink_ = nullptr;
     size_t bufferSize_ = 0;
 #endif
+    bool appInfoNeedReset_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

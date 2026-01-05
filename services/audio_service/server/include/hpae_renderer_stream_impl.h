@@ -104,6 +104,7 @@ public:
     void SetSendDataEnabled(bool enabled) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    void TriggerAppsUidUpdate() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

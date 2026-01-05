@@ -98,6 +98,7 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

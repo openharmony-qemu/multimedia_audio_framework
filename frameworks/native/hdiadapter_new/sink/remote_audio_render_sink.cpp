@@ -291,6 +291,20 @@ int64_t RemoteAudioRenderSink::GetVolumeDataCount()
     return volumeDataCount_;
 }
 
+void RemoteAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
+    const std::string &value)
+{
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
+    int32_t ret = SUCCESS;
+    for (const auto &wrapper : audioRenderWrapperMap_) {
+        CHECK_AND_CONTINUE(wrapper.second.audioRender_ != nullptr);
+        ret = wrapper.second.audioRender_->SetExtraParams(value.c_str());
+        CHECK_AND_RETURN(ret != SUCCESS);
+    }
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
+}
+
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
@@ -641,6 +655,7 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
     wrapper.audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
     CHECK_AND_RETURN_RET(wrapper.audioRender_ != nullptr, ERR_NOT_STARTED);
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, wrapper.hdiRenderId_, shared_from_this());
+    wrapper.audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("create render success, cost: [%{public}" PRId64 "]ms", stamp);

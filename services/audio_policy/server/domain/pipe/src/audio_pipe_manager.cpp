@@ -790,5 +790,26 @@ bool AudioPipeManager::HasPrimarySink()
     }
     return false;
 }
+
+std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetDeviceBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    bool isRemote = false;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+                desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
+            if (desc->sessionId_ != sessionId) {
+                continue;
+            }
+            AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->GetAdapterName().c_str());
+            std::shared_ptr<AudioDeviceDescriptor> res = pipeInfo->adapterName_ == "remote" ?
+                std::make_shared<AudioDeviceDescriptor>(*(desc->newDeviceDescs_.front())) : nullptr;
+            return res;
+        }
+    }
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS
