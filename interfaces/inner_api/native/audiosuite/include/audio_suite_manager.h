@@ -55,7 +55,7 @@ public:
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
-    virtual int32_t GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
+    virtual int32_t GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
     virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
         AudioEqualizerFrequencyBandGains &frequencyBandGains) = 0;
     virtual int32_t GetVoiceBeautifierType(uint32_t nodeId,

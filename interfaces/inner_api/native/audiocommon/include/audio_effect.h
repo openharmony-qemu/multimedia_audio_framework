@@ -36,6 +36,7 @@ constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
 constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
 constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
+constexpr const char* SYSTEM_LOAD_SUBKEY = "systemLoad_state";
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -54,6 +55,9 @@ enum HdiSetParamCommandCode {
     HDI_LID_STATE = 13,
     HDI_QUERY_CHANNELLAYOUT = 14,
     HDI_ABS_VOLUME_STATE = 15,
+    HDI_OUTDOOR_MODE = 16,
+    HDI_SUPER_LOUDNESS_MODE = 17,
+    HDI_SYSTEMLOAD_STATE = 18,
 };
 
 enum AudioSpatialDeviceType {
@@ -739,6 +743,9 @@ enum AudioEffectChainSetParamIndex {
     LOUDNESS_GAIN_INDEX = 12,
     ABS_VOLUME_STATE = 13,
     EARPHONE_PRODUCT = 14,
+    OUTDOOR_MODE = 15,
+    SUPER_LOUDNESS_MODE = 16,
+    SYSTEMLOAD_STATE_INDEX = 17,
     MAX_PARAM_INDEX,
 };
 
@@ -885,12 +892,20 @@ struct ConverterConfig : public Parcelable {
     std::string version;
     Library library;
     uint64_t outChannelLayout = 0;
+    std::vector<uint64_t> supportOutChannelLayout;
+    static constexpr int32_t MAX_OUT_CHANNEL_LAYOUT_SIZE = 1000;
 
     bool Marshalling(Parcel &parcel) const override
     {
-        return parcel.WriteString(version) &&
-            library.Marshalling(parcel) &&
-            parcel.WriteUint64(outChannelLayout);
+        parcel.WriteString(version);
+        library.Marshalling(parcel);
+        parcel.WriteUint64(outChannelLayout);
+        int32_t size = static_cast<int32_t>(supportOutChannelLayout.size());
+        parcel.WriteInt32(size);
+        for (auto &pOutChannelLayout : supportOutChannelLayout) {
+            parcel.WriteUint64(pOutChannelLayout);
+        }
+        return true;
     }
 
     static ConverterConfig *Unmarshalling(Parcel &parcel)
@@ -902,6 +917,14 @@ struct ConverterConfig : public Parcelable {
         config->version = parcel.ReadString();
         config->library.UnmarshallingSelf(parcel);
         config->outChannelLayout = parcel.ReadUint64();
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > MAX_OUT_CHANNEL_LAYOUT_SIZE) {
+            delete config;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; i++) {
+            config->supportOutChannelLayout.push_back(parcel.ReadUint64());
+        }
         return config;
     }
 };

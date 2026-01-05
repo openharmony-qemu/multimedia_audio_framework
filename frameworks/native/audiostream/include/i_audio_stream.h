@@ -81,6 +81,7 @@ public:
         int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
+        bool streamMuteFlag = false;
 
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
@@ -122,6 +123,7 @@ public:
     virtual ~IAudioStream() = default;
 
     static int32_t GetByteSizePerFrame(const AudioStreamParams &params, size_t &result);
+    static int32_t GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result);
     static bool IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params);
     static std::shared_ptr<IAudioStream> GetPlaybackStream(StreamClass streamClass, AudioStreamParams params,
         AudioStreamType eStreamType, int32_t appUid);
@@ -172,6 +174,7 @@ public:
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
     virtual int32_t GetFrameCount(uint32_t &frameCount) = 0;
     virtual int32_t GetLatency(uint64_t &latency) = 0;
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) = 0;
     virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
@@ -188,6 +191,9 @@ public:
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
     virtual int32_t SetRebuildFlag() { return 0; }
+    virtual int32_t RequestUserPrivacyAuthority(uint32_t sessionId) = 0;
+    virtual void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) = 0;
     virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
     virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
@@ -356,6 +362,9 @@ public:
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 
     virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
+
+    virtual const std::string GetBundleName() = 0;
+    virtual void SetBundleName(std::string &name) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

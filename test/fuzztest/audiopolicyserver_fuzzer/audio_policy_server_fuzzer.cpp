@@ -1017,11 +1017,12 @@ void AudioPolicyServerIsAllowedPlaybackFuzzTest()
 
     int32_t uid = GetData<int32_t>();
     int32_t pid = GetData<int32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
     bool isAllowed = GetData<bool>();
     int32_t streamUsage = GetData<StreamUsage>();
     bool silentControl = GetData<bool>();
 
-    audioPolicyServer->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
+    audioPolicyServer->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
 }
 
 void AudioPolicyServerSetVoiceRingtoneMuteFuzzTest()
@@ -1888,14 +1889,6 @@ void AudioPolicyServerUpdateTrackerFuzzTest()
     server->UpdateTracker(modeIn, streamChangeInfoIn);
 }
 
-void AudioPolicyServerFetchInputDeviceForTrackFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioStreamChangeInfo streamChangeInfoIn;
-    server->FetchInputDeviceForTrack(streamChangeInfoIn);
-}
-
 void AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2049,6 +2042,26 @@ void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest()
     callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid);
 }
 
+void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    std::string zoneName = "zone";
+    AudioZoneContext context;
+    int32_t zoneId = 0;
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
+
+    int32_t uid = GetData<int32_t>();
+    const auto count = GetData<uint32_t>();
+    std::set<int32_t> usages;
+    for (uint32_t i = 0; i < count; ++i) {
+        usages.insert(GetData<int32_t>());
+    }
+    server->AddUidUsagesToAudioZone(zoneId, uid, usages);
+    server->RemoveUidUsagesFromAudioZone(zoneId, uid, usages);
+    server->ReleaseAudioZone(zoneId);
+}
+
 TestFuncs g_testFuncs[] = {
     AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest,
     AudioPolicyServerOnAddSystemAbilityExtractFuzzTest,
@@ -2065,7 +2078,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerIsRingerModeValidFuzzTest,
     AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest,
     AudioPolicyServerAddRemoteDevstatusCallbackFuzzTest,
-    AudioPolicyServerOnReceiveEventFuzzTest,
     AudioPolicyServerSubscribeBackgroundTaskFuzzTest,
     AudioPolicyServerSubscribeCommonEventExecuteFuzzTest,
     AudioPolicyServerCheckSubscribePowerStateChangeFuzzTest,
@@ -2178,6 +2190,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest,
     AudioPolicyServerEnableAudioZoneReportFuzzTest,
     AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest,
+    AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest,
     AudioPolicyServerAddStreamToAudioZoneFuzzTest,
     AudioPolicyServerAddStreamsToAudioZoneFuzzTest,
     AudioPolicyServerSetZoneDeviceVisibleFuzzTest,
@@ -2217,7 +2230,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerCreateCapturerClientFuzzTest,
     AudioPolicyServerRegisterTrackerFuzzTest,
     AudioPolicyServerUpdateTrackerFuzzTest,
-    AudioPolicyServerFetchInputDeviceForTrackFuzzTest,
     AudioPolicyServerGetCurrentRendererChangeInfosFuzzTest,
     AudioPolicyServerGetCurrentCapturerChangeInfosFuzzTest,
     AudioPolicyServerRegisteredTrackerClientDiedFuzzTest,

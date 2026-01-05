@@ -60,7 +60,7 @@ void NapiAudioSceneChangedCallback::SaveCallbackReference(const std::string &cal
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
-
+    std::string taskName = "NapiAudioSceneChangedCallback::destroy";
     CHECK_AND_RETURN_LOG(callbackName == AUDIO_SCENE_CHANGE_CALLBACK_NAME,
         "Unknown callback type: %{public}s", callbackName.c_str());
     for (auto &item : audioSceneChangeCbList_) {
@@ -73,7 +73,7 @@ void NapiAudioSceneChangedCallback::SaveCallbackReference(const std::string &cal
 
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr, "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     audioSceneChangeCbList_.push_back(cb);
     AUDIO_INFO_LOG("save callback ref success, list size [%{public}zu]", audioSceneChangeCbList_.size());
 }

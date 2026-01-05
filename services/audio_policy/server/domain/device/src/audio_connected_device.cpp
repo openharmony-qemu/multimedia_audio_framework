@@ -26,8 +26,12 @@
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
 #include "media_monitor_manager.h"
-
 #include "audio_policy_utils.h"
+#include "audio_zone_service.h"
+
+#ifdef FEATURE_DEVICE_MANAGER
+#include "device_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -257,8 +261,7 @@ void AudioConnectedDevice::SetDisplayName(const std::string &deviceName, bool is
 void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
-    AUDIO_INFO_LOG("Entry. deviceName_=%{public}s, dmDeviceType_=%{public}d",
-        dmDevice.deviceName_.c_str(), dmDevice.dmDeviceType_);
+    AUDIO_INFO_LOG("Entry. dmDeviceType_=%{public}d", dmDevice.dmDeviceType_);
     lock_guard<mutex> lg(dmDeviceMtx_);
     if (isConnect) {
         dmDeviceMap_[dmDevice.networkId_] = dmDevice;
@@ -269,6 +272,9 @@ void AudioConnectedDevice::UpdateDmDeviceMap(DmDevice &&dmDevice, bool isConnect
             (*it)->displayName_ = dmDevice.deviceName_;
             (*it)->deviceName_ = dmDevice.deviceName_;
             (*it)->dmDeviceType_ = dmDevice.dmDeviceType_;
+            if (dmDevice.dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR) {
+                (*it)->model_ = "hicar";
+            }
         }
     } else {
         dmDeviceMap_.erase(dmDevice.networkId_);
@@ -298,6 +304,9 @@ void AudioConnectedDevice::UpdateDeviceDesc4DmDevice(AudioDeviceDescriptor &devi
             deviceDesc.dmDeviceType_ = it->second.dmDeviceType_;
             deviceDesc.deviceName_ = it->second.deviceName_;
             deviceDesc.displayName_ = it->second.deviceName_;
+            if (it->second.dmDeviceType_ == DistributedHardware::DEVICE_TYPE_CAR) {
+                deviceDesc.model_ = "hicar";
+            }
         }
     }
 }
@@ -464,7 +473,8 @@ static std::string GetSha256EncryptAddress(const std::string& address)
 {
     const int32_t HexWidth = 2;
     unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char *>(address.c_str()), address.size(), hash);
+    AudioSecureHash::AudioSecureHashAlgo(reinterpret_cast<const unsigned char *>(address.c_str()),
+        address.size(), hash);
     std::stringstream ss;
     for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
         ss << std::hex << std::setw(HexWidth) << std::setfill('0') << (int32_t)hash[i];
@@ -511,7 +521,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceTy
     CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
     std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
     CHECK_AND_RETURN_RET(device == nullptr, device);
-    
+
+    device = AudioZoneService::GetInstance().GetDeviceDescriptor(type, networkId);
+    CHECK_AND_RETURN_RET(device == nullptr, device);
+
     device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);
     device->networkId_ = networkId;
     AUDIO_ERR_LOG("Get device failed, make new %{public}s", device->GetName().c_str());

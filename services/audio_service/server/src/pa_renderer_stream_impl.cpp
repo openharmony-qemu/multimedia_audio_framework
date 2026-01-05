@@ -772,6 +772,8 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
     CHECK_AND_RETURN_LOG(streamImpl, "PAStreamWriteCb: userdata is null");
+    CHECK_AND_RETURN_LOG(streamImpl->sendDataEnabled_.load(),
+        "Send data disabled, sessionId %{public}u", streamImpl->streamIndex_);
 
     Trace trace("PaRendererStreamImpl::PAStreamWriteCb sink-input:" + std::to_string(streamImpl->sinkInputIndex_) +
         " length:" + std::to_string(length));
@@ -1332,6 +1334,11 @@ void PaRendererStreamImpl::BlockStream() noexcept
 {
     return;
 }
+
+void PaRendererStreamImpl::SetSendDataEnabled(bool enabled)
+{
+    sendDataEnabled_.store(enabled);
+}
 // offload end
 
 int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
@@ -1369,6 +1376,12 @@ void PaRendererStreamImpl::UpdatePaTimingInfo()
     } else {
         AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
     }
+}
+
+int32_t PaRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -46,6 +46,8 @@ public:
     MOCK_METHOD(AudioStreamInfo, GetStreamInfo, (), (override));
     MOCK_METHOD(uint32_t, GetAudioSessionId, (), (override));
     MOCK_METHOD(AudioStreamType, GetAudioStreamType, (), (override));
+    MOCK_METHOD(StreamUsage, GetUsage, (), (override));
+    MOCK_METHOD(SourceType, GetSource, (), (override));
 
     MOCK_METHOD(void, SetInnerCapState, (bool isInnerCapped, int32_t innerCapId), (override));
     MOCK_METHOD(bool, GetInnerCapState, (int32_t innerCapId), (override));
@@ -1298,26 +1300,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_047, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_048
- * @tc.desc  : Test AudioEndpointInner::GetFastSource()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_048, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::string networkId = "RemoteDevice";
-    IAudioSourceAttr attr = {};
-    audioEndpointInner->GetFastSource(networkId, type, attr);
-}
-
-/*
  * @tc.name  : Test MockCallbacks API
  * @tc.type  : FUNC
  * @tc.number: MockCallbacks_049
@@ -1805,6 +1787,123 @@ HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Leve
         .Times(1)
         .WillOnce(Return());
     audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamChange_001
+ * @tc.desc  : Test AudioEndpointInner::NotifyStreamChange() for playback
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
+{
+    auto testEndpoint = std::make_shared<AudioEndpointInner>(
+        AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_PLAYBACK);
+
+    // Call config to init sink
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int32_t pin = 0;
+    testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
+
+    MockAudioProcessStream mockProcessStream;
+    EXPECT_CALL(mockProcessStream, GetUsage()).WillOnce(Return(StreamUsage::STREAM_USAGE_MUSIC));
+    testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamChange_002
+ * @tc.desc  : Test AudioEndpointInner::NotifyStreamChange() for record
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
+{
+    auto testEndpoint = std::make_shared<AudioEndpointInner>(
+        AudioEndpoint::TYPE_MMAP, TEST_ENDPOINT_ID, AUDIO_MODE_RECORD);
+
+    // Call config to init source
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int32_t pin = 0;
+    testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
+
+    MockAudioProcessStream mockProcessStream;
+    EXPECT_CALL(mockProcessStream, GetSource()).WillOnce(Return(SourceType::SOURCE_TYPE_MIC));
+    testEndpoint->NotifyStreamChange(STREAM_CHANGE_TYPE_ADD, &mockProcessStream, RENDERER_PREPARED);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSourceAttr_001
+ * @tc.desc  : Test AudioEndpointInner::InitSourceAttr()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSourceAttr_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    IAudioSourceAttr attr;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "usb");
+
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_MIC;
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "primary");
+
+    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
+    attr = audioEndpointInner->InitSourceAttr(deviceInfo);
+    EXPECT_EQ(attr.adapterName, "remote");
+}
+
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_001
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+    std::string adapterName = "";
+    int32_t pin = 0;
+
+    IAudioSinkAttr attr;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
+    EXPECT_EQ(attr.adapterName, "usb");
+
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
+    EXPECT_EQ(attr.adapterName, "primary");
+
+    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
+    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
+    EXPECT_EQ(attr.adapterName, "remote");
 }
 } // namespace AudioStandard
 } // namespace OHOS

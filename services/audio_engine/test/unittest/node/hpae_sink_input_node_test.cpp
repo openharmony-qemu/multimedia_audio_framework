@@ -232,13 +232,14 @@ HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputDataCase, TestSize.Level
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     std::shared_ptr<WriteFixedDataCb> writeFixedDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_F32LE);
     hpaeSinkInputNode->RegisterWriteCallback(writeFixedDataCb);
+    int32_t offset = writeFixedDataCb->writeNum_;
     for (int32_t i = 0; i < testNum; i++) {
         OutputPort<HpaePcmBuffer *> *outputPort = hpaeSinkInputNode->GetOutputPort();
         HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
         float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
         for (int32_t j = 0; j < nodeInfo.frameLen; j++) {
             for (int32_t k = 0; k < nodeInfo.channels; k++) {
-                float diff = outputPcmData[j * nodeInfo.channels + k] - i;
+                float diff = outputPcmData[j * nodeInfo.channels + k] - offset - i;
                 EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
             }
         }
@@ -260,13 +261,14 @@ HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase, T
     hpaeSinkInputNode->RegisterWriteCallback(writeFixedDataCb);
     hpaeSinkOutputNode->Connect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1 + 1);
+    int32_t offset = writeFixedDataCb->writeNum_;
     for (int32_t i = 0; i < testNum; i++) {
         OutputPort<HpaePcmBuffer *> *outputPort = hpaeSinkInputNode->GetOutputPort();
         HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
         float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
         for (int32_t j = 0; j < nodeInfo.frameLen; j++) {
             for (int32_t k = 0; k < nodeInfo.channels; k++) {
-                float diff = outputPcmData[j * nodeInfo.channels + k] - i;
+                float diff = outputPcmData[j * nodeInfo.channels + k] - offset - i;
                 EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
             }
         }

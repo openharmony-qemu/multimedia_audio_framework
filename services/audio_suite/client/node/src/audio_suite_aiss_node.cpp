@@ -46,11 +46,6 @@ int32_t AudioSuiteAissNode::DoProcess()
     CHECK_AND_RETURN_RET_LOG(GetAudioNodeDataFinishedFlag() != true, SUCCESS, "AudioSuiteProcessNode"
         "DoProcess:Current node type = %{public}d does not have more data to process.", GetNodeType());
     CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "AudioSuiteAissNode init failed");
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
 
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
@@ -58,17 +53,21 @@ int32_t AudioSuiteAissNode::DoProcess()
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
             "do SignalProcess.", GetNodeType());
         Trace trace("AudioSuiteAissNode::SignalProcess Start");
+        auto startTime = std::chrono::steady_clock::now();
         tempOut = SignalProcess(preOutputs);
         trace.End();
         if (tempOut == nullptr) {
-            AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d do SignalProcess failed, "
-                "return a nullptr", GetNodeType());
+            AUDIO_ERR_LOG("AudioSuiteAissNode::DoProcess: do SignalProcess failed, return a nullptr");
             return ERR_OPERATION_FAILED;
         }
         tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
-        outputStream_->WriteDataToOutput(&tmpHumanSoundOutput_);
-        outputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
+        outputStream_.WriteDataToOutput(&tmpHumanSoundOutput_);
+        outputStream_.WriteDataToOutput(&tmpBkgSoundOutput_);
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(tempOut->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d signalProcess "
             "is not enabled.", GetNodeType());
@@ -81,8 +80,8 @@ int32_t AudioSuiteAissNode::DoProcess()
         tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpHumanSoundOutput_ = *tempOut;
         tmpBkgSoundOutput_ = *tempOut;
-        outputStream_->WriteDataToOutput(tempOut);
-        outputStream_->WriteDataToOutput(tempOut);
+        outputStream_.WriteDataToOutput(tempOut);
+        outputStream_.WriteDataToOutput(tempOut);
     } else {
         AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d can't get "
             "pcmbuffer from prenodes", GetNodeType());
@@ -97,13 +96,10 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
     }
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     if (!aissAlgo_) {
         aissAlgo_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
-    }
-    
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
 
     if (aissAlgo_->Init() != SUCCESS) {

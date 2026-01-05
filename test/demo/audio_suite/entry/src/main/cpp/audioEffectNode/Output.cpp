@@ -38,7 +38,7 @@ OH_AudioSuite_Result RenDerFrame()
 
     char *totalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     char *tapTotalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
-    // 获取位深
+    // Get bit depth
     int32_t bitsPerSample = GetBitsPerSample(g_audioFormatOutput.sampleFormat);
     int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate *
         g_audioFormatOutput.channelCount * bitsPerSample / BITS_PER_BYTE / MILLISECONDS_PER_SECOND;
@@ -54,7 +54,7 @@ OH_AudioSuite_Result StartPipelineAndCheckState(OH_AudioSuitePipeline *audioSuit
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest renDerFrame start-"
                                                                "audioSuitePipeline:%{public}p", audioSuitePipeline);
 
-    // 启动管线
+    // Start the pipeline
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_StartPipeline(audioSuitePipeline);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,
                  "audioEditTest OH_audioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
@@ -62,7 +62,7 @@ OH_AudioSuite_Result StartPipelineAndCheckState(OH_AudioSuitePipeline *audioSuit
         return result;
     }
 
-    // 获取管线状态
+    // Obtains pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     result = OH_AudioSuiteEngine_GetPipelineState(audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,

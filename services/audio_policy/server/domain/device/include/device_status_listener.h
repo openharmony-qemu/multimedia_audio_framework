@@ -36,6 +36,8 @@ public:
     DeviceStatusListener(IDeviceStatusObserver &observer);
     ~DeviceStatusListener();
 
+    static void ParseModelFromProtocol(const std::string &info, DStatusInfo &statusInfo);
+
     int32_t RegisterDeviceStatusListener();
     int32_t UnRegisterDeviceStatusListener();
 

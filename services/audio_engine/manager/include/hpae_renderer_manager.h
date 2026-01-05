@@ -121,7 +121,7 @@ private:
     void ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void ConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
-    void DisConnectOutputCluster(HpaeProcessorType sceneType);
+    void DisConnectOutputCluster(HpaeProcessorType sceneType, const bool isNeedInitEffectBuffer = false);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     void DereferenceInputCluster(uint32_t sessionId);
@@ -153,6 +153,8 @@ private:
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
+    void StopOuputNode();
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
 
 private:
 

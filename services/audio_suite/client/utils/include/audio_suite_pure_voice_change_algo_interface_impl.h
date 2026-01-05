@@ -21,7 +21,6 @@
 
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
-#include "audio_suite_log.h"
 #include <utility>
 #include <dlfcn.h>
 #include "audio_errors.h"
@@ -82,6 +81,7 @@ private:
     char *handle_ = nullptr;
     char *scratchBuf_ = nullptr;
     void *libHandle_{nullptr};
+    AudioSuiteLibraryManager algoLibrary_;
 };
 
 }  // namespace AudioSuite

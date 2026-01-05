@@ -1217,7 +1217,9 @@ HWTEST(AudioPolicyUnitTest, MaxOrMinVolumeOption_001, TestSize.Level1)
     int32_t volLevel = 20;
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
-    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
+    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 0);
+    EXPECT_FALSE(result);
+    result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 1);
     EXPECT_FALSE(result);
 }
 
@@ -2257,35 +2259,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_086, TestSize.Level1)
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RUNNING;
     ret = server->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_087
-* @tc.desc  : Test FetchOutputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_087, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    server->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_088
-* @tc.desc  : Test FetchInputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_088, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    server->FetchInputDeviceForTrack(streamChangeInfo);
 }
 
 /**
@@ -3754,6 +3727,65 @@ HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
 
     constexpr int32_t UID_MCU = 7500;
     EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MCU));
+}
+
+/**
+* @tc.name  : Test GetSystemSoundPath.
+* @tc.number: GetSystemSoundPath_001
+* @tc.desc  : Test GetSystemSoundPath.
+*/
+HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string ret = "";
+    server->GetSystemSoundPath(0, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(1, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(2, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(-1, ret);
+    EXPECT_EQ(ret, "");
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::OnStart.
+* @tc.number: OnStart_001
+* @tc.desc  : Publish() is skipped when isUT_ is true.
+*/
+HWTEST(AudioPolicyUnitTest, OnStart_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->isUT_ = true;
+    server->OnStart();
+    EXPECT_TRUE(server->isUT_);
+    EXPECT_FALSE(server->IsPublishCalled());
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::OnStart.
+* @tc.number: OnStart_002
+* @tc.desc  : Publish() is not skipped when isUT_ is false.
+*/
+HWTEST(AudioPolicyUnitTest, OnStart_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    server->isUT_ = false;
+    server->OnStart();
+    EXPECT_FALSE(server->isUT_);
+    EXPECT_TRUE(server->IsPublishCalled());
 }
 } // AudioStandard
 } // OHOS

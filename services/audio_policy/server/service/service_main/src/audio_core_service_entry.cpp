@@ -99,7 +99,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
+    HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
@@ -127,15 +127,21 @@ std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t ses
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
+std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetModuleNameBySessionId(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
@@ -328,8 +334,9 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_WARNING_LOG("withlock mac[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
-        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
+    HILOG_COMM_WARN("[OnDeviceInfoUpdated]withlock mac[%{public}s] type[%{public}d] command: %{public}d "
+        "category[%{public}d] connectState[%{public}d] isEnable[%{public}d]",
+        GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     coreService_->OnDeviceInfoUpdated(desc, command);
 }
@@ -521,15 +528,6 @@ std::vector<sptr<VolumeGroupInfo>> AudioCoreService::EventEntry::GetVolumeGroupI
     return infos;
 }
 
-void AudioCoreService::EventEntry::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-}
-
-void AudioCoreService::EventEntry::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-}
-
 int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -646,6 +644,7 @@ void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &rea
 
 int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->CaptureConcurrentCheck(sessionId);
 }
@@ -656,6 +655,14 @@ void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_p
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->HandleDeviceConfigChanged(selectedAudioDevice);
+}
+
+void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType,
+    bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
 }
 }

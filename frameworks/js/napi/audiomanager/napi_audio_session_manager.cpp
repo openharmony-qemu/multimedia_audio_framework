@@ -103,6 +103,8 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("clearSelectedMediaInputDevice", ClearSelectedMediaInputDevice),
         DECLARE_NAPI_FUNCTION("setBluetoothAndNearlinkPreferredRecordCategory", PreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("getBluetoothAndNearlinkPreferredRecordCategory", GetPreferBluetoothAndNearlinkRecord),
+        DECLARE_NAPI_FUNCTION("enableMuteSuggestionWhenMixWithOthers", EnableMuteSuggestionWhenMixWithOthers),
+        DECLARE_NAPI_FUNCTION("isOtherMediaPlaying", IsOtherMediaPlaying),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -237,6 +239,31 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         NapiParamUtils::SetValueInt32(env, context->intValue, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "DeactivateAudioSession", executor, complete);
+}
+
+napi_value NapiAudioSessionMgr::IsOtherMediaPlaying(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("IsOtherMediaPlaying failed : no memory");
+        NapiParamUtils::SetValueBoolean(env, false, result);
+        return result;
+    }
+    context->GetCbInfo(env, info);
+
+    CHECK_AND_RETURN_RET_LOG(CheckContextStatus(context), result,  "context object state is error.");
+    auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+    ObjectRefMap objectGuard(obj);
+    auto *napiSessionMgr = objectGuard.GetPtr();
+    if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+        NapiParamUtils::SetValueBoolean(env, false, result);
+        return result;
+    }
+    context->isActive = napiSessionMgr->audioSessionMngr_->IsOtherMediaPlaying();
+    NapiParamUtils::SetValueBoolean(env, context->isActive, result);
+    return result;
 }
 
 napi_value NapiAudioSessionMgr::IsAudioSessionActivated(napi_env env, napi_callback_info info)
@@ -1031,6 +1058,38 @@ napi_value NapiAudioSessionMgr::GetPreferBluetoothAndNearlinkRecord(napi_env env
 
     auto ret = napiSessionMgr->audioSessionMngr_->GetPreferBluetoothAndNearlinkRecord();
     NapiParamUtils::SetValueInt32(env, ret, result);
+    return result;
+}
+
+napi_value NapiAudioSessionMgr::EnableMuteSuggestionWhenMixWithOthers(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiSessionMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM, "argcCount invalid"), "argcCount invalid");
+
+    bool enable = false;
+    napi_status status = NapiParamUtils::GetValueBoolean(env, enable, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG((status == napi_ok), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+        "parameter verification failed: enable wrong value"),
+        "valueType invalid");
+
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM, "can not get session"), "napiSessionMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM, "can not get session"), "audioSessionMngr_ is nullptr");
+
+    int32_t ret = napiSessionMgr->audioSessionMngr_->EnableMuteSuggestionWhenMixWithOthers(enable);
+    if (ret == ERROR_ILLEGAL_STATE) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, illegal state ret = %{public}d", ret);
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE);
+    } else if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM);
+    }
+
     return result;
 }
 

@@ -216,5 +216,37 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_016, TestSize.Level1)
     auto ret = deviceStatusListenerPtr->UnRegisterDeviceStatusListener();
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: DeviceStatusListener_017
+ * @tc.desc  : Test DeviceStatusListener::ParseModelFromProtocol().
+ */
+HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_017, TestSize.Level1)
+{
+    // Test1
+    DStatusInfo statusInfo;
+    std::string info = "SOME_KEY=123;ANOTHER_KEY=456";
+    DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
+    EXPECT_EQ(statusInfo.model, "unknown");
+
+    // Test2
+    info = "PROTOCOL=0;VERSION=1.0";
+    statusInfo.model = "unknowm";
+    DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
+    EXPECT_EQ(statusInfo.model, "hiplay");
+
+    // Test3
+    info = "PROTOCOL=2;VERSION=1.0";
+    statusInfo.model = "unknowm";
+    DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
+    EXPECT_EQ(statusInfo.model, "unknown");
+
+    // Test4
+    info = "PROTOCOL=0";
+    statusInfo.model = "unknowm";
+    DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
+    EXPECT_EQ(statusInfo.model, "hiplay");
+}
 } // namespace AudioStandard
 } // namespace OHOS

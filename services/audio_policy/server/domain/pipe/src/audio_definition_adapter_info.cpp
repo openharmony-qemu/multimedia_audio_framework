@@ -296,6 +296,21 @@ void AudioPolicyConfigData::RegisterStreamProperty(
     Reorganize();
 }
 
+AudioPin AudioPolicyConfigData::DecideAudioPin(DeviceType type, DeviceRole role)
+{
+    auto tmp = std::make_pair(type, role);
+    CHECK_AND_RETURN_RET_LOG(deviceInfoMap.find(tmp) != deviceInfoMap.end(), AUDIO_PIN_NONE,
+        "not find deviceType: %{public}d, role: %{public}d", type, role);
+    const auto &deviceInfos = deviceInfoMap[tmp];
+    for (std::shared_ptr<AdapterDeviceInfo> deviceInfo : deviceInfos) {
+        if (deviceInfo->type_ == type && deviceInfo->role_ == role) {
+            AUDIO_INFO_LOG("type: %{public}d, role: %{public}d, pin: %{public}d", type, role, deviceInfo->pin_);
+            return deviceInfo->pin_;
+        }
+    }
+    return AUDIO_PIN_NONE;
+}
+
 PolicyAdapterInfo::PolicyAdapterInfo()
 {
     AUDIO_INFO_LOG("in");

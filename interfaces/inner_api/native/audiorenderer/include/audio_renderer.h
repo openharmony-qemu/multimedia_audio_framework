@@ -292,7 +292,7 @@ public:
      * after played once. Setting it to -1 indicates continuous looping.
      * @since 22
      */
-    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) = 0;
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes = 0) { return -1; }
 
     /**
      * @brief Sets audio privacy type.
@@ -1172,9 +1172,21 @@ public:
      */
     virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
+    /**
+     * @brief Gets audio renderer latency with specific flag.
+     *
+     * @param latency Indicates latency (in frames) corresponding to requested flag.
+     * @param flag Indicates latency flag defined in {@link LatencyFlag}.
+     * @return Returns {@link SUCCESS} if the getting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const { return -1; }
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
+    static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);
     static std::mutex createRendererMutex_;
 };
 }  // namespace AudioStandard

@@ -4,7 +4,7 @@
 
 #include "AudioSuiteError.h"
 
-// 错误信息映射表
+// Error Message Mapping Table
 const std::map<AudioSuiteResult, std::string> errorMessages = {
     {AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR,
         "node manager operation error"},
@@ -53,7 +53,7 @@ const std::map<AudioSuiteResult, std::string> errorMessages = {
         "Demo create node error"},
 };
 
-// 获取错误码对应的错误信息
+// Get the error message corresponding to the error code
 std::string GetErrorMessage(AudioSuiteResult result)
 {
     auto it = errorMessages.find(result);

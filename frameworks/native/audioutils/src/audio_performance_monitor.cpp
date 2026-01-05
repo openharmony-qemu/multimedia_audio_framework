@@ -26,6 +26,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_utils_c.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,8 +92,8 @@ void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    HILOG_COMM_WARN("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
-        adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
+    HILOG_COMM_WARN("[ReportWriteSlow]AdapterType %{public}d, PipeType %{public}d, write time "
+        "interval %{public}d ms! overTime!", adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
     AUTO_CTRACE("Fast pipe OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d", overtimeMs,
         PIPE_TYPE_MAP[adapterType], adapterType);
     ReportEvent(OVERTIME_EVENT, overtimeMs, PIPE_TYPE_MAP[adapterType], adapterType);
@@ -179,8 +180,9 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
                 printStr += silenceDetectMap_[sessionId].historyStateDeque.front() ? "_" : "-";
                 silenceDetectMap_[sessionId].historyStateDeque.pop_front();
             }
-            HILOG_COMM_WARN("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
-                sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
+            HILOG_COMM_WARN("[JudgeNoise]record %{public}d state, pipeType %{public}d for"
+                "last %{public}zu times: %{public}s", sessionId, silenceDetectMap_[sessionId].pipeType,
+                MAX_RECORD_QUEUE_SIZE, printStr.c_str());
             AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());
             AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
@@ -203,7 +205,7 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     AudioPipeType pipeType = PIPE_TYPE_MAP[adapterType];
     for (auto item : silenceDetectMap_) {
         if (item.second.isRunning && item.second.pipeType == pipeType) {
-            std::string name = GetBundleNameByToken(item.second.tokenId);
+            std::string name = AudioBundleManager::GetBundleNameByToken(item.second.tokenId);
             hapNames << name << ";";
         }
     }

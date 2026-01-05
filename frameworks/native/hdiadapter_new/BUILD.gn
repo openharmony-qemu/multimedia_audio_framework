@@ -41,6 +41,7 @@ ohos_shared_library("hdiadapter_new") {
     "../../../services/audio_policy/server/infra/datashare/include",
     "../../../services/audio_service/common/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../audiodefinitions/include",
     "../audioutils/include",
     "../audioeffect/include",
     "../audioschedule/include",
@@ -53,6 +54,7 @@ ohos_shared_library("hdiadapter_new") {
     "manager/hdi_adapter_factory.cpp",
     "manager/hdi_adapter_manager.cpp",
     "manager/hdi_monitor.cpp",
+    "sink/i_audio_render_sink.cpp",
     "sink/audio_render_sink.cpp",
     "sink/bluetooth_audio_render_sink.cpp",
     "sink/direct_audio_render_sink.cpp",
@@ -60,6 +62,7 @@ ohos_shared_library("hdiadapter_new") {
     "sink/file_audio_render_sink.cpp",
     "sink/multichannel_audio_render_sink.cpp",
     "sink/offload_audio_render_sink.cpp",
+    "source/i_audio_capture_source.cpp",
     "source/audio_capture_source.cpp",
     "source/bluetooth_audio_capture_source.cpp",
     "source/fast_audio_capture_source.cpp",
@@ -85,9 +88,11 @@ ohos_shared_library("hdiadapter_new") {
     "hisysevent:libhisysevent",
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
@@ -173,6 +178,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "-Werror",
     "-fno-access-control",
   ]
+  defines = []
 
   include_dirs = [
     "include",
@@ -193,32 +199,50 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/sink/file_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/multichannel_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/offload_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
-    "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
     "test/unittest/source/audio_capture_source_unit_test.cpp",
     "test/unittest/source/va_capture_source_unit_test.cpp",
     "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/file_audio_capture_source_unit_test.cpp",
-    "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
-    "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/wakeup_audio_capture_source_unit_test.cpp",
     "test/unittest/util_unit_test.cpp",
   ]
 
   deps = [
-      ":hdiadapter_new",
-      "../audioclock:audio_clock",
-      "../audioutils:audio_utils",
+    ":hdiadapter_new",
+    "../audioclock:audio_clock",
+    "../audioutils:audio_utils",
   ]
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
+    "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "googletest:gmock",
     "googletest:gtest",
+    "hdf_core:libhdf_ipc_adapter",
+    "hilog:libhilog",
   ]
+
+  defines = []
+
+  if (audio_framework_feature_power_manager) {
+    sources += [ "util/audio_running_lock.cpp" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+    external_deps += [ "power_manager:powermgr_client" ]
+  }
+  
+  if (audio_framework_feature_distributed_audio) {
+    sources += [
+      "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
+      "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
+      "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
+      "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
+      "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
+    ]
+    external_deps += [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
+    defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"

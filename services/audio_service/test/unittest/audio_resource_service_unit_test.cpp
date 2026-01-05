@@ -485,6 +485,58 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_002, TestSize
 }
 
 /**
+ * @tc.name  : Test WorkgroupRendererMonitor
+ * @tc.type  : FUNC
+ * @tc.number: WorkgroupRendererMonitor
+ * @tc.desc  : Test WorkgroupRendererMonitor when allow status changed
+ */
+HWTEST(AudioResourceServiceUnitTest, WorkgroupRendererMonitor_003, TestSize.Level0)
+{
+    int32_t testPid1 = 321;
+    int32_t testPid2 = 123;
+    int32_t testPid3 = 132;
+    int32_t testPid4 = 312;
+ 
+    audioResourceService.allowWorkgroupPidSet_.clear();
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 0);
+ 
+    audioResourceService.allowWorkgroupPidSet_.insert(testPid3);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 1);
+ 
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, true);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 2);
+ 
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = true;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, false);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 1);
+ 
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = true;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, false);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 1);
+ 
+    audioResourceService.allowWorkgroupPidSet_.insert(testPid4);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 2);
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, true);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 2);
+ 
+    audioResourceService.allowWorkgroupPidSet_.clear();
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 0);
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = true;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, false);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 0);
+ 
+    audioResourceService.audioWorkgroupMap_[testPid1].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid1, true);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 1);
+ 
+    audioResourceService.audioWorkgroupMap_[testPid2].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid2, true);
+    EXPECT_EQ(audioResourceService.allowWorkgroupPidSet_.size(), 2);
+}
+
+/**
  * @tc.name  : Test RegisterAudioWorkgroupMonitor
  * @tc.type  : FUNC
  * @tc.number: RegisterAudioWorkgroupMonitor_003
@@ -796,7 +848,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
         audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
     }
     EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
-    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), SUCCESS);
 }
 
 /**
@@ -847,7 +899,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
         service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
     }
     int32_t pid = 8888;
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
 }
 
 /**

@@ -36,6 +36,12 @@ static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuStat
     {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, {ACTIVE, INTERRUPT_HINT_NONE}}
 };
 
+static const std::map<std::pair<SourceType, SourceType>, InterruptHint> ULTRASONIC_STRATEGY_MAP = {
+    {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, INTERRUPT_HINT_NONE},
+    {{SOURCE_TYPE_VOICE_COMMUNICATION, SOURCE_TYPE_ULTRASONIC}, INTERRUPT_HINT_NONE},
+    {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, INTERRUPT_HINT_NONE}
+};
+
 void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
@@ -96,6 +102,35 @@ void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &
     }
     CeliaCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent, bundleName);
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
+}
+
+void AudioInterruptCustom::UpdateUltraSonicCustomFocus(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    SourceType activeSourceType = currentInterrupt.audioFocusType.sourceType;
+    if (activeSourceType != SOURCE_TYPE_ULTRASONIC && incomingSourceType != SOURCE_TYPE_ULTRASONIC) {
+        return;
+    }
+    if (focusEntry.hintType != INTERRUPT_HINT_STOP && focusEntry.hintType != INTERRUPT_HINT_PAUSE) {
+        return;
+    }
+    if (!SolePipe::IsSolePipeSource(SOURCE_TYPE_ULTRASONIC)) {
+        return;
+    }
+
+    std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
+    if (ULTRASONIC_STRATEGY_MAP.count(ultraSonicFocus) > 0) {
+        AUDIO_INFO_LOG("activeSourceType %{public}d incomingSourceType %{public}d set activeState is %{public}d",
+            activeSourceType, incomingSourceType, ULTRASONIC_STRATEGY_MAP.at(ultraSonicFocus));
+        focusEntry.hintType = ULTRASONIC_STRATEGY_MAP.at(ultraSonicFocus);
+    }
+}
+
+void AudioInterruptCustom::UpdateCustomFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    UpdateUltraSonicCustomFocus(currentInterrupt, incomingInterrupt, focusEntry);
 }
 
 } // namespace AudioStandard

@@ -29,6 +29,7 @@
 #include "message_parcel.h"
 #include "parcel.h"
 #include "audio_stream_enum.h"
+#include "oh_audio_buffer.h"
 
 using namespace testing::ext;
 
@@ -941,16 +942,16 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_037, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     float duckFactor = 0.2f;
 
-    auto ret1 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret1 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret2 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     ipcStreamInServerRet.ConfigRenderer();
-    auto ret3 = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret3 = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 
@@ -1457,7 +1458,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_064, TestSize.Level1)
         ipcStreamInServerRet.streamListenerHolder_);
     ASSERT_TRUE(ipcStreamInServerRet.rendererInServer_ != nullptr);
 
-    auto result = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto result = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
@@ -1678,7 +1679,7 @@ HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_002, TestSize.Level1)
 
     ipcStreamInServerRet.ConfigRenderer();
     ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
-    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, EAC3_PLAYBACK);
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, HWDECODING_PLAYBACK);
 }
 
 /**
@@ -1772,6 +1773,7 @@ HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
  
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.rendererInServer_->audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     auto ret = ipcStreamInServerRet.Start();
     EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
@@ -2124,7 +2126,7 @@ HWTEST(IpcStreamInServerUnitTest, SetDuckFactor_001, TestSize.Level3)
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
 
-    auto ret = ipcStreamInServerRet.SetDuckFactor(duckFactor);
+    auto ret = ipcStreamInServerRet.SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2202,6 +2204,33 @@ HWTEST(IpcStreamInServerUnitTest, UpdatePlaybackCaptureConfig_001, TestSize.Leve
 
     auto ret = ipcStreamInServerRet.UpdatePlaybackCaptureConfig(config);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test RequestHandleData API
+ * @tc.type  : FUNC
+ * @tc.number: RequestHandleData_001
+ * @tc.desc  : Test RequestHandleData interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, RequestHandleData_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    uint64_t syncFramePts = 0;
+    uint32_t size = 0;
+    int32_t ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ret = ipcStreamInServerRet.RequestHandleData(syncFramePts, size);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2434,42 +2463,6 @@ HWTEST(IpcStreamInServerUnitTest, SetTarget_001, TestSize.Level1)
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     result = ipcStreamInServerRet.SetTarget(target, ret);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: PreSetLoopTimes
- * @tc.desc  : Test PreSetLoopTimes interface.
- */
-HWTEST(IpcStreamInServerUnitTest, PreSetLoopTimes_001, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
-        ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: PreSetLoopTimes
- * @tc.desc  : Test PreSetLoopTimes interface.
- */
-HWTEST(IpcStreamInServerUnitTest, PreSetLoopTimes_002, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.PreSetLoopTimes(10), ERR_OPERATION_FAILED);
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
-        ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_NE(ipcStreamInServerRet.PreSetLoopTimes(10), SUCCESS);
 }
 
 /**

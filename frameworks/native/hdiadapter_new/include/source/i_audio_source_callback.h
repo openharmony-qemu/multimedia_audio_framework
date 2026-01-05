@@ -12,19 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OFFLIEN_STREAM_IN_SERVER_FUZZ_H
-#define OFFLIEN_STREAM_IN_SERVER_FUZZ_H
 
-#include "offline_stream_in_server.h"
+#ifndef I_AUDIO_SOURCE_CALLBACK_H
+#define I_AUDIO_SOURCE_CALLBACK_H
+
+#include <string>
 #include "audio_info.h"
+#include "audio_errors.h"
+#include "audio_engine_callback_types.h"
+
 namespace OHOS {
 namespace AudioStandard {
-class OfflineStreamInServerFuzzTest {
+class IAudioSourceCallback {
 public:
-    void OfflineStreamInServerFuzz();
-    std::vector<std::function<void()>> Funcs_;
-    std::shared_ptr<OfflineStreamInServer> offlineStreamInServer_;
+    virtual ~IAudioSourceCallback() = default;
+    virtual void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
+        const std::string &condition, const std::string &value) {}
+    virtual void OnCaptureState(bool isActive) {}
+    virtual void OnWakeupClose(void) {}
+    virtual void OnInputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) {};
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // OFFLIEN_STREAM_IN_SERVER_FUZZ_H
+
+#endif // I_AUDIO_SOURCE_CALLBACK_H

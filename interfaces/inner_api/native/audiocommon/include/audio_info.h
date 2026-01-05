@@ -34,6 +34,7 @@
 #include <audio_stream_info.h>
 #include <audio_asr.h>
 #include "audio_shared_memory.h"
+#include "audio_pipe_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -79,6 +80,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
+constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128K
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
 
@@ -98,7 +100,13 @@ const char* OFFLOAD_CAPTURER_SOURCE = "InnerCapturerSource";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
+
+// For ipc
+constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
 }
+
+// For common stream
+constexpr uint32_t STREAM_ID_INVALID = 0;
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
@@ -355,6 +363,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
@@ -416,6 +425,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+    CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
 };
 
@@ -481,6 +491,7 @@ struct StreamVolumeEvent : public Parcelable {
     int32_t volumeGroupId = -1;
     int32_t previousVolume = -1;
     std::string networkId = "";
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     bool Marshalling(Parcel &parcel) const override
     {
@@ -548,6 +559,7 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
     PLAYER_TYPE_TONE_PLAYER = 1003,
+    PLAYER_TYPE_SYSTEM_SOUND_PLAYER = 1004,
 };
 
 enum RecorderType : int32_t {
@@ -988,6 +1000,7 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1026,6 +1039,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         parcel.WriteBool(silentCapture);
+        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1086,6 +1100,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         config->silentCapture = parcel.ReadBool();
+
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         return config;
     }
@@ -1254,6 +1270,15 @@ enum FastStatus {
     FASTSTATUS_FAST
 };
 
+enum PlaybackCaptureStartState {
+    /* Internal recording started successfully. */
+    START_STATE_SUCCESS = 0,
+    /* Start playback capture failed */
+    START_STATE_FAILED = 1,
+    /* Start playback capture but user not authorized state. */
+    START_STATE_NOT_AUTHORIZED = 2
+};
+
 struct StreamSwitchingInfo {
     bool isSwitching_ = false;
     State state_ = INVALID;
@@ -1302,7 +1327,6 @@ enum InnerCapMode : uint32_t {
 };
 
 struct StaticBufferInfo : public Parcelable {
-    int64_t preSetTotalLoopTimes_ = 0;
     int64_t totalLoopTimes_ = 0;
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
@@ -1310,11 +1334,10 @@ struct StaticBufferInfo : public Parcelable {
 
     bool Marshalling(Parcel &parcel) const override
     {
-        parcel.WriteInt64(preSetTotalLoopTimes_);
         parcel.WriteInt64(totalLoopTimes_);
         parcel.WriteInt64(currentLoopTimes_);
         parcel.WriteUint64(curStaticDataPos_);
-        return sharedMemory_->Marshalling(parcel);
+        return (sharedMemory_ == nullptr ? false : sharedMemory_->Marshalling(parcel));
     }
 
     static StaticBufferInfo *Unmarshalling(Parcel &parcel)
@@ -1323,7 +1346,6 @@ struct StaticBufferInfo : public Parcelable {
         if (info == nullptr) {
             return nullptr;
         }
-        info->preSetTotalLoopTimes_ = parcel.ReadInt64();
         info->totalLoopTimes_ = parcel.ReadInt64();
         info->currentLoopTimes_ = parcel.ReadInt64();
         info->curStaticDataPos_ = parcel.ReadUint64();
@@ -1668,6 +1690,7 @@ enum AudioParamKey {
     PERF_INFO = 201,
     MMI = 301,
     PARAM_KEY_LOWPOWER = 1000,
+    AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
 };
 
 struct DStatusInfo {
@@ -1678,10 +1701,19 @@ struct DStatusInfo {
     int32_t deviceId;
     int32_t channelMasks;
     std::string deviceName = "";
+    std::string model = "unknown";
     bool isConnected = false;
     std::string macAddress;
     std::list<DeviceStreamInfo> streamInfo = {};
     ConnectType connectType = CONNECT_TYPE_LOCAL;
+    uint16_t dmDeviceType = 0;
+    std::string dmDeviceInfo = "";
+};
+
+struct HWDecodingInfo {
+    uint64_t pts = 0;
+    uint32_t size = 0;
+    int32_t optCode = 0;
 };
 
 struct AudioRendererDataInfo {
@@ -2139,6 +2171,22 @@ struct FetchDeviceInfo : public Parcelable {
     }
 };
 
+struct RendererStreamInfo {
+    uint32_t streamId_ = STREAM_ID_INVALID;
+
+    StreamUsage usage_ = STREAM_USAGE_INVALID;
+
+    RendererState state_ = RENDERER_INVALID;
+};
+
+struct CapturerStreamInfo {
+    uint32_t streamId_ = STREAM_ID_INVALID;
+
+    SourceType source_ = SOURCE_TYPE_INVALID;
+
+    CapturerState state_ = CAPTURER_INVALID;
+};
+
 /**
  * remote device splite stream enum
  */
@@ -2162,6 +2210,14 @@ public:
     virtual ~StaticBufferEventCallback() = default;
 
     virtual void OnStaticBufferEvent(StaticBufferEventId eventId) = 0;
+};
+
+enum LatencyFlag : uint32_t {
+    LATENCY_FLAG_SHARED_BUFFER = 1U << 0,
+    LATENCY_FLAG_ENGINE = 1U << 1,
+    LATENCY_FLAG_SOFTWARE = 0X0FFFFFFF,
+    LATENCY_FLAG_HARDWARE = 1U << 31,
+    LATENCY_FLAG_ALL = 0XFFFFFFFF
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -386,6 +386,10 @@ static const std::map<OHOS::AudioStandard::AudioSessionStateChangeHint,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_DUCK},
     {OHOS::AudioStandard::AudioSessionStateChangeHint::UNDUCK,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::MUTE_SUGGESTION,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::UNMUTE_SUGGESTION,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION},
 };
 
 static const std::map<OHOS::AudioStandard::OutputDeviceChangeRecommendedAction,
@@ -694,6 +698,12 @@ OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsageFir(int32_t
         case TaiheAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = OHOS::AudioStandard::STREAM_USAGE_VOICE_CALL_ASSISTANT;
             break;
+        case TaiheAudioEnum::USAGE_ANNOUNCEMENT:
+            result = OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT;
+            break;
+        case TaiheAudioEnum::USAGE_EMERGENCY:
+            result = OHOS::AudioStandard::STREAM_USAGE_EMERGENCY;
+            break;
         case TaiheAudioEnum::USAGE_MAX:
             result = OHOS::AudioStandard::STREAM_USAGE_MAX;
             break;
@@ -762,6 +772,10 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
 #else
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
 #endif
+            break;
+        case OHOS::AudioStandard::AudioStreamType::STREAM_ANNOUNCEMENT:
+        case OHOS::AudioStandard::AudioStreamType::STREAM_EMERGENCY:
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::ALARM);
             break;
         default:
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
@@ -845,6 +859,12 @@ StreamUsage TaiheAudioEnum::GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = TaiheAudioEnum::ToTaiheStreamUsage(
                 OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
             break;
         default:
             result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
@@ -984,6 +1004,8 @@ bool TaiheAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ULTRASONIC:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY:
             result = true;
             break;
         default:

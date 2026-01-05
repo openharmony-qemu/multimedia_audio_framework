@@ -84,6 +84,8 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
@@ -107,6 +109,7 @@ public:
 
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
     void HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
+    int32_t StartPlaybackCapture() override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -118,18 +121,7 @@ public:
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
     bool isChannelChange_ = false;
-    static inline AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params)
-    {
-        AudioStreamParams audioStreamParams;
-
-        audioStreamParams.format = params.audioSampleFormat;
-        audioStreamParams.samplingRate = params.samplingRate;
-        audioStreamParams.channels = params.audioChannel;
-        audioStreamParams.encoding = params.audioEncoding;
-        audioStreamParams.channelLayout = params.channelLayout;
-
-        return audioStreamParams;
-    }
+    AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params);
 
 private:
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);

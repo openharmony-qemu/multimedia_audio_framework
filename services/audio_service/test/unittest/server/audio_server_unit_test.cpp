@@ -20,6 +20,7 @@
 #include "audio_service.h"
 #include "system_ability_definition.h"
 #include "audio_service_types.h"
+#include "audio_system_load_listener.h"
 
 using namespace testing::ext;
 
@@ -512,6 +513,68 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
     EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
     audioServer->ParseAudioParameter();
     EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
+}
+
+/**
+ * @tc.name  : Test OnSystemloadLevel API
+ * @tc.type  : FUNC
+ * @tc.number: OnSystemloadLevel_001
+ * @tc.desc  : Test OnSystemloadLevel interface.
+ */
+HWTEST(AudioServerUnitTest, OnSystemloadLevel_001, TestSize.Level1)
+{
+    AudioSystemloadListener audioSystemloadListener;
+    AudioService::GetInstance()->currentRendererStreamCnt_ = 10;
+    audioSystemloadListener.OnSystemloadLevel(1);
+    audioSystemloadListener.OnSystemloadLevel(2);
+    audioSystemloadListener.OnSystemloadLevel(3);
+    audioSystemloadListener.OnSystemloadLevel(4);
+    audioSystemloadListener.OnSystemloadLevel(5);
+    audioSystemloadListener.OnSystemloadLevel(6);
+    audioSystemloadListener.OnSystemloadLevel(7);
+    AudioService::GetInstance()->currentRendererStreamCnt_ = 0;
+    audioSystemloadListener.OnSystemloadLevel(7);
+    EXPECT_EQ(AudioService::GetInstance()->currentRendererStreamCnt_, 0);
+}
+
+/**
+ * @tc.name  : Test NeedDelayCreateSource API
+ * @tc.type  : FUNC
+ * @tc.number: NeedDelayCreateSource_001
+ * @tc.desc  : Test NeedDelayCreateSource interface.
+ */
+HWTEST(AudioServerUnitTest, NeedDelayCreateSource_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_MMAP), true);
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB), true);
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_MMAP), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSource(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_MMAP), false);
+}
+
+/**
+ * @tc.name  : Test NeedDelayCreateSink API
+ * @tc.type  : FUNC
+ * @tc.number: NeedDelayCreateSink_001
+ * @tc.desc  : Test NeedDelayCreateSink interface.
+ */
+HWTEST(AudioServerUnitTest, NeedDelayCreateSink_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_MMAP), true);
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB), true);
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_USB), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_FAST, HDI_ID_INFO_MMAP), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB), false);
+    EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_MMAP), false);
 }
 
 } // namespace AudioStandard

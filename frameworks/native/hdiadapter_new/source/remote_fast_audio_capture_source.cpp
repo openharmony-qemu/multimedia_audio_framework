@@ -203,31 +203,6 @@ int32_t RemoteFastAudioCaptureSource::Reset(void)
     return SUCCESS;
 }
 
-int32_t RemoteFastAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-int32_t RemoteFastAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-std::string RemoteFastAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void RemoteFastAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t RemoteFastAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -315,18 +290,6 @@ int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool 
     int32_t ret = audioCapture_->SelectScene(sceneDesc);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     return SUCCESS;
-}
-
-int32_t RemoteFastAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void RemoteFastAudioCaptureSource::RegistCallback(uint32_t type, IAudioSourceCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
 }
 
 int32_t RemoteFastAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -517,7 +480,8 @@ int32_t RemoteFastAudioCaptureSource::PrepareMmapBuffer(const AudioSampleAttribu
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->ReqMmapBuffer(reqBufferFrameSize, desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret:%{public}d", ret));
     AUDIO_DEBUG_LOG("memoryFd: [%{public}d], totalBufferFrames: [%{public}d], transferFrameSize: [%{public}d], "
         "isShareable: [%{public}d], offset: [%{public}d]", desc.memoryFd, desc.totalBufferFrames,
         desc.transferFrameSize, desc.isShareable, desc.offset);
@@ -563,11 +527,6 @@ int32_t RemoteFastAudioCaptureSource::CheckPositionTime(void)
         }
     }
     return ERR_OPERATION_FAILED;
-}
-
-void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 } // namespace AudioStandard

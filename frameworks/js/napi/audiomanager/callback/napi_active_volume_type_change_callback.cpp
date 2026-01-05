@@ -137,10 +137,11 @@ void NapiAudioManagerActiveVolumeTypeChangeCallback::SaveActiveVolumeTypeChangeC
     }
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
+    std::string taskName = "NapiAudioManagerActiveVolumeTypeChangeCallback::destroy";
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     if (callbackName == ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME) {
         activeVolumeTypeChangeList_.push_back(cb);
     }  else {

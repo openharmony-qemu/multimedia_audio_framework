@@ -105,14 +105,14 @@ void SetDefaultOutputDeviceFuzzTest()
     coreServiceProviderWrapper.SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 
-void GetAdapterNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionID = GetData<uint32_t>();
     std::string name = "abc";
-    coreServiceProviderWrapper.GetAdapterNameBySessionId(sessionID, name);
+    coreServiceProviderWrapper.GetModuleNameBySessionId(sessionID, name);
 }
 
 void GetProcessDeviceInfoBySessionIdFuzzTest()
@@ -124,7 +124,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
     AudioStreamInfo info;
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, reload);
+    int32_t pin;
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, reload);
 }
 
 void GenerateSessionIdFuzzTest()
@@ -141,7 +142,7 @@ TestFuncs g_testFuncs[] = {
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,
     SetDefaultOutputDeviceFuzzTest,
-    GetAdapterNameBySessionIdFuzzTest,
+    GetModuleNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
     GenerateSessionIdFuzzTest,
 };

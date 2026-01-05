@@ -63,6 +63,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         AUDIO_ERR_LOG("AudioSuitePureVoiceChangeNode::Init failed, already inited");
         return ERROR;
     }
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     algoInterfaceImpl_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "Failed to create nr algoInterface");
@@ -217,23 +218,24 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
     }
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
-        return ERR_INVALID_PARAM;
-    }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
 
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
         tempOut = SignalProcess(preOutputs);
         CHECK_AND_RETURN_RET_LOG(tempOut != nullptr,
             ERR_OPERATION_FAILED,
             "node %{public}d do SignalProcess failed, return a nullptr",
             GetNodeType());
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         tempOut = splitDataInHalf(preOutputs);
@@ -246,7 +248,7 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     return SUCCESS;
 }
 

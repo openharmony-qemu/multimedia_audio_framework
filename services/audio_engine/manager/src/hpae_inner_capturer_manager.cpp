@@ -238,15 +238,24 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
     SendRequestInner(request, __func__);
     return SUCCESS;
 }
+
+void HpaeInnerCapturerManager::StopOuputNode()
+{
+    if (hpaeInnerCapSinkNode_  != nullptr) {
+        hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
+        hpaeInnerCapSinkNode_->ResetAll();
+        hpaeInnerCapSinkNode_ = nullptr;
+    }
+}
  
 int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
-    if (IsInit()) {
-        AUDIO_INFO_LOG("deinit inner capture first.");
-        DeInit();
+    if (!IsInit()) {
+        hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
-    hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
+        AUDIO_INFO_LOG("reload inner capture");
+        StopOuputNode();
         for (const auto &it: sinkInputNodeMap_) {
             CHECK_AND_CONTINUE_LOG(it.second != nullptr, "sessionid: %{public}u can not found in sinkInputNodeMap",
                 it.first);
@@ -270,7 +279,9 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
         }
     };
     SendRequestInner(request, __func__, true);
-    hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    if (!IsInit()) {
+        hpaeSignalProcessThread_->ActivateThread(shared_from_this());
+    }
     return SUCCESS;
 }
 
@@ -331,11 +342,7 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
     }
     hpaeNoLockQueue_.HandleRequests();
     int32_t ret = SUCCESS;
-    if (hpaeInnerCapSinkNode_  != nullptr) {
-        ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
-        hpaeInnerCapSinkNode_->ResetAll();
-        hpaeInnerCapSinkNode_ = nullptr;
-    }
+    StopOuputNode();
     isInit_.store(false);
     if (isMoveDefault) {
         std::string sinkName = "";
@@ -655,6 +662,8 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone");
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
+            "no need disconnect renderer input session, %{public}u is running", sessionId);
         DisConnectRendererInputSessionInner(sessionId);
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;
@@ -763,7 +772,8 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         }
         sceneTypeToProcessClusterCount_--;
         if (sceneTypeToProcessClusterCount_ == 0) {
-            HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            HILOG_COMM_INFO("[DeleteRendererInputNodeSession]need to erase rendererSceneCluster, "
+                "last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }

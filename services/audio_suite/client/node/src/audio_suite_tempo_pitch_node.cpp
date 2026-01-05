@@ -58,6 +58,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
@@ -67,6 +68,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
     currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
     bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;
     outBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES + RESIZE_EXPAND_BYTES);
+    readFinishedFlag_ = false;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init end");
     return SUCCESS;
@@ -97,11 +99,14 @@ int32_t AudioSuiteTempoPitchNode::DeInit()
 
 float ParseStringToSpeedRate(const std::string &str, char delimiter)
 {
-    std::string token;
+    float value;
+    std::string paramValue;
     std::istringstream iss(str);
 
-    if (std::getline(iss, token, delimiter) && !token.empty()) {
-        return std::stof(token);
+    if (std::getline(iss, paramValue, delimiter) && !paramValue.empty()) {
+        CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), 0.0f,
+            "Pure voice change convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+        return value;
     }
 
     return 0.0f;
@@ -163,15 +168,24 @@ int32_t AudioSuiteTempoPitchNode::DoProcessPreOutputs(AudioSuitePcmBuffer** temp
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         Trace trace("AudioSuiteTempoPitchNode::SignalProcess Start");
+
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
+
         if (SignalProcess(preOutputs) == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
         }
         trace.End();
+
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(preOutputs[0] != nullptr, ERROR,
-            "ReadProcessNodePreOutputData failed, preOutputs[0] is nullptr");
+            "Failed to get data from the previous node.");
         int32_t ret = SplitDataToQueue(preOutputs[0]->GetPcmData(), preOutputs[0]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AudioSuiteTempoPitchNode SplitDataToQueue failed");
     } else {
@@ -200,13 +214,6 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
 {
     CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), SUCCESS,
         "Current node type = %{public}d does not have more data to process.", GetNodeType());
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_, ERROR,
-            "node type = %{public}d outputStream is null!", GetNodeType());
-    }
-    CHECK_AND_RETURN_RET_LOG(inputStream_, ERR_INVALID_PARAM,
-        "node type = %{public}d inputstream is null!", GetNodeType());
     AudioSuitePcmBuffer* tempOut = nullptr;
     int32_t ret = -1;
     // readyDataBuffer_ has data
@@ -232,7 +239,7 @@ int32_t AudioSuiteTempoPitchNode::DoProcess()
         SetAudioNodeDataFinishedFlag(true);
     }
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     return SUCCESS;

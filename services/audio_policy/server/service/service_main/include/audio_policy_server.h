@@ -261,7 +261,11 @@ public:
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
+    int32_t IsOtherMediaPlaying(bool &existence) override;
+
     int32_t SetAudioSessionScene(int32_t audioSessionScene) override;
+
+    int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;
 
     int32_t GetDefaultOutputDevice(int32_t &deviceType) override;
 
@@ -392,6 +396,8 @@ public:
 
     int32_t GetSystemSoundUri(const std::string &key, std::string &uri) override;
 
+    int32_t GetSystemSoundPath(const int32_t systemSoundType, std::string &path) override;
+
     int32_t GetMinStreamVolume(float &volume) override;
 
     int32_t GetMaxStreamVolume(float &volume) override;
@@ -491,6 +497,8 @@ public:
 
     int32_t ReleaseAudioZone(int32_t zoneId) override;
 
+    int32_t UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
+
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs) override;
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc) override;
@@ -510,6 +518,10 @@ public:
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) override;
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
+
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
@@ -544,11 +556,6 @@ public:
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
-    int32_t FetchOutputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt &reason) override;
-
-    int32_t FetchInputDeviceForTrack(const AudioStreamChangeInfo &streamChangeInfo) override;
-
     int32_t GetSpatializationSceneType(int32_t &type) override;
 
     int32_t SetSpatializationSceneType(int32_t spatializationSceneType) override;
@@ -582,7 +589,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsageIn, bool &isAllowed,
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
         bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
@@ -660,12 +667,15 @@ public:
 
     int32_t RestoreDistributedDeviceInfo() override;
 
+    bool IsPublishCalled() const;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
         // AudioParameterCallback
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key, const std::string &condition,
             const std::string &value) override;
+        void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
     private:
         sptr<AudioPolicyServer> server_;
         void VolumeOnChange(const std::string networkId, const std::string &condition);
@@ -729,6 +739,7 @@ public:
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     void HandleDataShareReadyEvent();
+    int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -813,7 +824,8 @@ private:
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    bool MaxOrMinVolumeOption(const int32_t &volLevel, const int32_t keyType, const AudioStreamType &streamInFocus,
+        int32_t zoneId = 0);
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
@@ -933,7 +945,7 @@ private:
     bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    bool loudVolumeModeEnable_ = false;
+    int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
@@ -944,6 +956,8 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
 
     int32_t sessionIdByRemote_ = -1;
+    bool isUT_ = false;
+    bool isPublishCalled_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;

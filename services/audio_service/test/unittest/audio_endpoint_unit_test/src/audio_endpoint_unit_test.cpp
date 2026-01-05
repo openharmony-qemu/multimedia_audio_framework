@@ -62,7 +62,9 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
+    std::string adapterName = "";
+    int32_t pin = 0;
+    if (!audioEndpoint->Config(deviceInfo, streamInfo, adapterName, pin, clientConfig.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -78,7 +80,9 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
         std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config.audioMode);
     audioEndpoint->injector_ = *MockAudioInjector::GetMockInstance();
-    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType)) {
+    std::string adapterName = "";
+    int32_t pin = 0;
+    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -142,8 +146,11 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo,
+        adapterName, pin);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 
@@ -192,8 +199,11 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo,
+        adapterName, pin);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 
@@ -210,8 +220,11 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    int32_t pin = 0;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo,
+        adapterName, pin);
     EXPECT_NE(nullptr, audioEndpoint);
 
     int32_t ret = audioEndpoint->EnableFastInnerCap(1);
@@ -527,7 +540,9 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo, config.streamType);
+    std::string adapterName = "";
+    int32_t pin = 0;
+    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
     EXPECT_FALSE(result);
 
     processStream->SetInnerCapState(true, 1);
@@ -1213,6 +1228,27 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_006, TestSize.Level1)
     EXPECT_EQ(AudioEndpointInner::INACTIVE, audioEndpointInner->zeroVolumeState_);
 
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastRenderId_);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_007
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_NEARLINK);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
+
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_SPEAKER);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::INACTIVE;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
 }
 
 /*

@@ -669,6 +669,24 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredInputDeviceUpdated, Test
 }
 
 /**
+ * @tc.name  : HandlePreferredDeviceSet_001
+ * @tc.number: HandlePreferredDeviceSet_001
+ * @tc.desc  : Test HandlePreferredDeviceSet function when eventContextObj is nullptr.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredDeviceSet, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_DEVICE_SET, 0);
+    audioPolicyServerHandler_->HandlePreferredDeviceSetEvent(event);
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
+}
+
+/**
  * @tc.name  : HandleRendererInfoEvent_001
  * @tc.number: HandleRendererInfoEvent_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
@@ -988,6 +1006,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_001, TestSize.L
     audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE;
     audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
+    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_DEVICE_SET;
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 

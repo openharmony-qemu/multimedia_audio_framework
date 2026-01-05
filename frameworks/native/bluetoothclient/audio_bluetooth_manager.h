@@ -61,6 +61,7 @@ public:
     static void DisconnectBluetoothA2dpSource();
     static int32_t SetActiveA2dpDevice(const std::string& macAddress);
     static std::string GetActiveA2dpDevice();
+    static std::string GetActiveA2dpDeviceLocal();
     static int32_t SetDeviceAbsVolume(const std::string& macAddress, int32_t volume);
     static int32_t GetA2dpDeviceStreamInfo(const std::string& macAddress,
         AudioStandard::AudioStreamInfo &streamInfo);
@@ -134,6 +135,7 @@ public:
     static int32_t ClearActiveHfpDevice(const std::string &macAddress);
     static int32_t UpdateActiveHfpDevice(const BluetoothRemoteDevice &device);
     static std::string GetActiveHfpDevice();
+    static std::string GetActiveHfpDeviceLocal();
     static int32_t DisconnectSco();
     static void DisconnectBluetoothHfpSink();
     static void ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device);

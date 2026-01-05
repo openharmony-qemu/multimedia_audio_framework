@@ -156,7 +156,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
 int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
 {
-    AUDIO_INFO_LOG("start apply vm algorithm");
+    AUDIO_DEBUG_LOG("start apply vm algorithm");
 
     if (audioInputs.empty() || audioOutputs.empty()) {
         AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");

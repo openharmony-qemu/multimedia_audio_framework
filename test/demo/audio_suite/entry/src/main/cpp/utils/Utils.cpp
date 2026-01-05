@@ -22,7 +22,7 @@ const char *UTILS_TAG = "[AudioEditTestApp_utils_cpp]";
 const int BITSPERSAMPLEMODE_INT = 0;
 const int BITSPERSAMPLEMODE_FLOAT = 1;
 
-// 解析 napi 字符串参数
+// Parsing napi string parameters
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
 {
     size_t size;
@@ -31,7 +31,7 @@ napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
         return status;
     }
 
-    result.resize(size + CONSTANT_1); // 包含结尾的空字符
+    result.resize(size + CONSTANT_1); // Contains ending null characters
     status = napi_get_value_string_utf8(env, value, const_cast<char *>(result.data()), size + CONSTANT_1, nullptr);
 
     return status;
@@ -58,7 +58,7 @@ void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
     }
 }
 
-// 设置采样率
+// Set Sampling Rate
 OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate)
 {
     switch (sampleRate) {
@@ -95,7 +95,7 @@ OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate)
     }
 }
 
-// 设置声道
+// Set audio channels
 OH_AudioChannelLayout SetChannelLayout(int32_t channels)
 {
     OH_AudioChannelLayout audioChannelLayout;
@@ -113,7 +113,7 @@ OH_AudioChannelLayout SetChannelLayout(int32_t channels)
     return audioChannelLayout;
 }
 
-// 设置位深
+// Set bit depth
 OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
 {
     OH_Audio_SampleFormat audioSampleFormat;
@@ -139,7 +139,7 @@ OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample)
     return audioSampleFormat;
 }
 
-// 位深转换
+// Bit depth conversion
 void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode)
 {
     switch (bitsPerSample) {

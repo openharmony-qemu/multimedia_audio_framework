@@ -29,6 +29,7 @@ static const uint32_t LOW_FREQ_PRINT_LOG = 1000;
 }
 void AudioLogUtils::ProcessVolumeData(const std::string &logTag, const ChannelVolumes &vols, int64_t &count)
 {
+    CHECK_AND_RETURN(vols.channel <= CHANNEL_16);
     bool isDataSilent = true;
     for (int32_t i = 0; i < vols.channel; i++) {
         if (vols.volStart[i] != 0) {

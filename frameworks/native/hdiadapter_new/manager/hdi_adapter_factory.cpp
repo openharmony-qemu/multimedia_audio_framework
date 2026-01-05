@@ -84,7 +84,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_OFFLOAD:
             sink = std::make_shared<OffloadAudioRenderSink>();
             break;
-        case HDI_ID_TYPE_EAC3:
+        case HDI_ID_TYPE_HWDECODE:
             sink = std::make_shared<DirectAudioRenderSink>();
             break;
 #ifdef FEATURE_DISTRIBUTE_AUDIO

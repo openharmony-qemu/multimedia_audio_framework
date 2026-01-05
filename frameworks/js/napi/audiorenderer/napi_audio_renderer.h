@@ -61,6 +61,7 @@ private:
         int32_t rendererFlags;
         int32_t interruptMode;
         int32_t target;
+        int32_t latencyType;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -72,6 +73,7 @@ private:
         uint32_t audioStreamId;
         size_t totalBytesWritten;
         uint32_t underflowCount;
+        int32_t latencyMs;
         void *data;
         int32_t audioEffectMode;
         int32_t channelBlendMode;
@@ -130,6 +132,7 @@ private:
     static napi_value GetUnderflowCountSync(napi_env env, napi_callback_info info);
     static napi_value GetAudioTimestampInfo(napi_env env, napi_callback_info info);
     static napi_value GetAudioTimestampInfoSync(napi_env env, napi_callback_info info);
+    static napi_value GetLatency(napi_env env, napi_callback_info info);
     static napi_value GetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetAudioEffectMode(napi_env env, napi_callback_info info);
     static napi_value SetChannelBlendMode(napi_env env, napi_callback_info info);

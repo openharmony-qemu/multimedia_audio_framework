@@ -68,7 +68,7 @@ int32_t AudioSuiteEngine::Init()
         return ERR_ILLEGAL_STATE;
     }
     engineThread_ = std::make_unique<AudioSuiteManagerThread>();
-    engineThread_->ActivateThread(this);
+    engineThread_->ActivateThread(this, "SuiteEngine");
     isInit_.store(true);
     AUDIO_INFO_LOG("AudioSuiteEngine::Init end");
     return SUCCESS;

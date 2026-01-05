@@ -810,5 +810,123 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_007, TestSize.Lev
     EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
     EXPECT_EQ(idInfo, HDI_ID_INFO_ULTRASONIC);
 }
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSinkIdInfoAndIdType_001
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "usb";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+
+    std::string idInfo;
+    HdiIdType idType;
+    audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSinkIdInfoAndIdType_002
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "usb";
+    pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
+
+    std::string idInfo = "err";
+    HdiIdType idType;
+    audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idInfo, "err");
+}
+
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSinkIdInfoAndIdType_003
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "error";
+    pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
+
+    std::string idInfo = "err";
+    HdiIdType idType;
+    audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idInfo, "err");
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSinkIdInfoAndIdType_001
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "usb";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+
+    std::string idInfo;
+    HdiIdType idType;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_002
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_012, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "usb";
+    pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
+
+    std::string idInfo = "err";
+    HdiIdType idType;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idInfo, "err");
+}
+
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_003
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_013, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "error";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+
+    std::string idInfo = "err";
+    HdiIdType idType;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idInfo, "err");
+}
 } // namespace AudioStandard
 } // namespace OHOS

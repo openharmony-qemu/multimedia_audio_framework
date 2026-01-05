@@ -270,6 +270,8 @@ public:
 
     bool IsAudioSessionActivated();
 
+    bool IsOtherMediaPlaying();
+
     int32_t SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback);
 
     int32_t UnsetAudioSessionCallback();
@@ -303,6 +305,8 @@ public:
 
     int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
         const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback);
+
+    int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -387,6 +391,8 @@ public:
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
     std::string GetSystemSoundUri(const std::string &key);
+
+    std::string GetSystemSoundPath(const int32_t systemSoundType);
 
     float GetMinStreamVolume(void);
 
@@ -526,6 +532,8 @@ public:
 
     void ReleaseAudioZone(int32_t zoneId);
 
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
+
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
@@ -545,6 +553,10 @@ public:
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
+
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
 
@@ -577,11 +589,6 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
     ConverterConfig GetConverterConfig();
-
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
 
     bool IsHighResolutionExist();
 
@@ -665,7 +672,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+        StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 
@@ -716,6 +724,8 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     bool IsCollaborativePlaybackSupported();
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
@@ -734,6 +744,7 @@ public:
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    AudioScene GetAudioSceneFromAllZones();
 
 private:
     AudioPolicyManager() {}
@@ -757,9 +768,6 @@ private:
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
-
-    bool isAudioRendererEventListenerRegistered = false;
-    bool isAudioCapturerEventListenerRegistered = false;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
     std::vector<AudioRendererInfo> rendererInfos_;

@@ -43,6 +43,7 @@ class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_fro
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;
     AudioPrivacyType GetAudioPrivacyType() override;
     int32_t SetParams(const AudioRendererParams params) override;
@@ -182,6 +183,7 @@ public:
     }
 
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    bool isHWDecodingType_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
@@ -201,9 +203,10 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t AsyncCheckAudioRenderer(std::string callingFunc);
+    int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool needWait = false);
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
+    bool WaitSwitchStreamIfNeeded(bool needWait = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
@@ -233,10 +236,10 @@ private:
     void WriteUnderrunEvent() const;
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
-    RendererState GetStatusInner();
+    RendererState GetStatusInner() const;
     void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     float GetVolumeInner() const;

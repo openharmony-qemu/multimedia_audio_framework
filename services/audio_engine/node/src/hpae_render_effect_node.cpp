@@ -36,6 +36,7 @@ static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX = 3;
 static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
+static constexpr float SMALL_SIGNAL_NUM = 1e-6;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,8 +57,8 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         }
         if (sceneType_ == "SCENE_COLLABORATIVE") {
             PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
-            directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
-            collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+            directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
+            collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
         }
     }
     AUDIO_INFO_LOG("created, scene type: %{public}s", sceneType_.c_str());
@@ -137,9 +138,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
     Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len);
 
-    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled() ||
-        (!AudioEffectChainManager::GetInstance()->IsSpatializationEnabledForChains() &&
-        !AudioEffectChainManager::GetInstance()->IsEffectChainFading(sceneType_))) {
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         return inputs[0];
     }
     if (IsByPassEffectZeroVolume(inputs[0])) {
@@ -174,12 +173,12 @@ int32_t HpaeRenderEffectNode::SplitCollaborativeData()
     float *directOutput = directOutput_->GetPcmDataBuffer();
     float *collaborativeOutput = collaborativeOutput_->GetPcmDataBuffer();
     for (uint32_t i = 0; i < effectOutput_.GetFrameLen(); ++i) {
-        directOutput[DIRECT_CHANNELS * i] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i];
-        directOutput[DIRECT_CHANNELS * i + 1] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + 1];
+        directOutput[DIRECT_CHANNELS * i] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i] + SMALL_SIGNAL_NUM;
+        directOutput[DIRECT_CHANNELS * i + 1] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] + SMALL_SIGNAL_NUM;
         collaborativeOutput[COLLABORATIVE_CHANNELS * i] =
-            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX];
+            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] + SMALL_SIGNAL_NUM;
         collaborativeOutput[COLLABORATIVE_CHANNELS * i + 1] =
-            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX];
+            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] + SMALL_SIGNAL_NUM;
     }
     return SUCCESS;
 }
@@ -418,11 +417,7 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    bool isSpatializationEnabled =
-        AudioEffectChainManager::GetInstance()->IsSpatializationEnabledForChains() ||
-        AudioEffectChainManager::GetInstance()->IsEffectChainFading(sceneType_);
-    basicFormat.rate = isSpatializationEnabled ?
-        static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE) : basicFormat.rate;
+    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
     int32_t ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
         basicFormat.audioChannelInfo.numChannels, channelLayout);
@@ -470,8 +465,9 @@ void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
     audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
 }
 
-void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
+void HpaeRenderEffectNode::InitEffectBufferFromDisConnect(const bool isNeedInitEffectBuffer)
 {
+    CHECK_AND_RETURN_LOG(isNeedInitEffectBuffer != false, "no need InitEffectBuffer");
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);

@@ -88,7 +88,7 @@ public:
         return shared_from_this();
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort()
+    virtual OutputPort<AudioSuitePcmBuffer*>* GetOutputPort()
     {
         return nullptr;
     }
@@ -199,7 +199,7 @@ public:
         return "";
     }
 
-    virtual std::string GetSoundFiledType()
+    virtual std::string GetSoundFieldType()
     {
         return "";
     }

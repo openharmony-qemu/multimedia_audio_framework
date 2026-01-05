@@ -25,6 +25,7 @@
 #include "audio_performance_monitor.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,9 +45,12 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     ret = PrepareMmapBuffer();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
+        HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
 
     sinkInited_ = true;
+    InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
+
     return SUCCESS;
 }
 
@@ -70,6 +74,7 @@ void FastAudioRenderSink::DeInit(void)
     deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
     audioRender_ = nullptr;
     ReleaseMmapBuffer();
+    DeinitPipeInfo();
 }
 
 bool FastAudioRenderSink::IsInited(void)
@@ -91,10 +96,12 @@ int32_t FastAudioRenderSink::Start(void)
     }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
     UpdateSinkState(true);
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     ret = CheckPositionTime();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "check position time fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
+        HILOG_COMM_ERROR("[Start]check position time fail"));
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
@@ -104,7 +111,7 @@ int32_t FastAudioRenderSink::Start(void)
     if (runningLock_ != nullptr) {
         runningLock_->Lock(RUNNING_LOCK_TIMEOUTMS_LASTING);
     } else {
-        AUDIO_ERR_LOG("running lock is null, playback can not work well");
+        HILOG_COMM_ERROR("[FastAudioRenderSink::Start]running lock is null, playback can not work well");
     }
 #endif
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
@@ -135,7 +142,9 @@ int32_t FastAudioRenderSink::Stop(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail, ret: %{public}d", ret);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
+        HILOG_COMM_ERROR("[Stop]stop fail, ret: %{public}d", ret));
     started_ = false;
     return SUCCESS;
 }
@@ -150,7 +159,8 @@ int32_t FastAudioRenderSink::Resume(void)
         return SUCCESS;
     }
     int32_t ret = audioRender_->Resume(audioRender_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "resume fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[Resume]resume fail"));
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     paused_ = false;
     return SUCCESS;
@@ -165,7 +175,8 @@ int32_t FastAudioRenderSink::Pause(void)
         return SUCCESS;
     }
     int32_t ret = audioRender_->Pause(audioRender_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "pause fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[Pause]pause fail"));
     paused_ = true;
     return SUCCESS;
 }
@@ -177,7 +188,8 @@ int32_t FastAudioRenderSink::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioRender_->Flush(audioRender_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[Flush]flush fail"));
     return SUCCESS;
 }
 
@@ -243,28 +255,14 @@ int64_t FastAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-int32_t FastAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
 void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    HILOG_COMM_INFO("[SetAudioParameter]key: %{public}d, condition: %{public}s, "
+        "value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
     AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);
-}
-
-std::string FastAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
 }
 
 int32_t FastAudioRenderSink::SetVolume(float left, float right)
@@ -368,48 +366,6 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
-{
-    AUDIO_INFO_LOG("not support");
-    return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::GetAudioScene(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void FastAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
-}
-
-void FastAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
-int32_t FastAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t FastAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t FastAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
 {
     return SUCCESS;
@@ -428,11 +384,6 @@ int32_t FastAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 void FastAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FastSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
-}
-
-void FastAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 int32_t FastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -462,9 +413,10 @@ int32_t FastAudioRenderSink::GetMmapHandlePosition(uint64_t &frames, int64_t &ti
         frames, curReadPos_);
 #endif
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it
-    CHECK_AND_RETURN_RET_LOG(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
+    CHECK_AND_CALL_FUNC_RETURN_RET(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
         stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
-        "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
+        HILOG_COMM_ERROR("[GetMmapHandlePosition]get invalid time, second: %{public}" PRId64 ", "
+            "nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec));
     timeSec = stamp.tvSec;
     timeNanoSec = stamp.tvNSec;
     return ret;
@@ -545,6 +497,14 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
 
 void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
+    // only dp adapter use the pin configured in xml;
+    if (attr_.adapterName == "dp") {
+        deviceDesc.pins = static_cast<AudioPortPin>(attr_.pin);
+        deviceDesc.desc = const_cast<char *>("dp_fast");
+        AUDIO_INFO_LOG("use config pin");
+        return;
+    }
+    deviceDesc.desc = const_cast<char *>("");
     switch (static_cast<DeviceType>(attr_.deviceType)) {
         case DEVICE_TYPE_EARPIECE:
             deviceDesc.pins = PIN_OUT_EARPIECE;
@@ -561,12 +521,15 @@ void FastAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDes
         case DEVICE_TYPE_BLUETOOTH_SCO:
             deviceDesc.pins = PIN_OUT_BLUETOOTH_SCO;
             break;
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
+            deviceDesc.pins = PIN_OUT_USB_HEADSET;
+            break;
         default:
             AUDIO_WARNING_LOG("unsupport, use default, deviceType: %{public}d", attr_.deviceType);
             deviceDesc.pins = PIN_OUT_SPEAKER;
             break;
     }
-    deviceDesc.desc = const_cast<char *>("");
 }
 
 int32_t FastAudioRenderSink::CreateRender(void)
@@ -593,6 +556,16 @@ void FastAudioRenderSink::UpdateSinkState(bool started)
     callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST), started);
 }
 
+void FastAudioRenderSink::EnableSyncInfo(const int32_t syncInfoSize)
+{
+    if (syncInfoSize == 0) {
+        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
+        return;
+    }
+    syncInfoSize_ = syncInfoSize;
+    AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", syncInfoSize);
+}
+
 int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
 {
     uint32_t totalBufferInMs = 40; // 40: 5 * (6 + 2 * (1)) = 40ms, the buffer size, not latency
@@ -601,35 +574,31 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "request mmap buffer fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret: %{public}d", ret));
     AUDIO_INFO_LOG("memoryAddress: [%{private}p], memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
         "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryAddress,
         desc.memoryFd, desc.totalBufferFrames, desc.transferFrameSize, desc.isShareable, desc.offset);
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030, 3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
-    CHECK_AND_RETURN_RET_LOG(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+    CHECK_AND_CALL_FUNC_RETURN_RET(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
-        "invalid value, totalBufferFrames: [%{public}d], transferFrameSize: [%{public}d]", desc.totalBufferFrames,
-        desc.transferFrameSize);
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]invalid value, totalBufferFrames: [%{public}d], "
+            "transferFrameSize: [%{public}d]", desc.totalBufferFrames, desc.transferFrameSize));
 
     frameSizeInByte_ = PcmFormatToBit(attr_.format) * attr_.channel / PCM_8_BIT;
     bufferTotalFrameSize_ = static_cast<uint32_t>(desc.totalBufferFrames); // 1440 ~ 3840
     eachReadFrameSize_ = static_cast<uint32_t>(desc.transferFrameSize); // 240
     CHECK_AND_RETURN_RET_LOG(frameSizeInByte_ <= ULLONG_MAX / bufferTotalFrameSize_, ERR_OPERATION_FAILED,
         "buffer size will overflow");
-    if (desc.syncInfoSize != 0) {
-        AUDIO_INFO_LOG("syncInfo for fast is enabled: %{public}d", desc.syncInfoSize);
-        syncInfoSize_ = desc.syncInfoSize;
-    } else {
-        AUDIO_WARNING_LOG("syncInfo for fast is not enabled");
-    }
     bufferSize_ = bufferTotalFrameSize_ * frameSizeInByte_;
+    EnableSyncInfo(desc.syncInfoSize);
 #ifdef DEBUG_DIRECT_USE_HDI
     privBufferFd_ = dup(bufferFd_);
     bufferAddress_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, privBufferFd_, 0);
-    CHECK_AND_RETURN_RET_LOG(bufferAddress_ != nullptr && bufferAddress_ != MAP_FAILED, ERR_OPERATION_FAILED,
-        "mmap buffer fail");
+    CHECK_AND_CALL_FUNC_RETURN_RET(bufferAddress_ != nullptr && bufferAddress_ != MAP_FAILED, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[PrepareMmapBuffer]mmap buffer fail"));
 #endif
     return SUCCESS;
 }
@@ -692,6 +661,7 @@ int32_t FastAudioRenderSink::CheckPositionTime(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
     return ERR_OPERATION_FAILED;
 }
@@ -712,6 +682,5 @@ void FastAudioRenderSink::PreparePosition(void)
         curWritePos_);
 #endif
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

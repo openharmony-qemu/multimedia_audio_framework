@@ -15,21 +15,22 @@ export interface MusicMetadata {
 const TAG: string = 'AudioEditTestApp_MusicMetadataService';
 
 export class MusicMetadataService {
-    // 使用 fs 文件系统打开沙箱地址获取媒体文件地址， 设置 fdSrc 属性， 获取音频元数据并打印，
-    // 获取音频专辑封面并通过 Image 控件显示在屏幕上。
+    // Use the fs file system to open the sandbox address to obtain the media file address,
+    // set the fdSrc property, retrieve audio metadata, and print it.
+    // Obtain the audio album cover and display it on the screen using an Image control.
     async fetchMetadata(uri: string): Promise<MusicMetadata> {
         let avMetadataExtractor: media.AVMetadataExtractor | null = null;
         let pixelMap: PixelMap | undefined = undefined;
         let metadata: media.AVMetadata | undefined = undefined;
         if (canIUse('SystemCapability.Multimedia.Media.AVMetadataExtractor')) {
-            try { // 创建 AVMetadataExtractor 对象
+            try { // Create an AVMetadataExtractor object
                 avMetadataExtractor = await media.createAVMetadataExtractor();
-                // 设置fdSrc
+                // Set fdSrc.
                 avMetadataExtractor.fdSrc = fs.openSync(uri);
-                // 获取元数据（promise 模式）
+                // Get Metadata (Promise Mode)
                 metadata = await avMetadataExtractor.fetchMetadata();
                 Logger.info(TAG, `Get metadata successfully, mimeType: ${metadata.mimeType}`);
-                // 获取专辑封面（promise 模式）
+                // Get Album Cover (Promise Mode)
                 await avMetadataExtractor
                     .fetchAlbumCover()
                     .then((cover: PixelMap) => {

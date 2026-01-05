@@ -58,6 +58,8 @@ public:
     int32_t SetSinkState(StreamManagerState sinkState);
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     uint32_t GetLatency();
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state);
 
 private:
     void HandleRemoteTiming();

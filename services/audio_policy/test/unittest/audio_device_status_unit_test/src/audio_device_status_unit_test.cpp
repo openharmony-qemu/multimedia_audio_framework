@@ -1770,5 +1770,30 @@ HWTEST_F(AudioDeviceStatusUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
     audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
     EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
 }
+
+/**
+* @tc.name  : Test CheckAndActiveHfpDevice.
+* @tc.number: CheckAndActiveHfpDevice_001
+* @tc.desc  : Test CheckAndActiveHfpDevice
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, CheckAndActiveHfpDevice_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioDeviceDescriptor deviceDesc;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(desc, nullptr);
+
+    deviceDesc.deviceType_ = DEVICE_TYPE_NONE;
+    audioDeviceStatus.CheckAndActiveHfpDevice(deviceDesc);
+
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(desc);
+    deviceDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceStatus.CheckAndActiveHfpDevice(deviceDesc);
+
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioDeviceStatus.CheckAndActiveHfpDevice(deviceDesc);
+}
 } // namespace AudioStandard
 } // namespace OHOS

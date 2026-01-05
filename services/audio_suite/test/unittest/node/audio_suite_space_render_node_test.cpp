@@ -66,7 +66,7 @@ void AudioSuiteSpaceRenderTest::TearDown()
 void DoSignalProcess(std::string inputFile, std::string outputFile,
     std::string name, std::string value)
 {
-    AudioSuiteSpaceRenderNode spacerender;
+    auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
     std::ifstream file1(inputFile, std::ios::binary | std::ios::ate);
 
     ASSERT_TRUE(file1.is_open()) << "Failed to open file1: " << inputFile;
@@ -75,8 +75,8 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
 
     std::ofstream outProcessedFile(outputFile, std::ios::binary);
 
-    spacerender.Init();
-    spacerender.SetOptions(name, value);
+    node->Init();
+    node->SetOptions(name, value);
     AudioSuitePcmBuffer buffer(PcmBufferFormat{
         SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
           SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT});
@@ -90,7 +90,7 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
             exitLoop = true;
         } else {
             inputs = {&buffer};
-            outProcessedFile.write(reinterpret_cast<const char *>((spacerender.SignalProcess(inputs))->GetPcmData()),
+            outProcessedFile.write(reinterpret_cast<const char *>((node->SignalProcess(inputs))->GetPcmData()),
                 dataSize);
             inputs.clear();
         }
@@ -191,9 +191,9 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderExtensionParams001, TestSize.Leve
  
 HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderSetParameterParams001, TestSize.Level0)
 {
-    AudioSuiteSpaceRenderNode spacerender;
-    spacerender.Init();
-    int32_t ret = spacerender.SetOptions("test", "1,1,1");
+    auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
+    node->Init();
+    int32_t ret = node->SetOptions("test", "1,1,1");
     EXPECT_EQ(ret, ERROR);
 }
  
@@ -202,36 +202,36 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderGetParameterParams001, TestSize.L
     std::string paramValue;
     int32_t ret;
  
-    AudioSuiteSpaceRenderNode spacerender;
+    auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
  
-    ret = spacerender.Init();
+    ret = node->Init();
     EXPECT_EQ(SUCCESS, ret);
  
-    ret = spacerender.Init();
+    ret = node->Init();
     EXPECT_EQ(ERROR, ret);
  
-    spacerender.SetOptions("AudioSpaceRenderPositionParams", "1,1,1");
-    ret = spacerender.GetOptions("AudioSpaceRenderPositionParams", paramValue);
+    node->SetOptions("AudioSpaceRenderPositionParams", "1,1,1");
+    ret = node->GetOptions("AudioSpaceRenderPositionParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('1', paramValue[0]);
  
-    spacerender.SetOptions("AudioSpaceRenderRotationParams", "1,1,1,2,0");
-    ret = spacerender.GetOptions("AudioSpaceRenderRotationParams", paramValue);
+    node->SetOptions("AudioSpaceRenderRotationParams", "1,1,1,2,0");
+    ret = node->GetOptions("AudioSpaceRenderRotationParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('1', paramValue[0]);
  
-    spacerender.SetOptions("AudioSpaceRenderExtensionParams", "2,90");
-    ret = spacerender.GetOptions("AudioSpaceRenderExtensionParams", paramValue);
+    node->SetOptions("AudioSpaceRenderExtensionParams", "2,90");
+    ret = node->GetOptions("AudioSpaceRenderExtensionParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('2', paramValue[0]);
  
-    ret = spacerender.GetOptions("test", paramValue);
+    ret = node->GetOptions("test", paramValue);
     EXPECT_EQ(ret, ERROR);
  
-    ret = spacerender.DeInit();
+    ret = node->DeInit();
     EXPECT_EQ(SUCCESS, ret);
  
-    ret = spacerender.DeInit();
+    ret = node->DeInit();
     EXPECT_EQ(ERROR, ret);
 }
  
@@ -244,9 +244,7 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderDoProcess001, TestSize.Level0)
     EXPECT_EQ(SUCCESS, ret);
  
     node->SetAudioNodeDataFinishedFlag(false);
-    node->outputStream_ = nullptr;
-    node->inputStream_ = nullptr;
     ret = node->DoProcess();
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 }  // namespace

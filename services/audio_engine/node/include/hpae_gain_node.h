@@ -36,6 +36,7 @@ public:
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);
+    void ResetVolume();
     uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
@@ -49,6 +50,7 @@ private:
     FadeOutState fadeOutState_ = FadeOutState::NO_FADEOUT;
     IOperation operation_ = OPERATION_INVALID;
     void DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount);
+    uint32_t CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain);
     void DoFading(HpaePcmBuffer *input);
     void SilenceData(HpaePcmBuffer *pcmBuffer);
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);

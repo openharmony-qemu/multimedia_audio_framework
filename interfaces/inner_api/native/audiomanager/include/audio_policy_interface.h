@@ -155,6 +155,15 @@ class AudioPreferredInputDeviceChangeCallback {
     virtual void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
 };
 
+// This callback is triggered when SetPreferredDevice() is called.
+class PreferredDeviceSetCallback {
+public:
+    virtual ~PreferredDeviceSetCallback() = default;
+
+    virtual void OnPreferredDeviceSet(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller) = 0;
+};
+
 class AudioManagerDeviceChangeCallback {
 public:
     virtual ~AudioManagerDeviceChangeCallback() = default;

@@ -18,6 +18,8 @@
 
 #include "audio_static_buffer_processor.h"
 #include "audio_errors.h"
+#include "audio_log_utils.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,6 +29,20 @@ std::shared_ptr<AudioStaticBufferProcessor> AudioStaticBufferProcessor::CreateIn
 {
     CHECK_AND_RETURN_RET_LOG(sharedBuffer != nullptr, nullptr, "sharedBuffer is nullptr");
     return std::make_shared<AudioStaticBufferProcessor>(streamInfo, sharedBuffer);
+}
+
+int32_t AudioStaticBufferProcessor::ProcessFadeInOut(int8_t *bufferBase, size_t bufferSize,
+    AudioStreamInfo streamInfo, bool isFadeOut)
+{
+    ChannelVolumes mapVols = isFadeOut ? VolumeTools::GetChannelVolumes(streamInfo.channels, 1.0f, 0.0f) :
+        VolumeTools::GetChannelVolumes(streamInfo.channels, 0.0f, 1.0f);
+    BufferDesc fadeBufferDesc{};
+    fadeBufferDesc.buffer = reinterpret_cast<uint8_t *>(bufferBase);
+    fadeBufferDesc.bufLength = bufferSize;
+    fadeBufferDesc.dataLength = bufferSize;
+    int32_t ret = VolumeTools::Process(fadeBufferDesc, streamInfo.format, mapVols);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "VolumeTools::Process failed: %{public}d", ret);
+    return SUCCESS;
 }
 
 AudioStaticBufferProcessor::AudioStaticBufferProcessor(AudioStreamInfo streamInfo,
@@ -41,20 +57,22 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
 {
     float speed = ConvertAudioRenderRateToSpeed(renderRate);
     if (isEqual(speed, SPEED_NORMAL)) {
+        processBuffer_ = nullptr;
+        speedBufferSize_ = 0;
         curSpeed_ = speed;
         return SUCCESS;
     }
 
-    if (speed == curSpeed_) {
+    if (isEqual(speed, curSpeed_)) {
         return SUCCESS;
     }
-    speedBuffer_ = std::make_unique<uint8_t[]>(sharedBuffer_->GetDataSize() * MAX_SPEED_BUFFER_FACTOR);
+    processBuffer_ = std::make_unique<uint8_t[]>(sharedBuffer_->GetDataSize() * MAX_SPEED_BUFFER_FACTOR);
     audioSpeed_->SetSpeed(speed);
     audioSpeed_->SetPitch(speed);
 
     int32_t outBufferSize = 0;
     if (audioSpeed_->ChangeSpeedFunc(sharedBuffer_->GetDataBase(), sharedBuffer_->GetDataSize(),
-        speedBuffer_, outBufferSize) == 0) {
+        processBuffer_, outBufferSize) == 0) {
         AUDIO_ERR_LOG("process speed error");
         return ERR_OPERATION_FAILED;
     }
@@ -67,9 +85,9 @@ int32_t AudioStaticBufferProcessor::ProcessBuffer(AudioRendererRate renderRate)
 
 int32_t AudioStaticBufferProcessor::GetProcessedBuffer(uint8_t **bufferBase, size_t &bufferSize)
 {
-    if (speedBuffer_ != nullptr && speedBufferSize_ != 0) {
+    if (processBuffer_ != nullptr && speedBufferSize_ != 0) {
         AUDIO_INFO_LOG("Use %{public}f speed processed buffer!", curSpeed_);
-        *bufferBase = speedBuffer_.get();
+        *bufferBase = processBuffer_.get();
         bufferSize = speedBufferSize_;
     } else {
         AUDIO_INFO_LOG("Use original buffer!");
@@ -78,6 +96,12 @@ int32_t AudioStaticBufferProcessor::GetProcessedBuffer(uint8_t **bufferBase, siz
         bufferSize = sharedBuffer_->GetDataSize();
     }
     return SUCCESS;
+}
+
+void AudioStaticBufferProcessor::SaveProcessBuffer()
+{
+    speedBuffer_ = std::move(processBuffer_);
+    processBuffer_ = nullptr;
 }
 
 } // namespace AudioStandard

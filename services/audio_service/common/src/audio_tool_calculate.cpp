@@ -30,6 +30,7 @@ const static constexpr uint32_t DEFAULT_STEP_BY_32 = 32;
 #endif
 
 const static constexpr int32_t DEFAULT_CHANNEL_COUNT_2 = 2;
+const static constexpr int32_t DEFAULT_NUM_SAMPLES_16 = 16;
 
 inline bool Is16ByteAligned(const void * ptr)
 {
@@ -41,7 +42,6 @@ template <typename T, typename R,
     typename = std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<R>>>
 inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_t channels, size_t split)
 {
-    Trace trace("SumPcmAbsNormal");
     std::vector<R> sum(channels, 0);
     for (uint32_t i = 0; i < num_samples - (split - 1); i += split) {
         for (int32_t j = 0; j < channels; j++) {
@@ -116,14 +116,19 @@ std::vector<int64_t> SumS32SingleAbsNeno(const int32_t* data, uint32_t num_sampl
 {
     std::vector<int64_t> sum(1, 0);
 #if USE_ARM_NEON == 1
-    int64x2_t sum_vec = vdupq_n_s64(0);
+    uint64x2_t sum_vec = vdupq_n_u64(0);
     for (uint32_t i = 0; i + DEFAULT_OFFSET_3 < num_samples; i += DEFAULT_STEP_BY_4) {
         int32x4_t v = vld1q_s32(data + i);        // load 4 samples
-        int32x4_t abs_v = vabsq_s32(v);           // take absolute values
-        int64x2_t pair_sum = vpaddlq_s32(abs_v);  // 4->2 wide accumulation
-        sum_vec = vaddq_s64(sum_vec, pair_sum);   // accumulate into sum_vec
+        // safe ub abs
+        uint32x4_t mask = vcltq_s32(v, vdupq_n_s32(0));
+        uint32x4_t abs_u32 = vsubq_u32(vreinterpretq_u32_s32(v) ^ mask, mask);
+        uint32x2_t l = vget_low_u32(abs_u32);
+        uint32x2_t h = vget_high_u32(abs_u32);
+
+        sum_vec = vaddq_u64(sum_vec, vmovl_u32(l));
+        sum_vec = vaddq_u64(sum_vec, vmovl_u32(h));
     }
-    sum[0] = vgetq_lane_s64(sum_vec, 0) + vgetq_lane_s64(sum_vec, 1);
+    sum[0] = static_cast<int64_t>(vgetq_lane_u64(sum_vec, 0) + vgetq_lane_u64(sum_vec, 1));
 #endif
     return sum;
 }
@@ -140,23 +145,20 @@ std::vector<int64_t> SumS32StereoAbsNeno(const int32_t* data, uint32_t num_sampl
         data += DEFAULT_STEP_BY_8;
 
         // calculate absolute values
-        int32x4_t left_abs = vabsq_s32(samples.val[0]);
-        int32x4_t right_abs = vabsq_s32(samples.val[1]);
+        uint32x4_t mask_l = vcltq_s32(samples.val[0], vdupq_n_s32(0));
+        uint32x4_t mask_r = vcltq_s32(samples.val[1], vdupq_n_s32(0));
 
-        // zero-overhead extension to 64-bit
-        uint64x2_t left_low = vmovl_u32(vget_low_u32(vreinterpretq_u32_s32(left_abs)));
-        uint64x2_t left_high = Extension32bitTo64bit(left_abs);
-        uint64x2_t right_low = vmovl_u32(vget_low_u32(vreinterpretq_u32_s32(right_abs)));
-        uint64x2_t right_high = Extension32bitTo64bit(right_abs);
+        uint32x4_t left_abs = vsubq_u32(vreinterpretq_u32_s32(samples.val[0]) ^ mask_l, mask_l);
+        uint32x4_t right_abs = vsubq_u32(vreinterpretq_u32_s32(samples.val[1]) ^ mask_r, mask_r);
 
-        // accumulate
-        sum_left_64x2 = vaddq_u64(sum_left_64x2, left_low);
-        sum_left_64x2 = vaddq_u64(sum_left_64x2, left_high);
-        sum_right_64x2 = vaddq_u64(sum_right_64x2, right_low);
-        sum_right_64x2 = vaddq_u64(sum_right_64x2, right_high);
+        sum_left_64x2 = vaddq_u64(sum_left_64x2, vmovl_u32(vget_low_u32(left_abs)));
+        sum_left_64x2 = vaddq_u64(sum_left_64x2, vmovl_u32(vget_high_u32(left_abs)));
+
+        sum_right_64x2 = vaddq_u64(sum_right_64x2, vmovl_u32(vget_low_u32(right_abs)));
+        sum_right_64x2 = vaddq_u64(sum_right_64x2, vmovl_u32(vget_high_u32(right_abs)));
     }
-    sum[0] = vgetq_lane_u64(sum_left_64x2, 0) + vgetq_lane_u64(sum_left_64x2, 1);
-    sum[1] = vgetq_lane_u64(sum_right_64x2, 0) + vgetq_lane_u64(sum_right_64x2, 1);
+    sum[0] = static_cast<int64_t>(vgetq_lane_u64(sum_left_64x2, 0) + vgetq_lane_u64(sum_left_64x2, 1));
+    sum[1] = static_cast<int64_t>(vgetq_lane_u64(sum_right_64x2, 0) + vgetq_lane_u64(sum_right_64x2, 1));
 #endif
     return sum;
 }
@@ -165,10 +167,8 @@ std::vector<int64_t> SumS32AbsNeno(const int32_t* pcm, uint32_t num_samples, int
 {
     std::vector<int64_t> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumS32SingleAbsNeno");
         return SumS32SingleAbsNeno(pcm, num_samples);
     } else {
-        Trace trace("SumS32StereoAbsNeno");
         return SumS32StereoAbsNeno(pcm, num_samples);
     }
     return sum;
@@ -177,7 +177,8 @@ std::vector<int64_t> SumS32AbsNeno(const int32_t* pcm, uint32_t num_samples, int
 std::vector<int64_t> AudioToolCalculate::SumAudioS32AbsPcm(const int32_t* pcm, uint32_t num_samples,
     int32_t channels, size_t split)
 {
-    if (!Is16ByteAligned(pcm) || channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
+    if (!Is16ByteAligned(pcm) || num_samples < DEFAULT_NUM_SAMPLES_16 ||
+        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<int32_t, int64_t>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1
@@ -193,12 +194,15 @@ std::vector<int32_t> SumS16SingleAbsNeno(const int16_t* pcm, uint32_t num_sample
 #if USE_ARM_NEON == 1
     int32x4_t sum_vec = vdupq_n_s32(0);  // 32-bit accumulator
     for (uint32_t i = 0; i + DEFAULT_OFFSET_7 <= num_samples; i += DEFAULT_STEP_BY_8) {
-    int16x8_t v = vld1q_s16(&pcm[i]);           // load 8 int16 samples
-    int16x8_t abs_v = vabsq_s16(v);             // absolute values（S16）
-    int32x4_t vabs_lo = vmovl_s16(vget_low_s16(abs_v));  // first 4 samples
-    int32x4_t vabs_hi = vmovl_s16(vget_high_s16(abs_v)); // last 4 samples
-    sum_vec = vaddq_s32(sum_vec, vabs_lo);
-    sum_vec = vaddq_s32(sum_vec, vabs_hi);
+        int16x8_t v = vld1q_s16(&pcm[i]);           // load 8 int16 samples
+
+        uint16x8_t mask = vcltq_s16(v, vdupq_n_s16(0));
+        uint16x8_t abs_v = vsubq_u16(vreinterpretq_u16_s16(v) ^ mask, mask);
+
+        int32x4_t vabs_lo = vmovl_s16(vreinterpret_s16_u16(vget_low_u16(abs_v)));  // first 4 samples
+        int32x4_t vabs_hi = vmovl_s16(vreinterpret_s16_u16(vget_high_u16(abs_v))); // last 4 samples
+        sum_vec = vaddq_s32(sum_vec, vabs_lo);
+        sum_vec = vaddq_s32(sum_vec, vabs_hi);
     }
     sum[0] = SafeVaddvqS32(sum_vec);
 #endif
@@ -217,13 +221,16 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
         pcm += DEFAULT_STEP_BY_16;
 
         // absolute values
-        int16x8_t left_abs = vabsq_s16(samples.val[0]);
-        int16x8_t right_abs = vabsq_s16(samples.val[1]);
+        uint16x8_t mask_l = vcltq_s16(samples.val[0], vdupq_n_s16(0));
+        uint16x8_t mask_r = vcltq_s16(samples.val[1], vdupq_n_s16(0));
+    
+        uint16x8_t left_abs = vsubq_u16(vreinterpretq_u16_s16(samples.val[0]) ^ mask_l, mask_l);
+        uint16x8_t right_abs = vsubq_u16(vreinterpretq_u16_s16(samples.val[1]) ^ mask_r, mask_r);
 
         // zero-overhead extension to 32-bit
-        uint32x4_t left_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(left_abs)));
+        uint32x4_t left_low = vmovl_u16(vget_low_u16(left_abs));
         uint32x4_t left_high = Extension16bitTo32bit(left_abs);
-        uint32x4_t right_low = vmovl_u16(vget_low_u16(vreinterpretq_u16_s16(right_abs)));
+        uint32x4_t right_low = vmovl_u16(vget_low_u16(right_abs));
         uint32x4_t right_high = Extension16bitTo32bit(right_abs);
 
         // accumulate
@@ -234,7 +241,6 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
     }
     sum[0] = SafeVaddvqU32(sum_left_32x4);
     sum[1] = SafeVaddvqU32(sum_right_32x4);
-    AUDIO_INFO_LOG("SumS16StereoAbsNeno, sum 0 :%{public}d", sum[0]);
 #endif
     return sum;
 }
@@ -242,14 +248,9 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
 std::vector<int32_t> SumS16AbsNeno(const int16_t* pcm, uint32_t num_samples, int32_t channels)
 {
     std::vector<int32_t> sum(channels, 0);
-    AUDIO_INFO_LOG("SumS16AbsNeno");
     if (channels == 1) {
-        AUDIO_INFO_LOG("SumS16AbsNeno channel 1");
-        Trace trace("SumS16SingleAbsNeno");
         return SumS16SingleAbsNeno(pcm, num_samples);
     } else {
-        AUDIO_INFO_LOG("SumS16AbsNeno channel 2");
-        Trace trace("SumS16StereoAbsNeno");
         return SumS16StereoAbsNeno(pcm, num_samples);
     }
     return sum;
@@ -258,15 +259,13 @@ std::vector<int32_t> SumS16AbsNeno(const int16_t* pcm, uint32_t num_samples, int
 std::vector<int32_t> AudioToolCalculate::SumAudioS16AbsPcm(const int16_t* pcm, uint32_t num_samples,
     int32_t channels, size_t split)
 {
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm1");
-    if (!Is16ByteAligned(pcm) || channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
+    if (!Is16ByteAligned(pcm) || num_samples < DEFAULT_NUM_SAMPLES_16||
+        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<int16_t, int32_t>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm2");
     return SumS16AbsNeno(pcm, num_samples, channels);
 #else
-    AUDIO_INFO_LOG("SumAudioS16AbsPcm3");
     return SumPcmAbsNormal<int16_t, int32_t>(pcm, num_samples, channels, split);
 #endif
 }
@@ -329,10 +328,8 @@ std::vector<int32_t> SumU8AbsNeno(const uint8_t *pcm, uint32_t num_samples, int3
 {
     std::vector<int32_t> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumU8SingleNeno");
         return SumU8SingleNeno(pcm, num_samples);
     } else {
-        Trace trace("SumU8StereoNeno");
         return SumU8StereoNeno(pcm, num_samples);
     }
     return sum;
@@ -341,7 +338,8 @@ std::vector<int32_t> SumU8AbsNeno(const uint8_t *pcm, uint32_t num_samples, int3
 std::vector<int32_t> AudioToolCalculate::SumAudioU8AbsPcm(const uint8_t *pcm, uint32_t num_samples,
     int32_t channels, size_t split)
 {
-    if (!Is16ByteAligned(pcm) || channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
+    if (!Is16ByteAligned(pcm) || num_samples < DEFAULT_NUM_SAMPLES_16 ||
+        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<uint8_t, int32_t>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1
@@ -402,10 +400,8 @@ std::vector<float> SumF32AbsNeno(const float *pcm, uint32_t num_samples, int32_t
 {
     std::vector<float> sum(channels, 0);
     if (channels == 1) {
-        Trace trace("SumF32SingleAbsNeno");
         return SumF32SingleAbsNeno(pcm, num_samples);
     } else {
-        Trace trace("SumF32StereoAbsNeno");
         return SumF32StereoAbsNeno(pcm, num_samples);
     }
     return sum;
@@ -414,7 +410,8 @@ std::vector<float> SumF32AbsNeno(const float *pcm, uint32_t num_samples, int32_t
 std::vector<float> AudioToolCalculate::SumAudioF32AbsPcm(const float *pcm, uint32_t num_samples,
     int32_t channels, size_t split)
 {
-    if (!Is16ByteAligned(pcm) || channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
+    if (!Is16ByteAligned(pcm) || num_samples < DEFAULT_NUM_SAMPLES_16 ||
+        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<float, float>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1

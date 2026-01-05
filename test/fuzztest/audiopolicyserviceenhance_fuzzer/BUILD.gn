@@ -69,7 +69,7 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -95,7 +95,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
 
   public_external_deps += [
     "libxml2:libxml2",
-    "openssl:libcrypto_shared",
   ]
 
   if (accessibility_enable == true) {

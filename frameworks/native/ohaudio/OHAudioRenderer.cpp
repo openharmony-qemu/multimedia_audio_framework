@@ -17,6 +17,7 @@
 #endif
 
 #include "OHAudioRenderer.h"
+#include <limits>
 #include "audio_errors.h"
 #include "audio_utils.h"
 
@@ -448,6 +449,43 @@ OH_AudioStream_Result OH_AudioRenderer_GetKeepRunning(OH_AudioRenderer* renderer
     CHECK_AND_RETURN_RET_LOG(keepRunning != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "keepRunning is nullptr");
     int32_t ret = audioRenderer->GetKeepRunning(*keepRunning);
     CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, AUDIOSTREAM_ERROR_SYSTEM, "System internal error.");
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetLatency(OH_AudioRenderer* renderer,
+    OH_AudioStream_LatencyType type, int32_t* latencyMs)
+{
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(latencyMs != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "latencyMs is nullptr");
+
+    OHOS::AudioStandard::LatencyFlag flag;
+    switch (type) {
+        case AUDIOSTREAM_LATENCY_TYPE_ALL:
+            flag = static_cast<OHOS::AudioStandard::LatencyFlag>(
+                OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_ENGINE |
+                OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_HARDWARE);
+            break;
+        case AUDIOSTREAM_LATENCY_TYPE_SOFTWARE:
+            flag = OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_ENGINE;
+            break;
+        case AUDIOSTREAM_LATENCY_TYPE_HARDWARE:
+            flag = OHOS::AudioStandard::LatencyFlag::LATENCY_FLAG_HARDWARE;
+            break;
+        default:
+            AUDIO_ERR_LOG("invalid latency type %{public}d", static_cast<int32_t>(type));
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+
+    uint64_t latencyUs = 0;
+    int32_t ret = audioRenderer->GetLatencyWithFlag(latencyUs, flag);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, AUDIOSTREAM_ERROR_SYSTEM,
+        "GetLatencyWithFlag failed, ret %{public}d", ret);
+
+    int64_t latencyInMs = static_cast<int64_t>(latencyUs / OHOS::AudioStandard::AUDIO_US_PER_MS);
+    CHECK_AND_RETURN_RET_LOG(latencyInMs <= std::numeric_limits<int32_t>::max(),
+        AUDIOSTREAM_ERROR_SYSTEM, "latency exceeds int32 range");
+    *latencyMs = static_cast<int32_t>(latencyInMs);
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -1007,6 +1045,12 @@ int32_t OHAudioRenderer::GetKeepRunning(bool &keepRunning)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetKeepRunning(keepRunning);
+}
+
+int32_t OHAudioRenderer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetLatencyWithFlag(latency, flag);
 }
 
 int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)

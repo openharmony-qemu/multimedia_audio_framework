@@ -26,6 +26,7 @@ config("audio_engine_private_config") {
     "../../../audioutils/include",
     "../../../hdiadapter_new/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../services/audio_engine/manager/include",
     "../../../../../services/audio_policy/common/include",
     "../../../../../services/audio_service/common/include",

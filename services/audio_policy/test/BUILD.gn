@@ -152,7 +152,7 @@ ohos_unittest("audio_zone_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -175,10 +175,6 @@ ohos_unittest("audio_zone_service_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_zone_service_unit_test/audio_zone_device_unit_test.cpp",
@@ -318,7 +314,7 @@ ohos_unittest("audio_zone_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -342,10 +338,6 @@ ohos_unittest("audio_zone_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "../../audio_policy/client/stub/src/audio_zone_client.cpp",
@@ -479,7 +471,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -502,10 +494,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
@@ -628,7 +616,7 @@ ohos_unittest("standalone_mode_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -767,7 +755,7 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -790,10 +778,6 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_second_unit_test.cpp",
@@ -911,7 +895,7 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -934,10 +918,6 @@ ohos_unittest("audio_policy_service_first_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_first_unit_test.cpp",
@@ -1094,7 +1074,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -1117,10 +1097,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_second_unit_test.cpp",
@@ -1284,7 +1260,7 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -1307,10 +1283,6 @@ ohos_unittest("audio_policy_service_third_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_third_unit_test.cpp",
@@ -1466,7 +1438,7 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -1489,10 +1461,6 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_microphone_descriptor_unit_test/src/audio_microphone_descriptor_unit_test.cpp",
@@ -1650,7 +1618,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -1673,10 +1641,6 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_thirdext_unit_test.cpp",
@@ -1831,7 +1795,7 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -1854,10 +1818,6 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_policy_service_unit_test/src/audio_policy_service_extended_unit_test.cpp",
@@ -2031,7 +1991,7 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -2106,7 +2066,7 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -2635,7 +2595,7 @@ ohos_unittest("audio_device_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -2715,7 +2675,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -2920,7 +2880,7 @@ ohos_unittest("audio_affinity_parser_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -2985,7 +2945,7 @@ ohos_unittest("audio_global_config_manager_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -3124,7 +3084,7 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3219,7 +3179,7 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3300,7 +3260,7 @@ ohos_unittest("audio_effect_service_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gtest",
     "hdf_core:libhdf_host",
@@ -3454,7 +3414,7 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -3476,10 +3436,6 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [ "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_pro_unit_test.cpp" ]
 
@@ -3598,7 +3554,7 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gtest",
     "hdf_core:libhdf_host",
@@ -3710,7 +3666,7 @@ ohos_unittest("audio_affinity_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3778,7 +3734,7 @@ ohos_unittest("audio_device_common_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3849,7 +3805,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3917,7 +3873,7 @@ ohos_unittest("device_status_listener_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -3962,6 +3918,7 @@ ohos_unittest("audio_ec_manager_unit_test") {
     "./unittest/audio_ec_manager_unit_test/include",
     "../../audio_policy/server/src/service/service",
     "../../audio_policy/server/domain/pipe/src",
+    "../../../frameworks/native/include",
   ]
 
   use_exceptions = true
@@ -3993,6 +3950,7 @@ ohos_unittest("audio_ec_manager_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
+    "../../../frameworks/native/audioutils:audio_utils",
   ]
 
     sanitize = {
@@ -4079,7 +4037,7 @@ ohos_unittest("audio_active_device_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4144,7 +4102,7 @@ ohos_unittest("audio_a2dp_device_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4210,7 +4168,7 @@ ohos_unittest("audio_connected_device_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4392,7 +4350,7 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4470,7 +4428,7 @@ ohos_unittest("audio_volume_utils_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4549,7 +4507,7 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4624,7 +4582,7 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4709,7 +4667,7 @@ ohos_unittest("audio_input_thread_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -4767,7 +4725,7 @@ ohos_unittest("audio_concurrency_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -4991,7 +4949,7 @@ ohos_unittest("power_state_listener_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5045,7 +5003,7 @@ ohos_unittest("audio_usb_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5144,7 +5102,7 @@ ohos_unittest("audio_session_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -5191,7 +5149,7 @@ ohos_unittest("audio_session_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -5237,7 +5195,7 @@ ohos_unittest("audio_policy_utils_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
@@ -5301,7 +5259,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5324,10 +5282,6 @@ ohos_unittest("audio_background_manager_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_background_manager_unit_test/src/audio_background_manager_unit_test.cpp",
@@ -5381,7 +5335,7 @@ ohos_unittest("audio_setting_provider_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
@@ -5438,7 +5392,7 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "googletest:gtest",
@@ -5483,7 +5437,7 @@ ohos_unittest("audio_tone_parser_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -5567,7 +5521,7 @@ ohos_unittest("audio_capturer_session_unit_test") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -5605,7 +5559,7 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -5672,7 +5626,7 @@ ohos_unittest("audio_client_tracker_callback_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -5733,7 +5687,7 @@ ohos_unittest("audio_core_service_entry_unit_test") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5789,7 +5743,7 @@ ohos_unittest("audio_core_service_private_unit_test") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5875,7 +5829,7 @@ ohos_unittest("audio_core_service_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -5898,10 +5852,6 @@ ohos_unittest("audio_core_service_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [
     "./unittest/audio_core_service_unit_test/src/audio_core_service_unit_test.cpp",
@@ -6046,7 +5996,7 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -6069,10 +6019,6 @@ ohos_unittest("audio_core_service_utils_unit_test") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   sources = [ "./unittest/audio_core_service_utils_unit_test/src/audio_core_service_utils_unit_test.cpp" ]
 
@@ -6231,7 +6177,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -6292,7 +6238,7 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -6366,7 +6312,7 @@ ohos_unittest("audio_tone_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -6438,7 +6384,7 @@ ohos_unittest("dfx_msg_manager_unit_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",

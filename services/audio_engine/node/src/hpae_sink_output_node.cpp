@@ -335,7 +335,7 @@ StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("[SetSinkState]Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
@@ -353,6 +353,14 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
     streamRunningNum_ = appsUid.size();
     return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t sessionId, StreamUsage usage, RendererState state)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)

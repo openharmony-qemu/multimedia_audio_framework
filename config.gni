@@ -104,6 +104,20 @@ declare_args() {
     audio_telephony_cellular_data_enable = false
   }
 
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.telephony_call_manager)) {
+    audio_framework_feature_call_manager_enable = false
+  } else {
+    audio_framework_feature_call_manager_enable = true
+  }
+
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.multi_alarm_level)) {
+    audio_framework_feature_multi_alarm_level = false
+  } else {
+    audio_framework_feature_multi_alarm_level = true
+  }
+
   audio_framework_feature_new_napi = true
 }
 

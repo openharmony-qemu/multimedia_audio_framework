@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/remote_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -163,7 +164,7 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_006, TestSize.Level1)
     EXPECT_TRUE(sink_ && sink_->IsInited());
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
@@ -197,5 +198,153 @@ HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_007, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name   : Test RemoteSink CheckLatencySignal
+ * @tc.number : RemoteSinkUnitTest_008
+ * @tc.desc   : Verify latency monitor update branch when signal detected flag is set
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_008, TestSize.Level1)
+{
+    auto remoteSink = std::static_pointer_cast<RemoteAudioRenderSink>(sink_);
+    ASSERT_NE(remoteSink, nullptr);
+
+    IAudioSinkAttr originalAttr = remoteSink->attr_;
+    auto originalAgent = remoteSink->signalDetectAgent_;
+    size_t originalDetectedTime = remoteSink->signalDetectedTime_;
+    remoteSink->attr_.sampleRate = SAMPLE_RATE_48000;
+    remoteSink->attr_.channel = STEREO;
+    remoteSink->attr_.format = AudioSampleFormat::SAMPLE_S16LE;
+    std::vector<uint8_t> buffer(remoteSink->attr_.channel * GetFormatByteSize(remoteSink->attr_.format), 0);
+    remoteSink->CheckLatencySignal(buffer.data(), buffer.size());
+
+    remoteSink->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    ASSERT_NE(remoteSink->signalDetectAgent_, nullptr);
+    remoteSink->signalDetectAgent_->channels_ = remoteSink->attr_.channel;
+    remoteSink->signalDetectAgent_->sampleRate_ = remoteSink->attr_.sampleRate;
+    remoteSink->signalDetectAgent_->sampleFormat_ = remoteSink->attr_.format;
+    remoteSink->signalDetectAgent_->formatByteSize_ = GetFormatByteSize(remoteSink->attr_.format);
+    remoteSink->signalDetectAgent_->signalDetected_ = true;
+    remoteSink->signalDetectAgent_->lastPeakBufferTime_ = "2025-01-01-00:00:00";
+
+    // Prepare dsp time to avoid out_of_range in ShowTimestamp
+    LatencyMonitor::GetInstance().UpdateDspTime("2025-01-01-00:00:00:0002025-01-01-00:00:00:000");
+
+    remoteSink->signalDetectedTime_ = MILLISECOND_PER_SECOND;
+    remoteSink->CheckLatencySignal(buffer.data(), buffer.size());
+
+    EXPECT_FALSE(remoteSink->signalDetectAgent_->signalDetected_);
+    EXPECT_GE(remoteSink->signalDetectedTime_, static_cast<size_t>(MILLISECOND_PER_SECOND));
+
+    LatencyMonitor::GetInstance().UpdateDspTime("");
+    remoteSink->signalDetectAgent_ = originalAgent;
+    remoteSink->attr_ = originalAttr;
+    remoteSink->signalDetectedTime_ = originalDetectedTime;
+}
+
+/**
+ * @tc.name   : Test RemoteSink CheckLatencySignal
+ * @tc.number : RemoteSinkUnitTest_009
+ * @tc.desc   : Verify latency signal detection resets timer
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_009, TestSize.Level1)
+{
+    auto remoteSink = std::static_pointer_cast<RemoteAudioRenderSink>(sink_);
+    ASSERT_NE(remoteSink, nullptr);
+
+    IAudioSinkAttr originalAttr = remoteSink->attr_;
+    auto originalAgent = remoteSink->signalDetectAgent_;
+    bool originSignalDetected = remoteSink->signalDetected_;
+    size_t originSignalDetectedTime = remoteSink->signalDetectedTime_;
+
+    remoteSink->attr_.sampleRate = SAMPLE_RATE_48000;
+    remoteSink->attr_.channel = STEREO;
+    remoteSink->attr_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    remoteSink->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    ASSERT_NE(remoteSink->signalDetectAgent_, nullptr);
+    remoteSink->signalDetectAgent_->channels_ = remoteSink->attr_.channel;
+    remoteSink->signalDetectAgent_->sampleRate_ = remoteSink->attr_.sampleRate;
+    remoteSink->signalDetectAgent_->sampleFormat_ = remoteSink->attr_.format;
+    remoteSink->signalDetectAgent_->formatByteSize_ = GetFormatByteSize(remoteSink->attr_.format);
+
+    std::vector<int16_t> firstFrame = {1, 1};
+    remoteSink->CheckLatencySignal(reinterpret_cast<uint8_t *>(firstFrame.data()),
+        firstFrame.size() * sizeof(int16_t));
+
+    const size_t framesToDetect = 5000;
+    std::vector<uint8_t> silentBuffer(framesToDetect * remoteSink->attr_.channel *
+        remoteSink->signalDetectAgent_->formatByteSize_, 0);
+    remoteSink->CheckLatencySignal(silentBuffer.data(), silentBuffer.size());
+
+    EXPECT_TRUE(remoteSink->signalDetected_);
+    EXPECT_EQ(remoteSink->signalDetectedTime_, 0u);
+    EXPECT_TRUE(remoteSink->signalDetectAgent_->signalDetected_);
+
+    remoteSink->signalDetectAgent_ = originalAgent;
+    remoteSink->attr_ = originalAttr;
+    remoteSink->signalDetected_ = originSignalDetected;
+    remoteSink->signalDetectedTime_ = originSignalDetectedTime;
+}
+
+/**
+ * @tc.name   : Test RemoteSink CheckLatencySignal
+ * @tc.number : RemoteSinkUnitTest_010
+ * @tc.desc   : Verify latency signal detection resets timer
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_010, TestSize.Level1)
+{
+    auto remoteSink = std::static_pointer_cast<RemoteAudioRenderSink>(sink_);
+    ASSERT_NE(remoteSink, nullptr);
+
+    IAudioSinkAttr originalAttr = remoteSink->attr_;
+    auto originalAgent = remoteSink->signalDetectAgent_;
+    bool originSignalDetected = remoteSink->signalDetected_;
+    size_t originSignalDetectedTime = remoteSink->signalDetectedTime_;
+
+    remoteSink->attr_.sampleRate = SAMPLE_RATE_48000;
+    remoteSink->attr_.channel = STEREO;
+    remoteSink->attr_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    remoteSink->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    ASSERT_NE(remoteSink->signalDetectAgent_, nullptr);
+    remoteSink->signalDetectAgent_->channels_ = remoteSink->attr_.channel;
+    remoteSink->signalDetectAgent_->sampleRate_ = remoteSink->attr_.sampleRate;
+    remoteSink->signalDetectAgent_->sampleFormat_ = remoteSink->attr_.format;
+    remoteSink->signalDetectAgent_->formatByteSize_ = GetFormatByteSize(remoteSink->attr_.format);
+
+    // Use values above DETECTED_ZERO_THRESHOLD to ensure non-zero path
+    std::vector<int16_t> firstFrame = {100, 100};
+    remoteSink->CheckLatencySignal(reinterpret_cast<uint8_t *>(firstFrame.data()),
+        firstFrame.size() * sizeof(int16_t));
+
+    const size_t framesToDetect = 5000;
+    std::vector<uint8_t> silentBuffer(framesToDetect * remoteSink->attr_.channel *
+        remoteSink->signalDetectAgent_->formatByteSize_, 0);
+    remoteSink->CheckLatencySignal(silentBuffer.data(), silentBuffer.size());
+
+    EXPECT_TRUE(remoteSink->signalDetected_);
+    EXPECT_EQ(remoteSink->signalDetectedTime_, 0u);
+    EXPECT_TRUE(remoteSink->signalDetectAgent_->signalDetected_);
+
+    remoteSink->signalDetectAgent_ = originalAgent;
+    remoteSink->attr_ = originalAttr;
+    remoteSink->signalDetected_ = originSignalDetected;
+    remoteSink->signalDetectedTime_ = originSignalDetectedTime;
+}
+
+/**
+ * @tc.name   : Test RemoteSink API
+ * @tc.number : RemoteSinkUnitTest_011
+ * @tc.desc   : Test remote sink release active device
+ */
+HWTEST_F(RemoteAudioRenderSinkUnitTest, RemoteSinkUnitTest_011, TestSize.Level1)
+{
+    std::shared_ptr<RemoteAudioRenderSink> sink = std::make_shared<RemoteAudioRenderSink>("test");
+    sink->renderInited_.store(true);
+    sink->ReleaseActiveDevice(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(sink->renderInited_.load(), false);
+    sink->ReleaseActiveDevice(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(sink->renderInited_.load(), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

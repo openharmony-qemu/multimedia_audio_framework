@@ -26,6 +26,7 @@ namespace AudioStandard {
 typedef struct IAudioSinkAttr : public Parcelable {
     std::string adapterName = "";
     uint32_t openMicSpeaker = 0;
+    AudioEncodingType encodingType = ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
@@ -37,11 +38,13 @@ typedef struct IAudioSinkAttr : public Parcelable {
     int32_t audioStreamFlag = 0;
     std::string address;
     std::string aux = "";
+    AudioPin pin = AUDIO_PIN_NONE;
 
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteString(adapterName) &&
             parcel.WriteUint32(openMicSpeaker) &&
+            parcel.WriteUint32(static_cast<uint32_t>(encodingType)) &&
             parcel.WriteUint8(static_cast<uint8_t>(format)) &&
             parcel.WriteUint32(sampleRate) &&
             parcel.WriteUint32(channel) &&
@@ -64,6 +67,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
 
         attr->adapterName = parcel.ReadString();
         attr->openMicSpeaker = parcel.ReadUint32();
+        attr->encodingType = static_cast<AudioEncodingType>(parcel.ReadUint32());
         attr->format = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRate = parcel.ReadUint32();
         attr->channel = parcel.ReadUint32();

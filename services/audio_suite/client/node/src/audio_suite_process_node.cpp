@@ -28,7 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat)
-    : AudioNode(nodeType, audioFormat), inputStream_(std::make_shared<InputPort<AudioSuitePcmBuffer*>>())
+    : AudioNode(nodeType, audioFormat)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
     CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
@@ -40,13 +40,6 @@ int32_t AudioSuiteProcessNode::DoProcess()
     if (GetAudioNodeDataFinishedFlag()) {
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
-    }
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
-        return ERR_INVALID_PARAM;
     }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
@@ -82,19 +75,16 @@ int32_t AudioSuiteProcessNode::DoProcess()
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     return SUCCESS;
 }
 
 std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutputData()
 {
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null! will trigger crash.", GetNodeType());
-    }
     bool isFinished = true;
-    auto& preOutputs = inputStream_->getInputDataRef();
+    auto& preOutputs = inputStream_.getInputDataRef();
     preOutputs.clear();
-    auto& preOutputMap = inputStream_->GetPreOutputMap();
+    auto& preOutputMap = inputStream_.GetPreOutputMap();
 
     for (auto& o : preOutputMap) {
         if (o.first == nullptr || !o.second) {
@@ -133,34 +123,35 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    if (outputStream_) {
-        outputStream_->resetResampleCfg();
-    }
+    outputStream_.ResetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteProcessNode::InitOutputStream()
+{
+    outputStream_.SetOutputPort(GetSharedInstance());
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode)
 {
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
-        return ERR_INVALID_PARAM;
-    }
     if (!preNode) {
         AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
     }
-    inputStream_->Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
+    CHECK_AND_RETURN_RET_LOG(preNode->GetOutputPort() != nullptr, ERROR, "OutputPort is null");
+    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 {
-    if (!inputStream_) {
-        AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
+    if (!preNode) {
+        AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
     }
-    inputStream_->DisConnect(preNode);
+    inputStream_.DisConnect(preNode);
     return SUCCESS;
 }
 

@@ -53,7 +53,9 @@ public:
     void SetActiveOutputDeviceProxy(DeviceType deviceType);
     bool GetEffectOffloadEnabledProxy();
     int32_t UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState state, const std::string &deviceName = "");
+        BluetoothOffloadState state, const std::string &deviceName = "",
+        const std::string &networkId = LOCAL_NETWORK_ID);
+    int32_t ReleaseActiveDeviceRouteProxy(DeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     int32_t UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId,
         const std::string &dupSinkName = "Speaker");
     void UpdateSessionConnectionStateProxy(const int32_t &sessionID, const int32_t &state);
@@ -122,6 +124,10 @@ public:
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t SetNonInterruptMuteProxy(uint32_t sessionId, bool muteFlag);
+    std::string GetRemoteAudioParameterProxy(const std::string& networkId);
+    void SetRemoteAudioParameterProxy(const std::string& networkId, bool isVol, int32_t val);
+    void RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& neowtrokId);
+    void UnRegistAdapterManagerCallback(const std::string& networkId);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

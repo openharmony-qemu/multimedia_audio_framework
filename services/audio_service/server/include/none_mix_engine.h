@@ -14,6 +14,7 @@
  */
 #ifndef NONE_MIX_ENGINE_H
 #define NONE_MIX_ENGINE_H
+#include <functional>
 #include <mutex>
 #include <atomic>
 #include "audio_playback_engine.h"
@@ -59,6 +60,8 @@ private:
 
     void GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
         uint32_t &targetChannel, AudioSampleFormat &targetFormat, bool &isVoip);
+    void RegisterSinkLatencyFetcher(uint32_t renderId);
+    void RegisterSinkLatencyFetcherToStreamIfNeeded();
 
 private:
     bool isVoip_;
@@ -69,6 +72,7 @@ private:
     uint64_t fwkSyncTime_;
     uint64_t latency_;
     std::shared_ptr<IRendererStream> stream_;
+    std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
 
     std::mutex startMutex;
 

@@ -42,6 +42,14 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_OUT_DIRECT_NORMAL},
 };
 
+static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16"},
+    {SAMPLE_S24LE, "s24"},
+    {SAMPLE_S32LE, "s32"},
+    {SAMPLE_F32LE, "f32"},
+};
+
 static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
@@ -51,6 +59,23 @@ static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, 
         (newPipe->moduleInfo_.rate != oldPipe->moduleInfo_.rate) ||
         (newPipe->moduleInfo_.channels != oldPipe->moduleInfo_.channels) ||
         (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
+}
+
+bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe,
+    std::shared_ptr<AudioPipeInfo> oldPipe)
+{
+    CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
+    CHECK_AND_RETURN_RET(!newPipe->streamDescriptors_.empty(), false);
+    const auto streamDesc = newPipe->streamDescriptors_.front();
+    CHECK_AND_RETURN_RET(!streamDesc->newDeviceDescs_.empty() && !streamDesc->oldDeviceDescs_.empty(), false);
+    const auto newDeviceID = streamDesc->newDeviceDescs_.front()->GetDeviceId();
+    const auto oldDeviceID = streamDesc->oldDeviceDescs_.front()->GetDeviceId();
+    if (newPipe->IsRouteFast() && oldPipe->IsRouteFast() &&
+        newPipe->moduleInfo_.className == "usb" && oldPipe->moduleInfo_.className == "usb" &&
+        newDeviceID != oldDeviceID) {
+        return true;
+    }
+    return false;
 }
 
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
@@ -99,7 +124,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     info.pipeAction_ = PIPE_ACTION_NEW;
     selectedPipeInfoList.push_back(std::make_shared<AudioPipeInfo>(info));
-    AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
+    HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
 
     return selectedPipeInfoList;
@@ -118,6 +143,10 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     streamInfo.format = streamPropInfo->format_;
     streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
     streamInfo.SetChannels({streamPropInfo->channels_});
+    if (streamPropInfo->channelLayout_ != CH_LAYOUT_UNKNOWN) {
+        streamInfo.channelLayout.clear();
+        streamInfo.channelLayout.insert(streamPropInfo->channelLayout_);
+    }
     temp->audioStreamInfo_ = {streamInfo};
     std::string info = streamInfo.Serialize();
     AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
@@ -215,8 +244,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
             // find if curStream's prefer pipe has already exist
             newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                 [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-                    return newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
-                        newPipeInfo->adapterName_ == streamDescAdapterName;
+                    return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName);
                 });
         }
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
@@ -247,7 +275,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         std::vector<uint64_t> sessionIdForLog{};
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
             if (streamDescToOldPipeInfo.find(streamDesc->sessionId_) == streamDescToOldPipeInfo.end()) {
-                AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
+                HILOG_COMM_WARN("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
                 continue;
             }
             streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
@@ -256,7 +284,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
                 sessionIdForLog.push_back(streamDesc->GetSessionId());
                 continue;
             }
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d --> %{public}d, "
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d -> %{public}d, "
                 "sAction %{public}d", streamDesc->GetSessionId(),
                 streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
                 newPipeInfo->GetRoute(), streamDesc->GetAction());
@@ -269,10 +297,10 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             std::string result = logstream.str();
             result.pop_back();
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}s", result.c_str());
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}s", result.c_str());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Empty");
         }
     }
 }
@@ -333,7 +361,7 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
     pipeInfo.pipeAction_ = PIPE_ACTION_NEW;
     std::shared_ptr<AudioPipeInfo> tempPipeInfo = std::make_shared<AudioPipeInfo>(pipeInfo);
     newPipeInfoList.push_back(tempPipeInfo);
-    AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d, "
+    HILOG_COMM_INFO("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d, "
         "routeFlag %{public}d", tempPipeInfo->ToString().c_str(), streamDesc->sessionId_, streamDesc->streamAction_,
         streamDesc->routeFlag_);
 }
@@ -343,7 +371,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-    AUDIO_INFO_LOG("Route flag: %{public}u", streamDesc->routeFlag_);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     for (auto &pipeInfo : pipeInfoList) {
@@ -364,7 +391,8 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
-    AUDIO_INFO_LOG("Route flag after concurrency: %{public}u", streamDesc->routeFlag_);
+    HILOG_COMM_INFO("[ScanPipeListForStreamDesc]Route flag after concurrency: %{public}u  sessionId: %{public}u",
+        streamDesc->routeFlag_, streamDesc->sessionId_);
 }
 
 AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
@@ -383,6 +411,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_NORMAL_UNPROCESS;
     } else if (flag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION;
+    } else if (flag & AUDIO_INPUT_FLAG_RAW_AI) {
+            return PIPE_TYPE_IN_NORMAL_RAW_AI;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -570,21 +600,28 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
     }
 }
 
+void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(deviceDesc, "streamDesc is nullptr");
+    moduleInfo.deviceType = std::to_string(deviceDesc->deviceType_);
+    moduleInfo.networkId = deviceDesc->networkId_;
+    moduleInfo.macAddress = deviceDesc->macAddress_;
+    if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
+        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().back().samplingRate.empty(), "samplingRate set empty");
+        moduleInfo.rate = to_string(*(deviceDesc->GetAudioStreamInfo().back().samplingRate.begin()));
+    }
+}
+
 void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info)
 {
     CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "streamPropInfo is nullptr");
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
-    if (pipeInfoPtr == nullptr) {
-        AUDIO_ERR_LOG("Adapter info is null");
-        return ;
-    }
-
+    CHECK_AND_RETURN_LOG(pipeInfoPtr, "pipeInfoPtr is null");
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
-    if (adapterInfoPtr == nullptr) {
-        AUDIO_ERR_LOG("Pipe info is null");
-        return ;
-    }
+    CHECK_AND_RETURN_LOG(pipeInfoPtr, "adapterInfoPtr is null");
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
@@ -592,6 +629,12 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        info.moduleInfo_.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
+        info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
+        info.moduleInfo_.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
+        info.moduleInfo_.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
+    }
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;
@@ -599,13 +642,18 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
-    AUDIO_INFO_LOG("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
+    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
+    HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]info.moduleInfo_.channels: %{public}s, "
+        "info.moduleInfo_.channelLayout: %{public}s", info.moduleInfo_.channels.c_str(),
+        info.moduleInfo_.channelLayout.c_str());
     FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
-    info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
-    info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
-    info.moduleInfo_.macAddress = streamDesc->newDeviceDescs_[0]->macAddress_;
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    info.moduleInfo_.renderInIdleState = pipeInfoPtr->paProp_.renderInIdleState_;
+
+    if (!streamDesc->newDeviceDescs_.empty()) {
+        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+    }
 
     info.streamDescriptors_.push_back(streamDesc);
     info.streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -620,15 +668,14 @@ AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
+    CHECK_AND_RETURN_RET(!IsBothFastArmUsbNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }
-    if ((oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
-        (oldPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) || (newPipe->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT)) {
+    if (oldPipe->IsRouteFast() || newPipe->IsRouteFast() || oldPipe->IsRouteDirect() || newPipe->IsRouteDirect()) {
         return AUDIO_STREAM_ACTION_RECREATE;
-    } else {
-        return AUDIO_STREAM_ACTION_MOVE;
     }
+    return AUDIO_STREAM_ACTION_MOVE;
 }
 
 void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
@@ -694,7 +741,7 @@ void AudioPipeSelector::ProcessModemCommunicationConcurrency(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal)
 {
     CHECK_AND_RETURN(AudioPipeManager::GetPipeManager()->IsModemCommunicationIdExist());
-    AUDIO_INFO_LOG("ModemCommunication exists, need process concurrency");
+    HILOG_COMM_INFO("[RemoveTargetStreams]ModemCommunication exists, need process concurrency");
     std::shared_ptr<AudioStreamDescriptor> modemCommStream =
         AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc();
     for (auto &streamDesc : streamDescs) {
@@ -715,8 +762,11 @@ void AudioPipeSelector::SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioS
 bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
+    CHECK_AND_RETURN_RET(!streamDesc->IsRunning(), false);
     CHECK_AND_RETURN_RET_LOG(streamDescToOldPipeInfo.size() != 0, false, "streamDescToOldPipeInfo is empty!");
-    return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
+    const auto sessionID = streamDesc->GetSessionId();
+    CHECK_AND_RETURN_RET(streamDescToOldPipeInfo[sessionID], false);
+    return (streamDescToOldPipeInfo[sessionID]->IsRenderPipeNeedMoveToNormal() &&
         streamDesc->IsRenderStreamNeedRecreate());
 }
 
@@ -731,15 +781,14 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         AUDIO_INFO_LOG("action %{public}d adapter[%{public}s] pipeRoute[0x%{public}x] streamRoute[0x%{public}x]",
             pipeInfo->GetAction(), pipeInfo->GetAdapterName().c_str(), pipeInfo->GetRoute(), streamDesc->GetRoute());
 
-        CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
-            pipeInfo->routeFlag_ == streamDesc->routeFlag_);
+        CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName));
 
         MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
 
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
         pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
-        AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
+        HILOG_COMM_INFO("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
             pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
         return true;
     }
@@ -797,6 +846,20 @@ void AudioPipeSelector::UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescri
  
     AudioPipeType type = GetPipeType(streamDesc->routeFlag_, streamDesc->audioMode_);
     AudioStreamCollector::GetAudioStreamCollector().UpdateRendererPipeInfo(streamDesc->sessionId_, type);
+}
+
+bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
+
+    CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName), false);
+
+    // Use networkId to distinguish multiple remote devices that may exist
+    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
+
+    return pipeInfo->IsSameNetworkId(deviceDesc->networkId_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -387,14 +387,14 @@ HWTEST_F(AudioCoreServiceExtUnitTest, SetDefaultOutputDevice_002, TestSize.Level
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: GetAdapterNameBySessionId_001
-* @tc.desc  : Test GetAdapterNameBySessionId - invalid session id return "".
+* @tc.number: GetModuleNameBySessionId_001
+* @tc.desc  : Test GetModuleNameBySessionId - invalid session id return "".
 */
-HWTEST_F(AudioCoreServiceExtUnitTest, GetAdapterNameBySessionId_001, TestSize.Level1)
+HWTEST_F(AudioCoreServiceExtUnitTest, GetModuleNameBySessionId_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioCoreServiceExtUnitTest GetAdapterNameBySessionId_001 start");
+    AUDIO_INFO_LOG("AudioCoreServiceExtUnitTest GetModuleNameBySessionId_001 start");
     uint32_t sessionID = 100001; // sessionId
-    auto result = GetServerPtr()->eventEntry_->GetAdapterNameBySessionId(sessionID);
+    auto result = GetServerPtr()->eventEntry_->GetModuleNameBySessionId(sessionID);
     EXPECT_EQ(result, "");
 }
 
@@ -409,7 +409,8 @@ HWTEST_F(AudioCoreServiceExtUnitTest, GetProcessDeviceInfoBySessionId_001, TestS
     uint32_t sessionID = 100001; // sessionId
     AudioDeviceDescriptor deviceDesc;
     AudioStreamInfo info;
-    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info);
+    int32_t pin;
+    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info, pin);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1149,6 +1150,22 @@ HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_002, TestSize.
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->streamInfo_.channels = STEREO;
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_004
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface, return false.
+ */
+HWTEST_F(AudioCoreServiceExtUnitTest, IsStreamSupportMultiChannel_004, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     streamDesc->streamInfo_.channels = STEREO;
     EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);

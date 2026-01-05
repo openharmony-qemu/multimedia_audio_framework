@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
 #include "media_monitor_manager.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -122,7 +123,7 @@ void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
         std::string subStr = value.substr(0, equalPos);
         if (muteType.count(subStr)) {
             auto tokenId = IPCSkeleton::GetCallingFullTokenID();
-            std::string bundleName = GetBundleNameByToken(tokenId);
+            std::string bundleName = AudioBundleManager::GetBundleNameByToken(tokenId);
             AUDIO_INFO_LOG("bundleName: %{public}s", bundleName.c_str());
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::MUTE_BUNDLE_NAME,

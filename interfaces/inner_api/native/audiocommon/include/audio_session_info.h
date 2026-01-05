@@ -50,6 +50,7 @@ enum class AudioSessionType {
     NOTIFICATION = 6,
     DTMF = 7,
     VOICE_ASSISTANT = 8,
+    NAVIGATION = 9,
 };
 
 /**
@@ -124,6 +125,18 @@ enum class AudioSessionStateChangeHint {
      * @since 20
      */
     UNDUCK = 5,
+
+    /**
+     * Suggests that the playback be muted. The application may choose to mute its audio upon receiving this hint.
+     * @since 23
+     */
+    MUTE_SUGGESTION = 6,
+
+    /**
+     * Suggests that the playback be unmuted. The application may choose to restore its audio upon receiving this hint.
+     * @since 23
+     */
+    UNMUTE_SUGGESTION = 7,
 };
 
 /**

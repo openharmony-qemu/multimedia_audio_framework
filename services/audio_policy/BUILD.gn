@@ -186,7 +186,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_definition_policy_utils.cpp",
     "server/infra/appclient/src/app_state_listener.cpp",
     "server/infra/appclient/src/audio_background_manager.cpp",
-    "server/infra/appclient/src/audio_bundle_manager.cpp",
     "server/infra/appclient/src/client_type_manager.cpp",
     "server/infra/appclient/src/client_type_manager_handler.cpp",
     "server/infra/config/parser/src/audio_affinity_parser.cpp",
@@ -209,6 +208,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
+    "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
@@ -253,6 +253,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_active_device.cpp",
     "server/domain/pipe/src/audio_capturer_session.cpp",
     "server/domain/device/src/audio_connected_device.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
     "server/domain/device/src/audio_device_common.cpp",
     "server/domain/device/src/audio_device_lock.cpp",
     "server/domain/device/src/audio_device_status.cpp",
@@ -367,9 +368,10 @@ audio_ohos_library("audio_policy_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "cJSON:cjson",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -395,10 +397,6 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]

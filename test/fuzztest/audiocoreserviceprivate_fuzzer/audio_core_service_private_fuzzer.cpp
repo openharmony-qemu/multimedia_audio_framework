@@ -205,14 +205,14 @@ void AudioCoreServicePrivateFetchDeviceAndRouteFuzzTest()
     audioCoreService->FetchDeviceAndRoute("SetAudioScene", reason);
 }
 
-void AudioCoreServicePrivateGetAdapterNameBySessionIdFuzzTest()
+void AudioCoreServicePrivateGetModuleNameBySessionIdFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     if (audioCoreService == nullptr) {
         return;
     }
     int32_t uid = 0;
-    audioCoreService->GetAdapterNameBySessionId(uid);
+    audioCoreService->GetModuleNameBySessionId(uid);
 }
 
 void AudioCoreServicePrivateAddSessionIdFuzzTest()
@@ -732,17 +732,6 @@ void AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest()
     }
 }
 
-void AudioCoreServicePrivateIsPaRouteFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-
-    uint32_t routeFlag = GetData<uint32_t>();
-    audioCoreService->IsPaRoute(routeFlag);
-}
-
 void AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1043,7 +1032,7 @@ void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
     }
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     audioStreamDescriptor->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesscs.push_back(audioStreamDescriptor);
+    streamDescs.push_back(audioStreamDescriptor);
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
@@ -1068,8 +1057,8 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
         return;
     }
     audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, audioStreamDescriptor);
-    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
-    audioCOreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, audioStreamDescriptor);
+    audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
 }
 
 void AudioCoreServicePrivateNotifyRouteUpdate()
@@ -1110,7 +1099,7 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchCapturerPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateFetchDeviceAndRouteFuzzTest,
-    AudioCoreServicePrivateGetAdapterNameBySessionIdFuzzTest,
+    AudioCoreServicePrivateGetModuleNameBySessionIdFuzzTest,
     AudioCoreServicePrivateAddSessionIdFuzzTest,
     AudioCoreServicePrivateDeleteSessionIdFuzzTest,
     AudioCoreServicePrivateOnDeviceStatusUpdatedFuzzTest,
@@ -1143,7 +1132,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateSelectRingerOrAlarmDevicesFuzzTest,
     AudioCoreServicePrivateUpdateDualToneStateFuzzTest,
     AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest,
-    AudioCoreServicePrivateIsPaRouteFuzzTest,
     AudioCoreServicePrivateSendA2dpConnectedWhileRunningFuzzTest,
     AudioCoreServicePrivateUpdateTrackerDeviceChangeFuzzTest,
     AudioCoreServicePrivateUpdateOutputDeviceFuzzTest,

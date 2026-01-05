@@ -49,6 +49,8 @@ int32_t CheckFramelen(const HpaeSinkInfo &sinkInfo);
 int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
 int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo);
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo);
+RendererState ConvertHpaeToRendererState(HpaeSessionState state);
+CapturerState ConvertHpaeToCapturerState(HpaeSessionState state);
 
 // for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>

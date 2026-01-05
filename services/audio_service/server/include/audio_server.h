@@ -43,6 +43,9 @@
 #include "audio_resource_service.h"
 #include "audio_stream_monitor.h"
 #include "standard_audio_service_stub.h"
+#include "async_action_handler.h"
+#include "iaudio_engine_callback_handle.h"
+#include "audio_engine_callback_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -107,7 +110,9 @@ public:
     int32_t GetTransactionId(int32_t deviceType, int32_t deviceRole, uint64_t& transactionId) override;
     int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
-        int32_t a2dpOffloadFlag, const std::string &deviceName) override;
+        int32_t a2dpOffloadFlag, const std::string &deviceName,
+        const std::string &networkId = LOCAL_NETWORK_ID) override;
+    int32_t ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
@@ -145,14 +150,23 @@ public:
     int32_t CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig, sptr<IRemoteObject>& client) override;
 
-    // ISinkParameterCallback
+    // Implement IAudioSinkCallback interfaces
     void OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
+
+    void OnRenderSinkStateChange(uint32_t sinkId, bool started) override;
+
+    void OnOutputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo) override;
+
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
 
     // IAudioSourceCallback
     void OnWakeupClose() override;
     void OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
         const std::string &condition, const std::string &value) override;
+    void OnInputPipeChange(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo) override;
 
     int32_t SetParameterCallback(const sptr<IRemoteObject>& object) override;
 
@@ -205,8 +219,6 @@ public:
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack) override;
 
     int32_t UnsetOffloadMode(uint32_t sessionId) override;
-
-    void OnRenderSinkStateChange(uint32_t sinkId, bool started) override;
 
     int32_t CheckHibernateState(bool hibernate) override;
 
@@ -270,8 +282,83 @@ public:
     int32_t AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
         std::string &channels, std::string &bufferSize) override;
     int32_t RemoveCaptureInjector(uint32_t sinkPortidx) override;
+
+    // Interfaces for callback handle
+    int32_t RegisterCallbackHandle(const sptr<IRemoteObject> &object) override;
+    int32_t SetCallbackHandleEnable(uint32_t callbackId, bool enable) override;
+
+    // Interfaces for pipes
+    int32_t GetCurrentOutputPipeChangeInfos(
+        std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos) override;
+    int32_t GetCurrentInputPipeChangeInfos(
+        std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+
+    int32_t RegistAdapterManagerCallback(const sptr<IRemoteObject>& object, const std::string& networkId) override;
+    int32_t UnRegistAdapterManagerCallback(const std::string& networkId) override;
+    void OnAdapterParamChange(std::string networkId, const AudioParamKey key,
+        std::string condition, std::string value) override;
+    int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
+        const std::string& condition, std::string& value) override;
+
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+
+private:
+    class CallbackHandle : public IRemoteObject::DeathRecipient {
+    public:
+        CallbackHandle(AudioServer *owner,
+            const sptr<IAudioEngineCallbackHandle> &cbHandle, pid_t pid, uid_t uid);
+        virtual ~CallbackHandle() = default;
+
+        // Func of DeathRecipient
+        void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+
+        void OnOutputPipeChange(AudioPipeChangeType changeType,
+            std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo);
+        void OnInputPipeChange(AudioPipeChangeType changeType,
+            std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo);
+
+        void SetCallbackHandleEnable(uint32_t callbackId, bool enable);
+
+    private:
+        AudioServer *owner_;
+        const sptr<IAudioEngineCallbackHandle> cbHandle_;
+        const pid_t pid_;
+        const uid_t uid_;
+        std::map<AudioEngineCallbackId, bool> cbEnableMap_;
+        std::mutex lock_;
+    };
+
+    class OutputChangeCallbackAction : public AsyncActionHandler::AsyncAction {
+    public:
+        explicit OutputChangeCallbackAction(AudioServer *owner, AudioPipeChangeType changeType,
+            std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo)
+            : owner_(owner), changeType_(changeType), changedPipeInfo_(changedPipeInfo)
+        {}
+
+        void Exec() override;
+
+    private:
+        AudioServer *owner_;
+        AudioPipeChangeType changeType_;
+        std::shared_ptr<AudioOutputPipeInfo> changedPipeInfo_;
+    };
+
+    class InputChangeCallbackAction : public AsyncActionHandler::AsyncAction {
+    public:
+        explicit InputChangeCallbackAction(AudioServer *owner, AudioPipeChangeType changeType,
+            std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo)
+            : owner_(owner), changeType_(changeType), changedPipeInfo_(changedPipeInfo)
+        {}
+
+        void Exec() override;
+
+    private:
+        AudioServer *owner_;
+        AudioPipeChangeType changeType_;
+        std::shared_ptr<AudioInputPipeInfo> changedPipeInfo_;
+    };
 
 private:
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -295,25 +382,38 @@ private:
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
+    void RegisterSinkLatencyFetcher(uint32_t renderId);
+    void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);
 
-    void ResetRecordConfig(AudioProcessConfig &config);
-    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config);
+    void ResetRecordConfig(AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
+    AudioProcessConfig ResetProcessConfig(const AudioProcessConfig &config,
+        const AudioPlaybackCaptureConfig &filterConfig);
     bool CheckStreamInfoFormat(const AudioProcessConfig &config);
     bool CheckRendererFormat(const AudioProcessConfig &config);
     bool CheckRecorderFormat(const AudioProcessConfig &config);
     bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
+    // Server callbacks
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     void RegisterAudioRendererSinkCallback();
     void RegisterDataTransferStateChangeCallback();
+    void RemoveCallbackHandle(pid_t pid);
+    void DispatchOutputPipeChangeEvent(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo);
+    void DispatchInputPipeChangeEvent(AudioPipeChangeType changeType,
+        std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo);
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
+        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "",
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
+    int32_t SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+        const std::string &networkId);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
@@ -351,7 +451,8 @@ private:
     int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId) override;
     int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
     int32_t StopGroup(int32_t workgroupId) override;
-
+    bool NeedDelayCreateSink(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
+    bool NeedDelayCreateSource(const uint32_t idBase, const uint32_t idType, const std::string &idInfo);
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
@@ -366,6 +467,10 @@ private:
     int32_t ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads) override;
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
+    int32_t SetAudioBalanceStatus();
+    int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
+    void OnStartExpansion();
+
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -380,6 +485,9 @@ private:
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
 
+    bool isEarpiece_ = false;
+    float audioBalanceValue_ = 0.0f;
+
     // Capturer status flags: each capturer is represented by a single bit.
     // 0 indicates the capturer has stopped; 1 indicates the capturer has started.
     std::atomic<uint64_t> capturerStateFlag_ = 0;
@@ -392,6 +500,7 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
+    std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
     std::mutex audioParameterCacheMutex_;
@@ -417,6 +526,13 @@ private:
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
 
     std::mutex setA2dpParamMutex_;
+
+    std::map<pid_t, sptr<CallbackHandle>> cbHandles_;
+    std::mutex cbLock_;
+
+    std::mutex audioAdapterCbMutex_;
+    std::shared_ptr<AudioParameterCallback> audioAdapterCb_;
+    std::unordered_set<std::string> audioAdapterNetworkIdSet_;
 };
 
 class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {

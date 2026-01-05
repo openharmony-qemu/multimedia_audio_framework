@@ -18,7 +18,6 @@
 
 #include <iostream>
 
-#include "audio_system_manager.h"
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
 #include "audio_policy_interface.h"

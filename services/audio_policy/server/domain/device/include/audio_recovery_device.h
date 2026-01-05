@@ -55,10 +55,11 @@ public:
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
-        const int32_t audioDeviceSelectMode = 0);
+        const int32_t audioDeviceSelectMode = 0, const bool isNeedNotifyBt = true);
     void SelectOutputDeviceLog(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
+    void SelectOutputDeviceForRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
@@ -83,6 +84,8 @@ private:
         int32_t usageOrSourceType);
     int32_t HandleExcludedOutputDevicesRecovery(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &excludedDevices);
+    int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     // selectoutputdevice
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
@@ -111,6 +114,7 @@ private:
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void WriteUnexcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     AudioStreamCollector& streamCollector_;
     AudioDeviceManager &audioDeviceManager_;

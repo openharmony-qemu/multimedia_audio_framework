@@ -20,6 +20,8 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "source/audio_capture_source.h"
+#include "capturer_clock_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -29,6 +31,9 @@ namespace AudioStandard {
 
 const uint32_t DEFAULT_SIZE = 8;
 const uint32_t UNIQUE_ID_INTERVAL = 8;
+static const uint32_t TEST_CAPUTRE_ID = 1;
+static const uint32_t TEST_STREAM_ID = 100000;
+
 class AudioCaptureSourceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -44,6 +49,8 @@ public:
     static int32_t AudioCaptureCaptureFrameEc001(
         struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo);
     static int32_t AudioCaptureCaptureFrameEc002(
+        struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo);
+    static int32_t AudioCaptureCaptureFrameEc003(
         struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo);
 protected:
     static uint32_t primaryId_;
@@ -124,11 +131,28 @@ int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc001(
 }
 
 int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc002(
-    struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo)
+    struct IAudioCapture *self, const struct AudioFrameLen frameLen, struct AudioCaptureFrameInfo frameInfo)
 {
-    int8_t* frameEc = nullptr;
+    int8_t frameEc = nullptr;
+    int8_t frame = nullptr;
     frameEc = new int8_t[DEFAULT_SIZE];
+    frame = new int8_t[6]; // 6: frame
     frameInfo->frameEc = frameEc;
+    frameInfo->frame = frame;
+    frameInfo->replyBytes = DEFAULT_SIZE;
+    return 0;
+}
+
+int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc003(
+    struct IAudioCapture self, const struct AudioFrameLen frameLen, struct AudioCaptureFrameInfo frameInfo)
+{
+    int8_t frameEc = nullptr;
+    int8_t frame = nullptr;
+    frameEc = new int8_t[DEFAULT_SIZE];
+    frame = new int8_t[DEFAULT_SIZE];
+    frameInfo->frameEc = frameEc;
+    frameInfo->frame = frame;
+    frameInfo->replyBytes = 1024; // 1024: replyBytes
     return 0;
 }
 
@@ -350,17 +374,80 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_014, TestSize.Level1)
 }
 
 /**
-
 @tc.name : Test PrimarySource API
-
 @tc.number : PrimarySourceUnitTest_015
-
-@tc.desc : Test offload source CaptureFrameEC
+@tc.desc : Test CheckFrameInfoLen
 */
-HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_015, TestSize.Level1)
+HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_001, TestSize.Level1)
 {
-    auto offloadSource_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (offloadSource_ == nullptr) {
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    if (source_ == nullptr) {
+        return;
+    }
+
+    uint64_t replyBytes = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    struct AudioCaptureFrameInfo frameInfo = {
+        .replyBytes = 10,
+    };
+    int32_t status = source_->CheckFrameInfoLen(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(status, ERR_INVALID_READ);
+    frameInfo.frame = new int8_t[DEFAULT_SIZE];
+    status = source_->CheckFrameInfoLen(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(status, ERR_INVALID_READ);
+    delete[] frameInfo.frame;
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CheckFrameInfoLen
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    if (source_ == nullptr) {
+    return;
+    }
+
+    uint64_t replyBytes = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    struct AudioCaptureFrameInfo frameInfo = {
+        .frame = new int8_t[4],
+        .replyBytes = 1024,
+    };
+    int32_t status = source_->CheckFrameInfoLen(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(status, SUCCESS);
+    delete[] frameInfo.frame;
+}
+
+/*
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CaptureFrameEC
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    if (source_ == nullptr) {
         return;
     }
     attr_.adapterName = "primary";
@@ -371,8 +458,9 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_015, TestSize.Level1)
     attr_.deviceType = DEVICE_TYPE_MIC;
     attr_.openMicSpeaker = 1;
     attr_.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
-    offloadSource_->Init(attr_);
-    offloadSource_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc001;
+    source_->Init(attr_);
+    ASSERT_NE(source_->audioCapture_, nullptr);
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc001;
 
     uint64_t replyBytes = 0;
     uint64_t replyBytesEc = 0;
@@ -386,15 +474,117 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_015, TestSize.Level1)
         .frame = bufferEc.data(),
         .frameLen = bufferEc.size(),
     };
-    EXPECT_EQ(offloadSource_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc), SUCCESS);
-    audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
-    CapturerClockManager::GetInstance().RegisterAudioSourceClock(0, audioSrcClock_);
-    offloadSource_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc002;
-    EXPECT_EQ(offloadSource_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc), SUCCESS);
-    offloadSource_->attr_.sourceType = SOURCE_TYPE_LIVE;
-    EXPECT_EQ(offloadSource_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc), SUCCESS);
+    int32_t ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(0, source_->audioSrcClock_);
+    source_->audioSrcClock_->frameCnt_ = 0;
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc002;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc003;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->DeInit();
 }
 
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CaptureFrameEC
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_002, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    if (source_ == nullptr) {
+        return;
+    }
+    attr_.adapterName = "primary";
+    attr_.sampleRate = 48000; // 48000: sample rate
+    attr_.channel = 2; // 2: channel
+    attr_.format = SAMPLE_S16LE;
+    attr_.channelLayout = 3; // 3: channel layout
+    attr_.deviceType = DEVICE_TYPE_MIC;
+    attr_.openMicSpeaker = 1;
+    attr_.sourceType = SOURCE_TYPE_LIVE;
+    source_->Init(attr_);
+    ASSERT_NE(source_->audioCapture_, nullptr);
+
+    uint64_t replyBytes = 0;
+    uint64_t replyBytesEc = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc001;
+    int32_t ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, ERR_INVALID_READ);
+    source_->audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(0, source_->audioSrcClock_);
+    source_->audioSrcClock_->frameCnt_ = 0;
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc002;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, ERR_INVALID_READ);
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc003;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->DeInit();
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CaptureFrameEC
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_003, TestSize.Level1)
+{
+    auto source_ = std::make_shared(10004, "device001");
+    if (source_ == nullptr) {
+        return;
+    }
+    attr_.adapterName = "primary";
+    attr_.sampleRate = 48000; // 48000: sample rate
+    attr_.channel = 2; // 2: channel
+    attr_.format = SAMPLE_S16LE;
+    attr_.channelLayout = 3; // 3: channel layout
+    attr_.deviceType = DEVICE_TYPE_MIC;
+    attr_.openMicSpeaker = 1;
+    attr_.sourceType = SOURCE_TYPE_EC;
+    source_->Init(attr_);
+    ASSERT_NE(source_->audioCapture_, nullptr);
+
+    uint64_t replyBytes = 0;
+    uint64_t replyBytesEc = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc001;
+    int32_t ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(0, source_->audioSrcClock_);
+    source_->audioSrcClock_->frameCnt_ = 0;
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc002;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc003;
+    ret = source_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc);
+    EXPECT_EQ(ret, SUCCESS);
+    source_->DeInit();
+}
 
 /**
  * @tc.name   : Test UsbSource API
@@ -431,9 +621,9 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_003, TestSize.Level1)
     EXPECT_TRUE(usbSource_);
     usbSource_->DeInit();
     int32_t ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
 }
 
@@ -447,17 +637,17 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
     InitUsbSource();
     EXPECT_TRUE(usbSource_);
     int32_t ret = usbSource_->Start();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Resume();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Pause();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Flush();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Reset();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
@@ -619,7 +809,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_009, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_ULTRASONIC;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_ULTRASONIC_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_ULTRASONIC * UNIQUE_ID_INTERVAL);
 }
 
 /**
@@ -634,7 +824,103 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_010, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_VOICE_RECOGNITION_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_RECOGNITION * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_011
+ * @tc.desc   : Test GetUniqueIdBySourceType API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_011, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_RAW_AI_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT * UNIQUE_ID_INTERVAL);
+}
+
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_001
+ * @tc.desc   : Test ChangePipeStream() add, change and remove cases
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_001, TestSize.Level2)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_STATE_CHANGE,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    auto streams = pipeInfo->GetStreams();
+    if (streams.find(TEST_STREAM_ID) == streams.end()) {
+        DeInitPrimarySource();
+        FAIL();
+    }
+    EXPECT_EQ(CAPTURER_RUNNING, streams[TEST_STREAM_ID].state_);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_002
+ * @tc.desc   : Test ChangePipeStream() remove all cases
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_002, TestSize.Level2)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(1, pipeInfo->GetStreams().size());
+
+    primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE_ALL,
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+    pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : ChangePipeStream_003
+ * @tc.desc   : Test ChangePipeStream() abnormal case
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_003, TestSize.Level4)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+
+    primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
+
+    primarySource_->ChangePipeStream(static_cast<StreamChangeType>(STREAM_CHANGE_TYPE_STATE_CHANGE + 1),
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+    auto pipeInfo = primarySource_->GetInputPipeInfo();
+    EXPECT_EQ(0, pipeInfo->GetStreams().size());
+
+    DeInitPrimarySource();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -512,5 +512,40 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_027, TestSize.Level4)
     AudioPolicyManagerFactory::GetAudioPolicyManager().ConnectServiceAdapter();
     EXPECT_EQ(audioDeviceStatus_->RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort), ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_028
+ * @tc.desc  : Test OnPreferredStateUpdated.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
+{
+    AudioDeviceDescriptor desc;
+    desc.isEnable_ = true;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    DeviceInfoUpdateCommand updateCommand = CATEGORY_UPDATE;
+    AudioStreamDeviceChangeReasonExt reason;
+    audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    desc.deviceType_ = DEVICE_TYPE_DP;
+    audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

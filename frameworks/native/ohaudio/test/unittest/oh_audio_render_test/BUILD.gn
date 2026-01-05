@@ -63,6 +63,7 @@ ohos_unittest("audio_oh_render_unit_test") {
   ]
 
   sources = [
+    "src/oh_audio_render_latency_unit_test.cpp",
     "src/oh_audio_render_unit_test.cpp",
     "src/oh_audio_render_getter_unit_test.cpp",
     "src/oh_audio_render_setter_unit_test.cpp"

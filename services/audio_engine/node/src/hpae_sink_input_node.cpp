@@ -215,6 +215,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSinkInputNode::GetOutputPort()
 bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallback> &callback)
 {
     writeCallback_ = callback;
+    OnStreamInfoChange(false);
     return true;
 }
 // reset historyBuffer
@@ -243,9 +244,9 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    HILOG_COMM_INFO("Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
-        ConvertSessionState2Str(renderState).c_str());
+    HILOG_COMM_INFO("[SetState]Sink[%{public}s]->Session[%{public}u - %{public}d] state change:"
+        "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), GetSessionId(), GetStreamType(),
+        ConvertSessionState2Str(state_).c_str(), ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;
     return SUCCESS;
 }

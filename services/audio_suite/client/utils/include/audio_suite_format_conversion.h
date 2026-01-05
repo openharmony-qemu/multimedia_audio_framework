@@ -19,7 +19,6 @@
 #include <vector>
 #include "securec.h"
 #include "audio_errors.h"
-#include "audio_suite_log.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_proresampler.h"
 #include "hpae_format_convert.h"

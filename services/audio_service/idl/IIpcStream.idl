@@ -33,6 +33,7 @@ interface IIpcStream {
     void Flush();
     void Drain([in] boolean stopFlag); // stopFlag = false
     void UpdatePlaybackCaptureConfig([in] AudioPlaybackCaptureConfig config);
+    void RequestHandleData([in] unsigned long syncFramePts, [in] unsigned int size);
     void GetAudioTime([out] unsigned long framePos, [out] unsigned long timestamp);
     void GetAudioPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
         [in] int base);
@@ -56,7 +57,7 @@ interface IIpcStream {
     void SetSilentModeAndMixWithOthers([in] boolean on);
     void SetClientVolume();
     void SetMute([in] boolean isMute);
-    void SetDuckFactor([in] float duckFactor);
+    void SetDuckFactor([in] float duckFactor, [in] unsigned int durationMs);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
@@ -68,6 +69,7 @@ interface IIpcStream {
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetTarget([in] int target, [out] int ret); //SetRenderTarget
     void SetRebuildFlag();
-    void PreSetLoopTimes([in] long bufferLoopTimes);
+    void SetLoopTimes([in] long bufferLoopTimes);
     void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
+    void GetLatencyWithFlag([out] unsigned long latency, [in] unsigned int flag);
 }

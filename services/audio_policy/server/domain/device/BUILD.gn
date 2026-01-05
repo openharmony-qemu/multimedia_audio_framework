@@ -58,7 +58,7 @@ ohos_unittest("audio_device_common_unit_next_test") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",

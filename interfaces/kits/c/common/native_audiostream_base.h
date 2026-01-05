@@ -929,6 +929,75 @@ typedef OH_AudioData_Callback_Result (*OH_AudioRenderer_OnWriteDataCallback)(OH_
 typedef int32_t (*OH_AudioRenderer_OnWriteDataCallbackAdvanced)(OH_AudioRenderer* renderer, void* userData,
     void* audioData, int32_t audioDataSize);
 
+/**
+ * @brief Defines audio latency types.
+ *
+ * @since 23
+ */
+typedef enum {
+    /**
+     * Type to get latency of all audio processing units, including software and hardware.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_LATENCY_TYPE_ALL = 0,
+
+    /**
+     * Type to get latency of software part, including audio effects in software.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_LATENCY_TYPE_SOFTWARE = 1,
+
+    /**
+     * Type to get latency of hardware part, including audio effects in hal, driver and hardware.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_LATENCY_TYPE_HARDWARE = 2
+} OH_AudioStream_LatencyType;
+
+typedef enum {
+    /**
+     * default mode".
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT = 0x0,
+    /**
+     * media mode.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA = 0x1,
+    /**
+     * Self-exclusion mode.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF = 0x8000,
+} OH_AudioStream_PlaybackCaptureMode;
+ 
+typedef enum {
+    /**
+     * Internal recording started successfully.
+     *
+     * @since 23
+     */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_SUCCESS = 0,
+/**
+ * Start playback capture failed state, because the request for interrupt is denied
+ * or meet system internal error.
+ * @since 23
+ */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_FAILED = 1,
+/**
+ * Start playback capture but user not authorized state.
+ * @since 23
+ */
+    AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_NOT_AUTHORIZED = 2,
+} OH_AudioStream_PlaybackCaptureStartState;
+
 #ifdef __cplusplus
 }
 #endif

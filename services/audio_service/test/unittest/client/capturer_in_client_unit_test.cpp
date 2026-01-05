@@ -123,6 +123,8 @@ public:
 
     virtual int32_t Drain(bool stopFlag) override { return 0; }
 
+    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return 0; }
+
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
@@ -139,6 +141,7 @@ public:
     }
 
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
@@ -182,7 +185,7 @@ public:
 
     virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
 
-    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+    virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
     virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override
     {
@@ -204,7 +207,7 @@ public:
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
 
-    virtual int32_t PreSetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
     virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };

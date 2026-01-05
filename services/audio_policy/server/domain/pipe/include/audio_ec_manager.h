@@ -50,8 +50,8 @@ public:
     AudioEcInfo GetAudioEcInfo();
     void ResetAudioEcInfo();
 
-    void PresetArmIdleInput(const string &address);
-    void ActivateArmDevice(const string &address, const DeviceRole role);
+    void PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void ActivateArmDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
 
@@ -105,7 +105,7 @@ private:
     int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
         std::shared_ptr<AdapterPipeInfo> &pipeInfo);
 
-    void UpdateArmModuleInfo(const string &address, const DeviceRole role, AudioModuleInfo &moduleInfo);
+    void UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioModuleInfo &moduleInfo);
     std::string GetHalNameForDevice(const std::string &role, const DeviceType deviceType);
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
 private:

@@ -31,6 +31,10 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
+  generalVoiceChangeType?: GeneralVoiceChangeType;
+  pureVoiceChangeType?: PureVoiceChangeType;
+  pureVoiceChangeGender?: PureVoiceChangeGenderOption;
+  pureVoiceChangePitch?: number;
   spaceRender?: SpaceRender;
 }
 
@@ -46,7 +50,7 @@ export interface  OutSong {
   isRendererFinished?: boolean,
 }
 
-// 定义接口
+// Define Interface
 export interface NavigationParams {
   mode: number;
   pipelineCascadMode: number;
@@ -124,23 +128,23 @@ export const ColorMap = new Map<NodeType, BackColor>([
 
 export enum SoundFiledType {
   /**
-   * 无
+   * None
    */
   SOUND_FIELD_CLOSE = 0,
   /**
-   * 前置
+   * Front
    */
   SOUND_FIELD_FRONT_FACING = 1,
   /**
-   * 宏大
+   * Grandeur
    */
   SOUND_FIELD_GRAND = 2,
   /**
-   * 聆听
+   * Listen
    */
   SOUND_FIELD_NEAR = 3,
   /**
-   * 宽广
+   * Broad
    */
   SOUND_FIELD_WIDE = 4,
 }
@@ -291,7 +295,7 @@ export const AudioSeparationMap = new Map<AudioSeparationType | undefined, strin
   [AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE, '伴奏']
 ])
 
-// 定义映射表：数字 -> NodeType
+// Define mapping table: numbers -> NodeType
 export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [201, NodeType.EQ],
   [202, NodeType.NR],
@@ -363,7 +367,7 @@ export const outputNodeSongNameMap = new Map<number, string>([
   [PIPELINECASCADMODE_3, 'OUTPUT 3'],
 ]);
 
-// 位深类型
+// Bit-depth type
 export enum BitsPerSampleMode {
   INT = 0,
   FLOAT = 1,

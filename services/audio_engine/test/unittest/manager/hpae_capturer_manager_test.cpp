@@ -1705,6 +1705,33 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerIsRunningTest_005, TestSize.Level1
     EXPECT_EQ(sourceInputCluster->GetSourceState(), STREAM_MANAGER_RUNNING); // sourceIn is run
     EXPECT_EQ(capturerManager->IsRunning(), true);
 }
+
+/**
+ * @tc.name  : Test HpaeCapturerManager NotifyStreamChangeToSource API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamChangeToSource_001
+ * @tc.desc  : Test HpaeCapturerManager NotifyStreamChangeToSource() cases
+ */
+HWTEST_F(HpaeCapturerManagerTest, NotifyStreamChangeToSource_001, TestSize.Level2)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(SUCCESS, capturerManager->Init());
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, DEFAULT_SESSION_ID, CAPTURER_PREPARED);
+    EXPECT_EQ(0, capturerManager->sourceOutputNodeMap_.size());
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
+
+    capturerManager->NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED);
+    EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

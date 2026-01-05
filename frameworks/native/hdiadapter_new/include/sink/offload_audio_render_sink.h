@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
@@ -50,12 +50,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -67,16 +61,6 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
     void SetSpeed(float speed) override;
-
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
@@ -90,8 +74,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
-
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -101,7 +85,6 @@ private:
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     int32_t CreateRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
@@ -109,9 +92,7 @@ private:
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
     int32_t FlushInner(void);
-#ifdef SUPPORT_OLD_ENGINE
     void CheckFlushThread();
-#endif
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -129,14 +110,11 @@ private:
     static constexpr uint32_t AUDIO_SPEED_BASE = 1000;
 
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     struct OffloadHdiCallback hdiCallback_ = {};
     bool sinkInited_ = false;
     bool started_ = false;
     bool isFlushing_ = false;
-#ifdef SUPPORT_OLD_ENGINE
     bool isNeedRestart_ = false;
-#endif
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -169,10 +147,9 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
-    std::mutex sinkMutex_;
-#ifdef SUPPORT_OLD_ENGINE
+
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     std::shared_ptr<std::thread> flushThread_;
-#endif
 };
 
 } // namespace AudioStandard

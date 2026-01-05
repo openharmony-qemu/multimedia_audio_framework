@@ -66,6 +66,18 @@ int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureC
     return ERR_NOT_SUPPORTED;
 }
 
+void FastAudioStream::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t FastAudioStream::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation: RequestUserPrivacyAuthority");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -143,8 +155,8 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AudioProcessConfig config;
     int32_t ret = InitializeAudioProcessConfig(config, info);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Initialize failed.");
-    CHECK_AND_RETURN_RET_LOG(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
-        "Stream is not supported.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Stream is not supported."));
     processconfig_ = config;
     // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
     // avoid using FastAudioStream after free in callback.
@@ -339,6 +351,21 @@ int32_t FastAudioStream::GetLatency(uint64_t &latency)
     return ret;
 }
 
+int32_t FastAudioStream::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    latency = 0;
+    bool needHardware = (flag & LATENCY_FLAG_HARDWARE) != 0;
+    bool needEngine = (flag & LATENCY_FLAG_ENGINE) != 0;
+
+    if (needEngine) {
+        latency += 5ULL * AUDIO_US_PER_MS; // engine latency 5 ms
+    }
+    if (needHardware) {
+        latency += 20ULL * AUDIO_US_PER_MS; // hardware latency 20 ms
+    }
+    return SUCCESS;
+}
+
 int32_t FastAudioStream::SetAudioStreamType(AudioStreamType audioStreamType)
 {
     // Stream type can only be set when create.
@@ -437,12 +464,6 @@ bool FastAudioStream::GetSilentModeAndMixWithOthers()
 
 int32_t FastAudioStream::SetRenderRate(AudioRendererRate renderRate)
 {
-    if (rendererInfo_.isStatic) {
-        CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
-        CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
-        return processClient_->SetStaticRenderRate(renderRate);
-    }
-
     CHECK_AND_RETURN_RET(RENDER_RATE_NORMAL != renderRate, SUCCESS);
     AUDIO_ERR_LOG("%{public}s: Unsupported", logTag_.c_str());
     return ERR_INVALID_OPERATION;
@@ -701,18 +722,14 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
-        false, "%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_);
+    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
+        HILOG_COMM_ERROR("[StartAudioStream]%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_));
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
         "%{public}s: Start failed, process is null.", logTag_.c_str());
     if (spkProcClientCb_ != nullptr) {
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
-    }
-    if (audioStreamTracker_ != nullptr && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
     }
     int32_t ret = ERROR;
     if (state_ == PAUSED || state_ == STOPPED) {
@@ -740,8 +757,9 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
-        "%{public}s: state is not RUNNING. Illegal state:%{public}u", logTag_.c_str(), state_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(state_ == RUNNING, false,
+        HILOG_COMM_ERROR("[PauseAudioStream]%{public}s: state is not RUNNING. Illegal state:%{public}u",
+            logTag_.c_str(), state_));
     State oldState = state_;
 
     state_ = PAUSED;
@@ -766,8 +784,9 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::StopAudioStream()
 {
-    CHECK_AND_RETURN_RET_LOG((state_ == RUNNING) || (state_ == PAUSED), false,
-        "%{public}s: State is not RUNNING. Illegal state:%{public}u", logTag_.c_str(), state_);
+    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == RUNNING) || (state_ == PAUSED), false,
+        HILOG_COMM_ERROR("[StopAudioStream]%{public}s: State is not RUNNING. Illegal state:%{public}u",
+            logTag_.c_str(), state_));
     State oldState = state_;
     state_ = STOPPED; // Set it before stopping as Read/Write and Stop can be called from different threads
 
@@ -804,8 +823,9 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED && state_ != NEW,
-        false, "%{public}s: Illegal state: state = %{public}u", logTag_.c_str(), state_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(state_ != RELEASED && state_ != NEW, false,
+        HILOG_COMM_ERROR("[ReleaseAudioStream]%{public}s: Illegal state: state = %{public}u",
+            logTag_.c_str(), state_));
     // If state_ is RUNNING try to Stop it first and Release
     if (state_ == RUNNING) {
         StopAudioStream();
@@ -997,6 +1017,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
+    info.streamMuteFlag = GetMute();
 
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
     info.defaultOutputDevice = defaultOutputDevice_;
@@ -1360,6 +1381,16 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     return processClient_->SetLoopTimes(bufferLoopTimes);
+}
+
+const std::string FastAudioStream::GetBundleName()
+{
+    return bundleName;
+}
+
+void FastAudioStream::SetBundleName(std::string &name)
+{
+    bundleName = name;
 }
 
 } // namespace AudioStandard

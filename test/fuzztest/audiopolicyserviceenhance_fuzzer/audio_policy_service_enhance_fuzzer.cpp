@@ -25,6 +25,7 @@
 #include "token_setproc.h"
 #include "access_token.h"
 #include "audio_policy_utils.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -124,7 +125,7 @@ void AudioFuzzTestGetPermission()
     }
 }
 
-void AudioPolicyServiceEnhanceOneFuzzTest()
+void AudioPolicyServiceEnhanceOneFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     if (audioRendererFilter == nullptr) {return;}
@@ -142,7 +143,7 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
 }
 
-void AudioPolicyServiceEnhanceTwoFuzzTest()
+void AudioPolicyServiceEnhanceTwoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
@@ -174,7 +175,7 @@ void AudioPolicyServiceEnhanceTwoFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleOfflineDistributedDevice();
 }
 
-void AudioPolicyServiceEnhanceThreeFuzzTest()
+void AudioPolicyServiceEnhanceThreeFuzzTest(FuzzedDataProvider& fdp)
 {
     DStatusInfo statusInfo;
     std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
@@ -202,7 +203,7 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
 }
 
-void AudioPolicyServiceEnhanceFourFuzzTest()
+void AudioPolicyServiceEnhanceFourFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t clientUid = GetData<int32_t>();
     int32_t sessionId = GetData<int32_t>();
@@ -255,7 +256,7 @@ void AudioPolicyServiceEnhanceFourFuzzTest()
     GetServerPtr()->audioPolicyService_.InitSharedVolume(buffer);
 }
 
-void AudioPolicyServiceEnhanceFiveFuzzTest()
+void AudioPolicyServiceEnhanceFiveFuzzTest(FuzzedDataProvider& fdp)
 {
     Volume vol;
     AudioVolumeType streamType = GetData<AudioVolumeType>();
@@ -272,7 +273,7 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
         inputDevice, outputDevice, "test");
 }
 
-void AudioPolicyServiceEnhanceSixFuzzTest()
+void AudioPolicyServiceEnhanceSixFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioEnhancePropertyArray oldPropertyArray;
     AudioEnhancePropertyArray newPropertyArray;
@@ -294,7 +295,7 @@ void AudioPolicyServiceEnhanceSixFuzzTest()
     GetServerPtr()->audioPolicyService_.GetAndSaveClientType(uid, bundleName);
 }
 
-void AudioPolicyServiceEnhanceSevenFuzzTest()
+void AudioPolicyServiceEnhanceSevenFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
@@ -325,7 +326,7 @@ void AudioPolicyServiceEnhanceSevenFuzzTest()
     GetServerPtr()->audioPolicyService_.OnReceiveEvent(eventData);
 }
 
-void AudioPolicyServiceEnhanceEightFuzzTest()
+void AudioPolicyServiceEnhanceEightFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioDeviceDescriptor> remote = std::make_shared<AudioDeviceDescriptor>();
     CastType type = GetData<CastType>();
@@ -353,7 +354,7 @@ void AudioPolicyServiceEnhanceEightFuzzTest()
         deviceType, macAddress, deviceName, streamInfo);
 }
 
-void AudioPolicyServiceEnhanceNineFuzzTest()
+void AudioPolicyServiceEnhanceNineFuzzTest(FuzzedDataProvider& fdp)
 {
     DStatusInfo statusInfo;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
@@ -381,9 +382,9 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
 }
 
-void AudioPolicyServiceEnhanceTenFuzzTest()
+void AudioPolicyServiceEnhanceTenFuzzTest(FuzzedDataProvider& fdp)
 {
-    OHOS::AudioStandard::AudioPolicyServiceEnhanceNineFuzzTest();
+    OHOS::AudioStandard::AudioPolicyServiceEnhanceNineFuzzTest(FuzzedDataProvider& fdp);
     int32_t notificationId = GetData<int32_t>();
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.CancelSafeVolumeNotification(notificationId);
 
@@ -405,7 +406,7 @@ void AudioPolicyServiceEnhanceTenFuzzTest()
     GetServerPtr()->audioPolicyService_.SetAudioEnhanceProperty(enhancePropertyArray);
 }
 
-void AudioPolicyServiceEnhanceElevenFuzzTest()
+void AudioPolicyServiceEnhanceElevenFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceAddress = "deviceAddress";
     int32_t playingState = GetData<int32_t>();
@@ -426,9 +427,9 @@ void AudioPolicyServiceEnhanceElevenFuzzTest()
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged(deviceAddressEnmpy, playingStateThree);
 }
 
-typedef void (*TestFuncs[11])();
-
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioPolicyServiceEnhanceOneFuzzTest,
     AudioPolicyServiceEnhanceTwoFuzzTest,
     AudioPolicyServiceEnhanceThreeFuzzTest,
@@ -440,37 +441,23 @@ TestFuncs g_testFuncs = {
     AudioPolicyServiceEnhanceNineFuzzTest,
     AudioPolicyServiceEnhanceTenFuzzTest,
     AudioPolicyServiceEnhanceElevenFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
-
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    return 0;
-}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
@@ -479,6 +466,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

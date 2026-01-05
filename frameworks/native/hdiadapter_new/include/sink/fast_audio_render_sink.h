@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -44,11 +44,7 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -61,22 +57,10 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void DumpInfo(std::string &dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -95,6 +79,7 @@ private:
     void ReleaseMmapBuffer(void);
     int32_t CheckPositionTime(void);
     void PreparePosition(void);
+    void EnableSyncInfo(const int32_t syncInfoSize);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -113,7 +98,6 @@ private:
 
     std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
     bool started_ = false;
     bool paused_ = false;
@@ -128,7 +112,6 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
 #endif
-    std::mutex sinkMutex_;
     std::mutex startMutex_;
 
     // low latency

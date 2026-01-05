@@ -51,7 +51,8 @@ public:
 
     int32_t SetQueryAllowedPlaybackCallback(const sptr<IRemoteObject> &object);
     int32_t SetBackgroundMuteCallback(const sptr<IRemoteObject> &object);
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, int32_t streamUsage, bool &silentControl);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
+        StreamUsage streamUsage, bool &silentControl);
     void SubscribeBackgroundTask();
     void NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state);
     void NotifyBackgroundTaskStateChange(const int32_t uid, const int32_t pid, bool hasBackgroundTask);
@@ -62,6 +63,7 @@ public:
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);
     void WriteAppStateChangeSysEvent(int32_t pid, AppState appState, bool isAdd);
     void RecoryAppState();
+    bool IsAppInBackState(int32_t pid);
 
 private:
     AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

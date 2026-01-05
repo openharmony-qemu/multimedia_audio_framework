@@ -162,6 +162,8 @@ public:
 
     bool IsAudioSessionActivated();
 
+    bool IsOtherMediaPlaying();
+
     OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
     OH_AudioCommon_Result SelectMediaInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     OH_AudioDeviceDescriptor *GetSelectedMediaInputDevice();
@@ -191,6 +193,7 @@ public:
         OH_AudioSession_CurrentOutputDeviceChangedCallback callback);
     OH_AudioCommon_Result UnsetAudioSessionCurrentDeviceChangeCallback(
         OH_AudioSession_CurrentOutputDeviceChangedCallback callback);
+    OH_AudioCommon_Result EnableMuteSuggestionWhenMixWithOthers(bool enable);
 
 private:
     OHAudioSessionManager();

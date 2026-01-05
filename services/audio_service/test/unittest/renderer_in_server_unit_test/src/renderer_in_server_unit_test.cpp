@@ -1333,6 +1333,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_001, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
+    rendererInServer->offloadEnable_ = true;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
@@ -1354,6 +1355,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_002, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
+    rendererInServer->offloadEnable_ = false;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(SUCCESS, ret);
@@ -2643,7 +2645,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.L
     EXPECT_NE(nullptr, rendererInServer);
 
     float duck = 0.2f;
-    int32_t ret = rendererInServer->SetDuckFactor(duck);
+    int32_t ret = rendererInServer->SetDuckFactor(duck, 0);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3383,6 +3385,10 @@ HWTEST_F(RendererInServerUnitTest, HandleOperationStarted_001, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
     rendererInServer->HandleOperationStarted();
     EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+
+    rendererInServer->isHWDecodingType_ = true;
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

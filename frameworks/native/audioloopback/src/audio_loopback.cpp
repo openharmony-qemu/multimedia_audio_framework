@@ -91,7 +91,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
     Trace trace("AudioLoopbackPrivate::Enable");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     if (!IsAudioLoopbackSupported()) {
-        HILOG_COMM_INFO("AudioLoopback not support");
+        HILOG_COMM_INFO("[Enable]AudioLoopback not support");
         return false;
     }
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
@@ -99,14 +99,14 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
         InitStatus();
         if (!CheckDeviceSupport()) {
-            HILOG_COMM_INFO("Device not support");
+            HILOG_COMM_INFO("[Enable]Device not support");
             return false;
         }
         CreateAudioLoopback();
         currentState_ = LOOPBACK_STATE_PREPARED;
         UpdateStatus();
         if (GetCurrentState() != LOOPBACK_STATE_RUNNING) {
-            HILOG_COMM_INFO("AudioLoopback Enable failed");
+            HILOG_COMM_INFO("[Enable]AudioLoopback Enable failed");
             return false;
         }
     } else {
@@ -163,7 +163,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
     Trace trace("AudioLoopbackPrivate::SetVolume");
     if (volume < 0.0 || volume > 1.0) {
-        HILOG_COMM_INFO("SetVolume with invalid volume");
+        HILOG_COMM_INFO("[SetVolume]with invalid volume");
         return ERR_INVALID_PARAM;
     }
     std::lock_guard<std::mutex> lock(loopbackMutex_);
@@ -221,7 +221,7 @@ bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)
 {
     bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters);
     if (!ret) {
-        HILOG_COMM_INFO("SetKaraokeParameters failed");
+        HILOG_COMM_INFO("[SetKaraokeParameters]failed");
     }
     return ret;
 }
@@ -245,11 +245,11 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     Trace trace("AudioLoopbackPrivate::CreateAudioLoopback");
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
     if (audioRenderer_ == nullptr) {
-        HILOG_COMM_INFO("CreateRenderer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateRenderer failed");
         return;
     }
     if (!audioRenderer_->IsFastRenderer()) {
-        HILOG_COMM_INFO("CreateFastRenderer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateFastRenderer failed");
         return;
     }
 
@@ -257,14 +257,14 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
     if (audioCapturer_ == nullptr) {
-        HILOG_COMM_INFO("CreateCapturer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateCapturer failed");
         return;
     }
 
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
     if (capturerInfo.capturerFlags != STREAM_FLAG_FAST) {
-        HILOG_COMM_INFO("CreateFastCapturer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateFastCapturer failed");
         return;
     }
 
@@ -278,12 +278,12 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
 void AudioLoopbackPrivate::StartAudioLoopback()
 {
     if (!audioRenderer_->Start()) {
-        HILOG_COMM_INFO("audioRenderer Start failed");
+        HILOG_COMM_INFO("[StartAudioLoopback]audioRenderer Start failed");
         return;
     }
     rendererState_ = RENDERER_RUNNING;
     if (!audioCapturer_->Start()) {
-        HILOG_COMM_INFO("audioCapturer Start failed");
+        HILOG_COMM_INFO("[StartAudioLoopback]audioCapturer Start failed");
         return;
     }
     capturerState_ = CAPTURER_RUNNING;
@@ -479,7 +479,7 @@ void AudioLoopbackPrivate::UpdateStatus()
         newState = EnableLoopback() ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
     }
     if (newState != oldState) {
-        HILOG_COMM_WARN("UpdateState: %{public}d -> %{public}d", oldState, newState);
+        HILOG_COMM_WARN("[UpdateStatus]UpdateState: %{public}d -> %{public}d", oldState, newState);
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
             auto self = shared_from_this();

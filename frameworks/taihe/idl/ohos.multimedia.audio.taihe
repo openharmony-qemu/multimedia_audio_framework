@@ -660,6 +660,8 @@ struct AudioDeviceDescriptor {
   @readonly encodingTypes: Optional<Array<AudioEncodingType>>;
   @readonly spatializationSupported: Optional<bool>;
   @readonly dmDeviceType: Optional<i32>;
+  @readonly model: Optional<String>;
+  @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
 
 struct VolumeEvent {
@@ -781,6 +783,8 @@ enum AudioSessionStateChangeHint: i32 {
   AUDIO_SESSION_STATE_CHANGE_HINT_TIME_OUT_STOP = 3,
   AUDIO_SESSION_STATE_CHANGE_HINT_DUCK = 4,
   AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK = 5,
+  AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION = 6,
+  AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION = 7,
 }
 
 enum OutputDeviceChangeRecommendedAction: i32 {
@@ -815,12 +819,16 @@ interface AudioSessionManager {
 
   IsAudioSessionActivated(): bool;
 
+  IsOtherMediaPlaying(): bool;
+
   GetDefaultOutputDevice(): DeviceType;
 
   SetAudioSessionScene(scene: AudioSessionScene): void;
 
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
+
+  EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
 
   OnAudioSessionDeactivated(callback: (data: AudioSessionDeactivatedEvent) => void): void;
   OnAudioSessionStateChanged(callback: (data: AudioSessionStateChangedEvent) => void): void;
@@ -951,6 +959,12 @@ enum RenderTarget: i32 {
   INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 }
 
+enum AudioLatencyType: i32 {
+  LATENCY_TYPE_ALL = 0,
+  LATENCY_TYPE_SOFTWARE = 1,
+  LATENCY_TYPE_HARDWARE = 2,
+}
+
 struct AudioTimestampInfo {
   @readonly framePos: i64;
   @readonly timestamp: i64;
@@ -1063,6 +1077,8 @@ interface AudioRenderer {
   SetLoudnessGainSync(loudnessGain: f64): void;
 
   GetLoudnessGain(): f64;
+
+  GetLatency(type: AudioLatencyType): i32;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;

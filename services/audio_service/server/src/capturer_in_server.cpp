@@ -37,6 +37,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 namespace {
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
@@ -50,6 +51,8 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     processConfig_ = processConfig;
     streamListener_ = streamListener;
     innerCapId_ = processConfig.innerCapId;
+    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
 
 CapturerInServer::~CapturerInServer()
@@ -300,6 +303,18 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+void CapturerInServer::RecordOverflowStatus(bool currentStatus)
+{
+    if (currentStatus == true && currentStatus != lastOverflowStatus_.load()) {
+        lastOverflowStatus_.store(currentStatus);
+        audioStreamChecker_->RecordOverflowTime(currentStatus);
+    }
+    if (currentStatus == false && currentStatus != lastOverflowStatus_.load()) {
+        lastOverflowStatus_.store(currentStatus);
+        audioStreamChecker_->RecordOverflowTime(currentStatus);
+    }
+}
+
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
@@ -312,8 +327,10 @@ void CapturerInServer::ReadData(size_t length)
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(length);
+        RecordOverflowStatus(true);
         return;
     }
+    RecordOverflowStatus(false);
     Trace trace(traceTag_ + "::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "RingCache write invalid size %{public}zu", result.size);
@@ -376,8 +393,10 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);
+        RecordOverflowStatus(true);
         return ERR_WRITE_FAILED;
     }
+    RecordOverflowStatus(false);
     Trace trace("CapturerInServer::ReadData:" + std::to_string(currentWriteFrame));
     OptResult result = ringCache_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
@@ -416,7 +435,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
-
+    audioStreamChecker_->RecordNormalFrame();
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -515,6 +534,9 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t CapturerInServer::Start()
 {
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
+        filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
+        ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -527,6 +549,7 @@ int32_t CapturerInServer::Start()
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
         CaptureConcurrentCheck(streamIndex_);
     }
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     return ret;
 }
 
@@ -614,6 +637,7 @@ int32_t CapturerInServer::Pause()
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, false);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -690,6 +714,7 @@ int32_t CapturerInServer::Stop()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     CaptureConcurrentCheck(streamIndex_);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -706,14 +731,15 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     }
     lock.unlock();
     AUDIO_INFO_LOG("Start release capturer");
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         int32_t result =
             CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
+        CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    CaptureConcurrentCheck(streamIndex_);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
@@ -841,6 +867,27 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "GetLatency failed, stream_ is null");
     return stream_->GetLatency(latency);
+}
+
+int32_t CapturerInServer::RequestUserPrivacyAuthority()
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
+    if (status_ == I_STATUS_STARTING || status_ == I_STATUS_STARTED) {
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_FAILED);
+        AUDIO_ERR_LOG("Inner capturer already start");
+        return SUCCESS;
+    }
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+        hasRequestUserPrivacyAuthority_ = true;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
+        AUDIO_INFO_LOG("request user privacy authority success");
+    } else {
+        hasRequestUserPrivacyAuthority_ = false;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
+        AUDIO_ERR_LOG("request user privacy authority failed");
+    }
+    return SUCCESS;
 }
 
 int32_t CapturerInServer::InitCacheBuffer(size_t targetSize)

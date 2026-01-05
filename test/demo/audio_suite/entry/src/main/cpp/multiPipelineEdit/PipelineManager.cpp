@@ -11,7 +11,7 @@ PipelineManager::PipelineManager(std::string pipelineId,
     OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager)
     : pipelineId(pipelineId), audioSuitePipeline(audioSuitePipeLine), nodeManager(nodeManager)
     {
-    // 初始化PipelineManager
+    // initialize PipelineManager
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "PipelineManager inited pipelineId: %{public}s, "
         "audioSuitePipeLine: %{public}p, audioSuitePipeLine: %{public}p",
@@ -20,6 +20,12 @@ PipelineManager::PipelineManager(std::string pipelineId,
 
 PipelineManager::~PipelineManager()
 {
+    for (auto& [key, file] : writeDataFileMap) {
+        if (file != nullptr) {
+            fclose(file);
+            file = nullptr;
+        }
+    }
 }
 
 MultiUserData::MultiUserData(std::string pipelineId, std::string inputId) : pipelineId(pipelineId), inputId(inputId)

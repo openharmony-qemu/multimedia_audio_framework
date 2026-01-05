@@ -79,6 +79,7 @@ ohos_unittest("hpae_render_manager_test") {
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
     "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {
@@ -353,6 +354,7 @@ ohos_unittest("hpae_sink_output_node_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {
@@ -748,6 +750,7 @@ ohos_unittest("hpae_offload_sinkoutput_node_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {
@@ -935,6 +938,7 @@ ohos_unittest("hpae_source_input_node_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {
@@ -1063,6 +1067,7 @@ ohos_unittest("hpae_source_input_cluster_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   sanitize = {

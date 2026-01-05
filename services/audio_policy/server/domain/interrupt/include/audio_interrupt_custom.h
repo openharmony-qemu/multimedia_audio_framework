@@ -25,11 +25,15 @@ class AudioInterruptCustom {
 public:
     void ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);
+    void UpdateCustomFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        AudioFocusEntry &focusEntry);
 private:
     void UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);
     void CeliaCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent, const std::string &appName);
+    void UpdateUltraSonicCustomFocus(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        AudioFocusEntry &focusEntry);
 };
 
 } // namespace AudioStandard

@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_zone.h"
+#include "audio_connected_device.h"
 
 #include <thread>
 #include <memory>
@@ -138,6 +139,116 @@ HWTEST_F(AudioZoneServiceUnitTest, CheckExistUidInAudioZone_001, TestSize.Level1
     audioZone->BindByKey(AudioZoneBindKey(1, "", "", STREAM_USAGE_UNKNOWN));
     EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: CheckExistUidInAudioZone_001
+ * @tc.desc  : Test CheckExistUidInAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AddUidUsagesToAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone3", context, 0);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(audioZone, nullptr);
+
+    const std::set<StreamUsage> usages = {
+        STREAM_USAGE_MEDIA,
+        STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_ALARM,
+    };
+
+    EXPECT_EQ(AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, 1000, usages), SUCCESS);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_MEDIA)), true);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_VOICE_COMMUNICATION)), true);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_ALARM)), true);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+
+    // add invalid zone
+    EXPECT_NE(AudioZoneService::GetInstance().AddUidUsagesToAudioZone(-1, 1000, usages), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: RemoveUidUsagesFromAudioZone_001
+ * @tc.desc  : Test RemoveUidUsagesFromAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveUidUsagesFromAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone4", context, 0);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(audioZone, nullptr);
+    const std::set<StreamUsage> usages = {
+        STREAM_USAGE_MEDIA,
+        STREAM_USAGE_VOICE_COMMUNICATION,
+        STREAM_USAGE_ALARM,
+    };
+
+    EXPECT_EQ(AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, 1000, usages), SUCCESS);
+    EXPECT_EQ(AudioZoneService::GetInstance().RemoveUidUsagesFromAudioZone(zoneId, 1000, usages), SUCCESS);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_MEDIA)), false);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_VOICE_COMMUNICATION)), false);
+    EXPECT_EQ(audioZone->IsContainKey(AudioZoneBindKey(1000, "", "", STREAM_USAGE_ALARM)), false);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+    // remove invalid zone
+    EXPECT_NE(AudioZoneService::GetInstance().RemoveUidUsagesFromAudioZone(-1, 1000, usages), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FindAudioZone
+ * @tc.desc  : Test FindAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FindAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone5", context, 0);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(audioZone, nullptr);
+
+    const std::set<StreamUsage> usages = {
+        STREAM_USAGE_MEDIA,
+        STREAM_USAGE_RINGTONE,
+        STREAM_USAGE_INVALID,
+    };
+
+    AudioZoneService::GetInstance().AddUidUsagesToAudioZone(zoneId, 1234, usages);
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(1234, STREAM_USAGE_MEDIA), zoneId); // uid and usage match
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(1234, STREAM_USAGE_DTMF), zoneId); // match uid only
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(12345, STREAM_USAGE_RINGTONE), 0); // not found
+    EXPECT_EQ(AudioZoneService::GetInstance().FindAudioZone(12345, STREAM_USAGE_ALARM), 0); // not found
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: GetDeviceDescriptor
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, GetDeviceDescriptor, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone5", context, 0);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    ASSERT_NE(audioZone, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->networkId_ = "Test";
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    devices.push_back(desc);
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
+
+    EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, ""), nullptr);
+    EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, ""), nullptr);
+    EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, "Test"), nullptr);
+    EXPECT_NE(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, "Test"), nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

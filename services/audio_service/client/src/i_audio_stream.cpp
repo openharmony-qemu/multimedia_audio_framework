@@ -96,6 +96,8 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
 
     IAudioStream::CreateStreamMap(streamMap);
     return streamMap;
@@ -126,6 +128,8 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
 }
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
@@ -199,6 +203,38 @@ int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_
     return SUCCESS;
 }
 
+int32_t IAudioStream::GetByteSizePerFrameWithEc(const AudioStreamParams &params, size_t &result)
+{
+    result = 0;
+    size_t bitWidthSize = 0;
+    switch (params.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        case SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            return ERR_INVALID_PARAM;
+            break;
+    }
+
+    if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
+        return ERR_INVALID_PARAM;
+    }
+    result = bitWidthSize * static_cast<size_t>(params.channels + params.ecChannels);
+    return SUCCESS;
+}
+
 bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
 {
     // 0 for normal stream
@@ -243,11 +279,11 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Create fast playback stream");
+        HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
 #else
         (void)params;
-        AUDIO_INFO_LOG("Unsupport create fast playback stream, so create ipc playback stream");
+        HILOG_COMM_INFO("[GetPlaybackStream]Unsupport create fast playback stream, so create ipc playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
 #endif
     }
@@ -265,7 +301,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        HILOG_COMM_INFO("Create fast record stream");
+        HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
 #else
         (void)params;
@@ -274,7 +310,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 #endif
     }
     if (streamClass == PA_STREAM) {
-        HILOG_COMM_INFO("Create ipc record stream");
+        HILOG_COMM_INFO("[GetRecordStream]Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;

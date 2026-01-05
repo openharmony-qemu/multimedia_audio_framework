@@ -4770,5 +4770,21 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_002, TestSize.Level0)
     EXPECT_EQ(nullptr, audioRenderer);
 }
 
+/**
+ * @tc.name  : AudioRenderer_WaitSwitchStreamIfNeeded_001
+ * @tc.number: WaitSwitchStreamIfNeeded_001
+ * @tc.desc  : Test WaitSwitchStreamIfNeeded() for different cases
+ */
+HWTEST(AudioRendererUnitTest, WaitSwitchStreamIfNeeded_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+
+    bool res = testRendererInner->WaitSwitchStreamIfNeeded(true);
+    EXPECT_EQ(false, res);
+    res = testRendererInner->WaitSwitchStreamIfNeeded(false);
+    EXPECT_EQ(true, res);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

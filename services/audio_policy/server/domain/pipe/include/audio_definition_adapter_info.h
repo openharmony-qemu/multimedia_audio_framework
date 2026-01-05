@@ -235,6 +235,7 @@ public:
     void UnregisterAdapter(AudioAdapterType type);
     void RegisterStreamProperty(
         AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps);
+    AudioPin DecideAudioPin(DeviceType type, DeviceRole role);
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};

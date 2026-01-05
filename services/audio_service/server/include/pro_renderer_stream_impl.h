@@ -77,6 +77,10 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
+    void SetSendDataEnabled(bool enabled) override;
+
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher) override;
 
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
@@ -97,6 +101,7 @@ private:
     bool isBlock_;
     bool isDrain_;
     bool isFirstFrame_;
+    std::atomic<bool> sendDataEnabled_ = true;
     int32_t privacyType_;
     int32_t renderRate_;
     uint32_t streamIndex_; // invalid index
@@ -121,6 +126,8 @@ private:
     AudioProcessConfig processConfig_;
     std::unique_ptr<AudioDownMixStereo> downMixer_;
     BufferBaseInfo bufferInfo_;
+    std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
+    std::mutex sinkLatencyFetcherMutex_;
 
     std::mutex firstFrameMutex;
     std::mutex enqueueMutex;

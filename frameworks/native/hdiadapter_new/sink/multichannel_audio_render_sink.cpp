@@ -27,6 +27,7 @@
 #include "audio_performance_monitor.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 namespace {
 const std::string DEFAULT_NAME = "multichannel";
@@ -61,6 +62,8 @@ int32_t MultichannelAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
 
     sinkInited_ = true;
+    InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+
     return SUCCESS;
 }
 
@@ -77,6 +80,7 @@ void MultichannelAudioRenderSink::DeInit(void)
     renderInited_ = false;
     deviceManager->DestroyRender(adapterNameCase_, hdiRenderId_);
     audioRender_ = nullptr;
+    DeinitPipeInfo();
 
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
@@ -112,6 +116,7 @@ int32_t MultichannelAudioRenderSink::Start(void)
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     started_ = true;
 
     uint64_t frameSize = 0;
@@ -147,6 +152,7 @@ int32_t MultichannelAudioRenderSink::Stop(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
     started_ = false;
     return SUCCESS;
@@ -222,16 +228,6 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
             AUDIO_WARNING_LOG("call memset_s fail");
         }
     }
-    if (emptyFrameCount_ > 0) {
-        Trace trace("MultichannelAudioRenderSink::RenderFrame::renderEmpty");
-        if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
-            AUDIO_WARNING_LOG("call memset_s fail");
-        }
-        --emptyFrameCount_;
-        if (emptyFrameCount_ == 0) {
-            updateActiveDeviceCV_.notify_all();
-        }
-    }
 
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
@@ -257,21 +253,6 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
 int64_t MultichannelAudioRenderSink::GetVolumeDataCount()
 {
     return volumeDataCount_;
-}
-
-int32_t MultichannelAudioRenderSink::SuspendRenderSink(void)
-{
-    return SUCCESS;
-}
-
-int32_t MultichannelAudioRenderSink::RestoreRenderSink(void)
-{
-    return SUCCESS;
-}
-
-void MultichannelAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
 }
 
 std::string MultichannelAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -408,27 +389,7 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
         return SUCCESS;
     }
     currentActiveDevice_ = outputDevices[0];
-
-    emptyFrameCount_ = 5; // 5: frame count before update route
-    std::unique_lock<std::mutex> lock(switchDeviceMutex_);
-    updateActiveDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
-        if (emptyFrameCount_ == 0) {
-            AUDIO_INFO_LOG("wait for empty frame end");
-            return true;
-        }
-        AUDIO_DEBUG_LOG("emptyFrameCount: %{public}d", emptyFrameCount_.load());
-        return false;
-    });
-    int32_t ret = DoSetOutputRoute(outputDevices);
-    emptyFrameCount_ = 5; // 5: frame count after update route
-    return ret;
-}
-
-void MultichannelAudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    callback_.RegistCallback(type, callback);
-    AUDIO_INFO_LOG("regist succ");
+    return SUCCESS;
 }
 
 void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
@@ -436,18 +397,6 @@ void MultichannelAudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType devi
     if (currentActiveDevice_ == device) {
         currentActiveDevice_ = DEVICE_TYPE_NONE;
     }
-}
-
-int32_t MultichannelAudioRenderSink::SetPaPower(int32_t flag)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-int32_t MultichannelAudioRenderSink::SetPriPaPower(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
 }
 
 int32_t MultichannelAudioRenderSink::UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size)
@@ -473,11 +422,6 @@ void MultichannelAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: MchSink\tstarted: " + std::string(started_ ? "true" : "false") + "\thalName: " + halName_ +
         "\tcurrentActiveDevice: " + std::to_string(currentActiveDevice_) + "\n";
-}
-
-void MultichannelAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t MultichannelAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
@@ -750,5 +694,11 @@ int32_t MultichannelAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 
     return SUCCESS;
 }
+
+bool MultichannelAudioRenderSink::IsInA2dpOffload()
+{
+    return currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

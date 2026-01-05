@@ -88,7 +88,7 @@ void UnregisterDeviceObserver()
 
 void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType)
 {
-    AUDIO_INFO_LOG("devType is %{public}d, eventType is%{public}d.", devType, eventType);
+    HILOG_COMM_INFO("[SendUserSelectionEvent]devType is %{public}d, eventType is%{public}d.", devType, eventType);
     BluetoothRemoteDevice device;
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {

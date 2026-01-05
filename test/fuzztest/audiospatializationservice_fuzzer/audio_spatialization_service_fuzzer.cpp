@@ -204,10 +204,10 @@ void WriteSpatializationStateToDbFuzzTest()
     AudioSpatializationSceneType testScene = AudioSpatializationSceneTypeVec[testSceneCount];
     service.spatializationSceneType_ = testScene;
     int32_t operationCount =
-        static_cast<int32_t>(AudioSpatializationService::WriteToDbOperation::WRITE_DEVICESPATIAL_INFO) + 1;
+        static_cast<int32_t>(AudioSpatializationService::WriteToDbOperation::WRITE_ALLDEVICESPATIAL_INFO) + 1;
     AudioSpatializationService::WriteToDbOperation operation =
         static_cast<AudioSpatializationService::WriteToDbOperation>(GetData<uint8_t>() % operationCount);
-    service.WriteSpatializationStateToDb(operation, "");
+    service.WriteSpatializationStateToDb(operation);
 }
 
 void GetSpatializationStateFuzzTest()

@@ -114,7 +114,9 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_DTMF", STREAM_USAGE_DTMF},
     {"STREAM_USAGE_ENFORCED_TONE", STREAM_USAGE_ENFORCED_TONE},
     {"STREAM_USAGE_ULTRASONIC", STREAM_USAGE_ULTRASONIC},
-    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION}
+    {"STREAM_USAGE_VIDEO_COMMUNICATION", STREAM_USAGE_VIDEO_COMMUNICATION},
+    {"STREAM_USAGE_ANNOUNCEMENT", STREAM_USAGE_ANNOUNCEMENT},
+    {"STREAM_USAGE_EMERGENCY", STREAM_USAGE_EMERGENCY}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceRoleMap = {
@@ -133,7 +135,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-    {"BT_SPP", DEVICE_TYPE_BT_SPP},
+    {"BLUETOOTH_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
     {"NEARLINK_PORT", DEVICE_TYPE_NEARLINK_PORT},
     {"SYSTEM_PRIVATE", DEVICE_TYPE_SYSTEM_PRIVATE},
@@ -166,6 +168,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::sourceTypeMap = {
     {"SOURCE_TYPE_VOICE_TRANSCRIPTION", SOURCE_TYPE_VOICE_TRANSCRIPTION},
     {"SOURCE_TYPE_UNPROCESSED", SOURCE_TYPE_UNPROCESSED},
     {"SOURCE_TYPE_LIVE", SOURCE_TYPE_LIVE},
+    {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT", SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::volumeAdjustTypeMap = {
@@ -545,6 +548,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintM
         static_cast<int32_t>(AudioSessionStateChangeHint::TIME_OUT_STOP)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_DUCK", static_cast<int32_t>(AudioSessionStateChangeHint::DUCK)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION ",
+        static_cast<int32_t>(AudioSessionStateChangeHint::MUTE_SUGGESTION)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION ",
+        static_cast<int32_t>(AudioSessionStateChangeHint::UNMUTE_SUGGESTION)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommendedActionMap = {
@@ -561,6 +568,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
 const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
     {"PLAYBACK", NORMAL_PLAYBACK},
     {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioLatencyTypeMap = {
+    {"LATENCY_TYPE_ALL", LATENCY_TYPE_ALL},
+    {"LATENCY_TYPE_SOFTWARE", LATENCY_TYPE_SOFTWARE},
+    {"LATENCY_TYPE_HARDWARE", LATENCY_TYPE_HARDWARE},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferredRecordCategoryMap = {
@@ -739,6 +752,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
         DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
+        DECLARE_NAPI_PROPERTY("AudioLatencyType", CreateEnumObject(env, audioLatencyTypeMap)),
         DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
             CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
     };
@@ -1195,6 +1209,7 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
         case TYPE_LIVE:
+        case TYPE_UNPROCESSED_VOICE_ASSISTANT:
             result = true;
             break;
         default:
@@ -1217,6 +1232,36 @@ bool NapiAudioEnum::IsLegalRenderTarget(int32_t target)
             break;
     }
     return result;
+}
+
+bool NapiAudioEnum::IsLegalAudioLatencyType(int32_t latencyType)
+{
+    bool result = false;
+    switch (latencyType) {
+        case LATENCY_TYPE_ALL:
+        case LATENCY_TYPE_SOFTWARE:
+        case LATENCY_TYPE_HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+LatencyFlag NapiAudioEnum::ConvertLatencyTypeToFlag(int32_t latencyType)
+{
+    switch (latencyType) {
+        case LATENCY_TYPE_ALL:
+            return static_cast<LatencyFlag>(LatencyFlag::LATENCY_FLAG_ENGINE | LatencyFlag::LATENCY_FLAG_HARDWARE);
+        case LATENCY_TYPE_SOFTWARE:
+            return LatencyFlag::LATENCY_FLAG_ENGINE;
+        case LATENCY_TYPE_HARDWARE:
+            return LatencyFlag::LATENCY_FLAG_HARDWARE;
+        default:
+            return LatencyFlag::LATENCY_FLAG_ALL;
+    }
 }
 
 bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
@@ -1365,6 +1410,21 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
 #endif
             break;
         default:
+            result = GetJsAudioVolumeTypeFir(volumeType);
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsAudioVolumeTypeFir(AudioStreamType volumeType)
+{
+    int32_t result = MEDIA;
+    switch (volumeType) {
+        case AudioStreamType::STREAM_ANNOUNCEMENT:
+        case AudioStreamType::STREAM_EMERGENCY:
+            result = NapiAudioEnum::ALARM;
+            break;
+        default:
             result = NapiAudioEnum::MEDIA;
             break;
     }
@@ -1446,6 +1506,12 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
+        case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+            result = NapiAudioEnum::USAGE_ANNOUNCEMENT;
+            break;
+        case StreamUsage::STREAM_USAGE_EMERGENCY:
+            result = NapiAudioEnum::USAGE_EMERGENCY;
+            break;
         default:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
@@ -1520,6 +1586,7 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         case SourceType::SOURCE_TYPE_CAMCORDER:
         case SourceType::SOURCE_TYPE_UNPROCESSED:
         case SourceType::SOURCE_TYPE_LIVE:
+        case SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
             return true;
         default:
             return false;
@@ -1601,6 +1668,8 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case STREAM_USAGE_VOICE_RINGTONE:
+        case STREAM_USAGE_ANNOUNCEMENT:
+        case STREAM_USAGE_EMERGENCY:
             result = true;
             break;
         default:
@@ -1760,6 +1829,12 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
             break;
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = STREAM_USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case NapiAudioEnum::USAGE_ANNOUNCEMENT:
+            result = STREAM_USAGE_ANNOUNCEMENT;
+            break;
+        case NapiAudioEnum::USAGE_EMERGENCY:
+            result = STREAM_USAGE_EMERGENCY;
             break;
         case NapiAudioEnum::USAGE_MAX:
             result = STREAM_USAGE_MAX;

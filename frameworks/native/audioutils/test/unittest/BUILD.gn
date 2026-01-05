@@ -24,6 +24,7 @@ group("unit_test_group") {
     ":audio_utils_plus_unit_test",
     ":audio_utils_pro_unit_test",
     ":audio_utils_unit_test",
+    ":audio_sink_latency_fetcher_test",
   ]
 }
 
@@ -64,6 +65,28 @@ ohos_unittest("audio_utils_unit_test") {
   ]
 
   deps = [ "../../../audioutils:audio_utils" ]
+}
+
+ohos_unittest("audio_sink_latency_fetcher_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include/",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_sink_latency_fetcher_test.cpp" ]
+
+  deps = [ "../../../audioutils:audio_utils" ]
+
+  external_deps = [
+    "googletest:gtest",
+  ]
 }
 
 ohos_unittest("audio_utils_plus_unit_test") {

@@ -65,6 +65,11 @@ bool AudioSessionManager::IsAudioSessionActivated()
     return AudioPolicyManager::GetInstance().IsAudioSessionActivated();
 }
 
+bool AudioSessionManager::IsOtherMediaPlaying()
+{
+    return AudioPolicyManager::GetInstance().IsOtherMediaPlaying();
+}
+
 int32_t AudioSessionManager::SetAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &audioSessionCallback)
 {
     AUDIO_INFO_LOG("in");
@@ -251,6 +256,19 @@ int32_t AudioSessionManager::UnsetAudioSessionCurrentInputDeviceChangeCallback(
     return ret;
 }
 
+int32_t AudioSessionManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    AUDIO_INFO_LOG("enable mute suggestion when mix with others, enable:%{public}d", enable);
+
+    int32_t result = AudioPolicyManager::GetInstance().EnableMuteSuggestionWhenMixWithOthers(enable);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "EnableMuteSuggestionWhenMixWithOthers failed, result:%{public}d", result);
+
+    restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION,
+        static_cast<int32_t>(enable));
+    return result;
+}
+
 void AudioSessionManager::RegisterAudioPolicyServerDiedCb()
 {
     std::lock_guard<std::mutex> lock(sessionManagerRestoreMutex_);
@@ -356,6 +374,38 @@ void AudioSessionRestoreParams::OnAudioSessionStateChanged(AudioSessionStateChan
     }
 }
 
+void AudioSessionRestoreParams::EnsureMuteAfterScene()
+{
+    auto muteIt = std::find_if(actions_.begin(), actions_.end(),
+        [](const std::unique_ptr<AudioSessionAction> &action) {
+            return action && action->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION;
+        });
+    auto sceneIt = std::find_if(actions_.begin(), actions_.end(),
+        [](const std::unique_ptr<AudioSessionAction> &action) {
+            return action && action->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE;
+        });
+    if (muteIt == actions_.end() || sceneIt == actions_.end() || muteIt >= sceneIt) {
+        return;
+    }
+    std::rotate(muteIt, muteIt + 1, sceneIt + 1);
+}
+
+void AudioSessionRestoreParams::DeduplicateLastOperation(AudioSessionRestoreParams::OperationType type)
+{
+    bool firstFound = false;
+    for (int32_t idx = static_cast<int32_t>(actions_.size()) - 1; idx >= 0; --idx) {
+        CHECK_AND_CONTINUE(actions_[idx] != nullptr);
+        if (actions_[idx]->type != type) {
+            continue;
+        }
+        if (!firstFound) {
+            firstFound = true;
+        } else {
+            actions_.erase(actions_.begin() + idx);
+        }
+    }
+}
+
 void AudioSessionRestoreParams::RecordAudioSessionOpt(const OperationType type, const int32_t value)
 {
     std::lock_guard<std::mutex> lock(actionsMutex_);
@@ -388,19 +438,13 @@ void AudioSessionRestoreParams::RecordAudioSessionOpt(const OperationType type, 
             }
         }
 
-        bool firstFound = false;
-        for (int32_t idx = static_cast<int32_t>(actions_.size()) - 1; idx >= 0; idx--) {
-            CHECK_AND_CONTINUE(actions_[idx] != nullptr);
-            if (actions_[idx]->type != OperationType::AUDIO_SESSION_SET_SCENE) {
-                continue;
-            }
-
-            if (!firstFound) {
-                firstFound = true;
-            } else {
-                actions_.erase(actions_.begin() + idx);
-            }
-        }
+        DeduplicateLastOperation(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_SCENE);
+        // After deduplication, SCENE operations might appear before MUTE operations.
+        // However, MUTE settings need to be applied after SCENE settings in practice.
+        // Therefore, we need to reorder MUTE operations to appear after SCENE operations.
+        EnsureMuteAfterScene();
+    } else if (type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION) {
+        DeduplicateLastOperation(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION);
     }
 }
 
@@ -425,6 +469,13 @@ bool AudioSessionRestoreParams::RestoreParams()
             AudioSessionScene audioSessionScene = static_cast<AudioSessionScene>((*it)->optValue);
             ret = AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore DeviceType params failed, ret:%{public}d", ret);
+        }
+
+        if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION) {
+            bool enable = static_cast<bool>((*it)->optValue);
+            ret = AudioPolicyManager::GetInstance().EnableMuteSuggestionWhenMixWithOthers(enable);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore MuteSuggestion params failed, ret:%{public}d",
+                ret);
         }
     }
 

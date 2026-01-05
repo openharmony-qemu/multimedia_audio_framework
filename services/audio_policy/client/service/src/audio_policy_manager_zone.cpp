@@ -52,6 +52,14 @@ void AudioPolicyManager::ReleaseAudioZone(int32_t zoneId)
     gsp->ReleaseAudioZone(zoneId);
 }
 
+void AudioPolicyManager::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
+
+    gsp->UpdateContextForAudioZone(zoneId, context);
+}
+
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -131,6 +139,37 @@ int32_t AudioPolicyManager::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     return gsp->RemoveUidFromAudioZone(zoneId, uid);
+}
+
+int32_t AudioPolicyManager::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    std::set<int32_t> usageSet;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "usage is invalid");
+        usageSet.insert(static_cast<int32_t>(usage));
+    }
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->AddUidUsagesToAudioZone(zoneId, uid, usageSet);
+}
+
+int32_t AudioPolicyManager::RemoveUidUsagesFromAudioZone(
+    int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages)
+{
+    std::set<int32_t> usageSet;
+    for (const auto &usage : usages) {
+        CHECK_AND_RETURN_RET_LOG(usage > STREAM_USAGE_UNKNOWN && usage <= STREAM_USAGE_MAX, ERR_INVALID_PARAM,
+            "usage is invalid");
+        usageSet.insert(static_cast<int32_t>(usage));
+    }
+
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->RemoveUidUsagesFromAudioZone(zoneId, uid, usageSet);
 }
 
 int32_t AudioPolicyManager::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream)

@@ -254,6 +254,12 @@ int32_t AudioVolumeManagerImpl::GetVolumeByStream(StreamUsage streamUsage)
 {
     int32_t volume = 0;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (audioSystemMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return volume;
@@ -272,6 +278,12 @@ int32_t AudioVolumeManagerImpl::GetMinVolumeByStream(StreamUsage streamUsage)
 {
     int32_t minVolume = 0;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (audioSystemMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return minVolume;
@@ -290,6 +302,12 @@ int32_t AudioVolumeManagerImpl::GetMaxVolumeByStream(StreamUsage streamUsage)
 {
     int32_t maxVolume = 0;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (audioSystemMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return maxVolume;
@@ -345,6 +363,12 @@ double AudioVolumeManagerImpl::GetVolumeInUnitOfDbByStream(StreamUsage streamUsa
 {
     double volumeInDb = VOLUME_DEFAULT_DOUBLE;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
         AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
@@ -397,6 +421,12 @@ AudioVolumeType AudioVolumeManagerImpl::GetAudioVolumeTypeByStreamUsage(StreamUs
 {
     OHOS::AudioStandard::AudioStreamType volType = OHOS::AudioStandard::AudioStreamType::STREAM_DEFAULT;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
         return TaiheAudioEnum::GetJsAudioVolumeType(volType);
@@ -468,6 +498,12 @@ bool AudioVolumeManagerImpl::IsSystemMutedForStream(StreamUsage streamUsage)
 {
     bool isMuted = false;
     int32_t streamUsageInt = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsageInt == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsageInt = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
         AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,

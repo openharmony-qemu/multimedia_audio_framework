@@ -535,7 +535,7 @@ void VolumeTools::DfxOperation(const BufferDesc &buffer, AudioStreamInfo streamI
     size_t byteSizePerData = GetByteSize(streamInfo.format);
     size_t frameLen = byteSizePerData * static_cast<size_t>(streamInfo.channels) *
         static_cast<size_t>(streamInfo.samplingRate) * 0.02; // 0.02s
-    CHECK_AND_RETURN_LOG(frameLen > 0, "frameLen is invalid");
+    CHECK_AND_RETURN_LOG(frameLen > 0 && buffer.buffer != nullptr && streamInfo.channels <= CHANNEL_16, "invalid para");
     int64_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
         BufferDesc temp = {buffer.buffer + frameLen * index, std::min(buffer.bufLength - frameLen * index, frameLen),
@@ -564,6 +564,7 @@ void VolumeTools::CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, 
         AUDIO_ERR_LOG("invalid size");
         return;
     }
+    CHECK_AND_RETURN_LOG(buffer.buffer != nullptr && streamInfo.channels <= CHANNEL_16, "invalid para");
     int64_t minVolume = INT_32_MAX;
     for (size_t index = 0; index < (buffer.bufLength + frameLen - 1) / frameLen; index++) {
         BufferDesc temp = {buffer.buffer + frameLen * index, std::min(buffer.bufLength - frameLen * index, frameLen),

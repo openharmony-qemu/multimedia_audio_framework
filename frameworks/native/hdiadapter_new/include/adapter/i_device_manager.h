@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+typedef IAudioSinkCallback IAudioAdapterCallback;
 class IDeviceManagerCallback {
 public:
     virtual void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
@@ -51,6 +52,7 @@ public:
         int32_t streamId) = 0;
     virtual int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) = 0;
+    virtual void ReleaseOutputRoute(const std::string &adapterName) {}
     virtual void SetMicMute(const std::string &adapterName, bool isMute) = 0;
     virtual int32_t HandleEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value, void *reserved) { return ERR_NOT_SUPPORTED; }
@@ -58,8 +60,15 @@ public:
         std::shared_ptr<IDeviceManagerCallback> callback) {}
     virtual void RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
         std::shared_ptr<IDeviceManagerCallback> callback) {}
+
+    virtual void RegistAdapterManagerCallback(const std::string &adapterName,
+        std::shared_ptr<IAudioAdapterCallback> callback) {}
+
     virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
     virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
+    virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback) {}
+
+    virtual void UnRegistAdapterManagerCallback(const std::string &adapterName) {}
 
     virtual void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
         uint32_t &hdiRenderId) = 0;

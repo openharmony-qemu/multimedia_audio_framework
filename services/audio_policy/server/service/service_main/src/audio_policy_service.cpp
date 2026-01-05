@@ -400,6 +400,7 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
 {
     AudioPolicyDataShareListener::RegisterAccessiblilityBalance();
     AudioPolicyDataShareListener::RegisterAccessiblilityMono();
+    AudioPolicyDataShareListener::RegisterBroadcast();
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -1250,6 +1251,11 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
     AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice %{public}d",
         sourceType, ret);
     return ret;
+}
+
+AudioScene AudioPolicyService::GetAudioSceneFromAllZones()
+{
+    return AudioZoneService::GetInstance().GetAudioSceneFromAllZones();
 }
 } // namespace AudioStandard
 } // namespace OHOS

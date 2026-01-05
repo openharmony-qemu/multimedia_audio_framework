@@ -172,6 +172,7 @@ private:
     int32_t EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     int32_t SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     void SetSpatializationSceneTypeToChains();
+    bool HasRunningSessionForEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain);
     void SetSpatializationEnabledToChains();
     void SetSpkOffloadState();
     void UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType);
@@ -240,8 +241,11 @@ private:
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
     std::string lidState_ = "0";
+    std::string systemLoadState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
+    std::string outdoorModle_ = "0";
+    std::string superLoudnessMode_ = "music_off";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;

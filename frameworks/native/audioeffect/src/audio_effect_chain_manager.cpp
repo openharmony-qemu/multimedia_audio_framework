@@ -401,8 +401,11 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatializationEnabled(enabled);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
+    audioEffectChain->SetSystemLoadState(systemLoadState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
     audioEffectChain->SetEarphoneProduct(earphoneProduct_);
+    audioEffectChain->SetOutdoorMode(outdoorModle_);
+    audioEffectChain->SetSuperLoudnessMode(superLoudnessMode_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -997,6 +1000,18 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetLidState(value);
                 paramUpdated = true;
                 break;
+            case HDI_OUTDOOR_MODE:
+                audioEffectChain->SetOutdoorMode(value);
+                paramUpdated = true;
+                break;
+            case HDI_SUPER_LOUDNESS_MODE:
+                audioEffectChain->SetSuperLoudnessMode(value);
+                paramUpdated = true;
+                break;
+            case HDI_SYSTEMLOAD_STATE:
+                audioEffectChain->SetSystemLoadState(value);
+                paramUpdated = true;
+                break;
             default:
                 break;
         }
@@ -1027,6 +1042,12 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(foldState_, HDI_FOLD_STATE);
     } else if (mainkey == "device_status" && subkey == "lid_state") {
         updateParam(lidState_, HDI_LID_STATE);
+    } else if (mainkey == "audio_effect" && subkey == SYSTEM_LOAD_SUBKEY) {
+        updateParam(systemLoadState_, HDI_SYSTEMLOAD_STATE);
+    } else if (mainkey == "audio_effect" && subkey == "outdoor_mode") {
+        updateParam(outdoorModle_, HDI_OUTDOOR_MODE);
+    } else if (mainkey == "LOUD_VOLUME_MODE" && subkey == "super_loudness_mode") {
+        updateParam(superLoudnessMode_, HDI_SUPER_LOUDNESS_MODE);
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());
@@ -1053,19 +1074,35 @@ void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
+bool AudioEffectChainManager::HasRunningSessionForEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain)
+{
+    for (const auto& [sessionId, effectInfo] : sessionIDToEffectInfoMap_) {
+        CHECK_AND_CONTINUE(effectInfo.sceneMode != "EFFECT_NONE");
+        std::string sceneTypeTemp = effectInfo.sceneType;
+        std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
+        CHECK_AND_CONTINUE_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, "null audioEffectChain");
+        auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
+        if (audioEffectChainTemp == audioEffectChain) {
+            return true;
+        }
+    }
+    return false;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationEnabledToChains()
 {
-    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
-        auto audioEffectChain = it->second;
+    bool enabled = btOffloadEnabled_ ? false : IsSpatializationEnabledForChains();
+    for (const auto& [key, audioEffectChain] : sceneTypeToEffectChainMap_) {
         if (audioEffectChain == nullptr) {
             continue;
         }
-
-        if (btOffloadEnabled_ == false) {
-            bool enabled = IsSpatializationEnabledForChains();
+        if (HasRunningSessionForEffectChain(audioEffectChain)) {
             audioEffectChain->SetSpatializationEnabledForFading(enabled);
         } else {
-            audioEffectChain->SetSpatializationEnabledForFading(false);
+            audioEffectChain->SetSpatializationEnabled(enabled);
         }
     }
 }
@@ -1264,7 +1301,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     defaultEffectChainCreated_ = false;
     if (isPriorScene) {
-        HILOG_COMM_INFO("create prior effect chain: %{public}s", sceneType.c_str());
+        HILOG_COMM_INFO("[CreateAudioEffectChain]create prior effect chain: %{public}s", sceneType.c_str());
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
 #else
@@ -1273,8 +1310,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         return audioEffectChain;
     }
     if ((maxEffectChainCount_ - static_cast<int32_t>(sceneTypeToSpecialEffectSet_.size())) > 1) {
-        HILOG_COMM_INFO("max audio effect chain count not reached, create special effect chain: %{public}s",
-            sceneType.c_str());
+        HILOG_COMM_INFO("[CreateAudioEffectChain]max audio effect chain count not reached, "
+            "create special effect chain: %{public}s", sceneType.c_str());
         sceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
@@ -1283,7 +1320,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 #endif
     } else {
         if (!isDefaultEffectChainExisted_) {
-            HILOG_COMM_INFO("max audio effect chain count reached, create current and default effect chain");
+            HILOG_COMM_INFO("[CreateAudioEffectChain]max audio effect chain count reached, "
+                "create current and default effect chain");
 #ifdef SENSOR_ENABLE
             audioEffectChain = std::make_shared<AudioEffectChain>(DEFAULT_SCENE_TYPE, headTracker_);
 #else
@@ -1295,8 +1333,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         } else {
             audioEffectChain = sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey];
             defaultEffectChainCount_++;
-            HILOG_COMM_INFO("max audio effect chain count reached and default effect chain already exist: %{public}d",
-                defaultEffectChainCount_);
+            HILOG_COMM_INFO("[CreateAudioEffectChain]max audio effect chain count reached and default "
+                "effect chain already exist: %{public}d", defaultEffectChainCount_);
         }
     }
     return audioEffectChain;
@@ -1306,7 +1344,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
 {
     Trace trace("AudioEffectChainManager::CheckAndReleaseCommonEffectChain: " + sceneType);
-    HILOG_COMM_INFO("release effect chain for scene type: %{public}s", sceneType.c_str());
+    HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]release effect chain for scene type: %{public}s",
+        sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
@@ -1324,11 +1363,12 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             defaultEffectChainCount_= 0;
             isDefaultEffectChainExisted_ = false;
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
-            HILOG_COMM_INFO("default effect chain will be released");
+            HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain will be released");
             return SUCCESS;
         } else {
             defaultEffectChainCount_--;
-            HILOG_COMM_INFO("default effect chain still exist, count is %{public}d", defaultEffectChainCount_);
+            HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain still exist, "
+                "count is %{public}d", defaultEffectChainCount_);
         }
     }
     return ERROR;
@@ -1663,7 +1703,8 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 defaultEffectChainCount_++;
             }
-            HILOG_COMM_INFO("effect chain %{public}s still exist, current count: %{public}d, default count: %{public}d",
+            HILOG_COMM_INFO("[CreateAudioEffectChainDynamicInner]effect chain %{public}s still exist, "
+                "current count: %{public}d, default count: %{public}d",
                 sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             return SUCCESS;
         }
@@ -1802,8 +1843,9 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
         std::to_string(spatializationEnabled_.load()) + std::to_string(headTrackingEnabled_) +
         " current state: " + std::to_string(spatializationState.spatializationEnabled) +
         std::to_string(spatializationState.headTrackingEnabled));
-    HILOG_COMM_INFO("begin to update spatialization state, current state: %{public}d and %{public}d, previous state: \
-        %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
+    HILOG_COMM_INFO("[UpdateSpatializationStateInner]begin to update spatialization state, current "
+        "state: %{public}d and %{public}d, previous state: %{public}d and %{public}d",
+        spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
         spatializationEnabled_.load(), headTrackingEnabled_);
 
     if (spatializationEnabled_ != spatializationState.spatializationEnabled) {

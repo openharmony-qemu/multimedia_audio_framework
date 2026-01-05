@@ -113,6 +113,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType)
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_ULTRASONIC);
     } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_RAW_AI) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_RAW_AI);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }

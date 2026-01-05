@@ -93,7 +93,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_AI_MIC),
     std::string(PRIMARY_UNPROCESS_MIC),
     std::string(PRIMARY_ULTRASONIC_MIC),
-    std::string(PRIMARY_VOICE_RECOGNITION_MIC)
+    std::string(PRIMARY_VOICE_RECOGNITION_MIC),
+    std::string(PRIMARY_RAW_AI_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -278,6 +279,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
     deviceInfo.channelMasks_ = desc->channelMasks_;
     deviceInfo.channelIndexMasks_ = desc->channelIndexMasks_;
     deviceInfo.displayName_ = desc->displayName_;
+    deviceInfo.model_ = desc->model_;
     deviceInfo.connectState_ = desc->connectState_;
 
     if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -307,6 +309,7 @@ void AudioDeviceCommon::UpdateDeviceInfo(AudioDeviceDescriptor &deviceInfo,
         deviceInfo.interruptGroupId_ = GROUP_ID_NONE;
     }
     deviceInfo.audioStreamInfo_ = desc->audioStreamInfo_;
+    deviceInfo.capabilities_ = desc->capabilities_;
 }
 
 int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
@@ -422,7 +425,8 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
     // Use speaker streaminfo for all output devices cap
-    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID) {
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID &&
+        updatedDesc.deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET) {
         auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
         if (itr != nullptr) {
             audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
@@ -494,9 +498,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = INPUT_DEVICE;
     // Use mic streaminfo for all input devices cap
-    auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_MIC);
-    if (itr != nullptr) {
-        audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_USB_ARM_HEADSET) {
+        auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_MIC);
+        if (itr != nullptr) {
+            audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+        }
     }
     bool wasVirtualConnected = audioDeviceManager_.IsVirtualConnectedDevice(audioDescriptor);
     if (!wasVirtualConnected) {
@@ -593,7 +599,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             int32_t ret = HandleScoOutputDeviceFetched(descs.front(), rendererChangeInfos, reason);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] is not connected yet", encryptMacAddr.c_str());
         } else if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            audioEcManager_.ActivateArmDevice(descs.front()->macAddress_, descs.front()->deviceRole_);
+            audioEcManager_.ActivateArmDevice(descs.front());
         }
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
@@ -1137,7 +1143,7 @@ void AudioDeviceCommon::FetchInputDeviceInner(
         HandleBluetoothInputDeviceFetched(desc, capturerChangeInfos, sourceType);
         CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            audioEcManager_.ActivateArmDevice(desc->macAddress_, desc->deviceRole_);
+            audioEcManager_.ActivateArmDevice(desc);
         }
         if (needUpdateActiveDevice) {
             std::shared_ptr<AudioDeviceDescriptor> preferredDesc = audioAffinityManager_.GetCapturerDevice(clientUID);
@@ -1280,7 +1286,7 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentInputDevice(*desc);
     if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.PresetArmIdleInput(desc->macAddress_);
+        audioEcManager_.PresetArmIdleInput(desc);
     }
     DeviceType deviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", deviceType);

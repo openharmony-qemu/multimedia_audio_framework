@@ -1,0 +1,8 @@
+.vscode/
+.idea/
+
+tags*
+*.wecode-*
+
+out/
+build/

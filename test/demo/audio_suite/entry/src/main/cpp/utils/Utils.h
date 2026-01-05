@@ -61,16 +61,16 @@ napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
 void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
     int32_t* bitsPerSample, OH_AudioStream_SampleFormat* streamSampleFormat);
 
-// 设置采样率
+// Set Sampling Rate
 OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate);
 
-// 设置声道
+// Set audio channels
 OH_AudioChannelLayout SetChannelLayout(int32_t channels);
 
-// 设置位深
+// Set bit depth
 OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample);
 
-// 位深转换
+// Bit depth conversion
 void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode);
 
 int32_t GetBitsPerSample(OH_Audio_SampleFormat sampleFormat);

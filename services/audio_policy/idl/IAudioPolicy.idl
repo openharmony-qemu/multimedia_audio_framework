@@ -44,7 +44,12 @@ sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 
+// ! WARNING !
+// ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
+// ! WARNING ! DO NOT FORGET to MODIFY AudioPolicyInterfaceCode in audio_policy_ipc_interface_code.h
+// ! WARNING !
 interface IAudioPolicy {
+    // AudioPolicyInterfaceCode begin
     [ipccode 0] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel, [in] int deviceType); // AudioVolumeType volumeType, DeviceType deviceType
     void GetMinVolumeLevel([in] int volumeType, [out] int volumeLevel, [in] int deviceType); // AudioVolumeType volumeType, DeviceType deviceType
     void SetSystemVolumeLevelLegacy([in] int streamTypeIn, [in] int volumeLevel); // AudioVolumeType volumeType
@@ -129,6 +134,7 @@ interface IAudioPolicy {
     void GetAudioFocusInfoList([out] List<OrderedMap<AudioInterrupt, int>> focusInfoList, [in] int zoneId); /*  zoneID default value: 0 -- local device */
     void SetSystemSoundUri([in] String key, [in] String uri);
     void GetSystemSoundUri([in] String key, [out] String retUri);
+    void GetSystemSoundPath([in] int systemSoundType, [out] String retUri);
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
     void GetMaxRendererInstances([out] int ret);
@@ -192,8 +198,6 @@ interface IAudioPolicy {
     void SetCallDeviceActive([in] int deviceType, [in] boolean active, [in] String address, [in] int uid);
     void GetConverterConfig([out] ConverterConfig retCnf);
     void GetActiveBluetoothDevice([out] sharedptr<AudioDeviceDescriptor> descs);
-    void FetchOutputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo, [in] AudioStreamDeviceChangeReasonExt reason);
-    void FetchInputDeviceForTrack([in] AudioStreamChangeInfo streamChangeInfo);
     void IsHighResolutionExist([out] boolean ret);
     void SetHighResolutionExist([in] boolean highResExist);
     void GetSpatializationSceneType([out] int type);
@@ -227,7 +231,7 @@ interface IAudioPolicy {
     void GetInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetAudioDeviceAnahsCallback([in] IRemoteObject object);
     void UnsetAudioDeviceAnahsCallback();
-    void IsAllowedPlayback([in] int uid, [in] int pid, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
+    void IsAllowedPlayback([in] int uid, [in] int pid, [in] unsigned int sessionId, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
@@ -284,6 +288,7 @@ interface IAudioPolicy {
     void SetSystemVolumeDegree([in] int volumeType, [in] int volumeDegree, [in] int volumeFlag, [in] int uid);
     void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree);
     void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
+    // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
     void GetAudioZoneByName([in] String name, [out] int zoneId);
@@ -305,5 +310,11 @@ interface IAudioPolicy {
     void GetVirtualCall([out] boolean isVirtualCall);
     void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
+    void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
+    void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
+    void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
+    void IsOtherMediaPlaying([out] boolean retIsExistence);
+    void GetAudioSceneFromAllZones([out] int audioScene);
+    void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
 }
 

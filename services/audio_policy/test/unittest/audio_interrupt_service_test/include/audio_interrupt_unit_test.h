@@ -64,6 +64,7 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+    void ThreadRun();
 
 private:
     std::shared_ptr<AudioInterruptService> audioInterruptService_ = nullptr;

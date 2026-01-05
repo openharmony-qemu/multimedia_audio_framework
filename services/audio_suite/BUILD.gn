@@ -33,6 +33,7 @@ config("audio_suite_public_config") {
     "../audio_engine/plugin/channel_converter/include/",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosuite/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags_cc = [
@@ -112,6 +113,7 @@ audio_ohos_library("audio_suite") {
       "../../frameworks/native/audioschedule:audio_schedule",
       "../audio_service:audio_common",
       "../../frameworks/native/audioutils:audio_xml_utils",
+      "../audio_service:audio_client",
     ]
 
     external_deps = [

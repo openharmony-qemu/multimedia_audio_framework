@@ -2542,10 +2542,10 @@ HWTEST(AudioEffectChainManagerUnitTest, IsEffectChainStop_001, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetSpatializationEnabledToChains API
-* @tc.number : SetSpatializationEnabledToChains_003
+* @tc.number : SetSpatializationEnabledToChains_001
 * @tc.desc   : Test SetSpatializationEnabledToChains interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_003, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_001, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->ResetInfo();
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"test", nullptr});
@@ -2556,14 +2556,43 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_003, Te
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     std::string sceneType = "SCENE_MOVIE";
     std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
 
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
-    string sessionID1 = "123456";
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
+
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->SetSpatializationEnabledToChains();
+    EXPECT_EQ(!AudioEffectChainManager::GetInstance()->spatializationEnabled_,
+        audioEffectChain->spatializationEnabledFading_);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetSpatializationEnabledToChains API
+* @tc.number : SetSpatializationEnabledToChains_002
+* @tc.desc   : Test SetSpatializationEnabledToChains interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationEnabledToChains_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123456", DEFAULT_INFO});
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
     AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
@@ -2821,11 +2850,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_003, TestSi
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -2849,11 +2878,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -3367,6 +3396,28 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_002, TestSize.Level1)
     subkey = "lid_state";
     AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
     AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateParamExtra API
+* @tc.number : UpdateParamExtra_003
+* @tc.desc   : Test UpdateParamExtra interface, key is systemLoad_state.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_003, TestSize.Level1)
+{
+    std::string mainkey = "audio_effect";
+    std::string subkey = SYSTEM_LOAD_SUBKEY;
+    std::string value = "0";
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->systemLoadState_, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[0], HDI_SYSTEMLOAD_STATE);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[1], 0);
+
+    value = "1";
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->systemLoadState_, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[0], HDI_SYSTEMLOAD_STATE);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->effectHdiInput_[1], 1);
 }
 
 /**

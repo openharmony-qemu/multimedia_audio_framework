@@ -1399,7 +1399,6 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(
         callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, true);
     }
-    isAudioRendererEventListenerRegistered = true;
     return SUCCESS;
 }
 
@@ -1408,13 +1407,12 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
 {
     AUDIO_DEBUG_LOG("in");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].mutex);
-    if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
+    if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callbacks);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
-        isAudioRendererEventListenerRegistered = false;
     }
     return SUCCESS;
 }
@@ -1424,13 +1422,12 @@ int32_t AudioPolicyManager::UnregisterAudioRendererEventListener(
 {
     AUDIO_DEBUG_LOG("in");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].mutex);
-    if ((audioPolicyClientStubCB_ != nullptr) && isAudioRendererEventListenerRegistered) {
+    if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveRendererStateChangeCallback(callback);
         if (audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_RENDERER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_RENDERER_STATE_CHANGE, false);
         }
-        isAudioRendererEventListenerRegistered = false;
     }
     return SUCCESS;
 }
@@ -1458,7 +1455,6 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
         callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].isEnable = true;
         SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, true);
     }
-    isAudioCapturerEventListenerRegistered = true;
     return SUCCESS;
 }
 
@@ -1466,13 +1462,12 @@ int32_t AudioPolicyManager::UnregisterAudioCapturerEventListener(const int32_t c
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnregisterAudioCapturerEventListener");
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].mutex);
-    if ((audioPolicyClientStubCB_ != nullptr) && isAudioCapturerEventListenerRegistered) {
+    if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveCapturerStateChangeCallback();
         if (audioPolicyClientStubCB_->GetCapturerStateChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_CAPTURER_STATE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_CAPTURER_STATE_CHANGE, false);
         }
-        isAudioCapturerEventListenerRegistered = false;
     }
     return SUCCESS;
 }
@@ -1587,6 +1582,17 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
 
     std::string out{};
     gsp->GetSystemSoundUri(key, out);
+    return out;
+}
+
+std::string AudioPolicyManager::GetSystemSoundPath(const int32_t systemSoundType)
+{
+    AUDIO_DEBUG_LOG("GetSystemSoundPath: %{public}d", systemSoundType);
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
+
+    std::string out{};
+    gsp->GetSystemSoundPath(systemSoundType, out);
     return out;
 }
 
@@ -2290,6 +2296,15 @@ bool AudioPolicyManager::IsAudioSessionActivated()
     return active;
 }
 
+bool AudioPolicyManager::IsOtherMediaPlaying()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool existence = false;
+    gsp->IsOtherMediaPlaying(existence);
+    return existence;
+}
+
 int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const SourceType sourceType, bool isRunning)
 {
@@ -2618,6 +2633,20 @@ int32_t AudioPolicyManager::UnsetAudioSessionCurrentDeviceChangeCallback(
     return result;
 }
 
+int32_t AudioPolicyManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->EnableMuteSuggestionWhenMixWithOthers(enable);
+}
+
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2922,13 +2951,13 @@ int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const 
     return gsp->LoadSplitModule(splitArgs, networkId);
 }
 
-bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid,
+bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
     StreamUsage streamUsage, bool &silentControl)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     bool isAllowed = false;
-    gsp->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
+    gsp->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
     return isAllowed;
 }
 
@@ -3450,6 +3479,15 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
     return policyManager;
+}
+
+AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
+    int32_t audioScene = AUDIO_SCENE_DEFAULT;
+    gsp->GetAudioSceneFromAllZones(audioScene);
+    return static_cast<AudioScene>(audioScene);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

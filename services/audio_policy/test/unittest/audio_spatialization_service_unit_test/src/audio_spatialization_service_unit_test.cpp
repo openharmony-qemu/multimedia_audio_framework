@@ -14,11 +14,11 @@
  */
 
 #include "audio_spatialization_service_unit_test.h"
+#include "audio_setting_provider.h"
 #include "audio_errors.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "standard_spatialization_state_change_listener_proxy.h"
-#include <openssl/sha.h>
 #include <thread>
 #include <string>
 #include <memory>
@@ -171,34 +171,25 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
 
         auto encryptedDevice = service.GetSha256EncryptAddress(device);
         EXPECT_EQ(service.addressToDeviceSpatialInfoMap_[encryptedDevice], info);
-        EXPECT_EQ(service.addressToDeviceIDMap_[encryptedDevice], i);
     }
 
     EXPECT_EQ(service.addressToDeviceSpatialInfoMap_.size(), AudioSpatializationService::MAX_DEVICE_NUM);
-    EXPECT_EQ(service.addressToDeviceIDMap_.size(), AudioSpatializationService::MAX_DEVICE_NUM);
     // Test updating existing devices
     service.UpdateDeviceSpatialMapInfo("device5", "updated_info5");
     auto encryptedDevice5 = service.GetSha256EncryptAddress("device5");
     EXPECT_EQ(service.addressToDeviceSpatialInfoMap_[encryptedDevice5], "updated_info5");
-    EXPECT_EQ(service.addressToDeviceIDMap_[encryptedDevice5], 5);
     // Test adding more than the maximum number of devices
     service.UpdateDeviceSpatialMapInfo("device11", "info11");
     EXPECT_EQ(service.addressToDeviceSpatialInfoMap_.size(), AudioSpatializationService::MAX_DEVICE_NUM);
-    EXPECT_NE(service.addressToDeviceIDMap_.size(), AudioSpatializationService::MAX_DEVICE_NUM);
     auto encryptedDevice1 = service.GetSha256EncryptAddress("device1");
     auto encryptedDevice11 = service.GetSha256EncryptAddress("device11");
     // Verify that the oldest device is removed
     EXPECT_NE(service.addressToDeviceSpatialInfoMap_.count(encryptedDevice1), 0);
-    EXPECT_NE(service.addressToDeviceIDMap_.count(encryptedDevice1), 0);
     // Verify that the new device is added correctly
     EXPECT_EQ(service.addressToDeviceSpatialInfoMap_.count(encryptedDevice11), 1);
-    EXPECT_EQ(service.addressToDeviceIDMap_.count(encryptedDevice11), 1);
-    // Verify that the new device inherits the ID of the removed device
-    EXPECT_NE(service.addressToDeviceIDMap_[encryptedDevice11], 1);
     // Verify that the other device information remains the same
     auto encryptedDevice10 = service.GetSha256EncryptAddress("device10");
     EXPECT_EQ(service.addressToDeviceSpatialInfoMap_[encryptedDevice10], "info10");
-    EXPECT_EQ(service.addressToDeviceIDMap_[encryptedDevice10], 10);
 }
 
 /**
@@ -211,7 +202,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_004, Tes
     AudioSpatializationState testState = {true, false};
     service.spatializationStateFlag_ = testState;
 
-    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_SPATIALIZATION_STATE, "");
+    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_SPATIALIZATION_STATE);
 
     int32_t savedState;
     AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID).GetIntValue(SPATIALIZATION_STATE_SETTINGKEY, savedState);
@@ -234,7 +225,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_005, Tes
     AudioSpatializationSceneType testScene = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     service.spatializationSceneType_ = testScene;
 
-    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_SPATIALIZATION_SCENE, "");
+    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_SPATIALIZATION_SCENE);
     int32_t savedScene;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     settingProvider.GetIntValue(SPATIALIZATION_SCENE_SETTINGKEY, savedScene);
@@ -245,24 +236,22 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_005, Tes
 /**
 * @tc.name  : Test AudioSocketThread.
 * @tc.number: AudioSpatializationService_006
-* @tc.desc  : Test WriteSpatializationStateToDb_WRITE_DEVICESPATIAL_INFO
+* @tc.desc  : Test WriteSpatializationStateToDb_WRITE_ALLDEVICESPATIAL_INFO
 */
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_006, TestSize.Level1)
 {
     std::string testAddress = "test_address";
     std::string encryptedAddress = service.GetSha256EncryptAddress(testAddress);
-    uint32_t testDeviceId = 1;
     std::string testDeviceInfo = "test_device_info";
-    service.addressToDeviceIDMap_[encryptedAddress] = testDeviceId;
+    service.addressToDeviceSpatialInfoMap_.clear();
     service.addressToDeviceSpatialInfoMap_[encryptedAddress] = testDeviceInfo;
     service.preSettingSpatialAddress_ = testAddress;
 
-    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_DEVICESPATIAL_INFO, testAddress);
+    service.WriteSpatializationStateToDb(AudioSpatializationService::WRITE_ALLDEVICESPATIAL_INFO);
 
     std::string savedDeviceInfo;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = settingProvider.GetStringValue(
-        SPATIALIZATION_STATE_SETTINGKEY + "_device" + std::to_string(testDeviceId), savedDeviceInfo);
+    ErrCode ret = settingProvider.GetStringValue(SPATIALIZATION_STATE_SETTINGKEY + "_device", savedDeviceInfo);
     EXPECT_NE(ret, SUCCESS);
     EXPECT_NE(savedDeviceInfo, testDeviceInfo);
 
@@ -976,8 +965,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_043, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     AudioSpatializationService::WriteToDbOperation operation = AudioSpatializationService::WriteToDbOperation(5);
-    const std::string address = "1234";
-    ptrAudioSpatializationService->WriteSpatializationStateToDb(operation, address);
+    ptrAudioSpatializationService->WriteSpatializationStateToDb(operation);
 }
 
 /**
@@ -1180,6 +1168,23 @@ HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
     EXPECT_NO_THROW(
         ptrAudioSpatializationService->Init(effectChains);
     );
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService::InitSpatializationState_001
+* @tc.desc  : Test AudioSpatializationService::InitSpatializationState
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, InitSpatializationState_001, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    ptrAudioSpatializationService->InitSpatializationState();
+
+    AudioSettingProvider::GetInstance(1).SetDataShareReady(true);
+    ptrAudioSpatializationService->InitSpatializationState();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -13,15 +13,15 @@ class RadioParam {
     public isChecked: boolean = false;
     public label: string = '';
     public onChange: VoidCallback = () => {
-    }; // 点击单选框
+    }; // Click the radio button
 };
 
 @CustomDialog
 export struct SetFormatDialog {
     controller?: CustomDialogController;
-    //判断无音频，保存格式按钮置灰
+    // Judgment of no audio, save format button grayed out
     @Prop nodeList: Map<string, SongInfo> = new Map();
-    // 主标题样式修改器
+    // Main Title Style Modifier
     @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
     private symbolModifer: SymbolGlyphModifier =
         new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')])
@@ -29,17 +29,17 @@ export struct SetFormatDialog {
     @StorageLink('songWaveList') songWaveList: Map<string, SongInfo> = new Map();
     @Link newAudioFileName: string;
     private audioFormate: string = '.wav';
-    // 采样率
+    // sampling fraction
     @Link sampleRate: number;
     private sampleRates: number[] =
         [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000, 176400, 192000];
-    // 通道
+    // channels
     @Link channels: number;
-    // 位深
+    // bit depth
     @Link bitsPerSample: number;
     @Link bitsPerSampleMode: number;
     private bitsPerSamples: number[] = [8, 16, 24, 32];
-    // 导出中
+    // Exporting...
     @State isExported: boolean = false;
     scroller: Scroller = new Scroller();
     cancel: () => void = () => {

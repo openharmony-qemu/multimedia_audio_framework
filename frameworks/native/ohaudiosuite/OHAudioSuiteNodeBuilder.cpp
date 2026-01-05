@@ -115,7 +115,6 @@ static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout ch
         case OH_AudioChannelLayout::CH_LAYOUT_MONO:
             return channelCount == AudioChannel::MONO;
         case OH_AudioChannelLayout::CH_LAYOUT_STEREO:
-        case OH_AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX:
             return channelCount == AudioChannel::STEREO;
         default:
             return false;

@@ -57,6 +57,9 @@ public:
     ~InputNodeRequestDataCallBackTestImpl() = default;
     int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
+        (void)audioData;
+        (void)audioDataSize;
+        (void)finished;
         return 0;
     }
 };
@@ -238,7 +241,7 @@ void AudioSuiteManagerGetSoundFieldTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::SoundFieldType soundFieldType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundFieldType);
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundFieldType);
 }
 
 void AudioSuiteManagerGetEnvironmentTypeFuzzTest()

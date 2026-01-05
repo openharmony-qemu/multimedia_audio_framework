@@ -54,7 +54,9 @@ int32_t AudioSuiteSpaceRenderNode::Init()
         AUDIO_ERR_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited");
         return ERROR;
     }
- 
+    
+    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER,
         nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ CreateAlgoInterface failed");

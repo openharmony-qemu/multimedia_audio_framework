@@ -98,7 +98,14 @@ struct BasicBufferInfo {
     std::atomic<uint64_t> timeStamp;
 
     std::atomic<float> streamVolume;
+     
+    std::atomic<uint32_t> beginDurationMs;
+    std::atomic<uint32_t> durationMs;
     std::atomic<float> duckFactor;
+    std::atomic<float> oldDuckFactor;
+    std::atomic<float> lastEventFactor;
+    std::atomic<uint32_t> lastEventTime;
+
     std::atomic<float> muteFactor;
     std::atomic<RestoreStatus> restoreStatus = NO_NEED_FOR_RESTORE;
     std::atomic<bool> isNeedStop = false;
@@ -187,7 +194,7 @@ public:
     bool SetStreamVolume(float streamVolume);
 
     float GetDuckFactor();
-    bool SetDuckFactor(float duckFactor);
+    bool SetDuckFactor(float duckFactor, uint32_t durationMs);
 
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);
@@ -224,6 +231,8 @@ public:
 
     int32_t GetAllWritableBuffer(RingBufferWrapper &buffer);
     int32_t GetAllReadableBuffer(RingBufferWrapper &buffer);
+
+    int32_t GetRawBuffer(uint32_t size, BufferDesc &bufferDesc);
 
     int64_t GetLastWrittenTime();
     void SetLastWrittenTime(int64_t time);
@@ -262,6 +271,7 @@ public:
     std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
+    float GetVolumeFromOh();
 
 private:
     int32_t SizeCheck();
@@ -337,7 +347,7 @@ public:
     bool SetStreamVolume(float streamVolume);
 
     float GetDuckFactor();
-    bool SetDuckFactor(float duckFactor);
+    bool SetDuckFactor(float duckFactor, uint32_t durationMs);
 
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);

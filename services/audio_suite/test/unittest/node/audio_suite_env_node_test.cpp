@@ -42,39 +42,39 @@ static std::string g_targetfile001 = "/data/audiosuite/envnode/env_48000_2_16_ta
 
 HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvDeInit, TestSize.Level0)
 {
-    AudioSuiteEnvNode env;
-    EXPECT_EQ(env.Init(), 0);
-    EXPECT_NE(env.Init(), 0);
-    EXPECT_EQ(env.DeInit(), 0);
+    auto node = std::make_shared<AudioSuiteEnvNode>();
+    EXPECT_EQ(node->Init(), 0);
+    EXPECT_NE(node->Init(), 0);
+    EXPECT_EQ(node->DeInit(), 0);
 }
 
 HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvSetOptions, TestSize.Level0)
 {
-    AudioSuiteEnvNode env;
-    env.Init();
+    auto node = std::make_shared<AudioSuiteEnvNode>();
+    node->Init();
     std::string typeValue = "";
-    EXPECT_EQ(env.SetOptions("EnvironmentType", "0"), 0);
-    EXPECT_EQ(env.GetOptions("EnvironmentType", typeValue), 0);
+    EXPECT_EQ(node->SetOptions("EnvironmentType", "0"), 0);
+    EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "1");
 
-    EXPECT_EQ(env.SetOptions("EnvironmentType", "1"), 0);
-    EXPECT_EQ(env.GetOptions("EnvironmentType", typeValue), 0);
+    EXPECT_EQ(node->SetOptions("EnvironmentType", "1"), 0);
+    EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "1");
 
-    EXPECT_EQ(env.SetOptions("EnvironmentType", "2"), 0);
-    EXPECT_EQ(env.GetOptions("EnvironmentType", typeValue), 0);
+    EXPECT_EQ(node->SetOptions("EnvironmentType", "2"), 0);
+    EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "2");
 
-    EXPECT_EQ(env.SetOptions("EnvironmentType", "3"), 0);
-    EXPECT_EQ(env.GetOptions("EnvironmentType", typeValue), 0);
+    EXPECT_EQ(node->SetOptions("EnvironmentType", "3"), 0);
+    EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "3");
 
-    EXPECT_EQ(env.SetOptions("EnvironmentType", "4"), 0);
-    EXPECT_EQ(env.GetOptions("EnvironmentType", typeValue), 0);
+    EXPECT_EQ(node->SetOptions("EnvironmentType", "4"), 0);
+    EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "4");
 
-    EXPECT_NE(env.SetOptions("---------------", "0"), 0);
-    EXPECT_NE(env.GetOptions("---------------", typeValue), 0);
+    EXPECT_NE(node->SetOptions("---------------", "0"), 0);
+    EXPECT_NE(node->GetOptions("---------------", typeValue), 0);
     EXPECT_EQ(typeValue, "4");
 }
 

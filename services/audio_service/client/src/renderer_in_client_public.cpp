@@ -76,6 +76,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
+static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -87,7 +88,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
-    loudVolumeModeEnable_ = OHOS::system::GetBoolParameter("const.audio.loudvolume", false);
+    loudVolumeSupportMode_ = OHOS::system::GetIntParameter("const.audio.loudvolume", 0);
     state_ = NEW;
 }
 
@@ -109,8 +110,8 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
-        static_cast<int>(operation), result);
+    HILOG_COMM_INFO("[OnOperationHandled]sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".",
+        sessionId_, static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
         if (!offloadEnable_ && static_cast<bool>(result)) {
@@ -123,10 +124,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     if (operation == RESTORE_SESSION) {
         // fix it when restoreAudioStream work right
-        if (audioStreamTracker_ && audioStreamTracker_.get()) {
-            audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
-                state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-        }
         return SUCCESS;
     }
 
@@ -176,6 +173,18 @@ int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCa
     return ERR_NOT_SUPPORTED;
 }
 
+void RendererInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -218,20 +227,22 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
         "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
-        "remoteLayout: %{public}llx , isRemoteSpatialChannel: %{public}d",
+        "remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
         info.channels, info.format, eStreamType_, info.encoding,
-        info.remoteChannelLayout, info.isRemoteSpatialChannel);
+        static_cast<unsigned long long>(info.remoteChannelLayout), info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
+    isHWDecodingType_ = IsHWDecodingType(static_cast<AudioEncodingType>(streamParams_.encoding));
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
         if (info.isRemoteSpatialChannel) {
             cfg.outChannelLayout = info.remoteChannelLayout;
-            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx", cfg.outChannelLayout);
+            AUDIO_INFO_LOG("replace cfg outChannelLayout as %{public}llx",
+                static_cast<unsigned long long>(cfg.outChannelLayout));
         }
         converter_ = std::make_unique<AudioSpatialChannelConverter>();
         if (converter_ == nullptr || !converter_->Init(curStreamParams_, cfg) || !converter_->AllocateMem()) {
@@ -241,27 +252,24 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
     }
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+    CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
+        ERROR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
 
     if (state_ != NEW) {
-        AUDIO_ERR_LOG("State is not new, release existing stream and recreate, state %{public}d", state_.load());
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]State is not new, release existing stream and recreate, state %{public}d",
+            state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
     }
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
-    CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
+    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
     state_ = PREPARED;
 
-    // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" +
-        std::to_string(curStreamParams_.customSampleRate == 0 ?
-        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
-        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
-
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
+    InitDFXOperaiton();
     InitDirectPipeType();
 
     proxyObj_ = proxyObj;
@@ -363,11 +371,29 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     }
 }
 
+// time base is not used by hdi
+bool RendererInClientInner::GetHWDecodingTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    uint64_t readIdx = 0;
+    uint64_t timestampVal = 0;
+    uint64_t latency = 0;
+    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "failed to get time:%{public}d", ret);
+
+    timestamp.framePosition = readIdx;
+    timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
+    timestamp.time.tv_nsec = static_cast<time_t>(timestampVal % AUDIO_NS_PER_SECOND);
+    Trace trace("GetHWDecodingTime::ReadIndex:" + std::to_string(readIdx) + ",time:" + std::to_string(timestampVal));
+    return true;
+}
+
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
         ERR_INVALID_PARAM, "Timestampbase is not allowed");
+    RETURN_RET_IF(isHWDecodingType_, GetHWDecodingTime(timestamp, base));
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
@@ -447,6 +473,12 @@ int32_t RendererInClientInner::GetLatency(uint64_t &latency)
     return ipcStream_->GetLatency(latency);
 }
 
+int32_t RendererInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->GetLatencyWithFlag(latency, flag);
+}
+
 int32_t RendererInClientInner::SetAudioStreamType(AudioStreamType audioStreamType)
 {
     AUDIO_ERR_LOG("Change stream type %{public}d to %{public}d is not supported", eStreamType_, audioStreamType);
@@ -458,6 +490,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     Trace trace("RendererInClientInner::SetVolume:" + std::to_string(volume));
     AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d volume:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, volume);
+#ifdef MULTI_ALARM_LEVEL
+    if (eStreamType_ == STREAM_ANNOUNCEMENT || eStreamType_ == STREAM_EMERGENCY) {
+        AUDIO_INFO_LOG("streamType:%{public}d not support to set volume", eStreamType_);
+        return SUCCESS;
+    }
+#endif
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
@@ -513,9 +551,9 @@ int32_t RendererInClientInner::SetDuckVolume(float volume)
     }
     duckVolume_ = volume;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
-    clientBuffer_->SetDuckFactor(volume);
+    clientBuffer_->SetDuckFactor(volume, DUCK_UNDUCK_DURATION_MS);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetDuckFactor(volume);
+    int32_t ret = ipcStream_->SetDuckFactor(volume, DUCK_UNDUCK_DURATION_MS);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Set Duck failed:%{public}u", ret);
         return ERROR;
@@ -621,6 +659,7 @@ int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
 
 void RendererInClientInner::OnFirstFrameWriting()
 {
+    Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
 
@@ -668,6 +707,13 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
+    if (isHWDecodingType_) {
+        CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_INVALID_HANDLE, "ipcStream is not inited!");
+        std::lock_guard lock(speedMutex_);
+        realSpeed_ = speed;
+        ipcStream_->SetSpeed(speed);
+        return SUCCESS;
+    }
     std::lock_guard lock(speedMutex_);
     realSpeed_ = speed;
     if (isHdiSpeed_.load()) {
@@ -681,6 +727,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 
 int32_t RendererInClientInner::SetPitch(float pitch)
 {
+    RETURN_RET_IF(isHWDecodingType_, SUCCESS);
     std::lock_guard lock(speedMutex_);
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
@@ -714,14 +761,14 @@ void RendererInClientInner::InitCallbackLoop()
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d", strongRef->sessionId_);
         } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
+            HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
         }
         strongRef = nullptr;
         // start loop
         while (keepRunning) {
             strongRef = weakRef.lock();
             if (strongRef == nullptr) {
-                AUDIO_INFO_LOG("RendererInClientInner destroyed");
+                HILOG_COMM_INFO("[InitCallbackLoop]RendererInClientInner destroyed");
                 break;
             }
             keepRunning = strongRef->WriteCallbackFunc(); // Main operation in callback loop
@@ -802,12 +849,27 @@ int32_t RendererInClientInner::SetCapturerReadCallback(const std::shared_ptr<Aud
     return ERROR;
 }
 
+int32_t RendererInClientInner::GetRawBuffer(BufferDesc &bufDesc)
+{
+    Trace trace("RendererInClientInner::GetRawBuffer");
+    if (clientBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("buffer is not inited");
+        return ERR_OPERATION_FAILED;
+    }
+    size_t bufferSize = clientBuffer_->GetDataSize();
+    int32_t ret = clientBuffer_->GetRawBuffer(bufferSize, bufDesc);
+    return ret;
+}
+
 int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::GetBufferDesc");
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("GetBufferDesc is not supported. Render mode is not callback.");
         return ERR_INCORRECT_MODE;
+    }
+    if (isHWDecodingType_) {
+        return GetRawBuffer(bufDesc);
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     bufDesc.buffer = cbBuffer_.get();
@@ -992,12 +1054,11 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
-    }
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
+        HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
     int32_t ret = ipcStream_->Start();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
+        HILOG_COMM_ERROR("[StartAudioStream]Start call server failed:%{public}u", ret));
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.
@@ -1009,11 +1070,12 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
 
     waitLock.unlock();
-    if (loudVolumeModeEnable_) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
     }
 
-    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("[StartAudioStream]Start SUCCESS, sessionId: %{public}d, uid: %{public}d",
+        sessionId_, clientUid_);
 
     UpdateTracker("RUNNING");
 
@@ -1080,8 +1142,8 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
-        clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
+    HILOG_COMM_INFO("[PauseAudioStream]Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s",
+        sessionId_, clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
 }
@@ -1137,8 +1199,8 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
-        sessionId_, clientUid_, volumeDataCount_);
+    HILOG_COMM_INFO("[StopAudioStream]Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, "
+        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1199,8 +1261,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d, volume data counts: %{public}" PRId64,
-        sessionId_, clientUid_, volumeDataCount_);
+    HILOG_COMM_INFO("[ReleaseAudioStream]Release end, sessionId: %{public}d, uid: %{public}d, "
+        "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1292,6 +1354,7 @@ int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 
 void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecreate)
 {
+    CHECK_AND_RETURN_LOG(isHWDecodingType_ == false, "not support HWDecoding");
     std::lock_guard<std::mutex> lockSetPreferredFrameSize(setPreferredFrameSizeMutex_);
     userSettedPreferredFrameSize_ = frameSize;
     CHECK_AND_RETURN_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID,
@@ -1944,12 +2007,6 @@ RestoreStatus RendererInClientInner::SetRestoreStatus(RestoreStatus restoreStatu
 void RendererInClientInner::FetchDeviceForSplitStream()
 {
     AUDIO_INFO_LOG("Fetch output device for split stream %{public}u", sessionId_);
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_,
-            state_, clientPid_, rendererInfo_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    } else {
-        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
-    }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
@@ -2004,6 +2061,16 @@ void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyn
 bool RendererInClientInner::NeedStopFlush()
 {
     return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
+}
+
+const std::string RendererInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void RendererInClientInner::SetBundleName(std::string &name)
+{
+    bundleName = name;
 }
 } // namespace AudioStandard
 } // namespace OHOS

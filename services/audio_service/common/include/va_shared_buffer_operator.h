@@ -60,25 +60,23 @@ public:
 private:
     VASharedBuffer buffer_;
 
-    size_t capacity;
+    size_t capacity = 0;
     
     sptr<Ashmem> dataAshmem_;
 
     size_t minReadSize_ = 1;
     
-    uint64_t timeoutInNano_ = 100000000;
+    int64_t timeoutInNano_ = 100000000;
 
     VASharedStatusInfo *statusInfo_ = nullptr;
 
     std::atomic<uint32_t> *GetFutex();
 
-    FutexCode WaitForFutex(uint64_t timeoutInNs, const std::function<bool(void)> &pred);
+    FutexCode WaitForFutex(int64_t timeoutInNs, const std::function<bool(void)> &pred);
 
     void WakeFutex();
 
     void InitVASharedStatusInfo();
-
-    void WakeFutexIfNeed();
 
     bool HasEnoughReadableData();
 };

@@ -36,6 +36,10 @@ static const uint32_t MAX_PIPELINE_NUM = 10;
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }
@@ -3116,7 +3120,15 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderPositionParams_
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
 
-    OH_AudioSuite_SpaceRenderPositionParams position = {1, 2, 3};
+    OH_AudioSuite_SpaceRenderPositionParams position = {6, 6, 6};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode, position);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    position = {-6, -6, -6};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode, position);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    position = {1, 2, 3};
     ret = OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode, position);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
@@ -3189,7 +3201,23 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderRotationParams_
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
 
-    OH_AudioSuite_SpaceRenderRotationParams rotation = {1, 2, 3, 5, SPACE_RENDER_CW};
+    OH_AudioSuite_SpaceRenderRotationParams rotation = {6, 6, 6, 5, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    rotation = {-6, -6, -6, 5, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    rotation = {1, 2, 3, 1, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    rotation = {1, 2, 3, 41, SPACE_RENDER_CW};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    rotation = {1, 2, 3, 5, SPACE_RENDER_CW};
     ret = OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode, rotation);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
@@ -3262,7 +3290,23 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSpaceRenderExtensionParams
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_SPACE_RENDER, &audioNode);
 
-    OH_AudioSuite_SpaceRenderExtensionParams extension = {1, 1};
+    OH_AudioSuite_SpaceRenderExtensionParams extension = {1, 0};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    extension = {1, 360};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    extension = {0, 1};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    extension = {6, 1};
+    ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    extension = {1, 1};
     ret = OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode, extension);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
