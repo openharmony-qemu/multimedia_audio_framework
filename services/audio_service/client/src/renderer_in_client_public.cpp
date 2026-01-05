@@ -1082,10 +1082,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     FlushBeforeStart();
 
     offloadStartReadPos_ = 0;
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        // start the callback-write thread
-        cbThreadCv_.notify_all();
-    }
+
+    NotifyStopWaiting();
 
     RegisterThreadPriorityOnStart(cmdType);
 
@@ -1170,10 +1168,7 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        state_ = STOPPING;
-        AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    }
+    UpdateStopState();
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Stop();
@@ -1208,14 +1203,13 @@ bool RendererInClientInner::StopAudioStream()
 void RendererInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        cbThreadReleased_ = true; // stop loop
-        cbThreadCv_.notify_all();
-        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
-        FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
-        if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
-        }
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    cbThreadReleased_ = true; // stop loop
+    cbThreadCv_.notify_all();
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
+    FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
+    if (callbackLoop_.joinable()) {
+        callbackLoop_.join();
     }
 }
 
@@ -2072,5 +2066,20 @@ void RendererInClientInner::SetBundleName(std::string &name)
 {
     bundleName = name;
 }
+
+void RendererInClientInner::NotifyStopWaiting()
+{
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    // start the callback-write thread
+    cbThreadCv_.notify_all();
+}
+
+void RendererInClientInner::UpdateStopState()
+{
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    state_ = STOPPING;
+    AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
