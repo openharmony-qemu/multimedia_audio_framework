@@ -273,9 +273,7 @@ void UpdateAudioSceneFromInterruptFuzzTest(FuzzedDataProvider& fdp)
     data.RewindRead(0);
     AudioScene audioScene = *reinterpret_cast<const AudioScene *>(RAW_DATA);
     AudioInterruptChangeType changeType = *reinterpret_cast<const AudioInterruptChangeType *>(RAW_DATA);
-
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
     interruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
 }
 
@@ -289,7 +287,6 @@ void AudioInterruptServiceActivateAudioSessionFuzzTest(FuzzedDataProvider& fdp)
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
     AudioSessionStrategy strategy;
     AudioSessionServiceBuilder(interruptService, callerPid);
-
     interruptService->ActivateAudioSession(zoneId, callerPid, strategy);
 }
 
@@ -311,7 +308,6 @@ void AudioInterruptServiceSetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
     if (interruptService == nullptr) {
         return;
     }
-
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
     AudioSessionServiceBuilder(interruptService, callerPid);
     AudioSessionScene scene = AudioSessionScene::INVALID;
@@ -324,7 +320,6 @@ void AudioInterruptServiceAddActiveInterruptToSessionFuzzTest(FuzzedDataProvider
     if (interruptService == nullptr) {
         return;
     }
-
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
     AudioSessionServiceBuilder(interruptService, callerPid);
     interruptService->AddActiveInterruptToSession(callerPid);
@@ -336,7 +331,6 @@ void AudioInterruptServiceDeactivateAudioSessionFuzzTest(FuzzedDataProvider& fdp
     if (interruptService == nullptr) {
         return;
     }
-
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
     AudioSessionServiceBuilder(interruptService, callerPid);
@@ -362,7 +356,6 @@ void AudioInterruptServiceIsAudioSessionActivatedFuzzTest(FuzzedDataProvider& fd
     if (interruptService == nullptr) {
         return;
     }
-
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
     AudioSessionServiceBuilder(interruptService, callerPid);
     interruptService->IsAudioSessionActivated(callerPid);
