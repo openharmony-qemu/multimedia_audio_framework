@@ -292,9 +292,9 @@ AudioFormat AuxiliarySink::ConvertToHdiFormat(AudioSampleFormat format)
 }
 
 void AuxiliarySink::DumpInfo(std::string &dumpString)
-{   
+{
     dumpString += "type: AuxSink\tInitState: " + std::string(sinkInited_ ? "true" : "false") +
-        "\n param:[" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) +
+        "\nparams:[" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) +
         std::to_string(attr_.format) + "]";
 }
 
