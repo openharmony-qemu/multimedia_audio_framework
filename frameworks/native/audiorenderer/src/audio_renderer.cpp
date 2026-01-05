@@ -2310,12 +2310,9 @@ uint32_t AudioRendererPrivate::GetUnderflowCountInner() const
 }
 
 // Only called in SwitchToTargetStream, with AudioRendererPrivate::rendererMutex_ held.
-void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info)
+void AudioRendererPrivate::InitSwitchInfo(IAudioStream::SwitchInfo &info)
 {
     audioStream_->GetSwitchInfo(info);
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    }
 
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         info.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
@@ -2375,7 +2372,7 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
             switchResult = true;
         }
     }
-    InitSwitchInfo(targetClass, switchInfo);
+    InitSwitchInfo(switchInfo);
     if (restoreInfo.restoreReason == SERVER_DIED) {
         HILOG_COMM_INFO("[FinishOldStream]Server died, reset session id: %{public}d",
             switchInfo.params.originalSessionId);
@@ -2414,6 +2411,9 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        switchInfo.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");

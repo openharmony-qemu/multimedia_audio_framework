@@ -219,7 +219,7 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
-    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
+    void InitSwitchInfo(IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
     bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);

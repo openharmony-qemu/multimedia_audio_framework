@@ -1568,13 +1568,10 @@ int32_t AudioCapturerPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::
     return SUCCESS;
 }
 
-void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &switchInfo)
+void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::SwitchInfo &switchInfo)
 {
     audioStream_->GetSwitchInfo(switchInfo);
 
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    }
     switchInfo.captureMode = audioCaptureMode_;
     switchInfo.params.originalSessionId = sessionID_;
     return;
@@ -1592,7 +1589,7 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         }
     }
     // switch new stream
-    InitSwitchInfo(targetClass, switchInfo);
+    InitSwitchInfo(switchInfo);
     if (restoreInfo.restoreReason == SERVER_DIED) {
         AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
         switchInfo.params.originalSessionId = 0;
@@ -1620,6 +1617,9 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
 
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
+    if (targetClass == IAudioStream::VOIP_STREAM) {
+        switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
+    }
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
@@ -1660,14 +1660,21 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             std::static_pointer_cast<AudioCapturerInterruptCallbackImpl>(audioInterruptCallback_);
         interruptCbImpl->UpdateAudioStream(audioStream_);
     }
+    bool restartResult = RestartAudioStream(newAudioStream, previousState);
+    CHECK_AND_RETURN_RET_LOG(restartResult, false, "start new stream failed.");
+    return true;
+}
 
+bool AudioCapturerPrivate::RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
+    CapturerState previousState)
+{
+    bool switchResult = true;
     if (previousState == CAPTURER_RUNNING) {
         // restart audio stream
         newAudioStream->SetRebuildFlag();
-        bool switchResult = newAudioStream->StartAudioStream();
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        switchResult = newAudioStream->StartAudioStream();
     }
-    return true;
+    return switchResult;
 }
 
 bool AudioCapturerPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)

@@ -134,7 +134,7 @@ private:
     int32_t InitInputDeviceChangeCallback();
     void ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
+    void InitSwitchInfo(IAudioStream::SwitchInfo &info);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
     bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
@@ -159,6 +159,8 @@ private:
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
+        CapturerState previousState);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;

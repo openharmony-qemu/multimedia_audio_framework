@@ -446,6 +446,30 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_009, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerPrivate API
  * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_010
+ * @tc.desc  : Test AudioCapturerPrivate::GenerateNewStream
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_010, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo switchInfo;
+    RestoreInfo restoreInfo = {};
+    CapturerState previousState = CAPTURER_NEW;
+
+    IAudioStream::StreamClass targetClass = IAudioStream::VOIP_STREAM;
+
+    bool result = capturer->GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(switchInfo.capturerInfo.originalFlag, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
  * @tc.number: AudioCapturerPrivate_018
  * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied
  */
