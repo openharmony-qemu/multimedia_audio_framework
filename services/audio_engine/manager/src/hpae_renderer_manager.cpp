@@ -1704,7 +1704,6 @@ bool HpaeRendererManager::IsBypassSpatializationForStereo()
 
 int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    AUDIO_INFO_LOG("set to isEnabled:%{public}s", isEnabled ? "true" : "false");
     auto request = [this, isEnabled]() {
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (sinkInfo_.deviceClass == BT_SINK_NAME ||
             sinkInfo_.deviceClass == USB_SINK_NAME),

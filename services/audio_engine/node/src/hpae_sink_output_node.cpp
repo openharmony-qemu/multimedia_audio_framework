@@ -40,6 +40,7 @@ static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
     BT_SINK_NAME,
     USB_SINK_NAME
 };
+
 static inline const std::unordered_set<StreamUsage> VALID_STREAMUSAGE_AUXILIARY_FILTER = {
     STREAM_USAGE_MEDIA,
     STREAM_USAGE_MUSIC,
@@ -47,6 +48,7 @@ static inline const std::unordered_set<StreamUsage> VALID_STREAMUSAGE_AUXILIARY_
     STREAM_USAGE_GAME,
     STREAM_USAGE_AUDIOBOOK
 };
+
 static inline const std::unordered_set<StreamUsage> INVALID_STREAMUSAGE_AUXILIARY_FILTER = {
     STREAM_USAGE_VOICE_COMMUNICATION,
     STREAM_USAGE_VIDEO_COMMUNICATION
@@ -144,18 +146,15 @@ void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
 {
     AUDIO_DEBUG_LOG("spkName:%{public}s, auxSinkEnable_:%{public}s auxSinkState:%{public}d ",
         sinkOutAttr_.sinkName.c_str(), auxSinkEnable_ ? "true" : "false", auxSinkState_);
+    CHECK_AND_RETURN(auxSinkEnable_ && auxSinkState_ == STREAM_MANAGER_RUNNING &&
+        AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
     Trace trace("HpaeSinkOutputNode::RenderFrameForAuxiliarySink spkName:" + sinkOutAttr_.sinkName +
        " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_));
-    CHECK_AND_RETURN(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0 && auxSinkEnable_ &&
-        auxSinkState_ == STREAM_MANAGER_RUNNING);
+
     CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
     auto ret = auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
-    if (ret != SUCCESS || writeLen != renderSize_) {
-        AUDIO_DEBUG_LOG("RenderFrame fail for auxiliarySink, "
-            "ret:%{public}d writeLen:%{public}" PRIu64, ret, writeLen);
-    }
     return;
 }
 

@@ -2825,8 +2825,8 @@ std::shared_ptr<IHpaeRendererManager> HpaeManager::GetAuxiliaryRendererManager()
 {
     std::shared_ptr<IHpaeRendererManager> btSpkManager = GetRendererManagerByName(BT_SINK_NAME);
     std::shared_ptr<IHpaeRendererManager> usbSpkManager = GetRendererManagerByName(USB_SINK_NAME);
-    CHECK_AND_RETURN_RET_LOG(usbSpkManager != nullptr, btSpkManager, "get bt, usb is null");
-    CHECK_AND_RETURN_RET_LOG(btSpkManager != nullptr, usbSpkManager, "get usb, bt is null and usb is not null");
+    CHECK_AND_RETURN_RET(usbSpkManager != nullptr, btSpkManager);
+    CHECK_AND_RETURN_RET(btSpkManager != nullptr, usbSpkManager);
     
     bool isBtRunning = btSpkManager->IsRunning();
     bool isUsbRunning = usbSpkManager->IsRunning();

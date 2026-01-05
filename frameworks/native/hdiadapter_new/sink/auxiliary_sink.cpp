@@ -45,7 +45,7 @@ AuxiliarySink::~AuxiliarySink()
 int32_t AuxiliarySink::Init(const IAudioSinkAttr &attr)
 {
     attr_ = attr;
-    halName_ = attr_.adapterName == "a2dp" ? "btAuxSink" : "usbAuxSink";
+    halName_ = attr_.adapterName == "bt_a2dp" ? "btAuxSink" : "usbAuxSink";
     logTag_ = attr.sinkName == "a2dp" ? "btAuxSink" : "usbAuxSink";
     AUDIO_INFO_LOG("%{public}s::Init with params:[%{public}d_%{public}d_%{public}d]",
         logTag_.c_str(), attr.sampleRate, attr.channel, attr.format);
