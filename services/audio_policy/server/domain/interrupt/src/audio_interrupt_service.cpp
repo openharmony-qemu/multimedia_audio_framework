@@ -1773,11 +1773,11 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
-        SuggestionProcessWhenMixWithOthers(focusEntry, iterActive->first, incomingInterrupt);
         if (focusEntry.actionOn != CURRENT || IsSameAppInShareMode(incomingInterrupt, iterActive->first) ||
             iterActive->second == PLACEHOLDER || CanMixForSession(incomingInterrupt, iterActive->first, focusEntry) ||
             // incomming peeling should not stop/pause/duck other playing instances
             (IsLowestPriorityRecording(incomingInterrupt) && !IsRecordingInterruption(iterActive->first))) {
+            SuggestionProcessWhenMixWithOthers(focusEntry, iterActive->first, incomingInterrupt);
             ++iterActive;
             continue;
         }
@@ -2723,6 +2723,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     auto stage = (pos == HINT_STAGE_MAP.end()) ? INTERRUPT_STAGE_STOPPED : pos->second;
     dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
+
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        RemoveStreamIdSuggestionRecord(streamId);
+    }
 
     if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
         SetLatestMuteState(interruptEvent, streamId);
