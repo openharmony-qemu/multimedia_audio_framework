@@ -84,7 +84,7 @@ public:
     virtual void SetAudioScene(const AudioScene scene) = 0;
 
     // only for auxiliarySink
-    virtual int32_t CreateCognitionStream(const std::string &adapterName, viod *param,
+    virtual int32_t CreateCognitionStream(const std::string &adapterName, void *param,
         int32_t &sinkId, void *buffer) { return ERR_NOT_SUPPORTED; }
     virtual int32_t DestroyCognitionStream(const std::string &adapterName,
         const int32_t &sinkId) { return ERR_NOT_SUPPORTED; }
