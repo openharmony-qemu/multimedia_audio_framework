@@ -36,6 +36,10 @@ static const uint32_t MAX_PIPELINE_NUM = 10;
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }

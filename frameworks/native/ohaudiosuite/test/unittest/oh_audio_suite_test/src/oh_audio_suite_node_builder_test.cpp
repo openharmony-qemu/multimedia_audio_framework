@@ -38,6 +38,10 @@ static const uint32_t MAX_MIX_NODE_NUM = 3;
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }

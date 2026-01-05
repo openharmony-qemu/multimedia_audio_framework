@@ -1126,7 +1126,7 @@ int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, fl
             return IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(
                 nodeId, value.speed, value.pitch);
         };
-    TempoAndPitch result;
+    TempoAndPitch result = {1.0f, 1.0f};
     int32_t ret = GetAudioNodeProperty(node, &result, NODE_TYPE_TEMPO_PITCH, getter, "GetTempoAndPitch");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetTempoAndPitch failed, ret = %{public}d.", ret);
     *speed = result.speed;
