@@ -42,7 +42,6 @@ static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
 };
 
 static inline const std::unordered_set<StreamUsage> VALID_STREAMUSAGE_AUXILIARY_FILTER = {
-    STREAM_USAGE_MEDIA,
     STREAM_USAGE_MUSIC,
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
