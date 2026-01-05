@@ -220,8 +220,8 @@ void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
-    UpdateAndClearStreamPropInfoFuzztest,
-    UpdateDynamicCapturerConfigFuzztest,
+    UpdateAndClearStreamPropInfoFuzzTest,
+    UpdateDynamicCapturerConfigFuzzTest,
     GetMaxCapturersInstancesFuzzTest,
     GetMaxFastRenderersInstancesFuzzTest,
     GetVoipRendererFlagFuzzTest,

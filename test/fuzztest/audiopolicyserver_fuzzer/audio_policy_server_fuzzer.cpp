@@ -66,7 +66,7 @@ public:
 
 class AudioClientTrackerFuzzTest : public AudioClientTracker {
     public:
-        virtual ~AudioClientTrackerFuzzTest(FuzzedDataProvider& fdp) = default;
+        virtual ~AudioClientTrackerFuzzTest() = default;
         virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
@@ -2106,28 +2106,28 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyServerSetSingleStreamMuteFuzzTest,
     AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest,
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
-    AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
-    AudioPolicyServerSetAppVolumeLevelInternalFuzztest,
-    AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
-    AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
-    AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
-    AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,
-    AudioPolicyServerProcUpdateRingerModeFuzztest,
-    AudioPolicyServerSetAppSingleStreamVolumeFuzztest,
-    AudioPolicyServerSetSingleStreamVolumeFuzztest,
-    AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest,
-    AudioPolicyServerGetStreamMuteFuzztest,
-    AudioPolicyServerMapExternalToInternalDeviceTypeFuzztest,
-    AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest,
-    AudioPolicyServerIsFastRecordingSupportedFuzztest,
-    AudioPolicyServerSetRingerModeInternalFuzztest,
-    AudioPolicyServerInitMicrophoneMuteFuzztest,
-    AudioPolicyServerSetMicrophoneMuteAudioConfigFuzztest,
-    AudioPolicyServerSetMicrophoneMutePersistentFuzztest,
-    AudioPolicyServerSetAudioSceneFuzztest,
-    AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest,
-    AudioPolicyServerVerifySessionIdFuzztest,
-    AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzztest,
+    AudioPolicyServerSetSelfAppVolumeLevelFuzzTest,
+    AudioPolicyServerSetAppVolumeLevelInternalFuzzTest,
+    AudioPolicyServerSetSystemVolumeLevelInternalFuzzTest,
+    AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzzTest,
+    AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzzTest,
+    AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzzTest,
+    AudioPolicyServerProcUpdateRingerModeFuzzTest,
+    AudioPolicyServerSetAppSingleStreamVolumeFuzzTest,
+    AudioPolicyServerSetSingleStreamVolumeFuzzTest,
+    AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzzTest,
+    AudioPolicyServerGetStreamMuteFuzzTest,
+    AudioPolicyServerMapExternalToInternalDeviceTypeFuzzTest,
+    AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzzTest,
+    AudioPolicyServerIsFastRecordingSupportedFuzzTest,
+    AudioPolicyServerSetRingerModeInternalFuzzTest,
+    AudioPolicyServerInitMicrophoneMuteFuzzTest,
+    AudioPolicyServerSetMicrophoneMuteAudioConfigFuzzTest,
+    AudioPolicyServerSetMicrophoneMutePersistentFuzzTest,
+    AudioPolicyServerSetAudioSceneFuzzTest,
+    AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzzTest,
+    AudioPolicyServerVerifySessionIdFuzzTest,
+    AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzzTest,
     AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest,
     AudioPolicyServerGetMinStreamVolumeFuzzTest,
     AudioPolicyServerGetMaxStreamVolumeFuzzTest,
@@ -2247,9 +2247,9 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data size_t size)
+void Init(const uint8_t* data, size_t size)
 {
-    if(data==nullptr){
+    if(data == nullptr){
         return;
     }
     RAW_DATA = data;

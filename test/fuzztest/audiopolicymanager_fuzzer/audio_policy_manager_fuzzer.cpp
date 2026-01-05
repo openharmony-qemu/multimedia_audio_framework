@@ -746,9 +746,9 @@ void Test(FuzzedDataProvider& fdp)
     });
     func(fdp);
 }
-void Init(const uint8_t* data size_t size)
+void Init(const uint8_t* data, size_t size)
 {
-    if(data==nullptr){
+    if(data == nullptr){
         return;
     }
     RAW_DATA = data;
@@ -757,7 +757,6 @@ void Init(const uint8_t* data size_t size)
 }
 void Init()
 {
-     manager = std::make_shared<AudioA2dpOffloadManager>();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
