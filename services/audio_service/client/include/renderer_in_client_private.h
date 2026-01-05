@@ -328,6 +328,10 @@ private:
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
+
+    void NotifyStopWaiting();
+
+    void UpdateStopState();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

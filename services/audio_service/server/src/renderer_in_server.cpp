@@ -1146,7 +1146,8 @@ int32_t RendererInServer::StartInner()
     fadeoutFlag_ = NO_FADING;
     fadeLock.unlock();
 
-    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr && audioServerBuffer_->GetStreamStatus() != nullptr,
+        ERR_OPERATION_FAILED, "null stream");
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     MarkStaticFadeIn();
 
