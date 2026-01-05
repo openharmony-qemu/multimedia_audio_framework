@@ -34,7 +34,6 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_manager_base.h"
 #include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"

@@ -26,7 +26,6 @@
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_ec_info.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_router_center.h"
 #include "audio_policy_manager_factory.h"

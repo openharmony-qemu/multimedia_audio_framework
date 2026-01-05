@@ -17,7 +17,9 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "audio_devices_client_manager.h"
+
 #include "audio_policy_manager.h"
+#include "audio_type_convert.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +60,38 @@ int32_t AudioDevicesClientManager::SelectInputDevice(
 std::string AudioDevicesClientManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const
 {
     return AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
+}
+
+int32_t AudioDevicesClientManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+    const int32_t audioDeviceSelectMode) const
+{
+    // basic check
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
+        ERR_INVALID_PARAM, "invalid parameter");
+
+    size_t validDeviceSize = 1;
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() <= validDeviceSize &&
+        audioDeviceDescriptors[0] != nullptr, ERR_INVALID_OPERATION, "device error");
+    audioRendererFilter->streamType = AudioTypeConvert::GetStreamType(audioRendererFilter->rendererInfo.contentType,
+        audioRendererFilter->rendererInfo.streamUsage);
+    // operation check
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
+        ERR_INVALID_OPERATION, "not an output device.");
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
+        ERR_INVALID_PARAM, "invalid uid.");
+
+    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
+        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
+
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
+        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
+        static_cast<int32_t>(audioRendererFilter->streamType), (audioDeviceDescriptors[0]->networkId_.c_str()),
+        audioDeviceSelectMode);
+
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
+        audioDeviceSelectMode);
 }
 
 int32_t AudioDevicesClientManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

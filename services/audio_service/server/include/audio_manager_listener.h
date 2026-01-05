@@ -16,8 +16,9 @@
 #ifndef AUDIO_MANAGER_LISTENER_H
 #define AUDIO_MANAGER_LISTENER_H
 
-#include "audio_manager_base.h"
-#include "audio_system_manager.h"
+#include "audio_stutter.h"
+#include "audio_stream_types.h"
+#include "audio_wakeup_client_manager.h"
 #include "istandard_audio_server_manager_listener.h"
 
 namespace OHOS {

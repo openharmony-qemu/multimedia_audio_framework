@@ -55,5 +55,57 @@ std::string AppBundleManager::GetBundleNameFromUid(int32_t uid)
 
     return bundleName;
 }
+
+std::string AppBundleManager::GetSelfBundleName(int32_t uid)
+{
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+    std::string bundleName = "";
+
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetSelfBundleName");
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    guard.CheckCurrTimeout();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetSelfBundleName");
+    iBundleMgr->GetBundleNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
+    return bundleName;
+}
+
+std::string AppBundleManager::GetSelfBundleName()
+{
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+
+    std::string bundleName = "";
+
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();GetSelfBundleName");
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    guard.CheckCurrTimeout();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    AppExecFwk::BundleInfo bundleInfo;
+    WatchTimeout reguard("iBundleMgr->GetBundleInfoForSelf:GetSelfBundleName");
+    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+        bundleName = bundleInfo.name;
+    } else {
+        AUDIO_DEBUG_LOG("Get bundle info failed");
+    }
+    reguard.CheckCurrTimeout();
+    return bundleName;
+}
 } // namespace AudioStandard
 } // namespace OHOS
