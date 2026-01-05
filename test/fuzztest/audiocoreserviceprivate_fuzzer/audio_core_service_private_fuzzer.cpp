@@ -965,7 +965,7 @@ void AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest(FuzzedDataProvider&
     audioCoreService->HandleCommonSourceOpened(pipeInfo);
 }
 
-void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
+void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession(FuzzedDataProvider& fdp)
 {
     if (audioCoreService == nullptr) {
         return;
@@ -986,7 +986,7 @@ void AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSession()
     audioCoreService->UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
 }
 
-void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
+void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream(FuzzedDataProvider& fdp)
 {
     if (audioCoreService == nullptr) {
         return;
@@ -1004,7 +1004,7 @@ void AudioCoreServicePrivateCheckAndUpdateOffloadEnableForStream()
     audioCoreService->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, audioStreamDescriptor);
 }
 
-void AudioCoreServicePrivateNotifyRouteUpdate()
+void AudioCoreServicePrivateNotifyRouteUpdate(FuzzedDataProvider& fdp)
 {
     if (audioCoreService == nullptr) {
         return;
@@ -1022,7 +1022,7 @@ void AudioCoreServicePrivateNotifyRouteUpdate()
     audioCoreService->NotifyRouteUpdate(streamDescs);
 }
 
-void AudioCoreServicePrivateUpdateModemRoute()
+void AudioCoreServicePrivateUpdateModemRoute(FuzzedDataProvider& fdp)
 {
     if (audioCoreService == nullptr) {
         return;
@@ -1098,7 +1098,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr) {
+    if (data == nullptr) {
         return;
     }
     RAW_DATA = data;

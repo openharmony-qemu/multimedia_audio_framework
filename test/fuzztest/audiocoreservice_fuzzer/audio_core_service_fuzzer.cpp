@@ -60,7 +60,7 @@ public:
 
 class AudioClientTrackerFuzzTest : public AudioClientTracker {
     public:
-        virtual ~AudioClientTrackerFuzzTest(FuzzedDataProvider& fdp) = default;
+        virtual ~AudioClientTrackerFuzzTest() = default;
         virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
         virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
@@ -301,7 +301,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr) {
+    if (data == nullptr) {
         return;
     }
     RAW_DATA = data;

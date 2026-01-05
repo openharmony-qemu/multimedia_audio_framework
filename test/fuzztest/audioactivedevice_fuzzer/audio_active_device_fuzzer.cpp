@@ -47,7 +47,7 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 static int32_t NUM_2 = 2;
-std::shared_ptr audioActiveDevice;
+std::shared_ptr<AudioActiveDevice> audioActiveDevice;
 typedef void (*TestFuncs)();
 
 template<class T>
@@ -408,7 +408,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr) {
+    if (data == nullptr) {
         return;
     }
     RAW_DATA = data;

@@ -263,7 +263,8 @@ void UpdateAudioSceneFromInterruptFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceActivateAudioSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -276,7 +277,8 @@ void AudioInterruptServiceActivateAudioSessionFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceIsSessionNeedToFetchOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
 
@@ -287,7 +289,8 @@ void AudioInterruptServiceIsSessionNeedToFetchOutputDeviceFuzzTest(FuzzedDataPro
 
 void AudioInterruptServiceSetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
 
@@ -299,7 +302,8 @@ void AudioInterruptServiceSetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceAddActiveInterruptToSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
 
@@ -310,7 +314,8 @@ void AudioInterruptServiceAddActiveInterruptToSessionFuzzTest(FuzzedDataProvider
 
 void AudioInterruptServiceDeactivateAudioSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
 
@@ -323,7 +328,8 @@ void AudioInterruptServiceDeactivateAudioSessionFuzzTest(FuzzedDataProvider& fdp
 
 void AudioInterruptServiceRemovePlaceholderInterruptForSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t callerPid = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -334,7 +340,8 @@ void AudioInterruptServiceRemovePlaceholderInterruptForSessionFuzzTest(FuzzedDat
 
 void AudioInterruptServiceIsAudioSessionActivatedFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
 
@@ -345,7 +352,8 @@ void AudioInterruptServiceIsAudioSessionActivatedFuzzTest(FuzzedDataProvider& fd
 
 void AudioInterruptServiceIsCanMixInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt incomingInterrupt;
@@ -370,7 +378,8 @@ void AudioInterruptServiceIsCanMixInterruptFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceCanMixForSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt incomingInterrupt;
@@ -386,7 +395,8 @@ void AudioInterruptServiceCanMixForSessionFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceCanMixForIncomingSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt incomingInterrupt;
@@ -399,7 +409,8 @@ void AudioInterruptServiceCanMixForIncomingSessionFuzzTest(FuzzedDataProvider& f
 
 void AudioInterruptServiceIsIncomingStreamLowPriorityFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioFocusEntry focusEntry;
@@ -421,7 +432,8 @@ void AudioInterruptServiceIsIncomingStreamLowPriorityFuzzTest(FuzzedDataProvider
 
 void AudioInterruptServiceIsActiveStreamLowPriorityFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioFocusEntry focusEntry;
@@ -437,7 +449,8 @@ void AudioInterruptServiceIsActiveStreamLowPriorityFuzzTest(FuzzedDataProvider& 
 
 void AudioInterruptServiceUnsetAudioManagerInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     std::shared_ptr<AudioPolicyServerHandler> handler = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
@@ -447,7 +460,8 @@ void AudioInterruptServiceUnsetAudioManagerInterruptCallbackFuzzTest(FuzzedDataP
 
 void AudioInterruptServiceRequestAudioFocusFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t clientId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -463,7 +477,8 @@ void AudioInterruptServiceRequestAudioFocusFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceAbandonAudioFocusFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t clientId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -474,7 +489,8 @@ void AudioInterruptServiceAbandonAudioFocusFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceUnsetAudioInterruptCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -493,7 +509,8 @@ void AudioInterruptServiceUnsetAudioInterruptCallbackFuzzTest(FuzzedDataProvider
 
 void AudioInterruptServiceAudioInterruptIsActiveInFocusListFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -506,7 +523,8 @@ void AudioInterruptServiceAudioInterruptIsActiveInFocusListFuzzTest(FuzzedDataPr
 
 void AudioInterruptServiceHandleAppStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt audioInterrupt;
@@ -518,7 +536,8 @@ void AudioInterruptServiceHandleAppStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceActivateAudioInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -560,7 +579,8 @@ void AudioInterruptServicePrintLogsOfFocusStrategyBaseMusicFuzzTest(FuzzedDataPr
 
 void AudioInterruptServiceClearAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -575,7 +595,8 @@ void AudioInterruptServiceClearAudioFocusInfoListFuzzTest(FuzzedDataProvider& fd
 
 void AudioInterruptServiceActivatePreemptModeFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -588,7 +609,8 @@ void AudioInterruptServiceActivatePreemptModeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceInjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -602,7 +624,8 @@ void AudioInterruptServiceInjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider&
 
 void AudioInterruptServiceGetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -617,7 +640,8 @@ void AudioInterruptServiceGetAudioFocusInfoListFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceGetStreamInFocusByUidFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -632,7 +656,8 @@ void AudioInterruptServiceGetStreamInFocusByUidFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceGetSessionInfoInFocusFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -648,7 +673,8 @@ void AudioInterruptServiceGetSessionInfoInFocusFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceIsSameAppInShareModeFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t testId = *reinterpret_cast<const uint32_t *>(RAW_DATA) % TEST_ID_MODULO;
@@ -674,7 +700,8 @@ void AudioInterruptServiceIsSameAppInShareModeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceUpdateHintTypeForExistingSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t testId = *reinterpret_cast<const uint32_t *>(RAW_DATA) % TEST_ID_MODULO;
@@ -729,7 +756,8 @@ void AudioInterruptServiceProcessActiveInterruptFuzzTest(FuzzedDataProvider& fdp
 
 void AudioInterruptServiceHandleLowPriorityEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t pid = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -747,7 +775,8 @@ void AudioInterruptServiceHandleLowPriorityEventFuzzTest(FuzzedDataProvider& fdp
 
 void AudioInterruptServiceSendActiveInterruptEventFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t streamId = *reinterpret_cast<const uint32_t *>(RAW_DATA);
@@ -760,7 +789,8 @@ void AudioInterruptServiceSendActiveInterruptEventFuzzTest(FuzzedDataProvider& f
 
 void AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -776,7 +806,8 @@ void AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest(FuzzedDataP
 
 void AudioInterruptServiceIsMediaStreamFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(RAW_DATA);
@@ -786,7 +817,8 @@ void AudioInterruptServiceIsMediaStreamFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt currentInterrupt;
@@ -807,7 +839,8 @@ void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(FuzzedDataProvider& f
 
 void AudioInterruptServiceIsMicSourceFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     SourceType sourceType = *reinterpret_cast<const SourceType *>(RAW_DATA);
@@ -817,7 +850,8 @@ void AudioInterruptServiceIsMicSourceFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceFocusEntryContinueFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt audioInterrupt;
@@ -840,7 +874,8 @@ void AudioInterruptServiceFocusEntryContinueFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioInterruptServiceProcessFocusEntryFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -857,7 +892,8 @@ void AudioInterruptServiceProcessFocusEntryFuzzTest(FuzzedDataProvider& fdp)
 
 void GetHighestPriorityAudioSceneFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -865,7 +901,8 @@ void GetHighestPriorityAudioSceneFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void GetStreamTypePriorityFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(RAW_DATA);
@@ -873,14 +910,16 @@ void GetStreamTypePriorityFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void DeactivatePreemptModeFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     interruptService->DeactivatePreemptMode();
 }
  
 void IsCapturerFocusAvailableFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
  
@@ -890,7 +929,8 @@ void IsCapturerFocusAvailableFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void ClearAudioFocusBySessionIDFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(RAW_DATA);
@@ -898,7 +938,8 @@ void ClearAudioFocusBySessionIDFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void DeactivateAudioSessionInFakeFocusModeFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t pid = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -907,7 +948,8 @@ void DeactivateAudioSessionInFakeFocusModeFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void DeactivateAudioSessionFakeInterruptFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(RAW_DATA);
@@ -917,7 +959,8 @@ void DeactivateAudioSessionFakeInterruptFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void SetSessionMuteStateFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     uint32_t sessionId = *reinterpret_cast<const uint32_t *>(RAW_DATA);
@@ -930,7 +973,8 @@ void SetSessionMuteStateFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void SetLatestMuteStateFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     InterruptEventInternal interruptEvent = {};
@@ -943,7 +987,8 @@ void SetLatestMuteStateFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void UpdateMuteAudioFocusStrategyFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt currentInterrupt;
@@ -954,7 +999,8 @@ void UpdateMuteAudioFocusStrategyFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void ReportRecordGetFocusFailFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt activeInterrupt;
@@ -968,7 +1014,8 @@ void ReportRecordGetFocusFailFuzzTest(FuzzedDataProvider& fdp)
 }
  
 void ProcessActiveStreamFocusFuzzTest(FuzzedDataProvider& fdp)
-{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+{    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
     if (interruptService == nullptr || zone == nullptr) {
         return;
     }
@@ -988,7 +1035,8 @@ void ProcessActiveStreamFocusFuzzTest(FuzzedDataProvider& fdp)
 
 void CanMixForActiveSessionFuzzTest(FuzzedDataProvider& fdp)
 {
-     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();if (interruptService == nullptr) {
+     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
         return;
     }
     AudioInterrupt incomingInterrupt;
@@ -1075,7 +1123,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr) {
+    if (data == nullptr) {
         return;
     }
     RAW_DATA = data;
@@ -1087,8 +1135,6 @@ void Init()
 }
 } // namespace AudioStandard
 } // namesapce OHOS
-
-
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)

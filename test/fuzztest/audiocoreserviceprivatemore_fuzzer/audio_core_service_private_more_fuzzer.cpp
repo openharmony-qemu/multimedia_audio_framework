@@ -576,7 +576,7 @@ void AudioCoreServicePrivateNotifyRouteUpdateFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->NotifyRouteUpdate(streamDescs);
 }
 
-void AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest2()
+void AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest2(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     if (audioCoreService == nullptr) {
@@ -895,7 +895,7 @@ void Test(FuzzedDataProvider& fdp)
 }
 void Init(const uint8_t* data, size_t size)
 {
-    if(data == nullptr) {
+    if (data == nullptr) {
         return;
     }
     RAW_DATA = data;
