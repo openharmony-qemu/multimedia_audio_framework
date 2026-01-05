@@ -1180,7 +1180,7 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
 bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
 {
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
     Trace trace("CheckFrozenAndSetLastProcessTime" + std::to_string(bufferPosition));
     int64_t curTimestamp = ClockTime::GetCurNano();
 
