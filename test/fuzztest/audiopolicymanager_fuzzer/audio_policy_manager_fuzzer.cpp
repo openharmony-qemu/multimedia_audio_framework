@@ -20,6 +20,7 @@
 #include <thread>
 #include "audio_policy_manager.h"
 #include "sle_audio_device_manager.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -116,7 +117,7 @@ public:
     }
 };
 
-void AudioPolicyManagerOneFuzzTest()
+void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 {
     bool block = GetData<bool>();
     sptr<IAudioPolicy> Ap_gsp = AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy();
@@ -161,7 +162,7 @@ void AudioPolicyManagerOneFuzzTest()
     AudioPolicyManager::GetInstance().SetMicrophoneMuteAudioConfig(isMute);
 }
 
-void AudioPolicyManagerTwoFuzzTest()
+void AudioPolicyManagerTwoFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t volumeLevel = GetData<int32_t>();
     int32_t appUid = GetData<int32_t>();
@@ -206,7 +207,7 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
 }
 
-void AudioPolicyManagerThreeFuzzTest()
+void AudioPolicyManagerThreeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t appUid = GetData<int32_t>();
     std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> volumeTypeChangeCallback;
@@ -257,7 +258,7 @@ void AudioPolicyManagerThreeFuzzTest()
     AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
-void AudioPolicyManagerFourFuzzTest()
+void AudioPolicyManagerFourFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t clientId = GetData<int32_t>();
     AudioInterrupt audioInterrupt;
@@ -303,7 +304,7 @@ void AudioPolicyManagerFourFuzzTest()
     AudioPolicyManager::GetInstance().UnsetVolumeDegreeCallback(volumeDegreeEventCallback);
 }
 
-void AudioPolicyManagerFiveFuzzTest()
+void AudioPolicyManagerFiveFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t clientUid = GetData<int32_t>();
     StreamSetState streamSetState = GetData<StreamSetState>();
@@ -350,7 +351,7 @@ void AudioPolicyManagerFiveFuzzTest()
     AudioPolicyManager::GetInstance().GetAvailableMicrophones();
 }
 
-void AudioPolicyManagerSixFuzzTest()
+void AudioPolicyManagerSixFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string macAddress = "macAddress";
     bool support = GetData<bool>();
@@ -395,7 +396,7 @@ void AudioPolicyManagerSixFuzzTest()
     AudioPolicyManager::GetInstance().UnregisterNnStateEventListener();
 }
 
-void AudioPolicyManagerSevenFuzzTest()
+void AudioPolicyManagerSevenFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string address = "address";
     AudioSpatialDeviceState audioSpatialDeviceState;
@@ -437,7 +438,7 @@ void AudioPolicyManagerSevenFuzzTest()
     AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback(stateChangedCallback);
 }
 
-void AudioPolicyManagerEightFuzzTest()
+void AudioPolicyManagerEightFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType deviceType = GetData<DeviceType>();
     std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> deviceChangedCallback;
@@ -473,7 +474,7 @@ void AudioPolicyManagerEightFuzzTest()
     AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, isMuted);
 }
 
-void AudioPolicyManagerNiNeFuzzTest()
+void AudioPolicyManagerNiNeFuzzTest(FuzzedDataProvider& fdp)
 {
     bool isMute = GetData<bool>();
     int32_t clientUid = GetData<int32_t>();
@@ -506,7 +507,7 @@ void AudioPolicyManagerNiNeFuzzTest()
     AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
 
-void AudioPolicyManagerDeviceOneFuzzTest()
+void AudioPolicyManagerDeviceOneFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<AudioRendererFilter> audioRendererFilter;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
@@ -549,7 +550,7 @@ void AudioPolicyManagerDeviceOneFuzzTest()
     AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback(inputDeviceChangeCallback);
 }
 
-void AudioPolicyManagerDeviceTwoFuzzTest()
+void AudioPolicyManagerDeviceTwoFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = GetData<uint32_t>();
     std::weak_ptr<DeviceChangeWithInfoCallback> deviceChangeWithInfoCallback;
@@ -588,14 +589,14 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(preferredDeviceSetCallback);
 }
 
-void AudioPolicyManagerIsDeviceActiveFuzzTest()
+void AudioPolicyManagerIsDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     InternalDeviceType deviceType = GetData<InternalDeviceType>();
     audioPolicyManager.IsDeviceActive(deviceType);
 }
 
-void AudioPolicyManagerUnsetDeviceChangeCallbackFuzzTest()
+void AudioPolicyManagerUnsetDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     int32_t clientId = GetData<int32_t>();
@@ -606,7 +607,7 @@ void AudioPolicyManagerUnsetDeviceChangeCallbackFuzzTest()
     audioPolicyManager.UnsetDeviceChangeCallback(clientId, flag, cb);
 }
 
-void AudioPolicyManagerSetPreferredInputDeviceChangeCallbackFuzzTest()
+void AudioPolicyManagerSetPreferredInputDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
 
@@ -618,7 +619,7 @@ void AudioPolicyManagerSetPreferredInputDeviceChangeCallbackFuzzTest()
     audioPolicyManager.SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
 }
 
-void AudioPolicyManagerUnsetPreferredOutputDeviceChangeCallbackFuzzTest()
+void AudioPolicyManagerUnsetPreferredOutputDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -627,7 +628,7 @@ void AudioPolicyManagerUnsetPreferredOutputDeviceChangeCallbackFuzzTest()
     audioPolicyManager.UnsetPreferredOutputDeviceChangeCallback(callback);
 }
 
-void AudioPolicyManagerUnsetPreferredInputDeviceChangeCallbackFuzzTest()
+void AudioPolicyManagerUnsetPreferredInputDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -636,7 +637,7 @@ void AudioPolicyManagerUnsetPreferredInputDeviceChangeCallbackFuzzTest()
     audioPolicyManager.UnsetPreferredInputDeviceChangeCallback(callback);
 }
 
-void AudioPolicyManagerRegisterDeviceChangeWithInfoCallbackFuzzTest()
+void AudioPolicyManagerRegisterDeviceChangeWithInfoCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -648,7 +649,7 @@ void AudioPolicyManagerRegisterDeviceChangeWithInfoCallbackFuzzTest()
     audioPolicyManager.RegisterDeviceChangeWithInfoCallback(sessionID, callback);
 }
 
-void AudioPolicyManagerUnregisterDeviceChangeWithInfoCallbackFuzzTest()
+void AudioPolicyManagerUnregisterDeviceChangeWithInfoCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -656,7 +657,7 @@ void AudioPolicyManagerUnregisterDeviceChangeWithInfoCallbackFuzzTest()
     audioPolicyManager.UnregisterDeviceChangeWithInfoCallback(sessionID);
 }
 
-void AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest()
+void AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     int32_t clientId = GetData<int32_t>();
@@ -667,7 +668,7 @@ void AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest()
     audioPolicyManager.SetAvailableDeviceChangeCallback(clientId, usage, callback);
 }
 
-void AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest()
+void AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
@@ -680,7 +681,7 @@ void AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest()
     audioPolicyManager.SetAudioDeviceAnahsCallback(callback);
 }
 
-void AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest()
+void AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     std::shared_ptr<SleAudioOperationCallback> callback = make_shared<SleAudioDeviceManager>();
@@ -688,7 +689,7 @@ void AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest()
     audioPolicyManager.SetSleAudioOperationCallback(callback);
 }
 
-void AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest()
+void AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     int32_t zoneId = GetData<int32_t>();
@@ -702,7 +703,7 @@ void AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest()
     audioPolicyManager.AddUidUsagesToAudioZone(zoneId, GetData<int32_t>(), usages);
 }
 
-void AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest()
+void AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioPolicyManager audioPolicyManager;
     int32_t zoneId = GetData<int32_t>();
@@ -716,9 +717,9 @@ void AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest()
     audioPolicyManager.RemoveUidUsagesFromAudioZone(zoneId, GetData<int32_t>(), usages);
 }
 
-typedef void (*TestFuncs[23])();
-
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioPolicyManagerOneFuzzTest,
     AudioPolicyManagerTwoFuzzTest,
     AudioPolicyManagerThreeFuzzTest,
@@ -742,28 +743,20 @@ TestFuncs g_testFuncs = {
     AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest,
     AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest,
     AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -774,7 +767,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

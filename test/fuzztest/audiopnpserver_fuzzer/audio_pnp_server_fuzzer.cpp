@@ -18,11 +18,15 @@
 #include "audio_log.h"
 #include "audio_pnp_server.h"
 #include "audio_socket_thread.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
+static const uint8_t *RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 class TestAudioPnpDeviceChangeCallback : public AudioPnpDeviceChangeCallback {
 public:
     virtual ~TestAudioPnpDeviceChangeCallback() {};
@@ -76,13 +80,27 @@ uint32_t GetArrLength(T& arr)
     }
     return sizeof(arr) / sizeof(arr[0]);
 }
-
-void AudioPnpServerUnRegisterPnpStatusListenerFuzzTest(const uint8_t *rawData, size_t size)
+template<class T>
+T GetData()
+{
+    T object{};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+    return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+void AudioPnpServerUnRegisterPnpStatusListenerFuzzTest(FuzzedDataProvider& fdp)
 {
     audioPnpServer_->UnRegisterPnpStatusListener();
 }
 
-void AudioPnpServerOnPnpDeviceStatusChangedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPnpServerOnPnpDeviceStatusChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string info = "test_info";
     std::shared_ptr<AudioPnpDeviceChangeCallback> pnpCallback =
@@ -91,14 +109,14 @@ void AudioPnpServerOnPnpDeviceStatusChangedFuzzTest(const uint8_t *rawData, size
     audioPnpServer_->OnPnpDeviceStatusChanged(info);
 }
 
-void AudioPnpServerOnMicrophoneBlockedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPnpServerOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
 {
     MicrophoneBlocked::GetInstance().OnMicrophoneBlocked("test_info", *audioPnpServer_);
 }
 
-void AudioSocketThreadIsUpdatePnpDeviceStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadIsUpdatePnpDeviceStateFuzzTest(FuzzedDataProvider& fdp)
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = GetData<uint32_t>();
     AudioSocketThread audioSocketThread;
     PnpEventType pnpEventType = g_testPnpEventTypes[index % g_testPnpEventTypes.size()];
     PnpDeviceType pnpDeviceType = g_testPnpDeviceTypes[index % g_testPnpDeviceTypes.size()];
@@ -113,7 +131,7 @@ void AudioSocketThreadIsUpdatePnpDeviceStateFuzzTest(const uint8_t *rawData, siz
     audioSocketThread.IsUpdatePnpDeviceState(&event);
 }
 
-void AudioSocketThreadSetAudioPnpServerEventValueFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadSetAudioPnpServerEventValueFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> testSubSystem = {
         "audio",
@@ -126,7 +144,7 @@ void AudioSocketThreadSetAudioPnpServerEventValueFuzzTest(const uint8_t *rawData
         "3",
         "4",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = GetData<uint32_t>();
     AudioSocketThread audioSocketThread;
     PnpEventType pnpEventType = g_testPnpEventTypes[index % g_testPnpEventTypes.size()];
     PnpDeviceType pnpDeviceType = g_testPnpDeviceTypes[index % g_testPnpDeviceTypes.size()];
@@ -152,13 +170,13 @@ void AudioSocketThreadSetAudioPnpServerEventValueFuzzTest(const uint8_t *rawData
     audioSocketThread.SetAudioPnpServerEventValue(&event, &uevent);
 }
 
-void AudioSocketThreadSetAudioAnahsEventValueFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadSetAudioAnahsEventValueFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> testAnahsNames = {
         "INSERT",
         "REMOVE",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = GetData<uint32_t>();
     AudioSocketThread audioSocketThread;
     PnpEventType pnpEventType = g_testPnpEventTypes[index % g_testPnpEventTypes.size()];
     PnpDeviceType pnpDeviceType = g_testPnpDeviceTypes[index % g_testPnpDeviceTypes.size()];
@@ -176,7 +194,7 @@ void AudioSocketThreadSetAudioAnahsEventValueFuzzTest(const uint8_t *rawData, si
     audioSocketThread.SetAudioAnahsEventValue(&event, &uevent);
 }
 
-void AudioSocketThreadAudioNnDetectDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadAudioNnDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> testNames = {
         "send_nn_state0",
@@ -184,7 +202,7 @@ void AudioSocketThreadAudioNnDetectDeviceFuzzTest(const uint8_t *rawData, size_t
         "send_nn_state2",
         "send_nn_state3",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = GetData<uint32_t>();
     AudioSocketThread audioSocketThread;
     AudioPnpUevent uevent = {
         .action = "change",
@@ -194,14 +212,14 @@ void AudioSocketThreadAudioNnDetectDeviceFuzzTest(const uint8_t *rawData, size_t
     audioSocketThread.AudioNnDetectDevice(&uevent);
 }
 
-void AudioSocketThreadAudioDpDetectDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadAudioDpDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> testSwitchStates = {
         "0",
         "1",
         "2",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = GetData<uint32_t>();
     AudioSocketThread audioSocketThread;
     AudioPnpUevent uevent = {
         .subSystem = "switch",
@@ -212,7 +230,7 @@ void AudioSocketThreadAudioDpDetectDeviceFuzzTest(const uint8_t *rawData, size_t
     audioSocketThread.AudioDpDetectDevice(&uevent);
 }
 
-void AudioSocketThreadAudioMicBlockDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadAudioMicBlockDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> testAudioPnpUeventName = {
         "mic_blocked",
@@ -221,9 +239,9 @@ void AudioSocketThreadAudioMicBlockDeviceFuzzTest(const uint8_t *rawData, size_t
     };
     auto audioSocketThread = std::make_shared<AudioSocketThread>();
 
-    bool testBool = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool testBool = static_cast<bool>(GetData<uint32_t>()) % NUM_2;
     struct AudioPnpUevent audioPnpUevent;
-    audioPnpUevent.name = testAudioPnpUeventName[static_cast<uint32_t>(size) % testAudioPnpUeventName.size()].c_str();
+    audioPnpUevent.name = testAudioPnpUeventName[GetData<uint32_t>() % testAudioPnpUeventName.size()].c_str();
     struct AudioPnpUevent *audioPnpUeventPtr = &audioPnpUevent;
     if (testBool) {
         audioPnpUeventPtr = nullptr;
@@ -231,12 +249,12 @@ void AudioSocketThreadAudioMicBlockDeviceFuzzTest(const uint8_t *rawData, size_t
     audioSocketThread->AudioMicBlockDevice(audioPnpUeventPtr);
 }
 
-void AudioSocketThreadUpdateDeviceStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadUpdateDeviceStateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSocketThread = std::make_shared<AudioSocketThread>();
     AudioEvent updateEvent = {
-        static_cast<uint32_t>(size) % NUM_2,
-        static_cast<uint32_t>(size) % NUM_2 + 1,
+        GetData<uint32_t>() % NUM_2,
+        GetData<uint32_t>() % NUM_2 + 1,
         "device",
         "address",
         "anahs",
@@ -245,7 +263,7 @@ void AudioSocketThreadUpdateDeviceStateFuzzTest(const uint8_t *rawData, size_t s
     audioSocketThread->UpdateDeviceState(updateEvent);
 }
 
-void AudioSocketThreadReadAndScanDpNameFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSocketThreadReadAndScanDpNameFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSocketThread = std::make_shared<AudioSocketThread>();
     std::string testPath = "/tmp/test_path";
@@ -256,40 +274,52 @@ void AudioSocketThreadReadAndScanDpNameFuzzTest(const uint8_t *rawData, size_t s
     std::string name;
     audioSocketThread->ReadAndScanDpName(testPath, name);
 }
-
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
+	AudioPnpServerUnRegisterPnpStatusListenerFuzzTest,
+	AudioPnpServerOnPnpDeviceStatusChangedFuzzTest,
+	AudioPnpServerOnMicrophoneBlockedFuzzTest,
+	AudioSocketThreadIsUpdatePnpDeviceStateFuzzTest,
+	AudioSocketThreadSetAudioPnpServerEventValueFuzzTest,
+	AudioSocketThreadSetAudioAnahsEventValueFuzzTest,
+	AudioSocketThreadAudioNnDetectDeviceFuzzTest,
+	AudioSocketThreadAudioDpDetectDeviceFuzzTest,
+	AudioSocketThreadAudioMicBlockDeviceFuzzTest,
+	AudioSocketThreadUpdateDeviceStateFuzzTest,
+	AudioSocketThreadReadAndScanDpNameFuzzTest,
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return;
+    }
+    RAW_DATA = data;
+    g_dataSize = size;
+    g_pos = 0;
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-
-OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioPnpServerUnRegisterPnpStatusListenerFuzzTest,
-    OHOS::AudioStandard::AudioPnpServerOnPnpDeviceStatusChangedFuzzTest,
-    OHOS::AudioStandard::AudioPnpServerOnMicrophoneBlockedFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadIsUpdatePnpDeviceStateFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadSetAudioPnpServerEventValueFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadSetAudioAnahsEventValueFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadAudioNnDetectDeviceFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadAudioDpDetectDeviceFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadAudioMicBlockDeviceFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadUpdateDeviceStateFuzzTest,
-    OHOS::AudioStandard::AudioSocketThreadReadAndScanDpNameFuzzTest,
-};
-
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
+    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-    uint32_t len = OHOS::AudioStandard::GetArrLength(g_testPtrs);
-    if (len > 0) {
-        uint8_t firstByte = *data % len;
-        if (firstByte >= len) {
-            return 0;
-        }
-        data = data + 1;
-        size = size - 1;
-        g_testPtrs[firstByte](data, size);
-    }
+    data = data + 1;
+    size = size - 1;
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

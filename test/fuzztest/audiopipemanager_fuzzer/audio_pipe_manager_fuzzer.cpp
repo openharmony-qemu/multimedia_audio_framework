@@ -32,7 +32,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -94,7 +94,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void RemoveAudioPipeInfoFuzzTest()
+void RemoveAudioPipeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> targetPipe = std::make_shared<AudioPipeInfo>();
@@ -106,7 +106,7 @@ void RemoveAudioPipeInfoFuzzTest()
     auto pipeList = audioPipeManager->GetPipeList();
 }
 
-void RemoveAudioPipeInfoByIdFuzzTest()
+void RemoveAudioPipeInfoByIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> targetPipe = std::make_shared<AudioPipeInfo>();
@@ -119,7 +119,7 @@ void RemoveAudioPipeInfoByIdFuzzTest()
     audioPipeManager->GetPipeList();
 }
 
-void UpdateAudioPipeInfoFuzzTest()
+void UpdateAudioPipeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -139,7 +139,7 @@ void UpdateAudioPipeInfoFuzzTest()
     audioPipeManager->GetPipeList();
 }
 
-void IsSamePipeFuzzTest()
+void IsSamePipeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> info = std::make_shared<AudioPipeInfo>();
@@ -154,7 +154,7 @@ void IsSamePipeFuzzTest()
     audioPipeManager->IsSamePipe(info, cmpInfo);
 }
 
-void GetUnusedPipeFuzzTest()
+void GetUnusedPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -167,7 +167,7 @@ void GetUnusedPipeFuzzTest()
     audioPipeManager->GetUnusedPipe();
 }
 
-void IsSpecialPipeFuzzTest()
+void IsSpecialPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (AudioFlagVec.size() == 0) {
@@ -178,7 +178,7 @@ void IsSpecialPipeFuzzTest()
     audioPipeManager->IsSpecialPipe(routeFlag);
 }
 
-void IsNormalRecordPipeFuzzTest()
+void IsNormalRecordPipeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (AudioFlagVec.size() == 0 || audioPipeManager == nullptr) {
@@ -191,7 +191,7 @@ void IsNormalRecordPipeFuzzTest()
     audioPipeManager->IsNormalRecordPipe(pipe);
 }
 
-void GetStreamDescByIdFuzzTest()
+void GetStreamDescByIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (audioPipeManager == nullptr) {
@@ -209,7 +209,7 @@ void GetStreamDescByIdFuzzTest()
     audioPipeManager->GetStreamDescById(targetSessionId);
 }
 
-void DumpFuzzTest()
+void DumpFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (audioPipeManager == nullptr) {
@@ -219,7 +219,7 @@ void DumpFuzzTest()
     audioPipeManager->Dump(dumpString);
 }
 
-void IsModemCommunicationIdExistFuzzTest()
+void IsModemCommunicationIdExistFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (audioPipeManager == nullptr) {
@@ -229,7 +229,7 @@ void IsModemCommunicationIdExistFuzzTest()
     audioPipeManager->IsModemCommunicationIdExist(sessionId);
 }
 
-void GetModemCommunicationStreamDescByIdFuzzTest()
+void GetModemCommunicationStreamDescByIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     if (audioPipeManager == nullptr) {
@@ -244,7 +244,7 @@ void GetModemCommunicationStreamDescByIdFuzzTest()
     audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
 }
 
-void GetPipeinfoByNameAndFlagFuzzTest()
+void GetPipeinfoByNameAndFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -259,7 +259,7 @@ void GetPipeinfoByNameAndFlagFuzzTest()
     audioPipeManager->GetPipeinfoByNameAndFlag(targetAdapterName, targetRouteFlag);
 }
 
-void GetModuleNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -276,7 +276,7 @@ void GetModuleNameBySessionIdFuzzTest()
     audioPipeManager->GetModuleNameBySessionId(targetSessionId);
 }
 
-void GetProcessDeviceInfoBySessionIdFuzzTest()
+void GetProcessDeviceInfoBySessionIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -294,7 +294,7 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
 }
 
-void GetAllOutputStreamDescsFuzzTest()
+void GetAllOutputStreamDescsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -310,7 +310,7 @@ void GetAllOutputStreamDescsFuzzTest()
     audioPipeManager->GetAllOutputStreamDescs();
 }
 
-void GetAllInputStreamDescsFuzzTest()
+void GetAllInputStreamDescsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -326,7 +326,7 @@ void GetAllInputStreamDescsFuzzTest()
     audioPipeManager->GetAllInputStreamDescs();
 }
 
-void GetStreamDescByIdInnerFuzzTest()
+void GetStreamDescByIdInnerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -341,7 +341,7 @@ void GetStreamDescByIdInnerFuzzTest()
     audioPipeManager->GetStreamDescByIdInner(targetSessionId);
 }
 
-void GetStreamCountFuzzTest()
+void GetStreamCountFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -357,7 +357,7 @@ void GetStreamCountFuzzTest()
     audioPipeManager->GetStreamCount(targetAdapterName, targetRouteFlag);
 }
 
-void GetPaIndexByIoHandleFuzzTest()
+void GetPaIndexByIoHandleFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -371,7 +371,7 @@ void GetPaIndexByIoHandleFuzzTest()
     audioPipeManager->GetPaIndexByIoHandle(targetId);
 }
 
-void UpdateRendererPipeInfosFuzzTest()
+void UpdateRendererPipeInfosFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -388,7 +388,7 @@ void UpdateRendererPipeInfosFuzzTest()
     audioPipeManager->GetPipeList();
 }
 
-void UpdateCapturerPipeInfosFuzzTest()
+void UpdateCapturerPipeInfosFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -405,7 +405,7 @@ void UpdateCapturerPipeInfosFuzzTest()
     audioPipeManager->GetPipeList();
 }
 
-void PcmOffloadSessionCountFuzzTest()
+void PcmOffloadSessionCountFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -417,7 +417,7 @@ void PcmOffloadSessionCountFuzzTest()
     audioPipeManager->PcmOffloadSessionCount();
 }
 
-void AddModemCommunicationIdFuzzTest()
+void AddModemCommunicationIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 99999;
@@ -428,7 +428,7 @@ void AddModemCommunicationIdFuzzTest()
     audioPipeManager->GetModemCommunicationMap();
 }
 
-void RemoveModemCommunicationIdFuzzTest()
+void RemoveModemCommunicationIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     uint32_t sessionId = 12345;
@@ -439,7 +439,7 @@ void RemoveModemCommunicationIdFuzzTest()
     audioPipeManager->GetModemCommunicationMap();
 }
 
-void GetNormalSourceInfoFuzzTest()
+void GetNormalSourceInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -453,7 +453,7 @@ void GetNormalSourceInfoFuzzTest()
     audioPipeManager->GetNormalSourceInfo(isEcFeatureEnable);
 }
 
-void GetPipeByModuleAndFlagFuzzTest()
+void GetPipeByModuleAndFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -468,7 +468,9 @@ void GetPipeByModuleAndFlagFuzzTest()
     audioPipeManager->GetPipeByModuleAndFlag(targetModuleName, targetRouteFlag);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     RemoveAudioPipeInfoFuzzTest,
     RemoveAudioPipeInfoByIdFuzzTest,
     UpdateAudioPipeInfoFuzzTest,
@@ -495,28 +497,20 @@ TestFuncs g_testFuncs[] = {
     RemoveModemCommunicationIdFuzzTest,
     GetNormalSourceInfoFuzzTest,
     GetPipeByModuleAndFlagFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -528,6 +522,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

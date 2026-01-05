@@ -19,7 +19,7 @@
 #include "audio_background_manager.h"
 #include "app_state_listener.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -28,7 +28,7 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 typedef void (*TestFuncs)();
 
-void AudioBackgroundManagerNotifyBackgroundTaskStateChangeFuzzTest()
+void AudioBackgroundManagerNotifyBackgroundTaskStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t uid = g_fuzzUtils.GetData<int32_t>();
@@ -44,7 +44,7 @@ void AudioBackgroundManagerNotifyBackgroundTaskStateChangeFuzzTest()
     audioBackgroundManagerTest.NotifyBackgroundTaskStateChange(uid, pid, hasBackgroundTask);
 }
 
-void AudioBackgroundManagerNotifySessionStateChangeFuzzTest()
+void AudioBackgroundManagerNotifySessionStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t uid = g_fuzzUtils.GetData<int32_t>();
@@ -60,7 +60,7 @@ void AudioBackgroundManagerNotifySessionStateChangeFuzzTest()
     audioBackgroundManagerTest.NotifySessionStateChange(uid, pid, hasSession);
 }
 
-void AudioBackgroundManagerHandleSessionStateChangeFuzzTest()
+void AudioBackgroundManagerHandleSessionStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t uid = g_fuzzUtils.GetData<int32_t>();
@@ -76,7 +76,7 @@ void AudioBackgroundManagerHandleSessionStateChangeFuzzTest()
     audioBackgroundManagerTest.HandleSessionStateChange(uid, pid, silentControl);
 }
 
-void AudioBackgroundManagerNotifyFreezeStateChangeFuzzTest()
+void AudioBackgroundManagerNotifyFreezeStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -90,7 +90,7 @@ void AudioBackgroundManagerNotifyFreezeStateChangeFuzzTest()
     audioBackgroundManagerTest.NotifyFreezeStateChange(pidList, isFreeze);
 }
 
-void AudioBackgroundManagerResetAllProxyFuzzTest()
+void AudioBackgroundManagerResetAllProxyFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -101,7 +101,7 @@ void AudioBackgroundManagerResetAllProxyFuzzTest()
     audioBackgroundManagerTest.ResetAllProxy();
 }
 
-void AudioBackgroundManagerHandleFreezeStateChangeFuzzTest()
+void AudioBackgroundManagerHandleFreezeStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -113,7 +113,7 @@ void AudioBackgroundManagerHandleFreezeStateChangeFuzzTest()
     audioBackgroundManagerTest.HandleFreezeStateChange(pid, isFreeze);
 }
 
-void AudioBackgroundManagerDeleteFromMapFuzzTest()
+void AudioBackgroundManagerDeleteFromMapFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -128,14 +128,14 @@ void AudioBackgroundManagerDeleteFromMapFuzzTest()
     audioBackgroundManagerTest.DeleteFromMap(pid);
 }
 
-void AppStateListenerOnAppStateChangedFuzzTest()
+void AppStateListenerOnAppStateChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     AppStateListener appStateListener;
     AppExecFwk::AppProcessData appProcessData;
     appStateListener.OnAppStateChanged(appProcessData);
 }
 
-void AppStateListenerHandleAppStateChangeFuzzTest()
+void AppStateListenerHandleAppStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AppStateListener appStateListener;
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -144,7 +144,7 @@ void AppStateListenerHandleAppStateChangeFuzzTest()
     appStateListener.HandleAppStateChange(pid, uid, state);
 }
 
-void AppStateListenerHandleBackgroundAppStateChangeFuzzTest()
+void AppStateListenerHandleBackgroundAppStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AppStateListener appStateListener;
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
@@ -153,7 +153,9 @@ void AppStateListenerHandleBackgroundAppStateChangeFuzzTest()
     appStateListener.HandleBackgroundAppStateChange(pid, uid, state);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioBackgroundManagerNotifyBackgroundTaskStateChangeFuzzTest,
     AudioBackgroundManagerNotifySessionStateChangeFuzzTest,
     AudioBackgroundManagerHandleSessionStateChangeFuzzTest,
@@ -164,13 +166,23 @@ vector<TestFuncs> g_testFuncs = {
     AppStateListenerOnAppStateChangedFuzzTest,
     AppStateListenerHandleAppStateChangeFuzzTest,
     AppStateListenerHandleBackgroundAppStateChangeFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }
