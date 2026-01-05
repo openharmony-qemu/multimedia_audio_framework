@@ -204,7 +204,7 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
     uint32_t ret = deviceManager_->DestroyCognitionStream("primary", sinkId_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
     if (bufferAddress_ != nullptr) {
-        munmap(bufferAddress_, MMAP_BUFFERSIZE);
+        munmap(bufferAddress_, MAX_AUXILIARY_BUFFERSIZE);
         bufferAddress_ = nullptr;
         bufferSize_ = 0;
         AUDIO_INFO_LOG("release mmap buffer succ");
@@ -298,7 +298,7 @@ void AuxiliarySink::DumpInfo(std::string &dumpString)
         std::to_string(attr_.format) + "]";
 }
 
-int32_t AuxiliarySink::GetVolumeDataCount(int64_t &volumeData)
+int64_t AuxiliarySink::GetVolumeDataCount()
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;
@@ -337,7 +337,7 @@ int32_t AuxiliarySink::GetPresentationPosition(uint64_t &frames, int64_t &timeSe
 float AuxiliarySink::GetMaxAmplitude(void)
 {
     AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
+    return 0.0;
 }
 
 void AuxiliarySink::SetAudioMonoState(bool audioMono)

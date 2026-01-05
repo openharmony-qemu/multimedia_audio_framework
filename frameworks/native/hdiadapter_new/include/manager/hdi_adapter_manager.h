@@ -115,7 +115,6 @@ private:
     std::mutex renderSinkMtx_;
     std::mutex captureSourceMtx_;
     std::mutex deviceManagerMtx_;
-    std::shared_ptr<IAudioRenderSink> auxiliarySink_ = nullptr;
     // callback
     SinkCallbackWrapper sinkCbs_;
     SourceCallbackWrapper sourceCbs_;
