@@ -178,7 +178,7 @@ std::vector<int64_t> AudioToolCalculate::SumAudioS32AbsPcm(const int32_t* pcm, u
     int32_t channels, size_t split)
 {
     if (!Is16ByteAligned(pcm) || num_samples < DEFAULT_NUM_SAMPLES_16 ||
-        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1 ) {
+        channels > DEFAULT_CHANNEL_COUNT_2 || split > 1) {
         return SumPcmAbsNormal<int32_t, int64_t>(pcm, num_samples, channels, split);
     }
 #if USE_ARM_NEON == 1
