@@ -530,14 +530,14 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
         StopOuputNode();
-        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+        if (curNode_ != nullptr) {
             DisConnectInputSession();
             DestroyOffloadNodes();
         }
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 
-        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+        if (curNode_ != nullptr) {
             CreateOffloadNodes();
             ConnectInputSession();
         }
