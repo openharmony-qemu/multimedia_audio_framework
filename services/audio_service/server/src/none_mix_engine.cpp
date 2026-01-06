@@ -138,8 +138,11 @@ int32_t NoneMixEngine::Stop()
 {
     AUDIO_INFO_LOG("Enter");
     int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET(playbackThread_ != nullptr, ret);
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
+        playbackThread_->Stop();
+        playbackThread_ = nullptr;
         return ret;
     }
     AudioXCollie audioXCollie(
@@ -148,7 +151,7 @@ int32_t NoneMixEngine::Stop()
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    if (playbackThread_) {
+    {
         startFadein_ = false;
         startFadeout_ = true;
         // wait until fadeout complete
@@ -192,8 +195,10 @@ int32_t NoneMixEngine::StopAudioSink()
 int32_t NoneMixEngine::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Enter");
+    CHECK_AND_RETURN_RET(playbackThread_ != nullptr, SUCCESS);
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
+        playbackThread_->Pause();
         return SUCCESS;
     }
     if (isStandby) {
@@ -206,7 +211,7 @@ int32_t NoneMixEngine::Pause(bool isStandby)
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    if (playbackThread_) {
+    {
         startFadein_ = false;
         startFadeout_ = true;
         // wait until fadeout complete
