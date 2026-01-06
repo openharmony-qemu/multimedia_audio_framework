@@ -335,10 +335,8 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 
     int32_t inputSampleCount = 22050 * DEFAULT_INPUT_CHANNEL_NUM * 40 / 1000;
     int32_t inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
-    EXPECT_GE(maxInputSamples, inputSampleCount);
-    if (maxInputSamples < inputSampleCount) {
-        return;
-    }
+    ASSERT_GE(maxInputSamples, inputSampleCount);
+
     int32_t ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 22050, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
@@ -347,10 +345,8 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 
     inputSampleCount = 11025 * DEFAULT_INPUT_CHANNEL_NUM * 80 / 1000;
     inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
-    EXPECT_GE(maxInputSamples, inputSampleCount);
-    if (maxInputSamples < inputSampleCount) {
-        return;
-    }
+    ASSERT_GE(maxInputSamples, inputSampleCount);
+
     ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 11025, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
