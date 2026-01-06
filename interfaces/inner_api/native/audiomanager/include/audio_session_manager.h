@@ -347,10 +347,9 @@ public:
     int32_t ClearSelectedInputDevice();
 
     /**
-     * @brief Returns if there is any other application playing audio in media usage.
-     * The short sound effect will not be considered in.
+     * @brief Returns if there is any other application playing audio in media usage, including media session activated.
      *
-     * @return {@code true} if there is other application playing audio in media usage.
+     * @return Returns { boolean } True if there is other application playing audio in media usage.
      * @since 23
      */
     bool IsOtherMediaPlaying();
