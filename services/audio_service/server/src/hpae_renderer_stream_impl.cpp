@@ -277,7 +277,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
         deviceNetId = deviceNetId_;
     }
     std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId);
-    CHECK_AND_RETURN_RET(audioRendererSink->IsInA2dpOffload(), 0);
+    CHECK_AND_RETURN_RET(audioRendererSink != nullptr && audioRendererSink->IsInA2dpOffload(), 0);
 
     Trace trace("HpaeRendererStreamImpl::GetA2dpOffloadLatency");
     uint32_t a2dpOffloadLatency = 0;
