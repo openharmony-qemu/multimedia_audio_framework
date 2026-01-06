@@ -789,6 +789,10 @@ void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamTy
         } else {
             volume = std::max(std::min(volume, lastVolume), volumeHistory);
         }
+        if (IsVolumeSame(lastEventVolume, volume, AUDIO_VOLUME_EPSILON)) {
+            AUDIO_INFO_LOG("sessionId: %{public}d, stop set same volume: %{public}f", sessionId, volume);
+            return;
+        }
         AUDIO_DEBUG_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
         AudioVolume::GetInstance()->SetHistoryVolume(sessionId, volume);
         audioRendererSinkInstance->SetVolume(volume, volume);
@@ -817,7 +821,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         volumeDeviceClass.c_str(), volume);
     uint32_t sessionId = streamIndex_;
     if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
-        if (volumes.durationMs != 0 && volumes.volumeHistory != volumes.volume) {
+        if (volumes.durationMs != 0) {
             notEnableRmap = false;
             offloadVolumeRmap_ = std::async(std::launch::async,
                 [this, sessionId, streamType, volumeDeviceClass, deviceClass, deviceNetId] {
