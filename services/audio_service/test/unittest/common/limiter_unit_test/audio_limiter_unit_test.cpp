@@ -330,12 +330,13 @@ HWTEST_F(AudioLimiterUnitTest, Check_Support_Normale_SampleRate, TestSize.Level1
 HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 {
     const size_t maxInputSamples = 22050 * DEFAULT_INPUT_CHANNEL_NUM * 40 / 1000;
-    float in[maxInputSamples];
-    float out[maxInputSamples];
+    vector<float> in(maxInputSamples);
+    vector<float> out(maxInputSamples);
 
     int32_t inputSampleCount = 22050 * DEFAULT_INPUT_CHANNEL_NUM * 40 / 1000;
     int32_t inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
-    ASSERT_GE(maxInputSamples, inputSampleCount);
+    in.resize(inputSampleCount);
+    out.resize(inputSampleCount);
 
     int32_t ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 22050, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
@@ -345,7 +346,8 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 
     inputSampleCount = 11025 * DEFAULT_INPUT_CHANNEL_NUM * 80 / 1000;
     inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
-    ASSERT_GE(maxInputSamples, inputSampleCount);
+    in.resize(inputSampleCount);
+    out.resize(inputSampleCount);
 
     ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 11025, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
