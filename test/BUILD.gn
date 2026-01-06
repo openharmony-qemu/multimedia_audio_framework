@@ -128,6 +128,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_hpae_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
+    "../services/audio_service/test/unittest/hw_decoding_stream_unit_test:hw_decoding_stream_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:ring_buffer_wrapper_unit_test",
