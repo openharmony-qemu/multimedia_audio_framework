@@ -341,7 +341,7 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
     int32_t ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 22050, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
-    ret = limiter_->Process(inputSampleCount, in, out);
+    ret = limiter_->Process(inputSampleCount, in.data(), out.data());
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
     inputSampleCount = 11025 * DEFAULT_INPUT_CHANNEL_NUM * 80 / 1000;
@@ -352,7 +352,7 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
     ret = limiter_->SetConfig(inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, 11025, DEFAULT_INPUT_CHANNEL_NUM);
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
-    ret = limiter_->Process(inputSampleCount, in, out);
+    ret = limiter_->Process(inputSampleCount, in.data(), out.data());
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 }
 }  // namespace AudioStandard
