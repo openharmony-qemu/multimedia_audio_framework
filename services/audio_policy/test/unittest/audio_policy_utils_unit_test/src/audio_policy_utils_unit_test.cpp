@@ -429,7 +429,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     audioPolicyUtilsTest_->isBTReconnecting_ = true;
 
-    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(descs);
+    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(D_ALL_DEVICES, descs);
     EXPECT_EQ(ret, SUCCESS);
 }
 
