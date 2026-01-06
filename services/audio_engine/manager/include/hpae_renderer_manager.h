@@ -154,7 +154,8 @@ private:
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
     void StopOuputNode();
-    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
+        RendererState state, uint32_t appUid = INVALID_UID);
 
 private:
 

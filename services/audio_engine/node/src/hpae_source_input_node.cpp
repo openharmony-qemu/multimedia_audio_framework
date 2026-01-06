@@ -637,12 +637,12 @@ void HpaeSourceInputNode::SetInjectState(bool isInjecting)
 }
 
 void HpaeSourceInputNode::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t sessionId, SourceType source, CapturerState state)
+    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid)
 {
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         "audioCapturerSource_ is nullptr");
     CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
-    audioCapturerSource_->NotifyStreamChangeToSource(change, sessionId, source, state);
+    audioCapturerSource_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

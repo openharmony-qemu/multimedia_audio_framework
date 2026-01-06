@@ -66,7 +66,7 @@ public:
 
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state);
+        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);

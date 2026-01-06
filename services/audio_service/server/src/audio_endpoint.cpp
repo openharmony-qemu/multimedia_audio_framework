@@ -2504,13 +2504,13 @@ void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
     if (audioMode_ == AUDIO_MODE_PLAYBACK) {
         auto sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
         CHECK_AND_RETURN_LOG(sink, "sink is invalid");
-        sink->NotifyStreamChangeToSink(change,
-            processStream->GetAudioSessionId(), processStream->GetUsage(), state);
+        sink->NotifyStreamChangeToSink(change, processStream->GetAudioSessionId(), processStream->GetUsage(),
+            state, processStream->GetAppInfo().appUid);
     } else {
         auto source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
         CHECK_AND_RETURN_LOG(source, "source is invalid");
-        source->NotifyStreamChangeToSource(change,
-            processStream->GetAudioSessionId(), processStream->GetSource(), static_cast<CapturerState>(state));
+        source->NotifyStreamChangeToSource(change, processStream->GetAudioSessionId(), processStream->GetSource(),
+            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid);
     }
 }
 } // namespace AudioStandard
