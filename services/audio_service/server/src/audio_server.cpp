@@ -1028,6 +1028,21 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
     return true;
 }
 
+int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    uid_t callingUid = IPCSkeleton::GetCallingUid();
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    if (callingUid == ROOT_UID) {
+        return HPAE::IHpaeManager::GetHpaeManager().SetAuxiliarySinkEnable(isEnabled);
+    }
+#endif
+    // auxiliarySinkEnable only can be change by MSDP
+    CHECK_AND_RETURN_RET_LOG(callingUid == UID_MSDP_SA, ERROR,
+        "set fail! caller:[%{public}d] is not MSDP", callingUid);
+    return HPAE::IHpaeManager::GetHpaeManager().SetAuxiliarySinkEnable(isEnabled);
+}
+
 int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
 {
     if (!PermissionUtil::VerifyIsAudio()) {

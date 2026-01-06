@@ -157,6 +157,7 @@ public:
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
     virtual void updateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
+    virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
