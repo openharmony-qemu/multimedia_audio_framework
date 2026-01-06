@@ -68,7 +68,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
 
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     pcmDurationMs_ = (nodeCapability.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeCapability.inSampleRate;
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         VMPH_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
