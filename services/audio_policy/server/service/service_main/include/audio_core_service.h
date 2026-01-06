@@ -358,6 +358,7 @@ private:
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
+    void OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
