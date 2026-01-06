@@ -514,7 +514,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     int32_t ret = ExcludeOutputDevicesInner(audioDevUsage, audioDeviceDescriptors);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
 
-    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("ExcludeOutputDevices");
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
@@ -549,11 +549,11 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDev
         preferredType = AUDIO_CALL_RENDER;
     }
     if (audioDevUsage == ALL_MEDIA_DEVICES) {
+        const std::string macAddress = audioDeviceDescriptors.front()->macAddress_;
         audioDeviceDescriptors.clear();
         vector<shared_ptr<AudioDeviceDescriptor>> allDevices = audioDeviceManager_.GetConnectedDevices();
         for (const auto &desc : allDevices) {
-            if (!desc->macAddress_.empty() &&
-                desc->macAddress_ == audioDeviceDescriptors.front()->macAddress_ &&
+            if (!desc->macAddress_.empty() && desc->macAddress_ == macAddress &&
                 desc->deviceRole_ == OUTPUT_DEVICE) {
                 audioDeviceDescriptors.push_back(desc);
             }
