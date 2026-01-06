@@ -24,7 +24,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 bool AudioSuiteCapabilitiesParser::LoadConfiguration(
-    std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
+    std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities)
 {
     std::shared_ptr<AudioXmlNode> curNode = AudioXmlNode::Create();
     CHECK_AND_RETURN_RET_LOG(curNode->Config(AUDIO_SUITE_CAPABILITIES_CONFIG_FILE, nullptr, 0) == SUCCESS,
@@ -35,7 +35,7 @@ bool AudioSuiteCapabilitiesParser::LoadConfiguration(
 }
 
 bool AudioSuiteCapabilitiesParser::ParseInternal(
-    std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
+    std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities)
 {
     for (; curNode && curNode->IsNodeValid(); curNode->MoveToNext()) {
         if (!curNode->IsElementNode()) {
@@ -51,12 +51,12 @@ bool AudioSuiteCapabilitiesParser::ParseInternal(
 }
 
 void AudioSuiteCapabilitiesParser::ParserNodeType(
-    std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities)
+    std::shared_ptr<AudioXmlNode> curNode, std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities)
 {
     std::string name;
     std::string realtimeFactorStr;
     std::string frameLenStr;
-    NodeCapability nodeCapability;
+    NodeParameter nodeCapability;
 
     curNode->GetProp("name", name);
     curNode->GetProp("soName", nodeCapability.soName);
@@ -71,7 +71,7 @@ void AudioSuiteCapabilitiesParser::ParserNodeType(
         "Get node capability, name:%{public}s, realtimeFactor:%{public}f", name.c_str(), nodeCapability.realtimeFactor);
 
     // convert to uint32_t
-    int32_t ret = StringConverter(frameLenStr, nodeCapability.frameLen);
+    bool ret = StringConverter(frameLenStr, nodeCapability.frameLen);
     CHECK_AND_RETURN_LOG(ret, "convert string to uint32_t error, invalid frameLenStr =%{public}s", frameLenStr.c_str());
     auto it = NODE_TYPE_MAP.find(name);
     CHECK_AND_RETURN_LOG(

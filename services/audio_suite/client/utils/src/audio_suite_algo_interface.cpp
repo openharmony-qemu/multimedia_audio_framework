@@ -28,7 +28,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInterface(
-    AlgoType algoType, NodeCapability &nc)
+    AlgoType algoType, NodeParameter &nc)
 {
     switch (algoType) {
         case AlgoType::AUDIO_NODE_TYPE_EQUALIZER:

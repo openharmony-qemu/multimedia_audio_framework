@@ -30,7 +30,7 @@ AudioSuiteCapabilities::AudioSuiteCapabilities()
         AUDIO_SUITE_CAPABILITIES_CONFIG_FILE);
 }
 
-int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadVbCapability(NodeParameter &nc)
 {
     AudioVoiceMorhpingSpec specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -40,7 +40,7 @@ int32_t AudioSuiteCapabilities::LoadVbCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadEqCapability(NodeParameter &nc)
 {
     iMedia_Support_SPECS specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -50,7 +50,7 @@ int32_t AudioSuiteCapabilities::LoadEqCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadSfCapability(NodeParameter &nc)
 {
     iMedia_Support_SPECS specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -60,7 +60,7 @@ int32_t AudioSuiteCapabilities::LoadSfCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeParameter &nc)
 {
     iMedia_Support_SPECS specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -70,7 +70,7 @@ int32_t AudioSuiteCapabilities::LoadEnvCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadSrCapability(NodeParameter &nc)
 {
     AUDIO_INFO_LOG("loadSrCapability start.");
     std::string algoSoPath = nc.soPath + nc.soName;
@@ -96,7 +96,7 @@ int32_t AudioSuiteCapabilities::LoadSrCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeParameter &nc)
 {
     AUDIO_INFO_LOG("loadCapability start.");
     std::string algoSoPath = nc.soPath + nc.soName;
@@ -125,7 +125,7 @@ int32_t AudioSuiteCapabilities::LoadAinrCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadAissCapability(NodeParameter &nc)
 {
     AUDIO_INFO_LOG("LoadAissCapability start.");
     std::string algoSoPath = nc.soPath + nc.soName;
@@ -147,7 +147,7 @@ int32_t AudioSuiteCapabilities::LoadAissCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeParameter &nc)
 {
     AudioVoiceMorhpingSpec specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -157,7 +157,7 @@ int32_t AudioSuiteCapabilities::LoadGeneralCapability(NodeCapability &nc)
     return SUCCESS;
 }
  
-int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadPureCapability(NodeParameter &nc)
 {
     AudioVoiceMphTradSpec specs;
     CHECK_AND_RETURN_RET_LOG(
@@ -167,7 +167,7 @@ int32_t AudioSuiteCapabilities::LoadPureCapability(NodeCapability &nc)
     return SUCCESS;
 }
 
-int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeCapability &nc)
+int32_t AudioSuiteCapabilities::LoadTempoPitchCapability(NodeParameter &nc)
 {
     AUDIO_INFO_LOG("LoadTempoPitchCapability start.");
     std::istringstream iss(nc.soName);
@@ -228,7 +228,7 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
     }
     auto it = audioSuiteCapabilities_.find(nodeType);
     if (it != audioSuiteCapabilities_.end()) {
-        NodeCapability &nc = it->second;
+        NodeParameter &nc = it->second;
         if (nodeType == NODE_TYPE_TEMPO_PITCH) {
             std::istringstream iss(nc.soName);
             std::string tempoSoName = "";
@@ -251,13 +251,13 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
             *isSupported = true;
             return SUCCESS;
         } else {
-            if (GetNodeCapability(nodeType, nc) == SUCCESS) {
+            if (GetNodeParameter(nodeType, nc) == SUCCESS) {
                 AUDIO_INFO_LOG("nodeType: %{public}d isSupported status is %{public}d on this device.",
                     nodeType, nc.supportedOnThisDevice);
                 *isSupported = nc.supportedOnThisDevice;
                 return SUCCESS;
             } else {
-                AUDIO_ERR_LOG("GetNodeCapability failed for node type: %{public}d.", nodeType);
+                AUDIO_ERR_LOG("GetNodeParameter failed for node type: %{public}d.", nodeType);
                 return ERROR;
             }
         }
@@ -269,13 +269,13 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
 }
 
 // This function is only provided for effect node without mixerNode.
-int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability)
+int32_t AudioSuiteCapabilities::GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeCapability)
 {
     CHECK_AND_RETURN_RET(nodeType != NODE_TYPE_AUDIO_MIXER, SUCCESS);
     auto it = audioSuiteCapabilities_.find(nodeType);
     CHECK_AND_RETURN_RET_LOG(
         it != audioSuiteCapabilities_.end(), ERROR, "no such nodeType: %{public}d configured.", nodeType);
-    NodeCapability &nc = it->second;
+    NodeParameter &nc = it->second;
     if (!(nc.isLoaded)) {
         switch (nodeType) {
             case NODE_TYPE_AUDIO_SEPARATION:

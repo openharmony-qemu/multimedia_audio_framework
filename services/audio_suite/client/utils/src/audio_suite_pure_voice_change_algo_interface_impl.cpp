@@ -42,7 +42,7 @@ static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
 }
 
-AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
 }

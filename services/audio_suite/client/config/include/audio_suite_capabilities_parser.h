@@ -28,7 +28,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 static constexpr char AUDIO_SUITE_CAPABILITIES_CONFIG_FILE[] = "/system/etc/audio/audio_suite_capabilities.xml";
 
-struct NodeCapability {
+struct NodeParameter {
     std::string soName;
     std::string soPath;
     std::string general;
@@ -69,13 +69,13 @@ public:
     }
 
     bool LoadConfiguration(
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
 
 private:
     bool ParseInternal(std::shared_ptr<AudioXmlNode> audioSuiteCapabilitiesXmlNode,
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
     void ParserNodeType(std::shared_ptr<AudioXmlNode> curNode,
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
     float GetRealtimeFactor(std::string valueStr);
 };
 }  // namespace AudioSuite

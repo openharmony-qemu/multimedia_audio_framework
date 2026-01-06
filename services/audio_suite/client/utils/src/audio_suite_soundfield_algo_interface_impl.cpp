@@ -32,7 +32,7 @@ namespace {
 static constexpr uint32_t SAMPLE_SHIFT_AMOUNT = 16;
 }  // namespace
 
-AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeParameter &nc)
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()");
     stData_.piDataIn = dataIn_.data();

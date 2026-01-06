@@ -31,16 +31,16 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat
     : AudioNode(nodeType, audioFormat)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
-        "node: %{public}d GetNodeCapability failed.", nodeType);
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeCapability) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
 AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
     : AudioNode(nodeType)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
-        "node: %{public}d GetNodeCapability failed.", nodeType);
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeCapability) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
 int32_t AudioSuiteProcessNode::DoProcess()

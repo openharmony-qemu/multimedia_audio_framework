@@ -56,7 +56,7 @@ static float UnifyFloatValue(float value)
     return value;
 }
 
-AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
     inAudioBuffer_.frameLength = 0;

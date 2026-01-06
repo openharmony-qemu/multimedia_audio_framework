@@ -28,7 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl(NodeParameter &nc)
     : algoDefaultConfig_{AUDIO_AINR_PCM_SAMPLERATE_16K,
           AUDIO_AINR_PCM_CHANNEL_NUM,
           AUDIO_AINR_PCM_16K_FRAME_LEN,

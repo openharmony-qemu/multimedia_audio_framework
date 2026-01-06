@@ -25,7 +25,7 @@ using namespace AudioSuite;
 using namespace testing::ext;
 namespace {
 HWTEST(AudioSuiteAlgoInterface, CreateAlgoInterfaceTest, TestSize.Level0) {
-    NodeCapability nc;
+    NodeParameter nc;
     auto eqAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
         AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nc);
     EXPECT_NE(eqAlgo, nullptr);

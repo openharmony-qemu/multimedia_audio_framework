@@ -62,12 +62,12 @@ int32_t AudioSuiteSpaceRenderNode::Init()
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         SPACE_RENDER_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+    pcmDurationMs_ = (nodeCapability.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeCapability.inSampleRate;
 
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::Init end");

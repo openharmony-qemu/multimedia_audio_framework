@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteEnvAlgoInterfaceImpl::AudioSuiteEnvAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteEnvAlgoInterfaceImpl::AudioSuiteEnvAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
     algoApi_ = {0};

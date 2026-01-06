@@ -56,12 +56,12 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
         static_cast<AudioSampleFormat>(nodeCapability.inFormat),
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
     
-    pcmBufferOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+    pcmBufferOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         VM_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+    pcmDurationMs_ = (nodeCapability.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeCapability.inSampleRate;
 
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode Init end");
     return SUCCESS;

@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
 }

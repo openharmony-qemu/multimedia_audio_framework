@@ -41,7 +41,7 @@ public:
     void TearDown(void);
 
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::SetUp(void)

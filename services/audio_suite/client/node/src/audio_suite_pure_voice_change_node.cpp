@@ -53,6 +53,8 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         isOutputPortInit_ = true;
         AUDIO_ERR_LOG("InitOutputStream SUCCESS");
     }
+    isSecondRequest_ = false;
+    isDataReadComplete_ = false;
     algoInterfaceImpl_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "Failed to create nr algoInterface");
@@ -65,21 +67,21 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
 
     CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+    pcmDurationMs_ = (nodeCapability.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeCapability.inSampleRate;
     outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
         nodeCapability.outChannels,
         VMPH_ALGO_CHANNEL_LAYOUT,
         static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    postProcessedPcmBuffer_ =
-        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-                                nodeCapability.outChannels,
-                                VMPH_ALGO_CHANNEL_LAYOUT,
-                                static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
-            PCM_DATA_DURATION_40_MS);
-    tempPcmData_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-                                           nodeCapability.outChannels,
-                                           VMPH_ALGO_CHANNEL_LAYOUT,
-                                           static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+    postProcessedPcmBuffer_.ResizePcmBuffer(
+        PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+            nodeCapability.outChannels,
+            VMPH_ALGO_CHANNEL_LAYOUT,
+            static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+        PCM_DATA_DURATION_40_MS);
+    tempPcmData_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+                                     nodeCapability.outChannels,
+                                     VMPH_ALGO_CHANNEL_LAYOUT,
+                                     static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
         PCM_DATA_DURATION_40_MS);
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::Init end");
@@ -112,6 +114,8 @@ AudioSuitePcmBuffer *AudioSuitePureVoiceChangeNode::SignalProcess(const std::vec
     AUDIO_DEBUG_LOG(
         "AudioSuitePureVoiceChangeNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
 
+    tmpin_.resize(1);
+    tmpout_.resize(1);
     tmpin_[0] = inputs[0]->GetPcmData();
     tmpout_[0] = postProcessedPcmBuffer_.GetPcmData();
     CHECK_AND_RETURN_RET_LOG(tmpout_[0] != nullptr && tmpin_[0] != nullptr, nullptr, "tmpin or tempout is nullptr");
@@ -160,6 +164,10 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
         rawPcmData_,
         "Failed to read data from the previous node.");
 
+    if (GetNodeBypassStatus()) {
+        return preOutputsFirst;
+    }
+
     uint32_t srcSize = preOutputsFirst[0]->GetDataSize();
     uint32_t dstSize = tempPcmData_.GetDataSize();
     AUDIO_INFO_LOG("srcSize:%{public}d, dstSize:%{public}d", srcSize, dstSize);
@@ -194,37 +202,6 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuitePureVoiceChangeNode::ReadDoubleProc
     return rawPcmData_;
 }
 
-AudioSuitePcmBuffer* AudioSuitePureVoiceChangeNode::splitDataInHalf(const std::vector<AudioSuitePcmBuffer *> &inputs)
-{
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuitePureVoiceChangeNode prenode inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()),
-        nullptr,
-        "AudioSuitePureVoiceChangeNode prenode inputs[0] is nullptr");
-    AUDIO_DEBUG_LOG(
-        "AudioSuitePureVoiceChangeNode prenode inputs frameLen:%{public}d", inputs[0]->GetSampleCount());
-    AudioSuitePcmBuffer* pcmTempStorage = inputs[0];
-    int32_t ret;
-    if (isSecondRequest_) {
-        CHECK_AND_RETURN_RET_LOG(
-            outPcmBuffer_.GetDataSize() < pcmTempStorage->GetDataSize(), nullptr, "Offset exceeds source buffer size");
-        ret = memcpy_s(outPcmBuffer_.GetPcmData(),
-            outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
-            pcmTempStorage->GetPcmData() + outPcmBuffer_.GetDataSize(),
-            outPcmBuffer_.GetDataSize());
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
-        isSecondRequest_ = false;
-        return &outPcmBuffer_;
-    }
-    isSecondRequest_ = true;
-
-    ret = memcpy_s(outPcmBuffer_.GetPcmData(),
-        outPcmBuffer_.GetDataSize(),  // Copy the second frame 20ms data
-        pcmTempStorage->GetPcmData(),
-        outPcmBuffer_.GetDataSize());
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "memcpy failed, ret is %{public}d.", ret);
-    return &outPcmBuffer_;
-}
-
 int32_t AudioSuitePureVoiceChangeNode::DoProcess()
 {
     if (GetAudioNodeDataFinishedFlag()) {
@@ -234,6 +211,12 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadDoubleProcessNodePreOutputData();  // Returns 40ms PCM buffer
 
+    if (GetNodeBypassStatus()) {
+        CHECK_AND_RETURN_RET_LOG(!preOutputs.empty(), ERROR, "preOutputs is empty");
+        preOutputs[0]->SetIsFinished(GetAudioNodeDataFinishedFlag());
+        outputStream_.WriteDataToOutput(preOutputs[0]);
+        return SUCCESS;
+    }
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         // for dfx
@@ -249,11 +232,6 @@ int32_t AudioSuitePureVoiceChangeNode::DoProcess()
         auto endTime = std::chrono::steady_clock::now();
         auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         CheckEffectNodeProcessTime(preOutputs[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
-    } else if (!preOutputs.empty()) {
-        AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
-        tempOut = splitDataInHalf(preOutputs);
-        CHECK_AND_RETURN_RET_LOG(
-            tempOut != nullptr, ERR_INVALID_READ, "node %{public}d get a null pcmbuffer from prenode", GetNodeType());
     } else {
         AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
         return ERROR;

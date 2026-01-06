@@ -61,7 +61,7 @@ struct VoiceMphingAlgoApi {
 
 class AudioSuitePureVoiceChangeAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeCapability &nc);
+    AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuitePureVoiceChangeAlgoInterfaceImpl();
 
     int32_t Init() override;

@@ -50,7 +50,7 @@ const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
 const std::string SPACE_RENDER_EXTENSION_MOD = "AudioSpaceRenderExtensionParams";
 
-AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl()");

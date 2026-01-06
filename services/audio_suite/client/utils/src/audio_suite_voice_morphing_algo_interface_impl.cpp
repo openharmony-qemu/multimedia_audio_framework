@@ -35,7 +35,7 @@ const std::string voiceMorphingMode = "VoiceBeautifierType";
 const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
 }  // namespace
 
-AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
 }

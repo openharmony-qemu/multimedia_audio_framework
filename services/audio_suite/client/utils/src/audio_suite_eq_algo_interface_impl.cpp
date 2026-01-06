@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeCapability = nc;
     frameLen_ = 0;

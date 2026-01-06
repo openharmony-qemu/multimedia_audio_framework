@@ -40,7 +40,7 @@ public:
     void SetUp(void);
     void TearDown(void);
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteNrAlgoInterfaceImplUnitTest::SetUp(void)
