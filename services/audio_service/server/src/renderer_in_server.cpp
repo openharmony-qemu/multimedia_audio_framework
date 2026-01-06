@@ -2766,6 +2766,8 @@ void RendererInServer::ClearInnerCapBufferForInject()
     for (auto &capInfo : captureInfos_) {
         CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
             innerCapIdToDupStreamCallbackMap_.end());
+        CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr);
+        CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer() != nullptr);
         innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer()->ResetBuffer();
     }
 }
