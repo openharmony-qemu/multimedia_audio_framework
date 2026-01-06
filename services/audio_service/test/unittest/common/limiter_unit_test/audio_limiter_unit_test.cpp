@@ -330,8 +330,8 @@ HWTEST_F(AudioLimiterUnitTest, Check_Support_Normale_SampleRate, TestSize.Level1
 HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 {
     const size_t maxInputSamples = 22050 * DEFAULT_INPUT_CHANNEL_NUM * 40 / 1000;
-    vector<float> in(maxInputSamples);
-    vector<float> out(maxInputSamples);
+    std::vector<float> in(maxInputSamples);
+    std::vector<float> out(maxInputSamples);
 
     int32_t inputSampleCount = 22050 * DEFAULT_INPUT_CHANNEL_NUM * 40 / 1000;
     int32_t inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
