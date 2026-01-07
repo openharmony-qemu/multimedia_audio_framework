@@ -2757,7 +2757,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_126, TestSize.Leve
     uint32_t paIndex = 0;
     auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
 
-    EXPECT_NE(ret, sessionIDTest);
+    EXPECT_EQ(ret, sessionIDTest);
 }
 
 /**
