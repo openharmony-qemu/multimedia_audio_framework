@@ -1211,6 +1211,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         }
     }
     if (processList_.size() == 0) {
+        std::unique_lock<std::mutex> lock(startStatusLock_);
         StopDevice();
         UpdateEndpointStatus(UNLINKED);
     } else if (!IsAnyProcessRunningInner()) {
