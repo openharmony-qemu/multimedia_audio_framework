@@ -122,7 +122,7 @@ static void TestGetPipeChangeInfos(AudioMode mode)
 static void TestSetAuxiliarySinkEnable(bool isEnabled)
 {
     cout << "set to isEnabled:" << (isEnabled ? "true" : "false") << endl;
-    int32_t ret = DelayedSingleton<AudioEngineClientManager>::GetInstance()->TestSetAuxiliarySinkEnable(isEnabled);
+    int32_t ret = DelayedSingleton<AudioEngineClientManager>::GetInstance()->SetAuxiliarySinkEnable(isEnabled);
     cout << "set auxiliarySinkEnable " << (ret == SUCCESS ? "success" : "fail") << endl;
 }
 
