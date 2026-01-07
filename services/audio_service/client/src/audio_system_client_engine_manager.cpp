@@ -124,7 +124,7 @@ uint32_t AudioSystemClientEngineManager::GetEffectLatency(const std::string &ses
     return latency;
 }
 
-int32_t AudioSystemClientEngineManager::SetForegroundList(std::vector<std::string> list)
+int32_t AudioSystemClientEngineManager::SetForegroundList(const std::vector<std::string> &list)
 {
     const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
