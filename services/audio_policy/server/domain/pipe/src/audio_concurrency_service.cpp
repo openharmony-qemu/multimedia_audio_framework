@@ -81,7 +81,7 @@ AudioPipeType AudioConcurrencyService::GetPipeTypeByRouteFlag(uint32_t flag, Aud
 {
     for (const auto &priorityRule : g_priorityOrder) {
         if (priorityRule.first != audioMode) continue;
-        if ((flag & priorityRule.second) != check.second) continue;
+        if ((flag & priorityRule.second) != priorityRule.second) continue;
         
         auto it = g_pipeTypeMap.find(priorityRule);
         if (it != g_pipeTypeMap.end()) {
