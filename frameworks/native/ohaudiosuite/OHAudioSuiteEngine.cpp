@@ -562,7 +562,7 @@ static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
-static const float AUDIO_VOICE_MORPHING_PITCH_ZERO = 0.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -1142,9 +1142,9 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
 {
     CHECK_AND_RETURN_RET_LOG(
         (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
-            option.pitch == AUDIO_VOICE_MORPHING_PITCH_ZERO,
+            option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
         ERR_INVALID_PARAM,
-        "SetPureVoicePitch failed, pitch must be in the 0.3~3.0");
+        "SetPureVoicePitch failed, pitch must be in the 0.3f~3.0f and 0.0f");
     auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
         AudioPureVoiceChangeOption optionParams;
         optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(value.optionGender);
