@@ -289,7 +289,9 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     converterForLoudness_->DisConnect(curNode_);
     loudnessGainNode_->DisConnect(converterForLoudness_);
     converterForOutput_->DisConnect(loudnessGainNode_);
-    sinkOutputNode_->DisConnect(converterForOutput_);
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->DisConnect(converterForOutput_);
+    }
     renderNoneEffectNode_->AudioOffloadRendererStop(curNode_->GetNodeInfo(), sinkInfo_);
     return SUCCESS;
 }
