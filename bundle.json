@@ -318,7 +318,7 @@
                 "header_files": [
                   "audio_proresampler_process.h"
                 ],
-                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
               }
             }
           ],
