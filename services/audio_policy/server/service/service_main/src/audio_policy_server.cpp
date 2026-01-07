@@ -5498,16 +5498,16 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, bool &ret)
+int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t deviceType, bool &ret)
 {
     AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(modeIn);
-    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
+    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 

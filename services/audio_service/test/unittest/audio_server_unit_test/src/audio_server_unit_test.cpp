@@ -2696,5 +2696,49 @@ HWTEST_F(AudioServerUnitTest, SetAudioBalanceValueInner_001, TestSize.Level1)
     audioServer->SetAudioBalanceValueInner(isAudioBalanceEnable, audioBalance);
     EXPECT_TRUE(std::abs(audioServer->audioBalanceValue_ - (-0.8f)) <= std::numeric_limits<float>::epsilon());
 }
+
+/**
+ * @tc.name  : Test SetKaraokeParameters API
+ * @tc.type  : FUNC
+ * @tc.number: SetKaraokeParameters_001
+ * @tc.desc  : Test SetKaraokeParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetKaraokeParameters_001, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID();
+    MockNative::Mock();
+    audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    ASSERT_NE(nullptr, audioServer);
+    std::string parameters;
+    bool ret = false;
+    EXPECT_EQ(audioServer->SetKaraokeParameters(DEVICE_TYPE_USB_ARM_HEADSET, parameters, ret), SUCCESS);
+    EXPECT_TRUE(ret);
+    ret = false;
+    EXPECT_EQ(audioServer->SetKaraokeParameters(DEVICE_TYPE_NONE, parameters, ret), SUCCESS);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported API
+ * @tc.type  : FUNC
+ * @tc.number: IsAudioLoopbackSupported_001
+ * @tc.desc  : Test IsAudioLoopbackSupported interface.
+ */
+HWTEST_F(AudioServerUnitTest, IsAudioLoopbackSupported__001, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID();
+    MockNative::Mock();
+    audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    ASSERT_NE(nullptr, audioServer);
+    std::string parameters;
+    bool ret = true;
+    EXPECT_EQ(audioServer->IsAudioLoopbackSupported(AudioLoopbackMode::LOOPBACK_HARDWARE,
+        DEVICE_TYPE_USB_ARM_HEADSET, ret), SUCCESS);
+    EXPECT_FALSE(ret);
+    ret = true;
+    EXPECT_EQ(audioServer->IsAudioLoopbackSupported(AudioLoopbackMode::LOOPBACK_HARDWARE,
+        DEVICE_TYPE_NONE, ret), SUCCESS);
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -501,7 +501,12 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
-    if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
+
+    bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
+        incomingStream->rendererInfo_.isLoopback;
+    bool isConcedeExisting = action == CONCEDE_INCOMING && (existingStream->IsNoRunningOffload() ||
+        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback));
+    if (isConcedeExisting) {
         action = CONCEDE_EXISTING;
     }
     JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "

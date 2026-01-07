@@ -3102,22 +3102,22 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return isSupport;
 }
 
-bool AudioPolicyManager::SetKaraokeParameters(const std::string &parameters)
+bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const std::string &parameters)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool ret = false;
-    gsp->SetKaraokeParameters(parameters, ret);
+    gsp->SetKaraokeParameters(deviceType, parameters, ret);
     return ret;
 }
 
-bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType)
 {
     Trace trace("AudioPolicyManager::IsAudioLoopbackSupported");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool support = false;
-    gsp->IsAudioLoopbackSupported(mode, support);
+    gsp->IsAudioLoopbackSupported(mode, deviceType, support);
     return support;
 }
 

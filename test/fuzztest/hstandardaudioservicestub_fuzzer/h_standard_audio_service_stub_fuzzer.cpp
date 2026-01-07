@@ -669,8 +669,9 @@ void IsAudioLoopbackSupported(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     int32_t mode = provider.ConsumeIntegral<int32_t>();
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     bool isSupported = provider.ConsumeBool();
-    audioServer->IsAudioLoopbackSupported(mode, isSupported);
+    audioServer->IsAudioLoopbackSupported(mode, deviceType, isSupported);
 }
 
 void SetRenderWhitelist(FuzzedDataProvider &provider)
