@@ -681,8 +681,10 @@ int32_t RemoteDeviceManager::HandleRouteEnableEvent(const std::string &adapterNa
     size_t routeEnableValPos = routeEnableKeyPos + routeEnableKey.length();
     CHECK_AND_RETURN_RET_LOG(routeEnableValPos < contentDesStr.length(), ERR_INVALID_PARAM,
         "not find daudio route enable value, contentDes: %{public}s", contentDesStr.c_str());
-    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE, ERR_INVALID_PARAM, "route unenable");
+    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE ||
+        contentDesStr[routeEnableValPos] == ROUTE_DISABLE, ERR_INVALID_PARAM, "invalid route state");
     bool enable = contentDesStr[routeEnableValPos] == ROUTE_ENABLE;
+    AUDIO_INFO_LOG("enable: %{public}d", enable);
     callback_.OnHdiRouteStateChange(adapterName, enable);
     return SUCCESS;
 }
