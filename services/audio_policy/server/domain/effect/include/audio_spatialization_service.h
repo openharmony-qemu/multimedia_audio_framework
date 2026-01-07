@@ -114,6 +114,8 @@ private:
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
     void UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
+    bool IsSpatializationSupportedForDeviceInner(const std::string address);
+    bool IsHeadTrackingSupportedForDeviceInner(const std::string address);
     std::string RemoveOldestDevice();
     std::string GetCurrTimestamp();
     std::string EncapsulateDeviceInfo(const std::string address);
@@ -138,7 +140,6 @@ private:
     AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
-    std::mutex spatializationSupportedMutex_;
     std::mutex spatializationStateChangeListnerMutex_;
     std::mutex rendererInfoChangingMutex_;
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
