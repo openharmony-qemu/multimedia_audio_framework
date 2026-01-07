@@ -626,7 +626,7 @@ int32_t AudioSystemManager::DeactivatePreemptMode() const
     return AudioSystemClientPolicyManager::GetInstance().DeactivatePreemptMode();
 }
 
-int32_t AudioSystemManager::SetForegroundList(std::vector<std::string> list)
+int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
 {
     return AudioSystemClientEngineManager::GetInstance().SetForegroundList(list);
 }
