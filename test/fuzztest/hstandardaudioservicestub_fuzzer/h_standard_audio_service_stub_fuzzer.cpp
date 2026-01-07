@@ -662,7 +662,8 @@ void SetKaraokeParameters(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string parameters = provider.ConsumeRandomLengthString();
     bool ret = provider.ConsumeBool();
-    audioServer->SetKaraokeParameters(parameters, ret);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetKaraokeParameters(deviceType, parameters, ret);
 }
 
 void IsAudioLoopbackSupported(FuzzedDataProvider &provider)
