@@ -74,12 +74,11 @@ private:
     int32_t LoadAlgorithmFunction(void);
     int32_t ApplyAndWaitReady(void);
     void UnApply(void);
-    void Release();
     VoiceMphingAlgoApi vmAlgoApi_{0};
     std::vector<float> inBuf_;
     std::vector<float> outBuf_;
-    char *handle_ = nullptr;
-    char *scratchBuf_ = nullptr;
+    std::vector<char> handle_;
+    std::vector<char> scratchBuf_;
     void *libHandle_{nullptr};
     AudioSuiteLibraryManager algoLibrary_;
 };

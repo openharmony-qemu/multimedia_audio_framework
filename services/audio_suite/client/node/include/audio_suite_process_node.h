@@ -69,7 +69,7 @@ protected:
     void CheckEffectNodeOvertimeCount();
     int32_t InitOutputStream();
     bool isOutputPortInit_ = false;
-    uint32_t pcmDurationMs_;
+    uint32_t pcmDurationMs_ = 0;
 
 private:
     // for dfx

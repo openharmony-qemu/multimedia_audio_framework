@@ -100,55 +100,25 @@ void AudioSuitePureVoiceChangeAlgoInterfaceImpl::UnApply(void)
     AUDIO_INFO_LOG("end unload pure algo so");
 }
 
-void AudioSuitePureVoiceChangeAlgoInterfaceImpl::Release()
-{
-    if (handle_) {
-        delete[] handle_;
-        handle_ = nullptr;
-    }
-    if (scratchBuf_) {
-        delete[] scratchBuf_;
-        scratchBuf_ = nullptr;
-    }
-}
-
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
 {
     AUDIO_INFO_LOG("start init pure voice Morphing algorithm");
 
     int32_t ret = ApplyAndWaitReady();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    AudioVoiceMphMemSize* memSize = new AudioVoiceMphMemSize();
-    ret = vmAlgoApi_.getSize(memSize);
+    AudioVoiceMphMemSize memSize;
+    ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VOICEMPH_EOK) {
         AUDIO_ERR_LOG("AudioVoiceMphGetsize fail");
-        delete memSize;
-        memSize = nullptr;
         return ERROR;
     }
-    handle_ = new char[memSize->stateSize];
-    if (!handle_) {
-        AUDIO_ERR_LOG("Init handle_ fail");
-        delete memSize;
-        memSize = nullptr;
-        return ERROR;
-    }
-    scratchBuf_ = new char[memSize->scratchSize];
-    if (!scratchBuf_) {
-        AUDIO_ERR_LOG("Init scratchBuf_ fail");
-        delete memSize;
-        delete[] handle_;
-        memSize = nullptr;
-        handle_ = nullptr;
-        return ERROR;
-    }
-    delete memSize;
-    memSize = nullptr;
+    handle_.resize(memSize.stateSize);
+    scratchBuf_.resize(memSize.scratchSize);
 
     inBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
     outBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
 
-    ret = vmAlgoApi_.initAlgo(handle_, scratchBuf_);
+    ret = vmAlgoApi_.initAlgo(handle_.data(), scratchBuf_.data());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail");
     AUDIO_INFO_LOG("init pure algoso success");
     return SUCCESS;
@@ -157,7 +127,6 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
 {
     AUDIO_INFO_LOG("start deinit pure algorithm");
-    Release();
     UnApply();
     AUDIO_INFO_LOG("end deinit pure algorithm");
     return SUCCESS;
@@ -206,8 +175,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
  
     SpeakerSex valueSex = typeSexPtr->second;
     AudioVoiceMphTradType voiceType = typePtr->second;
-    int32_t ret = vmAlgoApi_.setPara(handle_, valueSex, voiceType, pitch);
-
+    int32_t ret = vmAlgoApi_.setPara(handle_.data(), valueSex, voiceType, pitch);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
     return SUCCESS;
 }
@@ -245,7 +213,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
         .outCh = 1,
     };
 
-    int32_t ret = vmAlgoApi_.applyAlgo(handle_, scratchBuf_, &data);
+    int32_t ret = vmAlgoApi_.applyAlgo(handle_.data(), scratchBuf_.data(), &data);
 
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "apply vmalgo fail.");
 
