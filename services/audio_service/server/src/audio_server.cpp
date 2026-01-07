@@ -840,8 +840,8 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
 
     if (key == HOME_MUSIC_KEY) {
         CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
-        std:string homeMusicNetworkId = newPair[0].second;
-        std:string homeMusicZoneValue = newPair[1].second;
+        std::string homeMusicNetworkId = newPair[0].second;
+        std::string homeMusicZoneValue = newPair[1].second;
         HdiAdapterManager &managerRemote = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = managerRemote.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
         CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "remote device manager is nullptr");
