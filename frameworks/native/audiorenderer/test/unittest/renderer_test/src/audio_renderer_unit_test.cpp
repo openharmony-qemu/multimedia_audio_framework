@@ -4692,6 +4692,24 @@ HWTEST(AudioRendererUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test IsNeedWaitForSwitch_001.
+ * @tc.number: IsNeedWaitForSwitch_001.
+ * @tc.desc  : Test IsNeedWaitForSwitch_001
+ */
+HWTEST(AudioRendererUnitTest, IsNeedWaitForSwitch_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+    
+    testRendererInner->isSwitchStreamSt_ = true;
+
+    bool res = testRendererInner->IsNeedWaitForSwitch(true);
+    EXPECT_EQ(true, res);
+    res = testRendererInner->IsNeedWaitForSwitch(false);
+    EXPECT_EQ(true, res);
+}
+
+/**
  * @tc.name  : Test IsRendererFlagsSupportStatic.
  * @tc.number: IsRendererFlagsSupportStatic.
  * @tc.desc  : Test IsRendererFlagsSupportStatic.
