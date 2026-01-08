@@ -2739,8 +2739,6 @@ std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeC
                 moveInfo.sessionInfo.state = movingIds_[sessionId];
             }
             movingIds_.erase(sessionId);
-            results.emplace_back(moveInfo);
-            continue;
         }
         results.emplace_back(moveInfo);
     }

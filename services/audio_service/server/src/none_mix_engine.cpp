@@ -311,7 +311,6 @@ void NoneMixEngine::MixStreams()
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
-    CHECK_AND_RETURN(stream_ != nullptr);
     uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
