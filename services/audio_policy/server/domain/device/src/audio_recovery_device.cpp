@@ -548,8 +548,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDev
         userSelectedDevice = audioStateManager_.GetPreferredCallRenderDevice();
         preferredType = AUDIO_CALL_RENDER;
     }
-    if (audioDevUsage == ALL_MEDIA_DEVICES) {
-        const std::string macAddress = audioDeviceDescriptors.front()->macAddress_;
+    const std::string macAddress = audioDeviceDescriptors.front()->macAddress_;
+    if (audioDevUsage == ALL_MEDIA_DEVICES && !macAddress.empty()) {
         audioDeviceDescriptors.clear();
         vector<shared_ptr<AudioDeviceDescriptor>> allDevices = audioDeviceManager_.GetConnectedDevices();
         for (const auto &desc : allDevices) {
