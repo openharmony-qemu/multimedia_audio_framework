@@ -86,6 +86,7 @@ constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 constexpr uint32_t PRIMARY_SINK_LATENCY_MS = 100;
 uint32_t AudioServer::paDaemonTid_;
+const std::string g_playtaskId = "0";
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
@@ -1105,6 +1106,16 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
+bool AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
+    std::vector<std::pair<std::string, std::string>> &result)
+{
+    for (const std:: string &key : subKeys) {
+        result.push_back(std::make_pair(key, g_playtaskId));
+    }
+    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str);
+    return true;
+}
+
 bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
@@ -1136,10 +1147,12 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         bool ret = GetEffectLiveParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get effect live parameters failed.");
         return SUCCESS;
-    }
-    if (mainKey == PCM_DUMP_KEY) {
+    } else if (mainKey == PCM_DUMP_KEY) {
         bool ret = GetPcmDumpParameter(subKeys, result);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
+        return SUCCESS;
+    } else if (mainKey == HOME_MUSIC_KEY) {
+        bool ret = GetTaskIdParameter(subKeys, result);
         return SUCCESS;
     }
 
@@ -1718,6 +1731,13 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
         "refused for %{public}d", callingUid);
     AUDIO_INFO_LOG("notify device info: networkId(%{public}s), connected(%{public}d)",
         GetEncryptStr(networkId).c_str(), connected);
+    if (networkId.find("taskId") != std::string::npos) {
+        size_t colon_pos = networkId.find(":");
+        size_t brace_pos = networkId.find("}");
+        g_playtaskId = networkId.substr(colon_pos + 1, brace_pos - 1);
+        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str);
+        return success;
+    }
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);

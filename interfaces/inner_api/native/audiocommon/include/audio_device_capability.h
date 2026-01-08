@@ -27,10 +27,10 @@ class RemoteDeviceCapability {
 public:
     std::list<DeviceStreamInfo> streamInfoList_;
     bool isSupportRemoteVolume_ = false;
-    int32_t initVolume_ = REMOTE_DEFAULT_VOLUME;
     bool initMuteStatus_ = false;
     std::string deviceName_ = "";
     int32_t protocol_ = 0;
+    bool isSupportHiLinkControl_ = false;
 
     std::string GetJsonString() const;
     void FromJsonString(const std::string &jsonString);

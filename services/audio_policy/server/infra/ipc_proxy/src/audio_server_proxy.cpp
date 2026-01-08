@@ -361,6 +361,15 @@ void AudioServerProxy::NotifyDeviceInfoProxy(std::string networkId, bool connect
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioServerProxy::NotifyTaskIdInfoProxy(std::string &taskId, bool connected)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    gsp->(taskId, connected);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 std::string AudioServerProxy::GetAudioParameterProxy(const std::string &key)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

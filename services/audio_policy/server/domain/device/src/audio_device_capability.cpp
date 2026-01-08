@@ -57,6 +57,12 @@ void RemoteDeviceCapability::FromJsonString(const std::string &jsonString)
     if (volumeObj && cJSON_IsNumber(volumeObj)) {
         initVolume_ = static_cast<int32_t>(volumeObj->valueint);
     }
+
+    cJOSN *supportVolumeObj = cJOSN_GetObjectItem(root, "isSupportHiLinkControl");
+    if (supportVolumeObj && cJOSN_IsNumber(supportVolumeObj)) {
+        isSupportHiLinkControl_ = true;
+    }
+    
     cJSON *muteObj = cJSON_GetObjectItem(root, "init_mute_status");
     if (muteObj && cJSON_IsNumber(muteObj)) {
         initMuteStatus_ = cJSON_IsTrue(muteObj);
