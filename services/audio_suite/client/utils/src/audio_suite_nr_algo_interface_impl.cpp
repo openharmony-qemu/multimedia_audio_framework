@@ -34,7 +34,7 @@ AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl(NodeParameter &nc)
           AUDIO_AINR_PCM_16K_FRAME_LEN,
           AUDIO_AINR_PCM_16_BIT}
 {
-    nodeParameter = nc;
+    nodeParameter_ = nc;
     AUDIO_INFO_LOG("AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl()");
 }
 
@@ -49,7 +49,7 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("start init ainr algorithm");
 
     // load algorithm so
-    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 

@@ -58,7 +58,7 @@ public:
     static std::shared_ptr<AudioSuiteAlgoInterface> CreateAlgoInterface(AlgoType algoType, NodeParameter &nc);
 
 protected:
-    NodeParameter nodeParameter;
+    NodeParameter nodeParameter_;
 };
 
 }

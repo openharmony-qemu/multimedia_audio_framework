@@ -34,7 +34,7 @@ namespace AudioSuite {
 
 AudioSuiteEnvAlgoInterfaceImpl::AudioSuiteEnvAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeParameter = nc;
+    nodeParameter_ = nc;
     algoApi_ = {0};
     stData_ = {0};
     para_ = IMEDIA_SWS_ENV_BROADCAST;
@@ -56,7 +56,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvAlgoInterfaceImpl already inited");
         return ERROR;
     }
-    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 

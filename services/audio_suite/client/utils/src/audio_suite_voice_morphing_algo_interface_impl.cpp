@@ -37,7 +37,7 @@ const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
 
 AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeParameter = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuiteVoiceMorphingAlgoInterfaceImpl::~AudioSuiteVoiceMorphingAlgoInterfaceImpl()
@@ -63,7 +63,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
 
-    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 

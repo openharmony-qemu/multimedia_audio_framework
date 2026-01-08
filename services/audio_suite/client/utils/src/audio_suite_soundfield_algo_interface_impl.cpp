@@ -42,7 +42,7 @@ AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(Nod
     stData_.iData_Format16 = AUDIO_SURROUND_PCM_16_BIT;
     stData_.iData_Channel = AUDIO_SURROUND_PCM_CHANNEL_NUM;
     stData_.iMasterVolume = AUDIO_SURROUND_MASTER_VOLUME;
-    nodeParameter = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuiteSoundFieldAlgoInterfaceImpl::~AudioSuiteSoundFieldAlgoInterfaceImpl()
@@ -56,7 +56,7 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("start init SoundField algorithm");
 
     // load algorithm so
-    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
