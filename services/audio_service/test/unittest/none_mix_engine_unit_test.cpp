@@ -1178,7 +1178,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_030, TestSize.Level1)
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
     EXPECT_EQ(ret, SUCCESS);
-    ptrNoneMixEngine->PauseAsync()
+    ptrNoneMixEngine->PauseAsync();
     ret = ptrNoneMixEngine->Pause();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1211,7 +1211,7 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_031, TestSize.Level1)
     ptrNoneMixEngine->SwitchSink(streamInfo, isVoip);
     int32_t ret = ptrNoneMixEngine->Start();
     EXPECT_EQ(ret, SUCCESS);
-    ptrNoneMixEngine->PauseAsync()
+    ptrNoneMixEngine->PauseAsync();
     ret = ptrNoneMixEngine->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }
