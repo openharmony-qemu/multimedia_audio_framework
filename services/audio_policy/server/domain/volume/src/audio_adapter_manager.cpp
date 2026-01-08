@@ -3742,7 +3742,7 @@ void AudioAdapterManager::SetRemoteVolumeForPassThroughDevice(std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
-    CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode == HILINK_MODE);
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == HILINK_MODE);
 
     int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, maxRet);
