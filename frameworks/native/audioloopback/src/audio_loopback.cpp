@@ -45,6 +45,8 @@ namespace {
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
+    // This is just to pre-validate potential errors, with the actual audio protection
+    // implemented where the recording stream is truly created.
     Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
     tokenId = (tokenId == Security::AccessToken::INVALID_TOKENID) ? IPCSkeleton::GetCallingTokenID() : tokenId;
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
