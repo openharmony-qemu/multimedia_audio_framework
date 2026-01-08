@@ -95,8 +95,6 @@ constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.support
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
-const std::string HOME_MUSIC_KEY = "HomeMusic";
-const std::string ZONE_ID_CHANGE = "zone_id_change";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -839,16 +837,6 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
     std::vector<std::pair<std::string, std::string>> newPair = ConvertStringPair(kvpairs);
 
-    if (key == HOME_MUSIC_KEY) {
-        CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
-        std::string homeMusicNetworkId = newPair[0].second;
-        std::string homeMusicZoneValue = newPair[1].second;
-        HdiAdapterManager &managerRemote = HdiAdapterManager::GetInstance();
-        std::shared_ptr<IDeviceManager> deviceManager = managerRemote.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "remote device manager is nullptr");
-        deviceManager->SetAudioParameter(homeMusicNetworkId, AudioParamKey::NONE, ZONE_ID_CHANGE, homeMusicZoneValue);
-        return SUCCESS;
-    }
     if (key == EFFECT_LIVE_KEY) {
         ret = SetEffectLiveParameter(newPair);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
