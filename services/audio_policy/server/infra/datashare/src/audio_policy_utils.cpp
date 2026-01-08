@@ -797,10 +797,10 @@ int32_t AudioPolicyUtils::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         return SUCCESS;
     }
 
-    if (audioDevUsage & MEDIA_OUTPUT_DEVICES != 0) {
+    if ((audioDevUsage & MEDIA_OUTPUT_DEVICES) != 0) {
         AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
     }
-    if(audioDevUsage & CALL_OUTPUT_DEVICES != 0) {
+    if ((audioDevUsage & CALL_OUTPUT_DEVICES) != 0) {
         AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
     }
     return SUCCESS;
