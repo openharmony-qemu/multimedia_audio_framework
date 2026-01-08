@@ -431,7 +431,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
 
     int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(D_ALL_DEVICES, descs);
     EXPECT_EQ(ret, SUCCESS);
-    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(MEDIA_INPUT_DEVICES, descs);
+    ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(MEDIA_INPUT_DEVICES, descs);
     EXPECT_EQ(ret, SUCCESS);
 }
 
