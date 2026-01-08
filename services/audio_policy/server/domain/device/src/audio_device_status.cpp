@@ -929,7 +929,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         statusInfo.mappingInterruptId, statusInfo.mappingVolumeId, statusInfo.networkId);
         deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
         std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
-        deviceDesc.push_back(audioDescriptor);
+        descForCb.push_back(audioDescriptor);
         TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
         TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
         return;
