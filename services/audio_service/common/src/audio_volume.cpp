@@ -85,13 +85,35 @@ AudioVolume::~AudioVolume()
     doNotDisturbStatusWhiteListVolume_.clear();
 }
 
+void AudioVolume::ConstructEnforcedToneVolumeValues(VolumeValues *volumes)
+{
+    float fixedVolume = VolumeUtils::GetEnforcedToneVolumeFixed();
+    volumes->volumeSystem = fixedVolume;
+    volumes->volumeStream = 1.0f;
+    volumes->volumeApp = 1.0f;
+    volumes->volume = fixedVolume;
+    volumes->volumeHistory = fixedVolume;
+}
+
 // Note: Time-consuming logic operations cannot be performed on GetVolume.
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
     VolumeValues *volumes)
 {
     // read or write volume must be called AudioVolume::volumeMutex_
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+    AudioStreamType srcStreamType = static_cast<AudioStreamType>(streamType);
+    if (srcStreamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
+        ConstructEnforcedToneVolumeValues(volumes);
+        return volumes->volume;
+    }
+    GetVolumeValues(sessionId, srcStreamType, deviceClass, volumes);
+    return volumes->volume;
+}
+
+void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
+    VolumeValues *volumes)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel = 0;
     int32_t appUid = -1;
     volumes->volumeStream = 1.0f;
@@ -137,7 +159,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
-    return volumes->volume;
 }
 
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)

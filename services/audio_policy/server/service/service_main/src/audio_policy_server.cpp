@@ -196,6 +196,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     if (volumeApplyToAll_) {
         audioPolicyConfigManager_.SetNormalVoipFlag(true);
     }
+    VolumeUtils::InitEnforcedToneVolume();
 }
 
 static std::string TranslateKeyEvent(const int32_t keyType)
