@@ -394,7 +394,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         }
     }
 
-    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(descForCb);
+    std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
+        make_shared<AudioDeviceDescriptor>(updatedDesc)};
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
 
     audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_);
