@@ -691,6 +691,7 @@ IAudioSourceAttr AudioEndpointInner::InitSourceAttr(const AudioDeviceDescriptor 
         attr.adapterName = "remote";
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
+    attr.sourceType = endpointType_ == TYPE_VOIP_MMAP ? SOURCE_TYPE_VOICE_COMMUNICATION : SOURCE_TYPE_MIC;
     attr.macAddress = deviceInfo.GetMacAddress();
     return attr;
 }
