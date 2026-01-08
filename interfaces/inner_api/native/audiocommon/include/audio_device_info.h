@@ -392,7 +392,7 @@ enum VolumeControlMode {
     DEFAULT_MODE = 0,
     LOCAL_MODE = DEFAULT_MODE,
     PASS_THROUGH_MODE = 1,
-    HILINK_MODE = 2;
+    HILINK_MODE = 2,
 };
 
 struct VolumeBehavior : public Parcelable {
