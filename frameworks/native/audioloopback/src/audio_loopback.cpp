@@ -56,8 +56,12 @@ std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackM
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, nullptr,
         "Permission denied [tid:%{public}d]", tokenId);
-    static std::shared_ptr<AudioLoopback> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
-    return instance;
+    if (mode == LOOPBACK_HARDWARE) {
+        static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+        return instance;
+    }
+    AUDIO_ERR_LOG("Invalid mode");
+    return nullptr;
 }
 
 void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackReportInfo &info)
@@ -92,6 +96,7 @@ AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo
     rendererOptions_ = GenerateRendererConfig();
     capturerOptions_ = GenerateCapturerConfig();
     InitStatus();
+    GetValidDevice();
 }
 
 AudioLoopback::~AudioLoopback() = default;
@@ -107,29 +112,12 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
     DestroyAudioLoopbackInner();
 }
 
-std::unordered_set<DeviceType> &AudioLoopbackPrivate::GetValidDevice(AudioLoopbackMode mode)
+void AudioLoopbackPrivate::GetValidDevice()
 {
-    static std::unordered_map<AudioLoopbackMode, std::unordered_set<DeviceType>> cache;
-    static std::mutex mtx;
-
-    {
-        auto it = cache.find(mode);
-        CHECK_AND_RETURN_RET(it == cache.end(), it->second);
+    for (auto type : g_deviceMaybeSupportedSet) {
+        CHECK_AND_CONTINUE(AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_, type));
+        validDevice.insert(type);
     }
-    
-    std::lock_guard<std::mutex> lock(mtx);
-
-    std::unordered_set<DeviceType> instance = [mode]() -> std::unordered_set<DeviceType> {
-        std::unordered_set<DeviceType> validDevice;
-        for (auto type : g_deviceMaybeSupportedSet) {
-            CHECK_AND_CONTINUE(AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode, type));
-            validDevice.insert(type);
-        }
-        return validDevice;
-    }();
-    
-    auto [it, _] = cache.try_emplace(mode, std::move(instance));
-    return it->second;
 }
 
 AudioLoopbackReportInfo AudioLoopbackPrivate::GetReportInfo(AudioLoopbackErrorScope scope,
@@ -428,7 +416,6 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
 bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 {
     Trace trace("AudioLoopbackPrivate::IsAudioLoopbackSupported");
-    auto &validDevice = GetValidDevice();
     return !validDevice.empty();
 }
 
@@ -440,7 +427,6 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
     CHECK_AND_RETURN_RET_LOG(activeOutputDevice_ == activeInputDevice_, ERROR_DEVICE_MISMATCH,
         "outputdevice dismatch inputdevice, output = %{public}u, input = %{public}u",
         activeOutputDevice_, activeInputDevice_);
-    auto &validDevice = GetValidDevice();
     isRendererUsb_ = validDevice.find(activeOutputDevice_) != validDevice.end();
     isCapturerUsb_ = validDevice.find(activeInputDevice_) != validDevice.end();
     CHECK_AND_RETURN_RET_LOG(isRendererUsb_ && isCapturerUsb_, ERROR_DEVICE_NOT_SUPPORT,

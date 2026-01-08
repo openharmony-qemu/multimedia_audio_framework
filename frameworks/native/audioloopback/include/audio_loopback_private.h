@@ -122,7 +122,7 @@ private:
     AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
     bool SetKaraokeParameters(const std::string &parameters);
     AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
-    static std::unordered_set<DeviceType> &GetValidDevice(AudioLoopbackMode mode = LOOPBACK_HARDWARE);
+    void GetValidDevice();
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
@@ -148,6 +148,7 @@ private:
 
     DeviceType activeOutputDevice_ = DEVICE_TYPE_NONE;
     DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
+    std::unordered_set<DeviceType> validDevice;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
