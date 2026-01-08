@@ -34,7 +34,7 @@ namespace AudioSuite {
 
 AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter = nc;
     frameLen_ = 0;
     inputSamples_ = 0;
     algoApi_ = {0};
@@ -69,7 +69,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
         return ERROR;
     }
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("LoadLibrary failed with path: %{private}s", soPath.c_str());

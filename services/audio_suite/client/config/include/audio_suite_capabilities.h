@@ -46,7 +46,7 @@ public:
     }
 
     int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported);
-    int32_t GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeCapability);
+    int32_t GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeParameter);
 
 private:
     AudioSuiteLibraryManager algoLibrary_;
@@ -77,39 +77,39 @@ private:
     }
 
     template <typename T>
-    int32_t SetAudioParameters(NodeParameter &nc, T &specs)
+    int32_t SetAudioParameters(NodeParameter &np, T &specs)
     {
-        nc.supportedOnThisDevice = specs.isSupport;
+        np.supportedOnThisDevice = specs.isSupport;
         if (specs.frameLen != 0) {
-            nc.frameLen = specs.frameLen;
+            np.frameLen = specs.frameLen;
         }
-        nc.inSampleRate = specs.inSampleRate;
-        nc.inChannels = specs.inChannels;
-        nc.inFormat = specs.inFormat;
-        nc.outSampleRate = specs.outSampleRate;
-        nc.outChannels = specs.outChannels;
-        nc.outFormat = specs.outFormat;
+        np.inSampleRate = specs.inSampleRate;
+        np.inChannels = specs.inChannels;
+        np.inFormat = specs.inFormat;
+        np.outSampleRate = specs.outSampleRate;
+        np.outChannels = specs.outChannels;
+        np.outFormat = specs.outFormat;
         AUDIO_INFO_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  ",
-            nc.inChannels,
-            nc.inFormat,
-            nc.inSampleRate);
+            np.inChannels,
+            np.inFormat,
+            np.inSampleRate);
         AUDIO_INFO_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d, frameLen:%{public}d",
-            nc.outChannels,
-            nc.outFormat,
-            nc.outSampleRate,
-            nc.frameLen);
+            np.outChannels,
+            np.outFormat,
+            np.outSampleRate,
+            np.frameLen);
         return SUCCESS;
     }
-    int32_t LoadVbCapability(NodeParameter &nc);
-    int32_t LoadEqCapability(NodeParameter &nc);
-    int32_t LoadAinrCapability(NodeParameter &nc);
-    int32_t LoadSfCapability(NodeParameter &nc);
-    int32_t LoadEnvCapability(NodeParameter &nc);
-    int32_t LoadSrCapability(NodeParameter &nc);
-    int32_t LoadAissCapability(NodeParameter &nc);
-    int32_t LoadGeneralCapability(NodeParameter &nc);
-    int32_t LoadPureCapability(NodeParameter &nc);
-    int32_t LoadTempoPitchCapability(NodeParameter &nc);
+    int32_t LoadVbCapability(NodeParameter &np);
+    int32_t LoadEqCapability(NodeParameter &np);
+    int32_t LoadAinrCapability(NodeParameter &np);
+    int32_t LoadSfCapability(NodeParameter &np);
+    int32_t LoadEnvCapability(NodeParameter &np);
+    int32_t LoadSrCapability(NodeParameter &np);
+    int32_t LoadAissCapability(NodeParameter &np);
+    int32_t LoadGeneralCapability(NodeParameter &np);
+    int32_t LoadPureCapability(NodeParameter &np);
+    int32_t LoadTempoPitchCapability(NodeParameter &np);
     std::unordered_map<AudioNodeType, NodeParameter> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
 };

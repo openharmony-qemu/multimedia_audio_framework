@@ -252,7 +252,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSi
 
     int32_t dataDurationMS = 20;  // 20 ms pcmbuf duration for example
     // processDurationBase is for compare use, dataduration * rtfBase(0.15 for eq node)
-    uint64_t processDurationBase = dataDurationMS * MILLISECONDS_TO_MICROSECONDS * node->nodeCapability.realtimeFactor;
+    uint64_t processDurationBase = dataDurationMS * MILLISECONDS_TO_MICROSECONDS * node->nodeParameter.realtimeFactor;
     uint64_t testDurationNormal = 1;  // 1 microsecond
     uint64_t testDurationBase = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_BASE];
     uint64_t testDuration110Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_110BASE];

@@ -56,27 +56,27 @@ void AudioSuiteCapabilitiesParser::ParserNodeType(
     std::string name;
     std::string realtimeFactorStr;
     std::string frameLenStr;
-    NodeParameter nodeCapability;
+    NodeParameter nodeParameter;
 
     curNode->GetProp("name", name);
-    curNode->GetProp("soName", nodeCapability.soName);
-    curNode->GetProp("soPath", nodeCapability.soPath);
-    curNode->GetProp("general", nodeCapability.general);
+    curNode->GetProp("soName", nodeParameter.soName);
+    curNode->GetProp("soPath", nodeParameter.soPath);
+    curNode->GetProp("general", nodeParameter.general);
     curNode->GetProp("realtimeFactor", realtimeFactorStr);
     curNode->GetProp("frameLen", frameLenStr);
 
     // convert to float
-    nodeCapability.realtimeFactor = GetRealtimeFactor(realtimeFactorStr);
+    nodeParameter.realtimeFactor = GetRealtimeFactor(realtimeFactorStr);
     AUDIO_INFO_LOG(
-        "Get node capability, name:%{public}s, realtimeFactor:%{public}f", name.c_str(), nodeCapability.realtimeFactor);
+        "Get node capability, name:%{public}s, realtimeFactor:%{public}f", name.c_str(), nodeParameter.realtimeFactor);
 
     // convert to uint32_t
-    bool ret = StringConverter(frameLenStr, nodeCapability.frameLen);
+    bool ret = StringConverter(frameLenStr, nodeParameter.frameLen);
     CHECK_AND_RETURN_LOG(ret, "convert string to uint32_t error, invalid frameLenStr =%{public}s", frameLenStr.c_str());
     auto it = NODE_TYPE_MAP.find(name);
     CHECK_AND_RETURN_LOG(
         it != NODE_TYPE_MAP.end(), "parse node cabability error, unexpected type name: %{public}s.", name.c_str());
-    audioSuiteCapabilities[it->second] = nodeCapability;
+    audioSuiteCapabilities[it->second] = nodeParameter;
 }
 
 float AudioSuiteCapabilitiesParser::GetRealtimeFactor(std::string valueStr)

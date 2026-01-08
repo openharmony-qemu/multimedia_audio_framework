@@ -44,7 +44,7 @@ static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter = nc;
 }
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::~AudioSuitePureVoiceChangeAlgoInterfaceImpl()
@@ -72,7 +72,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter.soPath + nodeParameter.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", soPath.c_str());

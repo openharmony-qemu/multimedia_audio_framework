@@ -56,32 +56,32 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
     isSecondRequest_ = false;
     isDataReadComplete_ = false;
     algoInterfaceImpl_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeCapability);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterfaceImpl_ != nullptr, ERROR, "Failed to create nr algoInterface");
     int32_t ret = algoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterfaceImpl_ Init failed");
-    nodeCapability.inChannels = STEREO;
-    nodeCapability.outChannels = STEREO;
-    SetAudioNodeFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
-        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
-        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    nodeParameter.inChannels = STEREO;
+    nodeParameter.outChannels = STEREO;
+    SetAudioNodeFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
 
-    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeCapability.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeCapability.inSampleRate;
-    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
         VMPH_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
     postProcessedPcmBuffer_.ResizePcmBuffer(
-        PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-            nodeCapability.outChannels,
+        PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+            nodeParameter.outChannels,
             VMPH_ALGO_CHANNEL_LAYOUT,
-            static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+            static_cast<AudioSampleFormat>(nodeParameter.outFormat)},
         PCM_DATA_DURATION_40_MS);
-    tempPcmData_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-                                     nodeCapability.outChannels,
+    tempPcmData_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+                                     nodeParameter.outChannels,
                                      VMPH_ALGO_CHANNEL_LAYOUT,
-                                     static_cast<AudioSampleFormat>(nodeCapability.outFormat)},
+                                     static_cast<AudioSampleFormat>(nodeParameter.outFormat)},
         PCM_DATA_DURATION_40_MS);
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::Init end");

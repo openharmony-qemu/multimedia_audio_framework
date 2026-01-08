@@ -28,7 +28,7 @@ namespace AudioSuite {
 
 AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter = nc;
 }
 
 AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
@@ -38,7 +38,7 @@ AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 {
-    std::string tempoSoPath = nodeCapability.soPath + soName;
+    std::string tempoSoPath = nodeParameter.soPath + soName;
     tempoSoHandle_ = algoLibrary_.LoadLibrary(tempoSoPath);
     CHECK_AND_RETURN_RET_LOG(tempoSoHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
@@ -57,7 +57,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 {
-    std::string pitchSoPath = nodeCapability.soPath + soName;
+    std::string pitchSoPath = nodeParameter.soPath + soName;
     pitchSoHandle_ = algoLibrary_.LoadLibrary(pitchSoPath);
     CHECK_AND_RETURN_RET_LOG(pitchSoHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
@@ -83,7 +83,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
 {
     AUDIO_INFO_LOG("start init tempo and pitch algorithm");
-    std::istringstream iss(nodeCapability.soName);
+    std::istringstream iss(nodeParameter.soName);
     std::string tempoSoName = "";
     std::string pitchSoName = "";
     std::getline(iss, tempoSoName, ',');
