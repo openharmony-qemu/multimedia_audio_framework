@@ -1100,7 +1100,7 @@ bool AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
     for (const std:: string &key : subKeys) {
         result.push_back(std::make_pair(key, g_playtaskId));
     }
-    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str);
+    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str());
     return true;
 }
 
@@ -1723,8 +1723,8 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
         size_t colon_pos = networkId.find(":");
         size_t brace_pos = networkId.find("}");
         g_playtaskId = networkId.substr(colon_pos + 1, brace_pos - 1);
-        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str);
-        return success;
+        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str());
+        return SUCCESS;
     }
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
