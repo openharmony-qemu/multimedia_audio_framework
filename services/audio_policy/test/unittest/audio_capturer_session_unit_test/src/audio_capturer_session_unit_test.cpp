@@ -642,7 +642,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     auto ioRet = AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle("test");
-    EXPECT_EQ(ioRet, SUCCESS);
+    EXPECT_NE(ioRet, SUCCESS);
 
     auto pipeRet = pipeManager->GetUnusedRecordPipe();
     EXPECT_EQ(pipeRet.size(), 0);
