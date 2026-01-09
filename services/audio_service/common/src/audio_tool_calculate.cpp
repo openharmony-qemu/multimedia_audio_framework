@@ -39,43 +39,24 @@ inline bool Is16ByteAligned(const void * ptr)
 }
 
 template <typename T, typename R = T>
-inline constexpr R SafeAbs(T x) {
-    static_assert(std::is_arithmetic_v<T>, "T must be arithmetic type");
-    static_assert(std::is_arithmetic_v<R>, "R must be arithmetic type");
-    
+inline constexpr R SafeAbs(T x)
+{
+    static_assert(std::is_arithmetic_v<T> && std::is_arithmetic_v<R>, "T or R must be arithmetic type");
     if constexpr (std::is_unsigned_v<T>) {
-        // Unsigned types: Direct conversion
-        return static_cast<R>(x);
+        return static_cast<R>(x); // Unsigned types: Direct conversion
     } else if constexpr (std::is_floating_point_v<T>) {
-        // Floating-point types: Use standard library abs
-        return static_cast<R>(std::abs(x));
-    } else {
-        // Signed integer types: Special handling required for minimum value
+        return static_cast<R>(std::abs(x)); // Floating-point types: Use standard library abs
+    } else { // Signed integer types: Special handling required for minimum value
         static_assert(std::is_integral_v<T>, "Should be integral type here");
-        
         using Limits = std::numeric_limits<T>;
-        
-        // Check for minimum value (the only case where -x can overflow)
         if (x == Limits::min()) {
             if constexpr (sizeof(R) > sizeof(T)) {
-                // R is wider than T, so -x can be safely represented in R
-                // First promote T to a wider type to avoid intermediate overflow
-                using WiderType = std::conditional_t<
-                    sizeof(T) <= 4, int64_t, // 4 for 4bytes, 32bit
-                    std::conditional_t<
-                        sizeof(T) <= 8, __int128_t, // 8 for 8bytes, 64bit
-                        long double
-                    >
-                >;
-                WiderType wider_x = x;
-                return static_cast<R>(-wider_x);
-            } else {
-                // R is not wider than T, return maximum value
-                return static_cast<R>(Limits::max());
+                using WiderType = std::conditional_t< sizeof(T) <= 4, int64_t, long double>; // 4 for 4bytes, 32bits
+                return static_cast<R>(-static_cast<WiderType>(x)); // R is wider than T, so -x can be safe
             }
+            return static_cast<R>(Limits::max()); // R is not wider than T, return maximum value
         }
-        // Normal case: Safe to compute absolute value directly
-        return static_cast<R>(x < 0 ? -x : x);
+        return static_cast<R>(x < 0 ? -x : x); // Normal case: Safe to compute absolute value directly
     }
 }
 
