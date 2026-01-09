@@ -839,6 +839,17 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "set extra parameters failed: no permission.");
     std::vector<std::pair<std::string, std::string>> newPair = ConvertStringPair(kvpairs);
 
+    if (key == HOME_MUSIC_KEY) {
+        CHECK_AND_RETURN_RET_LOG(kvpairs.size() == KVPAIRS_LEN, AUDIO_ERR, "set extra audio parameters failed: size");
+        std::string homeMusicNetworkId = newPair[0].second;
+        std::string homeMusicZoneValue = newPair[1].second;
+        HdiAdapterManager &managerRemote = HdiAdapterManager::GetInstance();
+        std::shared_ptr<IDeviceManager> deviceManager = managerRemote.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "remote device manager is nullptr");
+        deviceManager->SetAudioParameter(homeMusicNetworkId, AudioParamKey::NONE, ZONE_ID_CHANGE, homeMusicZoneValue);
+        return SUCCESS;
+    }
+
     if (key == EFFECT_LIVE_KEY) {
         ret = SetEffectLiveParameter(newPair);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set effect live parameters failed.");
