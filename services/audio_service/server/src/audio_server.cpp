@@ -1094,14 +1094,14 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
     return AudioCacheMgr::GetInstance().GetDumpParameter(subKeys, result);
 }
 
-bool AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
+int32_t AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
     for (const std:: string &key : subKeys) {
         result.push_back(std::make_pair(key, g_playtaskId));
     }
     AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str());
-    return true;
+    return SUCCESS;
 }
 
 bool AudioServer::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
@@ -1140,8 +1140,7 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "get audiodump parameters failed");
         return SUCCESS;
     } else if (mainKey == HOME_MUSIC_KEY) {
-        bool ret = GetTaskIdParameter(subKeys, result);
-        return SUCCESS;
+        return GetTaskIdParameter(subKeys, result);
     }
 
     CHECK_AND_RETURN_RET_LOG(isAudioParameterParsed_.load(), ERROR, "audioParameterKeys is not ready");

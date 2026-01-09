@@ -434,7 +434,7 @@ private:
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    bool AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
+    int32_t GetTaskIdParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
         std::shared_ptr<PipeInfoGuard> &pipeInfoGuard);
