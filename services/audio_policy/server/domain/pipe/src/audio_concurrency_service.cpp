@@ -27,7 +27,7 @@ namespace {
 static const int64_t DELAY_CONTROL_TIME_NS = 100000000; // 100ms
 }
 
-static const std::vector<std::pair<AudioMode, uint32_t>> priorityOrder = {
+static const std::vector<std::pair<AudioMode, uint32_t>> g_priorityOrder = {
     {AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP},
     {AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_FAST},
     {AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP},
@@ -42,7 +42,7 @@ static const std::vector<std::pair<AudioMode, uint32_t>> priorityOrder = {
     {AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_NORMAL},
 };
 
-static const std::map<std::pair<AudioMode, uint32_t>, AudioPipeType> pipeTypeMap_ = {
+static const std::map<std::pair<AudioMode, uint32_t>, AudioPipeType> g_pipeTypeMap = {
     {{AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP}, PIPE_TYPE_OUT_VOIP},
     {{AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_FAST}, PIPE_TYPE_OUT_LOWLATENCY},
     {{AUDIO_MODE_PLAYBACK, AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP}, PIPE_TYPE_OUT_VOIP},
@@ -79,12 +79,12 @@ ConcurrencyAction AudioConcurrencyService::GetConcurrencyAction(
 
 AudioPipeType AudioConcurrencyService::GetPipeTypeByRouteFlag(uint32_t flag, AudioMode audioMode)
 {
-    for (const auto &check : priorityOrder) {
-        if (check.first != audioMode) continue;
-        if ((flag & check.second) != check.second) continue;
+    for (const auto &priorityRule : g_priorityOrder) {
+        if (priorityRule.first != audioMode) continue;
+        if ((flag & priorityRule.second) != priorityRule.second) continue;
         
-        auto it = pipeTypeMap_.find(check);
-        if (it != pipeTypeMap_.end()) {
+        auto it = g_pipeTypeMap.find(priorityRule);
+        if (it != g_pipeTypeMap.end()) {
             return it->second;
         }
     }
