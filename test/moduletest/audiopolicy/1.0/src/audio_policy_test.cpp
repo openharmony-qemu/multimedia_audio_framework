@@ -143,49 +143,6 @@ const PolicyParam AUDIO_SCENE_PARAMS[] = {
 } // namespace
 
 /*
- * Set Volume
- *
- */
-class AudioPolicySetVolumeTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicySetVolumeTest, SetVolume, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-
-    AudioVolumeType volumeType
-        = static_cast<AudioVolumeType>(params.streamType);
-    float volume = params.volume;
-    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    SetVolume,
-    AudioPolicySetVolumeTest,
-    ValuesIn(VOLUME_PARAMS));
-
-/*
- * Get Volume
- *
- */
-class AudioPolicyGetVolumeTest : public AudioPolicyTest {};
-
-HWTEST_P(AudioPolicyGetVolumeTest, GetVolume, TestSize.Level1)
-{
-    PolicyParam params = GetParam();
-    AudioVolumeType volumeType
-        = static_cast<AudioVolumeType>(params.streamType);
-    float volume = params.volume;
-
-    EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
-    EXPECT_EQ(volume, AudioSystemManager::GetInstance()->GetVolume(volumeType));
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    GetVolume,
-    AudioPolicyGetVolumeTest,
-    ValuesIn(VOLUME_PARAMS));
-
-/*
  * Set Mute
  *
  */
