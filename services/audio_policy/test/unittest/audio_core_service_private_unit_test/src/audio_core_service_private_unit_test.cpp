@@ -4271,5 +4271,91 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
     audioCoreService->HandleA2dpRestore();
     EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
 }
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_001
+ * @tc.number : UpdateOutputRoute_001
+ * @tc.desc   : Test UpdateOutputRoute()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioRendererChangeInfo> fakeRenderer = std::make_shared<AudioRendererChangeInfo>();
+    fakeRenderer->sessionId = 1;
+    fakeRenderer->rendererInfo.pipeType = PIPE_TYPE_OUT_NORMAL;
+    fakeRenderer->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    fakeRenderer->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(fakeRenderer);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1;
+    streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioCoreService->UpdateOutputRoute(streamDesc);
+    EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_002
+ * @tc.number : UpdateOutputRoute_002
+ * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimarySink condition false.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1;
+    streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceDescriptor->networkId_ = "RemoteDevice";
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->UpdateOutputRoute(streamDesc);
+    EXPECT_EQ(0, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_003
+ * @tc.number : UpdateOutputRoute_003
+ * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimarySink condition true.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioRendererChangeInfo> fakeRenderer = std::make_shared<AudioRendererChangeInfo>();
+    fakeRenderer->sessionId = 1;
+    fakeRenderer->rendererInfo.pipeType = PIPE_TYPE_OUT_NORMAL;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(fakeRenderer);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1;
+    streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioCoreService->UpdateOutputRoute(streamDesc);
+    EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
+}
 } // namespace AudioStandard
 } // namespace OHOS
