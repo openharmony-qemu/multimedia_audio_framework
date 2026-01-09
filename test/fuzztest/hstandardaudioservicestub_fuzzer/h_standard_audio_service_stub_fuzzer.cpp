@@ -662,15 +662,17 @@ void SetKaraokeParameters(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string parameters = provider.ConsumeRandomLengthString();
     bool ret = provider.ConsumeBool();
-    audioServer->SetKaraokeParameters(parameters, ret);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetKaraokeParameters(deviceType, parameters, ret);
 }
 
 void IsAudioLoopbackSupported(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     int32_t mode = provider.ConsumeIntegral<int32_t>();
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     bool isSupported = provider.ConsumeBool();
-    audioServer->IsAudioLoopbackSupported(mode, isSupported);
+    audioServer->IsAudioLoopbackSupported(mode, deviceType, isSupported);
 }
 
 void SetRenderWhitelist(FuzzedDataProvider &provider)
