@@ -86,7 +86,7 @@ constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 constexpr uint32_t PRIMARY_SINK_LATENCY_MS = 100;
 uint32_t AudioServer::paDaemonTid_;
-const std::string g_playtaskId = "0";
+std::string g_playtaskId = "0";
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
@@ -1099,7 +1099,7 @@ bool AudioServer::GetPcmDumpParameter(const std::vector<std::string> &subKeys,
 int32_t AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
-    for (const std:: string &key : subKeys) {
+    for (const std::string &key : subKeys) {
         result.push_back(std::make_pair(key, g_playtaskId));
     }
     AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str());
@@ -1723,7 +1723,7 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     if (networkId.find("taskId") != std::string::npos) {
         size_t colon_pos = networkId.find(":");
         size_t brace_pos = networkId.find("}");
-        g_playtaskId = networkId.substr(colon_pos + 1, brace_pos - 1);
+        g_playtaskId = networkId.substr(colon_pos + 1, 1);
         AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str());
         return SUCCESS;
     }
