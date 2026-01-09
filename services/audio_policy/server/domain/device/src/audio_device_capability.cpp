@@ -28,6 +28,7 @@ std::string RemoteDeviceCapability::GetJsonString() const
     cJSON_AddBoolToObject(interface, "support_remote_volume", isSupportRemoteVolume_);
     cJSON_AddNumberToObject(interface, "init_volume", initVolume_);
     cJSON_AddBoolToObject(interface, "init_mute_status", initMuteStatus_);
+    cJSON_AddBoolToObject(interface, "isSupportHiLinkControl", isSupportHiLinkControl_);
     cJSON_AddStringToObject(interface, "device_name", deviceName_.c_str());
     cJSON_AddNumberToObject(interface, "protocol", protocol_);
     char *pChar = cJSON_PrintUnformatted(interface);

@@ -1658,7 +1658,7 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
     }
 
     if (capability.isSupportHiLinkControl_) {
-            device.volumeBehavior_.controlMode = HILINK_MODE;
+        device.volumeBehavior_.controlMode = HILINK_MODE;
     }
 
     if (capability.isSupportRemoteVolume_) {
