@@ -77,6 +77,7 @@ public:
     void RestoreRenderSinkProxy(const std::string &sinkName);
     void LoadHdiEffectModelProxy();
     void NotifyDeviceInfoProxy(std::string networkId, bool connected);
+    void NotifyTaskIdInfoProxy(std::string &taskId, bool connected);
     std::string GetAudioParameterProxy(const std::string &key);
     std::string GetAudioParameterProxy(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);

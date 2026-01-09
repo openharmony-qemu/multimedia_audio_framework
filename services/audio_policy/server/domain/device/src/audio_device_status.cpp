@@ -920,6 +920,20 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    if (statusInfo.dmDeviceInfo.find("taskId") != std::string::npos) {
+        DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+        if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
+            AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(statusInfo.dmDeviceInfo, true);
+        }
+        AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType),
+        statusInfo.mappingInterruptId, statusInfo.mappingVolumeId, statusInfo.networkId);
+        deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
+        std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+        descForCb.push_back(audioDescriptor);
+        TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
+        TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
+        return;
+    }
     int32_t ret = HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "HandleDistributedDeviceUpdate return directly.");
 
@@ -1644,6 +1658,10 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
             capability.streamInfoList_, supportDevices);
         AUDIO_INFO_LOG("Update audioStreamInfo success");
+    }
+
+    if (capability.isSupportHiLinkControl_) {
+        device.volumeBehavior_.controlMode = HILINK_MODE;
     }
 
     if (capability.isSupportRemoteVolume_) {
