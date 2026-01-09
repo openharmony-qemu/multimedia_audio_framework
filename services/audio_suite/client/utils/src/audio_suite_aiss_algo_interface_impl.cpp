@@ -56,9 +56,9 @@ static float UnifyFloatValue(float value)
     return value;
 }
 
-AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
     inAudioBuffer_.frameLength = 0;
     outAudioBuffer_.frameLength = 0;
 }
@@ -66,7 +66,7 @@ AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability 
 int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
 {
     Deinit();
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     if (CheckFilePath(soPath) != SUCCESS) {
         AUDIO_ERR_LOG("Check file path failed");
         return ERROR;

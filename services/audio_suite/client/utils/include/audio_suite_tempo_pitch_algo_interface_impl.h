@@ -49,7 +49,7 @@ static constexpr int32_t ALGO_PARAM_LENGTH = 2;
 
 class AudioSuiteTempoPitchAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc);
+    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteTempoPitchAlgoInterfaceImpl();
 
     int32_t TempoInit(std::string soName);
