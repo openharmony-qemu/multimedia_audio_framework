@@ -38,6 +38,47 @@ inline bool Is16ByteAligned(const void * ptr)
     return (address & 0xF) == 0;
 }
 
+template <typename T, typename R = T>
+inline constexpr R SafeAbs(T x) {
+    static_assert(std::is_arithmetic_v<T>, "T must be arithmetic type");
+    static_assert(std::is_arithmetic_v<R>, "R must be arithmetic type");
+    
+    if constexpr (std::is_unsigned_v<T>) {
+        // Unsigned types: Direct conversion
+        return static_cast<R>(x);
+    } else if constexpr (std::is_floating_point_v<T>) {
+        // Floating-point types: Use standard library abs
+        return static_cast<R>(std::abs(x));
+    } else {
+        // Signed integer types: Special handling required for minimum value
+        static_assert(std::is_integral_v<T>, "Should be integral type here");
+        
+        using Limits = std::numeric_limits<T>;
+        
+        // Check for minimum value (the only case where -x can overflow)
+        if (x == Limits::min()) {
+            if constexpr (sizeof(R) > sizeof(T)) {
+                // R is wider than T, so -x can be safely represented in R
+                // First promote T to a wider type to avoid intermediate overflow
+                using WiderType = std::conditional_t<
+                    sizeof(T) <= 4, int64_t, // 4 for 4bytes, 32bit
+                    std::conditional_t<
+                        sizeof(T) <= 8, __int128_t, // 8 for 8bytes, 64bit
+                        long double
+                    >
+                >;
+                WiderType wider_x = x;
+                return static_cast<R>(-wider_x);
+            } else {
+                // R is not wider than T, return maximum value
+                return static_cast<R>(Limits::max());
+            }
+        }
+        // Normal case: Safe to compute absolute value directly
+        return static_cast<R>(x < 0 ? -x : x);
+    }
+}
+
 template <typename T, typename R,
     typename = std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<R>>>
 inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_t channels, size_t split)
@@ -45,7 +86,7 @@ inline std::vector<R> SumPcmAbsNormal(const T *pcm, uint32_t num_samples, int32_
     std::vector<R> sum(channels, 0);
     for (uint32_t i = 0; i < num_samples - (split - 1); i += split) {
         for (int32_t j = 0; j < channels; j++) {
-            sum[j] += (*pcm >= 0 ? *pcm : -*pcm);
+            sum[j] += SafeAbs<T, R>(*pcm);
             pcm++;
         }
         pcm += (split - 1) * channels;
@@ -239,8 +280,8 @@ std::vector<int32_t> SumS16StereoAbsNeno(const int16_t* pcm, uint32_t num_sample
         sum_right_32x4 = vaddq_u32(sum_right_32x4, right_low);
         sum_right_32x4 = vaddq_u32(sum_right_32x4, right_high);
     }
-    sum[0] = SafeVaddvqU32(sum_left_32x4);
-    sum[1] = SafeVaddvqU32(sum_right_32x4);
+    sum[0] = static_cast<int32_t>(SafeVaddvqU32(sum_left_32x4));
+    sum[1] = static_cast<int32_t>(SafeVaddvqU32(sum_right_32x4));
 #endif
     return sum;
 }
@@ -285,7 +326,7 @@ std::vector<int32_t> SumU8SingleNeno(const uint8_t* pcm, uint32_t num_samples)
         acc32 = vpadalq_u16(acc32, high);
         pcm += DEFAULT_STEP_BY_16;
     }
-    sum[0] = SafeVaddvqU32(acc32);
+    sum[0] = static_cast<int32_t>(SafeVaddvqU32(acc32));
 #endif
     return sum;
 }
@@ -318,8 +359,8 @@ std::vector<int32_t> SumU8StereoNeno(const uint8_t *data, uint32_t num_samples)
     }
 
     // horizontal summation
-    sum[0] = SafeVaddvqU32(sum_left_32x4);
-    sum[1] = SafeVaddvqU32(sum_right_32x4);
+    sum[0] = static_cast<int32_t>(SafeVaddvqU32(sum_left_32x4));
+    sum[1] = static_cast<int32_t>(SafeVaddvqU32(sum_right_32x4));
 #endif
     return sum;
 }
