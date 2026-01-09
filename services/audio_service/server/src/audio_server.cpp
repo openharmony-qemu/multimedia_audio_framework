@@ -95,6 +95,8 @@ constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.support
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
+const std::string HOME_MUSIC_KEY = "HomeMusic"; 
+const std::string ZONE_ID_CHANGE = "zone_id_change";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
