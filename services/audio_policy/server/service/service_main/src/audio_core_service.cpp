@@ -397,6 +397,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
         InVideoCommFastBlockList(streamDesc->bundleName_)) {
+        AUDIO_INFO_LOG("bundleName_ is in the blocklist");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
