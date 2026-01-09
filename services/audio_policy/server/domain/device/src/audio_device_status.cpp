@@ -446,14 +446,6 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpDevice(updatedDesc.macAddress_, configInfo);
-        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
-            int32_t result = AudioCoreService::GetCoreService()->SwitchActiveA2dpDevice(
-                std::make_shared<AudioDeviceDescriptor>(updatedDesc));
-            CHECK_AND_RETURN_RET(result != SUCCESS, result);
-            AUDIO_ERR_LOG("ActiveA2dpAndLoadModule failed");
-            audioA2dpDevice_.DelA2dpDevice(updatedDesc.macAddress_);
-            return result;
-        }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
@@ -466,8 +458,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
             updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load dp failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
-    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-        updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
         std::string condition =
             string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
@@ -1300,9 +1291,9 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         // deduplicate
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
             updatedDesc.macAddress_, updatedDesc.deviceRole_);
+        audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
         int32_t result = HandleLocalDeviceConnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
-        audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
@@ -1441,6 +1432,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>());
+            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
+                make_shared<AudioDeviceDescriptor>(desc)};
+            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {

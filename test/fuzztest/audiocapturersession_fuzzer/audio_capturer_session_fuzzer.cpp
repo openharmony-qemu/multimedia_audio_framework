@@ -16,7 +16,7 @@
 #include "audio_log.h"
 #include "audio_capturer_session.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -24,7 +24,7 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 typedef void (*TestFuncs)();
 
-void LoadInnerCapturerSinkFuzzTest()
+void LoadInnerCapturerSinkFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     std::string moduleName = "moduleName";
@@ -32,14 +32,14 @@ void LoadInnerCapturerSinkFuzzTest()
     session.LoadInnerCapturerSink(moduleName, streamInfo);
 }
 
-void UnloadInnerCapturerSinkFuzzTest()
+void UnloadInnerCapturerSinkFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     std::string moduleName = "moduleName";
     session.UnloadInnerCapturerSink(moduleName);
 }
 
-void HandleRemoteCastDeviceFuzzTest()
+void HandleRemoteCastDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamInfo streamInfo;
@@ -47,7 +47,7 @@ void HandleRemoteCastDeviceFuzzTest()
     session.HandleRemoteCastDevice(isConnected, streamInfo);
 }
 
-void FindRunningNormalSessionFuzzTest()
+void FindRunningNormalSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamDescriptor runningSessionInfo;
@@ -55,7 +55,7 @@ void FindRunningNormalSessionFuzzTest()
     session.FindRunningNormalSession(sessionId, runningSessionInfo);
 }
 
-void ConstructWakeupAudioModuleInfoFuzzTest()
+void ConstructWakeupAudioModuleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamInfo streamInfo;
@@ -63,27 +63,27 @@ void ConstructWakeupAudioModuleInfoFuzzTest()
     session.ConstructWakeupAudioModuleInfo(streamInfo, audioModuleInfo);
 }
 
-void SetWakeUpAudioCapturerFuzzTest()
+void SetWakeUpAudioCapturerFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     InternalAudioCapturerOptions options;
     session.SetWakeUpAudioCapturer(options);
 }
 
-void SetWakeUpAudioCapturerFromAudioServerFuzzTest()
+void SetWakeUpAudioCapturerFromAudioServerFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioProcessConfig config;
     session.SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
-void CloseWakeUpAudioCapturerFuzzTest()
+void CloseWakeUpAudioCapturerFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     session.CloseWakeUpAudioCapturer();
 }
 
-void FillWakeupStreamPropInfoFuzzTest()
+void FillWakeupStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioStreamInfo streamInfo;
@@ -92,7 +92,7 @@ void FillWakeupStreamPropInfoFuzzTest()
     session.FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo);
 }
 
-void IsVoipDeviceChangedFuzzTest()
+void IsVoipDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioDeviceDescriptor inputDevice;
@@ -100,20 +100,20 @@ void IsVoipDeviceChangedFuzzTest()
     session.IsVoipDeviceChanged(inputDevice, outputDevice);
 }
 
-void SetInputDeviceTypeForReloadFuzzTest()
+void SetInputDeviceTypeForReloadFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioDeviceDescriptor inputDevice;
     session.SetInputDeviceTypeForReload(inputDevice);
 }
 
-void GetInputDeviceTypeForReloadFuzzTest()
+void GetInputDeviceTypeForReloadFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     session.GetInputDeviceTypeForReload();
 }
 
-void GetEnhancePropByNameV3FuzzTest()
+void GetEnhancePropByNameV3FuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEffectPropertyArrayV3 propertyArray;
@@ -121,7 +121,7 @@ void GetEnhancePropByNameV3FuzzTest()
     session.GetEnhancePropByNameV3(propertyArray, propName);
 }
 
-void ReloadSourceForEffectFuzzTest()
+void ReloadSourceForEffectFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEffectPropertyArrayV3 propertyArray;
@@ -129,7 +129,7 @@ void ReloadSourceForEffectFuzzTest()
     session.ReloadSourceForEffect(propertyArray, newPropertyArray);
 }
 
-void GetEnhancePropByNameFuzzTest()
+void GetEnhancePropByNameFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEnhancePropertyArray propertyArray;
@@ -137,7 +137,7 @@ void GetEnhancePropByNameFuzzTest()
     session.GetEnhancePropByName(propertyArray, propName);
 }
 
-void ReloadSourceForEffectDifferentArgsFuzzTest()
+void ReloadSourceForEffectDifferentArgsFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEnhancePropertyArray oldPropertyArray;
@@ -145,7 +145,9 @@ void ReloadSourceForEffectDifferentArgsFuzzTest()
     session.ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     LoadInnerCapturerSinkFuzzTest,
     UnloadInnerCapturerSinkFuzzTest,
     HandleRemoteCastDeviceFuzzTest,
@@ -162,13 +164,23 @@ vector<TestFuncs> g_testFuncs = {
     ReloadSourceForEffectFuzzTest,
     GetEnhancePropByNameFuzzTest,
     ReloadSourceForEffectDifferentArgsFuzzTest,
-};
+});
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

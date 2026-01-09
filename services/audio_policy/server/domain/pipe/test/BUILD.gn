@@ -51,7 +51,7 @@ ohos_unittest("audio_capturer_session_ext_unit_test") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",

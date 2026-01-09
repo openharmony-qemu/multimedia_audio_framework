@@ -33,6 +33,7 @@
 #include "audio_scene_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_manager_listener_stub_impl.h"
+#include "audio_format_utils.h"
 
 using namespace std;
 
@@ -2292,7 +2293,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
     if (!isFirstBoot) {
         LoadVolumeMap();
-        UpdateSafeVolume();
         return;
     }
     bool resetFirstFlag = false;
@@ -2364,6 +2364,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
             // clone data to VolumeToShareData
             SaveVolumeData(desc, streamType, volumeLevel, true);
         }
+        UpdateSafeVolumeInner(desc);
     }
 
     isNeedCopyVolumeData_ = false;
@@ -3449,6 +3450,7 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
 void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
+    CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
     if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
         UpdateVolumeWhenPassThroughDeviceConnect(desc);
         return;
@@ -3709,12 +3711,12 @@ void AudioAdapterManager::RemoteVolumeCallback::OnAudioParameterChange(const std
     switch (key) {
         case AudioParamKey::VOLUME:
             if (condition.find("VOLUME_CHANAGE") == 0) {
-                int32_t volumeDegree = std::stoi(value);
+                int32_t volumeDegree = FormatUtils::StringToInt32(value, 0);
                 AudioAdapterManager::GetInstance().SetVolumeFromRemote(networkId, volumeDegree);
                 return;
             }
             if (condition.find("MUTE_CHANGE") == 0) {
-                int32_t mute = std::stoi(value);
+                int32_t mute = FormatUtils::StringToInt32(value, 0);
                 AudioAdapterManager::GetInstance().SetMuteFromRemote(networkId, mute);
                 return;
             }

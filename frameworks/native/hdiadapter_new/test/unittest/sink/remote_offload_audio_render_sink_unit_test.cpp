@@ -196,7 +196,7 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, Te
     EXPECT_TRUE(sink_);
     std::vector<int32_t> appsUid = {};
     int32_t ret = sink_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     appsUid.push_back(20000001);
     appsUid.push_back(20000002);
     ret = sink_->UpdateAppsUid(appsUid);

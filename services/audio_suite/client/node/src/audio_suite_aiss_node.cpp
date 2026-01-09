@@ -23,15 +23,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-constexpr uint16_t DEFAULT_CHANNEL_COUNT = 2;
-constexpr uint16_t DEFAULT_CHANNEL_COUNT_OUT = 4;
-
 AudioSuiteAissNode::AudioSuiteAissNode()
-    : AudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION, AudioFormat{{CH_LAYOUT_STEREO,
-        DEFAULT_CHANNEL_COUNT}, SAMPLE_F32LE, SAMPLE_RATE_48000}),
-    tmpOutput_(PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT_OUT, CH_LAYOUT_QUAD, SAMPLE_F32LE)),
-    tmpHumanSoundOutput_(PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO, SAMPLE_F32LE)),
-    tmpBkgSoundOutput_(PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO, SAMPLE_F32LE))
+    : AudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION)
 {
     AUDIO_INFO_LOG("AudioSuiteAissNode create success");
 }
@@ -96,7 +89,10 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     if (!aissAlgo_) {
         aissAlgo_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
@@ -106,6 +102,27 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
     }
+
+    SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    
+    tmpOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        CH_LAYOUT_QUAD,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    tmpHumanSoundOutput_ =
+        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+            nodeCapability.inChannels,
+            CH_LAYOUT_STEREO,
+            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    tmpBkgSoundOutput_ =
+        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+            nodeCapability.inChannels,
+            CH_LAYOUT_STEREO,
+            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
     isInit_ = true;
     AUDIO_DEBUG_LOG("AudioSuiteAissNode Init success");
     return SUCCESS;

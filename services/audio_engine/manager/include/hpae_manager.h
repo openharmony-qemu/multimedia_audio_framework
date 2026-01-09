@@ -207,6 +207,8 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     void updateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
+
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
@@ -277,6 +279,7 @@ private:
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
     void UpdateBypassSpatializationForStereo();
     void HandleBypassSpatializationForStereo();
+    std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -300,6 +303,7 @@ private:
     std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
+    std::atomic<bool> auxSinkEnable_ = false;
     std::list<PendingStateTransition> pendingTransitionsTracker_;
 
     HpaeNoLockQueue hpaeNoLockQueue_;

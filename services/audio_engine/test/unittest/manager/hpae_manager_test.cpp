@@ -2160,12 +2160,16 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetUsedMoveInfos001, TestSize.Level1)
     moveInfo.sessionInfo.state = HPAE_SESSION_RUNNING;
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     moveInfos.emplace_back(moveInfo);
+    HpaeCaptureMoveInfo moveInfo1;
+    moveInfo1.sessionId = TEST_STREAM_UID;
+    moveInfo1.sessionInfo.state = HPAE_SESSION_RUNNING;
+    moveInfos.emplace_back(moveInfo1);
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
     std::vector<HpaeCaptureMoveInfo> results = hpaeManager_->GetUsedMoveInfos(moveInfos);
-    EXPECT_EQ(results.size(), 1);
+    EXPECT_EQ(results.size(), 2);
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RELEASED);
     results = hpaeManager_->GetUsedMoveInfos(moveInfos);
-    EXPECT_EQ(results.size(), 0);
+    EXPECT_EQ(results.size(), 1);
 }
 
 HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)

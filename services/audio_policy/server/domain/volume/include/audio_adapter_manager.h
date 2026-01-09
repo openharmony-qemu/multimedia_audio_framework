@@ -401,7 +401,6 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    bool LoadVolumeMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);

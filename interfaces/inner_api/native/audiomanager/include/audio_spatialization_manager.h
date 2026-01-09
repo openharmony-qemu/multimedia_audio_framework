@@ -16,17 +16,8 @@
 #ifndef ST_AUDIO_SPATIALIZATION_MANAGER_H
 #define ST_AUDIO_SPATIALIZATION_MANAGER_H
 
-#include <cstdlib>
-#include <list>
-#include <map>
-#include <mutex>
-#include <vector>
-#include <unordered_map>
-
-#include "parcel.h"
-#include "audio_effect.h"
-#include "audio_system_manager.h"
-
+#include "audio_spatialization_types.h"
+#include "audio_device_descriptor.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioSpatializationEnabledChangeCallback {

@@ -49,6 +49,7 @@ constexpr int32_t OVERSIZED_FRAME_LENGTH = 38500;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr int32_t TEST_SLEEP_TIME_100 = 100;
 constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t DEFAULT_SESSIONID_NUM_FIRST = 100000;
@@ -696,7 +697,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     EXPECT_EQ(hpaeRendererManager->Stop(streamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeRendererManager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_100));
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
 
@@ -711,7 +712,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
-    WaitForMsgProcessing(hpaeRendererManager);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
 
 template <class RenderManagerType>
@@ -2788,13 +2789,17 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
     EXPECT_NE(sinkInputNode, nullptr);
     hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
     hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
     hpaeRendererManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
     hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_STOPPED;
     hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
     hpaeRendererManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 0);
 }
 
@@ -2828,18 +2833,18 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     sinkInputNode->state_ = HPAE_SESSION_RUNNING;
     offloadManager->curNode_ = sinkInputNode;
     offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    offloadManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->appsUid_.size(), 1);
     sinkInputNode->state_ = HPAE_SESSION_STOPPED;
     offloadManager->curNode_ = sinkInputNode;
     offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->appsUid_.size(), 1);
-    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
-    offloadManager->curNode_ = sinkInputNode;
     offloadManager->TriggerAppsUidUpdate(0);
-    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
-    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
-    offloadManager->curNode_ = sinkInputNode;
-    offloadManager->TriggerAppsUidUpdate(0);
-    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 0);
 }
 }  // namespace

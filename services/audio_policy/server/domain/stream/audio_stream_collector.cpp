@@ -1335,7 +1335,7 @@ void AudioStreamCollector::HandleStartStreamMuteState(StartStreamInfo startStrea
             setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
             callback->MuteStreamImpl(setStateEvent);
             changeInfo->backMute = true;
-            if (startStreamInfo.sessionId == changeInfo->sessionId) {
+            if (startStreamInfo.sessionId == static_cast<uint32_t>(changeInfo->sessionId)) {
                 silentControl = true;
             }
         } else if (!mute && changeInfo->backMute) {

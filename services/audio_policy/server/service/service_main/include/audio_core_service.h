@@ -359,6 +359,7 @@ private:
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
+    void OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId);
 
 private:

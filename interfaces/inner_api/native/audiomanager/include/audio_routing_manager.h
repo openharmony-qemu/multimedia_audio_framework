@@ -17,18 +17,13 @@
 #define ST_AUDIO_ROUTING_MANAGER_H
 
 #include <iostream>
-
+#include "audio_stream_types.h"
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
 #include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioDeviceDescriptor;
-class AudioRendererFilter;
-class AudioDeviceRefiner;
-
 class AudioRoutingManager {
 public:
     AudioRoutingManager() = default;

@@ -642,6 +642,12 @@ void HpaeManagerImpl::LoadCollaborationConfig()
     manager_->LoadCollaborationConfig();
 }
 
+int32_t HpaeManagerImpl::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERROR, "manager is nullptr");
+    return manager_->SetAuxiliarySinkEnable(isEnabled);
+}
+
 void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");

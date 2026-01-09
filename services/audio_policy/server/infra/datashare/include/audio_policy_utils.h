@@ -23,7 +23,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
@@ -84,7 +83,8 @@ public:
     AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
-    int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
     std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
     void SetScoExcluded(bool scoExcluded);

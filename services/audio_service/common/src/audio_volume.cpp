@@ -26,6 +26,7 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_mute_factor_manager.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,7 @@ static const float DEFAULT_APP_VOLUME = 1.0f;
 uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
 uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
 uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
+static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -291,8 +293,10 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        it->second.duckFactor_ = duckFactor;
-        it->second.durationMs_ = durationMs;
+        if (!IsVolumeSame(it->second.duckFactor_, duckFactor, AUDIO_VOLUME_EPSILON)) {
+            it->second.duckFactor_ = duckFactor;
+            it->second.durationMs_ = durationMs;
+        }
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
             it->second.isDualMuted_) ? 0.0f :

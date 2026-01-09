@@ -1367,32 +1367,6 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_003, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_001
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
-}
-
-/**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_002
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_002, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
-}
-
-/**
  * @tc.name  : Test GetTypeValueFromPin API
  * @tc.type  : FUNC
  * @tc.number: GetTypeValueFromPin_001
@@ -1442,19 +1416,6 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
     int32_t volumeLevel = 5;
     EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType),
         ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_003
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_003, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_WIRED_HEADPHONES,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_OUT_HEADPHONE);
 }
 
 /**

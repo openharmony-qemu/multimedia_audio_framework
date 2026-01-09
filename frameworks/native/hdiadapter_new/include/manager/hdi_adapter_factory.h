@@ -31,6 +31,7 @@ public:
     std::shared_ptr<IAudioRenderSink> CreateRenderSink(uint32_t renderId);
     std::shared_ptr<IAudioCaptureSource> CreateCaptureSource(uint32_t captureId);
     std::shared_ptr<IDeviceManager> CreateDeviceManager(uint32_t type);
+    std::shared_ptr<IAudioRenderSink> CreateAuxiliarySink(void);
 
 private:
     HdiAdapterFactory() = default;

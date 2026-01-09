@@ -790,15 +790,19 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     }
 }
 
-int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+int32_t AudioPolicyUtils::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (isBTReconnecting_) {
         return SUCCESS;
     }
 
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
-
+    if ((audioDevUsage & MEDIA_OUTPUT_DEVICES) != 0) {
+        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
+    }
+    if ((audioDevUsage & CALL_OUTPUT_DEVICES) != 0) {
+        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
+    }
     return SUCCESS;
 }
 

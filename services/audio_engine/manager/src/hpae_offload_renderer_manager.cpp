@@ -290,7 +290,9 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     converterForLoudness_->DisConnect(curNode_);
     loudnessGainNode_->DisConnect(converterForLoudness_);
     converterForOutput_->DisConnect(loudnessGainNode_);
-    sinkOutputNode_->DisConnect(converterForOutput_);
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->DisConnect(converterForOutput_);
+    }
     renderNoneEffectNode_->AudioOffloadRendererStop(curNode_->GetNodeInfo(), sinkInfo_);
     return SUCCESS;
 }
@@ -532,14 +534,14 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
         StopOuputNode();
-        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+        if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             DisConnectInputSession();
             DestroyOffloadNodes();
         }
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 
-        if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
+        if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             CreateOffloadNodes();
             ConnectInputSession();
         }
@@ -960,13 +962,16 @@ bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
 
 void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
-    appsUid_.clear();
-    if (curNode_ != nullptr &&
-        (curNode_->GetState() == HPAE_SESSION_RUNNING ||
-        curNode_->GetSessionId() == sessionId)) {
-        appsUid_.emplace_back(curNode_->GetAppUid());
-    }
-    sinkOutputNode_->UpdateAppsUid(appsUid_);
+    auto request = [this, sessionId]() {
+        appsUid_.clear();
+        if (curNode_ != nullptr &&
+            (curNode_->GetState() == HPAE_SESSION_RUNNING ||
+            curNode_->GetSessionId() == sessionId)) {
+            appsUid_.emplace_back(curNode_->GetAppUid());
+        }
+        sinkOutputNode_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -381,7 +381,7 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
             streamDesc->newDeviceDescs_[0]->macAddress_) &&
         streamDesc->streamInfo_.channels <= STEREO &&
         streamDesc->streamInfo_.encoding != ENCODING_AUDIOVIVID);
-    CHECK_AND_CALL_RET_FUNC(ret == false, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
     return true;
 }
@@ -579,6 +579,7 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
+    OnRemoteDeviceStatusUpdated(desc);
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
@@ -605,11 +606,11 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
-    CHECK_AND_CALL_RET_FUNC(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
+    CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Modem communication ring, directly return"));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    CHECK_AND_CALL_RET_FUNC(streamDesc != nullptr, ERR_NULL_POINTER,
+    CHECK_AND_CALL_FUNC_RETURN_RET(streamDesc != nullptr, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]Cannot find session %{public}u", sessionId));
     CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
@@ -620,7 +621,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
         FetchOutputDevicesForDescs(streamDesc, outputDescs);
     }
-    CHECK_AND_CALL_RET_FUNC(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
 
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
@@ -628,13 +629,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
     // [Capturer NOTE 1.0] be careful device may be changed.
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_CALL_RET_FUNC(deviceDesc, ERR_NULL_POINTER, HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER,
+        HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         SetVolumeForSwitchDeviceIfNeed(deviceDesc, !streamDesc->rendererInfo_.isStatic);
-        std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
         }
@@ -1804,15 +1805,28 @@ void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId
     DeactivateRemoteDevice(networkId, deviceType);
 }
 
+void AudioCoreService::OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc)
+{
+    // For special remote devices, e.g. wifi soundbox, when switching from remote to other device, update device status
+    auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
+    CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+    audioActiveDevice_.NotifyUserDisSelectionEventToRemote(currentDesc);
+    currentDesc->connectState_ = VIRTUAL_CONNECTED;
+    audioDeviceManager_.UpdateDevicesListInfo(currentDesc, CONNECTSTATE_UPDATE);
+    DeactivateRemoteDevice(currentDesc->networkId_, currentDesc->deviceType_);
+}
+
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     int32_t ret = deviceDesc->networkId_ != LOCAL_NETWORK_ID ? FetchOutputDeviceAndRoute("StartClient") : 0;
     JUDGE_AND_WARNING_LOG(ret != SUCCESS, "FetchOutputDeviceAndRoute failed");
     int32_t outputRet = ActivateOutputDevice(streamDesc);
-    CHECK_AND_CALL_RET_FUNC(outputRet != REFETCH_DEVICE, SUCCESS,
+    CHECK_AND_CALL_FUNC_RETURN_RET(outputRet != REFETCH_DEVICE, SUCCESS,
         HILOG_COMM_ERROR("[FetchAndActivateOutputDevice]Activate output device failed, refetch device"));
-    CHECK_AND_CALL_RET_FUNC(outputRet == SUCCESS, outputRet,
+    CHECK_AND_CALL_FUNC_RETURN_RET(outputRet == SUCCESS, outputRet,
         HILOG_COMM_ERROR("[FetchAndActivateOutputDevice]Activate output device failed"));
     return SUCCESS;
 }

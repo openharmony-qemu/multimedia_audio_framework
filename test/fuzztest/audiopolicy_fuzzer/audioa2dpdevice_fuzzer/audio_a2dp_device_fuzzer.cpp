@@ -40,7 +40,7 @@
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -105,7 +105,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void GetA2dpInDeviceInfoFuzzTest()
+void GetA2dpInDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
     AudioSamplingRate samplingRate = AudioSamplingRateVec[samplingRateCount];
@@ -129,7 +129,7 @@ void GetA2dpInDeviceInfoFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpInDevice(device);
 }
 
-void GetA2dpDeviceInfoFuzzTest()
+void GetA2dpDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
     AudioSamplingRate samplingRate = AudioSamplingRateVec[samplingRateCount];
@@ -153,7 +153,7 @@ void GetA2dpDeviceInfoFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void CheckA2dpDeviceExistFuzzTest()
+void CheckA2dpDeviceExistFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     std::string device = "test_device";
@@ -162,7 +162,7 @@ void CheckA2dpDeviceExistFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void GetA2dpDeviceVolumeLevelFuzzTest()
+void GetA2dpDeviceVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.volumeLevel = GetData<int32_t>();
@@ -175,7 +175,7 @@ void GetA2dpDeviceVolumeLevelFuzzTest()
     AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(nonDevice, volumeLeve2);
 }
 
-void GetA2dpDeviceMuteFuzzTest()
+void GetA2dpDeviceMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
@@ -187,7 +187,7 @@ void GetA2dpDeviceMuteFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void SetA2dpDeviceMuteFuzzTest()
+void SetA2dpDeviceMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
@@ -199,7 +199,7 @@ void SetA2dpDeviceMuteFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void SetA2dpDeviceVolumeLevelFuzzTest()
+void SetA2dpDeviceVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
@@ -212,7 +212,7 @@ void SetA2dpDeviceVolumeLevelFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void SetA2dpDeviceAbsVolumeSupportFuzzTest()
+void SetA2dpDeviceAbsVolumeSupportFuzzTest(FuzzedDataProvider& fdp)
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
@@ -227,7 +227,9 @@ void SetA2dpDeviceAbsVolumeSupportFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     GetA2dpDeviceInfoFuzzTest,
     GetA2dpInDeviceInfoFuzzTest,
     GetA2dpDeviceVolumeLevelFuzzTest,
@@ -236,28 +238,20 @@ TestFuncs g_testFuncs[] = {
     GetA2dpDeviceMuteFuzzTest,
     SetA2dpDeviceAbsVolumeSupportFuzzTest,
     SetA2dpDeviceVolumeLevelFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -268,7 +262,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

@@ -456,8 +456,9 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
         (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
     if (renderFrameUS <= lastHdiOriginFramesUS_) {
-        AUDIO_INFO_LOG("no need to estimate, renderFrameUS: %{public}" PRIu64 "lastHdiOriginFramesUS: %{public}" PRIu64
-            ", lastHdiFramesUS: %{public}" PRIu64, renderFrameUS, lastHdiOriginFramesUS_, lastHdiFramesUS_);
+        AUDIO_INFO_LOG("no need to estimate, renderFrameUS: %{public}" PRIu64
+            ", lastHdiOriginFramesUS: %{public}" PRIu64 ", lastHdiFramesUS: %{public}" PRIu64,
+            renderFrameUS, lastHdiOriginFramesUS_, lastHdiFramesUS_);
         return SUCCESS;
     }
     

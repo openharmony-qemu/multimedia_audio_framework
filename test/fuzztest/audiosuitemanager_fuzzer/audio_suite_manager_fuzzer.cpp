@@ -57,6 +57,9 @@ public:
     ~InputNodeRequestDataCallBackTestImpl() = default;
     int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
+        (void)audioData;
+        (void)audioDataSize;
+        (void)finished;
         return 0;
     }
 };

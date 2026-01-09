@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "audio_effect_service.h"
 #include "audio_inner_call.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -88,7 +89,7 @@ T GetData()
     return object;
 }
 
-void AudioEffectServiceFuzzTest()
+void AudioEffectServiceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -98,7 +99,7 @@ void AudioEffectServiceFuzzTest()
     audioEffectService->BuildAvailableAEConfig();
 }
 
-void AudioEffectServiceGetAvailableEffectsFuzzTest()
+void AudioEffectServiceGetAvailableEffectsFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -109,7 +110,7 @@ void AudioEffectServiceGetAvailableEffectsFuzzTest()
     audioEffectService->GetAvailableEffects(availableEffects);
 }
 
-void AudioEffectServiceGetOriginalEffectConfigFuzzTest()
+void AudioEffectServiceGetOriginalEffectConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -120,7 +121,7 @@ void AudioEffectServiceGetOriginalEffectConfigFuzzTest()
     audioEffectService->GetOriginalEffectConfig(oriEffectConfig);
 }
 
-void AudioEffectServiceUpdateAvailableEffectsFuzzTest()
+void AudioEffectServiceUpdateAvailableEffectsFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -131,7 +132,7 @@ void AudioEffectServiceUpdateAvailableEffectsFuzzTest()
     audioEffectService->UpdateAvailableEffects(newAvailableEffects);
 }
 
-void AudioEffectServiceQueryEffectManagerSceneModeFuzzTest()
+void AudioEffectServiceQueryEffectManagerSceneModeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -142,7 +143,7 @@ void AudioEffectServiceQueryEffectManagerSceneModeFuzzTest()
     audioEffectService->QueryEffectManagerSceneMode(supportedEffectConfig);
 }
 
-void AudioEffectServiceGetSupportedEffectConfigFuzzTest()
+void AudioEffectServiceGetSupportedEffectConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -153,7 +154,7 @@ void AudioEffectServiceGetSupportedEffectConfigFuzzTest()
     audioEffectService->GetSupportedEffectConfig(supportedEffectConfig);
 }
 
-void AudioEffectServiceSetMasterSinkAvailableFuzzTest()
+void AudioEffectServiceSetMasterSinkAvailableFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -165,7 +166,7 @@ void AudioEffectServiceSetMasterSinkAvailableFuzzTest()
     audioEffectService->CanLoadEffectSinks();
 }
 
-void AudioEffectServiceConstructEffectChainModeFuzzTest()
+void AudioEffectServiceConstructEffectChainModeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -185,7 +186,7 @@ void AudioEffectServiceConstructEffectChainModeFuzzTest()
     audioEffectService->ConstructEffectChainMode(mode, sceneType, effectChainMgrParam);
 }
 
-void AudioEffectServiceConstructEffectChainManagerParamFuzzTest()
+void AudioEffectServiceConstructEffectChainManagerParamFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<ScenePriority> testScenePriorities = {
         DEFAULT_SCENE,
@@ -209,7 +210,7 @@ void AudioEffectServiceConstructEffectChainManagerParamFuzzTest()
     audioEffectService->ConstructEffectChainManagerParam(effectChainManagerParam);
 }
 
-void AudioEffectServiceConstructEnhanceChainManagerParamFuzzTest()
+void AudioEffectServiceConstructEnhanceChainManagerParamFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<ScenePriority> testScenePriorities = {
         DEFAULT_SCENE,
@@ -233,7 +234,7 @@ void AudioEffectServiceConstructEnhanceChainManagerParamFuzzTest()
     audioEffectService->ConstructEnhanceChainManagerParam(effectChainManagerParam);
 }
 
-void AudioEffectServiceAddSupportedPropertyByDeviceInnerFuzzTest()
+void AudioEffectServiceAddSupportedPropertyByDeviceInnerFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr || g_testDeviceTypes.empty()) {
@@ -248,7 +249,7 @@ void AudioEffectServiceAddSupportedPropertyByDeviceInnerFuzzTest()
     audioEffectService->AddSupportedPropertyByDeviceInner(deviceType, mergedSet, device2PropertySet);
 }
 
-void AudioEffectServiceAddSupportedAudioEffectPropertyByDeviceFuzzTest()
+void AudioEffectServiceAddSupportedAudioEffectPropertyByDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr || g_testDeviceTypes.empty()) {
@@ -260,7 +261,7 @@ void AudioEffectServiceAddSupportedAudioEffectPropertyByDeviceFuzzTest()
     audioEffectService->AddSupportedAudioEffectPropertyByDevice(deviceType, mergedSet);
 }
 
-void AudioEffectServiceAddSupportedAudioEnhancePropertyByDeviceFuzzTest()
+void AudioEffectServiceAddSupportedAudioEnhancePropertyByDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr || g_testDeviceTypes.empty()) {
@@ -272,7 +273,7 @@ void AudioEffectServiceAddSupportedAudioEnhancePropertyByDeviceFuzzTest()
     audioEffectService->AddSupportedAudioEnhancePropertyByDevice(deviceType, mergedSet);
 }
 
-void AudioEffectServiceUpdateUnavailableEffectChainsFuzzTest()
+void AudioEffectServiceUpdateUnavailableEffectChainsFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr || g_testDeviceTypes.empty()) {
@@ -288,7 +289,7 @@ void AudioEffectServiceUpdateUnavailableEffectChainsFuzzTest()
     audioEffectService->UpdateUnavailableEffectChains(availableLayout, processNew);
 }
 
-void AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest()
+void AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr || g_testDeviceTypes.empty()) {
@@ -309,7 +310,7 @@ void AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest()
     audioEffectService->UpdateSupportedEffectProperty(device, device2PropertySet);
 }
 
-void AudioEffectServiceUpdateAvailableAEConfigFuzzTest()
+void AudioEffectServiceUpdateAvailableAEConfigFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
     if (audioEffectService == nullptr) {
@@ -327,7 +328,9 @@ void AudioEffectServiceUpdateAvailableAEConfigFuzzTest()
     audioEffectService->UpdateAvailableAEConfig(aeConfig);
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioEffectServiceFuzzTest,
     AudioEffectServiceGetAvailableEffectsFuzzTest,
     AudioEffectServiceGetOriginalEffectConfigFuzzTest,
@@ -344,36 +347,38 @@ TestPtr g_testPtrs[] = {
     AudioEffectServiceUpdateUnavailableEffectChainsFuzzTest,
     AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest,
     AudioEffectServiceUpdateAvailableAEConfigFuzzTest,
-};
-
-void FuzzTest(const uint8_t *rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

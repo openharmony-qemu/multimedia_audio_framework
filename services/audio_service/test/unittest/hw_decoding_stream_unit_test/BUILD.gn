@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../../config.gni")
+
+module_output_path = "audio_framework/audio_framework_route/hw_decoding_stream_test"
+audio_framework_root = "../../../../.."
+
+ohos_unittest("hw_decoding_stream_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  cflags = [ "-fno-access-control" ]
+
+  sources = [ "./src/hw_decoding_stream_unit_test.cpp" ]
+
+  include_dirs = [
+    "../../../server/include",
+    "./include",
+    "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_service/server/src",
+  ]
+
+  configs = [ "../../../../../services/audio_service:audio_service_config" ]
+
+  deps = [
+    "../../../../audio_service:audio_process_service_static",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+}

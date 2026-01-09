@@ -262,6 +262,13 @@ int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
 {
     return hpaeSinkOutputNode_->RenderSinkSetSyncId(syncId);
 }
+
+int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(hpaeSinkOutputNode_ != nullptr, ERROR,
+        "sinkOutputNode is null");
+    return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

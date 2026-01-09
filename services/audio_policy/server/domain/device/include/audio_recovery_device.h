@@ -84,6 +84,8 @@ private:
         int32_t usageOrSourceType);
     int32_t HandleExcludedOutputDevicesRecovery(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &excludedDevices);
+    int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     // selectoutputdevice
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,

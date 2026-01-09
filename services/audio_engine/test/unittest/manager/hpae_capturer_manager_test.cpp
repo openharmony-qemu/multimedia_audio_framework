@@ -1734,11 +1734,11 @@ HWTEST_F(HpaeCapturerManagerTest, NotifyStreamChangeToSource_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test HpaeCapturerManager TriggerAppsUidUpdate API
- * @tc.type  : FUNC
- * @tc.number: TriggerAppsUidUpdate_001
- * @tc.desc  : Test HpaeCapturerManager TriggerAppsUidUpdate() cases
- */
+* @tc.name  : Test HpaeCapturerManager TriggerAppsUidUpdate API
+* @tc.type  : FUNC
+* @tc.number: TriggerAppsUidUpdate_001
+* @tc.desc  : Test HpaeCapturerManager TriggerAppsUidUpdate() cases
+*/
 HWTEST_F(HpaeCapturerManagerTest, TriggerAppsUidUpdate_001, TestSize.Level2)
 {
     HpaeSourceInfo sourceInfo;
@@ -1755,13 +1755,17 @@ HWTEST_F(HpaeCapturerManagerTest, TriggerAppsUidUpdate_001, TestSize.Level2)
     EXPECT_NE(sourceOutputNode, nullptr);
     capturerManager->sourceOutputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
     capturerManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->appsUid_.size(), 1);
     capturerManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->appsUid_.size(), 1);
     capturerManager->sourceOutputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_STOPPED;
     capturerManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->appsUid_.size(), 1);
     capturerManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->appsUid_.size(), 0);
 }
 } // namespace HPAE

@@ -35,7 +35,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
 #include "bluetooth_host.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -181,7 +181,7 @@ sptr<AudioPolicyServer> GetServerPtr()
     return server;
 }
 
-void AudioPolicyServerGetMinVolumeDegree()
+void AudioPolicyServerGetMinVolumeDegree(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -191,7 +191,7 @@ void AudioPolicyServerGetMinVolumeDegree()
     server->GetMinVolumeDegree(volumeType, deviceType, volumeDegree);
 }
 
-void AudioPolicyServerGetSystemVolumeDegree()
+void AudioPolicyServerGetSystemVolumeDegree(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -201,7 +201,7 @@ void AudioPolicyServerGetSystemVolumeDegree()
     server->GetSystemVolumeDegree(streamType, uid, volumeDegree);
 }
 
-void AudioPolicyServerSetSystemVolumeDegree()
+void AudioPolicyServerSetSystemVolumeDegree(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -212,14 +212,14 @@ void AudioPolicyServerSetSystemVolumeDegree()
     server->SetSystemVolumeDegree(streamType, volumeDegree, volumeFlag, uid);
 }
 
-void AudioPolicyServerRestoreDistributedDeviceInfo()
+void AudioPolicyServerRestoreDistributedDeviceInfo(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->RestoreDistributedDeviceInfo();
 }
 
-void AudioPolicyServerIsIntelligentNoiseReductionEnabledForCurrentDevice()
+void AudioPolicyServerIsIntelligentNoiseReductionEnabledForCurrentDevice(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -228,7 +228,7 @@ void AudioPolicyServerIsIntelligentNoiseReductionEnabledForCurrentDevice()
     server->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, result);
 }
 
-void AudioPolicyServerForceSelectDevice()
+void AudioPolicyServerForceSelectDevice(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -243,7 +243,7 @@ void AudioPolicyServerForceSelectDevice()
     server->ForceSelectDevice(deviceType, macAddress, audioRendererFilter);
 }
 
-void AudioPolicyServerSelectPrivateDevice()
+void AudioPolicyServerSelectPrivateDevice(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -252,7 +252,7 @@ void AudioPolicyServerSelectPrivateDevice()
     server->SelectPrivateDevice(deviceType, macAddress);
 }
 
-void AudioPolicyServerForceVolumeKeyControlType()
+void AudioPolicyServerForceVolumeKeyControlType(FuzzedDataProvider& fdp)
 {
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
@@ -262,7 +262,9 @@ void AudioPolicyServerForceVolumeKeyControlType()
     server->ForceVolumeKeyControlType(volumeType, duration, ret);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioPolicyServerGetMinVolumeDegree,
     AudioPolicyServerGetSystemVolumeDegree,
     AudioPolicyServerSetSystemVolumeDegree,
@@ -271,28 +273,20 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerForceSelectDevice,
     AudioPolicyServerSelectPrivateDevice,
     AudioPolicyServerForceVolumeKeyControlType,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 
@@ -308,8 +302,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
     OHOS::OnStop();
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

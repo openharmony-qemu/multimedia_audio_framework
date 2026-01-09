@@ -271,7 +271,6 @@ public:
     std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
-    float GetVolumeFromOh();
 
 private:
     int32_t SizeCheck();
@@ -285,6 +284,8 @@ private:
     void InitBasicBufferInfo();
 
     void WakeFutexIfNeed(uint32_t wakeVal = IS_READY);
+
+    float GetFactorFromRamp();
 
     uint32_t sessionId_ = 0;
 

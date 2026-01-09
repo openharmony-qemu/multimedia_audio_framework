@@ -29,19 +29,10 @@ static constexpr size_t RESIZE_EXPAND_BYTES = 512; // 256 frames
 static constexpr int32_t RESIZE_EXPAND_RATE = 2;
 }
 
-static constexpr AudioSamplingRate TEMPO_PITCH_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat TEMPO_PITCH_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel TEMPO_PITCH_ALGO_CHANNEL_COUNT = MONO;
 static constexpr AudioChannelLayout TEMPO_PITCH_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
 
 AudioSuiteTempoPitchNode::AudioSuiteTempoPitchNode()
-    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_TEMPO_PITCH,
-          AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, TEMPO_PITCH_ALGO_CHANNEL_COUNT},
-          TEMPO_PITCH_ALGO_SAMPLE_FORMAT, TEMPO_PITCH_ALGO_SAMPLE_RATE}),
-    outPcmBuffer_(PcmBufferFormat{TEMPO_PITCH_ALGO_SAMPLE_RATE,
-          TEMPO_PITCH_ALGO_CHANNEL_COUNT,
-          TEMPO_PITCH_ALGO_CHANNEL_LAYOUT,
-          TEMPO_PITCH_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_TEMPO_PITCH)
 {}
 
 AudioSuiteTempoPitchNode::~AudioSuiteTempoPitchNode()
@@ -58,12 +49,26 @@ int32_t AudioSuiteTempoPitchNode::Init()
         return ERROR;
     }
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init enter");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteTempoPitchAlgoInterfaceImpl Init failed");
+
+    SetAudioNodeFormat(AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
+        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
+        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+
+    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
+        nodeCapability.outChannels,
+        TEMPO_PITCH_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
 
     currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
     bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;

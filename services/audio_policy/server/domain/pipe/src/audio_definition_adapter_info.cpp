@@ -87,8 +87,8 @@ void AudioPolicyConfigData::Reorganize()
         if (pair.second->pipeInfos.size() <= 0) {
             AUDIO_ERR_LOG("Set Pipes failed, pipeInfos is empty");
         }
-        for (auto &pipeInfo_ : pair.second->pipeInfos) {
-            SetSupportDeviceAndPipeMap(pipeInfo_, tmpDeviceInfoMap);
+        for (auto &pipeInfo : pair.second->pipeInfos) {
+            SetSupportDeviceAndPipeMap(pipeInfo, tmpDeviceInfoMap);
         }
     }
 

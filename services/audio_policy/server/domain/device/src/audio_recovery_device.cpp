@@ -511,27 +511,10 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         return SUCCESS;
     }
 
-    audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    shared_ptr<AudioDeviceDescriptor> userSelectedDevice = nullptr;
-    PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    if (audioDevUsage & MEDIA_OUTPUT_DEVICES) {
-        userSelectedDevice = audioStateManager_.GetPreferredMediaRenderDevice();
-    } else if (audioDevUsage & CALL_OUTPUT_DEVICES) {
-        userSelectedDevice = audioStateManager_.GetPreferredCallRenderDevice();
-        preferredType = AUDIO_CALL_RENDER;
-    }
-    for (const auto &desc : audioDeviceDescriptors) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
-        ClearActiveHfpDevice(desc);
-        if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
-                make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ExcludeOutputDevices");
-        }
-        audioActiveDevice_.NotifyUserDisSelectionEventToBt(desc);
-        WriteExcludeOutputSysEvents(audioDevUsage, desc);
-    }
+    int32_t ret = ExcludeOutputDevicesInner(audioDevUsage, audioDeviceDescriptors);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
 
-    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("ExcludeOutputDevices");
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
@@ -553,9 +536,48 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     return SUCCESS;
 }
 
+int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+{
+    audioStateManager_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    shared_ptr<AudioDeviceDescriptor> userSelectedDevice = nullptr;
+    PreferredType preferredType = AUDIO_MEDIA_RENDER;
+    if (audioDevUsage & MEDIA_OUTPUT_DEVICES) {
+        userSelectedDevice = audioStateManager_.GetPreferredMediaRenderDevice();
+    } else if (audioDevUsage & CALL_OUTPUT_DEVICES) {
+        userSelectedDevice = audioStateManager_.GetPreferredCallRenderDevice();
+        preferredType = AUDIO_CALL_RENDER;
+    }
+    const std::string macAddress = audioDeviceDescriptors.front()->macAddress_;
+    if (audioDevUsage == ALL_MEDIA_DEVICES && !macAddress.empty()) {
+        audioDeviceDescriptors.clear();
+        vector<shared_ptr<AudioDeviceDescriptor>> allDevices = audioDeviceManager_.GetConnectedDevices();
+        for (const auto &desc : allDevices) {
+            if (!desc->macAddress_.empty() && desc->macAddress_ == macAddress &&
+                desc->deviceRole_ == OUTPUT_DEVICE) {
+                audioDeviceDescriptors.push_back(desc);
+            }
+        }
+    }
+    for (const auto &desc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
+        ClearActiveHfpDevice(desc);
+        if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(preferredType,
+                make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ExcludeOutputDevices");
+        }
+        audioActiveDevice_.NotifyUserDisSelectionEventToBt(desc);
+        WriteExcludeOutputSysEvents(audioDevUsage, desc);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    AUDIO_WARNING_LOG("audioDevUsage[%{public}d], Unexclude devices list size [%{public}zu], %{public}s",
+        audioDevUsage, audioDeviceDescriptors.size(),
+        AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
     if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         audioDeviceDescriptors.front()->macAddress_.empty()) {
         AudioPolicyUtils::GetInstance().SetScoExcluded(false);
@@ -583,10 +605,6 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
 int32_t AudioRecoveryDevice::UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    AUDIO_WARNING_LOG("audioDevUsage[%{public}d], Unexclude devices list size [%{public}zu], %{public}s",
-        audioDevUsage, audioDeviceDescriptors.size(),
-        AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
-
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
 
     for (const auto &desc : audioDeviceDescriptors) {

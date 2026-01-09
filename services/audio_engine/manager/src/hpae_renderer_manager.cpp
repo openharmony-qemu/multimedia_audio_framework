@@ -42,6 +42,8 @@ namespace {
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
+    const std::string BT_SINK_NAME = "a2dp";
+    const std::string USB_SINK_NAME = "usb";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = 5000;
     constexpr int32_t COLL_ALING_COUNT = 5;
@@ -1037,6 +1039,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
+    attr.sinkName = sinkInfo_.deviceClass.c_str();
     attr.sampleRate = sinkInfo_.samplingRate;
     attr.channel = sinkInfo_.channels;
     attr.format = sinkInfo_.format;
@@ -1047,6 +1050,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
+    attr.auxSinkEnable = sinkInfo_.auxSinkEnable;
     if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
         InitDefaultNodeInfo();
     }
@@ -1700,16 +1704,32 @@ bool HpaeRendererManager::IsBypassSpatializationForStereo()
     return bypass;
 }
 
+int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    auto request = [this, isEnabled]() {
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (sinkInfo_.deviceClass == BT_SINK_NAME ||
+            sinkInfo_.deviceClass == USB_SINK_NAME),
+            "outputCluster is nullptr or sink:%{public}s is not usb and bt",
+            sinkInfo_.deviceClass.c_str());
+        outputCluster_->SetAuxiliarySinkEnable(isEnabled);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
-    appsUid_.clear();
-    for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
-        if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
-            sinkInputNodePair.first == sessionId) {
-            appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
+    auto request = [this, sessionId]() {
+        appsUid_.clear();
+        for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
+            if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
+                sinkInputNodePair.first == sessionId) {
+                appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
+            }
         }
-    }
-    outputCluster_->UpdateAppsUid(appsUid_);
+        outputCluster_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

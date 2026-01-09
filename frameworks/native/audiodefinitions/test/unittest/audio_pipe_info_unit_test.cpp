@@ -140,8 +140,8 @@ HWTEST_F(AudioPipeInfoUnitTest, AllInputRoute_001, TestSize.Level2)
     EXPECT_EQ(false, testOutputPipe_->IsRouteFast());
 
     testInputPipe_->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-    EXPECT_EQ(false, testOutputPipe_->IsRouteNormal());
-    EXPECT_EQ(true, testOutputPipe_->IsRouteFast());
+    EXPECT_EQ(false, testInputPipe_->IsRouteNormal());
+    EXPECT_EQ(true, testInputPipe_->IsRouteFast());
 }
 
 /**

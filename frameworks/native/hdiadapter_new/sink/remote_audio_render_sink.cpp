@@ -434,8 +434,7 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
             CHECK_AND_CONTINUE(wrapper.second.audioRender_ != nullptr);
             std::string appInfoStr = GenerateAppsUidStr(appsUid_);
             int32_t ret = wrapper.second.audioRender_->SetExtraParams(appInfoStr.c_str());
-            AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
-            CHECK_AND_RETURN_RET(ret != SUCCESS, SUCCESS);
+            CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, SUCCESS, "set parameter: %{public}s", appInfoStr.c_str());
         }
         appInfoNeedReset_ = true;
     }

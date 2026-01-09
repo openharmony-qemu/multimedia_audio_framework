@@ -376,6 +376,7 @@ private:
     bool HasMuteSuggestionRecord(uint32_t streamId);
     void SendUnMuteSuggestionInterruptEvent(uint32_t streamId);
     void DelayRemoveMuteSuggestionRecord(uint32_t streamId);
+    void UpdateMuteSuggestionRecords(uint32_t currentpid);
     void RemoveMuteSuggestionRecord();
     void AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt);

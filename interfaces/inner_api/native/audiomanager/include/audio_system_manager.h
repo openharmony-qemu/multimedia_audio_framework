@@ -16,7 +16,14 @@
 #ifndef ST_AUDIO_SYSTEM_MANAGER_H
 #define ST_AUDIO_SYSTEM_MANAGER_H
 
-#include "audio_system_manager_ext.h"
+#include "audio_stutter.h"
+#include "audio_policy_interface.h"
+#include "audio_stream_types.h"
+#include "audio_interrupt_types.h"
+#include "audio_stream_change_info.h"
+#include "audio_interrupt_callback.h"
+#include "audio_routing_manager.h"
+
 #include "audio_workgroup_client_manager.h"
 #include "audio_wakeup_client_manager.h"
 
@@ -1243,7 +1250,7 @@ public:
      * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
      * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
      */
-    int32_t SetForegroundList(std::vector<std::string> list);
+    int32_t SetForegroundList(const std::vector<std::string> &list);
 
     /**
      * @brief Get standby state.
@@ -1338,7 +1345,6 @@ public:
 
     int32_t OnVoiceWakeupState(bool state);
 
-    uint16_t GetDmDeviceType() const;
     /**
      * @brief Get the maximum volume level for the specified stream usage.
      *
@@ -1551,18 +1557,8 @@ public:
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:
-
-    static const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_;
-
     AudioSystemManager();
     virtual ~AudioSystemManager();
-
-    static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
-    static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    int32_t GetCallingPid() const;
-
-    void OtherDeviceTypeCases(DeviceType deviceType) const;
-    AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole, uint16_t dmDeviceType) const;
 };
 } // namespace AudioStandard
 } // namespace OHOS

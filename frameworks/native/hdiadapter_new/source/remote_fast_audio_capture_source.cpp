@@ -503,7 +503,7 @@ int32_t RemoteFastAudioCaptureSource::PrepareMmapBuffer(const AudioSampleAttribu
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     int32_t ret = audioCapture_->ReqMmapBuffer(reqBufferFrameSize, desc);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret:%{public}d", ret));
     AUDIO_DEBUG_LOG("memoryFd: [%{public}d], totalBufferFrames: [%{public}d], transferFrameSize: [%{public}d], "
         "isShareable: [%{public}d], offset: [%{public}d]", desc.memoryFd, desc.totalBufferFrames,

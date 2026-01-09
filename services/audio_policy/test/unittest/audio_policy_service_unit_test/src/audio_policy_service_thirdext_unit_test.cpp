@@ -337,64 +337,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
     EXPECT_FALSE(ret);
 }
 
-/**
-* @tc.name  : Test UpdateRoute.
-* @tc.number: UpdateRoute_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateRoute_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
-    outputDevices.push_back(std::move(audioDeviceDescriptor));
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor1->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    outputDevices.push_back(std::move(audioDeviceDescriptor1));
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
-    outputDevices.push_back(std::move(audioDeviceDescriptor2));
-    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
-    audioDeviceDescriptor.reset();
-    audioDeviceDescriptor1.reset();
-    audioDeviceDescriptor2.reset();
-    rendererChangeInfo.reset();
-}
-
-/**
-* @tc.name  : Test UpdateRoute.
-* @tc.number: UpdateRoute_002
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UpdateRoute_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_DP;
-    outputDevices.push_back(std::move(audioDeviceDescriptor));
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
-
-    server->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
-    server->audioPolicyService_.audioDeviceCommon_.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, server->audioPolicyService_.audioVolumeManager_.ringerModeMute_);
-    audioDeviceDescriptor.reset();
-    rendererChangeInfo.reset();
-}
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
@@ -766,67 +708,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
     EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 #endif
-
-/**
-* @tc.name  : Test SelectRingerOrAlarmDevices.
-* @tc.number: SelectRingerOrAlarmDevices_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectRingerOrAlarmDevices_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SelectRingerOrAlarmDevices_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs1;
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo1 = std::make_shared<AudioRendererChangeInfo>();
-    bool result = GetServerUtil::GetServerPtr()
-        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs1, rendererChangeInfo1);
-    EXPECT_EQ(false, result);
-
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs2;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor2->deviceType_ = DEVICE_TYPE_SPEAKER;
-    descs2.push_back(std::move(audioDeviceDescriptor2));
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo2 = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo2->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    rendererChangeInfo2->sessionId = TEST_SESSIONID;
-    result = GetServerUtil::GetServerPtr()
-        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs2, rendererChangeInfo2);
-    EXPECT_EQ(true, result);
-
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs3;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor3 = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor3->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    descs3.push_back(std::move(audioDeviceDescriptor3));
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo3 = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo3->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    rendererChangeInfo3->sessionId = TEST_SESSIONID;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioPolicyManager_.SetRingerMode(
-        RINGER_MODE_VIBRATE);
-    result = GetServerUtil::GetServerPtr()
-        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs3, rendererChangeInfo3);
-    EXPECT_EQ(true, result);
-
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs4;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor4 = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor4->deviceType_ = DEVICE_TYPE_EXTERN_CABLE;
-    descs3.push_back(std::move(audioDeviceDescriptor4));
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo4 = std::make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo4->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    rendererChangeInfo4->sessionId = TEST_SESSIONID;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioDeviceCommon_.enableDualHalToneState_ = true;
-    result = GetServerUtil::GetServerPtr()
-        ->audioPolicyService_.audioDeviceCommon_.SelectRingerOrAlarmDevices(descs4, rendererChangeInfo4);
-    EXPECT_EQ(false, result);
-
-    rendererChangeInfo1.reset();
-    rendererChangeInfo2.reset();
-    rendererChangeInfo3.reset();
-    rendererChangeInfo4.reset();
-    audioDeviceDescriptor2.reset();
-    audioDeviceDescriptor3.reset();
-    audioDeviceDescriptor4.reset();
-}
 
 /**
 * @tc.name  : Test SetPreferredDevice.
