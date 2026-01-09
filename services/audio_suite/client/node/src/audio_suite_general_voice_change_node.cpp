@@ -19,6 +19,7 @@
 
 #include "audio_suite_general_voice_change_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

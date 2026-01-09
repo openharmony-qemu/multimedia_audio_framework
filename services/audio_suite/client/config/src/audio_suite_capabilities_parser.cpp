@@ -18,10 +18,21 @@
 
 #include "audio_utils.h"
 #include "audio_suite_capabilities_parser.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+AudioSuiteCapabilitiesParser::AudioSuiteCapabilitiesParser()
+{
+    AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser ctor");
+}
+
+AudioSuiteCapabilitiesParser::~AudioSuiteCapabilitiesParser()
+{
+    AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser dtor");
+}
 
 bool AudioSuiteCapabilitiesParser::LoadConfiguration(
     std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities)

@@ -18,6 +18,7 @@
 
 #include <filesystem>
 #include <audio_suite_capabilities.h>
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,6 +30,67 @@ AudioSuiteCapabilities::AudioSuiteCapabilities()
         "audioSuiteCapabilitiesParser LoadConfiguration failed, path: %{public}s.",
         AUDIO_SUITE_CAPABILITIES_CONFIG_FILE);
 }
+
+template <typename T>
+int32_t AudioSuiteCapabilities::LoadCapability(const std::string& functionName, std::string algoSoPath, T &specs)
+{
+    AUDIO_INFO_LOG("loadCapability start.");
+    void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
+    CHECK_AND_RETURN_RET_LOG(
+        libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
+    using GetFunc = T (*)();
+    GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
+    if (getSpecsFunc == nullptr) {
+        dlclose(libHandle);
+        AUDIO_ERR_LOG("dlsym failed");
+        return ERROR;
+    }
+
+    specs = getSpecsFunc();
+    dlclose(libHandle);
+    libHandle = nullptr;
+    AUDIO_INFO_LOG("loadCapability end.");
+    return SUCCESS;
+}
+
+template int32_t AudioSuiteCapabilities::LoadCapability(const std::string& functionName,
+    std::string algoSoPath, AudioVoiceMorhpingSpec &specs);
+template int32_t AudioSuiteCapabilities::LoadCapability(const std::string& functionName,
+    std::string algoSoPath, iMedia_Support_SPECS &specs);
+template int32_t AudioSuiteCapabilities::LoadCapability(const std::string& functionName,
+    std::string algoSoPath, AudioVoiceMphTradSpec &specs);
+
+template <typename T>
+int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, T &specs)
+{
+    np.supportedOnThisDevice = specs.isSupport;
+    if (specs.frameLen != 0) {
+        np.frameLen = specs.frameLen;
+    }
+    np.inSampleRate = specs.inSampleRate;
+    np.inChannels = specs.inChannels;
+    np.inFormat = specs.inFormat;
+    np.outSampleRate = specs.outSampleRate;
+    np.outChannels = specs.outChannels;
+    np.outFormat = specs.outFormat;
+    AUDIO_INFO_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  ",
+        np.inChannels,
+        np.inFormat,
+        np.inSampleRate);
+    AUDIO_INFO_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d, frameLen:%{public}d",
+        np.outChannels,
+        np.outFormat,
+        np.outSampleRate,
+        np.frameLen);
+    return SUCCESS;
+}
+
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, AudioVoiceMorhpingSpec &specs);
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, iMedia_Support_SPECS &specs);
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, SpaceRenderSpeces &specs);
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, AlgoSupportConfig &specs);
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, AudioVoiceMphTradSpec &specs);
+template int32_t AudioSuiteCapabilities::SetAudioParameters(NodeParameter &np, AudioPVSpec &specs);
 
 int32_t AudioSuiteCapabilities::LoadVbCapability(NodeParameter &np)
 {

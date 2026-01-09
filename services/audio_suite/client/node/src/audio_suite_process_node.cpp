@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

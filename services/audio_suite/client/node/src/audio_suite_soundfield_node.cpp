@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include "audio_suite_soundfield_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
