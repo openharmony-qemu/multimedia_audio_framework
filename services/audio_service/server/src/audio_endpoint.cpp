@@ -45,6 +45,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    static constexpr int32_t SHARED_VOLUME_MAX = 65536;
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static constexpr int64_t RECORD_DELAY_TIME_NS = 4000000; // 4ms = 4 * 1000 * 1000ns
     static constexpr int64_t RECORD_VOIP_DELAY_TIME_NS = 20000000; // 20ms = 20 * 1000 * 1000ns
@@ -1407,11 +1408,25 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         };
 }
 
+AudioEndpointInner::VolumeResult AudioEndpointInner::ConstructEnforcedToneVolume()
+{
+    VolumeResult enforcedToneVolume;
+    float fixedVolume = VolumeUtils::GetEnforcedToneVolumeFixed() * SHARED_VOLUME_MAX;
+    enforcedToneVolume.volumeStart = static_cast<int32_t>(fixedVolume);
+    enforcedToneVolume.volumeEnd = fixedVolume;
+    enforcedToneVolume.volumeHap = fixedVolume;
+    enforcedToneVolume.muteFlag = false;
+    return enforcedToneVolume;
+}
+
 AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 {
     Trace trace("AudioEndpointInner::CalculateVolume");
     Volume vol = {true, 1.0f, 0};
     AudioStreamType streamType = processList_[i]->GetAudioStreamType();
+    if (streamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
+        return ConstructEnforcedToneVolume();
+    }
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
