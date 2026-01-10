@@ -29,6 +29,7 @@
 #include "audio_system_client_engine_manager.h"
 #include "audio_system_client_policy_manager.h"
 #include "audio_asr_client_manager.h"
+#include "audio_wakeup_client_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

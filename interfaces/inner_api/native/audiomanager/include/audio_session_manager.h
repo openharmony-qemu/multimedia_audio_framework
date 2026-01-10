@@ -16,9 +16,9 @@
 #ifndef ST_AUDIO_SESSION_MANAGER_H
 #define ST_AUDIO_SESSION_MANAGER_H
 
-#include "audio_device_descriptor.h"
-#include "audio_system_manager.h"
+#include "audio_policy_interface.h"
 #include "audio_session_device_info.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

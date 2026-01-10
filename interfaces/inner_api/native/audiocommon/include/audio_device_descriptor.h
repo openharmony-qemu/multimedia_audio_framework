@@ -41,7 +41,6 @@ inline bool IsNearlinkDevice(DeviceType deviceType)
  *         different sets of audio devices and their roles
  */
 class AudioDeviceDescriptor : public Parcelable {
-friend class AudioSystemManager;
 public:
     enum {
         AUDIO_DEVICE_DESCRIPTOR,

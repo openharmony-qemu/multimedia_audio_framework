@@ -16,7 +16,7 @@
 #ifndef ST_DEVICE_STATUS_OBSERVER_H
 #define ST_DEVICE_STATUS_OBSERVER_H
 
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {

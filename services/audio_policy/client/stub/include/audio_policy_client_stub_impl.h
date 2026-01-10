@@ -19,14 +19,13 @@
 #include "audio_policy_client_stub.h"
 #include "audio_device_info.h"
 #include "audio_session_manager.h"
-#include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_policy_interface.h"
-#include "audio_stream_manager.h"
+#include "audio_stream_types.h"
 #include "audio_collaborative_manager.h"
 
 namespace OHOS {

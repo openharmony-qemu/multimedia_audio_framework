@@ -39,7 +39,6 @@
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
