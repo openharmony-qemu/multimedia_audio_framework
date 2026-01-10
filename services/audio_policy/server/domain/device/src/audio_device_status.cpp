@@ -688,6 +688,8 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
             auto exists = audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP);
             CHECK_AND_RETURN_LOG(!exists, "DP device already exists, ignore this one.");
         } else {
+            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>(desc);
+            AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
             auto exists = audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP, desc.macAddress_);
             CHECK_AND_RETURN_LOG(exists, "DP device does not exist, can not disconnect.");
         }
