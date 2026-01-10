@@ -13,6 +13,7 @@
 * limitations under the License.
 */
 
+#include <iremote_stub.h>
 #include "audio_log.h"
 #include "sle_audio_device_manager.h"
 
