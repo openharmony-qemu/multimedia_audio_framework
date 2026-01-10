@@ -15,12 +15,9 @@
 #ifndef ST_AUDIO_AFFINITY_MANAGER_H
 #define ST_AUDIO_AFFINITY_MANAGER_H
 
-#include <vector>
-#include <string>
-#include <memory>
-#include <unordered_map>
+
 #include "audio_device_info.h"
-#include "audio_system_manager.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {

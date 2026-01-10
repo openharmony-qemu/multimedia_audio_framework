@@ -16,10 +16,9 @@
 #ifndef ST_AUDIO_SERVER_H
 #define ST_AUDIO_SERVER_H
 
-#include <mutex>
+
 #include <condition_variable>
 #include <pthread.h>
-#include <unordered_map>
 
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
@@ -31,7 +30,6 @@
 #include "audio_server_dump.h"
 #endif
 #include "i_audio_server_hpae_dump.h"
-#include "audio_system_manager.h"
 #include "audio_inner_call.h"
 #include "common/hdi_adapter_info.h"
 #include "sink/i_audio_render_sink.h"
@@ -45,6 +43,7 @@
 #include "async_action_handler.h"
 #include "iaudio_engine_callback_handle.h"
 #include "audio_engine_callback_types.h"
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {

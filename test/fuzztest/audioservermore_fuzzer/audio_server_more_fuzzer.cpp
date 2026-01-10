@@ -29,6 +29,7 @@
 #include "audio_server_hpae_dump.h"
 #include "audio_info.h"
 #include "hpae_info.h"
+#include "microphone_descriptor.h"
 using namespace std;
 
 namespace OHOS {

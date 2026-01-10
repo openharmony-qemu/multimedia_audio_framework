@@ -21,7 +21,6 @@
 #include <utility>
 #include "audio_info.h"
 #include "audio_interrupt_info.h"
-#include "audio_system_manager.h"
 #include "audio_zone_info.h"
 #include "audio_device_descriptor.h"
 

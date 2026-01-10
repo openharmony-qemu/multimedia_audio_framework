@@ -26,7 +26,7 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "audio_utils.h"
-#include "audio_system_manager.h"
+#include "app_bundle_manager.h"
 #include "media_monitor_manager.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -125,7 +125,7 @@ AudioLoopbackReportInfo AudioLoopbackPrivate::GetReportInfo(AudioLoopbackErrorSc
 {
     AudioLoopbackReportInfo info = {
         .appUid = appInfo_.appUid,
-        .appName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid),
+        .appName = AppBundleManager::GetSelfBundleName(appInfo_.appUid),
         .renderDeviceType = activeOutputDevice_,
         .captureDeviceType = activeInputDevice_,
         .errScope = scope,

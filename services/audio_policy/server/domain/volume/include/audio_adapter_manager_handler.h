@@ -21,7 +21,6 @@
 #include "event_runner.h"
 
 #include "audio_policy_log.h"
-#include "audio_system_manager.h"
 #include "iaudio_policy_client.h"
 
 namespace OHOS {
