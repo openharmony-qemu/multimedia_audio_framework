@@ -67,7 +67,7 @@ std::map<int32_t, std::string> g_OptStrMap = {
     {EXIT_DEMO, "exit interactive run test"},
 };
 
-constexpr int32_t UID_FOUNDATION_SA = 5523;
+constexpr int32_t UID_FOUNDATION_SA = 1001;
 
 class PlaybackTest : public AudioRendererWriteCallback,
     public AudioCapturerReadCallback,

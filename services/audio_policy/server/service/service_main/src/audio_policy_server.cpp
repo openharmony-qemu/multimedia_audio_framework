@@ -87,7 +87,7 @@ constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
-constexpr uid_t UID_FOUNDATION_SA = 5523;
+constexpr uid_t UID_FOUNDATION_SA = 1001;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_TV_PROCESS_SA = 7501;
@@ -5232,7 +5232,7 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
 
 int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
 {
-    constexpr int32_t foundationUid = 5523; // "uid" : "foundation"
+    constexpr int32_t foundationUid = 1001; // "uid" : "foundation"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
     CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,

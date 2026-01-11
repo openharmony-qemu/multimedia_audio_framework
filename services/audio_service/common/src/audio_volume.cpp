@@ -61,7 +61,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
-uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
+uint32_t VOIP_CALL_VOICE_SERVICE = 1001;
 uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
 uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
