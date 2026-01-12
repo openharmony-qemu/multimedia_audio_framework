@@ -67,7 +67,7 @@ std::map<int32_t, std::string> g_OptStrMap = {
     {EXIT_DEMO, "exit interactive run test"},
 };
 
-constexpr int32_t UID_FOUNDATION_SA = 1001;
+constexpr int32_t UID_TELECOM_SA = 1001;
 
 class PlaybackTest : public AudioRendererWriteCallback,
     public AudioCapturerReadCallback,
@@ -231,7 +231,7 @@ int32_t PlaybackTest::InitSatelliteProcess(bool satellite)
     };
     rendererOptions.rendererInfo.isSatellite = satellite;
     rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    setuid(UID_FOUNDATION_SA);
+    setuid(UID_TELECOM_SA);
     AUDIO_ERR_LOG("Satellite process uid: %{public}d", static_cast<int32_t>(getuid()));
     audioRenderer_ = AudioStandard::AudioRenderer::Create(rendererOptions);
     if (audioRenderer_ == nullptr) {

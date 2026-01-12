@@ -5232,7 +5232,7 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
 
 int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
 {
-    constexpr int32_t foundationUid = 1001; // "uid" : "foundation"
+    constexpr int32_t telecomUid = 1001; // "uid" : "telecom"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
     CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
