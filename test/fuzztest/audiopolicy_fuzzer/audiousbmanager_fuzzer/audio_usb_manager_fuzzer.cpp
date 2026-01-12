@@ -147,7 +147,6 @@ void AudioUsbManagerHandleAudioDeviceEventFuzzTest()
     SoundCard soundCard;
     soundCard.isPlayer_ = GetData<bool>();
     soundCard.isCapturer_ = GetData<bool>();
-    audioUsbManager.soundCardMap_.insert({device.usbAddr_, soundCard});
     audioUsbManager.HandleAudioDeviceEvent(make_pair(device, GetData<bool>()));
     audioUsbManager.Deinit();
 }
@@ -165,7 +164,6 @@ void AudioUsbManagerNotifyDeviceFuzzTest()
     SoundCard soundCard;
     soundCard.isPlayer_ = GetData<bool>();
     soundCard.isCapturer_ = GetData<bool>();
-    audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
     audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
     audioUsbManager->Deinit();
 }
@@ -191,6 +189,24 @@ void UsbAudioDeviceFuzzTest()
     CHECK_AND_RETURN(usbAudioDevice1 == usbAudioDevice2);
 }
 
+void AudioUsbManagerSoundCard()
+{
+    auto &man = AudioUsbManager::GetInstance();
+    auto observer = make_shared<FuzzTestDeviceStatusObserver>();
+    man.SetObserver(observer);
+    UsbAddr usbAddr;
+    std::string name;
+    man.UpdateDeviceName(usbAddr, name);
+    man.pendingMap_[usbAddr] = "1";
+    man.UpdateDeviceName(usbAddr, name);
+    man.AddDeviceBySoundCard(0);
+    man.NotifySoundCardChange("2", true);
+    man.audioDevices_.push_back({
+        .cardNum_ = 2,
+    });
+    man.NotifySoundCardChange("2", false);
+}
+
 TestPtr g_testPtrs[] = {
     AudioUsbManagerInitFuzzTest,
     AudioUsbManagerDeinitFuzzTest,
@@ -199,6 +215,7 @@ TestPtr g_testPtrs[] = {
     AudioUsbManagerOnReceiveEventFuzzTest,
     AudioUsbManagerHandleAudioDeviceEventFuzzTest,
     AudioUsbManagerNotifyDeviceFuzzTest,
+    AudioUsbManagerSoundCard,
     UsbAddr1FuzzTest,
     UsbAddr2FuzzTest,
     UsbAudioDeviceFuzzTest

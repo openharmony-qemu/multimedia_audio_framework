@@ -32,6 +32,9 @@
 #include "audio_policy_log.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
+#ifdef USB_ENABLE
+#include "audio_usb_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -381,6 +384,34 @@ int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUe
     return SUCCESS;
 }
 
+#ifdef USB_ENABLE
+int32_t AudioSocketThread::AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent)
+{
+    CHECK_AND_RETURN_RET(strcmp(audioPnpUevent.subSystem, "sound") == 0, HDF_ERR_INVALID_PARAM);
+    string devPath{audioPnpUevent.devPath};
+    const char *strs[] {"/usb", "/sound/card", "/pcmC"};
+    size_t pos = 0;
+    for (const char *str : strs) {
+        pos = devPath.find(str, pos);
+        CHECK_AND_RETURN_RET(pos != string::npos, HDF_ERR_INVALID_PARAM);
+        pos += strlen(str);
+    }
+    AUDIO_INFO_LOG("devPath=%{public}s, action=%{public}s", audioPnpUevent.devPath, audioPnpUevent.action);
+    auto cardNumStr = devPath.substr(pos, devPath.find('D', pos) - pos);
+    if (strcmp(audioPnpUevent.action, "add") == 0) {
+        AudioUsbManager::GetInstance().NotifySoundCardChange(cardNumStr, true);
+    } else if (strcmp(audioPnpUevent.action, "remove") == 0) {
+        AudioUsbManager::GetInstance().NotifySoundCardChange(cardNumStr, false);
+    } else {
+        AUDIO_ERR_LOG("Invalid Action[%{public}s]", audioPnpUevent.action);
+        return ERROR;
+    }
+    AudioEvent audioEvent;
+    UpdatePnpDeviceState(&audioEvent);
+    return SUCCESS;
+}
+#endif
+
 int32_t AudioSocketThread::AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnpUevent)
 {
     AudioEvent audioEvent = {0};
@@ -456,13 +487,13 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         const char *arrStrTmp[UEVENT_ARR_SIZE] = {
             UEVENT_ACTION, UEVENT_DEV_NAME, UEVENT_NAME, UEVENT_STATE, UEVENT_DEVTYPE,
             UEVENT_SUBSYSTEM, UEVENT_SWITCH_NAME, UEVENT_SWITCH_STATE, UEVENT_HDI_NAME,
-            UEVENT_ANAHS
+            UEVENT_ANAHS, UEVENT_DEVPATH,
         };
         const char **arrVarTmp[UEVENT_ARR_SIZE] = {
             &audioPnpUevent.action, &audioPnpUevent.devName, &audioPnpUevent.name,
             &audioPnpUevent.state, &audioPnpUevent.devType, &audioPnpUevent.subSystem,
             &audioPnpUevent.switchName, &audioPnpUevent.switchState, &audioPnpUevent.hidName,
-            &audioPnpUevent.anahsName
+            &audioPnpUevent.anahsName, &audioPnpUevent.devPath,
         };
         for (int count = 0; count < UEVENT_ARR_SIZE; count++) {
             if (strncmp(msgTmp, arrStrTmp[count], strlen(arrStrTmp[count])) == 0) {
@@ -477,6 +508,9 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
     if ((AudioAnalogHeadsetDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioHDMIDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
+#ifdef USB_ENABLE
+        (AudioDetectUsbSoundCard(audioPnpUevent) == SUCCESS) ||
+#endif
         (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS)) {
