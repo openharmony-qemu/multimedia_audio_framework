@@ -114,14 +114,15 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
-std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
+static const std::unordered_set<std::string> MUTE_TYPE = {
+    "output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
 
 void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
 {
     size_t equalPos = value.find('=');
     if (equalPos != std::string::npos) {
         std::string subStr = value.substr(0, equalPos);
-        if (muteType.count(subStr)) {
+        if (MUTE_TYPE.count(subStr)) {
             auto tokenId = IPCSkeleton::GetCallingFullTokenID();
             std::string bundleName = AudioBundleManager::GetBundleNameByToken(tokenId);
             AUDIO_INFO_LOG("bundleName: %{public}s", bundleName.c_str());
