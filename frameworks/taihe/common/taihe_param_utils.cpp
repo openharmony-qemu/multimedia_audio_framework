@@ -52,6 +52,7 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_HDMI,
     OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY,
     OHOS::AudioStandard::DEVICE_TYPE_NEARLINK,
+    OHOS::AudioStandard::DEVICE_TYPE_SYSTEM_PRIVATE,
     OHOS::AudioStandard::DEVICE_TYPE_HEARING_AID,
     OHOS::AudioStandard::DEVICE_TYPE_DEFAULT
 };
