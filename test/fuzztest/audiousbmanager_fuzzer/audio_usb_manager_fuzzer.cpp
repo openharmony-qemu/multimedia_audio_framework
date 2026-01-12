@@ -15,7 +15,7 @@
 
 #include "audio_log.h"
 #include "audio_usb_manager.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -79,7 +79,7 @@ T GetData()
     return object;
 }
 
-void AudioUsbManagerInitFuzzTest()
+void AudioUsbManagerInitFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
@@ -88,7 +88,7 @@ void AudioUsbManagerInitFuzzTest()
     audioUsbManager.Init(observer);
 }
 
-void AudioUsbManagerDeinitFuzzTest()
+void AudioUsbManagerDeinitFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
@@ -98,7 +98,7 @@ void AudioUsbManagerDeinitFuzzTest()
     audioUsbManager.Deinit();
 }
 
-void AudioUsbManagerSubscribeEventFuzzTest()
+void AudioUsbManagerSubscribeEventFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
@@ -106,7 +106,7 @@ void AudioUsbManagerSubscribeEventFuzzTest()
     audioUsbManager.SubscribeEvent();
 }
 
-void AudioUsbManagerGetUsbSoundCardMapFuzzTest()
+void AudioUsbManagerGetUsbSoundCardMapFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
@@ -114,7 +114,7 @@ void AudioUsbManagerGetUsbSoundCardMapFuzzTest()
     audioUsbManager.GetUsbSoundCardMap();
 }
 
-void AudioUsbManagerOnReceiveEventFuzzTest()
+void AudioUsbManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<string> matchingSkills = {
         "usual.event.hardware.usb.action.USB_DEVICE_ATTACHED",
@@ -136,7 +136,7 @@ void AudioUsbManagerOnReceiveEventFuzzTest()
     subscriber->OnReceiveEvent(data);
 }
 
-void AudioUsbManagerHandleAudioDeviceEventFuzzTest()
+void AudioUsbManagerHandleAudioDeviceEventFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
@@ -152,7 +152,7 @@ void AudioUsbManagerHandleAudioDeviceEventFuzzTest()
     audioUsbManager.Deinit();
 }
 
-void AudioUsbManagerNotifyDeviceFuzzTest()
+void AudioUsbManagerNotifyDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioUsbManager = &AudioUsbManager::GetInstance();
     CHECK_AND_RETURN(audioUsbManager != nullptr);
@@ -170,28 +170,30 @@ void AudioUsbManagerNotifyDeviceFuzzTest()
     audioUsbManager->Deinit();
 }
 
-void UsbAddr1FuzzTest()
+void UsbAddr1FuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAddr usbAddr1;
     UsbAddr usbAddr2;
     CHECK_AND_RETURN(usbAddr1 == usbAddr2);
 }
 
-void UsbAddr2FuzzTest()
+void UsbAddr2FuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAddr usbAddr1;
     UsbAddr usbAddr2;
     CHECK_AND_RETURN(usbAddr1 < usbAddr2);
 }
 
-void UsbAudioDeviceFuzzTest()
+void UsbAudioDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     UsbAudioDevice usbAudioDevice1;
     UsbAudioDevice usbAudioDevice2;
     CHECK_AND_RETURN(usbAudioDevice1 == usbAudioDevice2);
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioUsbManagerInitFuzzTest,
     AudioUsbManagerDeinitFuzzTest,
     AudioUsbManagerSubscribeEventFuzzTest,
@@ -202,37 +204,37 @@ TestPtr g_testPtrs[] = {
     UsbAddr1FuzzTest,
     UsbAddr2FuzzTest,
     UsbAudioDeviceFuzzTest
-};
-
-void FuzzTest(const uint8_t *rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
 }
-
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

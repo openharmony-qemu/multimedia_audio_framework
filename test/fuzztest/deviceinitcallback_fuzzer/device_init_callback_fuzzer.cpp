@@ -18,7 +18,7 @@
 #include "audio_log.h"
 #include "device_init_callback.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -28,7 +28,7 @@ const int32_t TEST_DEVICE_NAME_LENGTH = 4;
 
 typedef void (*TestFuncs)();
 
-void DeviceStatusCallbackImplOnDeviceChangedFuzzTest()
+void DeviceStatusCallbackImplOnDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
     CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
@@ -38,7 +38,7 @@ void DeviceStatusCallbackImplOnDeviceChangedFuzzTest()
     deviceStatusCallbackImpl->OnDeviceChanged(dmDeviceBasicInfo);
 }
 
-void DeviceStatusCallbackImplOnDeviceOfflineFuzzTest()
+void DeviceStatusCallbackImplOnDeviceOfflineFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<DeviceStatusCallbackImpl> deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
     CHECK_AND_RETURN(deviceStatusCallbackImpl != nullptr);
@@ -48,16 +48,29 @@ void DeviceStatusCallbackImplOnDeviceOfflineFuzzTest()
     deviceStatusCallbackImpl->OnDeviceOffline(dmDeviceInfo);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     DeviceStatusCallbackImplOnDeviceChangedFuzzTest,
     DeviceStatusCallbackImplOnDeviceOfflineFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

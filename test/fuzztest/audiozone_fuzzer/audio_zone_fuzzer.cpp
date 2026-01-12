@@ -17,7 +17,7 @@
 #include "audio_zone.h"
 #include "audio_zone_client_manager.h"
 #include "audio_zone_service.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -59,7 +59,7 @@ T GetData()
     return object;
 }
 
-void AudioZoneBindKeyAudioZoneBindKeyFuzzTest()
+void AudioZoneBindKeyAudioZoneBindKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
     std::string streamTag = "testStreamTag";
@@ -71,7 +71,7 @@ void AudioZoneBindKeyAudioZoneBindKeyFuzzTest()
     AudioZoneBindKey audioZoneBindKey_5(std::move(audioZoneBindKey_1));
 }
 
-void AudioZoneBindKeyOperatorFuzzTest()
+void AudioZoneBindKeyOperatorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
     std::string streamTag = "testStreamTag";
@@ -80,21 +80,21 @@ void AudioZoneBindKeyOperatorFuzzTest()
     AudioZoneBindKey audioZoneBindKey_2 = audioZoneBindKey_1;
 }
 
-void AudioZoneBindKeyGetUidFuzzTest()
+void AudioZoneBindKeyGetUidFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     audioZoneBindKey.GetUid();
 }
 
-void AudioZoneBindKeyGetStringFuzzTest()
+void AudioZoneBindKeyGetStringFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
     audioZoneBindKey.GetString();
 }
 
-void AudioZoneBindKeyIsContainFuzzTest()
+void AudioZoneBindKeyIsContainFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t uid = GetData<int32_t>();
     AudioZoneBindKey audioZoneBindKey(uid);
@@ -102,7 +102,7 @@ void AudioZoneBindKeyIsContainFuzzTest()
     audioZoneBindKey.IsContain(audioZoneBindKey1);
 }
 
-void AudioZoneBindKeyGetSupportKeysFuzzTest()
+void AudioZoneBindKeyGetSupportKeysFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string deviceTag = "testDeviceTag";
     std::string streamTag = "testStreamTag";
@@ -115,7 +115,7 @@ void AudioZoneBindKeyGetSupportKeysFuzzTest()
     audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamTag, usage);
 }
 
-void AudioZoneGetDescriptorFuzzTest()
+void AudioZoneGetDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -125,7 +125,7 @@ void AudioZoneGetDescriptorFuzzTest()
     zone->GetDescriptor();
 }
 
-void AudioZoneGetStringDescriptorFuzzTest()
+void AudioZoneGetStringDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -135,7 +135,7 @@ void AudioZoneGetStringDescriptorFuzzTest()
     zone->GetStringDescriptor();
 }
 
-void AudioZoneGetDescriptorNoLockFuzzTest()
+void AudioZoneGetDescriptorNoLockFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -145,7 +145,7 @@ void AudioZoneGetDescriptorNoLockFuzzTest()
     zone->GetDescriptorNoLock();
 }
 
-void AudioZoneBindByKeyFuzzTest()
+void AudioZoneBindByKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -157,7 +157,7 @@ void AudioZoneBindByKeyFuzzTest()
     zone->BindByKey(audioZoneBindKey);
 }
 
-void AudioZoneRemoveKeyFuzzTest()
+void AudioZoneRemoveKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -169,7 +169,7 @@ void AudioZoneRemoveKeyFuzzTest()
     zone->RemoveKey(audioZoneBindKey);
 }
 
-void AudioZoneIsContainKeyFuzzTest()
+void AudioZoneIsContainKeyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioZoneContext context;
@@ -181,7 +181,7 @@ void AudioZoneIsContainKeyFuzzTest()
     zone->IsContainKey(audioZoneBindKey);
 }
 
-void AudioZoneRemoveDeviceDescriptorFuzzTest()
+void AudioZoneRemoveDeviceDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -194,7 +194,7 @@ void AudioZoneRemoveDeviceDescriptorFuzzTest()
     zone->RemoveDeviceDescriptor(devices);
 }
 
-void AudioZoneAddDeviceDescriptorFuzzTest()
+void AudioZoneAddDeviceDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -207,7 +207,7 @@ void AudioZoneAddDeviceDescriptorFuzzTest()
     zone->AddDeviceDescriptor(devices);
 }
 
-void AudioZoneUpdateDeviceDescriptorFuzzTest()
+void AudioZoneUpdateDeviceDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -221,7 +221,7 @@ void AudioZoneUpdateDeviceDescriptorFuzzTest()
     zone->UpdateDeviceDescriptor(device);
 }
 
-void AudioZoneEnableDeviceDescriptorFuzzTest()
+void AudioZoneEnableDeviceDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -235,7 +235,7 @@ void AudioZoneEnableDeviceDescriptorFuzzTest()
     zone->EnableDeviceDescriptor(device);
 }
 
-void AudioZoneDisableDeviceDescriptorFuzzTest()
+void AudioZoneDisableDeviceDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -249,7 +249,7 @@ void AudioZoneDisableDeviceDescriptorFuzzTest()
     zone->DisableDeviceDescriptor(device);
 }
 
-void AudioZoneIsDeviceConnectFuzzTest()
+void AudioZoneIsDeviceConnectFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
@@ -263,7 +263,7 @@ void AudioZoneIsDeviceConnectFuzzTest()
     zone->IsDeviceConnect(device);
 }
 
-void AudioZoneFetchOutputDevicesFuzzTest()
+void AudioZoneFetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     StreamUsage streamUsage =
@@ -277,7 +277,7 @@ void AudioZoneFetchOutputDevicesFuzzTest()
     zone->FetchOutputDevices(streamUsage, clientUid, bypassType);
 }
 
-void AudioZoneFetchInputDeviceFuzzTest()
+void AudioZoneFetchInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     SourceType sourceType =
@@ -290,7 +290,7 @@ void AudioZoneFetchInputDeviceFuzzTest()
     zone->FetchInputDevice(sourceType, clientUid);
 }
 
-void AudioZoneEnableChangeReportFuzzTest()
+void AudioZoneEnableChangeReportFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     bool enable = static_cast<bool>(GetData<int32_t>() % NUM_2);
@@ -302,7 +302,7 @@ void AudioZoneEnableChangeReportFuzzTest()
     zone->EnableChangeReport(clientPid, enable);
 }
 
-void AudioZoneEnableSystemVolumeProxyFuzzTest()
+void AudioZoneEnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     bool enable =  static_cast<bool>(GetData<int32_t>() %NUM_2);
@@ -314,7 +314,7 @@ void AudioZoneEnableSystemVolumeProxyFuzzTest()
     zone->EnableSystemVolumeProxy(clientPid, enable);
 }
 
-void AudioZoneSetSystemVolumeLevelFuzzTest()
+void AudioZoneSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioVolumeType volumeProxyClientPid = GetData<AudioVolumeType>();
@@ -327,7 +327,7 @@ void AudioZoneSetSystemVolumeLevelFuzzTest()
     zone->SetSystemVolumeLevel(volumeProxyClientPid, volumeLevel, volumeFlag);
 }
 
-void AudioZoneGetSystemVolumeLevelFuzzTest()
+void AudioZoneGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = "testAudioZone";
     AudioVolumeType volumeProxyClientPid = GetData<AudioVolumeType>();
@@ -338,7 +338,9 @@ void AudioZoneGetSystemVolumeLevelFuzzTest()
     zone->GetSystemVolumeLevel(volumeProxyClientPid);
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioZoneBindKeyAudioZoneBindKeyFuzzTest,
     AudioZoneBindKeyOperatorFuzzTest,
     AudioZoneBindKeyGetUidFuzzTest,
@@ -362,28 +364,21 @@ TestPtr g_testPtrs[] = {
     AudioZoneEnableSystemVolumeProxyFuzzTest,
     AudioZoneSetSystemVolumeLevelFuzzTest,
     AudioZoneGetSystemVolumeLevelFuzzTest,
-};
-
-void FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
 }
-
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -393,6 +388,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

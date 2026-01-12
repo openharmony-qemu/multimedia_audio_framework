@@ -17,7 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "sle_audio_operation_callback_stub_impl.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 #include "../fuzz_utils.h"
 
 namespace OHOS {
@@ -44,7 +44,7 @@ public:
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override { return 0; };
 };
 
-void GetSleAudioDeviceListFuzzTest()
+void GetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -59,7 +59,7 @@ void GetSleAudioDeviceListFuzzTest()
     operationCallbackStub->GetSleAudioDeviceList(devices);
 }
 
-void GetSleVirtualAudioDeviceListFuzzTest()
+void GetSleVirtualAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -74,7 +74,7 @@ void GetSleVirtualAudioDeviceListFuzzTest()
     operationCallbackStub->GetSleVirtualAudioDeviceList(devices);
 }
 
-void IsInBandRingOpenFuzzTest()
+void IsInBandRingOpenFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -87,7 +87,7 @@ void IsInBandRingOpenFuzzTest()
     operationCallbackStub->IsInBandRingOpen(device, ret);
 }
 
-void GetSupportStreamTypeFuzzTest()
+void GetSupportStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -100,7 +100,7 @@ void GetSupportStreamTypeFuzzTest()
     operationCallbackStub->GetSupportStreamType(device, retType);
 }
 
-void SetActiveSinkDeviceFuzzTest()
+void SetActiveSinkDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -114,7 +114,7 @@ void SetActiveSinkDeviceFuzzTest()
     operationCallbackStub->SetActiveSinkDevice(device, streamType, ret);
 }
 
-void StartPlayingFuzzTest()
+void StartPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -129,7 +129,7 @@ void StartPlayingFuzzTest()
     operationCallbackStub->StartPlaying(device, streamType, time, ret);
 }
 
-void StopPlayingFuzzTest()
+void StopPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -143,7 +143,7 @@ void StopPlayingFuzzTest()
     operationCallbackStub->StopPlaying(device, streamType, ret);
 }
 
-void ConnectAllowedProfilesFuzzTest()
+void ConnectAllowedProfilesFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -156,7 +156,7 @@ void ConnectAllowedProfilesFuzzTest()
     operationCallbackStub->ConnectAllowedProfiles(remoteAddr, ret);
 }
 
-void SetDeviceAbsVolumeFuzzTest()
+void SetDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -171,7 +171,7 @@ void SetDeviceAbsVolumeFuzzTest()
     operationCallbackStub->SetDeviceAbsVolume(remoteAddr, volume, streamType, ret);
 }
 
-void SendUserSelectionFuzzTest()
+void SendUserSelectionFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -185,7 +185,7 @@ void SendUserSelectionFuzzTest()
     operationCallbackStub->SendUserSelection(device, streamType, USER_SELECT_SLE, ret);
 }
 
-void GetRenderPositionFuzzTest()
+void GetRenderPositionFuzzTest(FuzzedDataProvider& fdp)
 {
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
@@ -198,7 +198,9 @@ void GetRenderPositionFuzzTest()
     operationCallbackStub->GetRenderPosition(device, delayValue);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     GetSleAudioDeviceListFuzzTest,
     GetSleVirtualAudioDeviceListFuzzTest,
     IsInBandRingOpenFuzzTest,
@@ -210,13 +212,24 @@ vector<TestFuncs> g_testFuncs = {
     SetDeviceAbsVolumeFuzzTest,
     SendUserSelectionFuzzTest,
     GetRenderPositionFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

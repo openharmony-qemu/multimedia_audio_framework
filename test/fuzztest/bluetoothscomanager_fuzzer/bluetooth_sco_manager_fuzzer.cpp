@@ -22,7 +22,7 @@
 #include "../fuzz_utils.h"
 #include "bluetooth_sco_manager.h"
 #include "bluetooth_host.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -39,7 +39,7 @@ void OnStop()
     Bluetooth::BluetoothHost::GetDefaultHost().Close();
 }
 
-void UpdateScoStateWhenDisconnectedFuzzTest()
+void UpdateScoStateWhenDisconnectedFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_CONNECTED;
@@ -49,7 +49,7 @@ void UpdateScoStateWhenDisconnectedFuzzTest()
     OnStop();
 }
 
-void UpdateScoStateWhenConnectedFuzzTest()
+void UpdateScoStateWhenConnectedFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
@@ -61,7 +61,7 @@ void UpdateScoStateWhenConnectedFuzzTest()
     OnStop();
 }
 
-void UpdateScoStateWhenConnectingFuzzTest()
+void UpdateScoStateWhenConnectingFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
@@ -71,7 +71,7 @@ void UpdateScoStateWhenConnectingFuzzTest()
     OnStop();
 }
 
-void UpdateScoStateWhenDisconnectingFuzzTest()
+void UpdateScoStateWhenDisconnectingFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
@@ -81,7 +81,7 @@ void UpdateScoStateWhenDisconnectingFuzzTest()
     OnStop();
 }
 
-void WriteScoStateFaultEventFuzzTest()
+void WriteScoStateFaultEventFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
@@ -91,21 +91,21 @@ void WriteScoStateFaultEventFuzzTest()
     OnStop();
 }
 
-void ForceUpdateScoCategoryFuzzTest()
+void ForceUpdateScoCategoryFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.ForceUpdateScoCategory();
     OnStop();
 }
 
-void ProcCacheRequestFuzzTest()
+void ProcCacheRequestFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.ProcCacheRequest();
     OnStop();
 }
 
-void HandleScoConnectFuzzTest()
+void HandleScoConnectFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -114,7 +114,7 @@ void HandleScoConnectFuzzTest()
     OnStop();
 }
 
-void HandleScoDisconnectFuzzTest()
+void HandleScoDisconnectFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -123,7 +123,7 @@ void HandleScoDisconnectFuzzTest()
     OnStop();
 }
 
-void HandleScoConnectNoLockFuzzTest()
+void HandleScoConnectNoLockFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -134,7 +134,7 @@ void HandleScoConnectNoLockFuzzTest()
     OnStop();
 }
 
-void ProcConnectReqWhenDisconnectedFuzzTest()
+void ProcConnectReqWhenDisconnectedFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -143,7 +143,7 @@ void ProcConnectReqWhenDisconnectedFuzzTest()
     OnStop();
 }
 
-void ProcConnectReqWhenConnectedFuzzTest()
+void ProcConnectReqWhenConnectedFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -152,7 +152,7 @@ void ProcConnectReqWhenConnectedFuzzTest()
     OnStop();
 }
 
-void ProcConnectReqWhenConnectingFuzzTest()
+void ProcConnectReqWhenConnectingFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -161,7 +161,7 @@ void ProcConnectReqWhenConnectingFuzzTest()
     OnStop();
 }
 
-void IsNeedSwitchScoCategoryFuzzTest()
+void IsNeedSwitchScoCategoryFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
@@ -171,7 +171,7 @@ void IsNeedSwitchScoCategoryFuzzTest()
     OnStop();
 }
 
-void ProcDisconnectReqWhenConnectedFuzzTest()
+void ProcDisconnectReqWhenConnectedFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -179,7 +179,7 @@ void ProcDisconnectReqWhenConnectedFuzzTest()
     OnStop();
 }
 
-void ProcDisconnectReqWhenConnectingFuzzTest()
+void ProcDisconnectReqWhenConnectingFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -187,7 +187,7 @@ void ProcDisconnectReqWhenConnectingFuzzTest()
     OnStop();
 }
 
-void IsSameHfpDeviceFuzzTest()
+void IsSameHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device1("00:11:22:33:44:55", TRANSPORT);
@@ -196,7 +196,7 @@ void IsSameHfpDeviceFuzzTest()
     OnStop();
 }
 
-void ConnectAndDisconnectScoFuzzTest()
+void ConnectAndDisconnectScoFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
@@ -209,7 +209,7 @@ void ConnectAndDisconnectScoFuzzTest()
     OnStop();
 }
 
-void TryRestoreHfpDeviceFuzzTest()
+void TryRestoreHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
@@ -218,7 +218,7 @@ void TryRestoreHfpDeviceFuzzTest()
     OnStop();
 }
 
-void DisconnectScoReliableFuzzTest()
+void DisconnectScoReliableFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
@@ -227,21 +227,21 @@ void DisconnectScoReliableFuzzTest()
     OnStop();
 }
 
-void GetAudioScoStateFuzzTest()
+void GetAudioScoStateFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.GetAudioScoState();
     OnStop();
 }
 
-void GetAudioScoCategoryFuzzTest()
+void GetAudioScoCategoryFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.GetAudioScoCategory();
     OnStop();
 }
 
-void ResetScoStateFuzzTest()
+void ResetScoStateFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
@@ -249,7 +249,7 @@ void ResetScoStateFuzzTest()
     OnStop();
 }
 
-void SetAudioScoStateFuzzTest()
+void SetAudioScoStateFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     AudioScoState state = AudioScoState::CONNECTING;
@@ -257,21 +257,21 @@ void SetAudioScoStateFuzzTest()
     OnStop();
 }
 
-void OnScoStateTimeOutFuzzTest()
+void OnScoStateTimeOutFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.OnScoStateTimeOut();
     OnStop();
 }
 
-void GetAudioScoDeviceFuzzTest()
+void GetAudioScoDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     scoManager.GetAudioScoDevice();
     OnStop();
 }
 
-void UpdateScoStateFuzzTest()
+void UpdateScoStateFuzzTest(FuzzedDataProvider& fdp)
 {
     BluetoothScoManager scoManager;
     HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
@@ -283,7 +283,9 @@ void UpdateScoStateFuzzTest()
     OnStop();
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     UpdateScoStateWhenDisconnectedFuzzTest,
     UpdateScoStateWhenConnectedFuzzTest,
     UpdateScoStateWhenConnectingFuzzTest,
@@ -311,17 +313,26 @@ vector<TestFuncs> g_testFuncs = {
     OnScoStateTimeOutFuzzTest,
     GetAudioScoDeviceFuzzTest,
     UpdateScoStateFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
-
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

@@ -15,6 +15,7 @@
 
 #include "audio_volume_manager.h"
 #include "../fuzz_utils.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -25,7 +26,7 @@ const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 typedef void (*TestPtr)();
 
-void AudioVolumeManagerInitSharedVolumeFuzzTest()
+void AudioVolumeManagerInitSharedVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -33,7 +34,7 @@ void AudioVolumeManagerInitSharedVolumeFuzzTest()
     audioVolumeManager.InitSharedVolume(buffer);
 }
 
-void AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest()
+void AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     bool isMute = g_fuzzUtils.GetData<bool>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -41,7 +42,7 @@ void AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest()
     audioVolumeManager.SetVoiceRingtoneMute(isMute);
 }
 
-void AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest()
+void AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string macAddress = "11:22:33:44:55:66";
     int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
@@ -52,7 +53,7 @@ void AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest()
     audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
 }
 
-void AudioVolumeManagerIsWiredHeadSetFuzzTest()
+void AudioVolumeManagerIsWiredHeadSetFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -60,7 +61,7 @@ void AudioVolumeManagerIsWiredHeadSetFuzzTest()
     audioVolumeManager.IsWiredHeadSet(deviceType);
 }
 
-void AudioVolumeManagerIsBlueToothFuzzTest()
+void AudioVolumeManagerIsBlueToothFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -68,7 +69,7 @@ void AudioVolumeManagerIsBlueToothFuzzTest()
     audioVolumeManager.IsBlueTooth(deviceType);
 }
 
-void AudioVolumeManagerCheckMixActiveMusicTimeFuzzTest()
+void AudioVolumeManagerCheckMixActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t safeVolume = g_fuzzUtils.GetData<int32_t>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -78,7 +79,7 @@ void AudioVolumeManagerCheckMixActiveMusicTimeFuzzTest()
     audioVolumeManager.CheckMixActiveMusicTime(safeVolume);
 }
 
-void AudioVolumeManagerCheckBlueToothActiveMusicTimeFuzzTest()
+void AudioVolumeManagerCheckBlueToothActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t safeVolume = g_fuzzUtils.GetData<int32_t>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -89,7 +90,7 @@ void AudioVolumeManagerCheckBlueToothActiveMusicTimeFuzzTest()
     audioVolumeManager.CheckBlueToothActiveMusicTime(safeVolume);
 }
 
-void AudioVolumeManagerCheckWiredActiveMusicTimeFuzzTest()
+void AudioVolumeManagerCheckWiredActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t safeVolume = g_fuzzUtils.GetData<int32_t>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -100,7 +101,7 @@ void AudioVolumeManagerCheckWiredActiveMusicTimeFuzzTest()
     audioVolumeManager.CheckWiredActiveMusicTime(safeVolume);
 }
 
-void AudioVolumeManagerRestoreSafeVolumeFuzzTest()
+void AudioVolumeManagerRestoreSafeVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     int32_t safeVolume = g_fuzzUtils.GetData<int32_t>();
@@ -109,7 +110,7 @@ void AudioVolumeManagerRestoreSafeVolumeFuzzTest()
     audioVolumeManager.RestoreSafeVolume(streamType, safeVolume);
 }
 
-void AudioVolumeManagerSetSafeVolumeCallbackFuzzTest()
+void AudioVolumeManagerSetSafeVolumeCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -118,7 +119,7 @@ void AudioVolumeManagerSetSafeVolumeCallbackFuzzTest()
     audioVolumeManager.SetSafeVolumeCallback(streamType);
 }
 
-void AudioVolumeManagerChangeDeviceSafeStatusFuzzTest()
+void AudioVolumeManagerChangeDeviceSafeStatusFuzzTest(FuzzedDataProvider& fdp)
 {
     SafeStatus safeStatus = g_fuzzUtils.GetData<SafeStatus>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -126,7 +127,7 @@ void AudioVolumeManagerChangeDeviceSafeStatusFuzzTest()
     audioVolumeManager.ChangeDeviceSafeStatus(safeStatus);
 }
 
-void AudioVolumeManagerSetAbsVolumeSceneAsyncFuzzTest()
+void AudioVolumeManagerSetAbsVolumeSceneAsyncFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string macAddress = "11:22:33:44:55:66";
     bool support = g_fuzzUtils.GetData<bool>();
@@ -136,7 +137,7 @@ void AudioVolumeManagerSetAbsVolumeSceneAsyncFuzzTest()
     audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
 }
 
-void AudioVolumeManagerDealWithEventVolumeFuzzTest()
+void AudioVolumeManagerDealWithEventVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -145,14 +146,14 @@ void AudioVolumeManagerDealWithEventVolumeFuzzTest()
     audioVolumeManager.DealWithEventVolume(notificationId);
 }
 
-void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest()
+void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.UpdateSafeVolumeByS4();
 }
 
-void AudioVolumeManagerSetDeviceAbsVolumeSupportedFuzzTest()
+void AudioVolumeManagerSetDeviceAbsVolumeSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string macAddress = "11:22:33:44:55:66";
     bool support = g_fuzzUtils.GetData<bool>();
@@ -162,7 +163,7 @@ void AudioVolumeManagerSetDeviceAbsVolumeSupportedFuzzTest()
     audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
-void AudioVolumeManagerSetStreamMuteFuzzTest()
+void AudioVolumeManagerSetStreamMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeType streamType = g_fuzzUtils.GetData<AudioVolumeType>();
     bool mute = g_fuzzUtils.GetData<bool>();
@@ -177,7 +178,7 @@ void AudioVolumeManagerSetStreamMuteFuzzTest()
     audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType);
 }
 
-void AudioVolumeManagerGetMaxVolumeLevelFuzzTest()
+void AudioVolumeManagerGetMaxVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeType streamType = g_fuzzUtils.GetData<AudioVolumeType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -185,7 +186,7 @@ void AudioVolumeManagerGetMaxVolumeLevelFuzzTest()
     audioVolumeManager.GetMaxVolumeLevel(streamType);
 }
 
-void AudioVolumeManagerGetMinVolumeLevelFuzzTest()
+void AudioVolumeManagerGetMinVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeType streamType = g_fuzzUtils.GetData<AudioVolumeType>();
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -193,7 +194,7 @@ void AudioVolumeManagerGetMinVolumeLevelFuzzTest()
     audioVolumeManager.GetMinVolumeLevel(streamType);
 }
 
-void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest()
+void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
@@ -205,7 +206,7 @@ void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest()
     audioVolumeManager->GetAllDeviceVolumeInfo();
 }
 
-void AudioVolumeManagerInitFuzzTest()
+void AudioVolumeManagerInitFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
@@ -214,14 +215,14 @@ void AudioVolumeManagerInitFuzzTest()
     audioVolumeManager.Init(audioPolicyServerHandler);
 }
 
-void AudioVolumeManagerInitKVStoreFuzzTest()
+void AudioVolumeManagerInitKVStoreFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.InitKVStore();
 }
 
-void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest()
+void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
@@ -231,14 +232,14 @@ void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest()
     audioVolumeManager.ForceVolumeKeyControlType(volumeType, duration);
 }
 
-void AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest()
+void AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
     audioVolumeManager.SetAdjustVolumeForZone(zoneId);
 }
 
-void AudioVolumeManagerGetSystemVolumeLevelFuzzTest()
+void AudioVolumeManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
@@ -248,7 +249,7 @@ void AudioVolumeManagerGetSystemVolumeLevelFuzzTest()
     audioVolumeManager.GetSystemVolumeLevel(streamType, zoneId);
 }
 
-void AudioVolumeManagerCheckToCloseNotificationFuzzTest()
+void AudioVolumeManagerCheckToCloseNotificationFuzzTest(FuzzedDataProvider& fdp)
 {
     bool isPCVolumeEnable = g_fuzzUtils.GetData<bool>();
     VolumeUtils::SetPCVolumeEnable(isPCVolumeEnable);
@@ -261,7 +262,7 @@ void AudioVolumeManagerCheckToCloseNotificationFuzzTest()
     audioVolumeManager.CheckToCloseNotification(streamType, volumeLevel);
 }
 
-void AudioVolumeManagerSetAppVolumeMutedFuzzTest()
+void AudioVolumeManagerSetAppVolumeMutedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t appUid = g_fuzzUtils.GetData<int32_t>();
@@ -269,7 +270,7 @@ void AudioVolumeManagerSetAppVolumeMutedFuzzTest()
     audioVolumeManager.SetAppVolumeMuted(appUid, muted);
 }
 
-void AudioVolumeManagerIsAppVolumeMuteFuzzTest()
+void AudioVolumeManagerIsAppVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t appUid = g_fuzzUtils.GetData<int32_t>();
@@ -278,7 +279,7 @@ void AudioVolumeManagerIsAppVolumeMuteFuzzTest()
     audioVolumeManager.IsAppVolumeMute(appUid, owned, isMute);
 }
 
-void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest()
+void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
@@ -292,7 +293,7 @@ void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest()
     audioVolumeManager.HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
 }
 
-void AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest()
+void AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     std::string macAddress = "11:22:33:44:55:66";
@@ -307,14 +308,14 @@ void AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest()
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
 }
 
-void AudioVolumeManagerCancelSafeVolumeNotificationFuzzTest()
+void AudioVolumeManagerCancelSafeVolumeNotificationFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
     audioVolumeManager.CancelSafeVolumeNotification(notificationId);
 }
 
-void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest()
+void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
@@ -322,14 +323,14 @@ void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest()
     audioVolumeManager.SetRestoreVolumeLevel(deviceType, curDeviceVolume);
 }
 
-void AudioVolumeManagerCheckLowerDeviceVolumeFuzzTest()
+void AudioVolumeManagerCheckLowerDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     audioVolumeManager.CheckLowerDeviceVolume(deviceType);
 }
 
-void AudioVolumeManagerOnReceiveEventFuzzTest()
+void AudioVolumeManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     AAFwk::Want want;
@@ -346,7 +347,7 @@ void AudioVolumeManagerOnReceiveEventFuzzTest()
     audioVolumeManager.OnReceiveEvent(eventData);
 }
 
-void AudioVolumeManagerSetDeviceSafeVolumeStatusFuzzTest()
+void AudioVolumeManagerSetDeviceSafeVolumeStatusFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     audioVolumeManager.userSelect_ = g_fuzzUtils.GetData<bool>();
@@ -354,19 +355,19 @@ void AudioVolumeManagerSetDeviceSafeVolumeStatusFuzzTest()
     audioVolumeManager.SetDeviceSafeVolumeStatus();
 }
 
-void AudioVolumeManagerDisableSafeMediaVolumeFuzzTest()
+void AudioVolumeManagerDisableSafeMediaVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     audioVolumeManager.DisableSafeMediaVolume();
 }
 
-void AudioVolumeManagerResetRingerModeMuteFuzzTest()
+void AudioVolumeManagerResetRingerModeMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     audioVolumeManager.ResetRingerModeMute();
 }
 
-void AudioVolumeManagerGetLoadFlagFuzzTest()
+void AudioVolumeManagerGetLoadFlagFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     bool isLoad = g_fuzzUtils.GetData<bool>();
@@ -374,14 +375,16 @@ void AudioVolumeManagerGetLoadFlagFuzzTest()
     audioVolumeManager.GetLoadFlag();
 }
 
-void AudioVolumeManagerOnTimerExpiredFuzzTest()
+void AudioVolumeManagerOnTimerExpiredFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     audioVolumeManager.OnTimerExpired();
     audioVolumeManager.GetForceControlVolumeType();
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioVolumeManagerInitSharedVolumeFuzzTest,
     AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest,
     AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest,
@@ -420,14 +423,24 @@ vector<TestFuncs> g_testFuncs = {
     AudioVolumeManagerResetRingerModeMuteFuzzTest,
     AudioVolumeManagerGetLoadFlagFuzzTest,
     AudioVolumeManagerOnTimerExpiredFuzzTest,
-};
-
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

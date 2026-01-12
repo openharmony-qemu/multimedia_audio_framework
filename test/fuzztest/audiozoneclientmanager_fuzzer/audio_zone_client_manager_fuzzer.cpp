@@ -17,7 +17,7 @@
 #include "audio_zone.h"
 #include "audio_zone_client_manager.h"
 #include "audio_zone_service.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -58,14 +58,14 @@ T GetData()
     return object;
 }
 
-void AudioZoneClientManagerGetInstanceFuzzTest()
+void AudioZoneClientManagerGetInstanceFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
     audioZoneClientManager.GetInstance();
 }
 
-void AudioZoneClientManagerRegisterAudioZoneClientFuzzTest()
+void AudioZoneClientManagerRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -74,7 +74,7 @@ void AudioZoneClientManagerRegisterAudioZoneClientFuzzTest()
     audioZoneClientManager.RegisterAudioZoneClient(clientPid, client);
 }
 
-void AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest()
+void AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -82,7 +82,7 @@ void AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest()
     audioZoneClientManager.UnRegisterAudioZoneClient(clientPid);
 }
 
-void AudioZoneClientManagerDispatchEventFuzzTest()
+void AudioZoneClientManagerDispatchEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -90,7 +90,7 @@ void AudioZoneClientManagerDispatchEventFuzzTest()
     audioZoneClientManager.DispatchEvent(event);
 }
 
-void AudioZoneClientManagerSendZoneAddEventFuzzTest()
+void AudioZoneClientManagerSendZoneAddEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -99,7 +99,7 @@ void AudioZoneClientManagerSendZoneAddEventFuzzTest()
     audioZoneClientManager.SendZoneAddEvent(clientPid, descriptor);
 }
 
-void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
+void AudioZoneClientManagerSendZoneRemoveEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -108,7 +108,7 @@ void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
     audioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId);
 }
 
-void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
+void AudioZoneClientManagerSendZoneChangeEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<AudioZoneChangeReason> audioZoneChangeReason {
         AudioZoneChangeReason::UNKNOWN,
@@ -125,7 +125,7 @@ void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
     audioZoneClientManager.SendZoneChangeEvent(clientPid, descriptor, reason);
 }
 
-void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
+void AudioZoneClientManagerSendZoneInterruptEventFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<AudioZoneInterruptReason> audioZoneInterruptReason {
         AudioZoneInterruptReason::UNKNOWN,
@@ -146,7 +146,7 @@ void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
     audioZoneClientManager.SendZoneInterruptEvent(clientPid, zoneId, deviceTag, interrupts, reason);
 }
 
-void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest()
+void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -158,7 +158,7 @@ void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest()
     audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volumeLevel, volumeFlag);
 }
 
-void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest()
+void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioPolicyServerHandler> handler;
     AudioZoneClientManager audioZoneClientManager(handler);
@@ -168,7 +168,9 @@ void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest()
     audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioZoneClientManagerGetInstanceFuzzTest,
     AudioZoneClientManagerRegisterAudioZoneClientFuzzTest,
     AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest,
@@ -179,28 +181,21 @@ TestPtr g_testPtrs[] = {
     AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
     AudioZoneClientManagerSetSystemVolumeLevelFuzzTest,
     AudioZoneClientManagerGetSystemVolumeLevelFuzzTest,
-};
-
-void FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
 }
-
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -210,6 +205,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }
