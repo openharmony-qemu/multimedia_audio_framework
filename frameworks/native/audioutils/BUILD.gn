@@ -51,6 +51,7 @@ ohos_shared_library("audio_utils") {
     "./src/volume_ramp.cpp",
     "./src/xperf_adapter.cpp",
     "./src/audio_bundle_manager.cpp",
+    "./src/volume_utils.cpp",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_shared" ]

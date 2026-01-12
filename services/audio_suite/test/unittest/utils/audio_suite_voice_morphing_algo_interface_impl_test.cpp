@@ -37,7 +37,7 @@ public:
     void TearDown(void);
 
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteVbAlgoInterfaceImplUnitTest::SetUp(void)

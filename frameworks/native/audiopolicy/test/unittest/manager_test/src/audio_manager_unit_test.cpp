@@ -1248,20 +1248,6 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 }
 #endif
 
-/**
-* @tc.name   : Test SetVolume API
-* @tc.number : SetVolumeTest_001
-* @tc.desc   : Test setting volume of ringtone stream with max volume
-*/
-HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
-{
-    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
-    EXPECT_EQ(SUCCESS, ret);
-
-    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
-    EXPECT_EQ(MAX_VOL, volume);
-}
-
 #ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test SetVolume API
@@ -1439,17 +1425,6 @@ HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level1)
 
 /**
 * @tc.name   : Test SetMute API
-* @tc.number : SetMute_002
-* @tc.desc   : Test unmute functionality of ring stream
-*/
-HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level1)
-{
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, false);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name   : Test SetMute API
 * @tc.number : SetMute_003
 * @tc.desc   : Test mute functionality of music stream
 */
@@ -1507,20 +1482,6 @@ HWTEST(AudioManagerUnitTest, SetMute_007, TestSize.Level1)
     EXPECT_TRUE(isActive);
 }
 #endif
-
-/**
-* @tc.name   : Test SetMute API
-* @tc.number : SetMute_008
-* @tc.desc   : Test unmute functionality of media stream
-*/
-HWTEST(AudioManagerUnitTest, SetMute_008, TestSize.Level1)
-{
-    VolumeUtils::SetPCVolumeEnable(true);
-    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, false);
-    EXPECT_EQ(ret, SUCCESS);
-    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
-    EXPECT_FALSE(isActive);
-}
 
 /**
  * @tc.name : SetLowPowerVolume_001

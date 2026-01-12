@@ -31,16 +31,16 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat
     : AudioNode(nodeType, audioFormat)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
-        "node: %{public}d GetNodeCapability failed.", nodeType);
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
 AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
     : AudioNode(nodeType)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
-        "node: %{public}d GetNodeCapability failed.", nodeType);
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
 int32_t AudioSuiteProcessNode::DoProcess()
@@ -177,7 +177,7 @@ void AudioSuiteProcessNode::CheckEffectNodeProcessTime(uint32_t dataDurationMS, 
     // for dfx, overtime counter add when realtime factor exceeds the threshold
     uint64_t dataDurationUS = static_cast<uint64_t>(dataDurationMS) * MILLISECONDS_TO_MICROSECONDS;
     for (size_t i = 0; i < RTF_OVERTIME_LEVELS; ++i) {
-        uint64_t thresholdValue = dataDurationUS * nodeCapability.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
+        uint64_t thresholdValue = dataDurationUS * nodeParameter.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
         if (processDurationUS >= thresholdValue) {
             rtfOvertimeCounters_[i]++;
         }

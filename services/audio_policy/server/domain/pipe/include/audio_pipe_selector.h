@@ -91,6 +91,8 @@ private:
         AudioModuleInfo &moduleInfo);
     bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
+    void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+        const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
 
     AudioPolicyConfigManager& configManager_;
 };

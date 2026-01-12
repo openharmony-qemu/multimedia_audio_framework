@@ -63,13 +63,13 @@ protected:
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    NodeCapability nodeCapability;
+    NodeParameter nodeParameter;
     // for dfx
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
     void CheckEffectNodeOvertimeCount();
     int32_t InitOutputStream();
     bool isOutputPortInit_ = false;
-    uint32_t pcmDurationMs_;
+    uint32_t pcmDurationMs_ = 0;
 
 private:
     // for dfx

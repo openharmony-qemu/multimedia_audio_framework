@@ -494,7 +494,7 @@ int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool& 
     return SUCCESS;
 }
 
-int32_t AudioServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
+int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
@@ -502,12 +502,16 @@ int32_t AudioServer::SetKaraokeParameters(const std::string &parameters, bool &r
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
+    if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_USB_ARM_HEADSET) {
+        deviceManager->SetAudioParameter("usb", AudioParamKey::NONE, "", parameters);
+    } else {
+        deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
+    }
     ret = true;
     return SUCCESS;
 }
 
-int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, bool &isSupported)
+int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &isSupported)
 {
     isSupported = false;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -518,9 +522,16 @@ int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, bool &isSupported)
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
         CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-        std::string ret = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
-            "is_audioloop_support");
-        AUDIO_INFO_LOG("IsAudioLoopbackSupported ret: %{public}s", ret.c_str());
+        std::string ret;
+        if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_USB_ARM_HEADSET) {
+            ret = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+                "audio_capability#arm_usb_audio_loop_support");
+            AUDIO_INFO_LOG("IsAudioLoopbackSupported usbarm ret: %{public}s", ret.c_str());
+        } else {
+            ret = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+                "is_audioloop_support");
+            AUDIO_INFO_LOG("IsAudioLoopbackSupported ret: %{public}s", ret.c_str());
+        }
         isSupported = ret == "true";
         return SUCCESS;
     }

@@ -38,6 +38,9 @@ public:
     static int32_t VolumeDegreeToLevel(int32_t degree, int32_t maxLevel);
     static int32_t VolumeLevelToDegree(int32_t level, int32_t maxLevel);
     static int32_t GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel);
+    static void InitEnforcedToneVolume();
+    static bool IsEnforcedToneVolumeFixed();
+    static float GetEnforcedToneVolumeFixed();
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
 
@@ -51,6 +54,7 @@ private:
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
     static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
     static std::map<AudioVolumeType, std::vector<StreamUsage>> streamToStreamUsageMap_;
+    static float enforcedToneVolume_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

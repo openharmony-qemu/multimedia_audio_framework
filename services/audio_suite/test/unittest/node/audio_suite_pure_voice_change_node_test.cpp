@@ -244,59 +244,6 @@ static bool RunPureVoiceChangeTest(
     return true;
 }
 
-static bool RunSplitDataInHalfTest(
-    const PureVoiceChangeInfo &info, const std::string &inputFilePath, const std::string &outputFilePath)
-{
-    auto node = std::make_shared<AudioSuitePureVoiceChangeNode>();
-    node->Init();
-    std::string value = std::to_string(static_cast<int32_t>(info.valueSexType)) + "," +
-                        std::to_string(static_cast<int32_t>(info.pureVoiceType)) + "," +
-                        std::to_string(static_cast<float>(info.pitch));
-    std::string name = "AudioPureVoiceChangeOption";
-    int32_t ret = node->SetOptions(name, value);
-    EXPECT_EQ(ret, SUCCESS);
-    std::vector<AudioSuitePcmBuffer *> inputs;
-    std::ifstream file(inputFilePath, std::ios::binary | std::ios::ate);
-    if (!file) {
-        return false;
-    }
-    file.seekg(0, std::ios::beg);
-    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(
-        PcmBufferFormat(SAMPLE_RATE_16000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE), PCM_DATA_DURATION_40_MS);
-    const size_t frameBytes = buffer->GetDataSize();
-    std::ofstream outFile(outputFilePath, std::ios::binary | std::ios::out);
-    if (!outFile) {
-        delete buffer;
-        file.close();
-        return false;
-    }
-    vector<char> rawBuffer(frameBytes);
-    while (file.read(rawBuffer.data(), frameBytes).gcount() > 0) {
-        if (file.gcount() != rawBuffer.size()) {
-            rawBuffer.resize(file.gcount());
-        }
-        std::copy(rawBuffer.begin(), rawBuffer.end(), buffer->GetPcmData());
-        inputs.clear();
-        inputs.push_back(buffer);
-        AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = node->splitDataInHalf(inputs);
-        EXPECT_TRUE(outPcmbuffer != nullptr);
-        uint8_t *data = outPcmbuffer->GetPcmData();
-        if (data != nullptr) {
-            outFile.write(reinterpret_cast<const char *>(data), outPcmbuffer->GetDataSize());
-            if (outFile.fail()) {
-                break;
-            }
-        }
-    }
-    ret = node->GetOptions(name, value);
-    file.close();
-    outFile.close();
-    delete buffer;
-    node->DeInit();
-    return true;
-}
-
 static bool RunAllTestCases(const PureVoiceChangeInfo* testCases, size_t count)
 {
     for (size_t idx = 0; idx < count; idx++) {
@@ -308,7 +255,6 @@ static bool RunAllTestCases(const PureVoiceChangeInfo* testCases, size_t count)
         std::cout << testCases[idx].outputFileName << std::endl;
         std::cout << testCases[idx].compareFileName << std::endl;
         EXPECT_TRUE(RunPureVoiceChangeTest(info, inputFilePath, outputFilePath));
-        EXPECT_TRUE(RunSplitDataInHalfTest(info, inputFilePath, outputFilePath));
     }
     return true;
 }

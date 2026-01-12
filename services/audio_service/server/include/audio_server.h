@@ -260,8 +260,8 @@ public:
     int32_t DestroyHdiPort(uint32_t id) override;
     int32_t SetDeviceConnectedFlag(bool flag) override;
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool& isSupported) override;
-    int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
-    int32_t IsAudioLoopbackSupported(int32_t mode, bool &isSupported) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &isSupported) override;
     int32_t SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag) override;
     int32_t SetLatestMuteState(uint32_t sessionId, bool muteFlag) override;
     int32_t ForceStopAudioStream(int32_t audioType) override;
@@ -433,6 +433,8 @@ private:
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
+    int32_t GetTaskIdParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
         std::shared_ptr<PipeInfoGuard> &pipeInfoGuard);

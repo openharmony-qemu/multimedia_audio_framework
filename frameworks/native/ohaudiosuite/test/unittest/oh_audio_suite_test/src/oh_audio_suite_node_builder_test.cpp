@@ -1289,7 +1289,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, Te
 HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_002, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
-    ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, static_cast<OH_AudioNode_Type>(999));

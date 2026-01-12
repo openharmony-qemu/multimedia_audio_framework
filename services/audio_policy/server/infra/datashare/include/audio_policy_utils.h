@@ -83,7 +83,8 @@ public:
     AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
-    int32_t UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
     std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
     void SetScoExcluded(bool scoExcluded);

@@ -1766,6 +1766,70 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: GetVolume_007
+ * @tc.desc  : Test GetVolume interface with min fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_007, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = 0.0f;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    EXPECT_EQ(volume, 0.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_008
+ * @tc.desc  : Test GetVolume interface with valid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_008, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = 0.5f;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    EXPECT_EQ(volume, 0.5f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_009
+ * @tc.desc  : Test GetVolume interface with max fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_009, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = 1.0f;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_010
+ * @tc.desc  : Test GetVolume interface with invalid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_010, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_SYSTEM_ENFORCED, deviceClass, &volumes);
+    EXPECT_NE(volume, -1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: GetStreamVolume_002
  * @tc.desc  : Test AudioVolume interface.
  */

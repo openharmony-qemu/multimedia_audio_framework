@@ -30,7 +30,7 @@ public:
 
 HWTEST_F(AudioSuiteTempoPitchAlgoInterfaceImplTest, DeinitTest, TestSize.Level0)
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libaudio_variable_speed.z.so,libaudio_pitch_change.z.so";
     nc.soPath = "/system/lib64/";
     std::shared_ptr<AudioSuiteTempoPitchAlgoInterfaceImpl> algoInterface =
