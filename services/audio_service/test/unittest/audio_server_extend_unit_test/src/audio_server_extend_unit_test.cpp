@@ -1206,7 +1206,7 @@ HWTEST_F(AudioServerExtUnitTest, IsSatellite_001, TestSize.Level1)
     result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "callerUid is 0, should be false";
 
-    callerUid = 1001; // foundation
+    callerUid = 1001; // telecom
     result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "isSatellite is false, should be false";
 

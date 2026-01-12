@@ -210,7 +210,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
 
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
-    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_TELECOM_SA =;
+    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_TELECOM_SA;
 }
 
 static inline std::shared_ptr<IAudioRenderSink> GetSinkByProp(HdiIdType type, const std::string &info =
@@ -2134,7 +2134,7 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
 bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingUid)
 {
     return config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-        callingUid == UID_TELECOM_SA = && config.rendererInfo.isSatellite;
+        callingUid == UID_TELECOM_SA && config.rendererInfo.isSatellite;
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
