@@ -55,51 +55,11 @@ private:
     ~AudioSuiteCapabilities() = default;
 
     template <typename T>
-    int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
-    {
-        AUDIO_INFO_LOG("loadCapability start.");
-        void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-        CHECK_AND_RETURN_RET_LOG(
-            libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
-        using GetFunc = T (*)();
-        GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
-        if (getSpecsFunc == nullptr) {
-            dlclose(libHandle);
-            AUDIO_ERR_LOG("dlsym failed");
-            return ERROR;
-        }
-
-        specs = getSpecsFunc();
-        dlclose(libHandle);
-        libHandle = nullptr;
-        AUDIO_INFO_LOG("loadCapability end.");
-        return SUCCESS;
-    }
+    int32_t LoadCapability(const std::string& functionName, std::string algoSoPath, T &specs);
 
     template <typename T>
-    int32_t SetAudioParameters(NodeParameter &np, T &specs)
-    {
-        np.supportedOnThisDevice = specs.isSupport;
-        if (specs.frameLen != 0) {
-            np.frameLen = specs.frameLen;
-        }
-        np.inSampleRate = specs.inSampleRate;
-        np.inChannels = specs.inChannels;
-        np.inFormat = specs.inFormat;
-        np.outSampleRate = specs.outSampleRate;
-        np.outChannels = specs.outChannels;
-        np.outFormat = specs.outFormat;
-        AUDIO_INFO_LOG("inChannels:%{public}d, inFormat:%{public}d, inSampleRate:%{public}d  ",
-            np.inChannels,
-            np.inFormat,
-            np.inSampleRate);
-        AUDIO_INFO_LOG("outChannels:%{public}d, outFormat:%{public}d, outSampleRate:%{public}d, frameLen:%{public}d",
-            np.outChannels,
-            np.outFormat,
-            np.outSampleRate,
-            np.frameLen);
-        return SUCCESS;
-    }
+    int32_t SetAudioParameters(NodeParameter &np, T &specs);
+
     int32_t LoadVbCapability(NodeParameter &np);
     int32_t LoadEqCapability(NodeParameter &np);
     int32_t LoadAinrCapability(NodeParameter &np);

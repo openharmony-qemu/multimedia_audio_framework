@@ -19,7 +19,6 @@
 #include <unordered_map>
 #include <string>
 #include "audio_errors.h"
-#include "audio_suite_log.h"
 #include "audio_xml_parser.h"
 #include "audio_suite_base.h"
 
@@ -58,15 +57,8 @@ static const std::map<std::string, AudioNodeType>
 
 class AudioSuiteCapabilitiesParser {
 public:
-    AudioSuiteCapabilitiesParser()
-    {
-        AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser ctor");
-    }
-
-    ~AudioSuiteCapabilitiesParser()
-    {
-        AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser dtor");
-    }
+    AudioSuiteCapabilitiesParser();
+    ~AudioSuiteCapabilitiesParser();
 
     bool LoadConfiguration(
         std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);

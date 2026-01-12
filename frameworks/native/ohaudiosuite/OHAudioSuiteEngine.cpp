@@ -589,12 +589,12 @@ OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
     return &manager;
 }
 
-int32_t OHAudioSuiteEngine::CreateEngine()
+int32_t OHAudioSuiteEngine::CreateEngine() const
 {
     return IAudioSuiteManager::GetAudioSuiteManager().Init();
 }
 
-int32_t OHAudioSuiteEngine::DestroyEngine()
+int32_t OHAudioSuiteEngine::DestroyEngine() const
 {
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
@@ -634,7 +634,7 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StartPipeline failed, audioPipeline is nullptr.");
@@ -645,7 +645,7 @@ int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StopPipeline failed, audioPipeline is nullptr.");
