@@ -201,7 +201,7 @@ public:
         return callerPid_ == pid && callerUid_ == uid;
     }
 
-    bool IsSamePidUid(int32_t uid, int32_t pid) const
+    bool IsSamePid(int32_t pid) const
     {
         return callerPid_ == pid;
     }
