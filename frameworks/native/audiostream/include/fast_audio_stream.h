@@ -59,6 +59,18 @@ private:
     std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
+class FastStaticFirstFrameCallbackImpl : public AudioFirstFrameCallback {
+public:
+    FastStaticFirstFrameCallbackImpl(const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback,
+        IAudioStream &audioStream) : staticFirstFrameCallback_(callback), audioStreamImpl_(audioStream) {};
+    virtual ~FastStaticFirstFrameCallbackImpl() = default;
+
+    void OnFirstFrameWriting() override;
+private:
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> staticFirstFrameCallback_ = nullptr;
+    IAudioStream &audioStreamImpl_;
+};
+
 class FastAudioStream : public IAudioStream,  public IHandler,
     public std::enable_shared_from_this<FastAudioStream>{
 public:
@@ -289,6 +301,7 @@ private:
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::shared_ptr<AudioFirstFrameCallback> procFirstFrameClientCb_ = nullptr;
 
     std::string bundleName = "";
 

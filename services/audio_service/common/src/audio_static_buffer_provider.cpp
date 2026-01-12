@@ -83,6 +83,10 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
     CHECK_AND_RETURN_RET_LOG(CheckIsValid(inputData, offset, requestDataLen, remainSize) == SUCCESS,
         ERR_OPERATION_FAILED, "GetStaticBuffer is not valid, reset buffer!");
 
+    if (sharedBuffer_->IsFirstFrame()) {
+        sharedBuffer_->WakeFutex();
+    }
+
     return ProcessFadeInOutIfNeed(inputData, requestDataLen);
 }
 

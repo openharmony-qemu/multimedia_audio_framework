@@ -169,9 +169,14 @@ public:
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
 
     int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
+
+    int32_t SetFirstFrameWritingCallback(
+        const std::shared_ptr<AudioFirstFrameCallback> &callback) override;
+
+    void SetIsFirstFrame(bool value) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
-
 private:
 
     bool InitAudioBuffer();
@@ -305,6 +310,7 @@ private:
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
     std::mutex staticBufferMutex_;
+    std::weak_ptr<AudioFirstFrameCallback> staticFirstFrameCallback_;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -1822,6 +1828,14 @@ void AudioProcessInClientInner::CheckOperations()
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
             audioBuffer_->SetIsNeedSendLoopEndCallback(false);
         }
+        if (audioBuffer_->IsFirstFrame()) {
+            uint64_t latency = 0;
+            (void)GetLatency(latency);
+            std::shared_ptr<AudioFirstFrameCallback> cb = staticFirstFrameCallback_.lock();
+            CHECK_AND_RETURN_LOG(cb != nullptr, "audio staticFirstFrameCallback is null.");
+            cb->OnFirstFrameWriting(latency);
+            audioBuffer_->SetIsFirstFrame(false);
+        }
         return;
     }
 }
@@ -1879,6 +1893,23 @@ int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderR
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
         ERR_NULL_POINTER, "SetStaticRenderRate processProxy_ is nullptr");
     return processProxy_->SetStaticRenderRate(renderRate);
+}
+
+int32_t AudioProcessInClientInner::SetFirstFrameWritingCallback(
+    const std::shared_ptr<AudioFirstFrameCallback> &callback)
+{
+    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    staticFirstFrameCallback_ = callback;
+    return SUCCESS;
+}
+
+void AudioProcessInClientInner::SetIsFirstFrame(bool value)
+{
+    CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
+    audioBuffer_->SetIsFirstFrame(value);
 }
 
 } // namespace AudioStandard

@@ -526,9 +526,15 @@ int32_t FastAudioStream::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
     AUDIO_INFO_LOG("%{public}s: in.", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "%{public}s: callback is nullptr", logTag_.c_str());
+    CHECK_AND_RETURN_RET_LOG(callback && processClient_ != nullptr,
+        ERR_INVALID_PARAM, "%{public}s: callback is nullptr", logTag_.c_str());
     firstFrameWritingCb_ = callback;
+    if (rendererInfo_.isStatic) {
+        procFirstFrameClientCb_ = std::make_shared<FastStaticFirstFrameCallbackImpl>(callback, *this);
+        int32_t ret = processClient_->SetFirstFrameWritingCallback(procFirstFrameClientCb_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "%{public}s: save firstFrame data callback fail, ret %{public}d.", logTag_.c_str(), ret);
+    }
     return SUCCESS;
 }
 
@@ -732,6 +738,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    processClient_->SetIsFirstFrame(true);
     int32_t ret = ERROR;
     if (state_ == PAUSED || state_ == STOPPED) {
         ret = processClient_->Resume();
@@ -1062,6 +1069,8 @@ void FastAudioStream::ResetFirstFrameState()
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    CHECK_AND_RETURN(processClient_ != nullptr && rendererInfo_.isStatic);
+    processClient_->SetIsFirstFrame(true);
 }
 
 void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
@@ -1101,6 +1110,11 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(captureCallback_!= nullptr, "OnHandleData failed: captureCallback_ is null.");
     captureCallback_->OnReadData(length);
+}
+
+void FastStaticFirstFrameCallbackImpl::OnFirstFrameWriting() {
+    CHECK_AND_RETURN_LOG(staticFirstFrameCallback_ != nullptr, "send firstFrameCallback failed: callback is null.");
+    audioStreamImpl_.OnFirstFrameWriting();
 }
 
 int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)

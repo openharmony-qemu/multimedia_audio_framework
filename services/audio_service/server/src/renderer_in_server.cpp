@@ -1149,6 +1149,7 @@ int32_t RendererInServer::StartInner()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr && audioServerBuffer_->GetStreamStatus() != nullptr,
         ERR_OPERATION_FAILED, "null stream");
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+    audioServerBuffer_->SetIsFirstFrame(true);
     MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
