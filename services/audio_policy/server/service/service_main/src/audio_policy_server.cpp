@@ -281,7 +281,9 @@ void AudioPolicyServer::Init()
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
-
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SetObserver(eventEntry_);
+#endif
     // Init single async handler for different managers
     auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_APAsyncActionHandler");
     coreService_->SetAsyncActionHandler(asyncHandler);
