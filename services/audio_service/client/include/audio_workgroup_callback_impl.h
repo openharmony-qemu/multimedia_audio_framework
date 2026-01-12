@@ -17,7 +17,7 @@
 #define AUDIO_WORKGROUP_CALLBACK_IMPL_H
  
 #include "audio_workgroup_callback_stub.h"
-#include "audio_system_manager.h"
+#include "audio_workgroup_ipc.h"
  
 namespace OHOS {
 namespace AudioStandard {

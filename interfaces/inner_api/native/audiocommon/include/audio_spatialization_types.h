@@ -116,6 +116,18 @@ struct AudioSpatializationState : public Parcelable {
         return info;
     }
 };
+
+class AudioSpatializationStateChangeCallback {
+public:
+    virtual ~AudioSpatializationStateChangeCallback() = default;
+    /**
+     * @brief AudioSpatializationStateChangeCallback will be executed when spatialization state changes
+     *
+     * @param enabled the spatialization state.
+     * @since 11
+     */
+    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SPATIALIZATION_TYPES_H

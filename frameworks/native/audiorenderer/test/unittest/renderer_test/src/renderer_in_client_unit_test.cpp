@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "meta/audio_types.h"
 #include "oh_audio_buffer.h"
+#include "audio_stream_enum.h"
 
 
 using namespace testing::ext;

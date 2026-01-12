@@ -16,8 +16,6 @@
 #ifndef ST_AUDIO_SYSTEM_MANAGER_H
 #define ST_AUDIO_SYSTEM_MANAGER_H
 
-#include "audio_stutter.h"
-#include "audio_policy_interface.h"
 #include "audio_stream_types.h"
 #include "audio_interrupt_types.h"
 #include "audio_stream_change_info.h"
@@ -25,7 +23,6 @@
 #include "audio_routing_manager.h"
 
 #include "audio_workgroup_client_manager.h"
-#include "audio_wakeup_client_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

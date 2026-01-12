@@ -24,7 +24,6 @@ namespace OHOS {
 namespace AudioStandard {
 class MicrophoneDescriptor;
 class MicrophoneDescriptor : public Parcelable {
-    friend class AudioSystemManager;
 public:
     int32_t micId_;
     DeviceType deviceType_;

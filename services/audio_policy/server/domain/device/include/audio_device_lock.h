@@ -27,7 +27,6 @@
 #include "audio_volume_config.h"
 #include "audio_errors.h"
 #include "microphone_descriptor.h"
-#include "audio_system_manager.h"
 
 #include "audio_policy_manager_factory.h"
 #include "audio_device_manager.h"
