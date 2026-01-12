@@ -890,9 +890,8 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     bool forceFetch = false;
     for (auto &changeInfo : audioRendererChangeInfos) {
         bool currentSessionID = false;
-        for(int i = 0; i < sessionIDList.size(); i++)
-        {
-            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])){
+        for (int i = 0; i < sessionIDList.size(); i++) {
+            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])) {
                 currentSessionID = true;
                 break;
             }
