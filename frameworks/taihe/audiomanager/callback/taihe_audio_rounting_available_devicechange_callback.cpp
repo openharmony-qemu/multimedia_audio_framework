@@ -105,6 +105,7 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::OnAvailableDeviceChange(
 {
     AUDIO_INFO_LOG("OnAvailableDeviceChange:DeviceChangeType: %{public}d, DeviceFlag:%{public}d",
         deviceChangeAction.type, deviceChangeAction.flag);
+    std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); it++) {
         if (usage == (*it).second) {
             std::unique_ptr<AudioRountingJsCallback> cb = std::make_unique<AudioRountingJsCallback>();
