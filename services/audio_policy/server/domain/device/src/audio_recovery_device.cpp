@@ -532,8 +532,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
 
     for (const auto &desc : audioDeviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
-        audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
-        AudioCoreService::GetCoreService()->NotifyRemoteRouteStateChange(desc->networkId_, desc->deviceType_, false);
+        AudioCoreService::GetCoreService()->NotifyRemoteDeviceStatusUpdate(desc);
     }
     return SUCCESS;
 }
