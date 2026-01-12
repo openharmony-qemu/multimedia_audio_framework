@@ -201,6 +201,10 @@ public:
         return callerPid_ == pid && callerUid_ == uid;
     }
 
+    bool IsSamePidUid(int32_t uid, int32_t pid) const
+    {
+        return callerPid_ == pid;
+    }
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
