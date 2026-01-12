@@ -580,7 +580,7 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
-    OnRemoteDeviceStatusUpdated(desc);
+    OnRemoteDeviceStatusUpdated();
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
@@ -1806,17 +1806,13 @@ void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId
     DeactivateRemoteDevice(networkId, deviceType);
 }
 
-void AudioCoreService::OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc)
+void AudioCoreService::NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    // For special remote devices, e.g. wifi soundbox, when switching from remote to other device, update device status
-    auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
-    CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
-    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
-        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
-    audioActiveDevice_.NotifyUserDisSelectionEventToRemote(currentDesc);
-    currentDesc->connectState_ = VIRTUAL_CONNECTED;
-    audioDeviceManager_.UpdateDevicesListInfo(currentDesc, CONNECTSTATE_UPDATE);
-    DeactivateRemoteDevice(currentDesc->networkId_, currentDesc->deviceType_);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    audioDeviceManager_.UpdateDevicesListInfo(desc, CONNECTSTATE_UPDATE);
+    DeactivateRemoteDevice(desc->networkId_, desc->deviceType_);
 }
 
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
