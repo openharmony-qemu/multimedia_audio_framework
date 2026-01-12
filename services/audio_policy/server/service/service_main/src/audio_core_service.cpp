@@ -880,7 +880,7 @@ int32_t AudioCoreService::GetSessionDefaultOutputDevice(const int32_t callerPid,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType, bool skipForce)
 {
     vector<uint32_t> sessionIDList = pipeManager_->GetStreamIdsByPid(callerPid);
     CHECK_AND_RETURN_RET_LOG(AudioPolicyConfigManager::GetInstance().GetHasEarpiece(), ERR_NOT_SUPPORTED,
