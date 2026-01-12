@@ -87,7 +87,7 @@ constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr pid_t FIRST_SCREEN_ON_PID = 1000;
 constexpr uid_t UID_CAST_ENGINE_SA = 5526;
 constexpr uid_t UID_AUDIO = 1041;
-constexpr uid_t UID_TELECOM_SA = 1001;
+constexpr uid_t UID_FOUNDATION_SA = 5523;
 constexpr uid_t UID_BLUETOOTH_SA = 1002;
 constexpr uid_t UID_CAR_DISTRIBUTED_ENGINE_SA = 65872;
 constexpr uid_t UID_TV_PROCESS_SA = 7501;
@@ -1327,7 +1327,7 @@ int32_t AudioPolicyServer::GetAppVolumeLevelInternal(int32_t appUid, int32_t &vo
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    if (callerUid != UID_TELECOM_SA && callerUid != UID_RESOURCE_SCHEDULE_SERVICE) {
+    if (callerUid != UID_FOUNDATION_SA && callerUid != UID_RESOURCE_SCHEDULE_SERVICE) {
         AUDIO_ERR_LOG("SetLowPowerVolume callerUid Error: not foundation or resource_schedule_service");
         return ERROR;
     }
@@ -5235,8 +5235,8 @@ int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
     constexpr int32_t telecomUid = 1001; // "uid" : "telecom"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
-    CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
-        "SetVoiceRingtoneMute callerUid is error: not foundation");
+    CHECK_AND_RETURN_RET_LOG(callerUid == telecomUid, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not telecom");
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
 }
