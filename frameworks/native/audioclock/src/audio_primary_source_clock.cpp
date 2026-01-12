@@ -36,6 +36,7 @@ static constexpr uint32_t REGULAR_DETLA_RATIO = 2;
  */
 void AudioCapturerSourceClock::CheckAndResetTimestamp(uint64_t &timestamp, uint32_t positionInc)
 {
+    std::lock_guard<std::mutex> lock(clockMtx_);
     CHECK_AND_RETURN_LOG(sampleRate_ != 0, "sampleRate_ is zero!");
     if (isGetTimeStampFromSystemClock_) {
         return;

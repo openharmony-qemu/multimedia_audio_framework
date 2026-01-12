@@ -30,6 +30,7 @@ public:
     void RemoveWorkgroupChangeCallback();
 private:
     std::shared_ptr<AudioWorkgroupChangeCallback> workgroupCb_ = nullptr;
+    std::mutex workgroupCbMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

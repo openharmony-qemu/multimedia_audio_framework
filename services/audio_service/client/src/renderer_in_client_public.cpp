@@ -1005,6 +1005,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
     return totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
 }
 
@@ -1550,7 +1551,10 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     if (rendererInfo_.isStatic) {
         GetStaticBufferInfo(info.staticBufferInfo);
     }
-    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
+    {
+        std::lock_guard<std::mutex> lock(staticBufferMutex_);
+        info.staticBufferEventCallback = audioStaticBufferEventCallback_;
+    }
     GetStreamSwitchInfo(info);
 
     {
@@ -1577,11 +1581,15 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.duckVolume = duckVolume_;
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
+    std::unique_lock<std::mutex> lock(markReachMutex_);
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
     info.renderPositionCb = rendererPositionCallback_;
+    lock.unlock();
 
+    std::unique_lock<std::mutex> perlock(periodReachMutex_);
     info.framePeriodNumber = static_cast<uint64_t>(rendererPeriodSize_);
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
+    perlock.unlock();
 
     info.rendererWriteCallback = writeCb_;
     info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
