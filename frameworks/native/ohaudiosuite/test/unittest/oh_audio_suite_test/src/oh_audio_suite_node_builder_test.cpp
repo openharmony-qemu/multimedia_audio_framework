@@ -1281,5 +1281,23 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, Te
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
 
+/**
+ * @tc.name  : Test OH_AudioSuiteNodeBuilder_SetNodeType.
+ * @tc.number: OH_AudioSuiteNodeBuilder_SetNodeType_002
+ * @tc.desc  : Test setNodeType when type is invalid.
+ */
+HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_002, TestSize.Level0)
+{
+    OH_AudioNodeBuilder *builder = nullptr;
+    ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, static_cast<OH_AudioNode_Type>(999));
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

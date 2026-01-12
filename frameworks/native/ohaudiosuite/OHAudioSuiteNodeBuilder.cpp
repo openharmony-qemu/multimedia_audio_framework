@@ -71,7 +71,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(
 {
     OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy AudioNodeBuilder failed, builder is nullptr");
+        AUDIOSUITE_ERROR_INVALID_PARAM, "AudioNodeBuilder SetNodeType failed, builder is nullptr");
 
     return nodeBuilder->SetNodeType(type);
 }
@@ -160,6 +160,9 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetRequestDataCallback(
 
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetNodeType(OH_AudioNode_Type type)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        NODETYPE_TOSTRING_MAP.find(static_cast<AudioNodeType>(type)) != NODETYPE_TOSTRING_MAP.end(),
+        AUDIOSUITE_ERROR_INVALID_PARAM, "AudioNodeBuilder SetNodeType failed, type is invalid");
     nodeType_ = static_cast<AudioNodeType>(type);
     return AUDIOSUITE_SUCCESS;
 }
