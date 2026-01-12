@@ -683,7 +683,7 @@ std::vector<uint32_t> AudioPipeManager::GetStreamIdsByPid(int32_t pid)
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         for (auto &streamDesc : pipe->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-            if (streamDesc->IsSameUid(pid)) {
+            if (streamDesc->IsSamePid(pid)) {
                 sessionIds.push_back(streamDesc->sessionId_);
             }
         }
