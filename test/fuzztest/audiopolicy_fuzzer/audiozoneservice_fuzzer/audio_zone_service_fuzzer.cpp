@@ -330,7 +330,7 @@ void AudioZoneServiceRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
     audioZoneService.Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
         std::make_shared<AudioInterruptService>());
     int32_t clientPid = GetData<int32_t>();
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest(FuzzedDataProvider& fdp);
+    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
     audioZoneService.RegisterAudioZoneClient(clientPid, client);
 }
 
