@@ -755,8 +755,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
     OH_AudioSessionManager *audioSessionManager, bool enable);
 
 /**
- * @brief Returns if there is any other application playing audio in media usage.
- * The short sound effect will not be considered in.
+ * @brief Returns if there is any other application playing audio in media usage, including media session activated.
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}.

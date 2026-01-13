@@ -453,6 +453,7 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
     std::string name = "AudioSpaceRenderPositionParams";
     std::string value =
         std::to_string(position.x) + "," + std::to_string(position.y) + "," + std::to_string(position.z);
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSpaceRenderPositionParams failed, ret = %{public}d", ret);
 
@@ -499,6 +500,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
     std::string value = std::to_string(rotation.x) + "," + std::to_string(rotation.y) + "," +
                         std::to_string(rotation.z) + "," + std::to_string(rotation.surroundTime) + "," +
                         std::to_string(static_cast<int32_t>(rotation.surroundDirection));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(
         ret == SUCCESS, ret, "engine AudioSpaceRenderRotationParams failed, ret = %{public}d", ret);
@@ -544,6 +546,7 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
 
     std::string name = "AudioSpaceRenderExtensionParams";
     std::string value = std::to_string(extension.extRadius) + "," + std::to_string(extension.extAngle);
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(
         ret == SUCCESS, ret, "engine AudioSpaceRenderExtensionParams failed, ret = %{public}d", ret);
@@ -589,6 +592,7 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
 
     std::string name = "speedAndPitch";
     std::string value = std::to_string(speed) + "," + std::to_string(pitch);
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetTempoAndPitch failed, ret = %{public}d", ret);
     
@@ -635,6 +639,7 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
     std::string value = std::to_string(static_cast<int32_t>(option.optionGender)) + "," +
                         std::to_string(static_cast<int32_t>(option.optionType)) + "," +
                         std::to_string(static_cast<float>(option.pitch));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d", ret);
 
@@ -679,6 +684,7 @@ int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
 
     std::string name = "AudioGeneralVoiceChangeType";
     std::string value = std::to_string(static_cast<int32_t>(type));
+    isFinishSetOptions_ = false;
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetGeneralVoiceChangeType failed, ret = %{public}d", ret);
     

@@ -37,16 +37,14 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPort_001, TestSize.Level0)
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
 
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer *>> outputPort =
-        std::make_shared<OutputPort<AudioSuitePcmBuffer *>>(inputNode);
-    EXPECT_NE(outputPort, nullptr);
+    OutputPort<AudioSuitePcmBuffer *> outputPort;
 
-    std::vector<AudioSuitePcmBuffer *> data = outputPort->PullOutputData(
+    std::vector<AudioSuitePcmBuffer *> data = outputPort.PullOutputData(
         PcmBufferFormat(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S32LE), true);
     EXPECT_EQ(data.size(), 0);
 
     AudioSuitePcmBuffer *pcm = nullptr;
-    outputPort->WriteDataToOutput(pcm);
+    outputPort.WriteDataToOutput(pcm);
 }
 
 HWTEST_F(AudioSuiteOutputPortTest, OutputPortHandleInputPort_001, TestSize.Level0)
@@ -58,20 +56,18 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPortHandleInputPort_001, TestSize.Level
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
 
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer *>> outputPort =
-        std::make_shared<OutputPort<AudioSuitePcmBuffer *>>(inputNode);
-    EXPECT_NE(outputPort, nullptr);
+    OutputPort<AudioSuitePcmBuffer *> outputPort;
 
     InputPort<AudioSuitePcmBuffer*>* inputPort = new InputPort<AudioSuitePcmBuffer*>();
-    outputPort->AddInput(inputPort);
-    outputPort->RemoveInput(inputPort);
+    outputPort.AddInput(inputPort);
+    outputPort.RemoveInput(inputPort);
 
-    auto num = outputPort->GetInputNum();
+    auto num = outputPort.GetInputNum();
     EXPECT_EQ(num, 0);
 
-    outputPort->SetPortType(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    outputPort.SetPortType(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
 
-    auto type = outputPort->GetPortType();
+    auto type = outputPort.GetPortType();
     EXPECT_EQ(type, AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
 }
 }

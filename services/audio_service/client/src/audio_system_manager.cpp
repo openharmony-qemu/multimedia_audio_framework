@@ -29,6 +29,7 @@
 #include "audio_system_client_engine_manager.h"
 #include "audio_system_client_policy_manager.h"
 #include "audio_asr_client_manager.h"
+#include "audio_wakeup_client_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -626,7 +627,7 @@ int32_t AudioSystemManager::DeactivatePreemptMode() const
     return AudioSystemClientPolicyManager::GetInstance().DeactivatePreemptMode();
 }
 
-int32_t AudioSystemManager::SetForegroundList(std::vector<std::string> list)
+int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
 {
     return AudioSystemClientEngineManager::GetInstance().SetForegroundList(list);
 }

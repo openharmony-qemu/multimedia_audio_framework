@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "meta/audio_types.h"
 #include "oh_audio_buffer.h"
+#include "audio_stream_enum.h"
 
 
 using namespace testing::ext;
@@ -1468,7 +1469,7 @@ HWTEST(RendererInClientInnerUnitTest, WriteRawBuffer_001, TestSize.Level1)
 
     ptrRendererInClientInner->AudioServerDied(0, 0);
     ret = ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
-    EXPECT_NE(ret, ERR_WRITE_BUFFER);
+    EXPECT_EQ(ret, ERR_WRITE_BUFFER);
 }
 
 /**

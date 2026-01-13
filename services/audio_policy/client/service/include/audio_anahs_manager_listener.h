@@ -16,7 +16,7 @@
 #ifndef AUDIO_ANAHS_MANAGER_LISTENER_H
 #define AUDIO_ANAHS_MANAGER_LISTENER_H
 
-#include "audio_anahs_manager.h"
+#include "audio_policy_interface.h"
 #include "standard_audio_anahs_manager_listener_stub.h"
 
 namespace OHOS {

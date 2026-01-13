@@ -16,12 +16,10 @@
 #ifndef ST_AUDIO_ANAHS_MANAGER_H
 #define ST_AUDIO_ANAHS_MANAGER_H
 
-#include "audio_system_manager.h"
+#include "audio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioDeviceAnahs;
 class AudioAnahsManager {
 public:
     AudioAnahsManager() = default;

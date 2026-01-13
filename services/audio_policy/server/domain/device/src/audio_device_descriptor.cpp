@@ -82,7 +82,7 @@ static std::string ParseAudioFormat(std::string format)
     }
 }
 
-static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
+static std::map<std::string, AudioSampleFormat> g_formatStrToEnum = {
     {"s8", SAMPLE_U8},
     {"s16", SAMPLE_S16LE},
     {"s24", SAMPLE_S24LE},
@@ -395,8 +395,8 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
     if (key == AudioParametersKey::FORMAT) {
         parseRet = ParseAudioFormat(parseRet);
         AUDIO_INFO_LOG("parseRet:%{public}s, format: %{public}u", parseRet.c_str(),
-            static_cast<uint32_t>(formatStrToEnum[parseRet]));
-        return static_cast<uint32_t>(formatStrToEnum[parseRet]);
+            static_cast<uint32_t>(g_formatStrToEnum[parseRet]));
+        return static_cast<uint32_t>(g_formatStrToEnum[parseRet]);
     }
     CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
     ret = static_cast<uint32_t>(std::stoi(parseRet));

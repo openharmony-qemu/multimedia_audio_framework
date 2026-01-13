@@ -18,7 +18,7 @@
 
 #include <mutex>
 #include "audio_policy_interface.h"
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 #include "istandard_audio_service.h"
 
 namespace OHOS {

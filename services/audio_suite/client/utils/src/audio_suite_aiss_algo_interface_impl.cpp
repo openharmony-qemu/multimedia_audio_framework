@@ -22,6 +22,7 @@
 #include <dlfcn.h>
 #include "audio_errors.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,17 +57,23 @@ static float UnifyFloatValue(float value)
     return value;
 }
 
-AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
     inAudioBuffer_.frameLength = 0;
     outAudioBuffer_.frameLength = 0;
+}
+
+AudioSuiteAissAlgoInterfaceImpl::~AudioSuiteAissAlgoInterfaceImpl()
+{
+    int32_t ret = Deinit();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissAlgoInterfaceImpl Deinit failed");
 }
 
 int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
 {
     Deinit();
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     if (CheckFilePath(soPath) != SUCCESS) {
         AUDIO_ERR_LOG("Check file path failed");
         return ERROR;

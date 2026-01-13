@@ -78,6 +78,11 @@ public:
 
     void SetAudioScene(const AudioScene scene) override;
 
+    // only for auxiliarySink
+    int32_t CreateCognitionStream(const std::string &adapterName, void *param, int32_t &sinkId, void *buffer) override;
+    int32_t DestroyCognitionStream(const std::string &adapterName, const int32_t &sinkId) override;
+    int32_t NotifyCognitionData(const std::string &adapterName, const int32_t &sinkId,
+        uint32_t size, uint32_t offset) override;
 private:
     void InitAudioManager(void);
     std::shared_ptr<LocalAdapterWrapper> GetAdapter(const std::string &adapterName, bool tryCreate = false);

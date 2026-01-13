@@ -1496,9 +1496,13 @@ struct AudioProcessConfig : public Parcelable {
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {
-            config->staticBufferInfo = *StaticBufferInfo::Unmarshalling(parcel);
+            auto infoPtr = std::unique_ptr<StaticBufferInfo>(StaticBufferInfo::Unmarshalling(parcel));
+            if (infoPtr == nullptr) {
+                delete config;
+                return nullptr;
+            }
+            config->staticBufferInfo = *infoPtr;
         }
-
         return config;
     }
 

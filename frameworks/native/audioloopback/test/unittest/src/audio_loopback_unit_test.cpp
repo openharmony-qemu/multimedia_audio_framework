@@ -386,5 +386,35 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_DestroyAudioLoopback_002, TestSiz
     EXPECT_EQ(audioLoopback->audioRenderer_, nullptr);
     EXPECT_EQ(audioLoopback->audioCapturer_, nullptr);
 }
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_OnStateChange, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    auto renderCallback = std::make_shared<AudioLoopbackPrivate::RendererCallbackImpl>(*audioLoopback);
+    auto captureCallback = std::make_shared<AudioLoopbackPrivate::CapturerCallbackImpl>(*audioLoopback);
+
+    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_USB_HEADSET;
+    audioLoopback->activeInputDevice_ = DEVICE_TYPE_USB_HEADSET;
+
+    audioLoopback->isRendererUsb_ = true;
+    audioLoopback->isCapturerUsb_ = true;
+
+    AudioDeviceDescriptor deviceInfo;
+    AudioStreamDeviceChangeReason reson = AudioStreamDeviceChangeReason::UNKNOWN;
+    renderCallback->OnOutputDeviceChange(deviceInfo, reson);
+    captureCallback->OnStateChange(deviceInfo);
+    EXPECT_FALSE(audioLoopback->isRendererUsb_);
+    EXPECT_FALSE(audioLoopback->isCapturerUsb_);
+
+    renderCallback->OnFastStatusChange(FASTSTATUS_NORMAL);
+    captureCallback->OnFastStatusChange(FASTSTATUS_NORMAL);
+    EXPECT_EQ(audioLoopback->rendererFastStatus_, FASTSTATUS_NORMAL);
+    EXPECT_EQ(audioLoopback->capturerFastStatus_, FASTSTATUS_NORMAL);
+
+    renderCallback->OnFastStatusChange(FASTSTATUS_FAST);
+    captureCallback->OnFastStatusChange(FASTSTATUS_FAST);
+    EXPECT_EQ(audioLoopback->rendererFastStatus_, FASTSTATUS_FAST);
+    EXPECT_EQ(audioLoopback->capturerFastStatus_, FASTSTATUS_FAST);
+}
 } // namespace AudioStandard
 } // namespace OHOS

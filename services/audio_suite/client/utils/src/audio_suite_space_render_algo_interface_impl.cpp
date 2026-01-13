@@ -50,9 +50,9 @@ const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
 const std::string SPACE_RENDER_EXTENSION_MOD = "AudioSpaceRenderExtensionParams";
 
-AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderAlgoInterfaceImpl::AudioSuiteSpaceRenderAlgoInterfaceImpl()");
 }
 
@@ -66,7 +66,7 @@ AudioSuiteSpaceRenderAlgoInterfaceImpl::~AudioSuiteSpaceRenderAlgoInterfaceImpl(
 
 int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
 {
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", soPath.c_str());

@@ -103,6 +103,9 @@ private:
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
     bool IsVgsVolumeSupported() const;
     uint32_t GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, int32_t appUid, uint32_t sessionId);
+    void ConstructEnforcedToneVolumeValues(VolumeValues *volumes);
+    void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
+        VolumeValues *volumes);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};

@@ -49,7 +49,7 @@ static constexpr int32_t ALGO_PARAM_LENGTH = 2;
 
 class AudioSuiteTempoPitchAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc);
+    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteTempoPitchAlgoInterfaceImpl();
 
     int32_t TempoInit(std::string soName);
@@ -76,22 +76,7 @@ private:
     std::vector<int16_t> tempDataOut_;
     AudioSuiteLibraryManager algoLibrary_;
 
-    std::vector<float> ParseStringToFloatArray(const std::string &str, char delimiter)
-    {
-        std::vector<float> params;
-        std::string paramValue;
-        std::istringstream iss(str);
-
-        while (std::getline(iss, paramValue, delimiter)) {
-            if (!paramValue.empty()) {
-                float value;
-                CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
-                    "Tempo convert string to float value error, invalid data is %{public}s", paramValue.c_str());
-                params.push_back(value);
-            }
-        }
-        return params;
-    }
+    std::vector<float> ParseStringToFloatArray(const std::string &str, char delimiter);
 };
 
 }  // namespace AudioSuite

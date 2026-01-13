@@ -811,6 +811,7 @@ ohos_shared_library("audio_manager_client") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_anahs_manager.cpp",
+    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "client/service/src/audio_general_manager.cpp",
   ]
 
@@ -819,7 +820,6 @@ ohos_shared_library("audio_manager_client") {
   deps = [
     ":audio_foundation",
     ":audio_policy_client",
-    ":audio_policy_common",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_service:audio_common",
   ]
@@ -868,7 +868,6 @@ ohos_shared_library("audio_policy_common") {
   }
   install_enable = true
   sources = [
-    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "../audio_service/client/src/resource_manager_adapter.cpp",
   ]
 

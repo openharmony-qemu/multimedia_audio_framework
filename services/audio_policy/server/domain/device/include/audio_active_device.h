@@ -25,7 +25,6 @@
 #include "audio_group_handle.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
-#include "audio_system_manager.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
@@ -33,6 +32,7 @@
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
 #include "audio_connected_device.h"
+#include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -26,9 +26,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
@@ -38,7 +38,7 @@ AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 {
-    std::string tempoSoPath = nodeCapability.soPath + soName;
+    std::string tempoSoPath = nodeParameter_.soPath + soName;
     tempoSoHandle_ = algoLibrary_.LoadLibrary(tempoSoPath);
     CHECK_AND_RETURN_RET_LOG(tempoSoHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
@@ -57,7 +57,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 {
-    std::string pitchSoPath = nodeCapability.soPath + soName;
+    std::string pitchSoPath = nodeParameter_.soPath + soName;
     pitchSoHandle_ = algoLibrary_.LoadLibrary(pitchSoPath);
     CHECK_AND_RETURN_RET_LOG(pitchSoHandle_ != nullptr, ERROR,
         "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
@@ -83,7 +83,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
 {
     AUDIO_INFO_LOG("start init tempo and pitch algorithm");
-    std::istringstream iss(nodeCapability.soName);
+    std::istringstream iss(nodeParameter_.soName);
     std::string tempoSoName = "";
     std::string pitchSoName = "";
     std::getline(iss, tempoSoName, ',');
@@ -217,6 +217,24 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     }
     // return outFrameLen >= 0
     return outFrameLen;
+}
+
+std::vector<float> AudioSuiteTempoPitchAlgoInterfaceImpl::ParseStringToFloatArray(
+    const std::string &str, char delimiter)
+{
+    std::vector<float> params;
+    std::string paramValue;
+    std::istringstream iss(str);
+
+    while (std::getline(iss, paramValue, delimiter)) {
+        if (!paramValue.empty()) {
+            float value;
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
+                "Tempo convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+            params.push_back(value);
+        }
+    }
+    return params;
 }
 
 }  // namespace AudioSuite

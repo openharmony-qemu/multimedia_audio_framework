@@ -25,7 +25,9 @@ namespace AudioStandard {
 // if attr struct change, please check ipc serialize and deserialize code
 typedef struct IAudioSinkAttr : public Parcelable {
     std::string adapterName = "";
+    std::string sinkName = "";
     uint32_t openMicSpeaker = 0;
+    bool auxSinkEnable = false;
     AudioEncodingType encodingType = ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
@@ -43,7 +45,9 @@ typedef struct IAudioSinkAttr : public Parcelable {
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteString(adapterName) &&
+            parcel.WriteString(sinkName) &&
             parcel.WriteUint32(openMicSpeaker) &&
+            parcel.WriteBool(auxSinkEnable) &&
             parcel.WriteUint32(static_cast<uint32_t>(encodingType)) &&
             parcel.WriteUint8(static_cast<uint8_t>(format)) &&
             parcel.WriteUint32(sampleRate) &&
@@ -66,7 +70,9 @@ typedef struct IAudioSinkAttr : public Parcelable {
         }
 
         attr->adapterName = parcel.ReadString();
+        attr->sinkName = parcel.ReadString();
         attr->openMicSpeaker = parcel.ReadUint32();
+        attr->auxSinkEnable = parcel.ReadBool();
         attr->encodingType = static_cast<AudioEncodingType>(parcel.ReadUint32());
         attr->format = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRate = parcel.ReadUint32();

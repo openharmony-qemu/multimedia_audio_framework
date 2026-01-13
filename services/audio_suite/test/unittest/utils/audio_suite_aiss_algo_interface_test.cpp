@@ -43,7 +43,7 @@ public:
     {
     };
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 namespace {
     const std::string INPUT_PATH = "/data/aiss_48000_2_S32LE.pcm";

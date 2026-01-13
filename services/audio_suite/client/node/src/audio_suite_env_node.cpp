@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_suite_env_node.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,19 +49,19 @@ int32_t AudioSuiteEnvNode::Init()
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;
     }
-    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
+    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeParameter);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
-    SetAudioNodeFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
-        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
-        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    SetAudioNodeFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
     
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
         ENV_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEnvNode::Init end");
     return SUCCESS;

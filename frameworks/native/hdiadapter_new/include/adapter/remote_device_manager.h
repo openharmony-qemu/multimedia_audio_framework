@@ -146,6 +146,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_SPK = '1';
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr char ROUTE_ENABLE = '1';
+    static constexpr char ROUTE_DISABLE = '0';
 
     sptr<RemoteIAudioManager> audioManager_ = nullptr;
     std::mutex managerMtx_;

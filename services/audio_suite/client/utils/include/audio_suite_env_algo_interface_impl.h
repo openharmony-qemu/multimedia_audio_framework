@@ -47,7 +47,7 @@ struct EnvAlgoApi {
 
 class AudioSuiteEnvAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteEnvAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteEnvAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteEnvAlgoInterfaceImpl();
 
     int32_t Init() override;

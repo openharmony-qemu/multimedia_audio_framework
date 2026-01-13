@@ -14,26 +14,10 @@
  */
 #ifndef ST_AUDIO_COLLABORATIVE_MANAGER_H
 #define ST_AUDIO_COLLABORATIVE_MANAGER_H
-#include <cstdint>
-#include <memory>
-#include "parcel.h"
-#include "audio_device_descriptor.h"
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-class AudioCollaborationEnabledChangeForCurrentDeviceCallback {
-public:
-    virtual ~AudioCollaborationEnabledChangeForCurrentDeviceCallback() = default;
-    /**
-     * @brief AudioCollaborationEnabledChangeForCurrentDeviceCallback will be executed
-     *  when collboration enabled state changes
-     *
-     * @param enabled the collboration enabled state for current device.
-     * @since 20
-     */
-    virtual void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled) {}
-};
 
 class AudioCollaborativeManager {
 public:

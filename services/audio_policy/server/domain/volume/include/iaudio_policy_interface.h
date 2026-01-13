@@ -149,6 +149,8 @@ public:
 
     virtual void UpdateVolumeForStreams() = 0;
 
+    virtual void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream) = 0;
+
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;

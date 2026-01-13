@@ -171,6 +171,74 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_003, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateRenderClient_004
+* @tc.desc  : Test CreateRenderClient - active bluetooth a2dp.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t originalSessionId = 0;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: CreateRenderClient_005
+* @tc.desc  : Test CreateRenderClient - inactive bluetooth a2dp.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_MIC;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    uint32_t originalSessionId = 0;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: CreateCapturerClient_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */

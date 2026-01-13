@@ -58,7 +58,7 @@ static const std::unordered_map<std::string, AudioVoiceMorphingType> generalVoic
 
 class AudioSuiteVoiceMorphingAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeCapability &nc);
+    AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteVoiceMorphingAlgoInterfaceImpl();
 
     int32_t Init() override;

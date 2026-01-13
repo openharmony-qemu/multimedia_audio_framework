@@ -28,6 +28,8 @@ public:
     static void PrintVolumeInfo(char *data, uint64_t &len, const IAudioSourceAttr &attr, std::string logUtilsTag,
         int64_t &volumeDataCount);
     static void DumpData(char *data, uint64_t &len, FILE *dumpFile, std::string dumpFileName);
+    static void PrintSinkVolInfo(char *data, uint64_t &len, const IAudioSinkAttr &attr, std::string logUtilsTag,
+        int64_t &volumeDataCount);
 };
 } // namespace AudioStandard
 } // namespace OHOS
