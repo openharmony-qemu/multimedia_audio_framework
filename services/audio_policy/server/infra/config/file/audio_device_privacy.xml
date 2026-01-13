@@ -24,7 +24,7 @@
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="HEADPHONE,GLASSES," usage="voice,recongnition"/>
             <device name="Nearlink" type="DEVICE_TYPE_NEARLINK" role="output" Category="HEADPHONE,GLASSES" usage="media,voice"/>
-            <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="HEADPHONE,GLASSES" usage="voice,recongnition"/>
+            <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="HEADPHONE,GLASSES" usage="media,voice,recongnition"/>
             <device name="Hearing Aid" type="DEVICE_TYPE_HEARING_AID" role="output" Category="HEARAID" usage="media,voice"/>
         </devices>
     </adapter>

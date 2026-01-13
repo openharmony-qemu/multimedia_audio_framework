@@ -103,7 +103,7 @@ public:
     std::unordered_map<uint32_t, std::unordered_set<uint32_t>> GetNearlinkStreamTypeMapByDevice(
         const std::string &deviceAddr);
 
-    // Devcice Volume Manager
+    // Device Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);
     int32_t SetNearlinkDeviceVolumeLevel(const std::string &device, AudioStreamType streamType,
         const int32_t volumeLevel);

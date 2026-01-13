@@ -374,5 +374,33 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_017, TestSize.Le
     EXPECT_NE(desc1->pairDeviceDescriptor_, desc2);
     audioDeviceManager.RemoveConnectedDevices(desc2);
 }
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: CheckNearlinkInHQRecordingSupport_001.
+ * @tc.desc  : Test CheckNearlinkInHQRecordingSupport.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, CheckNearlinkInHQRecordingSupport_001, TestSize.Level4)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK_IN, DeviceRole::INPUT_DEVICE);
+    desc->highQualityRecordingSupported_ = true;
+    bool result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::MEDIA);
+    EXPECT_EQ(result, true);
+
+    desc->highQualityRecordingSupported_ = false;
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::MEDIA);
+    EXPECT_EQ(result, false);
+
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::VOICE);
+    EXPECT_EQ(result, true);
+
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::OUTPUT_DEVICE, DeviceUsage::VOICE);
+    EXPECT_EQ(result, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
