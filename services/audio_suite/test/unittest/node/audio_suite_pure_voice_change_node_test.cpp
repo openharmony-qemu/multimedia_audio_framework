@@ -135,7 +135,8 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     std::shared_ptr<AudioSuitePureVoiceChangeNode> node = std::make_shared<AudioSuitePureVoiceChangeNode>();
     node->Init();
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
-    OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort;
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort = 
+    
     inputNodeOutputPort.SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
