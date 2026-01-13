@@ -1829,7 +1829,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
 
     streamCallbacks->isFirstWriteDataFlag_ = true;
-    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROE);
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
 }
 
 /**
@@ -1852,7 +1852,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
 
     streamCallbacks->isFirstWriteDataFlag_ = true;
-    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROE);
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
 }
 
 /**
