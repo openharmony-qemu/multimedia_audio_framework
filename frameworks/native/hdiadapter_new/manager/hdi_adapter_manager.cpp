@@ -114,6 +114,18 @@ void HdiAdapterManager::ReleaseId(uint32_t &id)
     DecRefCount(tempId);
 }
 
+std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetAuxiliarySink()
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    std::shared_ptr<IAudioRenderSink> auxiliarySink = fac.CreateAuxiliarySink();
+    if (auxiliarySink == nullptr) {
+        AUDIO_ERR_LOG("get auxiliarySink fail");
+        return nullptr;
+    }
+    AUDIO_INFO_LOG("get auxiliarySink success");
+    return auxiliarySink;
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t renderId, bool tryCreate)
 {
     IdHandler &idHandler = IdHandler::GetInstance();

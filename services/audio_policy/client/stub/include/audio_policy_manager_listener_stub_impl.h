@@ -18,7 +18,6 @@
 
 #include <thread>
 
-#include "audio_system_manager.h"
 #include "audio_interrupt_callback.h"
 #include "audio_route_callback.h"
 #include "standard_audio_policy_manager_listener_stub.h"

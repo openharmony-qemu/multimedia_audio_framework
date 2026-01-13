@@ -17,7 +17,6 @@
 #define AUDIO_STREAM_COLLECTOR_H
 
 #include "iaudio_policy_client.h"
-#include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
 #include "audio_ability_manager.h"

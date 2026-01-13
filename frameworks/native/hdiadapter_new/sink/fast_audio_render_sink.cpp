@@ -45,7 +45,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     int32_t ret = CreateRender();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create render fail");
     ret = PrepareMmapBuffer();
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
 
     sinkInited_ = true;
@@ -96,11 +96,11 @@ int32_t FastAudioRenderSink::Start(void)
     }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     ret = CheckPositionTime();
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Start]check position time fail"));
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
@@ -143,7 +143,7 @@ int32_t FastAudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_NOT_STARTED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Stop]stop fail, ret: %{public}d", ret));
     started_ = false;
     return SUCCESS;
@@ -159,7 +159,7 @@ int32_t FastAudioRenderSink::Resume(void)
         return SUCCESS;
     }
     int32_t ret = audioRender_->Resume(audioRender_);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[Resume]resume fail"));
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
     paused_ = false;
@@ -175,7 +175,7 @@ int32_t FastAudioRenderSink::Pause(void)
         return SUCCESS;
     }
     int32_t ret = audioRender_->Pause(audioRender_);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[Pause]pause fail"));
     paused_ = true;
     return SUCCESS;
@@ -188,7 +188,7 @@ int32_t FastAudioRenderSink::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioRender_->Flush(audioRender_);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[Flush]flush fail"));
     return SUCCESS;
 }
@@ -413,7 +413,7 @@ int32_t FastAudioRenderSink::GetMmapHandlePosition(uint64_t &frames, int64_t &ti
         frames, curReadPos_);
 #endif
     int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it
-    CHECK_AND_CALL_RET_FUNC(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
+    CHECK_AND_CALL_FUNC_RETURN_RET(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
         stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[GetMmapHandlePosition]get invalid time, second: %{public}" PRId64 ", "
             "nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec));
@@ -574,7 +574,7 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
     int32_t ret = audioRender_->ReqMmapBuffer(audioRender_, reqBufferFrameSize, &desc);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[PrepareMmapBuffer]request mmap buffer fail, ret: %{public}d", ret));
     AUDIO_INFO_LOG("memoryAddress: [%{private}p], memoryFd: [%{public}d], totalBufferFrames: [%{public}d], "
         "transferFrameSize: [%{public}d], isShareable: [%{public}d], offset: [%{public}d]", desc.memoryAddress,
@@ -582,7 +582,7 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
 
     bufferFd_ = desc.memoryFd; // fcntl(fd, 1030, 3) after dup?
     int32_t periodFrameMaxSize = 1920000; // 192khz * 10s
-    CHECK_AND_CALL_RET_FUNC(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
+    CHECK_AND_CALL_FUNC_RETURN_RET(desc.totalBufferFrames >= 0 && desc.transferFrameSize >= 0 &&
         desc.transferFrameSize <= periodFrameMaxSize, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[PrepareMmapBuffer]invalid value, totalBufferFrames: [%{public}d], "
             "transferFrameSize: [%{public}d]", desc.totalBufferFrames, desc.transferFrameSize));
@@ -597,7 +597,7 @@ int32_t FastAudioRenderSink::PrepareMmapBuffer(void)
 #ifdef DEBUG_DIRECT_USE_HDI
     privBufferFd_ = dup(bufferFd_);
     bufferAddress_ = (char *)mmap(nullptr, bufferSize_, PROT_READ | PROT_WRITE, MAP_SHARED, privBufferFd_, 0);
-    CHECK_AND_CALL_RET_FUNC(bufferAddress_ != nullptr && bufferAddress_ != MAP_FAILED, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(bufferAddress_ != nullptr && bufferAddress_ != MAP_FAILED, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[PrepareMmapBuffer]mmap buffer fail"));
 #endif
     return SUCCESS;

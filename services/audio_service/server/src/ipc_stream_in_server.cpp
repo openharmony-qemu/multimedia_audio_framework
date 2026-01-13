@@ -124,10 +124,10 @@ std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
 int32_t IpcStreamInServer::ConfigRenderer()
 {
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
-    CHECK_AND_CALL_RET_FUNC(rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[ConfigRenderer]Create RendererInServer failed"));
     int32_t ret = rendererInServer_->Init();
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[ConfigRenderer]Init RendererInServer failed!"));
     return SUCCESS;
 }

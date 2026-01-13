@@ -32,12 +32,10 @@
 
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
-#include "audio_system_manager.h"
+#include "app_bundle_manager.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
-
-#include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #include "fast_audio_stream.h"
 #include "linear_pos_time_model.h"
@@ -391,7 +389,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
         "CheckIfSupport failed!");
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, nullptr,
         HILOG_COMM_ERROR("[Create]Create failed, can not get service."));
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = AudioStreamCommon::IsVoipMmap(config.rendererInfo.streamUsage, config.capturerInfo.sourceType);
@@ -716,7 +714,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
         processProxy_->RegisterThreadPriority(
             gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ);
         // Callback loop
         while (keepRunning) {
@@ -747,7 +745,7 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
         processProxy_->RegisterThreadPriority(
             gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ);
         // Callback loop
         while (keepRunning) {
@@ -864,7 +862,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 // the buffer will be used by client
 int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 {
-    CHECK_AND_CALL_RET_FUNC(isInited_, ERR_ILLEGAL_STATE,
+    CHECK_AND_CALL_FUNC_RETURN_RET(isInited_, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[GetBufferDesc]not inited!"));
     Trace trace("AudioProcessInClient::GetBufferDesc");
 

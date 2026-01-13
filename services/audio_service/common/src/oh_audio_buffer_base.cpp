@@ -24,26 +24,31 @@
 #include <memory>
 #include <sys/mman.h>
 #include "ashmem.h"
+#include <algorithm>
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "futex_tool.h"
 #include "audio_utils.h"
 #include "audio_parcel_helper.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 namespace {
-    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
     static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
+    const uint32_t MAX_DURATION_MS = 3000;
+    const uint32_t MAX_TIME_MS = 0xFFFFFFFF;
+    const float MIN_DUCK_FLOAT_VOLUME = 0.1f;
 }
 
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -510,6 +515,7 @@ float OHAudioBufferBase::GetStreamVolume()
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
     float vol = basicBufferInfo_->streamVolume.load();
+    vol *= GetFactorFromRamp();
     if (vol < MIN_FLOAT_VOLUME) {
         AUDIO_WARNING_LOG("vol < 0.0, invalid volume! using 0.0 instead.");
         return MIN_FLOAT_VOLUME;
@@ -571,25 +577,32 @@ float OHAudioBufferBase::GetDuckFactor()
     return factor;
 }
 
-float OHAudioBufferBase::GetVolumeFromOh()
+float OHAudioBufferBase::GetFactorFromRamp()
 {
-    float volumeStream = GetStreamVolume();
-    uint32_t durationMs = basicBufferInfo_->durationMs.load();
-    uint32_t beginDurationMs = basicBufferInfo_->beginDurationMs.load();
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
+    uint32_t durationMs = std::min(MAX_DURATION_MS, basicBufferInfo_->durationMs.load());
+    uint32_t beginDurationMs = std::min(MAX_TIME_MS, basicBufferInfo_->beginDurationMs.load());
+
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
- 
-    float oldDuckFactor = basicBufferInfo_->oldDuckFactor.load();
-    float duckFactor = basicBufferInfo_->duckFactor.load();
-    float lastEventFactor = basicBufferInfo_->lastEventFactor.load();
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
+    currentTime = std::max(currentTime, beginDurationMs);
+    uint32_t lastEventTime = std::max(beginDurationMs,
+        std::min(basicBufferInfo_->lastEventTime.load(), currentTime));
+
+    float oldDuckFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->oldDuckFactor.load()));
+    float duckFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->duckFactor.load()));
+    float lastEventFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->lastEventFactor.load()));
     float factor = duckFactor;
  
     if ((currentTime - beginDurationMs) < durationMs &&
-        !FLOAT_COMPARE_EQ(duckFactor, oldDuckFactor) && durationMs > 0) {
+        !IsVolumeSame(duckFactor, oldDuckFactor, AUDIO_VOLUME_EPSILON) && durationMs > 0) {
         float delta = duckFactor - oldDuckFactor;
         factor = lastEventFactor + delta *
-            static_cast<float>(currentTime - basicBufferInfo_->lastEventTime.load()) / static_cast<float>(durationMs);
+            static_cast<float>(currentTime - lastEventTime) / static_cast<float>(durationMs);
         if ((delta > 0 && factor > duckFactor) || (delta < 0 && factor < duckFactor)) {
             factor = duckFactor;
         }
@@ -598,8 +611,8 @@ float OHAudioBufferBase::GetVolumeFromOh()
     } else {
         basicBufferInfo_->lastEventFactor.store(duckFactor);
     }
- 
-    return volumeStream * factor * GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
+
+    return factor;
 }
  
 bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
@@ -611,7 +624,7 @@ bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
     }
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
  
     float oldDuckFactor = basicBufferInfo_->duckFactor.load();
     basicBufferInfo_->oldDuckFactor.store(oldDuckFactor);
@@ -629,7 +642,7 @@ int32_t OHAudioBufferBase::GetWritableDataFrames()
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
     uint64_t temp = write - read;
-    CHECK_AND_CALL_RET_FUNC(temp <= INT32_MAX && temp <= totalSizeInFrame_, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET(temp <= INT32_MAX && temp <= totalSizeInFrame_, result,
         HILOG_COMM_ERROR("[GetWritableDataFrames]failed to GetWritableDataFrames."));
     result = static_cast<int32_t>(totalSizeInFrame_ - temp);
     return result;
@@ -642,7 +655,7 @@ int32_t OHAudioBufferBase::GetReadableDataFrames()
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
     uint64_t temp = write - read;
-    CHECK_AND_CALL_RET_FUNC(temp <= INT32_MAX && temp <= totalSizeInFrame_, result,
+    CHECK_AND_CALL_FUNC_RETURN_RET(temp <= INT32_MAX && temp <= totalSizeInFrame_, result,
         HILOG_COMM_ERROR("[GetReadableDataFrames]failed to GetReadableDataFrames."));
     result = static_cast<int32_t>(temp);
     return result;
@@ -669,21 +682,21 @@ int32_t OHAudioBufferBase::ResetCurReadWritePos(uint64_t readFrame, uint64_t wri
 
 uint64_t OHAudioBufferBase::GetCurWriteFrame()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, 0,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, 0,
         HILOG_COMM_ERROR("[GetCurWriteFrame]basicBufferInfo_ is null"));
     return basicBufferInfo_->curWriteFrame.load();
 }
 
 uint64_t OHAudioBufferBase::GetCurReadFrame()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, 0,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, 0,
         HILOG_COMM_ERROR("[GetCurReadFrame]basicBufferInfo_ is null"));
     return basicBufferInfo_->curReadFrame.load();
 }
 
 uint64_t OHAudioBufferBase::GetBasePosInFrame()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, 0,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, 0,
         HILOG_COMM_ERROR("[GetBasePosInFrame]basicBufferInfo_ is null"));
     return basicBufferInfo_->basePosInFrame.load();
 }
@@ -696,21 +709,22 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
         return SUCCESS;
     }
 
-    CHECK_AND_CALL_RET_FUNC(oldWritePos >= basePos, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(oldWritePos >= basePos, ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurWriteFrame]oldWritePos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "",
             oldWritePos, basePos));
-    CHECK_AND_CALL_RET_FUNC(writeFrame > oldWritePos, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(writeFrame > oldWritePos, ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurWriteFrame]Too small writeFrame:%{public}" PRIu64".", writeFrame));
 
     uint64_t deltaToBase = writeFrame - basePos; // writeFrame % spanSizeInFrame_ --> 0
 
     // check new pos in range: base ~ base + 2*total
-    CHECK_AND_CALL_RET_FUNC(deltaToBase < (totalSizeInFrame_ + totalSizeInFrame_), ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(deltaToBase < (totalSizeInFrame_ + totalSizeInFrame_), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurWriteFrame]Invalid writeFrame %{public}" PRIu64" out of base range.", writeFrame));
 
     // check new pos in (read + cache) range: read ~ read + totalSize - 1*spanSize
     uint64_t curRead = basicBufferInfo_->curReadFrame.load();
-    CHECK_AND_CALL_RET_FUNC(writeFrame >= curRead && writeFrame - curRead <= totalSizeInFrame_, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(writeFrame >= curRead && writeFrame - curRead <= totalSizeInFrame_,
+        ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurWriteFrame]Invalid writeFrame %{public}" PRIu64" out of cache range, "
             "curRead %{public}" PRIu64".", writeFrame, curRead));
 
@@ -725,7 +739,7 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
 
 int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurReadFrame]basicBufferInfo_ is nullptr"));
     uint64_t oldBasePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t oldReadPos = basicBufferInfo_->curReadFrame.load();
@@ -733,12 +747,12 @@ int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
         return SUCCESS;
     }
 
-    CHECK_AND_CALL_RET_FUNC(oldReadPos >= oldBasePos, ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(oldReadPos >= oldBasePos, ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetCurReadFrame]oldReadPos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "",
             oldReadPos, oldBasePos));
 
     // new read position should not be bigger than write position or less than old read position
-    CHECK_AND_CALL_RET_FUNC(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),
+    CHECK_AND_CALL_FUNC_RETURN_RET(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),
         ERR_INVALID_PARAM, HILOG_COMM_ERROR("[SetCurReadFrame]Invalid readFrame %{public}" PRIu64".", readFrame));
 
     uint64_t deltaToBase = readFrame - oldBasePos;
@@ -787,7 +801,7 @@ int32_t OHAudioBufferBase::GetOffsetByFrameForWrite(uint64_t writePosInFrame, si
 int32_t OHAudioBufferBase::GetOffsetByFrameForRead(uint64_t readPosInFrame, size_t &offset)
 {
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
-    CHECK_AND_CALL_RET_FUNC(readPosInFrame >= basePos && readPosInFrame - basePos < totalSizeInFrame_,
+    CHECK_AND_CALL_FUNC_RETURN_RET(readPosInFrame >= basePos && readPosInFrame - basePos < totalSizeInFrame_,
         ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[GetOffsetByFrameForRead]Invalid read position:%{public}" PRIu64".", readPosInFrame));
     return GetOffsetByFrame(readPosInFrame, offset);
@@ -882,7 +896,7 @@ int32_t OHAudioBufferBase::GetAllReadableBufferFromPosFrame(uint64_t readPosInFr
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t writePos = basicBufferInfo_->curWriteFrame.load();
 
-    CHECK_AND_CALL_RET_FUNC((readPosInFrame >= basePos) && (readPosInFrame - basePos < totalSizeInFrame_) &&
+    CHECK_AND_CALL_FUNC_RETURN_RET((readPosInFrame >= basePos) && (readPosInFrame - basePos < totalSizeInFrame_) &&
         (readPosInFrame <= writePos),
         ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[GetAllReadableBufferFromPosFrame]Invalid read position:%{public}" PRIu64".",
@@ -985,21 +999,21 @@ size_t OHAudioBufferBase::GetDataSize()
 
 void OHAudioBufferBase::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[GetRestoreInfo]basicBufferInfo_ is nullptr"));
     restoreInfo = basicBufferInfo_->restoreInfo;
 }
 
 void OHAudioBufferBase::SetRestoreInfo(RestoreInfo restoreInfo)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[SetRestoreInfo]basicBufferInfo_ is nullptr"));
     basicBufferInfo_->restoreInfo = restoreInfo;
 }
 
 void OHAudioBufferBase::GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[GetTimeStampInfo]basicBufferInfo_ is nullptr"));
     position = basicBufferInfo_->position.load();
     timeStamp = basicBufferInfo_->timeStamp.load();
@@ -1007,7 +1021,7 @@ void OHAudioBufferBase::GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp
 
 void OHAudioBufferBase::SetTimeStampInfo(uint64_t position, uint64_t timeStamp)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[SetTimeStampInfo]basicBufferInfo_ is nullptr"));
     basicBufferInfo_->position.store(position);
     basicBufferInfo_->timeStamp.store(timeStamp);
@@ -1015,7 +1029,7 @@ void OHAudioBufferBase::SetTimeStampInfo(uint64_t position, uint64_t timeStamp)
 
 RestoreStatus OHAudioBufferBase::GetRestoreStatus()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, RESTORE_ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, RESTORE_ERROR,
         HILOG_COMM_ERROR("[GetRestoreStatus]basicBufferInfo_ is nullptr"));
     return basicBufferInfo_->restoreStatus.load();
 }
@@ -1024,7 +1038,7 @@ RestoreStatus OHAudioBufferBase::GetRestoreStatus()
 // to avoid multiple restore.
 RestoreStatus OHAudioBufferBase::CheckRestoreStatus()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, RESTORE_ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, RESTORE_ERROR,
         HILOG_COMM_ERROR("[CheckRestoreStatus]basicBufferInfo_ is nullptr"));
     RestoreStatus expectedStatus = NEED_RESTORE;
     basicBufferInfo_->restoreStatus.compare_exchange_strong(expectedStatus, RESTORING);
@@ -1035,7 +1049,7 @@ RestoreStatus OHAudioBufferBase::CheckRestoreStatus()
 // can be set to NEED_RESTORE only when it is currently NO_NEED_FOR_RESTORE(and vice versa).
 RestoreStatus OHAudioBufferBase::SetRestoreStatus(RestoreStatus restoreStatus)
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, RESTORE_ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, RESTORE_ERROR,
         HILOG_COMM_ERROR("[SetRestoreStatus]basicBufferInfo_ is nullptr"));
     RestoreStatus expectedStatus = RESTORE_ERROR;
     if (restoreStatus == NEED_RESTORE) {
@@ -1050,14 +1064,14 @@ RestoreStatus OHAudioBufferBase::SetRestoreStatus(RestoreStatus restoreStatus)
 
 void OHAudioBufferBase::SetStopFlag(bool isNeedStop)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[SetStopFlag]basicBufferInfo_ is nullptr"));
     basicBufferInfo_->isNeedStop.store(isNeedStop);
 }
 
 bool OHAudioBufferBase::GetStopFlag() const
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
         HILOG_COMM_ERROR("[GetStopFlag]basicBufferInfo_ is nullptr"));
     bool isNeedStop = basicBufferInfo_->isNeedStop.exchange(false);
     return isNeedStop;
@@ -1114,13 +1128,14 @@ void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 
 void OHAudioBufferBase::SetStaticMode(bool state)
 {
-    CHECK_AND_CALL_FUNC(basicBufferInfo_ != nullptr, HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
+    CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
+        HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
     basicBufferInfo_->isStatic_.store(state);
 }
 
 bool OHAudioBufferBase::GetStaticMode()
 {
-    CHECK_AND_CALL_RET_FUNC(basicBufferInfo_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
         HILOG_COMM_ERROR("[GetStaticMode]basicBufferInfo_ is null"));
     return basicBufferInfo_->isStatic_.load();
 }
@@ -1178,7 +1193,7 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
 bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
 {
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
     Trace trace("CheckFrozenAndSetLastProcessTime" + std::to_string(bufferPosition));
     int64_t curTimestamp = ClockTime::GetCurNano();
 

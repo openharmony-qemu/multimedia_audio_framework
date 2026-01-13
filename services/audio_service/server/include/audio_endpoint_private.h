@@ -254,6 +254,7 @@ private:
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
     void NotifyStreamChange(StreamChangeType change,
         IAudioProcessStream *processStream, RendererState state);
+    AudioEndpointInner::VolumeResult ConstructEnforcedToneVolume();
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -398,6 +399,8 @@ private:
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";
     std::string dupMixName_ = "";
+
+    std::mutex startStatusLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

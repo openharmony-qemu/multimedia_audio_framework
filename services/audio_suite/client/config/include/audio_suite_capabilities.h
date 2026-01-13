@@ -46,7 +46,7 @@ public:
     }
 
     int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool* isSupported);
-    int32_t GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability);
+    int32_t GetNodeParameter(AudioNodeType nodeType, NodeParameter &nodeParameter);
 
 private:
     AudioSuiteLibraryManager algoLibrary_;
@@ -55,38 +55,22 @@ private:
     ~AudioSuiteCapabilities() = default;
 
     template <typename T>
-    int32_t LoadCapability(std::string functionName, std::string algoSoPath, T &specs)
-    {
-        AUDIO_INFO_LOG("loadCapability start.");
-        void *libHandle = algoLibrary_.LoadLibrary(algoSoPath);
-        CHECK_AND_RETURN_RET_LOG(
-            libHandle != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", algoSoPath.c_str());
-        using GetFunc = T (*)();
-        GetFunc getSpecsFunc = reinterpret_cast<GetFunc>(dlsym(libHandle, functionName.c_str()));
-        if (getSpecsFunc == nullptr) {
-            dlclose(libHandle);
-            AUDIO_ERR_LOG("dlsym failed");
-            return ERROR;
-        }
+    int32_t LoadCapability(const std::string& functionName, std::string algoSoPath, T &specs);
 
-        specs = getSpecsFunc();
-        dlclose(libHandle);
-        libHandle = nullptr;
-        AUDIO_INFO_LOG("loadCapability end.");
-        return SUCCESS;
-    }
+    template <typename T>
+    int32_t SetAudioParameters(NodeParameter &np, T &specs);
 
-    int32_t LoadVbCapability(NodeCapability &nc);
-    int32_t LoadEqCapability(NodeCapability &nc);
-    int32_t LoadAinrCapability(NodeCapability &nc);
-    int32_t LoadSfCapability(NodeCapability &nc);
-    int32_t LoadEnvCapability(NodeCapability &nc);
-    int32_t LoadSrCapability(NodeCapability &nc);
-    int32_t LoadAissCapability(NodeCapability &nc);
-    int32_t LoadGeneralCapability(NodeCapability &nc);
-    int32_t LoadPureCapability(NodeCapability &nc);
-    int32_t LoadTempoPitchCapability(NodeCapability &nc);
-    std::unordered_map<AudioNodeType, NodeCapability> audioSuiteCapabilities_;
+    int32_t LoadVbCapability(NodeParameter &np);
+    int32_t LoadEqCapability(NodeParameter &np);
+    int32_t LoadAinrCapability(NodeParameter &np);
+    int32_t LoadSfCapability(NodeParameter &np);
+    int32_t LoadEnvCapability(NodeParameter &np);
+    int32_t LoadSrCapability(NodeParameter &np);
+    int32_t LoadAissCapability(NodeParameter &np);
+    int32_t LoadGeneralCapability(NodeParameter &np);
+    int32_t LoadPureCapability(NodeParameter &np);
+    int32_t LoadTempoPitchCapability(NodeParameter &np);
+    std::unordered_map<AudioNodeType, NodeParameter> audioSuiteCapabilities_;
     AudioSuiteCapabilitiesParser audioSuiteCapabilitiesParser_;
 };
 }

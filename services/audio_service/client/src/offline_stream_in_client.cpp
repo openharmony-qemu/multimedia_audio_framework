@@ -23,8 +23,6 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-
-#include "audio_manager_base.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "istandard_audio_service.h"
@@ -56,7 +54,7 @@ static const sptr<IStandardAudioService> GetAudioServerProxy()
 shared_ptr<OfflineStreamInClient> OfflineStreamInClient::Create()
 {
     sptr<IStandardAudioService> gasp = GetAudioServerProxy();
-    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, nullptr,
         HILOG_COMM_ERROR("[Create]Create failed, can not get service."));
     int32_t errCode = 0;
     sptr<IRemoteObject> ipcProxy;
@@ -72,7 +70,7 @@ shared_ptr<OfflineStreamInClient> OfflineStreamInClient::Create()
 int32_t OfflineStreamInClient::GetOfflineAudioEffectChains(std::vector<std::string> &effectChains)
 {
     sptr<IStandardAudioService> gasp = GetAudioServerProxy();
-    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[GetOfflineAudioEffectChains]Create failed, can not get service."));
     return gasp->GetOfflineAudioEffectChains(effectChains);
 }

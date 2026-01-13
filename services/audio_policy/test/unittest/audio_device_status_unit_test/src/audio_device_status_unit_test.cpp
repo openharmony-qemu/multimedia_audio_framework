@@ -700,7 +700,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_002, TestSize.Lev
     int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(desc);
     audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -728,7 +728,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_003, TestSize.Lev
     int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(descB);
     audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

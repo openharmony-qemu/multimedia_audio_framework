@@ -30,6 +30,7 @@
 #include "sink/multichannel_audio_render_sink.h"
 #include "sink/offload_audio_render_sink.h"
 #include "sink/direct_audio_render_sink.h"
+#include "sink/auxiliary_sink.h"
 #include "source/audio_capture_source.h"
 #include "source/bluetooth_audio_capture_source.h"
 #include "source/wakeup_audio_capture_source.h"
@@ -54,6 +55,11 @@ HdiAdapterFactory &HdiAdapterFactory::GetInstance(void)
 {
     static HdiAdapterFactory instance;
     return instance;
+}
+
+std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateAuxiliarySink(void)
+{
+    return std::make_shared<AuxiliarySink>();
 }
 
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t renderId)

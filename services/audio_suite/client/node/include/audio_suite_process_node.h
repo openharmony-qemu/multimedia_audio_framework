@@ -29,12 +29,12 @@ namespace AudioStandard {
 namespace AudioSuite {
 class AudioSuiteProcessNode : public AudioNode {
 public:
+    AudioSuiteProcessNode(AudioNodeType nodeType);
     AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat);
     virtual ~AudioSuiteProcessNode() = default;
     int32_t DoProcess() override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
-    int32_t InitOutputStream();
     int32_t Flush() override;
     std::string paraName_ = "";
     std::string paraValue_ = "";
@@ -58,15 +58,18 @@ public:
     }
 
 protected:
-    OutputPort<AudioSuitePcmBuffer*> outputStream_;
+    OutputPort<AudioSuitePcmBuffer *> outputStream_;
     InputPort<AudioSuitePcmBuffer *> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    NodeCapability nodeCapability;
+    NodeParameter nodeParameter;
     // for dfx
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
     void CheckEffectNodeOvertimeCount();
+    int32_t InitOutputStream();
+    bool isOutputPortInit_ = false;
+    uint32_t pcmDurationMs_ = 0;
 
 private:
     // for dfx

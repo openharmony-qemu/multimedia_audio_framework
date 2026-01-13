@@ -60,6 +60,7 @@ ohos_shared_library("hdiadapter_new") {
     "sink/direct_audio_render_sink.cpp",
     "sink/fast_audio_render_sink.cpp",
     "sink/file_audio_render_sink.cpp",
+    "sink/auxiliary_sink.cpp",
     "sink/multichannel_audio_render_sink.cpp",
     "sink/offload_audio_render_sink.cpp",
     "source/i_audio_capture_source.cpp",
@@ -92,7 +93,7 @@ ohos_shared_library("hdiadapter_new") {
     "bundle_framework:appexecfwk_core",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "hdf_core:libhdf_ipc_adapter",
     "hilog:libhilog",
@@ -216,7 +217,7 @@ ohos_unittest("hdiadapter_unit_test") {
 
   external_deps = [
     "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
     "googletest:gmock",
     "googletest:gtest",

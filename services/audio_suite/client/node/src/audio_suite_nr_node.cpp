@@ -18,24 +18,17 @@
 #endif
 
 #include "audio_suite_nr_node.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-static constexpr AudioSamplingRate NR_ALGO_SAMPLE_RATE = SAMPLE_RATE_16000;
-static constexpr AudioSampleFormat NR_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel NR_ALGO_CHANNEL_COUNT = MONO;
 static constexpr AudioChannelLayout NR_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
-static constexpr uint32_t NR_ALGO_FRAME_LENGTH = 160;      // 10ms data
-static constexpr uint32_t NR_ALGO_FRAME_SIZE = NR_ALGO_FRAME_LENGTH * sizeof(int16_t);
 }
 
 AudioSuiteNrNode::AudioSuiteNrNode()
-    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_NOISE_REDUCTION,
-          AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, NR_ALGO_CHANNEL_COUNT}, NR_ALGO_SAMPLE_FORMAT, NR_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(
-          PcmBufferFormat{NR_ALGO_SAMPLE_RATE, NR_ALGO_CHANNEL_COUNT, NR_ALGO_CHANNEL_LAYOUT, NR_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_NOISE_REDUCTION)
 {}
 
 AudioSuiteNrNode::~AudioSuiteNrNode()
@@ -46,14 +39,27 @@ AudioSuiteNrNode::~AudioSuiteNrNode()
 int32_t AudioSuiteNrNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init begin");
-    CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     algoInterface_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nodeCapability);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create nr algoInterface");
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init nr algorithm");
+
+    SetAudioNodeFormat(AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
+        NR_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
 
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init end");
     return SUCCESS;
@@ -80,7 +86,7 @@ AudioSuitePcmBuffer *AudioSuiteNrNode::SignalProcess(const std::vector<AudioSuit
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface is nullptr, need Init first");
 
     uint32_t inputDataSize = inputs[0]->GetDataSize();
-    uint32_t frameSize = NR_ALGO_FRAME_SIZE;
+    uint32_t frameSize = nodeParameter.frameLen * sizeof(int16_t);
     uint32_t frameCount = inputDataSize / frameSize;
     CHECK_AND_RETURN_RET_LOG(inputDataSize % frameSize == 0, nullptr, "Invalid inputPcmBuffer size");
 

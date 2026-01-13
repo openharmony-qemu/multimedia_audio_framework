@@ -34,6 +34,7 @@ using namespace AudioStandard;
 
 const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
 const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
+constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
 A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
@@ -677,6 +678,9 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
         if (isVirtual) {
             if (virtualCalls_.count(uid) > 0) {
                 virtualCalls_.erase(uid);
+            }
+            if (uid == UID_CALL_MANAGER_SA) {
+                virtualCalls_.clear();
             }
         } else {
             virtualCalls_[uid] = isVirtual;

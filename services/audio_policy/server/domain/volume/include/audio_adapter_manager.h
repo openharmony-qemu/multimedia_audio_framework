@@ -162,6 +162,8 @@ public:
 
     void UpdateVolumeForStreams();
 
+    void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream);
+
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName);
@@ -401,7 +403,6 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    bool LoadVolumeMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);

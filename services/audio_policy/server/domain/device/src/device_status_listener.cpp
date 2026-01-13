@@ -22,7 +22,7 @@
 #include "hdf_device_class.h"
 
 namespace {
-    #include "v5_0/audio_types.h"
+    #include "v6_0/audio_types.h"
 }
 
 
@@ -117,17 +117,32 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
 
 static void ParseDeviceExtraInfo(std::string &info, DStatusInfo &statusInfo)
 {
+    std::string deviceExtraCapsStr;
     std::string deviceExtraInfoStr;
     auto pos = info.find(DEVICE_EXTRA_INFO_PREFIX);
-    CHECK_AND_RETURN_LOG(pos != std::string::npos, "invalid info");
-    pos += DEVICE_EXTRA_INFO_PREFIX.length();
-    auto endPos = info.find(";", pos);
-    deviceExtraInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
+    auto postask = info.find(DEVICE_STREAM_INFO_PREFIX);
+    if (pos != std::string::npos) {
+        pos += DEVICE_EXTRA_INFO_PREFIX.length();
+        auto endPos = info.find(";", pos);
+        deviceExtraInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
+    }
 
+    if (postask != std::string::npos) {
+        postask += DEVICE_STREAM_INFO_PREFIX.length();
+        auto endtask = info.find(";", postask);
+        deviceExtraCapsStr += endtask == std::string::npos ? info.substr(postask) :
+            info.substr(postask, endtask - postask);
+    }
     std::vector<std::string> strList = SplitStr(deviceExtraInfoStr, ',');
-    CHECK_AND_RETURN_LOG(strList.size() == 3, "invalid extra info num"); // 3:member num
+    CHECK_AND_RETURN_LOG(strList.size() == 3 || strList.size() == 1, "invalid extra info num"); // 3、1:member num
     statusInfo.dmDeviceInfo = deviceExtraInfoStr; // str: deviceSN,dmDeviceType,isStereo
-    statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul(strList[1], nullptr, HEX_BASE)); // 1: dmDeviceType
+    if (deviceExtraInfoStr == "taskId") {
+        statusInfo.dmDeviceInfo = deviceExtraCapsStr;
+        statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul("A15", nullptr, HEX_BASE));
+    }
+    if (strList.size() == 3) { //3：strList size
+        statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul(strList[1], nullptr, HEX_BASE)); // 1: dmDeviceType
+    }
 }
 
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,

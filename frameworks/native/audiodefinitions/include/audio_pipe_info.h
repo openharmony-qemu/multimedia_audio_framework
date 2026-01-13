@@ -121,6 +121,11 @@ public:
         return adapterName_ == targetAdapterName;
     }
 
+    bool IsSameNetworkId(const std::string &targetNetworkId) const
+    {
+        return moduleInfo_.networkId == targetNetworkId;
+    }
+
     bool IsSameRole(const std::shared_ptr<AudioStreamDescriptor> stream) const
     {
         if (stream == nullptr) {

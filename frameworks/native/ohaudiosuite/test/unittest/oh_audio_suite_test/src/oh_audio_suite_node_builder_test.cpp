@@ -38,6 +38,10 @@ static const uint32_t MAX_MIX_NODE_NUM = 3;
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }
@@ -1272,6 +1276,24 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, Te
 
     ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, INPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteNodeBuilder_SetNodeType.
+ * @tc.number: OH_AudioSuiteNodeBuilder_SetNodeType_002
+ * @tc.desc  : Test setNodeType when type is invalid.
+ */
+HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_002, TestSize.Level0)
+{
+    OH_AudioNodeBuilder *builder = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, static_cast<OH_AudioNode_Type>(999));
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

@@ -60,6 +60,7 @@ public:
     uint32_t GetLatency();
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state);
+    int32_t SetAuxiliarySinkEnable(bool isEnabled);
 
 private:
     void HandleRemoteTiming();
@@ -68,6 +69,20 @@ private:
     bool ReadDataAndConvertFormat();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char, AlignedAllocator<char, 16>> renderFrameData_; // 16 for alignment in byte
+    
+    // only for auxiliarysink
+    int32_t GetAuxiliarySink(const std::string &deviceClass);
+    int32_t AuxiliarySinkInit();
+    int32_t AuxiliarySinkDeInit();
+    void RenderFrameForAuxiliarySink();
+    void UpdateAuxiliarySinkState(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state);
+    std::shared_ptr<IAudioRenderSink> auxiliarySink_ = nullptr;
+    std::atomic<bool> auxSinkEnable_ = false;
+    StreamManagerState auxSinkState_ = STREAM_MANAGER_NEW;
+    std::unordered_map<uint32_t, StreamUsage> sessionsWithAuxSinkInvalidFilter_;
+    std::unordered_map<uint32_t, StreamUsage> sessionsWithAuxSinkValidFilter_;
+    
     std::vector<float> interleveData_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;

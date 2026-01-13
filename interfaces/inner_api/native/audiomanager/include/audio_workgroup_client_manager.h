@@ -22,12 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioWorkgroupChangeCallback {
-public:
-    virtual ~AudioWorkgroupChangeCallback() = default;
-    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
-};
-
 // Workgroup priority recorder and related helpers, included inside AudioSystemManager class.
 class WorkgroupPrioRecorder {
 public:

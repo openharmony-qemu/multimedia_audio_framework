@@ -1905,5 +1905,83 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
     attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
     EXPECT_EQ(attr.adapterName, "remote");
 }
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateVolume_006
+ * @tc.desc  : Test CalculateVolume function with STREAM_SYSTEM_ENFORCED and valid volume
+ */
+ HWTEST_F(AudioEndpointPlusUnitTest, CalculateVolume_006, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(processBuffer, nullptr);
+
+    MockAudioProcessStream mockProcessStream;
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+    EXPECT_CALL(mockProcessStream, GetAudioStreamType())
+    .WillOnce(Return(STREAM_SYSTEM_ENFORCED));
+
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    audioEndpointInner->processList_.push_back(&mockProcessStream);
+    audioEndpointInner->deviceInfo_.networkId_ = LOCAL_NETWORK_ID;
+    audioEndpointInner->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    VolumeUtils::enforcedToneVolume_ = 0.5f;
+    int32_t targetVolume = static_cast<int32_t>(VolumeUtils::enforcedToneVolume_ * SHARED_VOLUME_MAX);
+    AudioEndpointInner::VolumeResult result = audioEndpointInner->CalculateVolume(0);
+    EXPECT_EQ(result.volumeStart, targetVolume);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateVolume_007
+ * @tc.desc  : Test CalculateVolume function with STREAM_SYSTEM_ENFORCED and invalid volume
+ */
+ HWTEST_F(AudioEndpointPlusUnitTest, CalculateVolume_007, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(processBuffer, nullptr);
+
+    MockAudioProcessStream mockProcessStream;
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+    EXPECT_CALL(mockProcessStream, GetAudioStreamType())
+    .WillOnce(Return(STREAM_SYSTEM_ENFORCED));
+
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    audioEndpointInner->processList_.push_back(&mockProcessStream);
+    audioEndpointInner->deviceInfo_.networkId_ = LOCAL_NETWORK_ID;
+    audioEndpointInner->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    int32_t targetVolume = -1;
+    AudioEndpointInner::VolumeResult result = audioEndpointInner->CalculateVolume(0);
+    EXPECT_NE(result.volumeStart, targetVolume);
+}
 } // namespace AudioStandard
 } // namespace OHOS

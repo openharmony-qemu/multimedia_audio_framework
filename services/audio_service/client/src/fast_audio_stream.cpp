@@ -24,6 +24,7 @@
 #include "audio_capturer_log.h"
 
 #include "fast_audio_stream.h"
+#include "app_bundle_manager.h"
 
 using namespace std;
 
@@ -155,7 +156,7 @@ int32_t FastAudioStream::SetAudioStreamInfo(const AudioStreamParams info,
     AudioProcessConfig config;
     int32_t ret = InitializeAudioProcessConfig(config, info);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Initialize failed.");
-    CHECK_AND_CALL_RET_FUNC(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
+    CHECK_AND_CALL_FUNC_RETURN_RET(AudioProcessInClient::CheckIfSupport(config), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[SetAudioStreamInfo]Stream is not supported."));
     processconfig_ = config;
     // OS_AudioPlayCb/RecordCb should lock weak_ptr of FastAudioStream before calling OnWriteData to
@@ -715,14 +716,14 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s: process client is null.", logTag_.c_str());
     processClient_->RegisterThreadPriority(tid,
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_CALL_RET_FUNC((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
+    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED), false,
         HILOG_COMM_ERROR("[StartAudioStream]%{public}s: Illegal state:%{public}u", logTag_.c_str(), state_));
 
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
@@ -757,7 +758,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
     AUDIO_PRERELEASE_LOGI("%{public}s: in", logTag_.c_str());
-    CHECK_AND_CALL_RET_FUNC(state_ == RUNNING, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(state_ == RUNNING, false,
         HILOG_COMM_ERROR("[PauseAudioStream]%{public}s: state is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
@@ -784,7 +785,7 @@ bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 
 bool FastAudioStream::StopAudioStream()
 {
-    CHECK_AND_CALL_RET_FUNC((state_ == RUNNING) || (state_ == PAUSED), false,
+    CHECK_AND_CALL_FUNC_RETURN_RET((state_ == RUNNING) || (state_ == PAUSED), false,
         HILOG_COMM_ERROR("[StopAudioStream]%{public}s: State is not RUNNING. Illegal state:%{public}u",
             logTag_.c_str(), state_));
     State oldState = state_;
@@ -823,7 +824,7 @@ bool FastAudioStream::DrainAudioStream(bool stopFlag)
 
 bool FastAudioStream::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    CHECK_AND_CALL_RET_FUNC(state_ != RELEASED && state_ != NEW, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(state_ != RELEASED && state_ != NEW, false,
         HILOG_COMM_ERROR("[ReleaseAudioStream]%{public}s: Illegal state: state = %{public}u",
             logTag_.c_str(), state_));
     // If state_ is RUNNING try to Stop it first and Release
@@ -1017,7 +1018,6 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
-    info.streamMuteFlag = GetMute();
 
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
     info.defaultOutputDevice = defaultOutputDevice_;

@@ -40,7 +40,7 @@ public:
     int32_t UnregisterOutputPipeChangeCallback(std::shared_ptr<AudioOutputPipeCallback> &callback);
     int32_t RegisterInputPipeChangeCallback(std::shared_ptr<AudioInputPipeCallback> &callback);
     int32_t UnregisterInputPipeChangeCallback(std::shared_ptr<AudioInputPipeCallback> &callback);
-
+    int32_t SetAuxiliarySinkEnable(bool isEnabled);
 private:
     class CallbackHandle : public IRemoteObject::DeathRecipient,
                            public AudioEngineCallbackHandleStub {

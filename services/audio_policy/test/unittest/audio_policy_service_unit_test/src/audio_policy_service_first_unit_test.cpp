@@ -651,62 +651,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test MoveToRemoteOutputDevice.
-* @tc.number: MoveToRemoteOutputDevice_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, MoveToRemoteOutputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest MoveToRemoteOutputDevice_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    SinkInput sinkInput = {};
-    sinkInput.streamId = 123;
-    sinkInput.streamType = STREAM_MUSIC;
-    sinkInput.uid = getuid();
-    sinkInput.pid = getpid();
-    vector<SinkInput> sinkInputs;
-    sinkInputs.push_back(sinkInput);
-
-    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, remoteDeviceDescriptor) << "remoteDeviceDescriptor is nullptr.";
-    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    remoteDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    remoteDeviceDescriptor->networkId_ = std::string(LOCAL_NETWORK_ID) + "xyz";
-
-    int32_t result = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToRemoteOutputDevice(
-        sinkInputs, remoteDeviceDescriptor);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
-}
-
-/**
-* @tc.name  : Test MoveToRemoteOutputDevice.
-* @tc.number: MoveToRemoteOutputDevice_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, MoveToRemoteOutputDevice_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest MoveToRemoteOutputDevice_002 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    SinkInput sinkInput = {};
-    sinkInput.streamId = 123;
-    sinkInput.streamType = STREAM_MUSIC;
-    sinkInput.uid = getuid();
-    sinkInput.pid = getpid();
-    vector<SinkInput> sinkInputs;
-    sinkInputs.push_back(sinkInput);
-
-    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, remoteDeviceDescriptor) << "remoteDeviceDescriptor is nullptr.";
-    remoteDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
-    remoteDeviceDescriptor->deviceRole_ = DeviceRole::INPUT_DEVICE;
-    remoteDeviceDescriptor->networkId_ = std::string(LOCAL_NETWORK_ID) + "xyz";;
-
-    int32_t result = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToRemoteOutputDevice(
-        sinkInputs, remoteDeviceDescriptor);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
-}
-
-/**
 * @tc.name  : Test SetCaptureDeviceForUsage.
 * @tc.number: SetCaptureDeviceForUsage_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -2373,29 +2317,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetNetworkIdByGroupId_001, TestSize.Level1)
     networkId = LOCAL_NETWORK_ID;
     int32_t res = GetServerPtr()->GetNetworkIdByGroupId(groupId, networkId);
     EXPECT_EQ(ERROR, res);
-}
-
-/**
-* @tc.name  : Test MoveToNewOutputDevice.
-* @tc.number: MoveToNewOutputDevice_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, MoveToNewOutputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest MoveToNewOutputDevice_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDescs.push_back(deviceDesc);
-    std::vector<SinkInput> sinkInputs;
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.MoveToNewOutputDevice(rendererChangeInfo, deviceDescs,
-        sinkInputs, reason);
-    EXPECT_EQ(DEVICE_TYPE_SPEAKER, rendererChangeInfo->outputDeviceInfo.deviceType_);
 }
 
 /**

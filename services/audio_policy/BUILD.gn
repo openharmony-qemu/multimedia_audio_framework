@@ -180,7 +180,6 @@ audio_ohos_library("audio_policy_service") {
     "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
-    "server/domain/interrupt/src/audio_interrupt_group_info.cpp",
     "server/domain/volume/src/audio_volume_group_info.cpp",
     "server/domain/pipe/src/audio_definition_adapter_info.cpp",
     "server/domain/pipe/src/audio_definition_policy_utils.cpp",
@@ -371,7 +370,7 @@ audio_ohos_library("audio_policy_service") {
     "cJSON:cjson",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -812,6 +811,7 @@ ohos_shared_library("audio_manager_client") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_anahs_manager.cpp",
+    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "client/service/src/audio_general_manager.cpp",
   ]
 
@@ -820,7 +820,6 @@ ohos_shared_library("audio_manager_client") {
   deps = [
     ":audio_foundation",
     ":audio_policy_client",
-    ":audio_policy_common",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_service:audio_common",
   ]
@@ -869,7 +868,6 @@ ohos_shared_library("audio_policy_common") {
   }
   install_enable = true
   sources = [
-    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "../audio_service/client/src/resource_manager_adapter.cpp",
   ]
 

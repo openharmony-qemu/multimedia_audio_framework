@@ -43,7 +43,7 @@ struct SpaceRenderAlgoApi {
 
 class AudioSuiteSpaceRenderAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteSpaceRenderAlgoInterfaceImpl();
  
     int32_t Init() override;

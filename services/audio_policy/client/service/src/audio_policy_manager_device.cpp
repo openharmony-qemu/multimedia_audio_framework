@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "sle_audio_operation_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {

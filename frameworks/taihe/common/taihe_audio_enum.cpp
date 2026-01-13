@@ -48,6 +48,7 @@ static const std::map<OHOS::AudioStandard::DeviceType, DeviceType> DEVICE_TYPE_T
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_REMOTE_DAUDIO, DeviceType::key_t::REMOTE_DAUDIO},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_HEARING_AID, DeviceType::key_t::HEARING_AID},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK, DeviceType::key_t::NEARLINK},
+    {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE, DeviceType::key_t::SYSTEM_PRIVATE},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT, DeviceType::key_t::DEFAULT},
 };
 
@@ -342,6 +343,7 @@ const std::map<std::string, int32_t> TaiheAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_SCO", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP},
     {"NEARLINK", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK},
+    {"SYSTEM_PRIVATE", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE},
     {"MIC", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_MIC},
     {"WAKEUP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_HEADSET},
@@ -401,7 +403,7 @@ static const std::map<OHOS::AudioStandard::OutputDeviceChangeRecommendedAction,
 };
 
 static const std::map<OHOS::AudioStandard::RenderTarget, RenderTarget> RENDER_TARGET_TAIHE_MAP = {
-    {OHOS::AudioStandard::RenderTarget::NORMAL_PLAYBACK, RenderTarget::key_t::NORMAL_PLAYBACK},
+    {OHOS::AudioStandard::RenderTarget::NORMAL_PLAYBACK, RenderTarget::key_t::PLAYBACK},
     {OHOS::AudioStandard::RenderTarget::INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
         RenderTarget::key_t::INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
 };
@@ -510,21 +512,6 @@ bool TaiheAudioEnum::IsLegalInputArgumentRingMode(int32_t ringMode)
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_SILENT:
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_VIBRATE:
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_NORMAL:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
-}
-
-bool TaiheAudioEnum::IsLegalRenderTarget(int32_t target)
-{
-    bool result = false;
-    switch (target) {
-        case TaiheAudioEnum::RenderTarget::NORMAL_PLAYBACK:
-        case TaiheAudioEnum::RenderTarget::INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
             result = true;
             break;
         default:
@@ -1452,13 +1439,13 @@ AudioLoopbackStatus TaiheAudioEnum::ToTaiheAudioLoopbackStatus(OHOS::AudioStanda
     return iter->second;
 }
 
-ohos::multimedia::audio::RenderTarget TaiheAudioEnum::ToTaiheRenderTarget(OHOS::AudioStandard::RenderTarget target)
+RenderTarget TaiheAudioEnum::ToTaiheRenderTarget(OHOS::AudioStandard::RenderTarget target)
 {
     auto iter = RENDER_TARGET_TAIHE_MAP.find(target);
     if (iter == RENDER_TARGET_TAIHE_MAP.end()) {
         AUDIO_WARNING_LOG("ToTaiheRenderTarget invalid mode: %{public}d", static_cast<int32_t>(target));
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheRenderTarget fail");
-        return ohos::multimedia::audio::RenderTarget::key_t::NORMAL_PLAYBACK;
+        return RenderTarget::key_t::PLAYBACK;
     }
     return iter->second;
 }

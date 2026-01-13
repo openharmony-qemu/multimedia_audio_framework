@@ -34,12 +34,10 @@
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_manager_base.h"
 #include "audio_renderer_log.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -48,7 +46,7 @@
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
 #include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_utils_c.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
@@ -273,7 +271,7 @@ int32_t RendererInClientInner::InitIpcStream()
     AudioProcessConfig config = ConstructConfig();
     bool resetSilentMode = (gServerProxy_ == nullptr) ? true : false;
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
-    CHECK_AND_CALL_RET_FUNC(gasp != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = nullptr;
@@ -310,7 +308,7 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetStreamVolume(volume);
-    CHECK_AND_CALL_RET_FUNC(ipcStream_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
         HILOG_COMM_ERROR("[SetInnerVolume]ipcStream is not inited!"));
     int32_t ret = ipcStream_->SetClientVolume();
     if (ret != SUCCESS) {
@@ -669,7 +667,7 @@ void RendererInClientInner::FirstFrameProcess()
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
     size_t oriBufferSize)
 {
-    CHECK_AND_CALL_RET_FUNC(sizePerFrameInByte_ > 0, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(sizePerFrameInByte_ > 0, ERROR,
         HILOG_COMM_ERROR("[WriteCacheData]sizePerFrameInByte :%{public}zu", sizePerFrameInByte_));
     size_t remainSize = (bufferSize / sizePerFrameInByte_) * sizePerFrameInByte_;
 
@@ -689,21 +687,22 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
                 return (state_ != RUNNING) || CheckBufferNeedWrite();
             });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        CHECK_AND_CALL_RET_FUNC(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
+        CHECK_AND_CALL_FUNC_RETURN_RET(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
             "time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal")));
 
         uint64_t writePos = clientBuffer_->GetCurWriteFrame();
         uint64_t readPos = clientBuffer_->GetCurReadFrame();
-        CHECK_AND_CALL_RET_FUNC(writePos >= readPos, ERROR, HILOG_COMM_ERROR("[WriteCacheData]writePos: "
+        CHECK_AND_CALL_FUNC_RETURN_RET(writePos >= readPos, ERROR, HILOG_COMM_ERROR("[WriteCacheData]writePos: "
             "%{public}" PRIu64 " readPos: %{public}" PRIu64 "", writePos, readPos));
         RingBufferWrapper ringBuffer;
         int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
-        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR,
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR,
             HILOG_COMM_ERROR("[WriteCacheData]Write failed:%{public}d", ret));
         auto copySize = std::min(remainSize, ringBuffer.dataLength);
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
-        CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ret, HILOG_COMM_ERROR("[WriteCacheData]errcode: %{public}d", ret));
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[WriteCacheData]errcode: %{public}d", ret));
         clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
@@ -717,7 +716,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
 
-    CHECK_AND_CALL_RET_FUNC(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[WriteCacheData]WriteCacheData failed, null ipcStream_."));
     ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(writtenSize);
@@ -747,7 +746,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         return ERR_WRITE_BUFFER;
     }
 
-    CHECK_AND_CALL_RET_FUNC(gServerProxy_ != nullptr, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(gServerProxy_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[WriteInner]server is died"));
     if (clientBuffer_->GetStreamStatus() == nullptr) {
         HILOG_COMM_ERROR("[WriteInner]The stream status is null!");
@@ -792,7 +791,7 @@ void RendererInClientInner::ResetFramePosition()
     Trace trace("RendererInClientInner::ResetFramePosition");
     uint64_t timestampval = 0;
     uint64_t latency = 0;
-    CHECK_AND_CALL_FUNC(ipcStream_ != nullptr,
+    CHECK_AND_CALL_FUNC_RETURN(ipcStream_ != nullptr,
         HILOG_COMM_ERROR("[ResetFramePosition]ipcStream is not inited!"));
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampval, latency,
         Timestamp::Timestampbase::MONOTONIC);
@@ -970,7 +969,7 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         return false;
     }
 
-    CHECK_AND_CALL_RET_FUNC(ipcStream_ != nullptr, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
         HILOG_COMM_ERROR("[DrainAudioStreamInner]ipcStream is not inited!"));
     AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
     int32_t ret = ipcStream_->Drain(stopFlag);
@@ -1176,7 +1175,7 @@ void RendererInClientInner::CheckFrozenStateInStaticMode()
     if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
         if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
             Trace trace2(traceTag_ + "call start to exit stand-by");
-            CHECK_AND_CALL_FUNC(ipcStream_ != nullptr,
+            CHECK_AND_CALL_FUNC_RETURN(ipcStream_ != nullptr,
                 HILOG_COMM_ERROR("[CheckFrozenStateInStaticMode]ipcStream is not inited!"));
             int32_t ret = ipcStream_->Start();
             AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
@@ -1191,7 +1190,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     std::unique_lock<std::mutex> stateLock(statusMutex_);
     // The Client is still in RUNNING state when been frozen.
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
-    CHECK_AND_CALL_RET_FUNC(ipcStream_ != nullptr, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[CallStartWhenInStandby]ipcStream is not inited!"));
     int32_t ret = ipcStream_->Start();
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);

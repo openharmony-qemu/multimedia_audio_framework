@@ -41,6 +41,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
 }  // namespace
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
+static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 static const std::string SPEAKER_SINK_NAME = "Speaker";
 
@@ -277,6 +278,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
     sinkInfo.sinkId = sinkNameSinkIdMap_[audioModuleInfo.name];
     uint32_t oldId = sinkInfo.sinkId;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
+    sinkInfo.auxSinkEnable = auxSinkEnable_;
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);
         return ret;
@@ -311,6 +313,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkSourceIndex;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
+    sinkInfo.auxSinkEnable = auxSinkEnable_;
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);
         return ret;
@@ -445,6 +448,7 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkSourceIndex;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
+    sinkInfo.auxSinkEnable = auxSinkEnable_;
     sinkInfo.deviceClass = audioModuleInfo.name;
     sinkInfo.adapterName = audioModuleInfo.name;
     if (ret != SUCCESS) {
@@ -2626,6 +2630,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
             sinkIdSinkNameMap_[sinkPortIndex].c_str());
         HpaeSinkInfo sinkInfo;
         int32_t ret = TransModuleInfoToHpaeSinkInfo(audioPortInfo, sinkInfo);
+        sinkInfo.auxSinkEnable = auxSinkEnable_;
         if (ret != SUCCESS) {
             return;
         }
@@ -2739,8 +2744,8 @@ std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeC
                 moveInfo.sessionInfo.state = movingIds_[sessionId];
             }
             movingIds_.erase(sessionId);
-            results.emplace_back(moveInfo);
         }
+        results.emplace_back(moveInfo);
     }
     return results;
 }
@@ -2814,6 +2819,35 @@ void HpaeManager::HandleBypassSpatializationForStereo()
         UpdateBypassSpatializationForStereo();
     };
     SendRequest(request, __func__);
+}
+
+std::shared_ptr<IHpaeRendererManager> HpaeManager::GetAuxiliaryRendererManager()
+{
+    std::shared_ptr<IHpaeRendererManager> btSpkManager = GetRendererManagerByName(BT_SINK_NAME);
+    std::shared_ptr<IHpaeRendererManager> usbSpkManager = GetRendererManagerByName(USB_SINK_NAME);
+    CHECK_AND_RETURN_RET(usbSpkManager != nullptr, btSpkManager);
+    CHECK_AND_RETURN_RET(btSpkManager != nullptr, usbSpkManager);
+    
+    bool isBtRunning = btSpkManager->IsRunning();
+    bool isUsbRunning = usbSpkManager->IsRunning();
+    CHECK_AND_RETURN_RET_LOG(isUsbRunning, btSpkManager, "get bt, usb not running");
+    CHECK_AND_RETURN_RET_LOG(isBtRunning, usbSpkManager, "get usb, usb running but bt not running");
+    AUDIO_INFO_LOG("get bt, both bt and usb are running");
+    return btSpkManager;
+}
+
+int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    AUDIO_INFO_LOG("set to isEnabled:[%{public}s]", isEnabled ? "true" : "false");
+    auxSinkEnable_ = isEnabled;
+    
+    auto request = [this, isEnabled]() {
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetAuxiliaryRendererManager();
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr, "can not find bt_speaker and usb_speaker");
+        rendererManager->SetAuxiliarySinkEnable(isEnabled);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

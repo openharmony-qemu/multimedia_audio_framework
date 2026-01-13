@@ -36,6 +36,10 @@ static const uint32_t MAX_PIPELINE_NUM = 10;
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }
@@ -1405,6 +1409,75 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_011, TestSize.Le
 
     ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_ConnectNodes.
+ * @tc.number: OH_AudioSuiteEngine_ConnectNodes_012
+ * @tc.desc  : Test pipeline is running add input node for mixNode.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_012, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNodeForEq = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeForEq);
+
+    OH_AudioNode *inputNodeFormix = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeFormix);
+
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    OH_AudioNode *mixNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
+
+    OH_AudioNode *eqNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeForEq, eqNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(eqNode, mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeFormix, mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(mixNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioFormat audioFormat;
+    audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+    audioFormat.channelCount = AudioChannel::STEREO;
+    audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+    audioFormat.sampleFormat = AUDIO_SAMPLE_U8;
+    ret = OH_AudioSuiteEngine_SetAudioFormat(inputNodeFormix, &audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
+
+    ret = OH_AudioSuiteEngine_SetAudioFormat(outputNode, &audioFormat);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_STATE);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

@@ -53,7 +53,6 @@ static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
-static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
 #ifdef FEATURE_CALL_MANAGER
@@ -872,7 +871,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, adapterName, pin, IsEndpointTypeVoip(config, deviceInfo));
-    CHECK_AND_CALL_RET_FUNC(audioEndpoint != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioEndpoint != nullptr, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
     // if reuse endpoint should keep samplerate same
     audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
@@ -881,22 +880,22 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    CHECK_AND_CALL_RET_FUNC(audioStreamInfo.samplingRate > 0, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStreamInfo.samplingRate > 0, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]Sample rate in server is invalid."));
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
-    CHECK_AND_CALL_RET_FUNC(process != nullptr, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(process != nullptr, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]AudioProcessInServer create failed."));
     process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]ConfigProcessBuffer failed"));
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, nullptr,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]LinkProcessToEndpoint failed"));
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     allProcessInServer_[sessionId] = process;
@@ -929,12 +928,12 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
         AUDIO_ERR_LOG("LinkProcessStream failed, erase endpoint %{public}s", endpointToErase.c_str());
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]LinkProcessStream to endpoint %{public}s failed",
         endpoint->GetEndpointName().c_str()));
 
     ret = process->AddProcessStatusListener(endpoint);
-    CHECK_AND_CALL_RET_FUNC(ret == SUCCESS, ERR_OPERATION_FAILED,
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[LinkProcessToEndpoint]AddProcessStatusListener failed"));
 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
@@ -1505,22 +1504,20 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         appUseNumMap_.emplace(appUid, initValue);
     }
 
-    if (appUseNumMap_[appUid] >= RENDERER_STREAM_CNT_PER_UID_LIMIT) {
+    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
         int32_t mostAppUid = INVALID_APP_UID;
         int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
         GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
-            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+            Media::MediaMonitor::EventType::FAULT_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
+        bean->Add("EXCEEDED_SCENE", "SingleApp");
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         HILOG_COMM_WARN("[IsExceedingMaxStreamCntPerUid]Current audio renderer stream num is greater "
             "than the renderer stream num limit per uid");
-    }
-
-    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
-        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
         return true;
     }
     return false;

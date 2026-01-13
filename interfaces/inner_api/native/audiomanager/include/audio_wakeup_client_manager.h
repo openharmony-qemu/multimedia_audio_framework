@@ -16,32 +16,10 @@
 #ifndef AUDIO_WAKEUP_CLIENT_MANAGER_H
 #define AUDIO_WAKEUP_CLIENT_MANAGER_H
 
-#include <memory>
-#include <cstdint>
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioCapturerSourceCallback {
-public:
-    virtual ~AudioCapturerSourceCallback() = default;
-    virtual void OnCapturerState(bool isActive) = 0;
-};
-
-class WakeUpSourceCloseCallback {
-public:
-    virtual ~WakeUpSourceCloseCallback() = default;
-    virtual void OnWakeupClose() = 0;
-};
-
-class WakeUpSourceCallback : public AudioCapturerSourceCallback, public WakeUpSourceCloseCallback {
-public:
-    virtual ~WakeUpSourceCallback() = default;
-    // Stop all listening capturers from sending false callbacks;
-    // when all capturers have stopped, allow one capturer to start sending true callbacks
-    virtual void OnCapturerState(bool isActive) = 0;
-    virtual void OnWakeupClose() = 0;
-};
-
 /**
  * @brief Lightweight manager for wakeup callbacks. Currently only keeps and dispatches
  * wakeup source and close notifications.

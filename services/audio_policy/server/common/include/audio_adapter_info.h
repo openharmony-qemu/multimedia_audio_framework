@@ -173,7 +173,6 @@ struct PipeInfo {
     std::string renderInIdleState_ = STR_INIT;
 
     int32_t audioFlag_ = AUDIO_FLAG_NORMAL;
-    int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
 
     std::list<StreamPropInfo> streamPropInfos_ {};
     std::list<uint32_t> sampleRates_ {};

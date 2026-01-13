@@ -23,7 +23,7 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_pipe_info.h"
 #include "istandard_audio_service.h"
 
@@ -148,6 +148,8 @@ public:
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
     virtual void UpdateVolumeForStreams() = 0;
+
+    virtual void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream) = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 

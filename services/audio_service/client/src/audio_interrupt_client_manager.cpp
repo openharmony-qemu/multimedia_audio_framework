@@ -23,6 +23,52 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class AudioManagerInterruptCallbackImpl : public AudioInterruptCallback {
+public:
+    explicit AudioManagerInterruptCallbackImpl()
+    {
+        AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");
+    }
+    virtual ~AudioManagerInterruptCallbackImpl()
+    {
+        AUDIO_DEBUG_LOG("AudioManagerInterruptCallbackImpl: instance destroy");
+    }
+
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override
+    {
+        cb_ = callback_.lock();
+        if (cb_ != nullptr) {
+            cb_->cbMutex_.lock();
+            InterruptAction interruptAction = {};
+            interruptAction.actionType = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN)
+                ? TYPE_INTERRUPT : TYPE_ACTIVATED;
+            interruptAction.interruptType = interruptEvent.eventType;
+            interruptAction.interruptHint = interruptEvent.hintType;
+            interruptAction.activated = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN) ? false : true;
+            cb_->OnInterrupt(interruptAction);
+            AUDIO_DEBUG_LOG("Notify event to app complete");
+            cb_->cbMutex_.unlock();
+        } else {
+            AUDIO_ERR_LOG("callback is null");
+        }
+
+        return;
+    }
+    void SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback)
+    {
+        auto wp = callback.lock();
+        if (wp != nullptr) {
+            callback_ = callback;
+        } else {
+            AUDIO_ERR_LOG("callback is nullptr");
+        }
+    }
+
+private:
+    std::weak_ptr<AudioManagerCallback> callback_;
+    std::shared_ptr<AudioManagerCallback> cb_;
+};
+
 AudioInterruptClientManager &AudioInterruptClientManager::GetInstance()
 {
     static AudioInterruptClientManager instance;

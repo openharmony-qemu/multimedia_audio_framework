@@ -97,12 +97,15 @@ typedef enum tagEnum_IMEDIA_Surround_PARA {
 } iMedia_Surround_PARA;
 
 typedef struct tagSTRU_IMEDIA_Support_SPECS {
-    unsigned int currentDeviceSupport;
-    unsigned int realTimeSupport;
-    unsigned int frameLenSpecs;
-    unsigned int sampleRateSpecs;
-    unsigned int channelCountSpecs;
-    unsigned int sampleFormatSpecs;
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } iMedia_Support_SPECS;
 
 // Sound field algorithm configurations

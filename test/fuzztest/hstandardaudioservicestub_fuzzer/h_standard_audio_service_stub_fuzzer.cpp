@@ -27,6 +27,7 @@ static int32_t NUM_32 = 32;
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+using FuzzFuncPtr = void(*)(FuzzedDataProvider&);
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 void FuzzTestOne(FuzzedDataProvider &provider);
@@ -661,15 +662,17 @@ void SetKaraokeParameters(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::string parameters = provider.ConsumeRandomLengthString();
     bool ret = provider.ConsumeBool();
-    audioServer->SetKaraokeParameters(parameters, ret);
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetKaraokeParameters(deviceType, parameters, ret);
 }
 
 void IsAudioLoopbackSupported(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     int32_t mode = provider.ConsumeIntegral<int32_t>();
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
     bool isSupported = provider.ConsumeBool();
-    audioServer->IsAudioLoopbackSupported(mode, isSupported);
+    audioServer->IsAudioLoopbackSupported(mode, deviceType, isSupported);
 }
 
 void SetRenderWhitelist(FuzzedDataProvider &provider)
@@ -759,115 +762,100 @@ void GetPrivacyTypeAudioServer(FuzzedDataProvider &provider)
     audioServer->GetPrivacyTypeAudioServer(sessionId, privacyType, ret);
 }
 
+FuzzFuncPtr g_fuzzFuncArray[] = {
+    GetAudioParameter,
+    SetAudioParameter,
+    GetExtraParameters,
+    SetExtraParameters,
+    SetMicrophoneMute,
+    SetAudioScene,
+    UpdateActiveDeviceRoute,
+    UpdateActiveDevicesRoute,
+    UpdateDualToneState,
+    GetTransactionId,
+    SetParameterCallback,
+    GetAudioMoreParameters,
+    SetAudioMoreParameter,
+    NotifyDeviceInfo,
+    CheckRemoteDeviceState,
+    SetVoiceVolume,
+    SetAudioMonoState,
+    SetAudioBalanceValue,
+    CreateAudioProcess,
+    SetOutputDeviceSink,
+    SetActiveOutputDevice,
+    CreatePlaybackCapturerManager,
+    RegiestPolicyProvider,
+    SetWakeupSourceCallback,
+    OffloadSetVolume,
+    NotifyStreamVolumeChanged,
+    GetMaxAmplitude,
+    ResetRouteForDisconnect,
+    UpdateLatencyTimestamp,
+    SetAsrAecMode,
+    GetAsrAecMode,
+    SetAsrNoiseSuppressionMode,
+    SetOffloadMode,
+    UnsetOffloadMode,
+    CheckHibernateState,
+    GetAsrNoiseSuppressionMode,
+    SetAsrWhisperDetectionMode,
+    GetAsrWhisperDetectionMode,
+    SetAsrVoiceControlMode,
+    SetAsrVoiceMuteMode,
+    IsWhispering,
+    SuspendRenderSink,
+    RestoreRenderSink,
+    SetSinkMuteForSwitchDevice,
+    UpdateSessionConnectionState,
+    SetNonInterruptMute,
+    RestoreSession,
+    GetStandbyStatus,
+    GenerateSessionId,
+    GetAllSinkInputs,
+    NotifyAccountsChanged,
+    NotifyAudioPolicyReady,
+    SetInnerCapLimit,
+    UnloadHdiAdapter,
+    CheckCaptureLimit,
+    ReleaseCaptureLimit,
+    CreateHdiSinkPort,
+    CreateSinkPort,
+    CreateHdiSourcePort,
+    CreateSourcePort,
+    DestroyHdiPort,
+    SetDeviceConnectedFlag,
+    SetDmDeviceType,
+    RegisterDataTransferMonitorParam,
+    UnregisterDataTransferMonitorParam,
+    RegisterDataTransferCallback,
+    NotifySettingsDataReady,
+    IsAcousticEchoCancelerSupported,
+    SetSessionMuteState,
+    SetLatestMuteState,
+    ForceStopAudioStream,
+    CreateAudioWorkgroup,
+    ReleaseAudioWorkgroup,
+    AddThreadToGroup,
+    RemoveThreadFromGroup,
+    StartGroup,
+    StopGroup,
+    SetBtHdiInvalidState,
+    SetKaraokeParameters,
+    IsAudioLoopbackSupported,
+    SetRenderWhitelist,
+    ImproveAudioWorkgroupPrio,
+    RestoreAudioWorkgroupPrio,
+    AddCaptureInjector,
+    RemoveCaptureInjector,
+    SetForegroundList,
+    GetVolumeDataCount,
+    GetPrivacyTypeAudioServer,
+};
+
 void FuzzTest(FuzzedDataProvider &provider)
 {
-    bool flag = provider.ConsumeBool();
-    if (flag) {
-        FuzzTestOne(provider);
-    } else {
-        FuzzTestTwo(provider);
-    }
-}
-
-void FuzzTestOne(FuzzedDataProvider &provider)
-{
-    auto func = provider.PickValueInArray({
-        GetAudioParameter,
-        SetAudioParameter,
-        GetExtraParameters,
-        SetExtraParameters,
-        SetMicrophoneMute,
-        SetAudioScene,
-        UpdateActiveDeviceRoute,
-        UpdateActiveDevicesRoute,
-        UpdateDualToneState,
-        GetTransactionId,
-        SetParameterCallback,
-        GetAudioMoreParameters,
-        SetAudioMoreParameter,
-        NotifyDeviceInfo,
-        CheckRemoteDeviceState,
-        SetVoiceVolume,
-        SetAudioMonoState,
-        SetAudioBalanceValue,
-        CreateAudioProcess,
-        SetOutputDeviceSink,
-        SetActiveOutputDevice,
-        CreatePlaybackCapturerManager,
-        RegiestPolicyProvider,
-        SetWakeupSourceCallback,
-        OffloadSetVolume,
-        NotifyStreamVolumeChanged,
-        GetMaxAmplitude,
-        ResetRouteForDisconnect,
-        UpdateLatencyTimestamp,
-        SetAsrAecMode,
-        GetAsrAecMode,
-        SetAsrNoiseSuppressionMode,
-        SetOffloadMode,
-        UnsetOffloadMode,
-        CheckHibernateState,
-        GetAsrNoiseSuppressionMode,
-        SetAsrWhisperDetectionMode,
-        GetAsrWhisperDetectionMode,
-        SetAsrVoiceControlMode,
-        SetAsrVoiceMuteMode,
-        IsWhispering,
-        SuspendRenderSink,
-        RestoreRenderSink,
-        SetSinkMuteForSwitchDevice,
-        UpdateSessionConnectionState,
-    });
-    func(provider);
-}
-
-void FuzzTestTwo(FuzzedDataProvider &provider)
-{
-    auto func = provider.PickValueInArray({
-        SetNonInterruptMute,
-        RestoreSession,
-        GetStandbyStatus,
-        GenerateSessionId,
-        GetAllSinkInputs,
-        NotifyAccountsChanged,
-        NotifyAudioPolicyReady,
-        SetInnerCapLimit,
-        UnloadHdiAdapter,
-        CheckCaptureLimit,
-        ReleaseCaptureLimit,
-        CreateHdiSinkPort,
-        CreateSinkPort,
-        CreateHdiSourcePort,
-        CreateSourcePort,
-        DestroyHdiPort,
-        SetDeviceConnectedFlag,
-        SetDmDeviceType,
-        RegisterDataTransferMonitorParam,
-        UnregisterDataTransferMonitorParam,
-        RegisterDataTransferCallback,
-        NotifySettingsDataReady,
-        IsAcousticEchoCancelerSupported,
-        SetSessionMuteState,
-        SetLatestMuteState,
-        ForceStopAudioStream,
-        CreateAudioWorkgroup,
-        ReleaseAudioWorkgroup,
-        AddThreadToGroup,
-        RemoveThreadFromGroup,
-        StartGroup,
-        StopGroup,
-        SetBtHdiInvalidState,
-        SetKaraokeParameters,
-        IsAudioLoopbackSupported,
-        SetRenderWhitelist,
-        ImproveAudioWorkgroupPrio,
-        RestoreAudioWorkgroupPrio,
-        AddCaptureInjector,
-        RemoveCaptureInjector,
-        SetForegroundList,
-        GetVolumeDataCount,
-        GetPrivacyTypeAudioServer,
-    });
+    auto func = provider.PickValueInArray(g_fuzzFuncArray);
     func(provider);
 }
 } // namespace AudioStandard
