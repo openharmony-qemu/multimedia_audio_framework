@@ -20,7 +20,7 @@
 #include "audio_info.h"
 #include "audio_engine_log.h"
 #include "idevice_status_observer.h"
-#include "../fuzz_utils.h"
+#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
