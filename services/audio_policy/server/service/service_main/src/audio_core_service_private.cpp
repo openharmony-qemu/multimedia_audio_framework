@@ -254,6 +254,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
+    CHECK_AND_RETURN_RET_LOG(audioA2dpOffloadManager_ != nullptr, ERROR, "audioA2dpOffloadManager_ is nullptr");
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
 
     uint32_t audioFlag;
