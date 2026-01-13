@@ -2266,11 +2266,14 @@ int32_t AudioPolicyServer::IsStreamActive(int32_t streamType, bool &active)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active)
+int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active)
 {
-    int32_t volumeType = static_cast<int32_t>(VolumeUtils::GetVolumeTypeFromStreamUsage(
-        static_cast<StreamUsage>(streamUsage)));
-    return IsStreamActive(volumeType, active);
+    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
+    if (streamUsage < STREAM_USAGE_INVALID || streamUsage > STREAM_USAGE_MAX) {
+        return ERR_NOT_SUPPORTED;
+    }
+    active = audioSceneManager_.IsStreamActiveByStreamUsage(streamUsage);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support)
