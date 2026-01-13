@@ -391,6 +391,11 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    outputDescs.push_back(streamDesc);
+    CheckFastStreamOverLimitToNormal(outputDescs);
+
     HILOG_COMM_INFO("[ScanPipeListForStreamDesc]Route flag after concurrency: %{public}u  sessionId: %{public}u",
         streamDesc->routeFlag_, streamDesc->sessionId_);
 }
