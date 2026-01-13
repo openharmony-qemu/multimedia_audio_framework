@@ -16,7 +16,7 @@
 #include <iremote_stub.h>
 #include "audio_log.h"
 #include "sle_audio_device_manager.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -234,7 +234,7 @@ T GetData()
     return object;
 }
 
-void SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest()
+void SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -245,7 +245,7 @@ void SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest()
     manager.GetSleAudioDeviceList(devices);
 }
 
-void SleAudioDeviceManagerGetSleVirtualAudioDeviceListFuzzTest()
+void SleAudioDeviceManagerGetSleVirtualAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -256,7 +256,7 @@ void SleAudioDeviceManagerGetSleVirtualAudioDeviceListFuzzTest()
     manager.GetSleVirtualAudioDeviceList(devices);
 }
 
-void SleAudioDeviceManagerIsInBandRingOpenFuzzTest()
+void SleAudioDeviceManagerIsInBandRingOpenFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -267,7 +267,7 @@ void SleAudioDeviceManagerIsInBandRingOpenFuzzTest()
     manager.IsInBandRingOpen(device);
 }
 
-void SleAudioDeviceManagerGetSupportStreamTypeFuzzTest()
+void SleAudioDeviceManagerGetSupportStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -278,7 +278,7 @@ void SleAudioDeviceManagerGetSupportStreamTypeFuzzTest()
     manager.GetSupportStreamType(device);
 }
 
-void SleAudioDeviceManagerSetActiveDeviceFuzzTest()
+void SleAudioDeviceManagerSetActiveDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -296,7 +296,7 @@ void SleAudioDeviceManagerSetActiveDeviceFuzzTest()
     manager.SetActiveDevice(deviceDescBySource, sourceType);
 }
 
-void SleAudioDeviceManagerStartPlayingFuzzTest()
+void SleAudioDeviceManagerStartPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -314,7 +314,7 @@ void SleAudioDeviceManagerStartPlayingFuzzTest()
     manager.StartPlaying(deviceDescBySource, sourceType);
 }
 
-void SleAudioDeviceManagerStopPlayingFuzzTest()
+void SleAudioDeviceManagerStopPlayingFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -332,7 +332,7 @@ void SleAudioDeviceManagerStopPlayingFuzzTest()
     manager.StopPlaying(deviceDescBySource, sourceType);
 }
 
-void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest()
+void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -343,7 +343,7 @@ void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest()
     manager.ConnectAllowedProfiles(remoteAddr);
 }
 
-void SleAudioDeviceManagerSetDeviceAbsVolumeFuzzTest()
+void SleAudioDeviceManagerSetDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -359,7 +359,7 @@ void SleAudioDeviceManagerSetDeviceAbsVolumeFuzzTest()
     manager.SetDeviceAbsVolume(device, streamType, volume);
 }
 
-void SleAudioDeviceManagerSendUserSelectionFuzzTest()
+void SleAudioDeviceManagerSendUserSelectionFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -377,7 +377,7 @@ void SleAudioDeviceManagerSendUserSelectionFuzzTest()
     manager.SendUserSelection(deviceDescBySource, sourceType, USER_SELECT_SLE);
 }
 
-void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest()
+void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -393,7 +393,7 @@ void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest()
     manager.GetStreamUsagesBySleStreamType(streamType);
 }
 
-void SleAudioDeviceManagerGetSourceTypesBySleStreamTypeFuzzTest()
+void SleAudioDeviceManagerGetSourceTypesBySleStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -409,7 +409,7 @@ void SleAudioDeviceManagerGetSourceTypesBySleStreamTypeFuzzTest()
     manager.GetSourceTypesBySleStreamType(streamType);
 }
 
-void SleAudioDeviceManagerAddNearlinkDeviceFuzzTest()
+void SleAudioDeviceManagerAddNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -426,7 +426,7 @@ void SleAudioDeviceManagerAddNearlinkDeviceFuzzTest()
     manager.RemoveNearlinkDevice(deviceDesc);
 }
 
-void SleAudioDeviceManagerUpdateSleStreamTypeCountFuzzTest()
+void SleAudioDeviceManagerUpdateSleStreamTypeCountFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<AudioStreamStatus> testAudioStreamStatuses = {
         STREAM_STATUS_NEW,
@@ -461,7 +461,7 @@ void SleAudioDeviceManagerUpdateSleStreamTypeCountFuzzTest()
     manager.UpdateSleStreamTypeCount(streamDesc, isRemoved);
 }
 
-void SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest()
+void SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -481,7 +481,7 @@ void SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest()
     manager.SetNearlinkDeviceMute(device, streamType, isMute);
 }
 
-void SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest()
+void SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -501,7 +501,7 @@ void SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest()
     manager.SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
 }
 
-void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest()
+void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
     if (manager.callback_ == nullptr) {
@@ -522,7 +522,9 @@ void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest()
     manager.GetVolumeLevelByVolumeType(volumeType, deviceDesc);
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     SleAudioDeviceManagerGetSleAudioDeviceListFuzzTest,
     SleAudioDeviceManagerGetSleVirtualAudioDeviceListFuzzTest,
     SleAudioDeviceManagerIsInBandRingOpenFuzzTest,
@@ -540,28 +542,21 @@ TestPtr g_testPtrs[] = {
     SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest,
     SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest,
     SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest,
-};
-
-void FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
 }
-
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -571,6 +566,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }
