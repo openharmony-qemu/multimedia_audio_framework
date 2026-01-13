@@ -74,7 +74,7 @@ static void PrintInputPipeInfo(const std::shared_ptr<AudioInputPipeInfo> &change
         cout << "    - id: " << streamIter.second.streamId_ <<
             " source: " << streamIter.second.source_ <<
             " state: " << streamIter.second.state_ <<
-            " uid: " << streamIter.second.appUid_ <<endl;
+            " uid: " << streamIter.second.appUid_ << endl;
     }
 }
 
