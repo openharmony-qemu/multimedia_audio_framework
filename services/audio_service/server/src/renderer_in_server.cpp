@@ -441,7 +441,7 @@ void RendererInServer::ReConfigDupStreamCallback()
         return;
     }
     
-    if (dupTotalSizeInFrame * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
+    if (dupTotalSizeInFrameTemp * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
         dupTotalSizeInFrameTemp = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
         AUDIO_INFO_LOG("dupTotalSizeInFrameTemp change to: %{public}u", static_cast<uint32_t>(dupTotalSizeInFrameTemp));
     }
@@ -1350,10 +1350,10 @@ int32_t RendererInServer::Flush()
                 } else {
                     renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
                 }
-                CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
                     innerCapIdToDupStreamCallbackMap_.end(),
                     "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
-                CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
                     "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
                 innerCapFirstWriteMap_[capInfo.first].store(0);
             }
@@ -2504,8 +2504,8 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     }
     dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
-    if (dupTotalSizeInFrame_ * dupByteSizePerFrame_ > MAX_INNER_CAP_DUP_BUFFER_SIZE) {
-        dupTotalSizeInFrame_ = MAX_INNER_CAP_DUP_BUFFER_SIZE / dupByteSizePerFrame_;
+    if (dupTotalSizeInFrame_ * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
+        dupTotalSizeInFrame_ = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
     }
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
         "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
