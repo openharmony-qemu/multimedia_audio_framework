@@ -550,17 +550,17 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDev
         preferredType = AUDIO_CALL_RENDER;
     }
     const std::string macAddress = audioDeviceDescriptors.front()->macAddress_;
+    vector<shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
     if (audioDevUsage == ALL_MEDIA_DEVICES && !macAddress.empty()) {
-        audioDeviceDescriptors.clear();
         vector<shared_ptr<AudioDeviceDescriptor>> allDevices = audioDeviceManager_.GetConnectedDevices();
         for (const auto &desc : allDevices) {
             if (!desc->macAddress_.empty() && desc->macAddress_ == macAddress &&
                 desc->deviceRole_ == OUTPUT_DEVICE) {
-                audioDeviceDescriptors.push_back(desc);
+                deviceDescriptors.push_back(desc);
             }
         }
     }
-    for (const auto &desc : audioDeviceDescriptors) {
+    for (const auto &desc : deviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         ClearActiveHfpDevice(desc);
         if (userSelectedDevice != nullptr && desc->IsSameDeviceDesc(*userSelectedDevice)) {
