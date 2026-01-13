@@ -18,7 +18,7 @@
 
 #include "audio_log.h"
 #include "audio_socket_thread.h"
-#include "../fuzz_utils.h"
+#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
