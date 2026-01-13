@@ -18,7 +18,7 @@
 #include <cstdint>
 #include "sle_audio_operation_callback_stub_impl.h"
 #include <fuzzer/FuzzedDataProvider.h>
-#include "../fuzz_utils.h"
+#include "../../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
