@@ -159,7 +159,7 @@ protected:
     virtual void ChangePipeStatus(AudioPipeStatus state);
     virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
     virtual void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid);
+        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     virtual void DeinitPipeInfo();
 
     // Common variables
