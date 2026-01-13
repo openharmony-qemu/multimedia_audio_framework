@@ -258,7 +258,7 @@ void AudioPnpStatusCallbackOnMicrophoneBlockedFuzzTest(FuzzedDataProvider& fdp)
     pnpCallback->OnMicrophoneBlocked(info);
 }
 
-void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest1()
+void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest1(FuzzedDataProvider& fdp)
 {
     auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
     if (!deviceStatusListenerPtr) {
