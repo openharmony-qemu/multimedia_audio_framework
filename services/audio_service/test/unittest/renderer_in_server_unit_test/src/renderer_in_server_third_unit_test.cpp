@@ -2969,7 +2969,7 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     size_t dupByteSizePerFrameTest = 1;
     rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
         std::make_shared<StreamCallbacks>(dupStreamIndex);
-    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer =
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
         AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
     rendererInServer->offloadEnable_ = true;
     rendererInServer->dupTotalSizeInFrame_ = dupTotalSizeInFrameTest;
