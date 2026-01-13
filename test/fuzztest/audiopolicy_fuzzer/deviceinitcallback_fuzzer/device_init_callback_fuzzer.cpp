@@ -17,7 +17,7 @@
 
 #include "audio_log.h"
 #include "device_init_callback.h"
-#include "../fuzz_utils.h"
+#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
