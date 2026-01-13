@@ -1820,6 +1820,8 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
     int8_t inputData[10] = {0};
     size_t requestDataLen = 10;
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
+    streamCallbacks->isFirstWriteDataFlag_ = false;
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
 }
 
@@ -1839,6 +1841,8 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
     int8_t inputData[10] = {0};
     size_t requestDataLen = 10;
     streamCallbacks->recoveryAntiShakeBufferCount_ = 1;
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
+    streamCallbacks->isFirstWriteDataFlag_ = false;
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
 }
 
