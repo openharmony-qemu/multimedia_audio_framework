@@ -307,15 +307,17 @@ void AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest()
 void AudioServerProxySetKaraokeParametersFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     std::string parameters = "testParameters";
-    audioServerProxy.SetKaraokeParameters(parameters);
+    audioServerProxy.SetKaraokeParameters(deviceType, parameters);
 }
  
 void AudioServerProxyIsAudioLoopbackSupportedFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     AudioLoopbackMode mode = LOOPBACK_HARDWARE;
-    audioServerProxy.IsAudioLoopbackSupported(mode);
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    audioServerProxy.IsAudioLoopbackSupported(mode, deviceType);
 }
  
 void AudioServerProxySetSessionMuteStateFuzzTest()

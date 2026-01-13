@@ -19,7 +19,6 @@
 #include <unordered_map>
 #include <string>
 #include "audio_errors.h"
-#include "audio_suite_log.h"
 #include "audio_xml_parser.h"
 #include "audio_suite_base.h"
 
@@ -28,7 +27,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 static constexpr char AUDIO_SUITE_CAPABILITIES_CONFIG_FILE[] = "/system/etc/audio/audio_suite_capabilities.xml";
 
-struct NodeCapability {
+struct NodeParameter {
     std::string soName;
     std::string soPath;
     std::string general;
@@ -58,24 +57,17 @@ static const std::map<std::string, AudioNodeType>
 
 class AudioSuiteCapabilitiesParser {
 public:
-    AudioSuiteCapabilitiesParser()
-    {
-        AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser ctor");
-    }
-
-    ~AudioSuiteCapabilitiesParser()
-    {
-        AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser dtor");
-    }
+    AudioSuiteCapabilitiesParser();
+    ~AudioSuiteCapabilitiesParser();
 
     bool LoadConfiguration(
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
 
 private:
     bool ParseInternal(std::shared_ptr<AudioXmlNode> audioSuiteCapabilitiesXmlNode,
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
     void ParserNodeType(std::shared_ptr<AudioXmlNode> curNode,
-        std::unordered_map<AudioNodeType, NodeCapability> &audioSuiteCapabilities);
+        std::unordered_map<AudioNodeType, NodeParameter> &audioSuiteCapabilities);
     float GetRealtimeFactor(std::string valueStr);
 };
 }  // namespace AudioSuite

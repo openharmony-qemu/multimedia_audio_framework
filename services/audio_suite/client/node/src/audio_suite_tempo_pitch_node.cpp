@@ -19,6 +19,7 @@
 
 #include "audio_suite_tempo_pitch_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,21 +55,21 @@ int32_t AudioSuiteTempoPitchNode::Init()
         isOutputPortInit_ = true;
     }
     algoInterface_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeCapability);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH, nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteTempoPitchAlgoInterfaceImpl Init failed");
 
-    SetAudioNodeFormat(AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, nodeCapability.inChannels},
-        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
-        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    SetAudioNodeFormat(AudioFormat{{TEMPO_PITCH_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
 
-    outPcmBuffer_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
         TEMPO_PITCH_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
 
     currentDataBuffer_.resize(TEMPO_PITCH_PCM_FRAME_BYTES);
     bufferRemainSize_ = TEMPO_PITCH_PCM_FRAME_BYTES;

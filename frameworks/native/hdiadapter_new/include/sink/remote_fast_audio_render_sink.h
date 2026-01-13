@@ -115,7 +115,6 @@ private:
     sptr<Ashmem> ashmemSink_ = nullptr;
     size_t bufferSize_ = 0;
 #endif
-    bool appInfoNeedReset_ = false;
     std::unordered_set<int32_t> appsUid_;
 };
 

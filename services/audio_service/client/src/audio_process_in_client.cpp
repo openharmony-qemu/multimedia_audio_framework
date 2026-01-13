@@ -32,7 +32,7 @@
 
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
-#include "audio_system_manager.h"
+#include "app_bundle_manager.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
@@ -714,7 +714,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
         processProxy_->RegisterThreadPriority(
             gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ);
         // Callback loop
         while (keepRunning) {
@@ -745,7 +745,7 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
         processProxy_->RegisterThreadPriority(
             gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ);
         // Callback loop
         while (keepRunning) {

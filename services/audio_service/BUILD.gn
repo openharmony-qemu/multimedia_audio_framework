@@ -252,6 +252,7 @@ ohos_shared_library("audio_client") {
     "client/src/offline_stream_in_client.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/audio_focus_info_change_callback_impl.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -272,7 +273,6 @@ ohos_shared_library("audio_client") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
-    "../audio_policy:audio_policy_common",
   ]
 
   include_dirs = [ "server/include" ]
@@ -287,13 +287,11 @@ ohos_shared_library("audio_client") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "i18n:intl_util",
     "init:libbegetutil",
     "ipc:ipc_single",
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "qos_manager:qos",

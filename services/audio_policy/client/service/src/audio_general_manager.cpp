@@ -379,40 +379,6 @@ int32_t AudioGeneralManager::RegisterAudioRendererEventListener(
     return ret;
 }
 
-AudioFocusInfoChangeCallbackImpl::AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl constructor");
-}
-
-AudioFocusInfoChangeCallbackImpl::~AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl: destroy");
-}
-
-void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    bool hasCallback = false;
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
-        if ((*it).lock() == callback.lock()) {
-            hasCallback = true;
-        }
-    }
-    if (!hasCallback) {
-        callbackList_.push_back(callback);
-    }
-}
-
-void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
-        return callback_.lock() == callback.lock();
-    });
-}
-
 int32_t AudioGeneralManager::GetPreferredInputDeviceForCapturerInfo(
     AudioCapturerInfo captureInfo, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {

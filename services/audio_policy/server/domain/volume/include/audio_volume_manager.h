@@ -17,16 +17,11 @@
 
 #include <bitset>
 #include <list>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_device_descriptor.h"
 #include "audio_module_info.h"
 #include "audio_shared_memory.h"
-#include "audio_system_manager.h"
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
 #include "audio_errors.h"
@@ -120,7 +115,7 @@ public:
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
     int32_t SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-        bool enableSetVoiceCallVolume = true);
+        bool enableSetVoiceCallVolume = true, std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr);
 
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);

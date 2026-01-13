@@ -20,6 +20,37 @@
 #include "audio_capturer.h"
 namespace OHOS {
 namespace AudioStandard {
+enum class AudioLoopbackErrorScope {
+    DEFAULT = 0,
+    PLATFORM,
+    DEVICE,
+    STREAM,
+};
+
+enum AudioLoopbackErrorType {
+    ERROR_PLATFORM_NOT_SUPPORT = -100,
+    ERROR_DEVICE_NOT_SUPPORT = -200,
+    ERROR_DEVICE_MISMATCH = -201,
+    ERROR_DEVICE_RECORD_PERMISSION_DENIED = -202,
+    ERROR_RENDER_CREATE_FAIL = -300,
+    ERROR_RENDER_CREATE_FAST_STREAM_FAIL = -301,
+    ERROR_RENDER_START_FAIL = -302,
+    ERROR_RENDER_FALL_BACK_NORMAL = -303,
+    ERROR_CAPTURE_CREATE_FAIL = -304,
+    ERROR_CAPTURE_CREATE_FAST_STREAM_FAIL = -305,
+    ERROR_CAPTURE_START_FAIL = -306,
+    ERROR_CAPTURE_FALL_BACK_NORMAL = -307,
+    DEFAULT_OK = 0,
+};
+
+struct AudioLoopbackReportInfo {
+    int32_t appUid = INVALID_UID;
+    std::string appName;
+    DeviceType renderDeviceType = DEVICE_TYPE_NONE;
+    DeviceType captureDeviceType = DEVICE_TYPE_NONE;
+    AudioLoopbackErrorScope errScope = AudioLoopbackErrorScope::PLATFORM;
+    AudioLoopbackErrorType errType = DEFAULT_OK;
+};
 
 class AudioLoopbackPrivate : public AudioLoopback,
                              public std::enable_shared_from_this<AudioLoopbackPrivate>,
@@ -42,6 +73,7 @@ public:
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
     AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
 
+    static void ReportAudioLoopbackException(const AudioLoopbackReportInfo &info);
 private:
 
     class RendererCallbackImpl : public AudioRendererCallback,
@@ -83,12 +115,14 @@ private:
     void DestroyAudioLoopback();
     void DestroyAudioLoopbackInner();
     bool IsAudioLoopbackSupported();
-    bool CheckDeviceSupport();
+    AudioLoopbackErrorType CheckDeviceSupport();
     bool EnableLoopback();
     void DisableLoopback();
     void StartAudioLoopback();
     AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
     bool SetKaraokeParameters(const std::string &parameters);
+    AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
+    void GetValidDevice();
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
@@ -111,6 +145,10 @@ private:
     std::atomic<FastStatus> capturerFastStatus_ = FASTSTATUS_NORMAL;
     AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATER;
     AudioLoopbackEqualizerPreset currentEqualizerPreset_ = EQUALIZER_PRESET_FULL;
+
+    DeviceType activeOutputDevice_ = DEVICE_TYPE_NONE;
+    DeviceType activeInputDevice_ = DEVICE_TYPE_NONE;
+    std::unordered_set<DeviceType> validDevice;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

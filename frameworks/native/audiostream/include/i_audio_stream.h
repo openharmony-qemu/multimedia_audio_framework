@@ -20,7 +20,7 @@
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
-#include "audio_stream_manager.h"
+#include "audio_stream_types.h"
 #include "audio_device_info.h"
 #include "audio_errors.h"
 

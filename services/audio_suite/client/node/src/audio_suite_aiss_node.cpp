@@ -18,6 +18,7 @@
 
 #include "audio_suite_aiss_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -95,7 +96,7 @@ int32_t AudioSuiteAissNode::Init()
     }
     if (!aissAlgo_) {
         aissAlgo_ =
-            AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
+            AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeParameter);
     }
 
     if (aissAlgo_->Init() != SUCCESS) {
@@ -103,26 +104,24 @@ int32_t AudioSuiteAissNode::Init()
         return ERROR;
     }
 
-    SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeCapability.inChannels},
-        static_cast<AudioSampleFormat>(nodeCapability.inFormat),
-        static_cast<AudioSamplingRate>(nodeCapability.inSampleRate)});
+    SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
     
-    tmpOutput_ = AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-        nodeCapability.outChannels,
+    tmpOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
         CH_LAYOUT_QUAD,
-        static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    tmpHumanSoundOutput_ =
-        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-            nodeCapability.inChannels,
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    tmpHumanSoundOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+            nodeParameter.inChannels,
             CH_LAYOUT_STEREO,
-            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    tmpBkgSoundOutput_ =
-        AudioSuitePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeCapability.outSampleRate),
-            nodeCapability.inChannels,
+            static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    tmpBkgSoundOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+            nodeParameter.inChannels,
             CH_LAYOUT_STEREO,
-            static_cast<AudioSampleFormat>(nodeCapability.outFormat)});
-    CHECK_AND_RETURN_RET_LOG(nodeCapability.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = nodeCapability.frameLen / nodeCapability.inSampleRate * MILLISECONDS_TO_MICROSECONDS;
+            static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_DEBUG_LOG("AudioSuiteAissNode Init success");
     return SUCCESS;

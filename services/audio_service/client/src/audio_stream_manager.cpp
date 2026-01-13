@@ -329,7 +329,8 @@ bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerInfo &captu
 
 bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
 {
-    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode);
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode, DEVICE_TYPE_USB_HEADSET) ||
+        AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode, DEVICE_TYPE_USB_ARM_HEADSET);
 }
 
 bool AudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)

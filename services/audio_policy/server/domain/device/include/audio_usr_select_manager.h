@@ -16,13 +16,10 @@
 #ifndef ST_AUDIO_USR_SELECT_MANAGER_H
 #define ST_AUDIO_USR_SELECT_MANAGER_H
 
-#include "audio_system_manager.h"
-
 #include "audio_device_manager.h"
 #include "audio_stream_descriptor.h"
 
 #include "ipc_skeleton.h"
-
 #include <shared_mutex>
 #include <unordered_map>
 #include <list>

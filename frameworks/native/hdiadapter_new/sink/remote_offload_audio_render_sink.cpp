@@ -707,14 +707,12 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
     std::unordered_set<int32_t> lastAppsUid = appsUid_;
     std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
     appsUid_ = std::move(appsUidSet);
-    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
-        appInfoNeedReset_ = true;
+    if (appsUid_ != lastAppsUid) {
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "audioRender_ is null");
         std::string appInfoStr = GenerateAppsUidStr(appsUid_);
         int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
         AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
-        appInfoNeedReset_ = false;
     }
     return SUCCESS;
 }

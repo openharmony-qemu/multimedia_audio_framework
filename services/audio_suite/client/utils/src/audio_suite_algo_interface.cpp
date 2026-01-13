@@ -28,27 +28,27 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInterface(
-    AlgoType algoType, NodeCapability &nc)
+    AlgoType algoType, NodeParameter &np)
 {
     switch (algoType) {
         case AlgoType::AUDIO_NODE_TYPE_EQUALIZER:
-            return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION:
-            return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD:
-            return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION:
-            return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE:
-            return std::make_shared<AudioSuiteVoiceMorphingAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteVoiceMorphingAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER:
-            return std::make_shared<AudioSuiteVoiceMorphingAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteVoiceMorphingAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE:
-            return std::make_shared<AudioSuitePureVoiceChangeAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuitePureVoiceChangeAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER:
-            return std::make_shared<AudioSuiteSpaceRenderAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteSpaceRenderAlgoInterfaceImpl>(np);
         case AlgoType::AUDIO_NODE_TYPE_TEMPO_PITCH:
-            return std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(nc);
+            return std::make_shared<AudioSuiteTempoPitchAlgoInterfaceImpl>(np);
         default:
             return nullptr;
     }

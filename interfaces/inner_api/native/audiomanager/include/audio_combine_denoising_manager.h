@@ -16,16 +16,11 @@
 #ifndef ST_AUDIO_COMBINE_DENOISING_MANAGER_H
 #define ST_AUDIO_COMBINE_DENOISING_MANAGER_H
 
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioNnStateChangeCallback {
-public:
-    virtual ~AudioNnStateChangeCallback() = default;
 
-    virtual void OnNnStateChange(const int32_t &nnState) = 0;
-};
 
 class AudioCombineDenoisingManager {
 public:

@@ -17,7 +17,7 @@
 #include "audio_session.h"
 #include "audio_session_service.h"
 #include "../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
@@ -34,21 +34,21 @@ std::shared_ptr<AudioSession> CreateAudioSession()
     return std::make_shared<AudioSession>(g_fuzzUtils.GetData<int32_t>(), strategy, audioSessionService);
 }
 
-void SetAudioSessionSceneFuzzTest()
+void SetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->SetAudioSessionScene(g_fuzzUtils.GetData<AudioSessionScene>());
 }
 
-void GetStreamsFuzzTest()
+void GetStreamsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->GetStreams();
 }
 
-void GetFakeStreamTypeFuzzTest()
+void GetFakeStreamTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -56,7 +56,7 @@ void GetFakeStreamTypeFuzzTest()
     audioSession->GetFakeStreamType();
 }
 
-void AddStreamInfoFuzzTest()
+void AddStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -69,7 +69,7 @@ void AddStreamInfoFuzzTest()
     audioSession->AddStreamInfo(incomingInterrupt);
 }
 
-void RemoveStreamInfoFuzzTest()
+void RemoveStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -82,28 +82,28 @@ void RemoveStreamInfoFuzzTest()
     audioSession->ClearStreamInfo();
 }
 
-void ClearStreamInfoFuzzTest()
+void ClearStreamInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->ClearStreamInfo();
 }
 
-void GetFakeStreamIdFuzzTest()
+void GetFakeStreamIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->GetFakeStreamId();
 }
 
-void SaveFakeStreamIdFuzzTest()
+void SaveFakeStreamIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->SaveFakeStreamId(g_fuzzUtils.GetData<uint32_t>());
 }
 
-void DumpFuzzTest()
+void DumpFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -116,7 +116,7 @@ void DumpFuzzTest()
     audioSession->ClearStreamInfo();
 }
 
-void UpdateSingleVoipStreamDefaultOutputDeviceFuzzTest()
+void UpdateSingleVoipStreamDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -125,7 +125,7 @@ void UpdateSingleVoipStreamDefaultOutputDeviceFuzzTest()
     audioSession->UpdateSingleVoipStreamDefaultOutputDevice(interrupt);
 }
 
-void UpdateVoipStreamsDefaultOutputDeviceFuzzTest()
+void UpdateVoipStreamsDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -135,7 +135,7 @@ void UpdateVoipStreamsDefaultOutputDeviceFuzzTest()
     audioSession->ClearStreamInfo();
 }
 
-void DeactivateFuzzTest()
+void DeactivateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -143,14 +143,14 @@ void DeactivateFuzzTest()
     audioSession->Deactivate();
 }
 
-void IsOutputDeviceConfigurableByStreamUsageFuzzTest()
+void IsOutputDeviceConfigurableByStreamUsageFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->IsOutputDeviceConfigurableByStreamUsage(g_fuzzUtils.GetData<StreamUsage>());
 }
 
-void CanCurrentStreamSetDefaultOutputDeviceFuzzTest()
+void CanCurrentStreamSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -159,7 +159,7 @@ void CanCurrentStreamSetDefaultOutputDeviceFuzzTest()
     audioSession->CanCurrentStreamSetDefaultOutputDevice(interrupt);
 }
 
-void EnableSingleVoipStreamDefaultOutputDeviceFuzzTest()
+void EnableSingleVoipStreamDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -169,7 +169,7 @@ void EnableSingleVoipStreamDefaultOutputDeviceFuzzTest()
     audioSession->EnableSingleVoipStreamDefaultOutputDevice(interrupt);
 }
 
-void EnableVoipStreamsDefaultOutputDeviceFuzzTest()
+void EnableVoipStreamsDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -181,7 +181,7 @@ void EnableVoipStreamsDefaultOutputDeviceFuzzTest()
     audioSession->ClearStreamInfo();
 }
 
-void EnableDefaultDeviceFuzzTest()
+void EnableDefaultDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -191,7 +191,7 @@ void EnableDefaultDeviceFuzzTest()
     audioSession->EnableDefaultDevice();
 }
 
-void GetStreamUsageInnerFuzzTest()
+void GetStreamUsageInnerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -199,14 +199,14 @@ void GetStreamUsageInnerFuzzTest()
     audioSession->GetStreamUsageInner();
 }
 
-void GetSessionStrategyFuzzTest()
+void GetSessionStrategyFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->GetSessionStrategy();
 }
 
-void IsAudioRendererEmptyFuzzTest()
+void IsAudioRendererEmptyFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -217,7 +217,7 @@ void IsAudioRendererEmptyFuzzTest()
     audioSession->ClearStreamInfo();
 }
 
-void GetSessionDefaultOutputDeviceFuzzTest()
+void GetSessionDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -225,7 +225,7 @@ void GetSessionDefaultOutputDeviceFuzzTest()
     audioSession->GetSessionDefaultOutputDevice(deviceType);
 }
 
-void IsRecommendToStopAudioFuzzTest()
+void IsRecommendToStopAudioFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -233,28 +233,28 @@ void IsRecommendToStopAudioFuzzTest()
         AudioStreamDeviceChangeReason::OVERRODE, std::make_shared<AudioDeviceDescriptor>());
 }
 
-void IsSessionOutputDeviceChangedFuzzTest()
+void IsSessionOutputDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->IsSessionOutputDeviceChanged(std::make_shared<AudioDeviceDescriptor>());
 }
 
-void GetSessionStreamUsageFuzzTest()
+void GetSessionStreamUsageFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->GetSessionStreamUsage();
 }
 
-void IsBackGroundAppFuzzTest()
+void IsBackGroundAppFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
     audioSession->IsBackGroundApp();
 }
 
-void GetAudioSessionStreamUsageForDeviceFuzzTest()
+void GetAudioSessionStreamUsageForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
@@ -262,7 +262,9 @@ void GetAudioSessionStreamUsageForDeviceFuzzTest()
     audioSession->GetAudioSessionStreamUsageForDevice(streamId);
 }
 
-vector<TestFuncs> g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     SetAudioSessionSceneFuzzTest,
     GetStreamsFuzzTest,
     GetFakeStreamTypeFuzzTest,
@@ -289,7 +291,12 @@ vector<TestFuncs> g_testFuncs = {
     GetSessionStreamUsageFuzzTest,
     IsBackGroundAppFuzzTest,
     GetAudioSessionStreamUsageForDeviceFuzzTest,
-};
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -299,7 +306,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

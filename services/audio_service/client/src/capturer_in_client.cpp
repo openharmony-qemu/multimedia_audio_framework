@@ -43,13 +43,13 @@
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1523,7 +1523,7 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
         needSetThreadPriority_ = false;
     }
 

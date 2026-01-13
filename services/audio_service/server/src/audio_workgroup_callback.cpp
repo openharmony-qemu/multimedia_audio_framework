@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_workgroup_callback.h"
-#include "audio_system_manager.h"
 #include "audio_service_log.h"
 
 namespace OHOS {

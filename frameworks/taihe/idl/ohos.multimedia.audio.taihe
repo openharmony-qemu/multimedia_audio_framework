@@ -111,6 +111,7 @@ enum DeviceType: i32 {
   REMOTE_DAUDIO = 29,
   HEARING_AID = 30,
   NEARLINK = 31,
+  SYSTEM_PRIVATE = 200,
   DEFAULT = 1000,
 }
 
@@ -955,7 +956,7 @@ enum AudioDataCallbackResult: i32 {
 }
 
 enum RenderTarget: i32 {
-  NORMAL_PLAYBACK = 0,
+  PLAYBACK = 0,
   INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 }
 

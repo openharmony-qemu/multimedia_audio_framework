@@ -18,7 +18,7 @@
 
 #include <unordered_set>
 #include <shared_mutex>
-#include "audio_system_manager.h"
+#include "audio_device_descriptor.h"
 #include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {

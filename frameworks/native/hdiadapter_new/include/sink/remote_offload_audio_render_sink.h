@@ -215,7 +215,6 @@ private:
     int64_t lastSystemTimeNS_ = 0;
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
-    bool appInfoNeedReset_ = false;
     std::unordered_set<int32_t> appsUid_;
 };
 

@@ -252,8 +252,6 @@ void AudioZone::BindByKey(const AudioZoneBindKey &key)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto itKey = keys_.begin(); itKey != keys_.end();) {
-        CHECK_AND_RETURN_LOG(!itKey->IsContain(key), "exist low key %{public}s to %{public}s for zone %{public}d",
-            itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);
         if (key.IsContain(*itKey)) {
             AUDIO_INFO_LOG("erase high key %{public}s to %{public}s for zone %{public}d",
                 itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);

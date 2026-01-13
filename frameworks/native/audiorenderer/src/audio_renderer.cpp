@@ -32,6 +32,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_scope_exit.h"
 #include "volume_tools.h"
+#include "app_bundle_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -406,7 +407,7 @@ bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
 {
     if (getuid() == UID_MEDIA) {
         // Boot animation use avplayer, do not get bundle name to avoid increasing boot duration.
-        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+        std::string bundleName = AppBundleManager::GetSelfBundleName(appInfo_.appUid);
         if (bundleName == "mockNotOffloadHap") {
             AUDIO_INFO_LOG("Force set offload allowed to false for this stream");
             return false;
@@ -566,7 +567,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.api = rendererInfo_.playerType;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
     if (audioInterrupt_.bundleName.empty()) {
-        audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+        audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
     }
 
     AUDIO_INFO_LOG("interruptMode %{public}d, streamType %{public}d, sessionID %{public}d",
@@ -795,7 +796,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
         audioStream_->NotifyRouteUpdate(flag, networkId);
-        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
+        std::string bundleName = AppBundleManager::GetSelfBundleName(getuid());
         audioStream_->SetBundleName(bundleName);
     }
     return SUCCESS;
@@ -3059,8 +3060,8 @@ void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackT
 bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
 {
     bool isBundleNameValid = false;
-    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
-    int32_t ret = AudioSystemManager::GetInstance()->CheckVKBInfo(bundleName, isBundleNameValid);
+    std::string bundleName = AppBundleManager::GetSelfBundleName(getuid());
+    int32_t ret = AudioPolicyManager::GetInstance().CheckVKBInfo(bundleName, isBundleNameValid);
     bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
         && isBundleNameValid;
     AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,

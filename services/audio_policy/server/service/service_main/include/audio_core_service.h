@@ -294,7 +294,8 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
     bool IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene);
-    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    int32_t SetSessionDefaultOutputDevice(
+        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false);
     int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
@@ -359,7 +360,7 @@ private:
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
-    void OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc);
+    void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId);
 
 private:
@@ -476,7 +477,6 @@ private:
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     bool CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void SetVolumeForSwitchDeviceIfNeed(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isNeed);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
         const std::vector<SourceOutput>& sourceOutputs);
@@ -601,6 +601,8 @@ private:
     void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioStreamDeviceChangeReasonExt UpdateRemoteDeviceChangeReason(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    void OnRemoteDeviceStatusUpdatedWhenNoRunningStream(std::shared_ptr<AudioDeviceDescriptor> newDesc);
+    void OnRemoteDeviceStatusUpdated();
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
 

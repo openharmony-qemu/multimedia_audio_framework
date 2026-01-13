@@ -20,8 +20,11 @@
 #include "event_handler.h"
 #include "event_runner.h"
 
+#include "audio_stream_types.h"
+#include "audio_interrupt_types.h"
+#include "audio_stream_change_info.h"
+
 #include "audio_policy_log.h"
-#include "audio_system_manager.h"
 #include "istandard_audio_policy_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"

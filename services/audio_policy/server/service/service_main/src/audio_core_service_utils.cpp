@@ -47,10 +47,21 @@ bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState ren
         return true;
     }
     if (rendererState == RENDERER_PAUSED && usage != STREAM_USAGE_ALARM &&
-        AudioSceneManager::GetInstance().GetAudioScene(true) != AUDIO_SCENE_RINGING) {
+        !IsRingScene(AudioSceneManager::GetInstance().GetAudioScene(true))) {
         return true;
     }
     return false;
+}
+
+bool AudioCoreServiceUtils::IsRingScene(AudioScene scene)
+{
+    switch (scene) {
+        case AUDIO_SCENE_RINGING:
+        case AUDIO_SCENE_VOICE_RINGING:
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

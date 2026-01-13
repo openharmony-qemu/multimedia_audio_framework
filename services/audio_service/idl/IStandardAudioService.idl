@@ -135,8 +135,8 @@ interface IStandardAudioService {
     void StartGroup([in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
     void StopGroup([in] int workgroupId);
     void SetBtHdiInvalidState();
-    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
-    void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);

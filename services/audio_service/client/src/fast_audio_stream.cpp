@@ -24,6 +24,7 @@
 #include "audio_capturer_log.h"
 
 #include "fast_audio_stream.h"
+#include "app_bundle_manager.h"
 
 using namespace std;
 
@@ -715,7 +716,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s: process client is null.", logTag_.c_str());
     processClient_->RegisterThreadPriority(tid,
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,

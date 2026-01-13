@@ -585,7 +585,7 @@ float OHAudioBufferBase::GetFactorFromRamp()
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
     currentTime = std::max(currentTime, beginDurationMs);
     uint32_t lastEventTime = std::max(beginDurationMs,
         std::min(basicBufferInfo_->lastEventTime.load(), currentTime));
@@ -624,7 +624,7 @@ bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
     }
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
  
     float oldDuckFactor = basicBufferInfo_->duckFactor.load();
     basicBufferInfo_->oldDuckFactor.store(oldDuckFactor);

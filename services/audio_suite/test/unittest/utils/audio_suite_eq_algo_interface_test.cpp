@@ -36,7 +36,7 @@ public:
 
 HWTEST_F(AudioSuiteEqAlgoInterfaceImplTest, AudioSuiteEqAlgoInterfaceImplTest, TestSize.Level0)
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
     AudioSuiteEqAlgoInterfaceImpl eqAlgo(nc);

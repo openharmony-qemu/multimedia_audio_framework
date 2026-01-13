@@ -196,6 +196,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     if (volumeApplyToAll_) {
         audioPolicyConfigManager_.SetNormalVoipFlag(true);
     }
+    VolumeUtils::InitEnforcedToneVolume();
 }
 
 static std::string TranslateKeyEvent(const int32_t keyType)
@@ -280,7 +281,9 @@ void AudioPolicyServer::Init()
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
-
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SetObserver(eventEntry_);
+#endif
     // Init single async handler for different managers
     auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_APAsyncActionHandler");
     coreService_->SetAsyncActionHandler(asyncHandler);
@@ -5231,11 +5234,11 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
 
 int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
 {
-    constexpr int32_t foundationUid = 5523; // "uid" : "foundation"
+    constexpr int32_t callManagerUid = 1001; // "uid" : "call_manager"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
-    CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
-        "SetVoiceRingtoneMute callerUid is error: not foundation");
+    CHECK_AND_RETURN_RET_LOG(callerUid == callManagerUid, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not call_manager");
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
 }
@@ -5497,16 +5500,16 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, bool &ret)
+int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t deviceType, bool &ret)
 {
     AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(modeIn);
-    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
+    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 

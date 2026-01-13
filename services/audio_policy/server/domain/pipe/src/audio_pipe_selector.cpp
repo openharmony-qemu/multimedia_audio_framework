@@ -488,6 +488,18 @@ void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
     }
 }
 
+void AudioPipeSelector::CheckIfConcedeExisting(ConcurrencyAction &action,
+    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
+{
+    bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
+        incomingStream->rendererInfo_.isLoopback;
+    bool isConcedeExisting = action == CONCEDE_INCOMING && (existingStream->IsNoRunningOffload() ||
+        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback));
+    CHECK_AND_RETURN(isConcedeExisting);
+    action = CONCEDE_EXISTING;
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
@@ -501,9 +513,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
-    if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
-        action = CONCEDE_EXISTING;
-    }
+    // incoming is loopback, concede offload
+    CheckIfConcedeExisting(action, existingStream, incomingStream);
+
     JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
         "incomingStream id: %{public}u, routeFlag: %{public}u",

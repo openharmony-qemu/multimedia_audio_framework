@@ -205,19 +205,15 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_009, TestSize.Le
 {
     EXPECT_TRUE(source_ && source_->IsInited());
     std::vector<int32_t> appsUid = {};
-    int32_t ret = source_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, SUCCESS);
+    source_->UpdateAppsUid(appsUid);
     appsUid.push_back(20000001);
     appsUid.push_back(20000002);
-    ret = source_->UpdateAppsUid(appsUid);
-    EXPECT_NE(ret, SUCCESS);
-    ret = source_->Start();
+    source_->UpdateAppsUid(appsUid);
+    int32_t ret = source_->Start();
     EXPECT_EQ(ret, ERR_NOT_STARTED);
-    ret = source_->UpdateAppsUid(appsUid);
-    EXPECT_NE(ret, SUCCESS);
+    source_->UpdateAppsUid(appsUid);
     appsUid.clear();
-    ret = source_->UpdateAppsUid(appsUid);
-    EXPECT_NE(ret, SUCCESS);
+    source_->UpdateAppsUid(appsUid);
     ret = source_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }

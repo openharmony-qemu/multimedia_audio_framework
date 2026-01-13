@@ -427,16 +427,14 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
     std::unordered_set<int32_t> lastAppsUid = appsUid_;
     std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
     appsUid_ = std::move(appsUidSet);
-    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
+    if (appsUid_ != lastAppsUid) {
         std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
-        appInfoNeedReset_ = false;
         for (const auto &wrapper : audioRenderWrapperMap_) {
             CHECK_AND_CONTINUE(wrapper.second.audioRender_ != nullptr);
             std::string appInfoStr = GenerateAppsUidStr(appsUid_);
             int32_t ret = wrapper.second.audioRender_->SetExtraParams(appInfoStr.c_str());
             CHECK_AND_RETURN_RET_LOG(ret != SUCCESS, SUCCESS, "set parameter: %{public}s", appInfoStr.c_str());
         }
-        appInfoNeedReset_ = true;
     }
     return SUCCESS;
 }

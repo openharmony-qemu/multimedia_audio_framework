@@ -119,7 +119,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_004, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     audioUsbManager->RefreshUsbAudioDevices();
-    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty());
 }
 
 /**
@@ -140,10 +140,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
     SoundCard soundCard;
     soundCard.isPlayer_ = true;
     soundCard.isCapturer_ = true;
-    audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
     audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
     audioUsbManager->Deinit();
-    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty());
 }
 
 /**
@@ -164,10 +163,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
     SoundCard soundCard;
     soundCard.isPlayer_ = false;
     soundCard.isCapturer_ = true;
-    audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
     audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
     audioUsbManager->Deinit();
-    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty());
 }
 
 /**
@@ -188,10 +186,9 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
     SoundCard soundCard;
     soundCard.isPlayer_ = true;
     soundCard.isCapturer_ = false;
-    audioUsbManager->soundCardMap_.insert({device.usbAddr_, soundCard});
     audioUsbManager->HandleAudioDeviceEvent(make_pair(device, true));
     audioUsbManager->Deinit();
-    EXPECT_TRUE(audioUsbManager->audioDevices_.empty() && audioUsbManager->soundCardMap_.empty());
+    EXPECT_TRUE(audioUsbManager->audioDevices_.empty());
 }
 
 /**
@@ -294,7 +291,76 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_014, TestSize.Level1)
     auto audioUsbManager = &AudioUsbManager::GetInstance();
     ASSERT_TRUE(audioUsbManager != nullptr);
     EXPECT_EQ(audioUsbManager->audioDevices_.size(), 0);
-    EXPECT_EQ(audioUsbManager->soundCardMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: NotifySoundCardChange_001.
+ * @tc.desc  : Test NotifySoundCardChange.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, NotifySoundCardChange_001, TestSize.Level1)
+{
+    auto &man = AudioUsbManager::GetInstance();
+    auto observer = make_shared<TestDeviceStatusObserver>();
+    man.SetObserver(observer);
+    man.NotifySoundCardChange("2", true);
+
+    man.audioDevices_.push_back({
+        .cardNum_ = 2,
+    });
+    man.NotifySoundCardChange("2", false);
+    man.initialized_ = true;
+    man.Deinit();
+    EXPECT_TRUE(man.audioDevices_.empty());
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: SetObserver_001.
+ * @tc.desc  : Test SetObserver.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, SetObserver_001, TestSize.Level1)
+{
+    auto &man = AudioUsbManager::GetInstance();
+    auto observer = make_shared<TestDeviceStatusObserver>();
+    man.SetObserver(observer);
+    man.initialized_ = true;
+    man.Deinit();
+    EXPECT_TRUE(man.audioDevices_.empty());
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: AddDeviceBySoundCard_001.
+ * @tc.desc  : Test AddDeviceBySoundCard.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, AddDeviceBySoundCard_001, TestSize.Level1)
+{
+    auto &man = AudioUsbManager::GetInstance();
+    auto observer = make_shared<TestDeviceStatusObserver>();
+    man.SetObserver(observer);
+    man.AddDeviceBySoundCard(0);
+    man.initialized_ = true;
+    man.Deinit();
+    EXPECT_TRUE(man.audioDevices_.empty());
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: UpdateDeviceName_001.
+ * @tc.desc  : Test UpdateDeviceName.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, UpdateDeviceName_001, TestSize.Level1)
+{
+    auto &man = AudioUsbManager::GetInstance();
+    UsbAddr usbAddr;
+    std::string name;
+    man.UpdateDeviceName(usbAddr, name);
+    man.pendingMap_[usbAddr] = "1";
+    man.UpdateDeviceName(usbAddr, name);
+    man.initialized_ = true;
+    man.Deinit();
+    EXPECT_TRUE(man.audioDevices_.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS

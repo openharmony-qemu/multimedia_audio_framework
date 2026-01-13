@@ -16,7 +16,6 @@
 #ifndef ST_ROUTER_BASE_H
 #define ST_ROUTER_BASE_H
 
-#include "audio_system_manager.h"
 #include "audio_device_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
