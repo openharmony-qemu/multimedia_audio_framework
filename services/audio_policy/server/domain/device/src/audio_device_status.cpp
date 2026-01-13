@@ -1572,6 +1572,7 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
             if (AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_) == DeviceRole::INPUT_DEVICE) {
                 remoteCapturerSwitch_ = true;
             }
+            AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_REMOTE, networkId, true);
         }
     }
 
