@@ -14,7 +14,7 @@
  */
 
 #include "audio_volume_manager.h"
-#include "../fuzz_utils.h"
+#include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
