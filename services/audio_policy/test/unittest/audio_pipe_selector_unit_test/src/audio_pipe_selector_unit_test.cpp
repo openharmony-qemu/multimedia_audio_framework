@@ -1650,7 +1650,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
     moduleInfo.rate = "8000";
 
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
