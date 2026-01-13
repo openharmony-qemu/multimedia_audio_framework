@@ -135,49 +135,62 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     std::shared_ptr<AudioSuitePureVoiceChangeNode> node = std::make_shared<AudioSuitePureVoiceChangeNode>();
     node->Init();
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort = 
-    
-    inputNodeOutputPort.SetOutputPort(mockInputNode_);
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
+        std::make_shared<OutputPort<AudioSuitePcmBuffer*>>();
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
+
+    size_t frameSizeInput;
+    std::vector<uint8_t> inputfileBuffer;
+    uint8_t *readPtr = nullptr;
+    int32_t frames = 0;
+    int32_t frameIndex = 0;
+    EXPECT_CALL(*mockInputNode_, DoProcess())
+        .WillRepeatedly(::testing::Invoke([&]() {
+            if (frameIndex == frames - 1) {
+                buffer->SetIsFinished(true);
+            }
+            memcpy_s(buffer->GetPcmData(), frameSizeInput, readPtr, frameSizeInput);
+            inputNodeOutputPort->WriteDataToOutput(buffer.get());
+            frameIndex++;
+            readPtr += frameSizeInput;
+            return SUCCESS;
+        }));
+
     std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," +
                         std::to_string(static_cast<int32_t>(changeType)) + "," +
                         std::to_string(static_cast<float>(pitch));
     int32_t ret = node->SetOptions("AudioPureVoiceChangeOption", optionValue);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     node->Connect(mockInputNode_);
-    CHECK_AND_RETURN_RET(inputNodeOutputPort.GetInputNum() == 1, ERROR);
+    CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 1, ERROR);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
-    size_t frameSizeInput = buffer->GetDataSize();
+    frameSizeInput = buffer->GetDataSize();
     CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
-    std::vector<uint8_t> inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
+    inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
     CHECK_AND_RETURN_RET(inputfileBuffer.empty() == false, ERROR);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out | std::ios::app);
-    uint8_t *readPtr = inputfileBuffer.data();
-    int32_t frames = inputfileBuffer.size() / frameSizeInput;
-    int32_t frameIndex = 0;
+    readPtr = inputfileBuffer.data();
+    frames = inputfileBuffer.size() / frameSizeInput;
+
     while (!node->GetAudioNodeDataFinishedFlag()) {
-        EXPECT_CALL(*mockInputNode_, DoProcess())
-            .WillRepeatedly(::testing::Invoke([&]() {
-            if (frameIndex == frames - 1) {
-                buffer->SetIsFinished(true);
-            }
-            memcpy_s(buffer->GetPcmData(), frameSizeInput, readPtr, frameSizeInput);
-            inputNodeOutputPort.WriteDataToOutput(buffer.get());
-            frameIndex++;
-            readPtr += frameSizeInput;
-            return SUCCESS;
-        }));
         std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true);
         CHECK_AND_RETURN_RET(result.size() == 1, ERROR);
         outFile.write(reinterpret_cast<const char *>(result[0]->GetPcmData()), frameSizeInput);
     }
     outFile.close();
+
     node->DisConnect(mockInputNode_);
-    CHECK_AND_RETURN_RET(inputNodeOutputPort.GetInputNum() == 0, ERROR);
+    CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 0, ERROR);
+    node->Flush();
+
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
     buffer->SetIsFinished(false);
+
+    inputNodeOutputPort.reset();
     mockInputNode_.reset();
+
     return SUCCESS;
 }
 
@@ -295,28 +308,30 @@ HWTEST_F(AudioSuitePureVoiceChangeNodeTest, DoProcessTest_002, TestSize.Level0)
     node->Init();
     node->SetBypassEffectNode(true);
     std::shared_ptr<MockInputNode> mockInputNode_ = std::make_shared<MockInputNode>();
-    OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort;
-    inputNodeOutputPort.SetOutputPort(mockInputNode_);
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> inputNodeOutputPort =
+        std::make_shared<OutputPort<AudioSuitePcmBuffer*>>();
+    inputNodeOutputPort->SetOutputPort(mockInputNode_);
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
-        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
+        .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(inputNodeOutputPort.get()));
 
     node->Connect(mockInputNode_);
-    EXPECT_EQ(1, inputNodeOutputPort.GetInputNum());
+    EXPECT_EQ(1, inputNodeOutputPort->GetInputNum());
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
     EXPECT_CALL(*mockInputNode_, DoProcess())
             .WillRepeatedly(::testing::Invoke([&]() {
             std::vector<uint8_t> tempData(buffer->GetDataSize(), 0);
             memcpy_s(buffer->GetPcmData(), buffer->GetDataSize(), tempData.data(), buffer->GetDataSize());
-            inputNodeOutputPort.WriteDataToOutput(buffer.get());
+            inputNodeOutputPort->WriteDataToOutput(buffer.get());
             return SUCCESS;
         }));
     std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true);
     EXPECT_EQ(1, result.size());
 
     node->DisConnect(mockInputNode_);
-    EXPECT_EQ(0, inputNodeOutputPort.GetInputNum());
+    EXPECT_EQ(0, inputNodeOutputPort->GetInputNum());
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
     node->Flush();
+    inputNodeOutputPort.reset();
     mockInputNode_.reset();
 }
 
