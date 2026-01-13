@@ -3863,7 +3863,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->newDeviceDescs_.front()->networkId_ = "test_networkId";
     streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
     streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
@@ -3883,6 +3883,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
@@ -3918,7 +3919,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->newDeviceDescs_.front()->networkId_ = "test_networkId";
     streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
 
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
@@ -3926,6 +3927,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.
     pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
     pipeInfo->adapterName_ = "primary";
     pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
