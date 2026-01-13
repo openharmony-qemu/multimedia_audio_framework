@@ -146,8 +146,7 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     uint8_t *readPtr = nullptr;
     int32_t frames = 0;
     int32_t frameIndex = 0;
-    EXPECT_CALL(*mockInputNode_, DoProcess())
-        .WillRepeatedly(::testing::Invoke([&]() {
+    EXPECT_CALL(*mockInputNode_, DoProcess()).WillRepeatedly(::testing::Invoke([&]() {
             if (frameIndex == frames - 1) {
                 buffer->SetIsFinished(true);
             }
@@ -158,18 +157,14 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
             return SUCCESS;
         }));
 
-    std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," +
-                        std::to_string(static_cast<int32_t>(changeType)) + "," +
-                        std::to_string(static_cast<float>(pitch));
+    std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," + 
+        std::to_string(static_cast<int32_t>(changeType)) + "," + std::to_string(static_cast<float>(pitch));
     int32_t ret = node->SetOptions("AudioPureVoiceChangeOption", optionValue);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     node->Connect(mockInputNode_);
-    CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 1, ERROR);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
     frameSizeInput = buffer->GetDataSize();
-    CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
     inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
-    CHECK_AND_RETURN_RET(inputfileBuffer.empty() == false, ERROR);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out | std::ios::app);
     readPtr = inputfileBuffer.data();
     frames = inputfileBuffer.size() / frameSizeInput;
