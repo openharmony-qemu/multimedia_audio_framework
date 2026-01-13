@@ -242,7 +242,7 @@ void Init()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::THRESHOLD) {
+    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
     OHOS::AudioStandard::Init(data, size);
