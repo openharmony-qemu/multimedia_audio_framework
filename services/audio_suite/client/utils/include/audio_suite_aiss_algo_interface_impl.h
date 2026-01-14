@@ -16,7 +16,6 @@
 #ifndef AUDIO_SUITE_AISS_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_AISS_ALGO_INTERFACE_IMPL_H
 
-#include "audio_log.h"
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_suite_algo_interface.h"
@@ -29,11 +28,7 @@ class AudioSuiteAissAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
     explicit AudioSuiteAissAlgoInterfaceImpl(NodeParameter &nc);
 
-    ~AudioSuiteAissAlgoInterfaceImpl()
-    {
-        int32_t ret = Deinit();
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissAlgoInterfaceImpl Deinit failed");
-    }
+    ~AudioSuiteAissAlgoInterfaceImpl();
 
     int32_t Init() override;
 

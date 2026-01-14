@@ -18,7 +18,7 @@
 #include "audio_zone_client_manager.h"
 #include "audio_zone_interrupt_reporter.h"
 #include "audio_zone_service.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -228,7 +228,7 @@ T GetData()
     return object;
 }
 
-void AudioZoneServiceCreateAudioZoneFuzzTest()
+void AudioZoneServiceCreateAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -241,7 +241,7 @@ void AudioZoneServiceCreateAudioZoneFuzzTest()
     audioZoneService.CreateAudioZone(name, context, 0);
 }
 
-void AudioZoneServiceReleaseAudioZoneFuzzTest()
+void AudioZoneServiceReleaseAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -257,7 +257,7 @@ void AudioZoneServiceReleaseAudioZoneFuzzTest()
     audioZoneService.ReleaseAudioZone(zoneId);
 }
 
-void AudioZoneServiceGetAllAudioZoneFuzzTest()
+void AudioZoneServiceGetAllAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -273,7 +273,7 @@ void AudioZoneServiceGetAllAudioZoneFuzzTest()
     audioZoneService.GetAllAudioZone();
 }
 
-void AudioZoneServiceBindDeviceToAudioZoneFuzzTest()
+void AudioZoneServiceBindDeviceToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -292,7 +292,7 @@ void AudioZoneServiceBindDeviceToAudioZoneFuzzTest()
     audioZoneService.BindDeviceToAudioZone(zoneId, devices);
 }
 
-void AudioZoneServiceRemoveDeviceFromGlobalFuzzTest()
+void AudioZoneServiceRemoveDeviceFromGlobalFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -303,7 +303,7 @@ void AudioZoneServiceRemoveDeviceFromGlobalFuzzTest()
     audioZoneService.RemoveDeviceFromGlobal(audioDeviceDescriptor);
 }
 
-void AudioZoneServiceUnBindDeviceToAudioZoneFuzzTest()
+void AudioZoneServiceUnBindDeviceToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -322,7 +322,7 @@ void AudioZoneServiceUnBindDeviceToAudioZoneFuzzTest()
     audioZoneService.UnBindDeviceToAudioZone(zoneId, devices);
 }
 
-void AudioZoneServiceRegisterAudioZoneClientFuzzTest()
+void AudioZoneServiceRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -334,7 +334,7 @@ void AudioZoneServiceRegisterAudioZoneClientFuzzTest()
     audioZoneService.RegisterAudioZoneClient(clientPid, client);
 }
 
-void AudioZoneServiceUnRegisterAudioZoneClientFuzzTest()
+void AudioZoneServiceUnRegisterAudioZoneClientFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -351,7 +351,7 @@ void AudioZoneServiceUnRegisterAudioZoneClientFuzzTest()
     audioZoneService.UnRegisterAudioZoneClient(clientPid);
 }
 
-void AudioZoneServiceInjectInterruptToAudioZoneFuzzTest()
+void AudioZoneServiceInjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -368,7 +368,7 @@ void AudioZoneServiceInjectInterruptToAudioZoneFuzzTest()
     audioZoneService.InjectInterruptToAudioZone(zoneId, interrupts);
 }
 
-void AudioZoneServiceFetchOutputDevicesFuzzTest()
+void AudioZoneServiceFetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -390,7 +390,7 @@ void AudioZoneServiceFetchOutputDevicesFuzzTest()
     audioZoneService.FetchOutputDevices(zoneId, streamUsage, clientUid, bypassType);
 }
 
-void AudioZoneServiceFetchInputDeviceFuzzTest()
+void AudioZoneServiceFetchInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -411,7 +411,7 @@ void AudioZoneServiceFetchInputDeviceFuzzTest()
     audioZoneService.FetchInputDevice(zoneId, sourceType, clientUid);
 }
 
-void AudioZoneServiceGetZoneStringDescriptorFuzzTest()
+void AudioZoneServiceGetZoneStringDescriptorFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -427,7 +427,7 @@ void AudioZoneServiceGetZoneStringDescriptorFuzzTest()
     audioZoneService.GetZoneStringDescriptor(zoneId);
 }
 
-void AudioZoneServiceUpdateDeviceFromGlobalForAllZoneFuzzTest()
+void AudioZoneServiceUpdateDeviceFromGlobalForAllZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -444,7 +444,7 @@ void AudioZoneServiceUpdateDeviceFromGlobalForAllZoneFuzzTest()
     audioZoneService.UpdateDeviceFromGlobalForAllZone(device);
 }
 
-void AudioZoneServiceClearAudioFocusBySessionIDFuzzTest()
+void AudioZoneServiceClearAudioFocusBySessionIDFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneService &audioZoneService = AudioZoneService::GetInstance();
 
@@ -455,7 +455,7 @@ void AudioZoneServiceClearAudioFocusBySessionIDFuzzTest()
     audioZoneService.ClearAudioFocusBySessionID(sessionID);
 }
 
-void AudioZoneInterruptReporterEnableInterruptReportFuzzTest()
+void AudioZoneInterruptReporterEnableInterruptReportFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
     pid_t clientPid = GetData<pid_t>();
@@ -473,7 +473,7 @@ void AudioZoneInterruptReporterEnableInterruptReportFuzzTest()
     audioZoneInterruptReporter.EnableInterruptReport(clientPid, zoneId, deviceTag, enable);
 }
 
-void AudioZoneInterruptReporterDisableInterruptReportFuzzTest()
+void AudioZoneInterruptReporterDisableInterruptReportFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
     pid_t clientPid = GetData<pid_t>();
@@ -487,7 +487,7 @@ void AudioZoneInterruptReporterDisableInterruptReportFuzzTest()
     audioZoneInterruptReporter.DisableAllInterruptReport();
 }
 
-void AudioZoneInterruptReporterCreateReporterFuzzTest()
+void AudioZoneInterruptReporterCreateReporterFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -503,7 +503,7 @@ void AudioZoneInterruptReporterCreateReporterFuzzTest()
     audioZoneInterruptReporter.CreateReporter(interruptService, zoneClientManager, reason);
 }
 
-void AudioZoneInterruptReporterGetFocusListFuzzTest()
+void AudioZoneInterruptReporterGetFocusListFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
     audioZoneInterruptReporter.interruptService_ = std::make_shared<AudioInterruptService>();
@@ -515,7 +515,7 @@ void AudioZoneInterruptReporterGetFocusListFuzzTest()
     audioZoneInterruptReporter.GetFocusList();
 }
 
-void AudioZoneInterruptReporterReportInterruptFuzzTest()
+void AudioZoneInterruptReporterReportInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
     audioZoneInterruptReporter.interruptService_ = std::make_shared<AudioInterruptService>();
@@ -526,7 +526,9 @@ void AudioZoneInterruptReporterReportInterruptFuzzTest()
     audioZoneInterruptReporter.ReportInterrupt();
 }
 
-TestPtr g_testPtrs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioZoneServiceCreateAudioZoneFuzzTest,
     AudioZoneServiceReleaseAudioZoneFuzzTest,
     AudioZoneServiceGetAllAudioZoneFuzzTest,
@@ -546,28 +548,21 @@ TestPtr g_testPtrs[] = {
     AudioZoneInterruptReporterCreateReporterFuzzTest,
     AudioZoneInterruptReporterGetFocusListFuzzTest,
     AudioZoneInterruptReporterReportInterruptFuzzTest,
-};
-
-void FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testPtrs);
-    if (len > 0) {
-        g_testPtrs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-    return;
 }
-
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -577,6 +572,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

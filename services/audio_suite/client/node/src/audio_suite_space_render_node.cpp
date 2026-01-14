@@ -19,6 +19,7 @@
 #include "audio_suite_space_render_node.h"
 #include <fstream>
 #include "audio_utils.h"
+#include "audio_suite_log.h"
  
 namespace OHOS {
 namespace AudioStandard {

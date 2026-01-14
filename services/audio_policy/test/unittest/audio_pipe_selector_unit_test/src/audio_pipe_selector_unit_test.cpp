@@ -587,7 +587,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->newDeviceDescs_.front()->networkId_ = "test_networkId";
     streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
     streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     streamDesc->streamInfo_.channels = AudioChannel::STEREO;
@@ -606,6 +606,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
     pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
@@ -641,7 +642,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->newDeviceDescs_.front()->networkId_ = "test_networkId";
     streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
     streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     streamDesc->streamInfo_.channels = AudioChannel::STEREO;
@@ -660,6 +661,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
     pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
@@ -1650,7 +1652,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
     moduleInfo.rate = "8000";
 
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
 }

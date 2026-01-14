@@ -34,7 +34,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
 #include "dfx_msg_manager.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -102,13 +102,13 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void SetPreferredMediaRenderDeviceFuzzTest()
+void SetPreferredMediaRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredMediaRenderDevice(desc);
 }
 
-void SetAndGetRecordCaptureDeviceFuzzTest()
+void SetAndGetRecordCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
@@ -118,59 +118,59 @@ void SetAndGetRecordCaptureDeviceFuzzTest()
     AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
 }
 
-void SetPreferredCallCaptureDeviceFuzzTest()
+void SetPreferredCallCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredCallCaptureDevice(desc);
 }
 
-void SetPreferredRingRenderDeviceFuzzTest()
+void SetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredRingRenderDevice(desc);
 }
 
-void SetPreferredRecordCaptureDeviceFuzzTest()
+void SetPreferredRecordCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredRecordCaptureDevice(desc);
 }
 
-void SetPreferredToneRenderDeviceFuzzTest()
+void SetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
 }
 
-void UpdatePreferredMediaRenderDeviceConnectStateFuzzTest()
+void UpdatePreferredMediaRenderDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
     ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
     AudioStateManager::GetAudioStateManager().UpdatePreferredMediaRenderDeviceConnectState(state);
 }
 
-void UpdatePreferredCallRenderDeviceConnectStateFuzzTest()
+void UpdatePreferredCallRenderDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
     ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallRenderDeviceConnectState(state);
 }
 
-void UpdatePreferredCallCaptureDeviceConnectStateFuzzTest()
+void UpdatePreferredCallCaptureDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
     ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallCaptureDeviceConnectState(state);
 }
 
-void UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest()
+void UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t stateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
     ConnectState state = static_cast<ConnectState>(GetData<uint8_t>() % stateCount);
     AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(state);
 }
 
-void SetAndGetPreferredRingRenderDeviceFuzzTest()
+void SetAndGetPreferredRingRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     if (desc == nullptr) {
@@ -180,27 +180,27 @@ void SetAndGetPreferredRingRenderDeviceFuzzTest()
     AudioStateManager::GetAudioStateManager().GetPreferredRingRenderDevice();
 }
 
-void SetAndGetPreferredToneRenderDeviceFuzzTest()
+void SetAndGetPreferredToneRenderDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
     AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice();
 }
 
-void SetAndGetPreferredRecognitionCaptureDeviceFuzzTest()
+void SetAndGetPreferredRecognitionCaptureDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
     AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
 }
 
-void SetAudioClientInfoMgrCallbackFuzzTest()
+void SetAudioClientInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IStandardAudioPolicyManagerListener> desc = sptr<IStandardAudioPolicyManagerListener>();
     AudioStateManager::GetAudioStateManager().SetAudioClientInfoMgrCallback(desc);
 }
 
-void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest()
+void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<IStandardAudioPolicyManagerListener> desc = sptr<IStandardAudioPolicyManagerListener>();
     AudioStateManager::GetAudioStateManager().SetAudioClientInfoMgrCallback(desc);
@@ -209,7 +209,7 @@ void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest()
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc_, uid);
 }
 
-void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest()
+void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
@@ -220,7 +220,9 @@ void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest()
     AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     SetPreferredMediaRenderDeviceFuzzTest,
     SetAndGetRecordCaptureDeviceFuzzTest,
     SetPreferredCallCaptureDeviceFuzzTest,
@@ -237,28 +239,20 @@ TestFuncs g_testFuncs[] = {
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest,
     SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -269,7 +263,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

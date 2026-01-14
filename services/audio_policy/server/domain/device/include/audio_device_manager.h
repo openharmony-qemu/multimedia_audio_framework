@@ -122,6 +122,8 @@ public:
 private:
     AudioDeviceManager();
     ~AudioDeviceManager() {};
+    bool CheckNearlinkInHQRecordingSupport(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+        DeviceRole devRole, DeviceUsage devUsage);
     bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType privacyType,
         DeviceRole devRole, DeviceUsage devUsage);
 

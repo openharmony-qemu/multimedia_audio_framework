@@ -19,7 +19,7 @@
 #include "audio_log.h"
 #include "audio_socket_thread.h"
 #include "../../fuzz_utils.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -30,7 +30,7 @@ const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 const uint32_t UEVENT_MSG_PADDING = 2;
 typedef void (*TestPtr)();
 
-void AudioSocketThreadAudioAnahsDetectDeviceFuzzTest()
+void AudioSocketThreadAudioAnahsDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     struct AudioPnpUevent validUeventInsert = {
@@ -50,7 +50,7 @@ void AudioSocketThreadAudioAnahsDetectDeviceFuzzTest()
     }
 }
 
-void AudioSocketThreadAudioAnalogHeadsetDetectDeviceFuzzTest()
+void AudioSocketThreadAudioAnalogHeadsetDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
 
@@ -74,7 +74,7 @@ void AudioSocketThreadAudioAnalogHeadsetDetectDeviceFuzzTest()
     }
 }
 
-void AudioSocketThreadAudioHDMIDetectDeviceFuzzTest()
+void AudioSocketThreadAudioHDMIDetectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     static const vector<string> testSubSystems = {
@@ -108,7 +108,7 @@ void AudioSocketThreadAudioHDMIDetectDeviceFuzzTest()
     }
 }
 
-void AudioSocketThreadAudioPnpUeventParseFuzzTest()
+void AudioSocketThreadAudioPnpUeventParseFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     static const vector<string> testMsgs = {
@@ -131,7 +131,7 @@ void AudioSocketThreadAudioPnpUeventParseFuzzTest()
     audioSocketThread.AudioPnpUeventParse(msg, strLength);
 }
 
-void AudioSocketThreadDetectAnalogHeadsetStateFuzzTest()
+void AudioSocketThreadDetectAnalogHeadsetStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     std::ofstream ofs(SWITCH_STATE_PATH);
@@ -145,7 +145,7 @@ void AudioSocketThreadDetectAnalogHeadsetStateFuzzTest()
     audioSocketThread.DetectAnalogHeadsetState(&audioEvent);
 }
 
-void AudioSocketThreadDetectDPStateFuzzTest()
+void AudioSocketThreadDetectDPStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     AudioEvent audioEvent;
@@ -155,7 +155,7 @@ void AudioSocketThreadDetectDPStateFuzzTest()
     audioSocketThread.DetectDPState(&audioEvent);
 }
 
-void AudioSocketThreadReadAndScanDpStateFuzzTest()
+void AudioSocketThreadReadAndScanDpStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSocketThread audioSocketThread;
     std::string testPath = "/tmp/test_path";
@@ -169,7 +169,9 @@ void AudioSocketThreadReadAndScanDpStateFuzzTest()
     audioSocketThread.ReadAndScanDpState(testPath, eventType);
 }
 
-vector<TestPtr> g_testPtrs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AudioSocketThreadAudioAnahsDetectDeviceFuzzTest,
     AudioSocketThreadAudioAnalogHeadsetDetectDeviceFuzzTest,
     AudioSocketThreadAudioHDMIDetectDeviceFuzzTest,
@@ -177,8 +179,12 @@ vector<TestPtr> g_testPtrs = {
     AudioSocketThreadDetectAnalogHeadsetStateFuzzTest,
     AudioSocketThreadDetectDPStateFuzzTest,
     AudioSocketThreadReadAndScanDpStateFuzzTest,
-};
-
+    });
+    func(fdp);
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -188,7 +194,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testPtrs);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

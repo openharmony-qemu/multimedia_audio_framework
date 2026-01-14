@@ -76,21 +76,25 @@ public:
     void Init(std::shared_ptr<IDeviceStatusObserver> observer);
     void Deinit();
     void SubscribeEvent();
+    void NotifySoundCardChange(const std::string &cardNumStr, bool isAttach);
+    void SetObserver(std::shared_ptr<IDeviceStatusObserver> observer);
 
 private:
     AudioUsbManager() = default;
     void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
     void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
-    bool FillUsbAudioDevice(UsbAudioDevice &device);
+    bool FillUsbAudioDevice(const map<UsbAddr, SoundCard> &cardMap, UsbAudioDevice &device);
     // must be called in mutex_ lock
     void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
+    void AddDeviceBySoundCard(uint32_t cardNum);
+    void UpdateDeviceName(UsbAddr usbAddr, std::string &name);
 
     std::shared_ptr<IDeviceStatusObserver> observer_{nullptr};
     std::shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
     vector<UsbAudioDevice> audioDevices_;
-    map<UsbAddr, SoundCard> soundCardMap_;
-    
+    map<UsbAddr, std::string> pendingMap_;
+
     bool initialized_{false};
     mutex mutex_;
 };

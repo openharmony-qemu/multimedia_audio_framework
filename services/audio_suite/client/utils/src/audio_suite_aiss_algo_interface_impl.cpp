@@ -22,6 +22,7 @@
 #include <dlfcn.h>
 #include "audio_errors.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,6 +62,12 @@ AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeParameter &
     nodeParameter_ = nc;
     inAudioBuffer_.frameLength = 0;
     outAudioBuffer_.frameLength = 0;
+}
+
+AudioSuiteAissAlgoInterfaceImpl::~AudioSuiteAissAlgoInterfaceImpl()
+{
+    int32_t ret = Deinit();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissAlgoInterfaceImpl Deinit failed");
 }
 
 int32_t AudioSuiteAissAlgoInterfaceImpl::Init()

@@ -2164,5 +2164,154 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
     audioEndpointInner->CheckJank(0);
     EXPECT_GT(audioEndpointInner->lastWriteTime_, currentTime);
 }
+
+/**
+ * @tc.name: AsyncGetPosTime_001
+ * @tc.number: AsyncGetPosTime_001
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    bool initialIsStarted = audioEndpointInner->isStarted_;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_002
+ * @tc.number: AsyncGetPosTime_002
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::RUNNING;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    bool initialIsStarted = audioEndpointInner->isStarted_;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_003
+ * @tc.number: AsyncGetPosTime_003
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_004
+ * @tc.number: AsyncGetPosTime_004
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() + 1000000;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

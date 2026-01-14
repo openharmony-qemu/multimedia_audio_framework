@@ -580,7 +580,7 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
-    OnRemoteDeviceStatusUpdated(desc);
+    OnRemoteDeviceStatusUpdated();
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
@@ -636,7 +636,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
-        SetVolumeForSwitchDeviceIfNeed(deviceDesc, !streamDesc->rendererInfo_.isStatic);
+        audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc, true, streamDesc);
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
         }
@@ -882,10 +882,38 @@ int32_t AudioCoreService::GetSessionDefaultOutputDevice(const int32_t callerPid,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+int32_t AudioCoreService::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType, bool skipForce)
 {
+    vector<uint32_t> sessionIDList = pipeManager_->GetStreamIdsByPid(callerPid);
     CHECK_AND_RETURN_RET_LOG(AudioPolicyConfigManager::GetInstance().GetHasEarpiece(), ERR_NOT_SUPPORTED,
         "the device has no earpiece");
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    bool forceFetch = false;
+    for (auto &changeInfo : audioRendererChangeInfos) {
+        bool currentSessionID = false;
+        uint32_t sessionIDListSize = sessionIDList.size();
+        for (uint32_t i = 0; i < sessionIDListSize; i++) {
+            if (changeInfo->sessionId == static_cast<int32_t>(sessionIDList[i])) {
+                currentSessionID = true;
+                break;
+            }
+        }
+        if (currentSessionID &&
+            (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION)) {
+            CHECK_AND_CONTINUE(!skipForce);
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+            forceFetch = true;
+        }
+    }
+    if (forceFetch) {
+        FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+    }
 
     return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
 }
@@ -1806,17 +1834,13 @@ void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId
     DeactivateRemoteDevice(networkId, deviceType);
 }
 
-void AudioCoreService::OnRemoteDeviceStatusUpdated(std::shared_ptr<AudioDeviceDescriptor> newDesc)
+void AudioCoreService::NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    // For special remote devices, e.g. wifi soundbox, when switching from remote to other device, update device status
-    auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
-    CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
-    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
-        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
-    audioActiveDevice_.NotifyUserDisSelectionEventToRemote(currentDesc);
-    currentDesc->connectState_ = VIRTUAL_CONNECTED;
-    audioDeviceManager_.UpdateDevicesListInfo(currentDesc, CONNECTSTATE_UPDATE);
-    DeactivateRemoteDevice(currentDesc->networkId_, currentDesc->deviceType_);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    audioDeviceManager_.UpdateDevicesListInfo(desc, CONNECTSTATE_UPDATE);
+    DeactivateRemoteDevice(desc->networkId_, desc->deviceType_);
 }
 
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
@@ -1844,12 +1868,5 @@ bool AudioCoreService::CheckStaticModeAndSelectFlag(std::shared_ptr<AudioStreamD
     }
     return false;
 }
-
-void AudioCoreService::SetVolumeForSwitchDeviceIfNeed(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isNeed)
-{
-    CHECK_AND_RETURN(isNeed);
-    audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

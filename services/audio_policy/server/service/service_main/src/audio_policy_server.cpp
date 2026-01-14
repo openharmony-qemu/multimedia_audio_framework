@@ -281,7 +281,9 @@ void AudioPolicyServer::Init()
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
-
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SetObserver(eventEntry_);
+#endif
     // Init single async handler for different managers
     auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_APAsyncActionHandler");
     coreService_->SetAsyncActionHandler(asyncHandler);
@@ -2264,11 +2266,14 @@ int32_t AudioPolicyServer::IsStreamActive(int32_t streamType, bool &active)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active)
+int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active)
 {
-    int32_t volumeType = static_cast<int32_t>(VolumeUtils::GetVolumeTypeFromStreamUsage(
-        static_cast<StreamUsage>(streamUsage)));
-    return IsStreamActive(volumeType, active);
+    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
+    if (streamUsage < STREAM_USAGE_INVALID || streamUsage > STREAM_USAGE_MAX) {
+        return ERR_NOT_SUPPORTED;
+    }
+    active = audioSceneManager_.IsStreamActiveByStreamUsage(streamUsage);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support)
@@ -5232,11 +5237,11 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
 
 int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
 {
-    constexpr int32_t foundationUid = 5523; // "uid" : "foundation"
+    constexpr int32_t callManagerUid = 1001; // "uid" : "call_manager"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
-    CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
-        "SetVoiceRingtoneMute callerUid is error: not foundation");
+    CHECK_AND_RETURN_RET_LOG(callerUid == callManagerUid, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not call_manager");
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
 }
