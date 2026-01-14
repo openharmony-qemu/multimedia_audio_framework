@@ -108,6 +108,8 @@ private:
 
     void ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate);
 
+    void SetRemoteHdiInvalidState(HdiDeviceManagerType type, bool force);
+
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;
     std::unordered_map<uint32_t, CaptureSourceInfo> captureSources_;
