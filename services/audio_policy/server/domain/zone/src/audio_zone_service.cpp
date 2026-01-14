@@ -378,6 +378,19 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
     return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
 }
 
+std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto keyList = AudioZoneBindKey::GetSupportKeys(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    for (const auto &key : keyList) {
+        for (const auto &it : zoneMaps_) {
+            CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+            return it.second->GetName();
+        }
+    }
+    return "";
+}
+
 int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate)
 {
     int32_t zoneId;

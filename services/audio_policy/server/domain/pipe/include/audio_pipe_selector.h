@@ -20,6 +20,7 @@
 #include "audio_stream_info.h"
 #include "audio_policy_config_manager.h"
 #include "audio_concurrency_parser.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,6 +36,7 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes);
 
 private:
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -60,6 +62,16 @@ private:
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+#ifdef CAR_AUDIO_DETECT
+    void HandleFindBusPipe(const std::vector<std::string> &busAddresses,
+                           std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+                           std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &busPipeIter);
+#endif
+    void HandleFindMatchPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+                             const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+                             const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo,
+                             std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,

@@ -181,6 +181,51 @@ struct AudioZoneStream : public Parcelable {
         return stream;
     }
 };
+
+struct AudioMix : public Parcelable {
+    std::vector<StreamUsage> streamUsages{};
+    AudioEncodingType encodingType = ENCODING_INVALID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    DeviceRole deviceRole = DEVICE_ROLE_NONE;
+    std::string busAddress;
+    
+    AudioMix() = default;
+    ~AudioMix() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(encodingType));
+        parcel.WriteInt32(static_cast<int32_t>(deviceType));
+        parcel.WriteInt32(static_cast<int32_t>(deviceRole));
+        parcel.WriteString(busAddress);
+        std::vector<int32_t> streamUsagesInt;
+        for (const auto &usage : streamUsages) {
+            streamUsagesInt.push_back(static_cast<int32_t>(usage));
+        }
+        parcel.WriteInt32Vector(streamUsagesInt);
+        return true;
+    }
+
+    static AudioMix *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new (std::nothrow) AudioMix();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->encodingType = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        info->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        info->deviceRole = static_cast<DeviceRole>(parcel.ReadInt32());
+        info->busAddress = parcel.ReadString();
+        std::vector<int32_t> streamUsagesInt;
+        if (parcel.ReadInt32Vector(&streamUsagesInt)) {
+            for (const auto &usage : streamUsagesInt) {
+                info->streamUsages.push_back(static_cast<StreamUsage>(usage));
+            }
+        }
+        return info;
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ZONE_INFO_H

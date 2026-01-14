@@ -3475,6 +3475,12 @@ int32_t AudioPolicyManager::UnregisterCollaborationEnabledForCurrentDeviceEventL
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetCustomAudioMix(zoneName, audioMixes);
+}
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
