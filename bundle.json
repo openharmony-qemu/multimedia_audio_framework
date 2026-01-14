@@ -197,7 +197,6 @@
                 "header_files": [
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
-                  "resource_manager_adapter.h",
                   "audio_group_manager.h",
                   "./audiocommon/include/audio_info.h",
                   "./audiocommon/include/audio_stream_change_info.h"
@@ -219,6 +218,52 @@
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
                  ]
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_policy_manager",
+              "header": {
+                "header_files": [
+                  "audio_stream_manager.h",
+                  "./audiocommon/include/audio_stream_types.h",
+                  "./audiocommon/include/audio_zone_types.h",
+                  "./audiocommon/include/audio_interrupt_types.h",
+                  "./audiocommon/include/audio_spatialization_types.h",
+                  "audio_group_manager.h",
+                  "audio_volume_client_manager.h",
+                  "audio_devices_client_manager.h",
+                  "audio_interrupt_client_manager.h",
+                  "audio_system_client_policy_manager.h",
+                  "audio_routing_client_manager.h",
+                  "audio_session_client_manager.h",
+                  "audio_spatialization_manager.h",
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
+                ],
+                "header_base": [
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
+                ]
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_engine_manager",
+              "header": {
+                "header_files": [
+                  "audio_engine_client_manager.h",
+                  "audio_system_client_engine_manager.h",
+                  "audio_asr_client_manager.h",
+                  "audio_stream_client_manager.h",
+                  "audio_workgroup_client_manager.h",
+                  "audio_wakeup_client_manager.h",
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_types.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
+                ],
+                "header_base": [
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
+                ]
               }
             },
             {

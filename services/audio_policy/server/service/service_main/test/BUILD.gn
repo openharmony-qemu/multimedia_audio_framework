@@ -254,6 +254,9 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_policy:audio_policy_service_static",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
   ]
 
   defines = []
@@ -417,6 +420,9 @@ ohos_unittest("device_init_callback_unit_test") {
     "../../../../../audio_policy:audio_policy_client",
     "../../../../../audio_policy:audio_policy_service_static",
     "../../../../../audio_service:audio_client",
+    "../../../../../audio_service:audio_engine_manager",
+    "../../../../../audio_service:audio_policy_manager",
+    "../../../../../audio_service:audio_stream_client",
   ]
 
   defines = []
@@ -586,6 +592,9 @@ ohos_unittest("audio_policy_dump_unit_test") {
     "../../../../../audio_policy:audio_policy_client",
     "../../../../../audio_policy:audio_policy_service_static",
     "../../../../../audio_service:audio_client",
+    "../../../../../audio_service:audio_engine_manager",
+    "../../../../../audio_service:audio_policy_manager",
+    "../../../../../audio_service:audio_stream_client",
   ]
 
   defines = []
