@@ -244,7 +244,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                    newPipeInfo->adapterName_ == streamDescAdapterName &&
                    newPipeInfo->audioStreamInfo_.channels == streamDesc->streamInfo_.channels &&
-                   newPipeInfo->audioStreamInfo_.format == streamDesc->streamInfo_.format &&         
+                   newPipeInfo->audioStreamInfo_.format == streamDesc->streamInfo_.format &&
                    newPipeInfo->audioStreamInfo_.samplingRate == streamDesc->streamInfo_.samplingRate;
         });
     }
@@ -271,9 +271,10 @@ void AudioPipeSelector::HandleFindMatchPipe(
     // but due to delay recons, the actual recons operation do not occur, the stream is still in old pipe,
     // which may cause two offload/multichannel streams running in concurrency.
     if (IsNeedTempMoveToNormal(streamDesc, streamDescToOldPipeInfo)) {
-         HILOG_COMM_INFO("[PipeFetchInfo] Temporarily move recons stream %{public}d to primary."
-                        " routeFlag %{public}d", 
-                        streamDesc->GetSessionId(), streamDesc->routeFlag_);
+        HILOG_COMM_INFO("[PipeFetchInfo] Temporarily move recons stream %{public}d to primary."
+                        " routeFlag %{public}d",
+                        streamDesc->GetSessionId(),
+                        streamDesc->routeFlag_);
         streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         streamDescAdapterName = "primary";
     }

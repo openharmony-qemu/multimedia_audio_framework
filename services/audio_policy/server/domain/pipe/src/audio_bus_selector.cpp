@@ -58,7 +58,7 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
     }
 
     std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_);
-    if(zoneName.empty()) {
+    if (zoneName.empty()) {
         zoneName = std::string(PRIMARY_ZONE_NAME);
     }
 
@@ -81,8 +81,7 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
                                                     return b;
                                                   } else {
                                                     return a + ", " + b;
-                                                  }
-                                              });
+                                                  }});
     if (busAddresses.empty()) {
         std::string defaultBus = GetDefaultBusConfig();
         if (defaultBus.empty()) {
