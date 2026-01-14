@@ -157,13 +157,14 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
             return SUCCESS;
         }));
 
-    std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," + 
+    std::string optionValue = std::to_string(static_cast<int32_t>(sexType)) + "," +
         std::to_string(static_cast<int32_t>(changeType)) + "," + std::to_string(static_cast<float>(pitch));
     int32_t ret = node->SetOptions("AudioPureVoiceChangeOption", optionValue);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     node->Connect(mockInputNode_);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
     frameSizeInput = buffer->GetDataSize();
+    CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
     inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out | std::ios::app);
     readPtr = inputfileBuffer.data();
