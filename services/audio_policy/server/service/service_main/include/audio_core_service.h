@@ -14,6 +14,8 @@
  */
 #ifndef AUDIO_CORE_SERVICE_H
 #define AUDIO_CORE_SERVICE_H
+#include <atomic>
+#include <condition_variable>
 #include <mutex>
 
 #include "audio_policy_server_handler.h"
@@ -191,8 +193,15 @@ public:
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 private:
+        int32_t WaitForServiceReady();
+        void NotifyServiceReady();
+
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
+        std::mutex serviceReadyMutex_;
+        std::condition_variable serviceReadyCV_;
+        std::atomic<bool> serviceReady_ = false;
+        int32_t serviceReadyWaitCount_ = 0;
     };
 
     // Ctor & dtor
