@@ -99,7 +99,7 @@ void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
     outputStreamMap_.emplace(micType, this);
     historyDataMap_.clear();
     historyRemainSizeMap_.clear();
-    concatDataBuffer_.resize(micInfo.channels * micInfo.frameLen * 1); // 1: SAMPLE_S16LE
+    concatDataBuffer_.resize(micInfo.channels * micInfo.frameLen * GetSizeFromFormat(micInfo.format));
     AUDIO_INFO_LOG("mic:%{public}d, ec:%{public}d, concatBufferSize:%{public}d", micInfo.channels,
         ecInfo.channels, static_cast<uint32_t>(concatDataBuffer_.size()));
 #ifdef ENABLE_HOOK_PCM
@@ -269,8 +269,8 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, con
     uint32_t totalChannel = nodeInfoMap_.at(micType).channels;
     uint32_t micChannel = totalChannel - nodeInfoMap_.at(ecType).channels;
     uint32_t ecChannel = nodeInfoMap_.at(ecType).channels;
-    uint32_t micFormatSize = GetSizeFromFormat(nodeInfoMap_.at(micType).format);
-    uint32_t ecFormatSize = GetSizeFromFormat(nodeInfoMap_.at(ecType).format);
+    uint32_t micFormatSize = static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(micType).format));
+    uint32_t ecFormatSize = static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(ecType).format));
 
     for (uint32_t i = 0; i < framelen; i++) {
         size_t frameStart = i * totalChannel * micFormatSize;
