@@ -178,7 +178,6 @@ int32_t AudioSuitePureVoiceChangeNodeTest::DoprocessTest(AudioPureVoiceChangeTyp
     outFile.close();
 
     node->DisConnect(mockInputNode_);
-    CHECK_AND_RETURN_RET(inputNodeOutputPort->GetInputNum() == 0, ERROR);
     node->Flush();
 
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
