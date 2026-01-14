@@ -98,6 +98,20 @@ void AudioDeviceManager::OnXmlParsingCompleted(
     }
 }
 
+bool AudioDeviceManager::CheckNearlinkInHQRecordingSupport(
+    const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole, DeviceUsage devUsage)
+{
+    if (devDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN &&
+        devRole == INPUT_DEVICE &&
+        devUsage == MEDIA) {
+        if (!devDesc->highQualityRecordingSupported_) {
+            AUDIO_INFO_LOG("Nearlink In device not support HQ recording.");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage)
 {
@@ -120,6 +134,9 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         AUDIO_INFO_LOG("bluetooth sco not support in media output scene");
         return false;
     }
+
+    CHECK_AND_RETURN_RET_LOG(CheckNearlinkInHQRecordingSupport(devDesc, devRole, devUsage),
+        false, "Nearlink In device not support HQ recording.");
 
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
