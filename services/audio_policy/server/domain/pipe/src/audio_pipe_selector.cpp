@@ -391,11 +391,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
-    outputDescs.push_back(streamDesc);
-    CheckFastStreamOverLimitToNormal(outputDescs);
-
     HILOG_COMM_INFO("[ScanPipeListForStreamDesc]Route flag after concurrency: %{public}u  sessionId: %{public}u",
         streamDesc->routeFlag_, streamDesc->sessionId_);
 }
@@ -801,6 +796,13 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName));
 
         MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
+
+        if ((pipeInfo->GetRoute() == AUDIO_OUTPUT_FLAG_FAST || pipeInfo->GetRoute() == AUDIO_INPUT_FLAG_FAST) &&
+            pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
+            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
+            streamDesc->ResetToNormalRoute(false);
+            return FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+        }
 
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
