@@ -1654,5 +1654,252 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - both conditions true
+* @tc.number: FindExistingPipe_001
+* @tc.desc  : Test when route is AUDIO_OUTPUT_FLAG_FAST AND stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    fastPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1001;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - first true, second false
+* @tc.number: FindExistingPipe_002
+* @tc.desc  : Test when route is AUDIO_OUTPUT_FLAG_FAST BUT stream count less than MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    fastPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
+        fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1002;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - first false, second true
+* @tc.number: FindExistingPipe_003
+* @tc.desc  : Test when route is not AUDIO_OUTPUT_FLAG_FAST BUT stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto normalPipeInfo = std::make_shared<AudioPipeInfo>();
+    normalPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    normalPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    normalPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(normalPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1003;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(normalPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT + 1);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - both conditions false
+* @tc.number: FindExistingPipe_004
+* @tc.desc  : Test when route is AUDIO_INPUT_FLAG_FAST AND stream count less than MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto normalPipeInfo = std::make_shared<AudioPipeInfo>();
+    normalPipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    normalPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    normalPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
+        normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(normalPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1004;
+    streamDesc->SetRoute(AUDIO_INPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    // 3. 执行测试
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_INPUT_FLAG_FAST);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(normalPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - AUDIO_INPUT_FLAG_FAST
+* @tc.number: FindExistingPipe_005
+* @tc.desc  : Test when route is AUDIO_INPUT_FLAG_FAST AND stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastInputPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastInputPipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    fastInputPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastInputPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        fastInputPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastInputPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1005;
+    streamDesc->SetRoute(AUDIO_INPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS
