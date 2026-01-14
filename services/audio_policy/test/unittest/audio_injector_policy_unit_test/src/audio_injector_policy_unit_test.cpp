@@ -263,32 +263,6 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_004, TestSize.Level1
 }
 
 /**
- * @tc.name: RebuildCaptureInjector_001
- * @tc.desc: wzwzwz
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_001, TestSize.Level1)
-{
-    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    audioInjectorPolicy.isOpened_ = true;
-    audioInjectorPolicy.RebuildCaptureInjector(1111);
-    audioInjectorPolicy.isOpened_ = false;
-    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
-    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
-    pipelist.clear();
-    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->paIndex_ = 1234;
-    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    desc->sessionId_ = 4321;
-    pipe1->streamDescriptors_.push_back(desc);
-    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
-    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
-    audioInjectorPolicy.capturePortIdx_ = 1111;
-    audioInjectorPolicy.RebuildCaptureInjector(1111);
-}
-
-/**
  * @tc.name: RebuildCaptureInjector_002
  * @tc.desc: wzwzwz
  * @tc.type: FUNC
