@@ -20,6 +20,7 @@
 #include <string>
 #include "audio_suite_process_node.h"
 #include "audio_suite_manager.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -76,6 +77,9 @@ class AudioSuiteProcessNodeTest : public ::testing::Test {
 public:
     void SetUp() override
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
         // init nodeinfo
         AudioFormat audioFormat = {
             {CH_LAYOUT_STEREO, STEREO},
