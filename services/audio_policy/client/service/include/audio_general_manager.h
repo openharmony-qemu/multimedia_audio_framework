@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include "audio_policy_interface.h"
+#include "audio_manager_base.h"
 #include "audio_system_manager.h"
 #include "istandard_audio_service.h"
 

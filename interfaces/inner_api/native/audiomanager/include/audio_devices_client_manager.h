@@ -19,7 +19,7 @@
 #include <cstdlib>
 #include <vector>
 #include "audio_device_descriptor.h"
-#include "audio_stream_types.h"
+#include "audio_system_manager_ext.h"
 #include "audio_policy_interface.h"
 
 namespace OHOS {
@@ -58,19 +58,6 @@ public:
      * @since 9
      */
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const;
-
-    /**
-     * @brief Select the audio output device according to the filter conditions.
-     *
-     * @param audioRendererFilter filter conditions.
-     * @param audioDeviceDescriptors Output device object.
-     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
-     * in {@link audio_errors.h} otherwise.
-     * @since 9
-     */
-    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
-        const int32_t audioDeviceSelectMode = 0) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.

@@ -23,6 +23,8 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+
+#include "audio_manager_base.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "istandard_audio_service.h"

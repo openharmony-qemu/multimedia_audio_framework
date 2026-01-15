@@ -19,6 +19,7 @@
 #include "audio_info.h"
 #include "audio_log.h"
 #include "OHAudioWorkgroup.h"
+#include "audio_manager_base.h"
 #include "native_audio_common.h"
 #include "native_audio_resource_manager.h"
 

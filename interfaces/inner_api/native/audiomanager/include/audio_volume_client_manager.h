@@ -16,7 +16,7 @@
 #ifndef AUDIO_VOLUME_CLIENT_MANAGER_H
 #define AUDIO_VOLUME_CLIENT_MANAGER_H
 
-#include "audio_policy_interface.h"
+#include "audio_system_manager_ext.h"
 #include "audio_group_manager.h"
 
 namespace OHOS {

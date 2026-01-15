@@ -36,6 +36,8 @@
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
 #include "securec.h"
+
+#include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #include "fast_audio_stream.h"
 #include "linear_pos_time_model.h"

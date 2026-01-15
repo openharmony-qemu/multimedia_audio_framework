@@ -23,7 +23,7 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
-#include "audio_device_descriptor.h"
+#include "audio_manager_base.h"
 #include "audio_pipe_info.h"
 #include "istandard_audio_service.h"
 
