@@ -97,6 +97,10 @@ public:
     MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
+
+    MOCK_METHOD(int32_t, SetFirstFrameWritingCallback,
+        (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
+    MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {
