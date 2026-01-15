@@ -239,7 +239,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
         CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
         std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
         busPipeIter = findPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-            return std::any_if(busAddresses.begin(), busAddresses.end(),
+            return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                    newPipeInfo->adapterName_ == streamDescAdapterName &&
