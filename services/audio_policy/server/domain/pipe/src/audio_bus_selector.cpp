@@ -99,7 +99,7 @@ std::string AudioBusSelector::GetDefaultBusByConfig()
         return "";
     }
 
-    AudioAdapterType adpaterType = PolicyAdapterInfo::GetAdapterType(globalConfigs.adapter_);
+    AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(globalConfigs.adapter_);
     std::shared_ptr<PolicyAdapterInfo> adapterInfo{nullptr};
     bool ret = audioConfigManager_.GetAdapterInfoByType(adapterType, adapterInfo);
     if (!ret || !adapterInfo) {
