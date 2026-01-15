@@ -798,17 +798,15 @@ void AudioProcessInServer::InitRendererStream(uint32_t spanTime,
     if (clientStreamInfo.samplingRate != serverStreamInfo.samplingRate) {
         if (clientStreamInfo.format != RESAMPLE_FORMAT) {
             resampleStreamInfo.format = RESAMPLE_FORMAT;
-
-            clientToResampleKey_.srcChn =  clientStreamInfo.channels;
-            clientToResampleKey_.srcFormat = clientStreamInfo.format;
-            clientToResampleKey_.dstChn = clientStreamInfo.channels;
-            clientToResampleKey_.dstFormat = resampleStreamInfo.format;
-            
             handleRendererDataType_ = handleRendererDataType_ | CONVERT_TO_F32_ACTION;
             auto f32SpanSize = CalcSpanSize(spanTime, clientStreamInfo.samplingRate, clientStreamInfo.channels,
                 resampleStreamInfo.format);
             AllocateBufferDesc(f32SpanSize, f32Buffer_, f32BufferNew_);
         }
+        clientToResampleKey_.srcChn =  clientStreamInfo.channels;
+        clientToResampleKey_.srcFormat = clientStreamInfo.format;
+        clientToResampleKey_.dstChn = clientStreamInfo.channels;
+        clientToResampleKey_.dstFormat = resampleStreamInfo.format;
         resampler_ = std::make_unique<HPAE::ProResampler>(clientStreamInfo.samplingRate,
             serverStreamInfo.samplingRate, clientStreamInfo.channels, 1);
         handleRendererDataType_ = handleRendererDataType_ | RESAMPLE_ACTION;
