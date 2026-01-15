@@ -51,6 +51,7 @@ static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint64_t FIXED_LATENCY_IN_MS = 40;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
+static constexpr uint64_t MICROSECOND_PER_MILLISECOND = 1000;
 // to judge whether customSampleRate is multiples of 50
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
@@ -1096,7 +1097,7 @@ uint64_t HpaeRendererStreamImpl::GetOffloadLatency()
     AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
                     " hdi pos: %{public}" PRIu64 " time: %{public}" PRIu64 " speed: %{public}f",
                     cacheLenInHdi, writePos_, hdiPos, time, speed_);
-    return cacheLenInHdi / 1000;
+    return cacheLenInHdi / MICROSECOND_PER_MILLISECOND;
 }
 
 void HpaeRendererStreamImpl::OnNotifyFlushStatus(bool isFlush)
