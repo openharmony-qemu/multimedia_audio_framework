@@ -89,7 +89,8 @@ HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_003, TestSize.Level1)
 HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_001, TestSize.Level1)
 {
     MockAudioZoneService audioZoneServiceMock;
-    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>());
+    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>(),
+                                 AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(audioZoneServiceMock, FindAudioZoneNameByUid(::testing::_)).WillOnce(::testing::Return("primary"));
 
     auto result = busSelector.GetBusAddressesByStreamDesc(nullptr);
@@ -105,7 +106,8 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_001, TestSize.Lev
 HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_002, TestSize.Level1)
 {
     MockAudioZoneService audioZoneServiceMock;
-    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>());
+    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>(),
+                                 AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(audioZoneServiceMock, FindAudioZoneNameByUid(::testing::_)).WillOnce(::testing::Return(""));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -123,7 +125,8 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_002, TestSize.Lev
 HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_003, TestSize.Level1)
 {
     MockAudioZoneService audioZoneServiceMock;
-    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>());
+    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>(),
+                                 AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(audioZoneServiceMock, FindAudioZoneNameByUid(::testing::_)).WillOnce(::testing::Return("primary-2"));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -141,7 +144,8 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_003, TestSize.Lev
 HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_004, TestSize.Level1)
 {
     MockAudioZoneService audioZoneServiceMock;
-    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>());
+    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>(),
+                                 AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(audioZoneServiceMock, FindAudioZoneNameByUid(::testing::_)).WillOnce(::testing::Return("primary"));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -165,7 +169,8 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_004, TestSize.Lev
 HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_005, TestSize.Level1)
 {
     MockAudioZoneService audioZoneServiceMock;
-    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>());
+    AudioBusSelector busSelector(audioZoneServiceMock, std::make_shared<MockAudioPipeManager>(),
+                                 AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(audioZoneServiceMock, FindAudioZoneNameByUid(::testing::_)).WillOnce(::testing::Return("primary"));
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -199,7 +204,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetSinkNameByStreamId_001, TestSize.Level1)
 
     MockAudioZoneService audioZoneServiceMock;
     std::shared_ptr<MockAudioPipeManager> audioPipeManagerMock = std::make_shared<MockAudioPipeManager>();
-    AudioBusSelector busSelector(audioZoneServiceMock, audioPipeManagerMock);
+    AudioBusSelector busSelector(audioZoneServiceMock, audioPipeManagerMock, AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(*audioPipeManagerMock, GetPipeList()).WillOnce(::testing::Return(pipeList));
     auto result = busSelector.GetSinkNameByStreamId(123);
     EXPECT_EQ(result, "TestModule");
@@ -221,7 +226,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetSinkNameByStreamId_002, TestSize.Level1)
 
     MockAudioZoneService audioZoneServiceMock;
     std::shared_ptr<MockAudioPipeManager> audioPipeManagerMock = std::make_shared<MockAudioPipeManager>();
-    AudioBusSelector busSelector(audioZoneServiceMock, audioPipeManagerMock);
+    AudioBusSelector busSelector(audioZoneServiceMock, audioPipeManagerMock, AudioPolicyConfigManager::GetInstance());
     EXPECT_CALL(*audioPipeManagerMock, GetPipeList()).WillOnce(::testing::Return(pipeList));
     auto result = busSelector.GetSinkNameByStreamId(456);
     EXPECT_EQ(result, PORT_NONE);
