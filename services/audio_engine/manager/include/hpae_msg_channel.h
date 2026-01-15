@@ -158,7 +158,7 @@ public:
 class IOffloadCallback {
 public:
     virtual void OnNotifyFlushStatus(bool isFlush);
-    virtual void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos);
+    virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos);
 };
 
 struct HpaeNodeInfo : HpaeDfxNodeInfo {
