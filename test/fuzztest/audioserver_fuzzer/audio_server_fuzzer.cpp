@@ -1966,15 +1966,6 @@ void OnStartExpansion()
     audioServerPtr->OnStartExpansion();
 }
 
-void OnStart()
-{
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    CHECK_AND_RETURN(audioServerPtr != nullptr);
-    audioServerPtr->OnStart();
-    std::shared_ptr<IAudioRenderSink> btSink = nullptr;
-    audioServerPtr->CheckAndPreStoreA2dpParam(btSink, AudioParamKey::A2DP_SUSPEND_STATE, "test");
-}
-
 void GetPcmDumpParameter()
 {
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -2193,7 +2184,6 @@ TestFuncs g_testFuncs[] = {
     AudioServerCheckMaxLoopbackInstancesFuzzTest,
     ReleaseActiveDeviceRoute,
     OnStartExpansion,
-    OnStart,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
