@@ -567,6 +567,11 @@ int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clien
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
     auto deviceChangeCbStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     CHECK_AND_RETURN_RET_LOG(deviceChangeCbStub != nullptr, ERROR, "object null");
 
@@ -595,6 +600,16 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
     {
         std::lock_guard<std::mutex> lock(handleAvailableDeviceChangeCbsMapMutex_);
         availableDeviceChangeCbsMap_.erase({clientId, usage});
+
+        if (usage == AudioDeviceUsage::D_ALL_DEVICES) {
+            for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end();) {
+                if ((*it).first.first == clientId) {
+                    it = availableDeviceChangeCbsMap_.erase(it);
+                } else {
+                    it++;
+                }
+            }
+        }
     }
 
     return gsp->UnsetAvailableDeviceChangeCallback(clientId, static_cast<int32_t>(usage));
