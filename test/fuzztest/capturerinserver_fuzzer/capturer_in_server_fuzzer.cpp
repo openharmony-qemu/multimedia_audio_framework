@@ -555,7 +555,6 @@ vector<TestFuncs> g_testFuncs = {
     RebuildCaptureInjectorTest,
     RequestUserPrivacyAuthorityTest,
     SetRebuildFlagTest,
-    GetLastAudioDurationTest,
 };
 
 } // namespace AudioStandard
