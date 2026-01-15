@@ -127,7 +127,7 @@ private:
     void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
         std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
     uint64_t GetOffloadLatency();
-    bool InitLatencyInfo(const AudioCallBackStreamInfo& callBackStremInfo);
+    bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
