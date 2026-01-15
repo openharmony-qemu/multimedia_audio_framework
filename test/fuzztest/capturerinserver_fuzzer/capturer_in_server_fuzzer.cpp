@@ -474,6 +474,63 @@ void InitCacheBufferFuzzTest()
     capturerInServer_->InitCacheBuffer(targetSize);
 }
 
+void RecordOverflowStatusTest()
+{
+    Init();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    bool currentStatus = g_fuzzUtils.GetData<bool>();
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->RecordOverflowStatus(currentStatus);
+}
+ 
+void RebuildCaptureInjectorTest()
+{
+    Init();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->RebuildCaptureInjector();
+}
+ 
+void RequestUserPrivacyAuthorityTest()
+{
+    Init();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->RequestUserPrivacyAuthority();
+}
+ 
+void SetRebuildFlagTest()
+{
+    Init();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->SetRebuildFlag();
+}
+ 
 vector<TestFuncs> g_testFuncs = {
     OnStatusUpdateFuzzTest,
     HandleOperationFlushedFuzzTest,
@@ -494,6 +551,11 @@ vector<TestFuncs> g_testFuncs = {
     StopFuzzTest,
     ReleaseFuzzTest,
     InitCacheBufferFuzzTest,
+    RecordOverflowStatusTest,
+    RebuildCaptureInjectorTest,
+    RequestUserPrivacyAuthorityTest,
+    SetRebuildFlagTest,
+    GetLastAudioDurationTest,
 };
 
 } // namespace AudioStandard
