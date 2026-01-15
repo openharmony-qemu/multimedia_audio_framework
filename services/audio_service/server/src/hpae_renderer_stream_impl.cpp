@@ -1108,7 +1108,7 @@ void HpaeRendererStreamImpl::OnNotifyFlushStatus(bool isFlush)
     }
 }
 
-void HpaeRendererStreamImpl::OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos)
+void HpaeRendererStreamImpl::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     std::unique_lock<std::shared_mutex> lock(latencyMutex_);
     hdiPos_ = hdiPos;

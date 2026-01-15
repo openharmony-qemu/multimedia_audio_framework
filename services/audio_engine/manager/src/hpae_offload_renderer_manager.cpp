@@ -898,7 +898,7 @@ void HpaeOffloadRendererManager::OnNotifyFlushStatus(bool isFlush)
         "HpaeOffloadRendererManager::OnNotifyFlushStatus curNode_ is null");
     curNode_->NotifyOffloadFlushState(isFlush);
 }
-void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos)
+void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     CHECK_AND_RETURN_LOG(curNode_ != nullptr,
         "HpaeOffloadRendererManager::OnNotifyHdiData curNode_ is null");

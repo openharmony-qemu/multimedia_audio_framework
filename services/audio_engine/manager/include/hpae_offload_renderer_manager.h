@@ -100,7 +100,7 @@ public:
 
     void OnRequestWritePos(uint64_t &writePos) override;
     void OnNotifyFlushStatus(bool isFlush) override;
-    void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();

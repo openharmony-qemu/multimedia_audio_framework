@@ -41,7 +41,7 @@ public:
 class HpaeOffloadCallbackInfo : public IOffloadCallback {
 public:
     void OnNotifyFlushStatus(bool isFlush) override {}
-    void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos) override {}
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override {}
     ~HpaeOffloadCallbackInfo() override {}
 };
 

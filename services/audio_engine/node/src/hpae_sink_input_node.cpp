@@ -282,7 +282,7 @@ void HpaeSinkInputNode::NotifyOffloadFlushState(bool isFlush)
     writeCallback->OnNotifyOffloadFlush(isFlush);
 }
 
-void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_4, TimePoint> &hdiPos)
+void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());

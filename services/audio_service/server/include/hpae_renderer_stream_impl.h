@@ -105,7 +105,7 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     void OnNotifyFlushStatus(bool isFlush) override;
-    void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
