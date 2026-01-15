@@ -90,7 +90,8 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
                                                     return b;
                                                   } else {
                                                     return a + ", " + b;
-                                                  }});
+                                                  }
+                                              });
     AUDIO_INFO_LOG("Bus Addresses: %{public}s", busAddressesStr.c_str());
     return busAddresses;
 }

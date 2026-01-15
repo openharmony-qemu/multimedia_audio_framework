@@ -1657,6 +1657,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 
+#ifdef CAR_AUDIO_DETECT
 /**
  * @tc.name: HandleFindBusPipe_001
  * @tc.desc: Test that when busAddresses is empty, the function should return the end iterator of newPipeInfoList.
@@ -1729,5 +1730,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_002, TestSize.Level1)
                                                             busPipeIter);
     EXPECT_NE(busPipeIter, newPipeInfoList.end());
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

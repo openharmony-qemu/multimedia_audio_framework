@@ -107,8 +107,11 @@ group("audio_policy_unittest_packages") {
     ":audio_injector_policy_unit_test",
     "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
     "../client/stub:client_stub_unit_test_group",
-    ":audio_bus_selector_unit_test",
   ]
+
+  if (audio_framework_feature_car_audio) {
+        deps += [ ":audio_bus_selector_unit_test" ]
+  }
 }
 
 module_output_path = "audio_framework/audio_framework_policy/audio_policy"
@@ -4547,6 +4550,10 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "-Wno-macro-redefined",
     "-fno-access-control",
   ]
+
+  if (audio_framework_feature_car_audio) {
+    defines += [ "CAR_AUDIO_DETECT" ]
+  }
 
   sources = [ "./unittest/audio_pipe_selector_unit_test/src/audio_pipe_selector_unit_test.cpp" ]
 
