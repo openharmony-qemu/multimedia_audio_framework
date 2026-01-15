@@ -57,7 +57,7 @@ int32_t AuxiliarySink::Init(const IAudioSinkAttr &attr)
         "_" + std::to_string(attr.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
-    uint32_t ret = PrepareMmapBuffer();
+    int32_t ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "prepare mmap buffer fail");
     sinkInited_ = true;
     return SUCCESS;
@@ -208,7 +208,7 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is null");
 
-    uint32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
+    int32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
     if (bufferAddress_ != nullptr) {
         munmap(bufferAddress_, MAX_AUXILIARY_BUFFERSIZE);
