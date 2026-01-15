@@ -84,14 +84,9 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
                           defaultBus.c_str(), streamDesc->rendererInfo_.streamUsage);
         return {defaultBus};
     }
-    std::string busAddressesStr = std::reduce(busAddresses.begin(), busAddresses.end(), std::string{},
-                                              [](const std::string &a, const std::string &b) {
-                                                  if (a.empty()) {
-                                                    return b;
-                                                  } else {
-                                                    return a + ", " + b;
-                                                  }
-                                              });
+    std::string busAddressesStr =
+        std::reduce(busAddresses.begin(), busAddresses.end(), std::string{},
+                    [](const std::string &a, const std::string &b) { return a.empty() ? b : a + ", " + b; });
     AUDIO_INFO_LOG("Bus Addresses: %{public}s", busAddressesStr.c_str());
     return busAddresses;
 }
