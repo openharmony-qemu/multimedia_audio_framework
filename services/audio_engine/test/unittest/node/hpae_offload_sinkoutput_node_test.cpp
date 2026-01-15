@@ -38,6 +38,13 @@ public:
     std::shared_ptr<MockAudioRenderSink> mockSink_;
 };
 
+class HpaeOffloadCallbackInfo : public IOffloadCallback {
+public:
+    void OnNotifyFlushStatus(bool isFlush) override {}
+    void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos) override {}
+    ~HpaeOffloadCallbackInfo() override {}
+};
+
 static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     size_t frameLen = 960;
@@ -89,6 +96,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullMovieStream_ShouldU
     // Expect unlock method called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(1);
     offloadNode_->OffloadNeedSleep(OFFLOAD_FULL);
+    offloadNode_->SetSpeed(1.0f);
     // Verify state changes
     EXPECT_TRUE(offloadNode_->isHdiFull_.load());
 }
@@ -286,6 +294,11 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateForegr
     offloadNode_->SetPolicyState(0);
     EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_ACTIVE_FOREGROUND);
     EXPECT_FALSE(offloadNode_->setPolicyStateTask_.flag);
+    offloadNode_->NotifyHdiPos();
+    std::shared_ptr<IOffloadCallback> callback = std::make_shared<HpaeOffloadCallbackInfo>();
+    offloadNode_->offloadCallback_ = callback.get();
+    offloadNode_->NotifyHdiPos();
+    EXPECT_NE(offloadNode_->offloadCallback_, nullptr);
 }
 
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackground, TestSize.Level0)

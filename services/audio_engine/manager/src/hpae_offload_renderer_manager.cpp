@@ -599,6 +599,7 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
     attr.filePath = sinkInfo_.filePath.c_str();
     int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
+    sinkOutputNode_->RegisterOffloadCallback(this);
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     AUDIO_INFO_LOG("inited");
@@ -879,6 +880,26 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     CHECK_AND_RETURN_LOG(curNode_ != nullptr,
         "HpaeOffloadRendererManager::OnRewindAndFlush curNode_ is null");
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
+}
+
+void HpaeOffloadRendererManager::OnRequestWritePos(uint64_t &writePos)
+{
+    writePos = 0;
+    if (sinkOutputNode_ != nullptr) {
+        writePos = sinkOutputNode_->GetWritePos();
+    }
+}
+void HpaeOffloadRendererManager::OnNotifyFlushStatus(bool isFlush)
+{
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnNotifyFlushStatus curNode_ is null");
+    curNode_->NotifyOffloadFlushState(isFlush);
+}
+void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos)
+{
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnNotifyHdiData curNode_ is null");
+    curNode_->NotifyOffloadHdiPos(hdiPos);
 }
 
 void HpaeOffloadRendererManager::OnNotifyQueue()

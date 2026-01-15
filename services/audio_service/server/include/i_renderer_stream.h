@@ -25,6 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
 class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
@@ -36,6 +37,8 @@ class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
     virtual bool OnQueryUnderrun() { return false; };
+    virtual void OnNotifyFlushStatus(bool isFlush){};
+    virtual void OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos){};
 };
 
 class IRendererStream : public IStream {

@@ -57,7 +57,6 @@ static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
-static constexpr int64_t TIME_INTERVAL_NS = 200 * 1000000LL;
 static constexpr uint32_t DUCK_UNDUCK_STEP_TIME = 20;
 static constexpr uint32_t DUCK_UNDUCK_STEP_TIME_US = 20000;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
@@ -323,6 +322,10 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
+        if (offloadEnable_) {
+            sinkLatency = GetOffloadLatency();
+            return SUCCESS;
+        }
     }
     return GetSinkLatencyInner(deviceClass, deviceNetId, sinkLatency);
 }
@@ -383,13 +386,6 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
 
     int64_t now = ClockTime::GetCurNano();
     auto &positionData = speedPositionData[base];
-    if (offloadStatePolicy_.load() == OFFLOAD_INACTIVE_BACKGROUND &&
-        now - positionData.lastCallTime < TIME_INTERVAL_NS) {
-        framePosition = positionData.framePosition;
-        timestamp = positionData.timestamp;
-        latency = positionData.latency;
-        return SUCCESS;
-    }
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
 
@@ -414,13 +410,6 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 {
     int64_t now = ClockTime::GetCurNano();
     auto &positionData = currentPositionData[base];
-    if (offloadStatePolicy_.load() == OFFLOAD_INACTIVE_BACKGROUND &&
-        now - positionData.lastCallTime < TIME_INTERVAL_NS) {
-        framePosition = positionData.framePosition;
-        timestamp = positionData.timestamp;
-        latency = positionData.latency;
-        return SUCCESS;
-    }
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
@@ -583,6 +572,7 @@ int32_t HpaeRendererStreamImpl::SetSpeed(float speed)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     IHpaeManager::GetHpaeManager().SetSpeed(processConfig_.originalSessionId, speed);
+    speed_ = speed;
     return SUCCESS;
 }
 
@@ -651,6 +641,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             (deviceClass_ != callBackStreamInfo.deviceClass || deviceNetId_ != callBackStreamInfo.deviceNetId);
         deviceClass_ = callBackStreamInfo.deviceClass;
         deviceNetId_ = callBackStreamInfo.deviceNetId;
+        writePos_ = callBackStreamInfo.writePos_;
     }
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
@@ -1091,5 +1082,35 @@ int32_t HpaeRendererStreamImpl::FetchSinkLatency(uint32_t &sinkLatency)
     return fetcher(sinkLatency);
 }
 
+uint64_t HpaeRendererStreamImpl::GetOffloadLatency()
+{
+    float speed = speed_;
+    if (deviceClass_ == DEVICE_CLASS_OFFLOAD && processConfig_.streamType != STREAM_MOVIE) {
+        speed = 1.0f;
+    }
+    auto now = std::chrono::high_resolution_clock::now();
+    uint64_t time = now > hdiPos_.second ?
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count()) : 0;
+    uint64_t hdiPos = hdiPos_.first + static_cast<uint64_t>(time * speed_);
+    uint64_t cacheLenInHdi = writePos_ > hdiPos ? (writePos_ - hdiPos) : 0;
+    AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
+                    " hdi pos: %{public}" PRIu64 " time: %{public}" PRIu64 " speed: %{public}f",
+                    cacheLenInHdi, writePos_, hdiPos, time, speed_);
+    return cacheLenInHdi / 1000;
+}
+
+void HpaeRendererStreamImpl::OnNotifyFlushStatus(bool isFlush)
+{
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+    if (statusCallback != nullptr && offloadEnable_) {
+        statusCallback->OnStatusUpdate(isFlush ? OPERATION_OFFLOAD_FLUSH_BEGIN : OPERATION_OFFLOAD_FLUSH_END);
+    }
+}
+
+void HpaeRendererStreamImpl::OnNotifyHdiData(const std::pair<uint64_4, TimePoint> &hdiPos)
+{
+    std::unique_lock<std::shared_mutex> lock(latencyMutex_);
+    hdiPos_ = hdiPos;
+}
 } // namespace AudioStandard
 } // namespace OHOS

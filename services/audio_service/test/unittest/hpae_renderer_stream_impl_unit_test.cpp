@@ -59,6 +59,15 @@ public:
     MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
 };
 
+class IIStatusCallbackTest : public IStatusCallback {
+public:
+    IIStatusCallbackTest() = default;
+
+    virtual ~IIStatusCallbackTest() = default;
+
+    void OnStatusUpdate(IOperation operation) override {}
+};
+
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -336,11 +345,27 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->OnNotifyOffloadFlush(false);
+    std::shared_ptr<IStatusCallback> callback = std::make_shared<IIStatusCallbackTest>();
+    unit->offloadEnable_ = true;
+    unit->statusCallback_ = callback;
+    unit->OnNotifyOffloadFlush(false);
+    unit->OnNotifyOffloadFlush(true);
+    unit->offloadEnable_ = false;
+    unit->OnNotifyOffloadFlush(false);
+
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->processConfig_.streamType = STREAM_MOVIE;
+    ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -456,6 +481,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_005, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
+    uint32_t latency = 0;
+    EXPECT_EQ(uint->GetSinkLatencyInner(latency), 0);
 }
 
 /**
