@@ -141,7 +141,7 @@ static void ParseDeviceExtraInfo(std::string &info, DStatusInfo &statusInfo)
         statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul("A15", nullptr, HEX_BASE));
     }
     if (strList.size() == 3) { //3：strList size
-        statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul(strList[1], nullptr, HEX_BASE)); // 1: dmDeviceType
+        statusInfo.dmDeviceType = static_cast<uint16_t>(HexStrToNum(strList[1])); // 1: dmDeviceType
     }
 }
 

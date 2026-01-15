@@ -55,6 +55,7 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const uint32_t AUDIO_ID = 1041;
+constexpr uint32_t BASE_HEX = 16;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -648,6 +649,8 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
 std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
+
+uint64_t HexStrToNum(const std::string &str);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
