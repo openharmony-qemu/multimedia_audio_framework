@@ -707,12 +707,12 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
     AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
 
-    std::shared_ptr<PolicyAdapterInfo> adpaterInfoPtr = deviceInfo->adpaterInfo_.lock();
-    CHECK_AND_RETURN_LOG(adpaterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
 
-    std::unorderer_map<std::string, std::std::shared<AdapterPipeInfo>> pipeInfoMap;
+    std::unordered_map<std::string, std::std::shared<AdapterPipeInfo>> pipeInfoMap;
     for (const auto &pipeName : deviceInfo->supportPipes_) {
-        std::shared_ptr<AdapterPipeInfo> pipeInfo = adpaterInfoPtr->GetPipeInfoByName(pipeName);
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
         if (pipeInfo != nullptr) {
             pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
         }
