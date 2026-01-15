@@ -4035,14 +4035,14 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_133, TestSize.Level1)
     uint32_t sessionId = 1001;
     AudioInterrupt activeInterrupt;
     activeInterrupt.pid = activePid;
-    activeInterrupt.audioFocusType.sourceType == SOURCE_TYPE_MIC;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     activeInterrupt.streamId = sessionId;
 
     uint32_t streamSessionId = 1002;
     AudioInterrupt streamActiveInterrupt;
-    activeInterrupt.pid = activePid;
-    activeInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION;
-    activeInterrupt.streamId = streamSessionId;
+    streamActiveInterrupt.pid = activePid;
+    streamActiveInterrupt.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    streamActiveInterrupt.streamId = streamSessionId;
  
     int32_t ret = audioInterruptService->ActivateAudioInterrupt(0, activeInterrupt, false);
     EXPECT_EQ(SUCCESS, ret);
