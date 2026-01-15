@@ -422,7 +422,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         case OPERATION_OFFLOAD_FLUSH_BEGIN:
             HandleOffloadFlush(true);
             break;
-         case OPERATION_OFFLOAD_FLUSH_END:
+        case OPERATION_OFFLOAD_FLUSH_END:
             HandleOffloadFlush(false);
             break;
         default:

@@ -589,7 +589,6 @@ void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
                 if (callback) {
                     callback->OnNotifyQueue();
                 }
-
             }
             break;
         }

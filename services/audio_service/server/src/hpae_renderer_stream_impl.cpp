@@ -627,9 +627,9 @@ void HpaeRendererStreamImpl::ResetSinkLatencyFetcher(const AudioCallBackStreamIn
     sinkLatencyFetcher_ = fetcher;
 }
 
-int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
+bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo& callBackStremInfo)
 {
-    bool needResetSinkLatencyFetcher = !firstStreamDataReceived_.load(std::memory_order_relaxed);
+     bool needResetSinkLatencyFetcher = !firstStreamDataReceived_.load(std::memory_order_relaxed);
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);
         OnDeviceClassChange(callBackStreamInfo);
@@ -643,6 +643,12 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         deviceNetId_ = callBackStreamInfo.deviceNetId;
         writePos_ = callBackStreamInfo.writePos_;
     }
+    return needResetSinkLatencyFetcher;
+}
+
+int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
+{
+    bool needResetSinkLatencyFetcher = InitLatencyInfo(callBackStreamInfo);
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
     }
