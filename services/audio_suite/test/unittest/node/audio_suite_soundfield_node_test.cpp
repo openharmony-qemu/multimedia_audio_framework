@@ -31,7 +31,12 @@ class AudioSuiteSoundFieldNodeUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
-    void SetUp(void){};
+    void SetUp(void)
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown(void){};
 };
 
