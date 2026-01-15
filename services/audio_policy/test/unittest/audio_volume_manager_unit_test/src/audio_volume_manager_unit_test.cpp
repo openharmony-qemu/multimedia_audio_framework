@@ -1301,6 +1301,26 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Leve
 
     ret = audioVolumeManager.GetMinVolumeDegree(STREAM_ALL, DEVICE_TYPE_NONE);
     EXPECT_EQ(ret, 0);
+
+    bool oldMuteState = audioVolumeManager.IsRingerModeMute();
+    audioVolumeManager.SetRingerModeMute(false);
+    ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_RING);
+    EXPECT_EQ(ret, 0);
+
+    int32_t zoneId = 0;
+    int32_t volumeLevel = 1;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioVolumeManager.SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
+    EXPECT_GT(ret, 0);
+
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioVolumeManager.SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
+    EXPECT_GT(ret, 0);
+
+    audioVolumeManager.SetRingerModeMute(oldMuteState);
 }
 
 /**
