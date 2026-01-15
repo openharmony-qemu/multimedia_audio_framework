@@ -4551,10 +4551,6 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "-fno-access-control",
   ]
 
-  if (audio_framework_feature_car_audio) {
-    defines += [ "CAR_AUDIO_DETECT" ]
-  }
-
   sources = [ "./unittest/audio_pipe_selector_unit_test/src/audio_pipe_selector_unit_test.cpp" ]
 
   deps = [
