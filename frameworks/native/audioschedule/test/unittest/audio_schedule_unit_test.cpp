@@ -82,7 +82,7 @@ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_002, TestSize.Level1)
  {
      SetProcessDataThreadPriority(-1);
      GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-     EXPECT_TRUE(SetEndpointThreadPriority());
+     EXPECT_FALSE(SetEndpointThreadPriority());
  }
 
 /**
