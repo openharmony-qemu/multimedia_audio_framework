@@ -482,7 +482,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_005, TestSize.Level1)
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
     uint32_t latency = 0;
-    EXPECT_EQ(uint->GetSinkLatencyInner(latency), 0);
+    EXPECT_EQ(unit->GetSinkLatencyInner(latency), 0);
 }
 
 /**

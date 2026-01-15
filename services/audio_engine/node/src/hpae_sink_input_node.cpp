@@ -278,15 +278,15 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
 void HpaeSinkInputNode::NotifyOffloadFlushState(bool isFlush)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
-    writeCallback->OnNotifyOffloadFlush(isFlush);
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyFlushStatus(isFlush);
 }
 
 void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     auto writeCallback = writeCallback_.lock();
-    CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
-    writeCallback->OnNotifyOffloadFlush(isFlush);
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyHdiData(hdiPos);
 }
 
 void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)

@@ -159,6 +159,7 @@ class IOffloadCallback {
 public:
     virtual void OnNotifyFlushStatus(bool isFlush);
     virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos);
+    virtual ~IOffloadCallback() = default;
 };
 
 struct HpaeNodeInfo : HpaeDfxNodeInfo {

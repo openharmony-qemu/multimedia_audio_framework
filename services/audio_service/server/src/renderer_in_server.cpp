@@ -2953,7 +2953,8 @@ void RendererInServer::MarkStaticFadeIn()
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
-void HandleOffloadFlush(bool isFlush) {
+void RendererInServer::HandleOffloadFlush(bool isFlush)
+{
     std::lock_guard<std::mutex> dupLock(dupMutex_);
     for (auto &capInfo : captureInfos_) {
         if (IsEnabledAndValidDupStream(capInfo.second)) {

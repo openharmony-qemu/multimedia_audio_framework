@@ -655,6 +655,11 @@ void HpaeOffloadSinkOutputNode::RegisterOffloadCallback(IOffloadCallback *offloa
 {
     offloadCallback_ = offloadCallback;
 }
+
+uint64_t HpaeOffloadSinkOutputNode::GetWritePos() const noexcept
+{
+    return writePos_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
