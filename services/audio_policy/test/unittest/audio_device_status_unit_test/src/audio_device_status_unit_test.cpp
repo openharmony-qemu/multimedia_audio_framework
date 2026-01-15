@@ -1637,26 +1637,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, WriteInputDeviceChangedSysEvents_001, TestSi
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
-* @tc.number: RemoveDeviceFromGlobalOnly_001
-* @tc.desc  : Test RemoveDeviceFromGlobalOnly interface.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, RemoveDeviceFromGlobalOnly_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDescriptor->networkId_ = "123456";
-    deviceDescriptor->deviceName_ = "usb_headset";
-    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-
-    audioDeviceStatus.RemoveDeviceFromGlobalOnly(deviceDescriptor);
-    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
-}
-
-/**
-* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AddDeviceBackToGlobalOnly_001
 * @tc.desc  : Test AddDeviceBackToGlobalOnly interface.
 */

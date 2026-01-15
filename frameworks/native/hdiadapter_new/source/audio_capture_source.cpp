@@ -419,6 +419,7 @@ void AudioCaptureSource::ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytes
     if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
         AUDIO_ERR_LOG("copy desc ec fail");
     } else {
+        HdiDfxUtils::DumpData(fdescEc->frame, replyBytesEc, ecDumpFile_, ecDumpFileName_);
         SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
     }
 }

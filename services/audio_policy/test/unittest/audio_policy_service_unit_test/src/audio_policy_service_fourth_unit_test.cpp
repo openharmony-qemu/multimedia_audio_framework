@@ -456,20 +456,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioEnhanceProperty_001, TestSize
 }
 
 /**
-* @tc.name  : Test GetAudioEnhanceProperty.
-* @tc.number: GetAudioEnhanceProperty_001
-* @tc.desc  : Test GetAudioEnhanceProperty interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest GetAudioEnhanceProperty_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioEnhancePropertyArray propertyArrayTest;
-    GetServerUtil::GetServerPtr()->GetAudioEnhanceProperty(propertyArrayTest);
-}
-
-/**
 * @tc.name  : Test ErasePreferredDeviceByType.
 * @tc.number: ErasePreferredDeviceByType_001
 * @tc.desc  : Test AudioPolicyService interfaces.

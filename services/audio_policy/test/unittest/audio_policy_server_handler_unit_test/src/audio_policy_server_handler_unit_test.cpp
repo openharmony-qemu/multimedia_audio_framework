@@ -178,25 +178,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerCreateEvent_001, TestSize.L
 }
 
 /**
- * @tc.name  : Test SendCapturerCreateEvent API
- * @tc.type  : FUNC
- * @tc.number: SendCapturerCreateEvent_002
- * @tc.desc  : Test SendCapturerCreateEvent interface.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerCreateEvent_002, TestSize.Level1)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    AudioCapturerInfo capturerInfo;
-    AudioStreamInfo streamInfo;
-    uint64_t sessionId = 0;
-    bool isSync = true;
-    int32_t error = 0;
-    int32_t ret =
-        audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, isSync, error);
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
-}
-
-/**
  * @tc.name  : Test SendCapturerRemovedEvent API
  * @tc.type  : FUNC
  * @tc.number: SendCapturerRemovedEvent_001

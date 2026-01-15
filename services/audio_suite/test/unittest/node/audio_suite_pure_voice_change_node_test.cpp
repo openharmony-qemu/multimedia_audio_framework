@@ -98,7 +98,11 @@ public:
 class AudioSuitePureVoiceChangeNodeTest : public testing::Test {
 protected:
     void SetUp() override
-    {}
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    }
     void TearDown() override
     {}
     int32_t DoprocessTest(AudioPureVoiceChangeType changeType, AudioPureVoiceChangeGenderOption sexType, float pitch,

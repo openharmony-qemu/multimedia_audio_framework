@@ -125,7 +125,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
 
     node->OnStreamInfoChange(false);
-    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()),
+        node->GetAppUid());
     UpdateClusterStreamInfo(nodeInfo.sceneType);
 }
 
@@ -333,7 +334,8 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
-        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED,
+            sinkInputNodeMap_[streamInfo.sessionId]->GetAppUid());
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1256,14 +1258,14 @@ void HpaeRendererManager::UpdateAppsUid()
 }
 
 void HpaeRendererManager::NotifyStreamChangeToSink(
-    StreamChangeType change, uint32_t sessionId, RendererState state)
+    StreamChangeType change, uint32_t sessionId, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN(outputCluster_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
         usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
     }
-    outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
 
 size_t HpaeRendererManager::GetWritableSize(uint32_t sessionId)
