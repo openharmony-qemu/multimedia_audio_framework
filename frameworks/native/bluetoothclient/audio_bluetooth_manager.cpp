@@ -26,6 +26,7 @@
 #include "bluetooth_device_manager.h"
 #include "bluetooth_device_utils.h"
 #include "bluetooth_hfp_interface.h"
+#include "bluetooth_a2dp_interface.h"
 #include "hisysevent.h"
 
 namespace OHOS {
@@ -36,12 +37,10 @@ const int32_t BT_VIRTUAL_DEVICE_ADD = 0;
 const int32_t BT_VIRTUAL_DEVICE_REMOVE = 1;
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 constexpr const uint8_t CONN_REASON_MANUAL_VIRTUAL_CONNECT_PREEMPT_FLAG = 0x03;
-A2dpSource *AudioA2dpManager::a2dpInstance_ = nullptr;
 std::shared_ptr<AudioA2dpListener> AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
 int AudioA2dpManager::connectionState_ = static_cast<int>(BTConnectState::DISCONNECTED);
 int32_t AudioA2dpManager::captureConnectionState_ = static_cast<int32_t>(BTHdapConnectState::DISCONNECTED);
 BluetoothRemoteDevice AudioA2dpManager::activeA2dpDevice_;
-std::shared_mutex g_a2dpInstanceLock;
 std::shared_ptr<AudioHfpListener> AudioHfpManager::hfpListener_ = std::make_shared<AudioHfpListener>();
 std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
@@ -51,6 +50,7 @@ std::map<pid_t, bool> AudioHfpManager::virtualCalls_;
 std::mutex AudioHfpManager::virtualCallMutex_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
+std::mutex g_activeA2dpDeviceLock;
 std::mutex g_a2dpPlayingStateChangedLock;
 static const int32_t BT_SET_ACTIVE_DEVICE_TIMEOUT = 8; //BtService SetActiveDevice 8s timeout
 
@@ -108,27 +108,14 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
 // LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("in");
-    std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    a2dpInstance_ = A2dpSource::GetProfile();
-    if (a2dpInstance_ == nullptr) {
-        HILOG_COMM_ERROR("[RegisterBluetoothA2dpListener]Failed to obtain A2DP profile instance");
-        return;
-    }
-    a2dpInstance_->RegisterObserver(a2dpListener_);
+    AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
+    BluetoothA2dpInterface::GetInstance().RegisterObserver(a2dpListener_);
 }
 
 void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("in");
-    std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    if (a2dpInstance_ == nullptr) {
-        HILOG_COMM_ERROR("[UnregisterBluetoothA2dpListener]A2DP profile instance unavailable");
-        return;
-    }
-
-    a2dpInstance_->DeregisterObserver(a2dpListener_);
-    a2dpInstance_ = nullptr;
+    AUDIO_INFO_LOG("AudioA2dpManager::UnregisterBluetoothA2dpListener");
+    BluetoothA2dpInterface::GetInstance().DeregisterObserver(a2dpListener_);
 }
 
 void AudioA2dpManager::DisconnectBluetoothA2dpSink()
@@ -168,10 +155,9 @@ void AudioA2dpManager::DisconnectBluetoothA2dpSource()
 
 int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     HILOG_COMM_WARN("[SetActiveA2dpDevice]incoming device:%{public}s, current device:%{public}s",
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeA2dpDevice_.GetDeviceAddr()).c_str());
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     BluetoothRemoteDevice device;
     if (macAddress != "") {
         int32_t tmp = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
@@ -182,7 +168,7 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
     } else {
         AUDIO_INFO_LOG("Deactive A2DP device");
     }
-    int32_t ret = a2dpInstance_->SetActiveSinkDevice(device);
+    int32_t ret = BluetoothA2dpInterface::GetInstance().SetActiveSinkDevice(device);
     if (ret != 0) {
         HILOG_COMM_ERROR("[SetActiveA2dpDevice] failed, result: %{public}d", ret);
         return ERROR;
@@ -193,14 +179,12 @@ int32_t AudioA2dpManager::SetActiveA2dpDevice(const std::string& macAddress)
 
 std::string AudioA2dpManager::GetActiveA2dpDevice()
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, "", "A2DP profile instance is null");
-    BluetoothRemoteDevice device = a2dpInstance_->GetActiveSinkDevice();
-    return device.GetDeviceAddr();
+    return BluetoothA2dpInterface::GetInstance().GetActiveA2dpDevice();
 }
 
 std::string AudioA2dpManager::GetActiveA2dpDeviceLocal()
 {
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     return activeA2dpDevice_.GetDeviceAddr();
 }
 
@@ -218,15 +202,13 @@ int32_t AudioA2dpManager::SetDeviceAbsVolume(const std::string& macAddress, int3
 int32_t AudioA2dpManager::GetA2dpDeviceStreamInfo(const std::string& macAddress,
     AudioStreamInfo &streamInfo)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
     BluetoothRemoteDevice device;
     int32_t ret = MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device);
     if (ret != SUCCESS) {
         HILOG_COMM_ERROR("[GetA2dpDeviceStreamInfo]: the configuring A2DP device doesn't exist.");
         return ERROR;
     }
-    A2dpCodecStatus codecStatus = a2dpInstance_->GetCodecStatus(device);
+    A2dpCodecStatus codecStatus = BluetoothA2dpInterface::GetInstance().GetCodecStatus(device);
     bool result = GetAudioStreamInfo(codecStatus.codecInfo, streamInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERROR, "GetA2dpDeviceStreamInfo: Unsupported a2dp codec info");
     return SUCCESS;
@@ -242,61 +224,61 @@ int32_t AudioA2dpManager::GetA2dpInDeviceStreamInfo(const std::string &macAddres
 
 bool AudioA2dpManager::HasA2dpDeviceConnected()
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, false, "A2DP profile instance is null");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
-    a2dpInstance_->GetDevicesByStates(states, devices);
+    BluetoothA2dpInterface::GetInstance().GetDevicesByStates(states, devices);
 
     return !devices.empty();
 }
 
 int32_t AudioA2dpManager::A2dpOffloadSessionRequest(const std::vector<A2dpStreamInfo> &info)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         HILOG_COMM_ERROR("[A2dpOffloadSessionRequest] Invalid mac address, not request, return A2DP_NOT_OFFLOAD.");
         return A2DP_NOT_OFFLOAD;
     }
-    int32_t ret = a2dpInstance_->A2dpOffloadSessionRequest(activeA2dpDevice_, info);
+    int32_t ret = BluetoothA2dpInterface::GetInstance().A2dpOffloadSessionRequest(activeA2dpDevice_, info);
+    CHECK_AND_RETURN_RET(ret != ERROR, ERROR);
     AUDIO_DEBUG_LOG("Request %{public}zu stream and return a2dp offload state %{public}d", info.size(), ret);
     return ret;
 }
 
 int32_t AudioA2dpManager::OffloadStartPlaying(const std::vector<int32_t> &sessionsID)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         HILOG_COMM_ERROR("[OffloadStartPlaying] Invalid mac address, not start, return error.");
         return ERROR;
     }
+    int32_t ret = BluetoothA2dpInterface::GetInstance().OffloadStartPlaying(activeA2dpDevice_, sessionsID);
+    CHECK_AND_RETURN_RET(ret != ERROR, ERROR);
     AUDIO_DEBUG_LOG("Start playing %{public}zu stream", sessionsID.size());
-    return a2dpInstance_->OffloadStartPlaying(activeA2dpDevice_, sessionsID);
+    return ret;
 }
 
 int32_t AudioA2dpManager::OffloadStopPlaying(const std::vector<int32_t> &sessionsID)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         AUDIO_DEBUG_LOG("Invalid mac address, not stop, return error.");
         return ERROR;
     }
+    int32_t ret = BluetoothA2dpInterface::GetInstance().OffloadStopPlaying(activeA2dpDevice_, sessionsID);
+    CHECK_AND_RETURN_RET(ret != ERROR, ERROR);
     AUDIO_DEBUG_LOG("Stop playing %{public}zu stream", sessionsID.size());
-    return a2dpInstance_->OffloadStopPlaying(activeA2dpDevice_, sessionsID);
+    return ret;
 }
 
 int32_t AudioA2dpManager::GetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance is null");
+    std::lock_guard<std::mutex> a2dpDeviceLock(g_activeA2dpDeviceLock);
     if (activeA2dpDevice_.GetDeviceAddr() == "00:00:00:00:00:00") {
         AUDIO_DEBUG_LOG("Invalid mac address, return error.");
         return ERROR;
     }
-    return a2dpInstance_->GetRenderPosition(activeA2dpDevice_, delayValue, sendDataSize, timeStamp);
+    return BluetoothA2dpInterface::GetInstance().GetRenderPosition(activeA2dpDevice_,
+        delayValue, sendDataSize, timeStamp);
 }
 
 int32_t AudioA2dpManager::RegisterA2dpPlayingStateChangedListener(
@@ -317,12 +299,10 @@ void AudioA2dpManager::OnA2dpPlayingStateChanged(const std::string &deviceAddres
 
 void AudioA2dpManager::CheckA2dpDeviceReconnect()
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance is null");
     CHECK_AND_RETURN_LOG(a2dpListener_ != nullptr, "a2dpListener_ is nullptr");
     std::vector<int32_t> states {static_cast<int32_t>(BTConnectState::CONNECTED)};
     std::vector<BluetoothRemoteDevice> devices;
-    a2dpInstance_->GetDevicesByStates(states, devices);
+    BluetoothA2dpInterface::GetInstance().GetDevicesByStates(states, devices);
 
     for (auto &device : devices) {
         a2dpListener_->OnConnectionStateChanged(device, static_cast<int32_t>(BTConnectState::CONNECTED),
@@ -338,7 +318,7 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
     }
 
     std::vector<std::string> virtualDevices;
-    a2dpInstance_->GetVirtualDeviceList(virtualDevices);
+    BluetoothA2dpInterface::GetInstance().GetVirtualDeviceList(virtualDevices);
     for (auto &macAddress : virtualDevices) {
         AUDIO_WARNING_LOG("reconnect virtual a2dp device:%{public}s", GetEncryptAddr(macAddress).c_str());
         a2dpListener_->OnVirtualDeviceChanged(static_cast<int32_t>(Bluetooth::BT_VIRTUAL_DEVICE_ADD), macAddress);
@@ -347,8 +327,6 @@ void AudioA2dpManager::CheckA2dpDeviceReconnect()
 
 int32_t AudioA2dpManager::Connect(const std::string &macAddress)
 {
-    std::shared_lock<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
-    CHECK_AND_RETURN_RET_LOG(a2dpInstance_ != nullptr, ERROR, "A2DP profile instance unavailable");
     BluetoothRemoteDevice virtualDevice = BluetoothRemoteDevice(macAddress);
     if (MediaBluetoothDeviceManager::IsA2dpBluetoothDeviceConnecting(macAddress)) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is connecting, ignore connect request",
@@ -357,13 +335,13 @@ int32_t AudioA2dpManager::Connect(const std::string &macAddress)
         return SUCCESS;
     }
     std::vector<std::string> virtualDevices;
-    a2dpInstance_->GetVirtualDeviceList(virtualDevices);
+    BluetoothA2dpInterface::GetInstance().GetVirtualDeviceList(virtualDevices);
     if (std::find(virtualDevices.begin(), virtualDevices.end(), macAddress) == virtualDevices.end()) {
         AUDIO_WARNING_LOG("A2dp device %{public}s is not virtual device, ignore connect request",
             GetEncryptAddr(macAddress).c_str());
         return SUCCESS;
     }
-    int32_t ret = a2dpInstance_->Connect(virtualDevice);
+    int32_t ret = BluetoothA2dpInterface::GetInstance().Connect(virtualDevice);
     if (ret != 0) {
         HILOG_COMM_ERROR("[Connect]A2dp Connect Failed");
         return ERROR;
@@ -450,13 +428,13 @@ void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDev
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
     HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(&DisconnectScoForDevice);
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
     BluetoothHfpInterface::GetInstance().RegisterObserver(hfpListener_);
 }
 
 void AudioHfpManager::UnregisterBluetoothScoListener()
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("AudioHfpManager::UnregisterBluetoothScoListener");
     BluetoothHfpInterface::GetInstance().DeregisterObserver(hfpListener_);
 }
 

@@ -100,7 +100,6 @@ public:
     }
 
 private:
-    static A2dpSource *a2dpInstance_;
     static std::shared_ptr<AudioA2dpListener> a2dpListener_;
     static int connectionState_;
     static int32_t captureConnectionState_;
