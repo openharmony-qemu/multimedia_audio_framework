@@ -705,8 +705,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
-    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d, deviceName: %{public}s", deviceInfo->type_,
-        deviceInfo->role_, newDeviceDesc->deviceName_.c_str());
+    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
 
     std::shared_ptr<PolicyAdapterInfo> adpaterInfoPtr = deviceInfo->adpaterInfo_.lock();
     CHECK_AND_RETURN_LOG(adpaterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
@@ -747,7 +746,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 
     AUDIO_INFO_LOG("Find streamPropInfo failed, choose first pipe.");
     std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddresses[0]);
-    if (!pipeInfo) {
+    if (!pipeInfo || pipeInfo->streamPropInfos_.empty()) {
         AUDIO_ERR_LOG("Failed to find pipe with bus: %{public}s.", busAddresses[0].c_str());
         return;
     }

@@ -38,7 +38,7 @@ public:
     std::string GetSinkNameByStreamId(int32_t streamId);
 
 private:
-    AudioBusSelector(AudioZoneService &audioZoneService, const std::shared_ptr<AudioPipeManager> audioPipeManager,
+    AudioBusSelector(AudioZoneService &audioZoneService, const std::shared_ptr<AudioPipeManager> &audioPipeManager,
                     AudioPolicyConfigManager &audioConfigManager)
         : audioZoneService_(audioZoneService),
           audioPipeManager_(audioPipeManager),

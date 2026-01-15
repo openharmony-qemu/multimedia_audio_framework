@@ -75,15 +75,8 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
             busAddresses.push_back(audioMix.busAddress);
         }
     }
-    std::string busAddressesStr = std::reduce(busAddresses.begin(), busAddresses.end(), std::string{},
-                                              [](const std::string &a, const std::string &b) {
-                                                  if (a.empty()) {
-                                                    return b;
-                                                  } else {
-                                                    return a + ", " + b;
-                                                  }});
     if (busAddresses.empty()) {
-        std::string defaultBus = GetDefaultBusConfig();
+        std::string defaultBus = GetDefaultBusByConfig();
         if (defaultBus.empty()) {
             defaultBus = std::string(PRIMARY_DEFAULT_BUS);
         }
@@ -91,11 +84,18 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
                           defaultBus.c_str(), streamDesc->rendererInfo_.streamUsage);
         return {defaultBus};
     }
+    std::string busAddressesStr = std::reduce(busAddresses.begin(), busAddresses.end(), std::string{},
+                                              [](const std::string &a, const std::string &b) {
+                                                  if (a.empty()) {
+                                                    return b;
+                                                  } else {
+                                                    return a + ", " + b;
+                                                  }});
     AUDIO_INFO_LOG("Bus Addresses: %{public}s", busAddressesStr.c_str());
     return busAddresses;
 }
 
-std::string AudioBusSelector::GetDefaultBusConfig()
+std::string AudioBusSelector::GetDefaultBusByConfig()
 {
     PolicyGlobalConfigs globalConfigs;
     audioConfigManager_.GetGlobalConfigs(globalConfigs);
@@ -106,7 +106,7 @@ std::string AudioBusSelector::GetDefaultBusConfig()
     AudioAdapterType adpaterType = PolicyAdapterInfo::GetAdapterType(globalConfigs.adapter_);
     std::shared_ptr<PolicyAdapterInfo> adapterInfo{nullptr};
     bool ret = audioConfigManager_.GetAdapterInfoByType(adapterType, adapterInfo);
-    if (!ret || adpaterInfo == nullptr) {
+    if (!ret || !adapterInfo) {
         AUDIO_ERR_LOG("Can not find adapter info for default bus.");
         return "";
     }

@@ -880,7 +880,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
                        "pipeChannel[%{public}d] streamChannel[%{public}d] pipeFormat[%{public}d] "
                        "streamFormat[%{public}d] pipeSamplingRate[%{public}d] streamSamplingRate[%{public}d]",
                         pipeInfo->name_.c_str(), pipeInfo->GetAction(), pipeInfo->GetAdapterName().c_str(),
-                        pipeInfo->GetRoute(), streamDesc->GetRoute(), pipeInfo->audioStreamInfo_.channels
+                        pipeInfo->GetRoute(), streamDesc->GetRoute(), pipeInfo->audioStreamInfo_.channels,
                         streamPropInfo->channels_, pipeInfo->audioStreamInfo_.format, streamPropInfo->format_,
                         pipeInfo->audioStreamInfo_.samplingRate, streamPropInfo->sampleRate_);
 
