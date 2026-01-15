@@ -30,6 +30,7 @@
 #include "audio_suite_output_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_limiter.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -63,7 +64,11 @@ public:
 };
 
 void AudioSuiteMixerTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteMixerTest::TearDown()
 {}

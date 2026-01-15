@@ -27,6 +27,7 @@
 #include "audio_suite_aiss_node.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
 #include "audio_suite_algo_interface.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -43,6 +44,9 @@ class AudioSuiteAissNodeTest : public testing::Test {
 public:
     void SetUp()
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
         impl = std::make_shared<AudioSuiteAissNode>();
     };
     void TearDown()
