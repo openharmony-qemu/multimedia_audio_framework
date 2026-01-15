@@ -5092,10 +5092,17 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
-        IPCSkeleton::GetCallingUid(), callerPid, true);
-    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
-        static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
+        // If an audio zone is selected based on the scene type,
+        // then all audio streams of the audioSession must be selected to the corresponding audio zone,
+        // which is equivalent to binding the entire application to the audio zone.
+        AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, callerUid);
+    }
+    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d, "
+        "streamUsage:%{public}d", static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId, streamUsage);
 
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
@@ -5121,9 +5128,14 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
-        IPCSkeleton::GetCallingUid(), callerPid, false);
-    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
+        AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, callerUid);
+    }
+    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
+        callerPid, zoneId, streamUsage);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
 }
 
