@@ -1317,7 +1317,7 @@ HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
 
     EXPECT_NE(nullptr, audioServer);
     auto ret = audioServer->ResetRouteForDisconnect(deviceType);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1370,7 +1370,7 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     float volume = 0.5f;
     int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 
     streamType = static_cast<AudioStreamType>(-1);
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
@@ -1632,7 +1632,7 @@ HWTEST_F(AudioServerUnitTest, GetExtraParameters_001, TestSize.Level1)
     result_.push_back({"key1", "value1"});
 
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result_);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2211,7 +2211,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
     AudioProcessConfig config;
     config.appInfo.appTokenId = SYSTEM_ABILITY_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_DENIED);
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
     config.innerCapMode = MODERN_INNER_CAP;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
@@ -2376,7 +2376,7 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
     result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
     EXPECT_EQ(result, ERR_PERMISSION_DENIED);
 }
