@@ -16,7 +16,7 @@
 #ifndef AUDIO_STREAM_CLIENT_MANAGER_H
 #define AUDIO_STREAM_CLIENT_MANAGER_H
 
-#include "audio_stream_types.h"
+#include "audio_system_manager_ext.h"
 #include "audio_policy_interface.h"
 
 namespace OHOS {

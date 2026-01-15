@@ -18,21 +18,29 @@
 
 #include "audio_system_manager.h"
 
-#include "app_bundle_manager.h"
+#include "system_ability_definition.h"
+#include "bundle_mgr_interface.h"
+#include "bundle_mgr_proxy.h"
+#include "iservice_registry.h"
+
 #include "audio_common_log.h"
 #include "audio_errors.h"
-#include "audio_type_convert.h"
+#include "audio_policy_manager.h"
+#include "audio_utils.h"
 #include "audio_volume_client_manager.h"
 #include "audio_stream_client_manager.h"
 #include "audio_devices_client_manager.h"
 #include "audio_interrupt_client_manager.h"
 #include "audio_system_client_engine_manager.h"
 #include "audio_system_client_policy_manager.h"
-#include "audio_asr_client_manager.h"
+#include "audio_service_proxy.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
+const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
+    = AudioSystemManager::CreateStreamMap();
 AudioSystemManager::AudioSystemManager()
 {
     AUDIO_DEBUG_LOG("AudioSystemManager start");
@@ -48,11 +56,94 @@ AudioSystemManager *AudioSystemManager::GetInstance()
     return &audioManager;
 }
 
-AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, StreamUsage streamUsage)
+int32_t AudioSystemManager::GetCallingPid() const
 {
-    return AudioTypeConvert::GetStreamType(contentType, streamUsage);
+    return getpid();
 }
 
+map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::CreateStreamMap()
+{
+    map<pair<ContentType, StreamUsage>, AudioStreamType> streamMap;
+    // Mapping relationships from content and usage to stream type in design
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_UNKNOWN)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA)] = STREAM_MOVIE;
+    streamMap[make_pair(CONTENT_TYPE_GAME, STREAM_USAGE_MEDIA)] = STREAM_GAME;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_MEDIA)] = STREAM_SPEECH;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ALARM)] = STREAM_ALARM;
+    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_NOTIFICATION)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_PROMPT, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
+    streamMap[make_pair(CONTENT_TYPE_DTMF, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_DTMF;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_SPEECH, STREAM_USAGE_ACCESSIBILITY)] = STREAM_ACCESSIBILITY;
+    streamMap[make_pair(CONTENT_TYPE_ULTRASONIC, STREAM_USAGE_SYSTEM)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+
+    // Old mapping relationships from content and usage to stream type
+    streamMap[make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_UNKNOWN)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_MEDIA)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_SONIFICATION, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+
+    AudioSystemManager::CreateStreamMap(streamMap);
+    return streamMap;
+}
+
+void AudioSystemManager::CreateStreamMap(map<pair<ContentType, StreamUsage>, AudioStreamType> &streamMap)
+{
+    // Only use stream usage to choose stream type
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MEDIA)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC)] = STREAM_MUSIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MESSAGE)] = STREAM_VOICE_MESSAGE;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_RINGTONE)] = STREAM_RING;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NOTIFICATION)] = STREAM_NOTIFICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ACCESSIBILITY)] = STREAM_ACCESSIBILITY;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_SYSTEM)] = STREAM_SYSTEM;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MOVIE)] = STREAM_MOVIE;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_GAME)] = STREAM_GAME;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_AUDIOBOOK)] = STREAM_SPEECH;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_NAVIGATION)] = STREAM_NAVIGATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_DTMF)] = STREAM_DTMF;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ENFORCED_TONE)] = STREAM_SYSTEM_ENFORCED;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+}
+
+AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, StreamUsage streamUsage)
+{
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    } else {
+        AUDIO_ERR_LOG("The pair of contentType and streamUsage is not in design. Use the default stream type");
+    }
+
+    if (streamType == AudioStreamType::STREAM_MEDIA) {
+        streamType = AudioStreamType::STREAM_MUSIC;
+    }
+
+    return streamType;
+}
 int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTransferMonitorParam &param,
     const std::shared_ptr<AudioRendererDataTransferStateChangeCallback> &callback)
 {
@@ -73,7 +164,25 @@ int32_t AudioSystemManager::SetRingerMode(AudioRingerMode ringMode)
 
 std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
 {
-    return AppBundleManager::GetSelfBundleName(uid);
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName_FromUid", GET_BUNDLE_INFO_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+    std::string bundleName = "";
+
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager():GetSelfBundleName");
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    guard.CheckCurrTimeout();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetSelfBundleName");
+    iBundleMgr->GetBundleNameForUid(uid, bundleName);
+    reguard.CheckCurrTimeout();
+    return bundleName;
 }
 
 AudioRingerMode AudioSystemManager::GetRingerMode()
@@ -101,6 +210,11 @@ bool AudioSystemManager::IsDeviceActive(DeviceType deviceType) const
     return AudioDevicesClientManager::GetInstance().IsDeviceActive(deviceType);
 }
 
+inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
+{
+    return AudioServiceProxy::GetAudioSystemManagerProxy();
+}
+
 DeviceType AudioSystemManager::GetActiveOutputDevice()
 {
     return AudioDevicesClientManager::GetInstance().GetActiveOutputDevice();
@@ -118,42 +232,70 @@ bool AudioSystemManager::IsStreamActive(AudioVolumeType volumeType) const
 
 int32_t AudioSystemManager::SetAsrAecMode(const AsrAecMode asrAecMode)
 {
-    return AudioAsrClientManager::GetInstance().SetAsrAecMode(asrAecMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrAecMode(static_cast<int32_t>(asrAecMode));
 }
 
 int32_t AudioSystemManager::GetAsrAecMode(AsrAecMode &asrAecMode)
 {
-    return AudioAsrClientManager::GetInstance().GetAsrAecMode(asrAecMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrAecMode(mode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    asrAecMode = static_cast<AsrAecMode>(mode);
+    return 0;
 }
 
 int32_t AudioSystemManager::SetAsrNoiseSuppressionMode(const AsrNoiseSuppressionMode asrNoiseSuppressionMode)
 {
-    return AudioAsrClientManager::GetInstance().SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrNoiseSuppressionMode(static_cast<int32_t>(asrNoiseSuppressionMode));
 }
 
 int32_t AudioSystemManager::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode &asrNoiseSuppressionMode)
 {
-    return AudioAsrClientManager::GetInstance().GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrNoiseSuppressionMode(mode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrAec Mode audio parameters failed");
+    asrNoiseSuppressionMode = static_cast<AsrNoiseSuppressionMode>(mode);
+    return 0;
 }
 
 int32_t AudioSystemManager::SetAsrWhisperDetectionMode(const AsrWhisperDetectionMode asrWhisperDetectionMode)
 {
-    return AudioAsrClientManager::GetInstance().SetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrWhisperDetectionMode(static_cast<int32_t>(asrWhisperDetectionMode));
 }
 
 int32_t AudioSystemManager::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode &asrWhisperDetectionMode)
 {
-    return AudioAsrClientManager::GetInstance().GetAsrWhisperDetectionMode(asrWhisperDetectionMode);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    int32_t mode = 0;
+    int32_t ret = gasp->GetAsrWhisperDetectionMode(mode);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get AsrWhisperDetection Mode audio parameters failed");
+    asrWhisperDetectionMode = static_cast<AsrWhisperDetectionMode>(mode);
+    return 0;
 }
 
 int32_t AudioSystemManager::SetAsrVoiceControlMode(const AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
-    return AudioAsrClientManager::GetInstance().SetAsrVoiceControlMode(asrVoiceControlMode, on);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrVoiceControlMode(static_cast<int32_t>(asrVoiceControlMode), on);
 }
 
 int32_t AudioSystemManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
 {
-    return AudioAsrClientManager::GetInstance().SetAsrVoiceMuteMode(asrVoiceMuteMode, on);
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrVoiceMuteMode(static_cast<int32_t>(asrVoiceMuteMode), on);
 }
 
 int32_t AudioSystemManager::IsWhispering()
@@ -436,8 +578,32 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode) const
 {
-    return AudioDevicesClientManager::GetInstance().SelectOutputDevice(audioRendererFilter,
-        audioDeviceDescriptors, audioDeviceSelectMode);
+    // basic check
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
+        ERR_INVALID_PARAM, "invalid parameter");
+
+    size_t validDeviceSize = 1;
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() <= validDeviceSize &&
+        audioDeviceDescriptors[0] != nullptr, ERR_INVALID_OPERATION, "device error");
+    audioRendererFilter->streamType = AudioSystemManager::GetStreamType(audioRendererFilter->rendererInfo.contentType,
+        audioRendererFilter->rendererInfo.streamUsage);
+    // operation check
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
+        ERR_INVALID_OPERATION, "not an output device.");
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
+        ERR_INVALID_PARAM, "invalid uid.");
+
+    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
+        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
+
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
+        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
+        static_cast<int32_t>(audioRendererFilter->streamType), (audioDeviceDescriptors[0]->networkId_.c_str()),
+        audioDeviceSelectMode);
+
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
+        audioDeviceSelectMode);
 }
 
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -568,17 +734,20 @@ void AudioSystemManager::SetAudioBalanceValue(float balanceValue)
 
 int32_t AudioSystemManager::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
+    return AudioPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
 }
 
 std::string AudioSystemManager::GetSystemSoundUri(const std::string &key)
 {
-    return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundUri(key);
+    return AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
 }
 
 std::string AudioSystemManager::GetSystemSoundPath(const int32_t systemSoundType)
 {
-    return AudioSystemClientPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
+    std::string systemSoundPath = AudioPolicyManager::GetInstance().GetSystemSoundPath(systemSoundType);
+    AUDIO_INFO_LOG("systemSoundType: %{public}d, systemSoundType: %{public}s",
+        systemSoundType, systemSoundPath.c_str());
+    return systemSoundPath;
 }
 
 // Below stub implementation is added to handle compilation error in call manager
@@ -608,7 +777,13 @@ int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const in
 
 int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
@@ -618,12 +793,14 @@ int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 
 int32_t AudioSystemManager::ActivatePreemptMode() const
 {
-    return AudioSystemClientPolicyManager::GetInstance().ActivatePreemptMode();
+    AUDIO_DEBUG_LOG("ActivatePreemptMode");
+    return AudioPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
 int32_t AudioSystemManager::DeactivatePreemptMode() const
 {
-    return AudioSystemClientPolicyManager::GetInstance().DeactivatePreemptMode();
+    AUDIO_DEBUG_LOG("DeactivatePreemptMode");
+    return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
 }
 
 int32_t AudioSystemManager::SetForegroundList(const std::vector<std::string> &list)
@@ -694,6 +871,47 @@ std::shared_ptr<AudioGroupManager> AudioSystemManager::GetGroupManager(int32_t g
     return AudioVolumeClientManager::GetInstance().GetGroupManager(groupId);
 }
 
+AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");
+}
+
+AudioManagerInterruptCallbackImpl::~AudioManagerInterruptCallbackImpl()
+{
+    AUDIO_DEBUG_LOG("AudioManagerInterruptCallbackImpl: instance destroy");
+}
+
+void AudioManagerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback)
+{
+    auto wp = callback.lock();
+    if (wp != nullptr) {
+        callback_ = callback;
+    } else {
+        AUDIO_ERR_LOG("callback is nullptr");
+    }
+}
+
+void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    cb_ = callback_.lock();
+    if (cb_ != nullptr) {
+        cb_->cbMutex_.lock();
+        InterruptAction interruptAction = {};
+        interruptAction.actionType = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN)
+            ? TYPE_INTERRUPT : TYPE_ACTIVATED;
+        interruptAction.interruptType = interruptEvent.eventType;
+        interruptAction.interruptHint = interruptEvent.hintType;
+        interruptAction.activated = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN) ? false : true;
+        cb_->OnInterrupt(interruptAction);
+        AUDIO_DEBUG_LOG("Notify event to app complete");
+        cb_->cbMutex_.unlock();
+    } else {
+        AUDIO_ERR_LOG("callback is null");
+    }
+
+    return;
+}
+
 bool AudioSystemManager::RequestIndependentInterrupt(FocusType focusType)
 {
     return AudioInterruptClientManager::GetInstance().RequestIndependentInterrupt(focusType);
@@ -706,12 +924,38 @@ bool AudioSystemManager::AbandonIndependentInterrupt(FocusType focusType)
 int32_t AudioSystemManager::UpdateStreamState(const int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {
-    return AudioSystemClientPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, streamUsage);
+    AUDIO_INFO_LOG("clientUid:%{public}d streamSetState:%{public}d streamUsage:%{public}d",
+        clientUid, streamSetState, streamUsage);
+    return AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, streamUsage);
 }
 
 std::string AudioSystemManager::GetSelfBundleName()
 {
-    return AppBundleManager::GetSelfBundleName();
+    AudioXCollie audioXCollie("AudioSystemManager::GetSelfBundleName", GET_BUNDLE_INFO_TIME_OUT_SECONDS,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
+
+    std::string bundleName = "";
+
+    WatchTimeout guard("SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();GetSelfBundleName");
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    guard.CheckCurrTimeout();
+    sptr<OHOS::IRemoteObject> remoteObject =
+        systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, bundleName, "remoteObject is null");
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
+
+    AppExecFwk::BundleInfo bundleInfo;
+    WatchTimeout reguard("iBundleMgr->GetBundleInfoForSelf:GetSelfBundleName");
+    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) == ERR_OK) {
+        bundleName = bundleInfo.name;
+    } else {
+        AUDIO_DEBUG_LOG("Get bundle info failed");
+    }
+    reguard.CheckCurrTimeout();
+    return bundleName;
 }
 
 int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
@@ -739,17 +983,151 @@ int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
 int32_t AudioSystemManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
+    AUDIO_INFO_LOG("isSleVoiceStatus: %{public}d", isSleVoiceStatus);
+    return AudioPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
-    return AudioTypeConvert::GetPinValueFromType(deviceType, deviceRole);
+    AudioPin pin = AUDIO_PIN_NONE;
+    uint16_t dmDeviceType = 0;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_NONE:
+        case OHOS::AudioStandard::DEVICE_TYPE_INVALID:
+            pin = AUDIO_PIN_NONE;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_DEFAULT:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_DAUDIO_DEFAULT;
+            } else {
+                pin = AUDIO_PIN_OUT_DAUDIO_DEFAULT;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_SPEAKER:
+            pin = AUDIO_PIN_OUT_SPEAKER;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_MIC:
+        case OHOS::AudioStandard::DEVICE_TYPE_WAKEUP:
+            pin = AUDIO_PIN_IN_MIC;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            pin = GetPinValueForPeripherals(deviceType, deviceRole, dmDeviceType);
+            break;
+        default:
+            OtherDeviceTypeCases(deviceType);
+            break;
+    }
+    return pin;
+}
+
+void AudioSystemManager::OtherDeviceTypeCases(DeviceType deviceType) const
+{
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SINK:
+        case OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO:
+        case OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case OHOS::AudioStandard::DEVICE_TYPE_MAX:
+            AUDIO_INFO_LOG("don't supported the device type");
+            break;
+        default:
+            AUDIO_INFO_LOG("invalid input parameter");
+            break;
+    }
+}
+
+AudioPin AudioSystemManager::GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole,
+    uint16_t dmDeviceType) const
+{
+    AudioPin pin = AUDIO_PIN_NONE;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_HS_MIC;
+            } else {
+                pin = AUDIO_PIN_OUT_HEADSET;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
+            pin = AUDIO_PIN_OUT_HEADPHONE;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_DP:
+            pin = AUDIO_PIN_OUT_DP;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_USB_HEADSET;
+            } else {
+                pin = AUDIO_PIN_OUT_USB_HEADSET;
+            }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
+            pin = AUDIO_PIN_OUT_HDMI;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+            dmDeviceType = GetDmDeviceType();
+            if (dmDeviceType == DM_DEVICE_TYPE_PENCIL) {
+                pin = AUDIO_PIN_IN_PENCIL;
+            } else if (dmDeviceType == DM_DEVICE_TYPE_UWB) {
+                pin = AUDIO_PIN_IN_UWB;
+            }
+            break;
+        default:
+            AUDIO_INFO_LOG("other case");
+    }
+    return pin;
 }
 
 DeviceType AudioSystemManager::GetTypeValueFromPin(AudioPin pin) const
 {
-    return AudioTypeConvert::GetTypeValueFromPin(pin);
+    DeviceType type = DEVICE_TYPE_NONE;
+    switch (pin) {
+        case OHOS::AudioStandard::AUDIO_PIN_NONE:
+            type = DEVICE_TYPE_NONE;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
+            type = DEVICE_TYPE_SPEAKER;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_USB_EXT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_DAUDIO_DEFAULT:
+            type = DEVICE_TYPE_DEFAULT;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_MIC:
+            type = DEVICE_TYPE_MIC;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
+            type = DEVICE_TYPE_WIRED_HEADSET;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_DAUDIO_DEFAULT:
+            type = DEVICE_TYPE_DEFAULT;
+            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_PENCIL:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
+            type = DEVICE_TYPE_ACCESSORY;
+            break;
+        default:
+            AUDIO_INFO_LOG("invalid input parameter");
+            break;
+    }
+    return type;
 }
 
 int32_t AudioSystemManager::SetAudioCapturerSourceCallback(
@@ -766,12 +1144,16 @@ int32_t AudioSystemManager::SetWakeUpSourceCloseCallback(const std::shared_ptr<W
 int32_t AudioSystemManager::SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
     const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetAvailableDeviceChangeCallback(usage, callback);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetAvailableDeviceChangeCallback(clientId, usage, callback);
 }
 
 int32_t AudioSystemManager::UnsetAvailableDeviceChangeCallback(AudioDeviceUsage usage)
 {
-    return AudioSystemClientPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(usage);
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 
 int32_t AudioSystemManager::ConfigDistributedRoutingRole(
@@ -792,10 +1174,68 @@ int32_t AudioSystemManager::UnsetDistributedRoutingRoleCallback(
     return AudioSystemClientPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback(callback);
 }
 
+void AudioDistributedRoutingRoleCallbackImpl::SaveCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    bool hasCallback = false;
+    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
+    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
+        if ((*it) == callback) {
+            hasCallback = true;
+        }
+    }
+    if (!hasCallback) {
+        callbackList_.push_back(callback);
+    }
+}
+
+void AudioDistributedRoutingRoleCallbackImpl::RemoveCallback(
+    const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
+    callbackList_.remove_if([&callback](std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback_) {
+        return callback_ == callback;
+    });
+}
+
+void AudioDistributedRoutingRoleCallbackImpl::OnDistributedRoutingRoleChange(
+    std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type)
+{
+    std::vector<std::shared_ptr<AudioDistributedRoutingRoleCallback>> temp_;
+    std::unique_lock<mutex> cbListLock(cbListMutex_);
+    for (auto callback = callbackList_.begin(); callback != callbackList_.end(); ++callback) {
+        cb_ = (*callback);
+        if (cb_ != nullptr) {
+            AUDIO_DEBUG_LOG("OnDistributedRoutingRoleChange : Notify event to app complete");
+            temp_.push_back(cb_);
+        } else {
+            AUDIO_ERR_LOG("OnDistributedRoutingRoleChange: callback is null");
+        }
+    }
+    cbListLock.unlock();
+    for (uint32_t i = 0; i < temp_.size(); i++) {
+        temp_[i]->OnDistributedRoutingRoleChange(descriptor, type);
+    }
+    return;
+}
+
+AudioDistributedRoutingRoleCallbackImpl::AudioDistributedRoutingRoleCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl constructor");
+}
+
+AudioDistributedRoutingRoleCallbackImpl::~AudioDistributedRoutingRoleCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioDistributedRoutingRoleCallbackImpl destroy");
+}
+
 int32_t AudioSystemManager::SetCallDeviceActive(DeviceType deviceType, bool flag, std::string address,
     const int32_t clientUid) const
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetCallDeviceActive(deviceType, flag, address, clientUid);
+    int32_t uid = clientUid == -1 ? getuid() : clientUid;
+    return (AudioPolicyManager::GetInstance().SetCallDeviceActive(static_cast<InternalDeviceType>(deviceType),
+        flag, address, uid));
 }
 
 uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
@@ -805,7 +1245,7 @@ uint32_t AudioSystemManager::GetEffectLatency(const std::string &sessionId)
 
 int32_t AudioSystemManager::DisableSafeMediaVolume()
 {
-    return AudioSystemClientPolicyManager::GetInstance().DisableSafeMediaVolume();
+    return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
 }
 
 int32_t AudioSystemManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
@@ -815,29 +1255,33 @@ int32_t AudioSystemManager::InjectInterruption(const std::string networkId, Inte
 
 int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
-    return AudioSystemClientPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
+    return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);
 }
 
 int32_t AudioSystemManager::SetVirtualCall(const bool isVirtual)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetVirtualCall(isVirtual);
+    return AudioPolicyManager::GetInstance().SetVirtualCall(isVirtual);
 }
 
 bool AudioSystemManager::GetVirtualCall()
 {
-    return AudioSystemClientPolicyManager::GetInstance().GetVirtualCall();
+    return AudioPolicyManager::GetInstance().GetVirtualCall();
 }
 
 int32_t AudioSystemManager::SetQueryAllowedPlaybackCallback(
     const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryAllowedPlaybackCallback(callback);
 }
 
 int32_t AudioSystemManager::SetBackgroundMuteCallback(
     const std::shared_ptr<AudioBackgroundMuteCallback> &callback)
 {
-    return AudioSystemClientPolicyManager::GetInstance().SetBackgroundMuteCallback(callback);
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetBackgroundMuteCallback(callback);
 }
 
 int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
@@ -846,24 +1290,32 @@ int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
     return SUCCESS;
 }
 
+uint16_t AudioSystemManager::GetDmDeviceType() const
+{
+    return AudioPolicyManager::GetInstance().GetDmDeviceType();
+}
+
 int32_t AudioSystemManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
 {
-    return AudioSystemClientPolicyManager::GetInstance().NotifySessionStateChange(uid, pid, hasSession);
+    AUDIO_INFO_LOG("Set uid:%{public}d, pid:%{public}d, Session state:%{public}d", uid, pid, hasSession);
+    return AudioPolicyManager::GetInstance().NotifySessionStateChange(uid, pid, hasSession);
 }
 
 int32_t AudioSystemManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
 {
-    return AudioSystemClientPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
+    return AudioPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
 }
 
 int32_t AudioSystemManager::ResetAllProxy()
 {
-    return AudioSystemClientPolicyManager::GetInstance().ResetAllProxy();
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().ResetAllProxy();
 }
 
 int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
 {
-    return AudioSystemClientPolicyManager::GetInstance().NotifyProcessBackgroundState(uid, pid);
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().NotifyProcessBackgroundState(uid, pid);
 }
 
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
@@ -960,7 +1412,8 @@ int32_t AudioSystemManager::StopGroup(int32_t workgroupId)
 
 int32_t AudioSystemManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
 {
-    return AudioSystemClientPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
+    AUDIO_INFO_LOG("volumeType:%{public}d, duration:%{public}d", volumeType, duration);
+    return AudioPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
 }
 
 int32_t AudioSystemManager::SetRenderWhitelist(std::vector<std::string> list)
@@ -980,7 +1433,7 @@ int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, floa
 
 void AudioSystemManager::CleanUpResource()
 {
-    AudioSystemClientPolicyManager::GetInstance().CleanUpResource();
+    AudioPolicyManager::GetInstance().CleanUpResource();
 }
 
 int32_t AudioSystemManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid)

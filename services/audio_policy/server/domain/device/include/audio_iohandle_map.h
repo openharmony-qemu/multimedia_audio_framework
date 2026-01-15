@@ -25,6 +25,7 @@
 #include "singleton.h"
 #include "async_action_handler.h"
 #include "audio_group_handle.h"
+#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_pipe_info.h"
 

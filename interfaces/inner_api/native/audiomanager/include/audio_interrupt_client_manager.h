@@ -15,7 +15,7 @@
 
 #ifndef AUDIO_INTERRUPT_CLIENT_MANAGER_H
 #define AUDIO_INTERRUPT_CLIENT_MANAGER_H
-#include "audio_interrupt_types.h"
+#include "audio_system_manager_ext.h"
 
 namespace OHOS {
 namespace AudioStandard {

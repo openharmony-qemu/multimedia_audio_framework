@@ -38,6 +38,7 @@
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
+#include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"

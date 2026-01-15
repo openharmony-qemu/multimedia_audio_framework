@@ -19,7 +19,7 @@
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_info.h"
-#include "audio_device_descriptor.h"
+#include "audio_manager_base.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_definition_adapter_info.h"

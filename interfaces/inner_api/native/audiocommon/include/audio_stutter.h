@@ -119,26 +119,6 @@ struct DataTransferMonitorParam : public Parcelable {
         return param;
     }
 };
-
-class AudioRendererDataTransferStateChangeCallback {
-public:
-    virtual ~AudioRendererDataTransferStateChangeCallback() = default;
-
-    virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
-
-    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
-};
-
-class DataTransferStateChangeCallbackInner {
-public:
-    virtual ~DataTransferStateChangeCallbackInner() = default;
-    
-    virtual void OnDataTransferStateChange(const int32_t &callbackId,
-        const AudioRendererDataTransferStateChangeInfo &info) = 0;
-
-    virtual void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
-        const uint32_t &sessionId, const bool &isMuted) = 0;
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STUTTER_H
