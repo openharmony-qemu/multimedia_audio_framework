@@ -341,6 +341,7 @@ HWTEST(AudioProcessInClientUnitTest, CheckOperations_003, TestSize.Level4)
     ptrAudioProcessInClientInner->audioStaticBufferEventCallback_ = std::make_shared<StaticBufferEventCallbackTest>();
     ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
     ptrAudioProcessInClientInner->audioBuffer_->SetIsNeedSendLoopEndCallback(true);
+    ptrAudioProcessInClientInner->audioBuffer_->SetIsFirstFrame(false);
     ptrAudioProcessInClientInner->CheckOperations();
     EXPECT_EQ(ptrAudioProcessInClientInner->audioBuffer_->IsNeedSendLoopEndCallback(), false);
 }

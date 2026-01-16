@@ -53,7 +53,7 @@ class AudioFirstFrameCallback {
 public:
     virtual ~AudioFirstFrameCallback() = default;
 
-    virtual void OnFirstFrameWriting()= 0;
+    virtual void OnFirstFrameWriting() = 0;
 };
 
 class AudioProcessInClient {

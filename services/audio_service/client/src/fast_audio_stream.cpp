@@ -1112,8 +1112,8 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
     captureCallback_->OnReadData(length);
 }
 
-void FastStaticFirstFrameCallbackImpl::OnFirstFrameWriting() {
-    CHECK_AND_RETURN_LOG(staticFirstFrameCallback_ != nullptr, "send firstFrameCallback failed: callback is null.");
+void FastStaticFirstFrameCallbackImpl::OnFirstFrameWriting()
+{
     audioStreamImpl_.OnFirstFrameWriting();
 }
 

@@ -1157,8 +1157,8 @@ void RendererInClientInner::CheckOperations()
         clientBuffer_->SetIsNeedSendLoopEndCallback(false);
     }
     if (clientBuffer_->IsFirstFrame()) {
-        OnFirstFrameWriting();
         clientBuffer_->SetIsFirstFrame(false);
+        OnFirstFrameWriting();
     }
 }
 

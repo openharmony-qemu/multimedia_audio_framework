@@ -1829,12 +1829,10 @@ void AudioProcessInClientInner::CheckOperations()
             audioBuffer_->SetIsNeedSendLoopEndCallback(false);
         }
         if (audioBuffer_->IsFirstFrame()) {
-            uint64_t latency = 0;
-            (void)GetLatency(latency);
+            audioBuffer_->SetIsFirstFrame(false);
             std::shared_ptr<AudioFirstFrameCallback> cb = staticFirstFrameCallback_.lock();
             CHECK_AND_RETURN_LOG(cb != nullptr, "audio staticFirstFrameCallback is null.");
-            cb->OnFirstFrameWriting(latency);
-            audioBuffer_->SetIsFirstFrame(false);
+            cb->OnFirstFrameWriting();
         }
         return;
     }
@@ -1898,7 +1896,7 @@ int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderR
 int32_t AudioProcessInClientInner::SetFirstFrameWritingCallback(
     const std::shared_ptr<AudioFirstFrameCallback> &callback)
 {
-    AUDIO_INFO_LOG("%{public}s enter.", __func__);
+    AUDIO_INFO_LOG("enter.");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
     staticFirstFrameCallback_ = callback;
