@@ -112,6 +112,41 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDevic
 }
 
 /**
+ * @tc.name   : Test AudioRoutingManager::ConvertRecommendInputDevices
+ * @tc.number : ConvertRecommendInputDevices_001
+ * @tc.desc   : Test ConvertRecommendInputDevices
+ */
+HWTEST(AudioRoutingManagerUnitTest, ConvertRecommendInputDevices_001, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    RecommendInputDevices ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    EXPECT_EQ(RecommendInputDevices::NO_UNAVAILABLE_DEVICE, ret);
+
+    descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE));
+    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    EXPECT_EQ(RecommendInputDevices::RECOMMEND_EXTERNAL_MIC, ret);
+
+    descs.clear();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->networkId_ = "";
+    descs.emplace_back(desc);
+    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    EXPECT_EQ(RecommendInputDevices::RECOMMEND_EXTERNAL_MIC, ret);
+
+    descs.clear();
+    descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE));
+    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    EXPECT_EQ(RecommendInputDevices::RECOMMEND_BUILT_IN_MIC, ret);
+
+    descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE));
+    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    EXPECT_EQ(RecommendInputDevices::RECOMMEND_BUILT_IN_MIC, ret);
+
+    EXPECT_EQ(descs.size(), 1);
+    EXPECT_EQ(descs[0]->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
  * @tc.name   : Test Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001 via legal state
  * @tc.number : Audio_Routing_Manager_PreferredInputDeviceChangeCallback_001
  * @tc.desc   : Test PreferredInputDeviceChangeCallback interface. Returns success.

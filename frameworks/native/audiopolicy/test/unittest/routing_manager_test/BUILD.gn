@@ -31,6 +31,7 @@ ohos_unittest("audio_routing_manager_test") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-fno-access-control",
   ]
   external_deps = [
     "c_utils:utils",
