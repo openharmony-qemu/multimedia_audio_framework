@@ -243,9 +243,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                    newPipeInfo->adapterName_ == streamDescAdapterName &&
-                   newPipeInfo->audioStreamInfo_.channels == streamDesc->streamInfo_.channels &&
-                   newPipeInfo->audioStreamInfo_.format == streamDesc->streamInfo_.format &&
-                   newPipeInfo->audioStreamInfo_.samplingRate == streamDesc->streamInfo_.samplingRate;
+                   newPipeInfo->audioStreamInfo_.channels == streamDesc->streamInfo_.channels;
         });
     }
     if (busPipeIter == newPipeInfoList.end()) {
@@ -887,9 +885,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 #ifdef CAR_AUDIO_DETECT
         CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
                                pipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
-                               pipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_ &&
-                               pipeInfo->audioStreamInfo_.format == streamPropInfo->format_ &&
-                               pipeInfo->audioStreamInfo_.samplingRate == streamPropInfo->sampleRate_);
+                               pipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_);
 #else
         CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName));
 #endif
