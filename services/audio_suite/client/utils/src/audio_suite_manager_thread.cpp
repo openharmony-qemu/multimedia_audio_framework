@@ -51,8 +51,8 @@ void AudioSuiteManagerThread::Run()
     ScheduleThreadInServer(getpid(), gettid());
     while (running_.load() && m_audioSuiteManager != nullptr) {
         {
-            std::unique_lock<std::mutex> lock(mutex_);
             bool isProcessing = m_audioSuiteManager->IsMsgProcessing();
+            std::unique_lock<std::mutex> lock(mutex_);
             bool signal = recvSignal_.load();
             Trace trace("AudioSuite runFunc:" + std::to_string(signal) +
                 " isPorcessing:" + std::to_string(isProcessing));

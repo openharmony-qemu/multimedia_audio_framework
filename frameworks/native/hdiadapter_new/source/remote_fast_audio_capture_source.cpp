@@ -204,15 +204,6 @@ int32_t RemoteFastAudioCaptureSource::Reset(void)
     return SUCCESS;
 }
 
-void RemoteFastAudioCaptureSource::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
-    CHECK_AND_RETURN_LOG(audioCapture_ != nullptr, "capture is nullptr");
-    int32_t ret = audioCapture_->SetExtraParams(value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
-}
-
 int32_t RemoteFastAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -489,6 +480,7 @@ int32_t RemoteFastAudioCaptureSource::CreateCapture(void)
     if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer(param);
     }
+    audioCapture_.SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
     AUDIO_INFO_LOG("end");
     return SUCCESS;
 }

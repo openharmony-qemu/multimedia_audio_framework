@@ -200,15 +200,6 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     return SUCCESS;
 }
 
-void RemoteAudioCaptureSource::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
-    CHECK_AND_RETURN_LOG(audioCapture_ != nullptr, "capture is nullptr");
-    int32_t ret = audioCapture_->SetExtraParams(value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
-}
-
 int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
 {
     float leftVolume = left;
@@ -433,6 +424,7 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     audioCapture_.ForceSetRefPtr(static_cast<IAudioCapture *>(capture));
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED, "create capture fail");
     deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, shared_from_this());
+    audioCapture_.SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
     return SUCCESS;
 }
 

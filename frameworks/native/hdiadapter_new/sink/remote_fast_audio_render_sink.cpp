@@ -199,15 +199,6 @@ int64_t RemoteFastAudioRenderSink::GetVolumeDataCount()
     return 0;
 }
 
-void RemoteFastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
-    const std::string &value)
-{
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
-    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
-    int32_t ret = audioRender_->SetExtraParams(value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
-}
-
 int32_t RemoteFastAudioRenderSink::SetVolume(float left, float right)
 {
     leftVolume_ = left;

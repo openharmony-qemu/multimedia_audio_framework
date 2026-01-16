@@ -52,6 +52,7 @@ if (audio_framework_feature_audiosuite_support) {
     sources = [
       "src/oh_audio_suite_engine_test.cpp",
       "src/oh_audio_suite_node_builder_test.cpp",
+      "src/oh_audio_suite_tool_test.cpp",
     ]
 
     deps = [

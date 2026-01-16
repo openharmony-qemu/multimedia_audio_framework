@@ -74,6 +74,7 @@ namespace {
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
+    static const size_t MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -418,6 +419,12 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
+        case OPERATION_OFFLOAD_FLUSH_BEGIN:
+            HandleOffloadFlush(true);
+            break;
+        case OPERATION_OFFLOAD_FLUSH_END:
+            HandleOffloadFlush(false);
+            break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
@@ -427,19 +434,24 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
-    size_t dupTotalSizeInFrameTemp_ = 0;
+    size_t dupTotalSizeInFrameTemp = 0;
 
     if (offloadEnable_ == true) {
-        dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
+        dupTotalSizeInFrameTemp = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
     } else {
-        dupTotalSizeInFrameTemp_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
+        dupTotalSizeInFrameTemp = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
     }
-    AUDIO_INFO_LOG("dupTotalSizeInFrameTemp_: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
-        dupTotalSizeInFrameTemp_, dupTotalSizeInFrame_);
-    if (dupTotalSizeInFrameTemp_ == dupTotalSizeInFrame_) {
+    AUDIO_INFO_LOG("dupTotalSizeInFrameTemp: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
+        dupTotalSizeInFrameTemp, dupTotalSizeInFrame_);
+    if (dupTotalSizeInFrameTemp == dupTotalSizeInFrame_) {
         return;
     }
-    dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp_;
+    
+    if (dupTotalSizeInFrameTemp * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
+        dupTotalSizeInFrameTemp = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
+        AUDIO_INFO_LOG("dupTotalSizeInFrameTemp change to: %{public}u", static_cast<uint32_t>(dupTotalSizeInFrameTemp));
+    }
+    dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp;
     std::lock_guard<std::mutex> lock(dupMutex_);
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
         if (captureInfos_[(*it).first].dupStream != nullptr && (*it).second != nullptr &&
@@ -912,6 +924,9 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
     int32_t innerCapId)
 {
+    if (innerCapFirstWriteMap_[innerCapId].load() == 0) {
+        InitDupBufferInner(innerCapId);
+    }
     bool innerCapWriteRet = SUCCESS;
     int32_t engineFlag = GetEngineFlag();
     if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) !=
@@ -1346,7 +1361,12 @@ int32_t RendererInServer::Flush()
                 } else {
                     renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
                 }
-                InitDupBufferInner(capInfo.first);
+                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                    innerCapIdToDupStreamCallbackMap_.end(),
+                    "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
+                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                    "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
+                innerCapFirstWriteMap_[capInfo.first].store(0);
             }
         }
     }
@@ -1928,6 +1948,7 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
         "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
     CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
+    CHECK_AND_RETURN_RET_LOG(!isFlush_, ERROR, "audioStream is flush, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
         std::unique_ptr<AudioRingCache> &dupBuffer = dupRingBuffer_;
@@ -1960,6 +1981,11 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 void StreamCallbacks::SetFirstWriteDataFlag(bool isFirstWriteDataFlag)
 {
     isFirstWriteDataFlag_ = isFirstWriteDataFlag;
+}
+
+void StreamCallbacks::SetOffloadFlushStatus(bool isFlush)
+{
+    isFlush_ = isFlush;
 }
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)
@@ -2495,6 +2521,9 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
     }
     dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
+    if (dupTotalSizeInFrame_ * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
+        dupTotalSizeInFrame_ = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
+    }
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
         "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
         dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
@@ -2929,5 +2958,19 @@ void RendererInServer::MarkStaticFadeIn()
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
+void RendererInServer::HandleOffloadFlush(bool isFlush)
+{
+    std::lock_guard<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (IsEnabledAndValidDupStream(capInfo.second)) {
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                innerCapIdToDupStreamCallbackMap_.end(),
+                "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
+            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
+            innerCapIdToDupStreamCallbackMap_[capInfo.first]->SetOffloadFlushStatus(isFlush);
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

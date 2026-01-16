@@ -1374,6 +1374,24 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
     return result;
 }
 
+bool AudioStreamCollector::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool result = false;
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            continue;
+        }
+        if ((changeInfo->rendererInfo).streamUsage == streamUsage) {
+            // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
+            return true;
+        }
+    }
+    return result;
+}
+
 bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

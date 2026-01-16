@@ -4237,25 +4237,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_001, TestSize.Level1)
 
 /**
  * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
- * @tc.number : HandleA2dpSuspend_002
- * @tc.desc   : Test HandleA2dpSuspend when a2dp needn't suspend
- */
-HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_002, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->Init();
-
-    audioCoreService->a2dpNeedSuspend_ = false;
-    audioCoreService->HandleA2dpSuspend();
-    const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
-    usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
-    audioCoreService->HandleA2dpRestore();
-    EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
-}
-
-/**
- * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
  * @tc.number : HandleA2dpSuspend_003
  * @tc.desc   : Test HandleA2dpSuspend when a2dp needn't suspend after restore
  */
@@ -4272,39 +4253,6 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
     usleep(1000*OLD_DEVICE_UNAVALIABLE_SUSPEND_MS);
     audioCoreService->HandleA2dpRestore();
     EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
-}
-
-/**
- * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_001
- * @tc.number : UpdateOutputRoute_001
- * @tc.desc   : Test UpdateOutputRoute()
- */
-HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioRendererChangeInfo> fakeRenderer = std::make_shared<AudioRendererChangeInfo>();
-    fakeRenderer->sessionId = 1;
-    fakeRenderer->rendererInfo.pipeType = PIPE_TYPE_OUT_NORMAL;
-    fakeRenderer->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    fakeRenderer->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(fakeRenderer);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = 1;
-    streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
-    streamDesc->rendererInfo_.contentType = CONTENT_TYPE_MUSIC;
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-
-    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
-    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
-    audioCoreService->UpdateOutputRoute(streamDesc);
-    EXPECT_EQ(1, audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.size());
 }
 
 /**

@@ -231,6 +231,10 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         DeleteAudioPolicyKvStore();
     }
 
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        UpdateVolumeWhenDeviceConnect(desc);
+    }
     UpdateVolumeForStreams();
 }
 
@@ -362,14 +366,7 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     isDataShareReady_ = isDataShareReady.load();
 
     CHECK_AND_RETURN_LOG(isDataShareReady, "isDataShareReady is false");
-    char firstboot[3] = {0};
-    GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
-    HandleKvData(atoi(firstboot) == 1);
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-    }
-    UpdateVolumeForStreams();
+    InitKVStoreInternal();
 }
 
 void AudioAdapterManager::UpdateSafeVolumeByS4()

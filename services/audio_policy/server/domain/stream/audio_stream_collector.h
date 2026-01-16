@@ -75,6 +75,7 @@ public:
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
     void HandleStartStreamMuteState(StartStreamInfo startStreamInfo, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);

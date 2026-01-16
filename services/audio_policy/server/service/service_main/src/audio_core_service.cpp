@@ -1837,6 +1837,7 @@ void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId
 void AudioCoreService::NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
     audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
     desc->connectState_ = VIRTUAL_CONNECTED;
     audioDeviceManager_.UpdateDevicesListInfo(desc, CONNECTSTATE_UPDATE);

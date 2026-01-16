@@ -24,6 +24,7 @@
 #include "audio_suite_manager_callback.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_base.h"
+#include "audio_suite_unittest_tools.h"
 
 
 using namespace OHOS;
@@ -36,7 +37,12 @@ namespace {
 
 class AudioSuiteEngineManagerUnitTest : public testing::Test {
 public:
-    void SetUp() {};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown() {};
 };
 

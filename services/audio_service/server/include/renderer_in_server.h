@@ -53,6 +53,7 @@ public:
     int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
     void SetFirstWriteDataFlag(bool isFirstWriteDataFlag);
+    void SetOffloadFlushStatus(bool isFlush);
 private:
     uint32_t streamIndex_ = 0;
     int32_t recoveryAntiShakeBufferCount_ = 0;
@@ -60,6 +61,7 @@ private:
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
     std::atomic<bool> isFirstWriteDataFlag_ = true;
+    std::atomic<bool> isFlush_ = true;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -236,6 +238,7 @@ private:
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
+    void HandleOffloadFlush(bool isFlush);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

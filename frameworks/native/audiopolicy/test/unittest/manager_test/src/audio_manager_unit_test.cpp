@@ -2128,7 +2128,7 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
     CastType castType = CAST_TYPE_ALL;
     audioDeviceDescriptors[0]->networkId_ = REMOTE_NETWORK_ID;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

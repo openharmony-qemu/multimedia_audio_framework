@@ -51,8 +51,6 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
 
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
     int32_t SetMute(bool isMute) override;

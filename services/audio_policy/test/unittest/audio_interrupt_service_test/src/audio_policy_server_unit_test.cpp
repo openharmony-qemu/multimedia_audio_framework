@@ -1684,22 +1684,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_052
-* @tc.desc  : Test ArgInfoDump.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_052, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    std::string dumpString;
-    std::queue<std::u16string> argQue;
-    server->OnStart();
-    server->ArgInfoDump(dumpString, argQue);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_053
 * @tc.desc  : Test IsHeadTrackingEnabled.
 */

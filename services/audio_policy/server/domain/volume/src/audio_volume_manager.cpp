@@ -286,11 +286,7 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
     bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
 
-    if (targetStream != nullptr && !streamInCall) {
-        audioPolicyManager_.UpdateVolumeForStream(targetStream);
-    } else {
-        audioPolicyManager_.UpdateVolumeForStreams();
-    }
+    audioPolicyManager_.UpdateVolumeForStreams();
 
     // The volume of voice_call needs to be adjusted separately
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {

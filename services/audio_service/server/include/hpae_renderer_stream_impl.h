@@ -104,6 +104,8 @@ public:
     void SetSendDataEnabled(bool enabled) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    void OnNotifyFlushStatus(bool isFlush) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
     void TriggerAppsUidUpdate() override;
 private:
     void SyncOffloadMode();
@@ -125,6 +127,8 @@ private:
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
     void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
         std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
+    uint64_t GetOffloadLatency();
+    bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -190,6 +194,10 @@ private:
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
     std::atomic<bool> sendDataEnabled_ = true;
+
+    std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
+    uint64_t writePos_ = 0;
+    float speed_ = 1.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS

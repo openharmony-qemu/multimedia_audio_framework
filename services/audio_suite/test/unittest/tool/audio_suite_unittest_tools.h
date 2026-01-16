@@ -32,6 +32,8 @@ bool CreateOutputPcmFile(const std::string &filename);
 bool WritePcmFile(const std::string &filename, const uint8_t *data, size_t dataSize);
 bool IsFilesEqual(const std::string &filename1, const std::string &filename2);
 
+bool AllNodeTypesSupported();
+
 template <typename T>
 int32_t TestEffectNodeSignalProcess(std::shared_ptr<T> node,
     const std::vector<AudioSuitePcmBuffer *> &inputs, const std::string &inputFile, const std::string &outputFile,
