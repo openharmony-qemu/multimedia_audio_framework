@@ -17,7 +17,7 @@
 #endif
 
 #include <memory>
-#include "native_audiostreambuilder.h"2
+#include "native_audiostreambuilder.h"
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
@@ -459,6 +459,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode)
 {
+    sourceType_ = SOURCE_TYPE_PLAYBACK_CAPTURE;
     playbackCaptureMode_ = mode;
     return AUDIOSTREAM_SUCCESS;
 }
