@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,8 +32,16 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat
     : AudioNode(nodeType, audioFormat)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
-        "node: %{public}d GetNodeCapability failed.", nodeType);
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
+}
+
+AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
+    : AudioNode(nodeType)
+{
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+        "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
 int32_t AudioSuiteProcessNode::DoProcess()
@@ -41,7 +50,6 @@ int32_t AudioSuiteProcessNode::DoProcess()
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "outputStream_ is nullptr");
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
@@ -76,7 +84,7 @@ int32_t AudioSuiteProcessNode::DoProcess()
     AUDIO_DEBUG_LOG("node type = %{public}d set "
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-    outputStream_->WriteDataToOutput(tempOut);
+    outputStream_.WriteDataToOutput(tempOut);
     return SUCCESS;
 }
 
@@ -124,19 +132,16 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    if (outputStream_) {
-        outputStream_->resetResampleCfg();
-    }
+    outputStream_.ResetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
-    if (outputStream_ == nullptr) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERROR, "Create OutputPort is null");
-    }
+    CHECK_AND_RETURN_RET_LOG(GetSharedInstance() != nullptr, ERROR, "GetSharedInstance returns a nullptr");
+    int32_t ret = outputStream_.SetOutputPort(GetSharedInstance());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOutputPort failed.");
     return SUCCESS;
 }
 
@@ -147,7 +152,7 @@ int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode
         return ERR_INVALID_PARAM;
     }
     CHECK_AND_RETURN_RET_LOG(preNode->GetOutputPort() != nullptr, ERROR, "OutputPort is null");
-    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
+    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
     return SUCCESS;
 }
 
@@ -173,7 +178,7 @@ void AudioSuiteProcessNode::CheckEffectNodeProcessTime(uint32_t dataDurationMS, 
     // for dfx, overtime counter add when realtime factor exceeds the threshold
     uint64_t dataDurationUS = static_cast<uint64_t>(dataDurationMS) * MILLISECONDS_TO_MICROSECONDS;
     for (size_t i = 0; i < RTF_OVERTIME_LEVELS; ++i) {
-        uint64_t thresholdValue = dataDurationUS * nodeCapability.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
+        uint64_t thresholdValue = dataDurationUS * nodeParameter.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
         if (processDurationUS >= thresholdValue) {
             rtfOvertimeCounters_[i]++;
         }

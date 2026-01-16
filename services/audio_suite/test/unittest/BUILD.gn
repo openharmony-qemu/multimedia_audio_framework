@@ -46,6 +46,7 @@ if (audio_framework_feature_audiosuite_support) {
   ohos_unittest("audio_suite_manager_test") {
     module_out_path = module_output_path
     sources = [
+      "tool/audio_suite_unittest_tools.cpp",
       "manager/audio_suite_engine_manager_test.cpp",
     ]
 

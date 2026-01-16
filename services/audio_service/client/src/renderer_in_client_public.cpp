@@ -23,24 +23,17 @@
 #include <cinttypes>
 #include <condition_variable>
 #include <sstream>
-#include <string>
-#include <mutex>
-#include <thread>
 
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 #include "securec.h"
 #include "hisysevent.h"
 
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
-#include "audio_manager_base.h"
 #include "audio_renderer_log.h"
 #include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "futex_tool.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -48,8 +41,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
-#include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "policy_handler.h"
 #include "volume_tools.h"
 #include "audio_manager_util.h"
@@ -173,6 +165,18 @@ int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCa
     return ERR_NOT_SUPPORTED;
 }
 
+void RendererInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    return;
+}
+ 
+int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -240,18 +244,21 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
     }
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
+    CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
+        ERROR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
 
     if (state_ != NEW) {
         HILOG_COMM_ERROR("[SetAudioStreamInfo]State is not new, release existing stream and recreate, state %{public}d",
             state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
     }
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream();
-    CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
+    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
     state_ = PREPARED;
 
     InitDFXOperaiton();
@@ -1039,9 +1046,11 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, false,
+        HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
     int32_t ret = ipcStream_->Start();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Start call server failed:%{public}u", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
+        HILOG_COMM_ERROR("[StartAudioStream]Start call server failed:%{public}u", ret));
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
     bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return state_ == RUNNING; // will be false when got notified.
@@ -1065,10 +1074,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     FlushBeforeStart();
 
     offloadStartReadPos_ = 0;
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        // start the callback-write thread
-        cbThreadCv_.notify_all();
-    }
+
+    NotifyStopWaiting();
 
     RegisterThreadPriorityOnStart(cmdType);
 
@@ -1153,10 +1160,7 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        state_ = STOPPING;
-        AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
-    }
+    UpdateStopState();
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Stop();
@@ -1191,14 +1195,13 @@ bool RendererInClientInner::StopAudioStream()
 void RendererInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        cbThreadReleased_ = true; // stop loop
-        cbThreadCv_.notify_all();
-        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
-        FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
-        if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
-        }
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    cbThreadReleased_ = true; // stop loop
+    cbThreadCv_.notify_all();
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
+    FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
+    if (callbackLoop_.joinable()) {
+        callbackLoop_.join();
     }
 }
 
@@ -2055,5 +2058,20 @@ void RendererInClientInner::SetBundleName(std::string &name)
 {
     bundleName = name;
 }
+
+void RendererInClientInner::NotifyStopWaiting()
+{
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    // start the callback-write thread
+    cbThreadCv_.notify_all();
+}
+
+void RendererInClientInner::UpdateStopState()
+{
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
+    state_ = STOPPING;
+    AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

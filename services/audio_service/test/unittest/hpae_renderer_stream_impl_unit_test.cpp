@@ -59,6 +59,15 @@ public:
     MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
 };
 
+class IIStatusCallbackTest : public IStatusCallback {
+public:
+    IIStatusCallbackTest() = default;
+
+    virtual ~IIStatusCallbackTest() = default;
+
+    void OnStatusUpdate(IOperation operation) override {}
+};
+
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -336,11 +345,27 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->OnNotifyFlushStatus(false);
+    std::shared_ptr<IStatusCallback> callback = std::make_shared<IIStatusCallbackTest>();
+    unit->offloadEnable_ = true;
+    unit->statusCallback_ = callback;
+    unit->OnNotifyFlushStatus(false);
+    unit->OnNotifyFlushStatus(true);
+    unit->offloadEnable_ = false;
+    unit->OnNotifyFlushStatus(false);
+
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->processConfig_.streamType = STREAM_MOVIE;
+    ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -456,6 +481,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_005, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
+    uint32_t latency = 0;
+    EXPECT_EQ(unit->GetSinkLatencyInner(latency), 0);
 }
 
 /**
@@ -996,10 +1023,13 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
  
     AudioCallBackStreamInfo info = {
-        .needData = false
+        .needData = true
     };
 
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
+
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
 
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
     unit->writeCallback_ = mockWriteCallback;
@@ -1175,6 +1205,54 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
     EXPECT_EQ(framePosition, framePosition2);
     EXPECT_EQ(timestamp, timestamp2);
     EXPECT_EQ(latency, latency2);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer preBuf not ready.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_041
+ * @tc.desc  : Test WriteDataFromRingBuffer preBuf not ready.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_041, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    constexpr size_t preBufSize = 8;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    EXPECT_NE(unit, nullptr);
+
+    unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
+    std::vector<int8_t> inBuffer(preBufSize, 1);
+    unit->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(inBuffer.data()), preBufSize - 1});
+
+    size_t requestDataLen = preBufSize - 1;
+    std::vector<int8_t> outBuffer(preBufSize, 0);
+    int32_t ret = unit->WriteDataFromRingBuffer(true, outBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, ERROR);
+    EXPECT_FALSE(unit->preBufDone_);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer preBuf ready.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_042
+ * @tc.desc  : Test WriteDataFromRingBuffer preBuf ready.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    constexpr size_t preBufSize = 8;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    EXPECT_NE(unit, nullptr);
+
+    unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
+    std::vector<int8_t> inBuffer(preBufSize, 1);
+    unit->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(inBuffer.data()), preBufSize});
+
+    size_t requestDataLen = preBufSize;
+    std::vector<int8_t> outBuffer(preBufSize, 0);
+    int32_t ret = unit->WriteDataFromRingBuffer(true, outBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(unit->preBufDone_);
 }
 }
 }

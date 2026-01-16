@@ -19,9 +19,9 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_common_log.h"
-#include "iservice_registry.h"
 #include "system_ability_definition.h"
-
+#include "audio_type_convert.h"
+#include "audio_volume_client_manager.h"
 #include "audio_routing_manager.h"
 
 namespace OHOS {
@@ -33,16 +33,10 @@ AudioRoutingManager *AudioRoutingManager::GetInstance()
     return &audioRoutingManager;
 }
 
-int32_t AudioRoutingManager::GetCallingPid()
-{
-    return getpid();
-}
-
 int32_t AudioRoutingManager::SetMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
 {
-    AudioSystemManager* audioSystemManager = AudioSystemManager::GetInstance();
-    std::shared_ptr<AudioGroupManager> groupManager = audioSystemManager->GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
+    auto groupManager = AudioVolumeClientManager::GetInstance().GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
     CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, ERR_INVALID_PARAM,
         "setMicrophoneMuteCallback falied, groupManager is null");
     return groupManager->SetMicStateChangeCallback(callback);
@@ -133,7 +127,7 @@ int32_t AudioRoutingManager::RestoreOutputDevice(sptr<AudioRendererFilter> audio
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "invalid parameter");
 
-    audioRendererFilter->streamType = AudioSystemManager::GetStreamType(
+    audioRendererFilter->streamType = AudioTypeConvert::GetStreamType(
         audioRendererFilter->rendererInfo.contentType, audioRendererFilter->rendererInfo.streamUsage);
 
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= -1, ERR_INVALID_PARAM, "invalid uid.");

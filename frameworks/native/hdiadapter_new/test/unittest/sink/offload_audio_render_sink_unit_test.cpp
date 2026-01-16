@@ -156,7 +156,7 @@ HWTEST_F(OffloadAudioRenderSinkUnitTest, OffloadSinkUnitTest_006, TestSize.Level
     EXPECT_TRUE(sink_);
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

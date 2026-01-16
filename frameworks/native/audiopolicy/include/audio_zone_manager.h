@@ -21,7 +21,6 @@
 #include <utility>
 #include "audio_info.h"
 #include "audio_interrupt_info.h"
-#include "audio_system_manager.h"
 #include "audio_zone_info.h"
 #include "audio_device_descriptor.h"
 
@@ -71,6 +70,8 @@ public:
     virtual int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) = 0;
 
     virtual void ReleaseAudioZone(int32_t zoneId) = 0;
+
+    virtual void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) = 0;
 
     virtual const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() = 0;
 

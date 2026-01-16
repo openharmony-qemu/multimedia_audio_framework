@@ -58,7 +58,11 @@ public:
 };
 
 void AudioSuiteSpaceRenderTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteSpaceRenderTest::TearDown()
 {}
@@ -244,7 +248,6 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderDoProcess001, TestSize.Level0)
     EXPECT_EQ(SUCCESS, ret);
  
     node->SetAudioNodeDataFinishedFlag(false);
-    node->outputStream_ = nullptr;
     ret = node->DoProcess();
     EXPECT_EQ(ERROR, ret);
 }

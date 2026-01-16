@@ -105,6 +105,13 @@ int32_t AudioGeneralManager::SetPreferredDevice(const PreferredType preferredTyp
     return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
 }
 
+int32_t AudioGeneralManager::SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioGeneralManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->SetAsrVoiceMuteMode(static_cast<int32_t>(asrVoiceMuteMode), on);
+}
+
 int32_t AudioGeneralManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
 {
@@ -370,40 +377,6 @@ int32_t AudioGeneralManager::RegisterAudioRendererEventListener(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ret: %{public}d", ret);
 
     return ret;
-}
-
-AudioFocusInfoChangeCallbackImpl::AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl constructor");
-}
-
-AudioFocusInfoChangeCallbackImpl::~AudioFocusInfoChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioFocusInfoChangeCallbackImpl: destroy");
-}
-
-void AudioFocusInfoChangeCallbackImpl::SaveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    bool hasCallback = false;
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    for (auto it = callbackList_.begin(); it != callbackList_.end(); ++it) {
-        if ((*it).lock() == callback.lock()) {
-            hasCallback = true;
-        }
-    }
-    if (!hasCallback) {
-        callbackList_.push_back(callback);
-    }
-}
-
-void AudioFocusInfoChangeCallbackImpl::RemoveCallback(const std::weak_ptr<AudioFocusInfoChangeCallback> &callback)
-{
-    AUDIO_INFO_LOG("Entered %{public}s", __func__);
-    std::lock_guard<std::mutex> cbListLock(cbListMutex_);
-    callbackList_.remove_if([&callback](std::weak_ptr<AudioFocusInfoChangeCallback> &callback_) {
-        return callback_.lock() == callback.lock();
-    });
 }
 
 int32_t AudioGeneralManager::GetPreferredInputDeviceForCapturerInfo(

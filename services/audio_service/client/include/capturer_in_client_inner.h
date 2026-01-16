@@ -34,13 +34,11 @@
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
-#include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -219,6 +217,9 @@ public:
     bool GetStopFlag() const override;
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
@@ -355,6 +356,8 @@ private:
 
     bool paramsIsSet_ = false;
     int32_t innerCapId_ = 0;
+    std::mutex playbackCaptureStartCallbackMutex_;
+    std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> playbackCaptureStartCallback_ = nullptr;
 
     std::string bundleName = "";
 
@@ -377,6 +380,12 @@ private:
         HANDLER_PARAM_STOPPING,
         HANDLER_PARAM_RUNNING_FROM_SYSTEM,
         HANDLER_PARAM_PAUSED_FROM_SYSTEM,
+    };
+
+    enum :int32_t {
+        AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_SUCCESS = 0,
+        AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_FAILED,
+        AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_NOT_AUTHORIZED,
     };
 };
 } // namespace AudioStandard

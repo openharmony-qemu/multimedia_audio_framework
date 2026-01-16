@@ -19,6 +19,7 @@
 #include <fstream>
 #include <cstring>
 #include "audio_suite_eq_algo_interface_impl.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -30,13 +31,18 @@ namespace {
 
 class AudioSuiteEqAlgoInterfaceImplTest : public testing::Test {
 public:
-    void SetUp(){};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown(){};
 };
 
 HWTEST_F(AudioSuiteEqAlgoInterfaceImplTest, AudioSuiteEqAlgoInterfaceImplTest, TestSize.Level0)
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
     AudioSuiteEqAlgoInterfaceImpl eqAlgo(nc);

@@ -60,8 +60,8 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, AudioMode audioMode);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-                AudioStreamType streamType) override;
+    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, const std::string &adapterName,
+        const int32_t pin, AudioStreamType streamType) override;
     bool StartDevice(EndpointStatus preferredState = INVALID,
         int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
@@ -169,7 +169,8 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     void CheckSyncInfo(uint64_t curWritePos);
-    void CheckJank(uint64_t curWritePos);
+    void RecordCheckSyncInfo(uint64_t curReadPos);
+    void CheckJank(uint64_t curWPos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
@@ -202,9 +203,10 @@ private:
     bool DelayStopDevice();
 
     std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
-    std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type,
-        IAudioSourceAttr &attr);
-    void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
+    std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type);
+    IAudioSinkAttr InitSinkAttr(const AudioDeviceDescriptor &deviceInfo, const std::string &adapterName,
+        const int32_t pin);
+    IAudioSourceAttr InitSourceAttr(const AudioDeviceDescriptor &deviceInfo);
 
     void InitLatencyMeasurement();
     void DeinitLatencyMeasurement();
@@ -252,6 +254,7 @@ private:
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
     void NotifyStreamChange(StreamChangeType change,
         IAudioProcessStream *processStream, RendererState state);
+    AudioEndpointInner::VolumeResult ConstructEnforcedToneVolume();
 
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -275,13 +278,15 @@ private:
         FAST_SINK_TYPE_NORMAL,
         FAST_SINK_TYPE_REMOTE,
         FAST_SINK_TYPE_VOIP,
-        FAST_SINK_TYPE_BLUETOOTH
+        FAST_SINK_TYPE_BLUETOOTH,
+        FAST_SINK_TYPE_ARM_USB
     };
     enum FastSourceType {
         NONE_FAST_SOURCE = 0,
         FAST_SOURCE_TYPE_NORMAL,
         FAST_SOURCE_TYPE_REMOTE,
-        FAST_SOURCE_TYPE_VOIP
+        FAST_SOURCE_TYPE_VOIP,
+        FAST_SOURCE_TYPE_ARM_USB
     };
     enum ZeroVolumeState : uint32_t {
         INACTIVE = 0,
@@ -394,6 +399,8 @@ private:
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";
     std::string dupMixName_ = "";
+
+    std::mutex startStatusLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

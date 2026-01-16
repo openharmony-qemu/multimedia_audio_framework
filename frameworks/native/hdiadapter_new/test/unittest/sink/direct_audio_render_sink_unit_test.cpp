@@ -108,6 +108,26 @@ HWTEST_F(DirectAudioRenderSinkUnitTest, InitAudioSampleAttrTest_001, TestSize.Le
     sink_->InitAudioSampleAttr(param);
     EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_EAC3);
 
+    sink_->attr_.encodingType = ENCODING_AC3;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_AC3);
+
+    sink_->attr_.encodingType = ENCODING_TRUE_HD;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_TRUE_HD);
+
+    sink_->attr_.encodingType = ENCODING_DTS_HD;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_DTS_HD);
+
+    sink_->attr_.encodingType = ENCODING_DTS_X;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_DTS_X);
+
+    sink_->attr_.encodingType = ENCODING_AUDIOVIVID_DIRECT;
+    sink_->InitAudioSampleAttr(param);
+    EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_AV3A);
+
     sink_->attr_.encodingType = ENCODING_PCM;
     sink_->InitAudioSampleAttr(param);
     EXPECT_EQ(param.format, AUDIO_FORMAT_TYPE_PCM_16_BIT);

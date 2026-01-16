@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioZoneManager"
 #endif
-
+#include <mutex>
 #include "audio_zone_manager.h"
 
 #include "audio_errors.h"
@@ -33,6 +33,8 @@ public:
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context) override;
 
     void ReleaseAudioZone(int32_t zoneId) override;
+
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
 
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone() override;
 
@@ -183,6 +185,13 @@ void AudioZoneManagerInner::ReleaseAudioZone(int32_t zoneId)
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
     AudioPolicyManager::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+void AudioZoneManagerInner::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_LOG(zoneId > 0, "zoneId is invalid");
+    AudioPolicyManager::GetInstance().UpdateContextForAudioZone(zoneId, context);
 }
 
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioZoneManagerInner::GetAllAudioZone()

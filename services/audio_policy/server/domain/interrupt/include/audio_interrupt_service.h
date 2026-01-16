@@ -118,6 +118,7 @@ public:
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
+    void UpdateContextForAudioZone(const int32_t zoneId, const AudioZoneContext &context);
 
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
     int32_t GetStreamTypePriority(AudioStreamType streamType);
@@ -152,6 +153,8 @@ public:
     void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
     std::future<void> stopFuture_;
+
+    AudioScene GetHighestPriorityAudioSceneFromAllZones();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -373,6 +376,7 @@ private:
     bool HasMuteSuggestionRecord(uint32_t streamId);
     void SendUnMuteSuggestionInterruptEvent(uint32_t streamId);
     void DelayRemoveMuteSuggestionRecord(uint32_t streamId);
+    void UpdateMuteSuggestionRecords(uint32_t currentpid);
     void RemoveMuteSuggestionRecord();
     void AddMuteSuggestionRecord(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt);

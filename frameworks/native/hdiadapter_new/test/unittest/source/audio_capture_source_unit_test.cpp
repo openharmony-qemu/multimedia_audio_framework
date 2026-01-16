@@ -381,9 +381,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_014, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_001, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
 
     uint64_t replyBytes = 0;
     std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
@@ -415,9 +413,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_001, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-    return;
-    }
+    ASSERT_NE(source_, nullptr);
 
     uint64_t replyBytes = 0;
     std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
@@ -447,9 +443,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
@@ -496,9 +490,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_002, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
@@ -544,10 +536,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_002, TestSize.Level1)
 */
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_003, TestSize.Level1)
 {
-    auto source_ = std::make_shared(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
@@ -621,9 +611,9 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_003, TestSize.Level1)
     EXPECT_TRUE(usbSource_);
     usbSource_->DeInit();
     int32_t ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Init(attr_);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
 }
 
@@ -637,17 +627,17 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
     InitUsbSource();
     EXPECT_TRUE(usbSource_);
     int32_t ret = usbSource_->Start();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Resume();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, SUCCESS);
     ret = usbSource_->Pause();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Flush();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Reset();
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
@@ -809,7 +799,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_009, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_ULTRASONIC;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_ULTRASONIC_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_ULTRASONIC * UNIQUE_ID_INTERVAL);
 }
 
 /**
@@ -824,7 +814,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_010, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     captureSource->attr_.hdiSourceType = "AUIDO_INPUT_VOICE_RECOGNITION_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_RECOGNITION * UNIQUE_ID_INTERVAL);
 }
 
 /**
@@ -839,7 +829,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_011, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_RAW_AI_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT * UNIQUE_ID_INTERVAL);
 }
 
 

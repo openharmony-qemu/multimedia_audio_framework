@@ -65,7 +65,7 @@ public:
     uint32_t GetCaptureId() const;
     void SetInjectState(bool isInjecting);
     void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t sessionId, SourceType source, CapturerState state);
+        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID);
 
 private:
     int32_t GetCapturerSourceAdapter(
@@ -76,8 +76,12 @@ private:
     void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
     void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void UpdateSourceInputMapCancatMicEc();
+    void SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo);
     void ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc);
     void DoProcessInnerMicAndEc(const uint64_t &replyBytes, const uint64_t replyBytesEc);
+    void DumpInput(HpaeSourceBufferType &micType, HpaeSourceBufferType &ecType,
+        const uint64_t &replyBytes, const uint64_t &replyBytesEc);
+    void DumpOutput(HpaeSourceBufferType &micType);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;

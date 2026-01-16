@@ -534,32 +534,45 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_033, TestSize.Level1)
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
-/**
+/**    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_034
-* @tc.desc  : Test UpdateDualToneState interface.
+* @tc.number: AudioDeviceCommon_033
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
 */
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_034, TestSize.Level1)
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool enable = true;
-    int32_t sessionId = 0;
-    audioDeviceCommon.UpdateDualToneState(enable, sessionId);
-    EXPECT_EQ(sessionId, audioDeviceCommon.enableDualHalToneSessionId_);
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.connectState_ = VIRTUAL_CONNECTED;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_035
-* @tc.desc  : Test UpdateDualToneState interface.
+* @tc.number: AudioDeviceCommon_030
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForInputDevice interface.
 */
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_035, TestSize.Level1)
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool enable = false;
-    int32_t sessionId = 0;
-    audioDeviceCommon.UpdateDualToneState(enable, sessionId);
-    EXPECT_EQ(enable, audioDeviceCommon.enableDualHalToneState_);
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptorSptr->deviceType_ = DEVICE_TYPE_DP;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+    audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc,
+        audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
 /**
@@ -602,120 +615,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_037, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_043
-* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_043, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_044
-* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_044, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_045
-* @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_045, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchGeneralDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_046
-* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_046, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_047
-* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_047, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_048
-* @tc.desc  : Test MuteSinkForSwitchBluetoothDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_048, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorUniqueptr = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorUniqueptrVector;
-    audioDeviceDescriptorUniqueptr->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptorUniqueptrVector.push_back(std::move(audioDeviceDescriptorUniqueptr));
-    audioDeviceCommon.MuteSinkForSwitchBluetoothDevice(rendererChangeInfo,
-        audioDeviceDescriptorUniqueptrVector, reason);
-    EXPECT_EQ(1, audioDeviceDescriptorUniqueptrVector.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_050
 * @tc.desc  : Test IsRendererStreamRunning interface.
 */
@@ -727,107 +626,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_050, TestSize.Level1)
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_RINGING);
     bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
     EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_051
-* @tc.desc  : Test ActivateA2dpDeviceWhenDescEnabled interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_051, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->isEnable_ = false;
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    rendererChangeInfos.push_back(std::move(rendererChangeInfo));
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    int32_t ret = audioDeviceCommon.ActivateA2dpDeviceWhenDescEnabled(desc, rendererChangeInfos, reason);
-    EXPECT_EQ(SUCCESS, ret);
-
-    desc->isEnable_ = true;
-    ret = audioDeviceCommon.ActivateA2dpDeviceWhenDescEnabled(desc, rendererChangeInfos, reason);
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_052
-* @tc.desc  : Test HandleScoOutputDeviceFetched interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_052, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    rendererChangeInfos.push_back(std::move(rendererChangeInfo));
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    int32_t ret = audioDeviceCommon.HandleScoOutputDeviceFetched(desc, rendererChangeInfos, reason);
-    EXPECT_EQ(ERROR, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_053
-* @tc.desc  : Test NotifyRecreateRendererStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_053, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
-    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_MMAP;
-    rendererChangeInfo->rendererInfo.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    bool ret = audioDeviceCommon.NotifyRecreateRendererStream(desc, rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    rendererChangeInfo->outputDeviceInfo.networkId_ = "test1";
-    desc->networkId_ = "test2";
-    ret = audioDeviceCommon.NotifyRecreateRendererStream(desc, rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_054
-* @tc.desc  : Test NeedRehandleA2DPDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_054, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    bool ret = audioDeviceCommon.NeedRehandleA2DPDevice(desc);
-    EXPECT_EQ(false, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = audioDeviceCommon.NeedRehandleA2DPDevice(desc);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_055
-* @tc.desc  : Test ActivateA2dpDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_055, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    rendererChangeInfos.push_back(std::move(rendererChangeInfo));
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    int32_t ret = audioDeviceCommon.ActivateA2dpDevice(desc, rendererChangeInfos, reason);
-    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -845,123 +643,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_056, TestSize.Level1)
     audioDeviceCommon.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     audioDeviceCommon.TriggerRecreateRendererStreamCallback(callerPid, sessionId, streamFlag, reason);
     EXPECT_EQ(true, audioDeviceCommon.audioPolicyServerHandler_ != nullptr);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_057
-* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_057, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
-    captureChangeInfos.push_back(std::move(captureChangeInfo));
-
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
-    EXPECT_EQ(1, captureChangeInfos.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_058
-* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_058, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
-    captureChangeInfos.push_back(std::move(captureChangeInfo));
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
-    EXPECT_EQ(1, captureChangeInfos.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_059
-* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_059, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_MIC;
-    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
-    captureChangeInfos.push_back(std::move(captureChangeInfo));
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
-    EXPECT_EQ(1, captureChangeInfos.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_060
-* @tc.desc  : Test HandleBluetoothInputDeviceFetched interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_060, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_MIC;
-    std::shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
-    captureChangeInfos.push_back(std::move(captureChangeInfo));
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    audioDeviceCommon.HandleBluetoothInputDeviceFetched(desc, captureChangeInfos, sourceType);
-    EXPECT_EQ(1, captureChangeInfos.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_061
-* @tc.desc  : Test NotifyRecreateCapturerStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_061, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isUpdateActiveDevice = true;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
-    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
-    capturerChangeInfo->inputDeviceInfo.networkId_ = "test";
-    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
-        capturerChangeInfo, reason);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_062
-* @tc.desc  : Test NotifyRecreateCapturerStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isUpdateActiveDevice = true;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
-    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
-    capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
-    bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
-        capturerChangeInfo, reason);
-    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -986,46 +667,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_063, TestSize.Level1)
     ret = audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID,
         sinkName, sourceType);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-}
-
-/**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_001
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = false;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-    bool isVrSupported = false;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
-        handleFlag, address, connectState, isVrSupported);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_002
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_002, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = true;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-    bool isVrSupported = false;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
-        handleFlag, address, connectState, isVrSupported);
-    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1132,42 +773,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_066, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_067
-* @tc.desc  : Test FetchOutputEnd interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_067, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isUpdateActiveDevice = true;
-    int32_t runningStreamCount = 0;
-    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
-    EXPECT_NE(0, audioDeviceCommon.spatialDeviceMap_.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_068
-* @tc.desc  : Test HandleDeviceChangeForFetchOutputDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_068, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    desc->deviceType_ = DEVICE_TYPE_NONE;
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
-        AudioStreamDeviceChangeReason::UNKNOWN);
-    EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
-        AudioStreamDeviceChangeReason::UNKNOWN);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_069
 * @tc.desc  : Test IsSameDevice interface.
 */
@@ -1254,277 +859,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_070, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_079
-* @tc.desc  : Test HandleDeviceChangeForFetchInputDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_079, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_NONE;
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo);
-    EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
-
-    desc->networkId_ = "";
-    capturerChangeInfo->inputDeviceInfo.networkId_ = "";
-    desc->macAddress_ = "";
-    capturerChangeInfo->inputDeviceInfo.macAddress_ = "";
-    desc->connectState_ = CONNECTED;
-    capturerChangeInfo->inputDeviceInfo.connectState_ = CONNECTED;
-    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    desc->deviceRole_ = DEVICE_ROLE_NONE;
-    capturerChangeInfo->inputDeviceInfo.deviceRole_ = DEVICE_ROLE_NONE;
-    ret = audioDeviceCommon.HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo);
-    EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
-
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    desc->connectState_ = DEACTIVE_CONNECTED;
-    ret = audioDeviceCommon.HandleDeviceChangeForFetchInputDevice(desc, capturerChangeInfo);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_080
-* @tc.desc  : Test MoveToRemoteInputDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_080, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    SourceOutput sourceOutput;
-    std::vector<SourceOutput> sourceOutputs;
-    sourceOutputs.push_back(sourceOutput);
-    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceCommon.isOpenRemoteDevice = false;
-    int32_t ret = audioDeviceCommon.MoveToRemoteInputDevice(sourceOutputs, remoteDeviceDescriptor);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
-
-    audioDeviceCommon.isOpenRemoteDevice = true;
-    ret = audioDeviceCommon.MoveToRemoteInputDevice(sourceOutputs, remoteDeviceDescriptor);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_081
-* @tc.desc  : Test MuteSinkPort interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::string oldSinkname = "";
-    std::string newSinkName = "Offload_Speaker";
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    oldSinkname = "Offload_Speaker";
-    newSinkName = "";
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    newSinkName = "Offload_Speaker";
-    oldSinkname = "";
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    newSinkName = "";
-    oldSinkname = "Offload_Speaker";
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_RINGING);
-    audioDeviceCommon.audioPolicyManager_.SetRingerMode(RINGER_MODE_SILENT);
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-
-    reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    oldSinkname = "RemoteCastInnerCapturer";
-    audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_082
-* @tc.desc  : Test MoveToNewOutputDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_082, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    rendererChangeInfo->outputDeviceInfo.macAddress_ = "";
-    rendererChangeInfo->outputDeviceInfo.networkId_ = "";
-    rendererChangeInfo->outputDeviceInfo.deviceRole_ = INPUT_DEVICE;
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
-    outputdevice->macAddress_ = "";
-    outputdevice->networkId_ = "";
-    outputdevice->deviceRole_ = INPUT_DEVICE;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    std::vector<SinkInput> sinkInputs;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
-    audioDeviceCommon.audioConfigManager_.OnUpdateRouteSupport(true);
-    audioDeviceCommon.MoveToNewOutputDevice(rendererChangeInfo, outputDevices, sinkInputs, reason);
-    EXPECT_EQ(true, audioDeviceCommon.audioConfigManager_.GetUpdateRouteSupport());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_083
-* @tc.desc  : Test MoveToNewOutputDevice interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_083, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    rendererChangeInfo->outputDeviceInfo.macAddress_ = "";
-    rendererChangeInfo->outputDeviceInfo.networkId_ = "";
-    rendererChangeInfo->outputDeviceInfo.deviceRole_ = INPUT_DEVICE;
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
-    outputdevice->macAddress_ = "";
-    outputdevice->networkId_ = "LocalDevice";
-    outputdevice->deviceRole_ = INPUT_DEVICE;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    std::vector<SinkInput> sinkInputs;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
-    audioDeviceCommon.audioConfigManager_.OnUpdateRouteSupport(true);
-    audioDeviceCommon.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    audioDeviceCommon.MoveToNewOutputDevice(rendererChangeInfo, outputDevices, sinkInputs, reason);
-    EXPECT_EQ(true, audioDeviceCommon.audioConfigManager_.GetUpdateRouteSupport());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_084
-* @tc.desc  : Test UpdateRoute interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_084, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    audioDeviceCommon.enableDualHalToneState_ = true;
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(0, audioDeviceCommon.enableDualHalToneSessionId_);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_085
-* @tc.desc  : Test UpdateRoute interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_085, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    audioDeviceCommon.enableDualHalToneState_ = false;
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, audioDeviceCommon.audioVolumeManager_.IsRingerModeMute());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_086
-* @tc.desc  : Test UpdateRoute interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_086, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    outputdevice->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    VolumeUtils::SetPCVolumeEnable(false);
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, audioDeviceCommon.shouldUpdateDeviceDueToDualTone_);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_087
-* @tc.desc  : Test UpdateRoute interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_087, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-
-    std::shared_ptr<AudioDeviceDescriptor> outputdevice = std::make_shared<AudioDeviceDescriptor>();
-    outputdevice->deviceType_ = DEVICE_TYPE_SPEAKER;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::move(outputdevice));
-    VolumeUtils::SetPCVolumeEnable(false);
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(true, audioDeviceCommon.audioVolumeManager_.IsRingerModeMute());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_088
-* @tc.desc  : Test UpdateRoute interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_088, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    rendererChangeInfo->sessionId = 1;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    outputDevices.push_back(std::make_shared<AudioDeviceDescriptor>());
-
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
-
-    outputDevices.front()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(0, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
-
-    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(1, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
-
-    outputDevices.front()->deviceType_ = DEVICE_TYPE_INVALID;
-    audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
-    EXPECT_EQ(2, audioDeviceCommon.streamsWhenRingDualOnPrimarySpeaker_.size());
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_089
-* @tc.desc  : Test IsDualStreamWhenRingDual interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_089, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-
-    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_RING));
-    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ALARM));
-    EXPECT_TRUE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_ACCESSIBILITY));
-    EXPECT_FALSE(audioDeviceCommon.IsDualStreamWhenRingDual(STREAM_MUSIC));
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_090
 * @tc.desc  : Test IsRingDualToneOnPrimarySpeaker interface.
 */
@@ -1602,64 +936,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
     deviceList = audioDeviceCommon.GetPreferredOutputDeviceDescInner(
         rendererInfo, networkId, uid);
     EXPECT_EQ(deviceList[0]->deviceId_, 2);
-}
-
-/**
-* @tc.name  : Test BluetoothScoFetch.
-* @tc.number: BluetoothScoFetch_001
-* @tc.desc  : Test BluetoothScoFetch interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_001, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->macAddress_ = "00:11:22:33:44:55";
-    desc->networkId_ = LOCAL_NETWORK_ID;
-    desc->isVrSupported_ = true;
-
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    capturerChangeInfos.push_back(capturerChangeInfo);
-
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
-    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, SOURCE_TYPE_VOICE_RECOGNITION);
-    const AudioDeviceDescriptor& activeDevice = audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
-    EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-    EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
-    EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
-}
-
-/**
-* @tc.name  : Test BluetoothScoFetch.
-* @tc.number: BluetoothScoFetch_002
-* @tc.desc  : Test BluetoothScoFetch interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, BluetoothScoFetch_002, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->macAddress_ = "00:11:22:33:44:55";
-    desc->networkId_ = LOCAL_NETWORK_ID;
-    desc->isVrSupported_ = false;
-
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    capturerChangeInfos.push_back(capturerChangeInfo);
-
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
-    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, SOURCE_TYPE_VOICE_RECOGNITION);
-    const AudioDeviceDescriptor& activeDevice = audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
-    EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-    EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
-    EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
 }
 
 /**

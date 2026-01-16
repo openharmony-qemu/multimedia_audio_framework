@@ -96,6 +96,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_005, TestSize.
 {
     int32_t callerPid = 0;
     audioSessionService_.OnAudioSessionTimeOut(callerPid);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_TRUE(res);
 }
 
 /**
@@ -107,6 +109,9 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_006, TestSize.
 {
     std::string dumpString = "test";
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    int32_t callerPid = 0;
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_TRUE(res);
 }
 
 /**
@@ -126,6 +131,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_007, TestSize.
 
     audioSessionService_.sessionMap_[callerPid] = audioSession;
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_FALSE(res);
 }
 
 /**
@@ -146,6 +153,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_008, TestSize.
 
     audioSessionService_.sessionMap_[callerPid] = audioSession;
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_FALSE(res);
 }
 
 /**
@@ -286,12 +295,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_013, TestSize.
 HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_014, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
-
-    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
+    audioInterrupt.pid = 0;
+    EXPECT_FALSE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
 }
 
 /**

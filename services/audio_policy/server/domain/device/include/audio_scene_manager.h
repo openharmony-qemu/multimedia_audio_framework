@@ -23,7 +23,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_errors.h"
@@ -49,6 +48,7 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
     bool IsStreamActive(AudioStreamType streamType) const;
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) const;
     bool CheckVoiceCallActive(int32_t sessionId) const;
 
     bool IsVoiceCallRelatedScene();

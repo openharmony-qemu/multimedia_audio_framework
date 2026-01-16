@@ -36,6 +36,7 @@ interface ICoreServiceProviderIpc {
         [in] unsigned int sessionID,
         [out] AudioDeviceDescriptor deviceInfo,
         [out] AudioStreamInfo streamInfo,
+        [out] int pin,
         [in] boolean isReloadProcess);
     void GenerateSessionId([out] unsigned int sessionId);
     void ReloadCaptureSession(
@@ -61,4 +62,5 @@ interface ICoreServiceProviderIpc {
     void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
     void OnCheckActiveMusicTime([in] String reason);
     [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
+    void GetModuleNameBySessionId([in] unsigned int sessionID, [out] String name);
 }

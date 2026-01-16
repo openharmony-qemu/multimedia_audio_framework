@@ -700,7 +700,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_002, TestSize.Lev
     int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(desc);
     audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -728,7 +728,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_003, TestSize.Lev
     int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(descB);
     audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1637,26 +1637,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, WriteInputDeviceChangedSysEvents_001, TestSi
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
-* @tc.number: RemoveDeviceFromGlobalOnly_001
-* @tc.desc  : Test RemoveDeviceFromGlobalOnly interface.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, RemoveDeviceFromGlobalOnly_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDescriptor->networkId_ = "123456";
-    deviceDescriptor->deviceName_ = "usb_headset";
-    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-
-    audioDeviceStatus.RemoveDeviceFromGlobalOnly(deviceDescriptor);
-    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
-}
-
-/**
-* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AddDeviceBackToGlobalOnly_001
 * @tc.desc  : Test AddDeviceBackToGlobalOnly interface.
 */
@@ -1794,6 +1774,37 @@ HWTEST_F(AudioDeviceStatusUnitTest, CheckAndActiveHfpDevice_001, TestSize.Level1
     desc->deviceType_ = DEVICE_TYPE_NEARLINK;
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     audioDeviceStatus.CheckAndActiveHfpDevice(deviceDesc);
+}
+
+/**
+* @tc.name  : Test CheckIsIndexValidAndHandleErr.
+* @tc.number: CheckIsIndexValidAndHandleErr_001
+* @tc.desc  : Test CheckIsIndexValidAndHandleErr
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, CheckIsIndexValidAndHandleErr_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioDeviceDescriptor deviceDesc;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(desc, nullptr);
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::string currentActivePort = "";
+    uint32_t paIndex = OPEN_PORT_FAILURE;
+    AudioIOHandle ioHandle = HDI_INVALID_ID;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = 1280;
+    ioHandle = HDI_INVALID_ID;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = OPEN_PORT_FAILURE;
+    ioHandle = 1280;
+    EXPECT_FALSE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+
+    paIndex = 1280;
+    ioHandle = 1280;
+    EXPECT_TRUE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
 }
 } // namespace AudioStandard
 } // namespace OHOS

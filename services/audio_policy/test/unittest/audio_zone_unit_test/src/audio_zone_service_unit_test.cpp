@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_zone.h"
+#include "audio_connected_device.h"
 
 #include <thread>
 #include <memory>

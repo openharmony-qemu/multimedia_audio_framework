@@ -25,6 +25,7 @@
 #include <cstdint>
 #include "audio_suite_log.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,9 +42,9 @@ static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
 }
 
-AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::~AudioSuitePureVoiceChangeAlgoInterfaceImpl()
@@ -71,12 +72,10 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());
-        return ERROR;
-    }
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
+    libHandle_ = algoLibrary_.LoadLibrary(soPath);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
     if (LoadAlgorithmFunction() != SUCCESS) {
         AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
@@ -101,55 +100,25 @@ void AudioSuitePureVoiceChangeAlgoInterfaceImpl::UnApply(void)
     AUDIO_INFO_LOG("end unload pure algo so");
 }
 
-void AudioSuitePureVoiceChangeAlgoInterfaceImpl::Release()
-{
-    if (handle_) {
-        delete[] handle_;
-        handle_ = nullptr;
-    }
-    if (scratchBuf_) {
-        delete[] scratchBuf_;
-        scratchBuf_ = nullptr;
-    }
-}
-
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
 {
     AUDIO_INFO_LOG("start init pure voice Morphing algorithm");
 
     int32_t ret = ApplyAndWaitReady();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    AudioVoiceMphMemSize* memSize = new AudioVoiceMphMemSize();
-    ret = vmAlgoApi_.getSize(memSize);
+    AudioVoiceMphMemSize memSize;
+    ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VOICEMPH_EOK) {
         AUDIO_ERR_LOG("AudioVoiceMphGetsize fail");
-        delete memSize;
-        memSize = nullptr;
         return ERROR;
     }
-    handle_ = new char[memSize->stateSize];
-    if (!handle_) {
-        AUDIO_ERR_LOG("Init handle_ fail");
-        delete memSize;
-        memSize = nullptr;
-        return ERROR;
-    }
-    scratchBuf_ = new char[memSize->scratchSize];
-    if (!scratchBuf_) {
-        AUDIO_ERR_LOG("Init scratchBuf_ fail");
-        delete memSize;
-        delete handle_;
-        memSize = nullptr;
-        handle_ = nullptr;
-        return ERROR;
-    }
-    delete memSize;
-    memSize = nullptr;
+    handle_.resize(memSize.stateSize);
+    scratchBuf_.resize(memSize.scratchSize);
 
     inBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
     outBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
 
-    ret = vmAlgoApi_.initAlgo(handle_, scratchBuf_);
+    ret = vmAlgoApi_.initAlgo(handle_.data(), scratchBuf_.data());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail");
     AUDIO_INFO_LOG("init pure algoso success");
     return SUCCESS;
@@ -158,7 +127,6 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
 int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
 {
     AUDIO_INFO_LOG("start deinit pure algorithm");
-    Release();
     UnApply();
     AUDIO_INFO_LOG("end deinit pure algorithm");
     return SUCCESS;
@@ -167,12 +135,16 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Deinit()
 static std::vector<float> ParseStringToIntArray(const std::string &str, char delimiter)
 {
     std::vector<float> result;
-    std::string token;
+    std::string paramValue;
     std::istringstream iss(str);
 
-    while (std::getline(iss, token, delimiter)) {
-        if (!token.empty()) {
-            result.push_back(std::stof(token));
+    while (std::getline(iss, paramValue, delimiter)) {
+        if (!paramValue.empty()) {
+            float value;
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
+                "Pure voice change convert string to float value error, invalid data is %{public}s",
+                paramValue.c_str());
+            result.push_back(value);
         }
     }
 
@@ -203,8 +175,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::SetParameter(
  
     SpeakerSex valueSex = typeSexPtr->second;
     AudioVoiceMphTradType voiceType = typePtr->second;
-    int32_t ret = vmAlgoApi_.setPara(handle_, valueSex, voiceType, pitch);
-
+    int32_t ret = vmAlgoApi_.setPara(handle_.data(), valueSex, voiceType, pitch);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
     return SUCCESS;
 }
@@ -242,7 +213,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
         .outCh = 1,
     };
 
-    int32_t ret = vmAlgoApi_.applyAlgo(handle_, scratchBuf_, &data);
+    int32_t ret = vmAlgoApi_.applyAlgo(handle_.data(), scratchBuf_.data(), &data);
 
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "apply vmalgo fail.");
 

@@ -385,3 +385,12 @@ TONE_PLAYBACK_FAILED:
   __BASE: {type: FAULT, level: CRITICAL, desc: Ringtone playback failure eventrame}
   ERROR_CODE: {type: INT32, desc: error code}
   ERROR_REASON: {type: STRING, desc: Detailed description of error type}
+
+LOOPBACK_EXCEPTION:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: loopback exception}
+  APP_UID: {type: INT32, desc: app uid}
+  APP_NAME: {type: STRING, desc: app name}
+  RENDER_DEVICE_TYPE: {type: INT32, desc: render device type}
+  CAPTURE_DEVICE_TYPE: {type: INT32, desc: capture device type}
+  ERROR_SCOPE: {type: INT32, desc: error scope}
+  ERROR_TYPE: {type: INT32, desc: error type}

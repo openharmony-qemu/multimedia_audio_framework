@@ -156,7 +156,7 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_006, Test
     EXPECT_TRUE(sink_);
     std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
     int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

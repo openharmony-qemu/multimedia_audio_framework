@@ -67,6 +67,10 @@ T GetData()
 static int32_t WriteDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }

@@ -39,12 +39,15 @@ typedef struct {
 } AudioVoiceMorphingData;
 
 typedef struct {
-    bool currentDeviceSupport;
-    bool realTimeSupport;
-    int frameLen;
-    int sampleRate;
-    int channel;
-    int dataFormat;
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } AudioVoiceMorhpingSpec;
 
 typedef enum {
@@ -82,12 +85,15 @@ typedef struct {
 } AudioVoiceMphData;
 
 typedef struct {
-    bool currentDeviceSupport;
-    bool realTimeSupport;
-    int frameLen;
-    int sampleRate;
-    int channel;
-    int dataFormat;
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
 } AudioVoiceMphTradSpec;
 
 typedef enum {
@@ -104,11 +110,6 @@ typedef enum {
     VMP_TRAD_MALE = 0,
     VMP_TRAD_FEMALE
 }SpeakerSex;
-
-extern int AudioVoiceMphGetsize(AudioVoiceMphMemSize *memSize);
-extern int AudioVoiceMphInit(char *handle, char *scratchBuf);
-extern int AudioVoiceMphSetPara(char *handle, SpeakerSex gender, AudioVoiceMphTradType type);
-extern int AudioVoiceMphApply(char *handle, char *scratchBuf, AudioVoiceMphData *data);
 
 #ifdef __cplusplus
 }

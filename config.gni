@@ -39,6 +39,7 @@ declare_args() {
   audio_framework_feature_usb_audio = false
   audio_framework_feature_mutesink_enable = true
   audio_framework_feature_audiosuite_support = false
+  audio_framework_feature_multi_alarm_level = false
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.usb_usb_manager)) {
@@ -112,9 +113,7 @@ declare_args() {
   }
 
   if (defined(global_parts_info) &&
-      !defined(global_parts_info.multi_alarm_level)) {
-    audio_framework_feature_multi_alarm_level = false
-  } else {
+      defined(global_parts_info.multi_alarm_level)) {
     audio_framework_feature_multi_alarm_level = true
   }
 

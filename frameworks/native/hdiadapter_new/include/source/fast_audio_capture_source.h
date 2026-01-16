@@ -19,7 +19,7 @@
 #include "source/i_audio_capture_source.h"
 #include <iostream>
 #include <cstring>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -75,6 +75,7 @@ private:
     int32_t DoSetInputRoute(DeviceType inputDevice);
 
     // low latency
+    void EnableSyncInfo(const int32_t syncInfoSize);
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
     int32_t StopInner();

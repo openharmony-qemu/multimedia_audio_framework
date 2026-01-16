@@ -135,8 +135,8 @@ interface IStandardAudioService {
     void StartGroup([in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
     void StopGroup([in] int workgroupId);
     void SetBtHdiInvalidState();
-    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
-    void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);
@@ -149,6 +149,7 @@ interface IStandardAudioService {
     void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
     void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
     void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
+    void SetAuxiliarySinkEnable([in] boolean isEnabled);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode
@@ -158,4 +159,5 @@ interface IStandardAudioService {
     void RegistAdapterManagerCallback([in] IRemoteObject object, [in] String networkId);
     void UnRegistAdapterManagerCallback([in] String networkId);
     void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
+    [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
 }

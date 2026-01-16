@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
@@ -74,6 +74,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -90,9 +92,7 @@ private:
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
     int32_t FlushInner(void);
-#ifdef SUPPORT_OLD_ENGINE
     void CheckFlushThread();
-#endif
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -114,9 +114,7 @@ private:
     bool sinkInited_ = false;
     bool started_ = false;
     bool isFlushing_ = false;
-#ifdef SUPPORT_OLD_ENGINE
     bool isNeedRestart_ = false;
-#endif
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -149,9 +147,9 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
-#ifdef SUPPORT_OLD_ENGINE
+
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     std::shared_ptr<std::thread> flushThread_;
-#endif
 };
 
 } // namespace AudioStandard

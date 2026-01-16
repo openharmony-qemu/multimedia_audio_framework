@@ -16,15 +16,14 @@
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
-
+#include <thread>
+#include <mutex>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
-#include "audio_manager_base.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -34,8 +33,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
-#include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 
@@ -59,6 +57,9 @@ public:
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -326,6 +327,10 @@ private:
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
+
+    void NotifyStopWaiting();
+
+    void UpdateStopState();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

@@ -559,6 +559,7 @@ enum PlayerType : int32_t {
     PLAYER_TYPE_AV_PLAYER = 1001,
     PLAYER_TYPE_SYSTEM_WEBVIEW = 1002,
     PLAYER_TYPE_TONE_PLAYER = 1003,
+    PLAYER_TYPE_SYSTEM_SOUND_PLAYER = 1004,
 };
 
 enum RecorderType : int32_t {
@@ -999,6 +1000,7 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1037,6 +1039,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         parcel.WriteBool(silentCapture);
+        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1097,6 +1100,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
         // silentCapture
         config->silentCapture = parcel.ReadBool();
+
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         return config;
     }
@@ -1263,6 +1268,15 @@ enum FastStatus {
     FASTSTATUS_NORMAL,
     /** Fast status */
     FASTSTATUS_FAST
+};
+
+enum PlaybackCaptureStartState {
+    /* Internal recording started successfully. */
+    START_STATE_SUCCESS = 0,
+    /* Start playback capture failed */
+    START_STATE_FAILED = 1,
+    /* Start playback capture but user not authorized state. */
+    START_STATE_NOT_AUTHORIZED = 2
 };
 
 struct StreamSwitchingInfo {
@@ -1482,9 +1496,13 @@ struct AudioProcessConfig : public Parcelable {
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {
-            config->staticBufferInfo = *StaticBufferInfo::Unmarshalling(parcel);
+            auto infoPtr = std::unique_ptr<StaticBufferInfo>(StaticBufferInfo::Unmarshalling(parcel));
+            if (infoPtr == nullptr) {
+                delete config;
+                return nullptr;
+            }
+            config->staticBufferInfo = *infoPtr;
         }
-
         return config;
     }
 
@@ -2163,6 +2181,8 @@ struct RendererStreamInfo {
     StreamUsage usage_ = STREAM_USAGE_INVALID;
 
     RendererState state_ = RENDERER_INVALID;
+
+    uint32_t appUid_ = INVALID_UID;
 };
 
 struct CapturerStreamInfo {
@@ -2171,6 +2191,8 @@ struct CapturerStreamInfo {
     SourceType source_ = SOURCE_TYPE_INVALID;
 
     CapturerState state_ = CAPTURER_INVALID;
+
+    uint32_t appUid_ = INVALID_UID;
 };
 
 /**

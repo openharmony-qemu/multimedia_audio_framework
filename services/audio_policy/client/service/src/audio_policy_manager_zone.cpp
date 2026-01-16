@@ -52,6 +52,14 @@ void AudioPolicyManager::ReleaseAudioZone(int32_t zoneId)
     gsp->ReleaseAudioZone(zoneId);
 }
 
+void AudioPolicyManager::UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
+
+    gsp->UpdateContextForAudioZone(zoneId, context);
+}
+
 const std::vector<std::shared_ptr<AudioZoneDescriptor>> AudioPolicyManager::GetAllAudioZone()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

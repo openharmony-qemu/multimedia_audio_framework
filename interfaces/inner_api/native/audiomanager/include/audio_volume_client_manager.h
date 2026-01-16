@@ -16,7 +16,8 @@
 #ifndef AUDIO_VOLUME_CLIENT_MANAGER_H
 #define AUDIO_VOLUME_CLIENT_MANAGER_H
 
-#include "audio_system_manager_ext.h"
+#include "audio_policy_interface.h"
+#include "audio_group_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -269,6 +270,15 @@ public:
     bool IsStreamMute(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Is stream active.
+     *
+     * @param volumeType audio volume type.
+     * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
+     * @since 9
+     */
+    bool IsStreamActive(AudioVolumeType volumeType) const;
+
+    /**
      * @brief get volume db value that system calculate by volume type, volume level and device type.
      *
      * @param volumeType audio volume type.
@@ -384,16 +394,6 @@ public:
     * @test
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
-
-    /**
-    * @brief set stream volume by sessionId.
-    *
-    * @param sessionId stream sessionId.
-    * @param volume return stream volume.
-    * @return Returns {@link SUCCESS} if the operation is successfully.
-    * @test
-    */
-    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 
     /**
      * @brief set stream volume degree.

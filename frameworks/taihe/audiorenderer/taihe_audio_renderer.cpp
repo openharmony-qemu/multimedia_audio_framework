@@ -544,7 +544,7 @@ void AudioRendererImpl::SetTargetSync(RenderTarget target)
         return;
     }
     int32_t renderTarget = target.get_value();
-    if (!TaiheAudioEnum::IsLegalRenderTarget(renderTarget)) {
+    if (!target.is_valid()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed.");
         return;
     }
@@ -577,7 +577,7 @@ RenderTarget AudioRendererImpl::GetTarget()
 {
     if (audioRenderer_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
-        return RenderTarget::key_t::NORMAL_PLAYBACK;
+        return RenderTarget::key_t::PLAYBACK;
     }
     OHOS::AudioStandard::RenderTarget target = audioRenderer_->GetTarget();
     RenderTarget result = TaiheAudioEnum::ToTaiheRenderTarget(target);

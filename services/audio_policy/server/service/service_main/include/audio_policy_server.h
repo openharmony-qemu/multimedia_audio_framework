@@ -151,7 +151,7 @@ public:
 
     int32_t IsStreamActive(int32_t streamType, bool &active) override;
 
-    int32_t IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active) override;
+    int32_t IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active) override;
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
@@ -365,9 +365,9 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
-    int32_t IsAudioLoopbackSupported(int32_t mode, bool &ret) override;
+    int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
-    int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -496,6 +496,8 @@ public:
         int32_t pid) override;
 
     int32_t ReleaseAudioZone(int32_t zoneId) override;
+
+    int32_t UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
 
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs) override;
 
@@ -665,6 +667,8 @@ public:
 
     int32_t RestoreDistributedDeviceInfo() override;
 
+    bool IsPublishCalled() const;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -735,6 +739,7 @@ public:
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     void HandleDataShareReadyEvent();
+    int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -951,6 +956,8 @@ private:
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
 
     int32_t sessionIdByRemote_ = -1;
+    bool isUT_ = false;
+    bool isPublishCalled_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;

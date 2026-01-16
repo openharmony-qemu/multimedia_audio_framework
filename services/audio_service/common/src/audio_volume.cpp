@@ -26,6 +26,7 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_mute_factor_manager.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,9 +61,10 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
-uint32_t VOIP_CALL_VOICE_SERVICE = 5523;
+uint32_t VOIP_CALL_VOICE_SERVICE = 1001;
 uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
 uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
+static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 
 AudioVolume *AudioVolume::GetInstance()
 {
@@ -83,13 +85,35 @@ AudioVolume::~AudioVolume()
     doNotDisturbStatusWhiteListVolume_.clear();
 }
 
+void AudioVolume::ConstructEnforcedToneVolumeValues(VolumeValues *volumes)
+{
+    float fixedVolume = VolumeUtils::GetEnforcedToneVolumeFixed();
+    volumes->volumeSystem = fixedVolume;
+    volumes->volumeStream = 1.0f;
+    volumes->volumeApp = 1.0f;
+    volumes->volume = fixedVolume;
+    volumes->volumeHistory = fixedVolume;
+}
+
 // Note: Time-consuming logic operations cannot be performed on GetVolume.
 float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::string &deviceClass,
     VolumeValues *volumes)
 {
     // read or write volume must be called AudioVolume::volumeMutex_
     std::shared_lock<std::shared_mutex> lock(volumeMutex_);
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+    AudioStreamType srcStreamType = static_cast<AudioStreamType>(streamType);
+    if (srcStreamType == STREAM_SYSTEM_ENFORCED && VolumeUtils::IsEnforcedToneVolumeFixed()) {
+        ConstructEnforcedToneVolumeValues(volumes);
+        return volumes->volume;
+    }
+    GetVolumeValues(sessionId, srcStreamType, deviceClass, volumes);
+    return volumes->volume;
+}
+
+void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
+    VolumeValues *volumes)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel = 0;
     int32_t appUid = -1;
     volumes->volumeStream = 1.0f;
@@ -135,7 +159,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
-    return volumes->volume;
 }
 
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
@@ -197,7 +220,7 @@ float AudioVolume::GetStreamVolume(uint32_t sessionId)
     if (it != streamVolume_.end()) {
         // only stream volume factor
         volumeStream =
-            it->second.isMuted_ || it->second.nonInterruptMute_ ?
+            it->second.isMuted_ || it->second.nonInterruptMute_ || it->second.isDualMuted_ ?
             0.0f : it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_;
     } else {
         HILOG_COMM_ERROR("[GetStreamVolume]stream volume not exist, sessionId:%{public}u", sessionId);
@@ -291,8 +314,10 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
-        it->second.duckFactor_ = duckFactor;
-        it->second.durationMs_ = durationMs;
+        if (!IsVolumeSame(it->second.duckFactor_, duckFactor, AUDIO_VOLUME_EPSILON)) {
+            it->second.duckFactor_ = duckFactor;
+            it->second.durationMs_ = durationMs;
+        }
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
             it->second.isDualMuted_) ? 0.0f :

@@ -60,6 +60,24 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test IsRingScene.
+ * @tc.number: IsRingScene_001
+ * @tc.desc  : Test AudioCoreServiceUtils::IsRingScene()
+ */
+HWTEST(AudioCoreServiceUtilsTest, IsRingScene_001, TestSize.Level1)
+{
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_INVALID));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_DEFAULT));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_PHONE_CHAT));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_CALL_START));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_CALL_END));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingScene(AUDIO_SCENE_MAX));
+}
+
+/**
  * @tc.name  : Test AudioCoreServiceUtils.
  * @tc.number: AudioCoreServiceUtils_003
  * @tc.desc  : Test AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker()

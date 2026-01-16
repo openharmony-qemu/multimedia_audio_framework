@@ -36,7 +36,7 @@ public:
 
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override;
+    OutputPort<AudioSuitePcmBuffer*>* GetOutputPort() override;
     int32_t DoProcess() override;
     int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
@@ -46,7 +46,7 @@ private:
     int32_t GetDataFromUser();
     int32_t GeneratePushBuffer();
 
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_ = nullptr;
+    OutputPort<AudioSuitePcmBuffer*> outputStream_;
     std::shared_ptr<InputNodeRequestDataCallBack> reqDataCallback_ = nullptr;
 
     AudioSuitePcmBuffer inPcmData_;

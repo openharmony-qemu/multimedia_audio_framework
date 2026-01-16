@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "adapter/i_device_manager.h"
 #include "util/audio_running_lock.h"
@@ -69,6 +69,8 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     int32_t SetSinkMuteForSwitchDevice(bool mute) override;
+
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -120,7 +122,6 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    std::atomic<int32_t> emptyFrameCount_ = 0;
     std::condition_variable updateActiveDeviceCV_;
     // for dfx log
     int32_t logMode_ = 0;

@@ -24,6 +24,7 @@
 #include "audio_suite_manager_callback.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_base.h"
+#include "audio_suite_unittest_tools.h"
 
 
 using namespace OHOS;
@@ -36,27 +37,13 @@ namespace {
 
 class AudioSuiteEngineManagerUnitTest : public testing::Test {
 public:
-    void SetUp() {};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown() {};
-};
-
-class MockAudioSuiteManagerCallback : public AudioSuiteManagerCallback {
-public:
-    MOCK_METHOD(void, OnDestroyPipeline, (int32_t result), (override));
-    MOCK_METHOD(void, OnCreatePipeline, (int32_t result, uint32_t pipelineId), (override));
-    MOCK_METHOD(void, OnStartPipeline, (int32_t result), (override));
-    MOCK_METHOD(void, OnStopPipeline, (int32_t result), (override));
-    MOCK_METHOD(void, OnGetPipelineState, (AudioSuitePipelineState state), (override));
-    MOCK_METHOD(void, OnCreateNode, (int32_t result, uint32_t nodeId), (override));
-    MOCK_METHOD(void, OnDestroyNode, (int32_t result), (override));
-    MOCK_METHOD(void, OnBypassEffectNode, (int32_t result), (override));
-    MOCK_METHOD(void, OnGetNodeBypass, (int32_t result, bool bypassStatus), (override));
-    MOCK_METHOD(void, OnSetAudioFormat, (int32_t result), (override));
-    MOCK_METHOD(void, OnWriteDataCallback, (int32_t result), (override));
-    MOCK_METHOD(void, OnConnectNodes, (int32_t result), (override));
-    MOCK_METHOD(void, OnDisConnectNodes, (int32_t result), (override));
-    MOCK_METHOD(void, OnRenderFrame, (int32_t result, uint32_t pipelineId), (override));
-    MOCK_METHOD(void, OnGetOptions, (int32_t result), (override));
 };
 
 class AudioSuiteManagerCallbackTestImpl : public AudioSuiteManagerCallback {
@@ -66,153 +53,129 @@ public:
 
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override
     {
-        EXPECT_EQ(pipelineId, INVALID_PIPELINE_ID);
+        isFinishCreatePipeline_ = true;
+        engineCreateResult_ = result;
+        engineCreatePipelineId_ = pipelineId;
     }
     void OnDestroyPipeline(int32_t result) override
     {
-        return;
+        isFinishDestroyPipeline_ = true;
+        destroyPipelineResult_ = result;
     }
     void OnStartPipeline(int32_t result) override
     {
-        return;
+        isFinishStartPipeline_ = true;
+        startPipelineResult_ = result;
     }
     void OnStopPipeline(int32_t result) override
     {
-        return;
+        isFinishStopPipeline_ = true;
+        stopPipelineResult_ = result;
     }
     void OnGetPipelineState(AudioSuitePipelineState state) override
     {
-        return;
+        isFinishGetPipelineState_ = true;
+        getPipelineState_ = state;
     }
     void OnCreateNode(int32_t result, uint32_t nodeId) override
     {
-        return;
+        isFinishCreateNode_ = true;
+        engineCreateNodeResult_ = result;
+        engineCreateNodeId_ = nodeId;
     }
     void OnDestroyNode(int32_t result) override
     {
-        return;
+        isFinishDestroyNode_ = true;
+        destroyNodeResult_ = result;
     }
     void OnBypassEffectNode(int32_t result) override
     {
-        return;
+        isFinishBypassEffectNode_ = true;
+        bypassEffectNodeResult_ = result;
     }
     void OnGetNodeBypass(int32_t result, bool bypassStatus) override
     {
-        return;
+        isFinishGetNodeBypassStatus_ = true;
+        getNodeBypassResult_ = bypassStatus;
     }
     void OnSetAudioFormat(int32_t result) override
     {
-        return;
+        isFinishSetFormat_ = true;
+        setFormatResult_ = result;
     }
     void OnWriteDataCallback(int32_t result) override
     {
-        return;
+        isFinishSetWriteData_ = true;
+        setWriteDataResult_ = result;
     }
     void OnConnectNodes(int32_t result) override
     {
-        return;
+        isFinishConnectNodes_ = true;
+        connectNodesResult_ = result;
     }
     void OnDisConnectNodes(int32_t result) override
     {
-        return;
+        isFinishDisConnectNodes_ = true;
+        disConnectNodesResult_ = result;
     }
     void OnRenderFrame(int32_t result, uint32_t pipelineId) override
     {
-        return;
+        isFinishRenderFrameMap_[pipelineId] = true;
+        renderFrameResultMap_[pipelineId] = result;
     }
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override
     {
-        return;
+        isFinishMultiRenderFrameMap_[pipelineId] = true;
+        multiRenderFrameResultMap_[pipelineId] = result;
     }
     void OnGetOptions(int32_t result) override
     {
-        return;
+        isFinishGetOptions_ = true;
+        getOptionsResult_ = result;
     }
     void OnSetOptions(int32_t result) override
     {
-        return;
+        isFinishSetOptions_ = true;
+        setOptionsResult_  = result;
     }
-};
 
-class IAudioSuitePipelineTestImpl : public IAudioSuitePipeline {
-public:
-    IAudioSuitePipelineTestImpl() = default;
-    ~IAudioSuitePipelineTestImpl() = default;
-
-    int32_t Init() override
-    {
-        return 0;
-    }
-    int32_t DeInit() override
-    {
-        return 0;
-    }
-    int32_t Start() override
-    {
-        return 0;
-    }
-    int32_t Stop() override
-    {
-        return 0;
-    }
-    int32_t GetPipelineState() override
-    {
-        return 0;
-    }
-    int32_t CreateNode(AudioNodeBuilder builder) override
-    {
-        return 0;
-    }
-    int32_t DestroyNode(uint32_t nodeId) override
-    {
-        return 0;
-    }
-    int32_t BypassEffectNode(uint32_t nodeId, bool bypass) override
-    {
-        return 0;
-    }
-    int32_t GetNodeBypassStatus(uint32_t nodeId) override
-    {
-        return 0;
-    }
-    int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override
-    {
-        return 0;
-    }
-    int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<InputNodeRequestDataCallBack> callback) override
-    {
-        return 0;
-    }
-    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override
-    {
-        return 0;
-    }
-    int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override
-    {
-        return 0;
-    }
-    int32_t RenderFrame(uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override
-    {
-        return 0;
-    }
-    int32_t MultiRenderFrame(uint8_t **audioDataArray, int arraySize,
-        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override
-    {
-        return 0;
-    }
-    int32_t SetOptions(uint32_t nodeId, std::string name, std::string value)  override
-    {
-        return 0;
-    }
-    int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override
-    {
-        return 0;
-    }
-    uint32_t GetPipelineId()  override
-    {
-        return 0;
-    }
+private:
+    bool isFinishCreatePipeline_ = false;
+    uint32_t engineCreatePipelineId_ = INVALID_PIPELINE_ID;
+    int32_t engineCreateResult_ = 0;
+    bool isFinishDestroyPipeline_ = false;
+    int32_t destroyPipelineResult_ = 0;
+    bool isFinishStartPipeline_ = false;
+    int32_t startPipelineResult_ = 0;
+    bool isFinishStopPipeline_ = false;
+    int32_t stopPipelineResult_ = 0;
+    bool isFinishGetPipelineState_ = false;
+    AudioSuitePipelineState getPipelineState_ = PIPELINE_STOPPED;
+    bool isFinishCreateNode_ = false;
+    int32_t engineCreateNodeResult_ = 0;
+    uint32_t engineCreateNodeId_ = INVALID_NODE_ID;
+    bool isFinishDestroyNode_ = false;
+    int32_t destroyNodeResult_ = 0;
+    bool isFinishBypassEffectNode_ = false;
+    int32_t bypassEffectNodeResult_ = 0;
+    bool isFinishGetNodeBypassStatus_ = false;
+    bool getNodeBypassResult_ = false;
+    bool isFinishSetFormat_ = false;
+    int32_t setFormatResult_ = 0;
+    bool isFinishSetWriteData_ = false;
+    int32_t setWriteDataResult_ = 0;
+    bool isFinishConnectNodes_ = false;
+    int32_t connectNodesResult_ = 0;
+    bool isFinishDisConnectNodes_ = false;
+    int32_t disConnectNodesResult_ = 0;
+    bool isFinishGetOptions_ = false;
+    int32_t getOptionsResult_ = 0;
+    bool isFinishSetOptions_ = false;
+    int32_t setOptionsResult_ = 0;
+    std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
+    std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
+    std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
+    std::unordered_map<uint32_t, int32_t> multiRenderFrameResultMap_;
 };
 
 class SuiteInputNodeRequestDataCallBackTestImpl : public InputNodeRequestDataCallBack {
@@ -220,16 +183,10 @@ public:
     ~SuiteInputNodeRequestDataCallBackTestImpl() = default;
     int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
+        (void)audioData;
+        (void)audioDataSize;
+        (void)finished;
         return 0;
-    }
-};
-
-class SuiteNodeReadTapDataCallbackTestImpl : public SuiteNodeReadTapDataCallback {
-public:
-    virtual ~SuiteNodeReadTapDataCallbackTestImpl() = default;
-    void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) override
-    {
-        return;
     }
 };
 
@@ -281,7 +238,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineTest, TestSize.Level0)
     int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
     for (size_t i = 1;i < engineManger.engineCfg_.maxPipelineNum_ + 3; ++i)
     {
-        engineManger.pipelineMap_.insert(std::make_pair(i, std::make_shared<IAudioSuitePipelineTestImpl>()));
+        engineManger.pipelineMap_[i]=std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     }
 
     result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
@@ -304,7 +261,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, destroyPipelineTest, TestSize.Level0)
     int32_t result = engineManger.DestroyPipeline(1);
     result = engineManger.DestroyPipeline(2);
 
-    engineManger.pipelineMap_[3] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.DestroyPipeline(3);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -320,7 +277,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, startPipelineTest, TestSize.Level0)
     int32_t result = engineManger.StartPipeline(1);
     result = engineManger.StartPipeline(2);
 
-    engineManger.pipelineMap_[3] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.StartPipeline(3);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -336,7 +293,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, stopPipelineTest, TestSize.Level0)
     int32_t result = engineManger.StopPipeline(1);
     result = engineManger.StopPipeline(2);
 
-    engineManger.pipelineMap_[3] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.StopPipeline(3);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -352,7 +309,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getPipelineTest, TestSize.Level0)
     int32_t result = engineManger.GetPipelineState(1);
     result = engineManger.GetPipelineState(2);
 
-    engineManger.pipelineMap_[3] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetPipelineState(3);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -369,7 +326,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createNodeTest, TestSize.Level0)
     int32_t result = engineManger.CreateNode(1, builder);
     result = engineManger.CreateNode(2, builder);
 
-    engineManger.pipelineMap_[3] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.CreateNode(3, builder);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -387,7 +344,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, destroyNodeTest, TestSize.Level0)
     result = engineManger.DestroyNode(1);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.DestroyNode(5);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -404,7 +361,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, bypassEffectNodeTest, TestSize.Level0)
     result = engineManger.BypassEffectNode(2, true);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.BypassEffectNode(5, true);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -421,7 +378,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getNodeEnableStatusTest, TestSize.Leve
     result = engineManger.GetNodeBypassStatus(2);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetNodeBypassStatus(5);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -439,7 +396,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setAudioFormatTest, TestSize.Level0)
     result = engineManger.SetAudioFormat(2, audioFormat);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.SetAudioFormat(5, audioFormat);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -458,7 +415,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetRequestDataCallbackTest, TestSize.L
     result = engineManger.SetRequestDataCallback(2, suiteCallback);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.SetRequestDataCallback(5, suiteCallback);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -494,7 +451,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest_001, TestSize.Level0)
     engineManger.nodeMap_[11] = 12;
     srcNodeId = 10;
     destNodeId = 11;
-    engineManger.pipelineMap_[12] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[12] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -530,7 +487,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest_002, TestSize.Level0)
     engineManger.nodeMap_[11] = 12;
     srcNodeId = 10;
     destNodeId = 11;
-    engineManger.pipelineMap_[12] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[12] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -571,7 +528,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, disConnectNodesTest, TestSize.Level0)
     engineManger.nodeMap_[14] = 15;
     srcNodeId = 13;
     destNodeId = 14;
-    engineManger.pipelineMap_[15] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[15] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.DisConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -583,7 +540,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, renderFrameTest, TestSize.Level0)
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
-    engineManger.pipelineMap_[1] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[1] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     engineManger.pipelineMap_[2] = nullptr;
     int32_t result = engineManger.RenderFrame(1, nullptr, 1, nullptr, nullptr);
     result = engineManger.RenderFrame(2, nullptr, 1, nullptr, nullptr);
@@ -600,7 +557,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, multiRenderFrameTest, TestSize.Level0)
     EXPECT_EQ(engineManger.IsInit(), true);
 
     AudioDataArray audioDataArray;
-    engineManger.pipelineMap_[1] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[1] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     engineManger.pipelineMap_[2] = nullptr;
     int32_t result = engineManger.MultiRenderFrame(1, &audioDataArray, nullptr, nullptr);
     result = engineManger.MultiRenderFrame(2, &audioDataArray, nullptr, nullptr);
@@ -623,7 +580,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setOptionsTest, TestSize.Level0)
     result = engineManger.SetOptions(2, name, value);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.SetOptions(5, name, value);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -642,7 +599,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getOptionsTest, TestSize.Level0)
     result = engineManger.GetOptions(2, name, value);
 
     engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetOptions(5, name, value);
     EXPECT_EQ(result, SUCCESS);
 }

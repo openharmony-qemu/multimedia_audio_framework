@@ -101,6 +101,16 @@ public:
             (routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL) : (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
     }
 
+    bool IsRouteFast() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) || (routeFlag_ & AUDIO_INPUT_FLAG_FAST);
+    }
+
+    bool IsRouteDirect() const
+    {
+        return routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT;
+    }
+
     bool IsRenderPipeNeedMoveToNormal() const
     {
         return ((routeFlag_ & AUDIO_OUTPUT_FLAG_MULTICHANNEL) || (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER));
@@ -109,6 +119,11 @@ public:
     bool IsSameAdapter(const std::string &targetAdapterName) const
     {
         return adapterName_ == targetAdapterName;
+    }
+
+    bool IsSameNetworkId(const std::string &targetNetworkId) const
+    {
+        return moduleInfo_.networkId == targetNetworkId;
     }
 
     bool IsSameRole(const std::shared_ptr<AudioStreamDescriptor> stream) const

@@ -289,6 +289,7 @@ enum InterruptEventCallbackType {
     INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
 };
 
+// This structure has compatibility constraints with the cast and cannot be modified arbitrarily.
 class AudioInterrupt : public Parcelable {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;

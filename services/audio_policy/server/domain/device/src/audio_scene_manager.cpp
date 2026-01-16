@@ -51,6 +51,9 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
             std::make_shared<AudioDeviceDescriptor>());
+        std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevices =
+            AudioStateManager::GetAudioStateManager().GetExcludedDevices(CALL_OUTPUT_DEVICES);
+        AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, unexcludedDevices);
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::UpdateAudioScene(audioScene_);
         Bluetooth::AudioHfpManager::DisconnectSco();
@@ -68,6 +71,13 @@ bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
         GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
 
     return streamCollector_.IsStreamActive(streamType);
+}
+
+bool AudioSceneManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) const
+{
+    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
+    return streamCollector_.IsStreamActiveByStreamUsage(streamUsage);
 }
 
 bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const

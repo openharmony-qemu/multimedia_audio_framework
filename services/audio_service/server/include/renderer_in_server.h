@@ -52,12 +52,16 @@ public:
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
     int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
+    void SetFirstWriteDataFlag(bool isFirstWriteDataFlag);
+    void SetOffloadFlushStatus(bool isFlush);
 private:
     uint32_t streamIndex_ = 0;
     int32_t recoveryAntiShakeBufferCount_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
+    std::atomic<bool> isFirstWriteDataFlag_ = true;
+    std::atomic<bool> isFlush_ = true;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -234,6 +238,7 @@ private:
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
+    void HandleOffloadFlush(bool isFlush);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -343,6 +348,7 @@ private:
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

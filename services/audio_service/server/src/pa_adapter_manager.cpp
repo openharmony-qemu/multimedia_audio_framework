@@ -113,7 +113,8 @@ int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::sh
     pa_stream *paStream = InitPaStream(processConfig, sessionId, false);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init render!");
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(rendererStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateRender]Failed to init pa stream!"));
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     rendererStreamMap_[sessionId] = rendererStream;
@@ -239,7 +240,8 @@ int32_t PaAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std::
     pa_stream *paStream = InitPaStream(processConfig, sessionId, true);
     CHECK_AND_RETURN_RET_LOG(paStream != nullptr, ERR_OPERATION_FAILED, "Failed to init capture");
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, paStream);
-    CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_CALL_FUNC_RETURN_RET(capturerStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateCapturer]Failed to init pa stream"));
     capturerStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     capturerStreamMap_[sessionId] = capturerStream;
@@ -418,7 +420,7 @@ pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint
     AUDIO_INFO_LOG("In, isInnerCapturer: %{public}d", processConfig.isInnerCapturer);
     std::string adapterName = "";
     if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
-        adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        adapterName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
     }
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     PaLockGuard palock(mainLoop_);

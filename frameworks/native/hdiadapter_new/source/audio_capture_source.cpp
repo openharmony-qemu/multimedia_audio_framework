@@ -83,14 +83,6 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
-static std::mutex g_usbAddressMtx;
-static std::unordered_map<uint32_t, std::string> g_usbAddressMap;
-
-static std::string GetAddress(uint32_t key)
-{
-    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
-    return g_usbAddressMap[key];
-}
 
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
@@ -104,7 +96,6 @@ AudioCaptureSource::~AudioCaptureSource()
     isCaptureThreadRunning_ = false;
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
-    g_usbAddressMap.erase(captureId_);
 }
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
@@ -428,6 +419,7 @@ void AudioCaptureSource::ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytes
     if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
         AUDIO_ERR_LOG("copy desc ec fail");
     } else {
+        HdiDfxUtils::DumpData(fdescEc->frame, replyBytesEc, ecDumpFile_, ecDumpFileName_);
         SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
     }
 }
@@ -669,12 +661,6 @@ int32_t AudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return SUCCESS;
 }
 
-void AudioCaptureSource::SetAddress(const std::string &address)
-{
-    std::lock_guard<std::mutex> lg(g_usbAddressMtx);
-    g_usbAddressMap[captureId_] = address;
-}
-
 void AudioCaptureSource::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: PrimarySource\tstarted: " + std::string(started_.load() ? "true" : "false") + "\thalName: " +
@@ -754,7 +740,8 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
     {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION},
     {"AUDIO_INPUT_ULTRASONIC_TYPE",  AUDIO_INPUT_ULTRASONIC_TYPE},
-    {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE}
+    {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE},
+    {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE}
 };
 
 AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
@@ -1040,15 +1027,11 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_IN_MIC;
-    address_ = GetAddress(captureId_);
+    address_ = attr_.macAddress.c_str();
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
-        if (address_.empty()) {
-            AUDIO_INFO_LOG("use attr desc instead");
-            deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
-        } else {
-            deviceDesc.desc = const_cast<char *>(address_.c_str());
-        }
+        AUDIO_INFO_LOG("use attr desc instead");
+        deviceDesc.desc = const_cast<char *>(address_.c_str());
         return;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
         if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
@@ -1423,7 +1406,6 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
 int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
 {
     Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
-    address_ = GetAddress(captureId_);
     std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);

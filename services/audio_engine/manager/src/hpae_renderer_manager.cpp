@@ -42,8 +42,11 @@ namespace {
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
+    const std::string BT_SINK_NAME = "a2dp";
+    const std::string USB_SINK_NAME = "usb";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = 5000;
+    constexpr int32_t COLL_ALING_COUNT = 5;
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -113,7 +116,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
-    UpdateClusterStreamInfo(nodeInfo.sceneType);
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
@@ -123,7 +125,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
 
     node->OnStreamInfoChange(false);
-    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()));
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()),
+        node->GetAppUid());
+    UpdateClusterStreamInfo(nodeInfo.sceneType);
 }
 
 void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect)
@@ -330,7 +334,8 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
-        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED);
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, RENDERER_PREPARED,
+            sinkInputNodeMap_[streamInfo.sessionId]->GetAppUid());
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -443,6 +448,10 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     }
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
+        std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
+        if (sessionGainNode != nullptr) {
+            sessionGainNode->ResetVolume();
+        }
         ConnectProcessCluster(sessionId, sceneType);
     }
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
@@ -709,6 +718,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             // for collaboration
             if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
                 hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+                hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
                 TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             }
             if (toBeStoppedSceneTypeToSessionMap_.count(sceneType) &&
@@ -1029,6 +1039,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
+    attr.sinkName = sinkInfo_.deviceClass.c_str();
     attr.sampleRate = sinkInfo_.samplingRate;
     attr.channel = sinkInfo_.channels;
     attr.format = sinkInfo_.format;
@@ -1039,6 +1050,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
+    attr.auxSinkEnable = sinkInfo_.auxSinkEnable;
     if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
         InitDefaultNodeInfo();
     }
@@ -1246,14 +1258,14 @@ void HpaeRendererManager::UpdateAppsUid()
 }
 
 void HpaeRendererManager::NotifyStreamChangeToSink(
-    StreamChangeType change, uint32_t sessionId, RendererState state)
+    StreamChangeType change, uint32_t sessionId, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN(outputCluster_ != nullptr);
     StreamUsage usage = STREAM_USAGE_UNKNOWN;
     if (sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end()) {
         usage = AudioTypeUtils::GetStreamUsageByStreamType(sinkInputNodeMap_[sessionId]->GetStreamType());
     }
-    outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    outputCluster_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
 
 size_t HpaeRendererManager::GetWritableSize(uint32_t sessionId)
@@ -1690,6 +1702,19 @@ bool HpaeRendererManager::IsBypassSpatializationForStereo()
         break;
     }
     return bypass;
+}
+
+int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    auto request = [this, isEnabled]() {
+        CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (sinkInfo_.deviceClass == BT_SINK_NAME ||
+            sinkInfo_.deviceClass == USB_SINK_NAME),
+            "outputCluster is nullptr or sink:%{public}s is not usb and bt",
+            sinkInfo_.deviceClass.c_str());
+        outputCluster_->SetAuxiliarySinkEnable(isEnabled);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

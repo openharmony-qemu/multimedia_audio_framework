@@ -21,7 +21,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
@@ -70,7 +70,6 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void SetAddress(const std::string &address) override;
     int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 

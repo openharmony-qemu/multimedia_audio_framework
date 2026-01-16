@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include "ctime"
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "adapter/i_device_manager.h"
@@ -74,8 +74,6 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void SetAddress(const std::string &address) override;
-
     void DumpInfo(std::string &dumpString) override;
 
     // for a2dp_offload connection state
@@ -86,6 +84,7 @@ public:
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
     void HandleDeviceCallback(const bool state);
 
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);

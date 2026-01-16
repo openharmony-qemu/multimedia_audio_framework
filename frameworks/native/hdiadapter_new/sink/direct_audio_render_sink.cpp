@@ -192,7 +192,8 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(ptr), dataLen);
         uint64_t temp = *reinterpret_cast<uint64_t *>(&data);
         CHECK_AND_RETURN_RET_LOG(temp >= mockPts_, ERR_OPERATION_FAILED, "mock write failed");
-        usleep(temp - mockPts_);
+        uint64_t sleepTime = temp - mockPts_ > AUDIO_US_PER_SECOND ? AUDIO_US_PER_SECOND : temp - mockPts_;
+        usleep(sleepTime);
         mockPts_ = temp;
         return SUCCESS;
     } else {
@@ -382,10 +383,24 @@ int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self,
 
 void DirectAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 {
-    // in plan: add type switcher for each encoding
     switch (attr_.encodingType) {
         case ENCODING_EAC3:
             param.format = AUDIO_FORMAT_TYPE_EAC3;
+            break;
+        case ENCODING_AC3:
+            param.format = AUDIO_FORMAT_TYPE_AC3;
+            break;
+        case ENCODING_TRUE_HD:
+            param.format = AUDIO_FORMAT_TYPE_TRUE_HD;
+            break;
+        case ENCODING_DTS_HD:
+            param.format = AUDIO_FORMAT_TYPE_DTS_HD;
+            break;
+        case ENCODING_DTS_X:
+            param.format = AUDIO_FORMAT_TYPE_DTS_X;
+            break;
+        case ENCODING_AUDIOVIVID_DIRECT:
+            param.format = AUDIO_FORMAT_TYPE_AV3A;
             break;
         default:
             AUDIO_WARNING_LOG("unknown format type, use PCM_16 as default");

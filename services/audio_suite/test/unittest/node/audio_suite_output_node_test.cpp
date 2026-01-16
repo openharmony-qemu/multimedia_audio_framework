@@ -28,6 +28,7 @@
 #include "audio_suite_input_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_aiss_node.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -170,7 +171,12 @@ const uint32_t AUDIO_DATA_SIZE = 1024;
 const uint32_t HEADER_SIZE = 44;
 class AudioSuiteOutputNodeTest : public testing::Test {
 public:
-    void SetUp() {};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown() {};
 };
 
@@ -414,7 +420,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_002, TestSize.Level0)
     inputNode->Init();
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
-    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
@@ -433,7 +439,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_003, TestSize.Level0)
     inputNode->Init();
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
-    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
@@ -452,7 +458,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_004, TestSize.Level0)
     inputNode->Init();
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
-    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);

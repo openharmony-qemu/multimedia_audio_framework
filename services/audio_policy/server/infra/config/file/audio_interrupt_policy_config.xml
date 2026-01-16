@@ -797,7 +797,6 @@
                 <focus_type value="STREAM_RING"/>
                 <focus_type value="STREAM_VOICE_ASSISTANT"/>
                 <focus_type value="STREAM_VOICE_RING"/>
-                <focus_type value="STREAM_VOICE_COMMUNICATION"/>
                 <focus_type value="STREAM_NAVIGATION"/>
             </deny>
             <shared>
@@ -826,6 +825,7 @@
                 <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_LIVE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_COMMUNICATION" is_forced="true" action_type="PAUSE" action_on="incoming"/>
             </shared>
             <private>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="STOP" action_on="existing"/>

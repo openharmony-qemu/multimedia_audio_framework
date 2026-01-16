@@ -93,9 +93,10 @@ public:
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
-        AudioStreamInfo &streamInfo, bool isReloadProcess = false);
+        AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream);
+        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, const std::string &adapterName,
+        const int32_t pin, bool isVoipStream);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
@@ -148,6 +149,7 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);

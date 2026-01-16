@@ -88,14 +88,14 @@ public:
     static OHAudioSuiteEngine *GetInstance();
 
     // engine
-    int32_t CreateEngine();
-    int32_t DestroyEngine();
+    int32_t CreateEngine() const;
+    int32_t DestroyEngine() const;
 
     // pipeline
     int32_t CreatePipeline(OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode);
     int32_t DestroyPipeline(OHAudioSuitePipeline *audioPipeline);
-    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline);
-    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline);
+    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline) const;
+    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline) const;
     int32_t GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state);
     int32_t RenderFrame(OHAudioSuitePipeline *audioPipeline,
         uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
@@ -118,7 +118,7 @@ public:
     int32_t SetVoiceBeautifierType(
         OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType);
     int32_t GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType);
-    int32_t GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType);
+    int32_t GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType);
     int32_t GetEqualizerFrequencyBandGains(OHAudioNode *node,
         OH_EqualizerFrequencyBandGains *frequencyBandGains);
     int32_t GetVoiceBeautifierType(OHAudioNode *node,
@@ -136,6 +136,12 @@ public:
     int32_t SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type);
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
+    template <typename T>
+    int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
+                                std::function<int32_t(uint32_t, T)> setter, const char* funcName);
+    template <typename T>
+    int32_t GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
+                                std::function<int32_t(uint32_t, T&)> getter, const char* funcName);
 
 private:
     explicit OHAudioSuiteEngine() {};
@@ -148,6 +154,7 @@ private:
     void RemoveNode(OHAudioNode *node);
     bool IsPipelineExists(OHAudioSuitePipeline *pipeline);
     bool IsNodeExists(OHAudioNode *node);
+    int32_t ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName);
 };
 
 } // namespace AudioStandard

@@ -127,15 +127,21 @@ std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t ses
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
+std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetModuleNameBySessionId(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
@@ -649,6 +655,14 @@ void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_p
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->HandleDeviceConfigChanged(selectedAudioDevice);
+}
+
+void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType,
+    bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
 }
 }

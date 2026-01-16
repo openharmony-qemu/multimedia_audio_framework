@@ -119,6 +119,7 @@ void NapiAudioSessionAvailableDeviceChangeCallback::OnAvailableDeviceChange(
             availableDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
         }
     }
+    std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); it++) {
         if (usage == (*it).second) {
             std::unique_ptr<AudioSessionAvailbleDeviceJsCallback> cb =

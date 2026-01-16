@@ -275,6 +275,20 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     OnStreamInfoChange(false);
 }
 
+void HpaeSinkInputNode::NotifyOffloadFlushState(bool isFlush)
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyFlushStatus(isFlush);
+}
+
+void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyHdiData(hdiPos);
+}
+
 void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
 {
     offloadEnable_ = offloadEnable;
@@ -320,9 +334,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
+    uint64_t writePos = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), latency);
+        nodeCallback->OnRequestWritePos(writePos);
     }
     latency += GetLatency();
     streamInfo_ = {
@@ -335,7 +351,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .needData = needData,
-        .forceData = forceData
+        .forceData = forceData,
+        .writePos_ = writePos
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

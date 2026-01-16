@@ -61,14 +61,10 @@ class SuiteInputNodeRequestDataCallBackTest : public AudioSuite::InputNodeReques
 class SuiteInputNodeRequestDataCallBackTestErr : public AudioSuite::InputNodeRequestDataCallBack {
     int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
     {
+        (void)audioData;
+        (void)audioDataSize;
+        (void)finished;
         return 0;
-    }
-};
-
-class SuiteNodeReadTapDataCallbackTest : public AudioSuite::SuiteNodeReadTapDataCallback {
-    void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) override
-    {
-        return;
     }
 };
 
@@ -137,8 +133,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetOutputPort_001, TestSize
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
 
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outport =
-        inputNode->GetOutputPort();
+    OutputPort<AudioSuitePcmBuffer*>* outport = inputNode->GetOutputPort();
     EXPECT_NE(outport, nullptr);
 }
 

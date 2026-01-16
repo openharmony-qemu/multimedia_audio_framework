@@ -145,13 +145,21 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_006, TestSize.Level1)
 HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_007, TestSize.Level1)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    std::shared_ptr<AudioRendererStateChangeCallback> callback;
-    auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
-    audioPolicyClient_->AddRendererStateChangeCallback(callback);
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    audioPolicyManager_->isAudioRendererEventListenerRegistered = true;
-    audioPolicyManager_->UnregisterAudioRendererEventListener(callback);
-    EXPECT_NE(audioPolicyManager_, nullptr);
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+
+    auto callback1 = std::make_shared<ConcreteAudioRendererStateChange>();
+    auto callback2 = std::make_shared<ConcreteAudioRendererStateChange>();
+
+    audioPolicyManager_->RegisterAudioRendererEventListener(callback1);
+    audioPolicyManager_->RegisterAudioRendererEventListener(callback2);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize(), 2);
+
+    audioPolicyManager_->UnregisterAudioRendererEventListener(callback1);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize(), 1);
+
+    audioPolicyManager_->UnregisterAudioRendererEventListener(callback2);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRendererStateChangeCallbackSize(), 0);
 }
 
 /**
@@ -165,19 +173,16 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_008, TestSize.Level1)
     std::shared_ptr<AudioRendererStateChangeCallback> callback =
         std::make_shared<ConcreteAudioRendererStateChange>();
     audioPolicyManager_->audioPolicyClientStubCB_ = nullptr;
-    audioPolicyManager_->isAudioRendererEventListenerRegistered = true;
     audioPolicyManager_->UnregisterAudioRendererEventListener(callback);
     EXPECT_NE(audioPolicyManager_, nullptr);
 
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    audioPolicyManager_->isAudioRendererEventListenerRegistered = false;
     audioPolicyManager_->UnregisterAudioRendererEventListener(callback);
     EXPECT_NE(audioPolicyManager_, nullptr);
 
     auto audioPolicyClient_ = std::make_shared<AudioPolicyClientStubImpl>();
     audioPolicyClient_->AddRendererStateChangeCallback(callback);
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    audioPolicyManager_->isAudioRendererEventListenerRegistered = true;
     audioPolicyManager_->UnregisterAudioRendererEventListener(callback);
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
@@ -195,7 +200,6 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_009, TestSize.Level1)
     auto cb = std::make_shared<ConcreteAudioCapturerStateChangeCallback>();
     audioPolicyClient_->AddCapturerStateChangeCallback(cb);
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    audioPolicyManager_->isAudioCapturerEventListenerRegistered = false;
     audioPolicyManager_->UnregisterAudioCapturerEventListener(clientId);
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
@@ -859,6 +863,21 @@ HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventLi
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
     ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
+    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnregisterCollaborationEnabledForCurrentDeviceEventListener_002.
+* @tc.desc  : Test UnregisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventListener_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
     int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     EXPECT_EQ(ret, SUCCESS);
 }

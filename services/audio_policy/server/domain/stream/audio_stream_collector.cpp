@@ -35,7 +35,9 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char *RECLAIM_MEMORY = "AudioReclaimMemory";
 constexpr uint32_t TIME_OF_RECLAIM_MEMORY_IN_MS = 280000; //4.66min
+constexpr uint32_t RECLAIM_DELAY_MS = 30000; //30sec
 constexpr const char *RECLAIM_FILE_STRING = "1";
+constexpr const char *RECLAIM_CONTENT_4 = "4";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
@@ -465,7 +467,9 @@ int32_t AudioStreamCollector::UpdateRendererStream(AudioStreamChangeInfo &stream
             AudioSpatializationService::GetAudioSpatializationService().UpdateRendererInfo(audioRendererChangeInfos_);
             RendererState rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
             StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-            ResetRingerModeMute(rendererState, streamUsage);
+            if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE) {
+                ResetRingerModeMute(rendererState, streamUsage);
+            }
             if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
                 audioRendererChangeInfos_.erase(it);
                 rendererStatequeue_.erase(make_pair(audioRendererChangeInfo.clientUID,
@@ -794,25 +798,27 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        const char *reclaimContent = RECLAIM_FILE_STRING;
+        auto delayTime = TIME_OF_RECLAIM_MEMORY_IN_MS;
         if (!activatedReclaimMemory_ &&
             system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
-            return;
+            reclaimContent = RECLAIM_CONTENT_4;
+            delayTime = RECLAIM_DELAY_MS;
         }
-        AUDIO_INFO_LOG("start reclaim memory task");
-        auto task = [this]() {
-            ReclaimMem();
+        AUDIO_INFO_LOG("start reclaim[%{public}s] memory task", reclaimContent);
+        auto task = [this, reclaimContent]() {
+            ReclaimMem(reclaimContent);
             isActivatedMemReclaiTask_.store(false);
         };
-        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY_IN_MS);
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, delayTime);
         isActivatedMemReclaiTask_.store(true);
     }
 }
 
-void AudioStreamCollector::ReclaimMem()
+void AudioStreamCollector::ReclaimMem(const std::string &reclaimContent)
 {
     std::lock_guard<std::mutex> lock(clearMemoryMutex_);
     std::string reclaimPath = "/proc/" + std::to_string(getpid()) + "/reclaim";
-    std::string reclaimContent = RECLAIM_FILE_STRING;
     AUDIO_INFO_LOG("start reclaim file = %{public}s", reclaimPath.c_str());
     std::ofstream outfile(reclaimPath);
     if (outfile.is_open()) {
@@ -1329,7 +1335,7 @@ void AudioStreamCollector::HandleStartStreamMuteState(StartStreamInfo startStrea
             setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
             callback->MuteStreamImpl(setStateEvent);
             changeInfo->backMute = true;
-            if (startStreamInfo.sessionId == changeInfo->sessionId) {
+            if (startStreamInfo.sessionId == static_cast<uint32_t>(changeInfo->sessionId)) {
                 silentControl = true;
             }
         } else if (!mute && changeInfo->backMute) {
@@ -1359,6 +1365,24 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
             }
         }
         if (rendererVolumeType == volumeType) {
+            // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
+            return true;
+        }
+    }
+    return result;
+}
+
+bool AudioStreamCollector::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool result = false;
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            continue;
+        }
+        if ((changeInfo->rendererInfo).streamUsage == streamUsage) {
             // An active stream has been found, return true directly.
             AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
                 changeInfo->clientUID, changeInfo->sessionId);

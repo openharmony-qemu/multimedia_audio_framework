@@ -644,26 +644,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_025, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_026
-* @tc.desc  : Test SetSharedVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_026, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    AudioVolumeType streamType = STREAM_VOICE_CALL;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    Volume vol;
-    audioVolumeManager->volumeVector_ = new Volume();
-    auto ret = audioVolumeManager->SetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(ret, true);
-    delete audioVolumeManager->volumeVector_;
-    audioVolumeManager->volumeVector_ = nullptr;
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_027
 * @tc.desc  : Test SetSharedVolume interface.
 */

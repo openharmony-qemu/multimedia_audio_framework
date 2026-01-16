@@ -38,6 +38,7 @@ public:
     
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
     void ReleaseAudioZone(int32_t zoneId);
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     int32_t GetAudioZoneByName(std::string name);
@@ -98,11 +99,12 @@ public:
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
-    int32_t FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate);
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
+
+    AudioScene GetAudioSceneFromAllZones();
 
 private:
     AudioZoneService() = default;

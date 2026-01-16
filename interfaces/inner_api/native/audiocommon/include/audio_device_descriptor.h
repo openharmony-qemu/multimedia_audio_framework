@@ -41,11 +41,16 @@ inline bool IsNearlinkDevice(DeviceType deviceType)
  *         different sets of audio devices and their roles
  */
 class AudioDeviceDescriptor : public Parcelable {
-friend class AudioSystemManager;
 public:
     enum {
         AUDIO_DEVICE_DESCRIPTOR,
         DEVICE_INFO,
+    };
+
+    enum class AudioParametersKey {
+        SAMPLE_RATE,
+        FORMAT,
+        SUPPORT_MMAP,
     };
 
     class ClientInfo {
@@ -79,6 +84,16 @@ public:
 
     DeviceRole getRole() const;
 
+    int32_t GetDeviceId() const;
+
+    std::string GetMacAddress() const;
+
+    uint32_t GetDeviceSupportMmap() const;
+
+    std::list<DeviceStreamInfo> GetAudioStreamInfo() const;
+
+    void ParseAudioParameters(const std::string &audioParameters);
+
     DeviceCategory GetDeviceCategory() const;
 
     bool IsAudioDeviceDescriptor() const;
@@ -97,6 +112,8 @@ public:
         int32_t channelIndexMasks = 0);
 
     void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
+
+    void SetDeviceSupportMmap(const uint32_t deviceSupportMmap);
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
@@ -175,6 +192,8 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedNearlink = true) const;
+    
+    uint32_t ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key);
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -216,6 +235,9 @@ public:
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
     std::string dmDeviceInfo_ = "";
+
+private:
+    uint32_t deviceSupportMmap_ = 1;
 
 private:
     bool IsOutput()

@@ -78,11 +78,12 @@ public:
     int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher) override;
 private:
     int32_t InitSink(AudioStreamInfo streamInfo);
+    int32_t IsSinkInitted(IAudioSinkAttr &attr);
     int32_t InitBuffer();
     void NotifyOperation(IOperation operation);
 private:
     // sink values
-    uint32_t renderId_ = 0;
+    uint32_t renderId_ = HDI_INVALID_ID;
     std::mutex sinkMutex_;
     std::shared_ptr<IAudioRenderSink> sink_ = nullptr;
 

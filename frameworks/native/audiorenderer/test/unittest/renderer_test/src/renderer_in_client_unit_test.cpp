@@ -21,6 +21,7 @@
 #include "i_stream_listener.h"
 #include "meta/audio_types.h"
 #include "oh_audio_buffer.h"
+#include "audio_stream_enum.h"
 
 
 using namespace testing::ext;
@@ -72,6 +73,9 @@ public:
 
     virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
     {
+        std::vector<uint64_t> vec;
+        ClockTime::GetAllTimeStamp(vec);
+        timestamp = vec[0];
         return 0;
     }
 
@@ -1465,6 +1469,10 @@ HWTEST(RendererInClientInnerUnitTest, WriteRawBuffer_001, TestSize.Level1)
     bufferDesc.dataLength = 1;
     ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
     EXPECT_NE(ptrRendererInClientInner->sleepCount_, 0);
+
+    ptrRendererInClientInner->AudioServerDied(0, 0);
+    ret = ptrRendererInClientInner->WriteRawBuffer(bufferDesc);
+    EXPECT_EQ(ret, ERR_WRITE_BUFFER);
 }
 
 /**

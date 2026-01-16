@@ -26,6 +26,7 @@
 #include "audio_suite_aiss_algo_interface_impl.h"
 #include "audio_suite_algo_interface.h"
 #include "audio_suite_pcm_buffer.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -36,6 +37,9 @@ class AudioSuiteAissAlgoInterfaceImplTest : public testing::Test {
 public:
     void SetUp()
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
         nc.soName = "libaudio_aiss_intergration.z.so";
         nc.soPath = "/system/lib64/";
     };
@@ -43,7 +47,7 @@ public:
     {
     };
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 namespace {
     const std::string INPUT_PATH = "/data/aiss_48000_2_S32LE.pcm";

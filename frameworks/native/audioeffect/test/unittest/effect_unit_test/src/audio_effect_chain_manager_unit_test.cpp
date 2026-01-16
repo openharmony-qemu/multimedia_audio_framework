@@ -2850,11 +2850,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_003, TestSi
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -2878,11 +2878,11 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
 
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    EXPECT_EQ(ret, CREATE_NEW_PROCESSCLUSTER);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 

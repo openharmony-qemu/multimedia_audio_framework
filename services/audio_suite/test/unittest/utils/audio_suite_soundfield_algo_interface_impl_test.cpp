@@ -41,11 +41,14 @@ public:
     void TearDown(void);
 
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::SetUp(void)
 {
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
     std::filesystem::remove(g_outputfile);

@@ -392,6 +392,7 @@ enum VolumeControlMode {
     DEFAULT_MODE = 0,
     LOCAL_MODE = DEFAULT_MODE,
     PASS_THROUGH_MODE = 1,
+    HILINK_MODE = 2,
 };
 
 struct VolumeBehavior : public Parcelable {
@@ -485,7 +486,8 @@ public:
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
         DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
-        SET_INPUT_DEVICE = 1004
+        SET_INPUT_DEVICE = 1004,
+        CALL_OR_RING_TO_DEFAULT = 1005,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -547,6 +549,11 @@ public:
     bool IsDistributedDeviceUnavailable() const
     {
         return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
+    }
+
+    bool IsCallOrRingToDefault() const
+    {
+        return reason_ == ExtEnum::CALL_OR_RING_TO_DEFAULT;
     }
 
     bool Marshalling(Parcel &parcel) const override

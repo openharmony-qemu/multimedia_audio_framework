@@ -16,8 +16,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "audio_service.h"

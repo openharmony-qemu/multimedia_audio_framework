@@ -33,6 +33,7 @@
 #include "securec.h"
 
 #include "audio_info.h"
+#include "audio_stream_info.h"
 #include "audio_common_utils.h"
 
 #define AUDIO_MS_PER_SECOND 1000
@@ -54,6 +55,7 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const uint32_t AUDIO_ID = 1041;
+constexpr uint32_t BASE_HEX = 16;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -388,6 +390,14 @@ auto SafeGetMap(const std::unordered_map<Key, std::shared_ptr<T>>& map, Key key)
     return (it != map.end() && it->second) ? it->second : nullptr;
 }
 
+template <typename Key, typename T>
+auto SafeGetMap(const std::map<Key, std::shared_ptr<T>>& map, Key key)
+    -> std::shared_ptr<T>
+{
+    auto it = map.find(key);
+    return (it != map.end() && it->second) ? it->second : nullptr;
+}
+
 std::string GetTime();
 std::string GetField(const std::string &src, const char* field, const char sep);
 int32_t GetFormatByteSize(int32_t format);
@@ -629,8 +639,6 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
 std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 
-std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
-
 uint32_t PcmFormatToBits(AudioSampleFormat format);
 std::string ConvertToStringForFormat(const AudioSampleFormat format);
 std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
@@ -642,6 +650,7 @@ std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 
+uint64_t HexStrToNum(const std::string &str);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

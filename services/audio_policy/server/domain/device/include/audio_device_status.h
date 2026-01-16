@@ -23,7 +23,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_errors.h"
 
@@ -176,6 +175,8 @@ private:
     void HandleDistributedDeviceDisConnected(DStatusInfo &statusInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason, AudioDeviceDescriptor &deviceDesc);
+    bool CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

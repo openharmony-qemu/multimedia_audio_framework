@@ -217,6 +217,7 @@ int32_t RemoteOffloadAudioRenderSink::FlushInner(void)
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     isFlushing_.store(true);
+    FlushResetPosition();
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush();
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "flush fail, ret: %{public}d", ret);
@@ -454,8 +455,9 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
         (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
     if (renderFrameUS <= lastHdiOriginFramesUS_) {
-        AUDIO_INFO_LOG("no need to estimate, renderFrameUS: %{public}" PRIu64 "lastHdiOriginFramesUS: %{public}" PRIu64
-            ", lastHdiFramesUS: %{public}" PRIu64, renderFrameUS, lastHdiOriginFramesUS_, lastHdiFramesUS_);
+        AUDIO_INFO_LOG("no need to estimate, renderFrameUS: %{public}" PRIu64
+            ", lastHdiOriginFramesUS: %{public}" PRIu64 ", lastHdiFramesUS: %{public}" PRIu64,
+            renderFrameUS, lastHdiOriginFramesUS_, lastHdiFramesUS_);
         return SUCCESS;
     }
     

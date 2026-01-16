@@ -54,6 +54,10 @@ class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback
         const uint32_t sessionId, const int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason) override {}
 };
 
+class ConcreteAudioManagerDeviceInfoUpdateCallback : public AudioManagerDeviceInfoUpdateCallback {
+    void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction) {};
+};
+
 class AudioPolicyManagerDeviceUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

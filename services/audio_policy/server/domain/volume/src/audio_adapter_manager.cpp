@@ -33,6 +33,7 @@
 #include "audio_scene_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_manager_listener_stub_impl.h"
+#include "audio_format_utils.h"
 
 using namespace std;
 
@@ -230,6 +231,10 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         DeleteAudioPolicyKvStore();
     }
 
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        UpdateVolumeWhenDeviceConnect(desc);
+    }
     UpdateVolumeForStreams();
 }
 
@@ -361,14 +366,7 @@ void AudioAdapterManager::SetDataShareReady(std::atomic<bool> isDataShareReady)
     isDataShareReady_ = isDataShareReady.load();
 
     CHECK_AND_RETURN_LOG(isDataShareReady, "isDataShareReady is false");
-    char firstboot[3] = {0};
-    GetParameter("persist.multimedia.audio.firstboot", "0", firstboot, sizeof(firstboot));
-    HandleKvData(atoi(firstboot) == 1);
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-    }
-    UpdateVolumeForStreams();
+    InitKVStoreInternal();
 }
 
 void AudioAdapterManager::UpdateSafeVolumeByS4()
@@ -722,6 +720,8 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     CHECK_AND_RETURN_RET_LOG(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE, SUCCESS,
         "pass through device volume db not set");
+    CHECK_AND_RETURN_RET_LOG(desc->volumeBehavior_.controlMode != HILINK_MODE, SUCCESS,
+        "pass through device volume db not set");
     return SetVolumeDb(desc, streamType);
 }
 
@@ -1001,6 +1001,10 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
         AudioServerProxy::GetInstance().SetRemoteAudioParameterProxy(device->networkId_, false, mute);
         AUDIO_INFO_LOG("set remote mute: %{public}d", mute);
     }
+    if (device->volumeBehavior_.controlMode == HILINK_MODE) {
+        AudioServerProxy::GetInstance().SetRemoteAudioParameterProxy(device->networkId_, false, mute);
+        AUDIO_INFO_LOG("set remote mute: %{public}d", mute);
+    }
     return SetVolumeDbForDeviceInPipe(device, streamType);
 }
 
@@ -1158,6 +1162,31 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 }
 
+void AudioAdapterManager::UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream)
+{
+    std::lock_guard<std::mutex> lock(activeDeviceMutex_);
+    bool isScoActive = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_SCO, false);
+    AudioVolume::GetInstance()->SetScoActive(isScoActive);
+
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(targetStream->rendererInfo_.streamUsage);
+    auto desc = targetStream->newDeviceDescs_.front();
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE, "controlMode is PASS_THROUGH_MODE");
+    CHECK_AND_RETURN_LOG(desc->volumeBehavior_.controlMode != HILINK_MODE, "controlMode is HILINK_MODE");
+    CHECK_AND_RETURN_LOG(volumeDataMaintainer_.LoadVolumeUpdateStateFromMap(desc, volumeType), "no volume update");
+
+    int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
+    SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
+    SetVolumeDb(desc, volumeType);
+    UpdateVolumeForLowLatency(desc, volumeType);
+    HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
+        "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(desc, volumeType),
+        volumeType, desc->GetName().c_str(), targetStream->sessionId_);
+    
+    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(desc, volumeType, false);
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
+}
+
 void AudioAdapterManager::UpdateVolumeForStreams()
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
@@ -1170,13 +1199,14 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         auto desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
+        CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
         int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
         UpdateVolumeForLowLatency(desc, volumeType);
         HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
-            "device: %{public}s", volumeLevel, GetStreamMuteInternal(desc, volumeType),
-            volumeType, desc->GetName().c_str());
+            "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(desc, volumeType),
+            volumeType, desc->GetName().c_str(), streamDesc->sessionId_);
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
@@ -1284,6 +1314,7 @@ void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
         auto desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
+        CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
         SetVolumeDb(desc, volumeType);
     }
 }
@@ -1445,6 +1476,16 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_BLUETOOTH;
             idInfo = HDI_ID_INFO_MMAP;
         }
+    } else if (pipeInfo->adapterName_ == "dp") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_DP_FAST;
+        }
+    } else if (pipeInfo->adapterName_ == "usb") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_USB;
+        }
     }
 }
 
@@ -1476,6 +1517,11 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_RAW_AI) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_RAW_AI;
+        }
+    } else if (pipeInfo->adapterName_ == "usb") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_USB;
         }
     }
 }
@@ -1944,12 +1990,14 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
     attr.aux = audioModuleInfo.extra;
+    attr.address = audioModuleInfo.macAddress;
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
     if (!audioModuleInfo.channelLayout.empty()) {
         attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     }
+    attr.address = audioModuleInfo.macAddress;
     return attr;
 }
 
@@ -2275,7 +2323,6 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 {
     if (!isFirstBoot) {
         LoadVolumeMap();
-        UpdateSafeVolume();
         return;
     }
     bool resetFirstFlag = false;
@@ -2347,6 +2394,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
             // clone data to VolumeToShareData
             SaveVolumeData(desc, streamType, volumeLevel, true);
         }
+        UpdateSafeVolumeInner(desc);
     }
 
     isNeedCopyVolumeData_ = false;
@@ -3094,6 +3142,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
     }
+    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(desc, STREAM_MUSIC, true);
 
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 
@@ -3116,8 +3165,7 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
     auto descA2DP = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
     SetVolumeDbForDeviceInPipe(descA2DP, STREAM_MUSIC);
 
-    auto descNearlink = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
-    SetVolumeDbForDeviceInPipe(descNearlink, STREAM_MUSIC);
+    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(descA2DP, STREAM_MUSIC, true);
 }
 
 bool AudioAdapterManager::IsAbsVolumeMute() const
@@ -3131,6 +3179,7 @@ void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
     isAbsVolumeMuteNearlink_ = mute;
     auto descNearlink = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
     SetVolumeDbForDeviceInPipe(descNearlink, STREAM_MUSIC);
+    volumeDataMaintainer_.SaveVolumeUpdateStateToMap(descNearlink, STREAM_MUSIC, true);
 }
 
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)
@@ -3432,7 +3481,9 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
 void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
-    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
+    CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
+    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
+        desc->volumeBehavior_.controlMode == HILINK_MODE) {
         UpdateVolumeWhenPassThroughDeviceConnect(desc);
         return;
     }
@@ -3515,7 +3566,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<Audio
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.DeInitDeviceVolumeMap(desc);
     volumeDataMaintainer_.DeInitDeviceMuteMap(desc);
-    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE) {
+    if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
+        desc->volumeBehavior_.controlMode == HILINK_MODE) {
         AudioServerProxy::GetInstance().UnRegistAdapterManagerCallback(desc->networkId_);
     }
     AUDIO_INFO_LOG("update ok");
@@ -3560,6 +3612,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         auto device = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
+        CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
         SetVolumeDb(device, streamType);
     }
     return SUCCESS;
@@ -3663,7 +3716,7 @@ void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType strea
     bool mute = GetStreamMuteInternal(device, streamType);
     volumeEvent.volume = GetStreamVolumeInternal(device, streamType) * (mute ? 0 : 1);
     volumeEvent.volumeDegree = GetStreamVolumeDegreeInternal(device, streamType) * (mute ? 0 : 1);
-    volumeEvent.updateUi = true;
+    volumeEvent.updateUi = false;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = device->networkId_;
     volumeEvent.deviceType = device->deviceType_;
@@ -3692,12 +3745,12 @@ void AudioAdapterManager::RemoteVolumeCallback::OnAudioParameterChange(const std
     switch (key) {
         case AudioParamKey::VOLUME:
             if (condition.find("VOLUME_CHANAGE") == 0) {
-                int32_t volumeDegree = std::stoi(value);
+                int32_t volumeDegree = FormatUtils::StringToInt32(value, 0);
                 AudioAdapterManager::GetInstance().SetVolumeFromRemote(networkId, volumeDegree);
                 return;
             }
             if (condition.find("MUTE_CHANGE") == 0) {
-                int32_t mute = std::stoi(value);
+                int32_t mute = FormatUtils::StringToInt32(value, 0);
                 AudioAdapterManager::GetInstance().SetMuteFromRemote(networkId, mute);
                 return;
             }
@@ -3712,6 +3765,7 @@ void AudioAdapterManager::SetRemoteVolumeForPassThroughDevice(std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == HILINK_MODE);
 
     int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, maxRet);
@@ -3723,6 +3777,7 @@ void AudioAdapterManager::UpdateVolumeWhenPassThroughDeviceConnect(std::shared_p
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == HILINK_MODE);
 
     int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
     int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(device->volumeBehavior_.controlInitVolume, maxRet);

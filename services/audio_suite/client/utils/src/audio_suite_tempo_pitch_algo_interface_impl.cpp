@@ -26,9 +26,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
@@ -38,10 +38,10 @@ AudioSuiteTempoPitchAlgoInterfaceImpl::~AudioSuiteTempoPitchAlgoInterfaceImpl()
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 {
-    std::string tempoSoPath = nodeCapability.soPath + soName;
-    tempoSoHandle_ = dlopen(tempoSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(tempoSoHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-        tempoSoPath.c_str(), dlerror());
+    std::string tempoSoPath = nodeParameter_.soPath + soName;
+    tempoSoHandle_ = algoLibrary_.LoadLibrary(tempoSoPath);
+    CHECK_AND_RETURN_RET_LOG(tempoSoHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", tempoSoPath.c_str());
 
     tempoAlgoApi_.create = reinterpret_cast<TEMPO_CREATE_FUNC>(dlsym(tempoSoHandle_, "PVCreate"));
     tempoAlgoApi_.destroy = reinterpret_cast<TEMPO_DESTROY_FUNC>(dlsym(tempoSoHandle_, "PVDestroypvHandle"));
@@ -57,10 +57,10 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
 
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 {
-    std::string pitchSoPath = nodeCapability.soPath + soName;
-    pitchSoHandle_ = dlopen(pitchSoPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CHECK_AND_RETURN_RET_LOG(pitchSoHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
-        pitchSoPath.c_str(), dlerror());
+    std::string pitchSoPath = nodeParameter_.soPath + soName;
+    pitchSoHandle_ = algoLibrary_.LoadLibrary(pitchSoPath);
+    CHECK_AND_RETURN_RET_LOG(pitchSoHandle_ != nullptr, ERROR,
+        "LoadLibrary failed with path: %{private}s", pitchSoPath.c_str());
     pitchLibHandle_ = static_cast<AudioEffectLibrary *>(dlsym(pitchSoHandle_, PITCH_LIB.c_str()));
     CHECK_AND_RETURN_RET_LOG(pitchLibHandle_ != nullptr, ERROR, "load pitch lib symbol fail");
 
@@ -83,7 +83,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
 int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Init()
 {
     AUDIO_INFO_LOG("start init tempo and pitch algorithm");
-    std::istringstream iss(nodeCapability.soName);
+    std::istringstream iss(nodeParameter_.soName);
     std::string tempoSoName = "";
     std::string pitchSoName = "";
     std::getline(iss, tempoSoName, ',');
@@ -199,17 +199,17 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     // pitch
     if (pitchRate_ != 1.0 && outFrameLen > 0) {
         AudioBuffer inBuffer = {
-            .frameLength = outFrameLen,
+            .frameLength = static_cast<size_t>(outFrameLen),
             .raw = tempDataOut_.data(),
             .metaData = nullptr
         };
         AudioBuffer outBuffer = {
-            .frameLength = outFrameLen,
+            .frameLength = static_cast<size_t>(outFrameLen),
             .raw = pcmOut,
             .metaData = nullptr
         };
         int32_t ret = (*pitchAlgoHandle_)->process(pitchAlgoHandle_, &inBuffer, &outBuffer);
-        outFrameLen = outBuffer.frameLength;
+        outFrameLen = static_cast<int32_t>(outBuffer.frameLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "apply pitch algo fail:%{public}d", ret);
     } else {
         copyRet = memcpy_s(pcmOut, expendSize_ * sizeof(int16_t), tempDataOut_.data(), outFrameLen * sizeof(int16_t));
@@ -217,6 +217,24 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     }
     // return outFrameLen >= 0
     return outFrameLen;
+}
+
+std::vector<float> AudioSuiteTempoPitchAlgoInterfaceImpl::ParseStringToFloatArray(
+    const std::string &str, char delimiter)
+{
+    std::vector<float> params;
+    std::string paramValue;
+    std::istringstream iss(str);
+
+    while (std::getline(iss, paramValue, delimiter)) {
+        if (!paramValue.empty()) {
+            float value;
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
+                "Tempo convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+            params.push_back(value);
+        }
+    }
+    return params;
 }
 
 }  // namespace AudioSuite

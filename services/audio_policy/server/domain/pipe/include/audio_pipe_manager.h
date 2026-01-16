@@ -49,6 +49,7 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
+    std::string GetModuleNameBySessionId(uint32_t sessionId);
     std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
         AudioStreamInfo &streamInfo);
 
@@ -88,6 +89,7 @@ public:
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
     std::vector<uint32_t> GetStreamIdsByUidAndPid(int32_t uid, int32_t pid);
+    std::vector<uint32_t> GetStreamIdsByPid(int32_t pid);
     void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
@@ -102,6 +104,8 @@ private:
     bool IsSpecialPipe(uint32_t routeFlag);
     bool IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
+    AudioStreamInfo DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
+        const std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};

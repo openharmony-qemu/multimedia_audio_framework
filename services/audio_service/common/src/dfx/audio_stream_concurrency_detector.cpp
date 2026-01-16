@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "parameter.h"
 #include "parameters.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,7 +68,7 @@ void AudioStreamConcurrencyDetector::CheckIsOtherStreamRunning(const AudioProces
 
     CHECK_AND_RETURN_LOG(info.streamIds.size() >= 1, "no other running stream");
 
-    info.appName = GetBundleNameByToken(config.appInfo.appTokenId);
+    info.appName = AudioBundleManager::GetBundleNameByToken(config.appInfo.appTokenId);
     info.streamIds.push_back(streamId);
 
     ReportHisysEvent(info);

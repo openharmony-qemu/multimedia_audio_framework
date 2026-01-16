@@ -86,6 +86,13 @@ private:
         std::shared_ptr<AudioPipeInfo> pipeInfo);
     void CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void SetPipeTypeByStreamType(AudioPipeType &nowPipeType, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe);
+    void UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+        AudioModuleInfo &moduleInfo);
+    bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
+    void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+        const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
 
     AudioPolicyConfigManager& configManager_;
 };

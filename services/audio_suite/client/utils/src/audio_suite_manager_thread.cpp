@@ -36,13 +36,14 @@ AudioSuiteManagerThread::~AudioSuiteManagerThread()
     DeactivateThread();
 }
 
-void AudioSuiteManagerThread::ActivateThread(IAudioSuiteManagerThread *audioSuiteManager)
+void AudioSuiteManagerThread::ActivateThread(IAudioSuiteManagerThread *audioSuiteManager, const std::string &threadName)
 {
     running_.store(true);
     m_audioSuiteManager = audioSuiteManager;
     auto threadFunc = std::bind(&AudioSuiteManagerThread::Run, this);
     thread_ = std::thread(threadFunc);
-    pthread_setname_np(thread_.native_handle(), "AudioSuiteManager");
+    int ret = pthread_setname_np(thread_.native_handle(), threadName.c_str());
+    CHECK_AND_RETURN_LOG(ret == 0, "Failed to set thread name: %s", strerror(ret));
 }
 
 void AudioSuiteManagerThread::Run()
@@ -50,8 +51,8 @@ void AudioSuiteManagerThread::Run()
     ScheduleThreadInServer(getpid(), gettid());
     while (running_.load() && m_audioSuiteManager != nullptr) {
         {
-            std::unique_lock<std::mutex> lock(mutex_);
             bool isProcessing = m_audioSuiteManager->IsMsgProcessing();
+            std::unique_lock<std::mutex> lock(mutex_);
             bool signal = recvSignal_.load();
             Trace trace("AudioSuite runFunc:" + std::to_string(signal) +
                 " isPorcessing:" + std::to_string(isProcessing));

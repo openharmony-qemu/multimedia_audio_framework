@@ -231,6 +231,13 @@ ohos_shared_library("audio_client") {
     "client/src/audio_service_proxy.cpp",
     "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_spatialization_manager.cpp",
+    "client/src/audio_devices_client_manager.cpp",
+    "client/src/audio_type_convert.cpp",
+    "client/src/audio_system_client_engine_manager.cpp",
+    "client/src/audio_system_client_policy_manager.cpp",
+    "client/src/audio_asr_client_manager.cpp",
+    "client/src/audio_interrupt_client_manager.cpp",
+    "client/src/audio_stream_client_manager.cpp",
     "client/src/audio_stream_manager.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/audio_system_manager.cpp",
@@ -245,6 +252,7 @@ ohos_shared_library("audio_client") {
     "client/src/offline_stream_in_client.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/audio_focus_info_change_callback_impl.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -265,7 +273,6 @@ ohos_shared_library("audio_client") {
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
-    "../audio_policy:audio_policy_common",
   ]
 
   include_dirs = [ "server/include" ]
@@ -280,13 +287,11 @@ ohos_shared_library("audio_client") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "i18n:intl_util",
     "init:libbegetutil",
     "ipc:ipc_single",
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "qos_manager:qos",
@@ -351,6 +356,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
     "../../services/audio_service/test/unittest/audio_endpoint_plus_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
+    "../../services/audio_service/test/unittest/hw_decoding_stream_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
     "../../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
@@ -465,10 +471,12 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audiodefinitions/include",
     "../audio_engine/plugin/resample/include",
     "../audio_engine/simd",
+    "../audio_policy/client/service/include",
   ]
 
   deps = [
     ":audio_common",
+    "../audio_policy:audio_manager_client",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioclock:audio_clock",
     "../../frameworks/native/audioeffect:audio_effect",

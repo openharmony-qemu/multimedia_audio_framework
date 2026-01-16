@@ -449,6 +449,20 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_009, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsSpecialPipe_010
+ * @tc.desc: Test IsSpecialPipe when none of the conditions are met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_010, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_HWDECODING;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: GetPipeinfoByNameAndFlag_001
  * @tc.desc: Test GetPipeinfoByNameAndFlag when adapterName does not match.
  * @tc.type: FUNC
@@ -514,12 +528,12 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoByNameAndFlag_003, TestSize.Level1
 }
 
 /**
- * @tc.name: GetAdapterNameBySessionId_001
- * @tc.desc: Test GetAdapterNameBySessionId when finding a matching sessionId.
+ * @tc.name: GetModuleNameBySessionId_001
+ * @tc.desc: Test GetModuleNameBySessionId when finding a matching sessionId.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_001, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetModuleNameBySessionId_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -534,17 +548,17 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_001, TestSize.Level
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     uint32_t targetSessionId = 123;
 
-    std::string result = audioPipeManager->GetAdapterNameBySessionId(targetSessionId);
+    std::string result = audioPipeManager->GetModuleNameBySessionId(targetSessionId);
     EXPECT_EQ(result, "TestAdapter");
 }
 
 /**
- * @tc.name: GetAdapterNameBySessionId_002
- * @tc.desc: Test GetAdapterNameBySessionId when not finding a matching sessionId.
+ * @tc.name: GetModuleNameBySessionId_002
+ * @tc.desc: Test GetModuleNameBySessionId when not finding a matching sessionId.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_002, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetModuleNameBySessionId_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
@@ -559,7 +573,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAdapterNameBySessionId_002, TestSize.Level
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     uint32_t targetSessionId = 456;
 
-    std::string result = audioPipeManager->GetAdapterNameBySessionId(targetSessionId);
+    std::string result = audioPipeManager->GetModuleNameBySessionId(targetSessionId);
     EXPECT_EQ(result, "");
 }
 
@@ -1391,7 +1405,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUsageActive_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    EXPECT_NE(nullptr, audioPipeManager);
+    ASSERT_NE(nullptr, audioPipeManager);
     audioPipeManager->curPipeList_.clear();
     auto pipeList01 = audioPipeManager->GetPipeList();
     EXPECT_EQ(pipeList01.size(), 0);
@@ -1421,7 +1435,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    EXPECT_NE(nullptr, audioPipeManager);
+    ASSERT_NE(nullptr, audioPipeManager);
     audioPipeManager->curPipeList_.clear();
     auto pipeList01 = audioPipeManager->GetPipeList();
     EXPECT_EQ(pipeList01.size(), 0);
@@ -1453,7 +1467,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_004, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    EXPECT_NE(nullptr, audioPipeManager);
+    ASSERT_NE(nullptr, audioPipeManager);
     audioPipeManager->curPipeList_.clear();
     auto pipeList01 = audioPipeManager->GetPipeList();
     EXPECT_EQ(pipeList01.size(), 0);
@@ -1485,7 +1499,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_004, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    EXPECT_NE(nullptr, audioPipeManager);
+    ASSERT_NE(nullptr, audioPipeManager);
     audioPipeManager->curPipeList_.clear();
     auto pipeList01 = audioPipeManager->GetPipeList();
     EXPECT_EQ(pipeList01.size(), 0);
@@ -1516,7 +1530,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, GetPaIndexByName_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    EXPECT_NE(nullptr, audioPipeManager);
+    ASSERT_NE(nullptr, audioPipeManager);
     audioPipeManager->curPipeList_.clear();
     auto pipeList01 = audioPipeManager->GetPipeList();
     EXPECT_EQ(pipeList01.size(), 0);
@@ -1532,6 +1546,35 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPaIndexByName_001, TestSize.Level1)
 
     ret = audioPipeManager->GetPaIndexByName("aaa");
     EXPECT_EQ(123, ret);
+}
+
+/**
+ * @tc.name: DecideStreamInfo_001
+ * @tc.desc: test DecideStreamInfo()
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, DecideStreamInfo_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, OUTPUT_DEVICE);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    pipeInfo->moduleInfo_.rate = "192000";
+    auto streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
+
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    pipeInfo->moduleInfo_.rate = "96000";
+    streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
+
+    deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    pipeInfo->moduleInfo_.rate = "96000";
+    streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
 }
 } // namespace AudioStandard
 } // namespace OHOS

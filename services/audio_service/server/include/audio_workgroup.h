@@ -18,7 +18,7 @@
 
 #include <vector>
 #include <unordered_map>
-#include "audio_manager_base.h"
+#include "audio_workgroup_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {

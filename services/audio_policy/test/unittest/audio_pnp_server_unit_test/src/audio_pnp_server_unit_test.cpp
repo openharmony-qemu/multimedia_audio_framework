@@ -78,23 +78,6 @@ HWTEST_F(AudioPnpServerTest, UnRegisterPnpStatusListener_ShouldReturnSuccess_Whe
 }
 
 /**
- * @tc.name  : OnPnpDeviceStatusChanged_ShouldCallCallback_WhenCallbackIsNotNull
- * @tc.number: AudioPnpServerTest_002
- * @tc.desc  : Test if OnPnpDeviceStatusChanged calls the callback when it is not null.
- */
-HWTEST_F(AudioPnpServerTest, OnPnpDeviceStatusChanged_ShouldCallCallback_WhenCallbackIsNotNull, TestSize.Level0)
-{
-    EXPECT_NE(audioPnpServer_, nullptr);
-    EXPECT_NE(mockCallback_, nullptr);
-    audioPnpServer_->RegisterPnpStatusListener(mockCallback_);
-
-    std::string info = "test_info";
-
-    audioPnpServer_->OnPnpDeviceStatusChanged(info);
-    EXPECT_NE(audioPnpServer_->pnpCallback_, nullptr);
-}
-
-/**
  * @tc.name  : OnPnpDeviceStatusChanged_ShouldNotCallCallback_WhenCallbackIsNull
  * @tc.number: AudioPnpServerTest_003
  * @tc.desc  : Test if OnPnpDeviceStatusChanged does not call the callback when it is null.

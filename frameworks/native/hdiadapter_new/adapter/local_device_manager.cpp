@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
 #include "media_monitor_manager.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,16 +114,17 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
-std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
+static const std::unordered_set<std::string> MUTE_TYPE = {
+    "output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
 
 void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
 {
     size_t equalPos = value.find('=');
     if (equalPos != std::string::npos) {
         std::string subStr = value.substr(0, equalPos);
-        if (muteType.count(subStr)) {
+        if (MUTE_TYPE.count(subStr)) {
             auto tokenId = IPCSkeleton::GetCallingFullTokenID();
-            std::string bundleName = GetBundleNameByToken(tokenId);
+            std::string bundleName = AudioBundleManager::GetBundleNameByToken(tokenId);
             AUDIO_INFO_LOG("bundleName: %{public}s", bundleName.c_str());
             std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
                 Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::MUTE_BUNDLE_NAME,
@@ -574,6 +576,76 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
     AUDIO_INFO_LOG("save param when adapter is nullptr, callerUid is %{public}u", callerUid);
     std::lock_guard<std::mutex> lock(reSetParamsMtx_);
     reSetParams_.push_back({ adapterName, key, condition, value });
+}
+
+int32_t LocalDeviceManager::CreateCognitionStream(const std::string &adapterName, void *param,
+    int32_t &sinkId, void *buffer)
+{
+    CHECK_AND_RETURN_RET_LOG(param != nullptr && buffer != nullptr, ERROR, "param or buffer is nullptr");
+    struct AudioSampleAttributes *localParam = static_cast<struct AudioSampleAttributes *>(param);
+    struct AudioMmapBufferDescriptor *localBuffer = static_cast<struct AudioMmapBufferDescriptor *>(buffer);
+
+    std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR,
+        "adapter %{public}s is nullptr", adapterName.c_str());
+    
+    Trace trace("LocalDeviceManager::CreateCognitionStream");
+
+    int32_t ret = wrapper->adapter_->CreateCognitionStream(wrapper->adapter_, localParam,
+        &sinkId, localBuffer);
+    if (ret != SUCCESS || sinkId == HDI_INVALID_ID) {
+        AUDIO_ERR_LOG("create CogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create CogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
+        return ret;
+    }
+    AUDIO_INFO_LOG("create cogStream:%{public}d for auxiliarySink success, ret:%{public}d", sinkId, ret);
+    return ret;
+}
+
+int32_t LocalDeviceManager::DestroyCognitionStream(const std::string &adapterName, const int32_t &sinkId)
+{
+    CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
+
+    std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
+        "adapter:%{public}s is nullptr", adapterName.c_str());
+    
+    Trace trace("LocalDeviceManager::DestroyCognitionStream[" + std::to_string(sinkId) + "]");
+
+    int32_t ret = wrapper->adapter_->DestroyCognitionStream(wrapper->adapter_, sinkId);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("destroy cogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " destroy cogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
+        return ret;
+    }
+    AUDIO_INFO_LOG("destroy cogStream:%{public}d for auxiliarySink success, ret:%{public}d", sinkId, ret);
+    return ret;
+}
+
+int32_t LocalDeviceManager::NotifyCognitionData(const std::string &adapterName, const int32_t &sinkId,
+    uint32_t size, uint32_t offset)
+{
+    CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
+
+    std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
+        "adapter:%{public}s is nullptr", adapterName.c_str());
+    
+    Trace trace("LocalDeviceManager::NotifyCognitionData[" + std::to_string(sinkId) + "]_[" +
+        std::to_string(size) + "]_[" + std::to_string(offset) + "]");
+
+    int32_t ret = wrapper->adapter_->NotifyCognitionData(wrapper->adapter_, sinkId, size, offset);
+    if (ret != SUCCESS) {
+        AUDIO_DEBUG_LOG("notify cogStream:%{public}d data fail, ret:%{public}d", sinkId, ret);
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " notify cogStream:" + std::to_string(sinkId) + " data fail, ret:" + std::to_string(ret)));
+        return ret;
+    }
+    AUDIO_DEBUG_LOG("notify cogStream:%{public}d data for auxiliarySink success, size:%{public}u "
+        "offset:%{public}u ret:%{public}d", sinkId, size, offset, ret);
+    return ret;
 }
 
 void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)

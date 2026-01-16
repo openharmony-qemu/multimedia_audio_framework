@@ -84,6 +84,8 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
@@ -107,6 +109,7 @@ public:
 
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
     void HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
+    int32_t StartPlaybackCapture() override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -131,7 +134,7 @@ private:
     int32_t InitInputDeviceChangeCallback();
     void ReconfigBufferSize(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
-    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
+    void InitSwitchInfo(IAudioStream::SwitchInfo &info);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
     bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
@@ -156,6 +159,8 @@ private:
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
+        CapturerState previousState);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;

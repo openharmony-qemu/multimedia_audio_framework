@@ -80,7 +80,7 @@ int32_t AudioSuitePipeline::Init()
         return ERR_ILLEGAL_STATE;
     }
     pipelineThread_ = std::make_unique<AudioSuiteManagerThread>();
-    pipelineThread_->ActivateThread(this);
+    pipelineThread_->ActivateThread(this, "SuitePipeline");
     isInit_.store(true);
     CreateDdlGroup();
     AUDIO_INFO_LOG("AudioSuitePipeline::Init end");
@@ -511,8 +511,9 @@ int32_t AudioSuitePipeline::SetAudioFormat(uint32_t nodeId, AudioFormat audioFor
             return;
         }
 
-        if (pipelineState_ != PIPELINE_STOPPED) {
-            AUDIO_ERR_LOG("SetAudioFormat failed, pipeline is not stop.");
+        if ((pipelineState_ == PIPELINE_RUNNING) &&
+            ((outputNode_ == nullptr) || (IsConnected(outputNode_->GetAudioNodeId(), nodeId)))) {
+            AUDIO_ERR_LOG("SetAudioFormat failed, pipeline status is running, nodeId:%{public}u is using.", nodeId);
             TriggerCallback(SET_AUDIO_FORMAT, ERR_ILLEGAL_STATE);
             return;
         }
@@ -532,8 +533,10 @@ int32_t AudioSuitePipeline::SetRequestDataCallback(uint32_t nodeId,
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetRequestDataCallback.");
 
     auto request = [this, nodeId, callback]() {
-        if (pipelineState_ != PIPELINE_STOPPED) {
-            AUDIO_ERR_LOG("SetRequestDataCallback failed, pipelineState status is not stopped.");
+        if ((pipelineState_ == PIPELINE_RUNNING) &&
+            ((outputNode_ == nullptr) || (IsConnected(outputNode_->GetAudioNodeId(), nodeId)))) {
+            AUDIO_ERR_LOG("SetRequestDataCallback failed, "
+                "pipeline status is running, nodeId:%{public}u is using.", nodeId);
             TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_ILLEGAL_STATE);
             return;
         }
