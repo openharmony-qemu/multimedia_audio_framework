@@ -347,14 +347,14 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
-    unit->OnNotifyOffloadFlush(false);
+    unit->OnNotifyFlushStatus(false);
     std::shared_ptr<IStatusCallback> callback = std::make_shared<IIStatusCallbackTest>();
     unit->offloadEnable_ = true;
     unit->statusCallback_ = callback;
-    unit->OnNotifyOffloadFlush(false);
-    unit->OnNotifyOffloadFlush(true);
+    unit->OnNotifyFlushStatus(false);
+    unit->OnNotifyFlushStatus(true);
     unit->offloadEnable_ = false;
-    unit->OnNotifyOffloadFlush(false);
+    unit->OnNotifyFlushStatus(false);
 
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
