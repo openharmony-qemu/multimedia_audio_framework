@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef FAST_AUDIO_STREAM_H
+#ifndef FAST_AUDIO_STREAM_Hcc
 #define FAST_AUDIO_STREAM_H
 
 #ifndef LOG_TAG

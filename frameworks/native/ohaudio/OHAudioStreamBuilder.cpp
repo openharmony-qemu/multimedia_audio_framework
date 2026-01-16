@@ -17,7 +17,7 @@
 #endif
 
 #include <memory>
-#include "native_audiostreambuilder.h"
+#include "native_audiostreambuilder.h"2
 #include "OHAudioStreamBuilder.h"
 #include "OHAudioCapturer.h"
 #include "audio_utils.h"
