@@ -1160,7 +1160,6 @@ HWTEST_F(HpaeCapturerManagerTest, Process_001, TestSize.Level1)
 
     EXPECT_EQ(capturerManager->Start(DEFAULT_SESSION_ID) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
-    capturerManager->Process();
     EXPECT_EQ(capturerManager->IsRunning(), true);
     EXPECT_EQ(capturerManager->Stop(DEFAULT_SESSION_ID) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);

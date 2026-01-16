@@ -67,6 +67,9 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+    
+    void RegisterOffloadCallback(IOffloadCallback *offloadCallback);
+    uint64_t GetWritePos() const noexcept;
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);
@@ -92,6 +95,9 @@ private:
     void OffloadNeedSleep(int32_t retType);
     // renderFrame and set state
     int32_t WriteFrameToHdi();
+
+    void UpdateOffloadFlushStatus(bool isFlush);
+    void NotifyHdiPos();
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;
@@ -129,6 +135,7 @@ private:
     HpaeBackoffController backoffController_;
 
     bool needUnLock_ = false;
+    IOffloadCallback *offloadCallback_;
 };
 
 }  // namespace HPAE

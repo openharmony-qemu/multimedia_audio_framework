@@ -73,6 +73,9 @@ public:
 
     virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
     {
+        std::vector<uint64_t> vec;
+        ClockTime::GetAllTimeStamp(vec);
+        timestamp = vec[0];
         return 0;
     }
 
