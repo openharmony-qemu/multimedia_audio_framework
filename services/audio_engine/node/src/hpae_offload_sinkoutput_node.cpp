@@ -639,10 +639,9 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
 
 void HpaeOffloadSinkOutputNode::UpdateOffloadFlushStatus(bool isFlush)
 {
-    if (offloadCallback_ != nullptr) {
-        offloadCallback_->OnNotifyFlushStatus(isFlush);
-    }
+    isFlush_ = isFlush;
 }
+
 void HpaeOffloadSinkOutputNode::NotifyHdiPos()
 {
     if (offloadCallback_ != nullptr) {
@@ -653,6 +652,11 @@ void HpaeOffloadSinkOutputNode::NotifyHdiPos()
 void HpaeOffloadSinkOutputNode::RegisterOffloadCallback(IOffloadCallback *offloadCallback)
 {
     offloadCallback_ = offloadCallback;
+}
+
+bool HpaeOffloadSinkOutputNode::GetFlushState() const noexcept
+{
+    return isFlush_;
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetWritePos() const noexcept

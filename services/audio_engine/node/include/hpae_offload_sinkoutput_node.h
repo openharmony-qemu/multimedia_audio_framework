@@ -70,6 +70,7 @@ public:
     
     void RegisterOffloadCallback(IOffloadCallback *offloadCallback);
     uint64_t GetWritePos() const noexcept;
+    bool GetFlushState() const noexcept;
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);
@@ -136,6 +137,7 @@ private:
 
     bool needUnLock_ = false;
     IOffloadCallback *offloadCallback_;
+    bool isFlush_ = false;
 };
 
 }  // namespace HPAE

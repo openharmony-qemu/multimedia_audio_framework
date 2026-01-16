@@ -378,7 +378,6 @@ void RendererInServer::HandleOperationStarted()
     }
 }
 
-// LCOV_EXCL_START
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -430,7 +429,6 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             status_ = I_STATUS_INVALID;
     }
 }
-// LCOV_EXCL_STOP
 
 void RendererInServer::ReConfigDupStreamCallback()
 {

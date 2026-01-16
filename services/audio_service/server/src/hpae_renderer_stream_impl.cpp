@@ -648,6 +648,7 @@ bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo &call
 
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
+    OnNotifyFlushStatus(callBackStreamInfo.isFlush_);
     bool needResetSinkLatencyFetcher = InitLatencyInfo(callBackStreamInfo);
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
@@ -1107,8 +1108,12 @@ uint64_t HpaeRendererStreamImpl::GetOffloadLatency()
 
 void HpaeRendererStreamImpl::OnNotifyFlushStatus(bool isFlush)
 {
+    if (isFlush_ == isFlush) {
+        return;
+    }
+    isFlush_ = isFlush;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
-    if (statusCallback != nullptr && offloadEnable_) {
+    if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(isFlush ? OPERATION_OFFLOAD_FLUSH_BEGIN : OPERATION_OFFLOAD_FLUSH_END);
     }
 }

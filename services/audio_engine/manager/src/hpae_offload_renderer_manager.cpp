@@ -892,12 +892,17 @@ void HpaeOffloadRendererManager::OnRequestWritePos(uint64_t &writePos)
         writePos = sinkOutputNode_->GetWritePos();
     }
 }
-void HpaeOffloadRendererManager::OnNotifyFlushStatus(bool isFlush)
+
+bool HpaeOffloadRendererManager::GetFlushState() const noexcept
 {
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
-        "HpaeOffloadRendererManager::OnNotifyFlushStatus curNode_ is null");
-    curNode_->NotifyOffloadFlushState(isFlush);
+    bool isFlush = false;
+    if (sinkOutputNode_ != nullptr)
+    {
+        isFlush = sinkOutputNode_->GetFlushState();
+    }
+    return isFlush;
 }
+
 void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     CHECK_AND_RETURN_LOG(curNode_ != nullptr,
