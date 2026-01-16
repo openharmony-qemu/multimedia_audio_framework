@@ -2181,6 +2181,8 @@ struct RendererStreamInfo {
     StreamUsage usage_ = STREAM_USAGE_INVALID;
 
     RendererState state_ = RENDERER_INVALID;
+
+    uint32_t appUid_ = INVALID_UID;
 };
 
 struct CapturerStreamInfo {
@@ -2189,6 +2191,8 @@ struct CapturerStreamInfo {
     SourceType source_ = SOURCE_TYPE_INVALID;
 
     CapturerState state_ = CAPTURER_INVALID;
+
+    uint32_t appUid_ = INVALID_UID;
 };
 
 /**

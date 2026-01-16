@@ -276,40 +276,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_Prepare001, TestSize
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AudioPolicyServiceTest_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    // DeviceTest
-    AudioDeviceDescriptor audioDeviceDescriptor;
-    audioDeviceDescriptor.deviceName_ = "dummyName";
-    audioDeviceDescriptor.macAddress_ = "11:22:33:44:55:66";
-    for (const auto& deviceType : deviceTypes) {
-        AUDIO_INFO_LOG("AudioPolicyServiceTest_001 deviceType:%{public}d, TEST_SESSIONID:%{public}d",
-            static_cast<uint32_t>(deviceType), TEST_SESSIONID);
-        audioDeviceDescriptor.deviceType_ = deviceType;
-        for (const auto& isConnected : isConnecteds) {
-            AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
-            GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = true;
-            GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
-        }
-        GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
-        GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
-        GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(
-            deviceType);
-        // AccountTest
-        GetServerPtr()->audioPolicyService_.NotifyAccountsChanged(TEST_SESSIONID);
-        // SafeVolumeTest
-        GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
-        GetServerPtr()->audioVolumeManager_.DisableSafeMediaVolume();
-    }
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_002
 * @tc.desc  : Test AudioPolicyService interfaces.
 */

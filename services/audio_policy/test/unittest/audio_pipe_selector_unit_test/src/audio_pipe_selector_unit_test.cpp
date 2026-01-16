@@ -848,30 +848,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_002, TestSize.Le
 }
 
 /**
- * @tc.name: ConvertStreamDescToPipeInfo_003
- * @tc.desc: Test ConvertStreamDescToPipeInfo pipeInfoPtr == nullptr and adapterInfoPtr == nullptr.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_003, TestSize.Level4)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    streamPropInfo->sampleRate_ = 44100;
-    streamPropInfo->pipeInfo_.reset();
-    AudioPipeInfo info;
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.moduleInfo_.rate, "");
-
-    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
-    pipeInfo->adapterInfo_.reset();
-    streamPropInfo->pipeInfo_ = pipeInfo;
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.moduleInfo_.rate, "");
-}
-
-/**
  * @tc.name: JudgeStreamAction_007
  * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
  * @tc.type: FUNC

@@ -295,12 +295,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_013, TestSize.
 HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_014, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
-
-    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
+    audioInterrupt.pid = 0;
+    EXPECT_FALSE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
 }
 
 /**

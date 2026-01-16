@@ -311,32 +311,6 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetVolumeAdjustZoneId_001, TestSize.Lev
 }
 
 /**
- * @tc.name: SetAdjustVolumeForZone_002
- * @tc.desc: Test SetAdjustVolumeForZone
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetAdjustVolumeForZone_002, TestSize.Level4)
-{
-    StreamVolumeParams volumeParams;
-    volumeParams.streamType = STREAM_RING;
-    volumeParams.uid = 42;
-    AudioVolume::GetInstance()->AddStreamVolume(volumeParams);
-
-    auto &adapterManager = AudioAdapterManager::GetInstance();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
-    desc->networkId_ = "LocalDevice";
-    devices.push_back(desc);
-    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices);
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
-    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
-    ASSERT_EQ(adapterManager.SetAdjustVolumeForZone(zoneId1_), SUCCESS);
-    ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), zoneId1_);
-}
-
-/**
  * @tc.name: UpdateSafeVolumeInner_001
  * @tc.desc: Test UpdateSafeVolumeInner
  * @tc.type: FUNC

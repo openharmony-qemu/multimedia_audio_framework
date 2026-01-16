@@ -32,9 +32,9 @@ void IAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSo
 }
 
 void IAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
+    uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid)
 {
-    ChangePipeStream(change, streamId, source, state);
+    ChangePipeStream(change, streamId, source, state, appUid);
 }
 
 std::shared_ptr<AudioInputPipeInfo> IAudioCaptureSource::GetInputPipeInfo()
@@ -78,14 +78,14 @@ void IAudioCaptureSource::ChangePipeDevice(const std::vector<DeviceType> &device
 }
 
 void IAudioCaptureSource::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
+    uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid)
 {
     std::lock_guard<std::mutex> lock(pipeLock_);
     CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
 
     switch (change) {
         case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, source, state);
+            pipeInfo_->AddStream(streamId, source, state, appUid);
             break;
         case STREAM_CHANGE_TYPE_REMOVE:
             pipeInfo_->RemoveStream(streamId);

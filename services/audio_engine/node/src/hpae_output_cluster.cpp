@@ -231,10 +231,10 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN(hpaeSinkOutputNode_ != nullptr);
-    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
 
 int32_t HpaeOutputCluster::SetPriPaPower(void)

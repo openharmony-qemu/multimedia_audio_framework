@@ -60,6 +60,8 @@ public:
     bool IsDrain();
     bool QueryUnderrun();
     int32_t OnStreamInfoChange(bool needata = true);
+    void NotifyOffloadFlushState(bool isFlush);
+    void NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos);
 
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;

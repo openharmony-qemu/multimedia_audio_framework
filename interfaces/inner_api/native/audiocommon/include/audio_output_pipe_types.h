@@ -96,12 +96,13 @@ public:
         devices_ = devices;
     }
 
-    void AddStream(uint32_t streamId, StreamUsage usage, RendererState state)
+    void AddStream(uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid)
     {
         RendererStreamInfo info;
         info.streamId_ = streamId;
         info.usage_ = usage;
         info.state_ = state;
+        info.appUid_ = appUid;
         streams_[streamId] = info;
     }
 
@@ -171,7 +172,8 @@ private:
         for (auto &stream : streams) {
             ret = parcel.WriteUint32(stream.second.streamId_) &&
                 parcel.WriteInt32(stream.second.state_) &&
-                parcel.WriteInt32(stream.second.usage_);
+                parcel.WriteInt32(stream.second.usage_) &&
+                parcel.WriteInt32(stream.second.appUid_);
             AUDIO_CHECK_AND_RETURN_RET(ret, false);
         }
         return true;
@@ -196,6 +198,7 @@ private:
             stream.streamId_ = parcel.ReadUint32();
             stream.state_ = static_cast<RendererState>(parcel.ReadInt32());
             stream.usage_ = static_cast<StreamUsage>(parcel.ReadInt32());
+            stream.appUid_ = parcel.ReadUint32();
             streams_[stream.streamId_] = stream;
         }
     }
