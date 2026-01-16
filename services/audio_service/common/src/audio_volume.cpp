@@ -54,8 +54,10 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
     {"navigation", STREAM_NAVIGATION},
+#ifdef MULTI_ALARM_LEVEL
     {"announcement", STREAM_ANNOUNCEMENT},
     {"emergency", STREAM_EMERGENCY},
+#endif
 };
 
 uint64_t DURATION_TIME_DEFAULT = 40;

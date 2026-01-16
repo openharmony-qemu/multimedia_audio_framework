@@ -72,10 +72,12 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_VOICE_RING, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_CAMCORDER",
         {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_INVALID, true}},
+#ifdef MULTI_ALARM_LEVEL
     {"STREAM_ANNOUNCEMENT",
         {AudioStreamType::STREAM_ANNOUNCEMENT, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_EMERGENCY",
         {AudioStreamType::STREAM_EMERGENCY, SourceType::SOURCE_TYPE_INVALID, true}},
+#endif
     // source type for audio interrupt
     {"SOURCE_TYPE_MIC",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},

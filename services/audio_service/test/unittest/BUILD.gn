@@ -978,6 +978,9 @@ ohos_unittest("audio_process_in_client_unit_test") {
         [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
 }
 
 ohos_unittest("audio_process_in_client_second_unit_test") {
@@ -1121,6 +1124,9 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
   }
   if (audio_framework_feature_offline_effect) {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 }
 
@@ -1268,6 +1274,9 @@ ohos_unittest("capturer_in_server_unit_test") {
   }
   if (audio_framework_feature_offline_effect) {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 }
 

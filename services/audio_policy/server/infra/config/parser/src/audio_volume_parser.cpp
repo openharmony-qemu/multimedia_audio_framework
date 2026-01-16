@@ -38,8 +38,10 @@ AudioVolumeParser::AudioVolumeParser()
         {"ULTRASONIC", STREAM_ULTRASONIC},
         {"SYSTEM", STREAM_SYSTEM},
         {"APP", STREAM_APP},
+#ifdef MULTI_ALARM_LEVEL
         {"ANNOUNCEMENT", STREAM_ANNOUNCEMENT},
         {"EMERGENCY", STREAM_EMERGENCY}
+#endif
     };
 
     audioDeviceMap_ = {
