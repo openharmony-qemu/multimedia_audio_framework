@@ -21,7 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    const int32_t SAMPLING_RATE_44100 = 44100;
+    const int32_t SAMPLING_RATE_44100 = 44100;x
     const int32_t SAMPLING_RATE_48000 = 48000;
     const int32_t SAMPLING_RATE_88200 = 88200;
     const int32_t SAMPLING_RATE_176400 = 176400;
