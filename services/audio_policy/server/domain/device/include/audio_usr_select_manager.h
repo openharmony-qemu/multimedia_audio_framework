@@ -76,13 +76,13 @@ private:
     void UpdateRecordDeviceInfoForPreferInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
     bool IsSourceTypeSupportedByMC(SourceType type);
- 	bool HasMCSourceTypeStreamRunning();
+    bool HasMCSourceTypeStreamRunning();
 
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;
     std::map<int32_t, AppIsBackState> appIsBackStatesMap_;
     bool mcSelectedFlag_ = false;
- 	std::shared_ptr<AudioDeviceDescriptor> mcInputPreferred_ = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> mcInputPreferred_ = std::make_shared<AudioDeviceDescriptor>();
 };
 
 } // namespace AudioStandard
