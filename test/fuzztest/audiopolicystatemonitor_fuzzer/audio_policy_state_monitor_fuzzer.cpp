@@ -39,7 +39,7 @@
 #include "capturer_clock_manager.h"
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -83,7 +83,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void UnRegisterCallbackFuzzTest()
+void UnRegisterCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     const shared_ptr<AudioPolicyStateMonitor> g_audioPolicyStateMonitor =
         DelayedSingleton<AudioPolicyStateMonitor>::GetInstance();
@@ -97,38 +97,32 @@ void UnRegisterCallbackFuzzTest()
     g_audioPolicyStateMonitor->UnRegisterCallback(cbId);
 }
 
-void FreeCbIdFuzzTest()
+void FreeCbIdFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioPolicyStateMonitor = std::make_shared<AudioPolicyStateMonitor>();
     int32_t cbId = GetData<int32_t>();
     audioPolicyStateMonitor->FreeCbId(cbId);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     UnRegisterCallbackFuzzTest,
     FreeCbIdFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -139,7 +133,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

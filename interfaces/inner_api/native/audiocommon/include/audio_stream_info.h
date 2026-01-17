@@ -521,6 +521,8 @@ struct AudioCallBackStreamInfo {
     std::string deviceNetId;
     bool needData = false;
     bool forceData = false;
+    uint64_t writePos_ = 0;
+    bool isWriteFirst_ = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

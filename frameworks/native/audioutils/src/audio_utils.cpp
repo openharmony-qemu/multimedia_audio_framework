@@ -2397,6 +2397,13 @@ float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate)
     return speed;
 }
 
+uint64_t HexStrToNum(const std::string &str)
+{
+    char *endPtr = nullptr;
+    uint64_t num = std::strtoull(str.c_str(), &endPtr, BASE_HEX);
+    return endPtr != nullptr && *endPtr == '\0' ? num : 0;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

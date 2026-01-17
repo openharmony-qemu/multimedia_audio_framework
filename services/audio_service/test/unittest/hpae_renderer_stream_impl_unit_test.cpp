@@ -336,12 +336,25 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->processConfig_.streamType = STREAM_MOVIE;
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->isWriteFirst_ = true;
+    unit->UpdateInnerCapWriteState(true);
+    EXPECT_EQ(unit->isWriteFirst_, true);
+    unit->UpdateInnerCapWriteState(false);
+    EXPECT_EQ(unit->isWriteFirst_, false);
 }
 
 /**
@@ -456,6 +469,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_005, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
+    uint32_t latency = 0;
+    EXPECT_EQ(unit->GetSinkLatencyInner(latency), 0);
 }
 
 /**

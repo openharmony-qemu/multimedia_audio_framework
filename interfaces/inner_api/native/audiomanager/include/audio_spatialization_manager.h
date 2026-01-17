@@ -77,18 +77,6 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
-class AudioSpatializationStateChangeCallback {
-public:
-    virtual ~AudioSpatializationStateChangeCallback() = default;
-    /**
-     * @brief AudioSpatializationStateChangeCallback will be executed when spatialization state changes
-     *
-     * @param enabled the spatialization state.
-     * @since 11
-     */
-    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
-};
-
 class AudioAdaptiveSpatialRenderingEnabledChangeCallback {
 public:
     virtual ~AudioAdaptiveSpatialRenderingEnabledChangeCallback() = default;

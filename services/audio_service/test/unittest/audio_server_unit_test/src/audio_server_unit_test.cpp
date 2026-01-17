@@ -442,6 +442,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->SetAudioParameter("mmi", "");
     audioServer->SetAudioParameter("perf_info", "");
 
+    audioServer->SetAudioParameter("outdoor_mode", "1");
+
     audioServer->SetAudioParameter("VOICE_PHONE_STATUS", "1");
     audioServer->GetAudioParameter("VOICE_PHONE_STATUS", str);
     EXPECT_EQ(str, "1");
@@ -462,6 +464,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
         "address=card=2;device=0 role=2", str);
     audioServer->GetAudioParameter(LOCAL_NETWORK_ID, AudioParamKey::GET_DP_DEVICE_INFO, "", str);
     audioServer->GetAudioParameter("", AudioParamKey::GET_DP_DEVICE_INFO, "", str);
+
+    audioServer->GetAudioParameter("outdoor_mode", str);
 }
 
 /**
@@ -1210,7 +1214,7 @@ HWTEST_F(AudioServerUnitTest, IsSatellite_001, TestSize.Level1)
     result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "callerUid is 0, should be false";
 
-    callerUid = 5523; // foundation
+    callerUid = 1001; // call_manager
     result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "isSatellite is false, should be false";
 
@@ -2695,6 +2699,46 @@ HWTEST_F(AudioServerUnitTest, SetAudioBalanceValueInner_001, TestSize.Level1)
     audioBalance = -0.8f;
     audioServer->SetAudioBalanceValueInner(isAudioBalanceEnable, audioBalance);
     EXPECT_TRUE(std::abs(audioServer->audioBalanceValue_ - (-0.8f)) <= std::numeric_limits<float>::epsilon());
+}
+
+/**
+ * @tc.name  : Test UpdateAudioParameterInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAudioParameterInfo_001
+ * @tc.desc  : Test UpdateAudioParameterInfo interface.
+ */
+HWTEST_F(AudioServerUnitTest, UpdateAudioParameterInfo_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+ 	  	 
+    std::string key = "outdoor_mode";
+    std::string value = "1";
+    int32_t ret = audioServer->SetAudioParameter(key, value);
+    EXPECT_EQ(ret, SUCCESS);
+ 	  	 
+    key = "test";
+    ret = audioServer->SetAudioParameter(key, value);
+    EXPECT_EQ(ret, SUCCESS);
+}
+ 	  	 
+/**
+ * @tc.name  : Test UpdateAudioParameterInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAudioParameterInfo_002
+ * @tc.desc  : Test UpdateAudioParameterInfo interface.
+ */
+HWTEST_F(AudioServerUnitTest, UpdateAudioParameterInfo_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+ 	  	 
+    std::string key = "LOUD_VOLUME_MODE";
+    std::string value = "super_loudness_mode=music_on";
+    int32_t ret = audioServer->SetAudioParameter(key, value);
+    EXPECT_EQ(ret, SUCCESS);
+ 	  	 
+    std::string longValue(129, 'a');
+    ret = audioServer->SetAudioParameter(key, longValue);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

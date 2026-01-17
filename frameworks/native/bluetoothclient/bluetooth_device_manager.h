@@ -22,7 +22,6 @@
 #include "bluetooth_device_utils.h"
 #include "audio_errors.h"
 #include "audio_common_log.h"
-#include "audio_system_manager.h"
 #include "idevice_status_observer.h"
 
 namespace OHOS {

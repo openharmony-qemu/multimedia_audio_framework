@@ -50,6 +50,11 @@ struct AudioWorkgroupChangeInfoIpc : public Parcelable {
     }
 };
 
+class AudioWorkgroupChangeCallback {
+public:
+    virtual ~AudioWorkgroupChangeCallback() = default;
+    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_WORKGROUP_IPC_H

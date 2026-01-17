@@ -28,6 +28,7 @@
 #include "audio_suite_input_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_aiss_node.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -170,7 +171,12 @@ const uint32_t AUDIO_DATA_SIZE = 1024;
 const uint32_t HEADER_SIZE = 44;
 class AudioSuiteOutputNodeTest : public testing::Test {
 public:
-    void SetUp() {};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown() {};
 };
 

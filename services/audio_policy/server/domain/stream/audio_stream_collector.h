@@ -17,7 +17,6 @@
 #define AUDIO_STREAM_COLLECTOR_H
 
 #include "iaudio_policy_client.h"
-#include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
 #include "audio_ability_manager.h"
@@ -76,6 +75,7 @@ public:
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
     void HandleStartStreamMuteState(StartStreamInfo startStreamInfo, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);

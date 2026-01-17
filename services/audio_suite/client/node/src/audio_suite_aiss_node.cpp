@@ -18,6 +18,7 @@
 
 #include "audio_suite_aiss_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

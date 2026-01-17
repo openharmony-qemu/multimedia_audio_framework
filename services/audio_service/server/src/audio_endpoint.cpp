@@ -1061,6 +1061,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     }
     if (endpointStatus_ == IDEL) {
         // call sink start
+        std::unique_lock<std::mutex> lock(startStatusLock_);
         if (!isStarted_) {
             CHECK_AND_CALL_FUNC_RETURN_RET(StartDevice(RUNNING, INT64_MAX), ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[OnStart]StartDevice failed"));
@@ -1212,6 +1213,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         }
     }
     if (processList_.size() == 0) {
+        std::unique_lock<std::mutex> lock(startStatusLock_);
         StopDevice();
         UpdateEndpointStatus(UNLINKED);
     } else if (!IsAnyProcessRunningInner()) {
@@ -1822,14 +1824,17 @@ void AudioEndpointInner::AsyncGetPosTime()
         if (stopUpdateThread_) {
             break;
         }
-        if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
-            HILOG_COMM_INFO("[AsyncGetPosTime]IDEL for too long, let's call hdi stop");
-            DelayStopDevice();
-            continue;
-        }
-        if (!isStarted_) {
-            UpdateVirtualDeviceHandleInfo();
-            continue;
+        {
+            std::unique_lock<std::mutex> lock(startStatusLock_);
+            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
+                HILOG_COMM_INFO("[AsyncGetPosTime]IDEL for too long, let's call hdi stop");
+                DelayStopDevice();
+                continue;
+            }
+            if (!isStarted_) {
+                UpdateVirtualDeviceHandleInfo();
+                continue;
+            }
         }
         // get signaled, call get pos-time
         uint64_t curHdiHandlePos = posInFrame_;
@@ -2521,13 +2526,13 @@ void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
     if (audioMode_ == AUDIO_MODE_PLAYBACK) {
         auto sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
         CHECK_AND_RETURN_LOG(sink, "sink is invalid");
-        sink->NotifyStreamChangeToSink(change,
-            processStream->GetAudioSessionId(), processStream->GetUsage(), state);
+        sink->NotifyStreamChangeToSink(change, processStream->GetAudioSessionId(), processStream->GetUsage(),
+            state, processStream->GetAppInfo().appUid);
     } else {
         auto source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
         CHECK_AND_RETURN_LOG(source, "source is invalid");
-        source->NotifyStreamChangeToSource(change,
-            processStream->GetAudioSessionId(), processStream->GetSource(), static_cast<CapturerState>(state));
+        source->NotifyStreamChangeToSource(change, processStream->GetAudioSessionId(), processStream->GetSource(),
+            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid);
     }
 }
 } // namespace AudioStandard

@@ -97,7 +97,7 @@ const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
-constexpr int32_t UID_FOUNDATION_SA = 5523;
+constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
@@ -210,7 +210,7 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
 
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
-    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
+    return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_CALL_MANAGER_SA;
 }
 
 static inline std::shared_ptr<IAudioRenderSink> GetSinkByProp(HdiIdType type, const std::string &info =
@@ -1046,7 +1046,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
 
 int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // root user case for auto test
     if (callingUid == ROOT_UID) {
@@ -2134,7 +2134,7 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
 bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingUid)
 {
     return config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-        callingUid == UID_FOUNDATION_SA && config.rendererInfo.isSatellite;
+        callingUid == UID_CALL_MANAGER_SA && config.rendererInfo.isSatellite;
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,

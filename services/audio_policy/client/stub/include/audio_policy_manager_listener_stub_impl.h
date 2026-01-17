@@ -18,7 +18,6 @@
 
 #include <thread>
 
-#include "audio_system_manager.h"
 #include "audio_interrupt_callback.h"
 #include "audio_route_callback.h"
 #include "standard_audio_policy_manager_listener_stub.h"
@@ -36,6 +35,7 @@ public:
     int32_t OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction &deviceChangeAction) override;
     int32_t OnQueryClientType(const std::string &bundleName, uint32_t uid, bool &ret) override;
     int32_t OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid, bool &ret) override;
+    int32_t OnCheckMediaControllerBundle(const std::string &bundleName, bool &ret) override;
     int32_t OnCheckVKBInfo(const std::string &bundleName, bool &isValid) override;
     int32_t OnQueryAllowedPlayback(int32_t uid, int32_t pid, bool &ret) override;
     int32_t OnBackgroundMute(const int32_t uid) override;

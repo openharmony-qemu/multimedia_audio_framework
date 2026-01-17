@@ -219,6 +219,24 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     return outFrameLen;
 }
 
+std::vector<float> AudioSuiteTempoPitchAlgoInterfaceImpl::ParseStringToFloatArray(
+    const std::string &str, char delimiter)
+{
+    std::vector<float> params;
+    std::string paramValue;
+    std::istringstream iss(str);
+
+    while (std::getline(iss, paramValue, delimiter)) {
+        if (!paramValue.empty()) {
+            float value;
+            CHECK_AND_RETURN_RET_LOG(StringConverterFloat(paramValue, value), std::vector<float>(),
+                "Tempo convert string to float value error, invalid data is %{public}s", paramValue.c_str());
+            params.push_back(value);
+        }
+    }
+    return params;
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS

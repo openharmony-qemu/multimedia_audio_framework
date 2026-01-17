@@ -58,7 +58,11 @@ public:
 };
 
 void AudioSuiteSpaceRenderTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteSpaceRenderTest::TearDown()
 {}

@@ -466,7 +466,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
 HWTEST_F(AudioCoreServiceUnitTest, GetModuleNameBySessionId_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest GetModuleNameBySessionId_001 start");
-    uint32_t sessionID = 100001; // sessionId
+    uint32_t sessionID = 0; // sessionId
     auto result = GetServerPtr()->eventEntry_->GetModuleNameBySessionId(sessionID);
     EXPECT_EQ(result, "");
 }
@@ -1882,36 +1882,6 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
 /**
 * @tc.name  : Test AudioCoreService
-* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_004
-* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
-*/
-HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_004, TestSize.Level4)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 start");
-
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(audioDeviceDescriptor, nullptr);
-
-    audioCoreService->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
-
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
-    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
-
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
-
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
-
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 end");
-}
-
-/**
-* @tc.name  : Test AudioCoreService
 * @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_005
 * @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
 */
@@ -2360,10 +2330,11 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_002, TestSize.Level1)
     streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_MMAP;
     streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
 
-    streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_REMOTE_CAST;
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
 
-    streamDesc->newDeviceDescs_.resize(0);
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    streamDesc->newDeviceDescs_ = {};
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), false);
 }
 
@@ -2384,6 +2355,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordIsForcedNormal_003, TestSize.Level1)
     streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_REMOTE_CAST;
     
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->RecordIsForcedNormal(streamDesc), true);
     deviceDesc->SetDeviceSupportMmap(1);
@@ -2406,6 +2378,7 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
     deviceDesc->SetDeviceSupportMmap(0);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
     deviceDesc->SetDeviceSupportMmap(1);

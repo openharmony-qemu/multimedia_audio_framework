@@ -676,6 +676,23 @@ std::vector<uint32_t> AudioPipeManager::GetStreamIdsByUidAndPid(int32_t uid, int
     return sessionIds;
 }
 
+std::vector<uint32_t> AudioPipeManager::GetStreamIdsByPid(int32_t pid)
+{
+    std::vector<uint32_t> sessionIds = {};
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
+        for (auto &streamDesc : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+            if (streamDesc->IsSamePid(pid)) {
+                sessionIds.push_back(streamDesc->sessionId_);
+            }
+        }
+    }
+    AUDIO_INFO_LOG("Session number of pid %{public}u: %{public}zu", pid, sessionIds.size());
+    return sessionIds;
+}
+
 void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs)
 {

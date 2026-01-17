@@ -1606,11 +1606,6 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
     }
-    if (ioHandle == HDI_INVALID_ID || paIndex == OPEN_PORT_FAILURE) {
-        audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
-        AUDIO_ERR_LOG("AudioPort failed, ioHandle: %{public}u, paIndex: %{public}u", ioHandle, paIndex);
-        return ERROR;
-    }
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
 
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
@@ -1631,6 +1626,8 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+
+    CHECK_AND_RETURN_RET(CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort), ERROR);
     return SUCCESS;
 }
 
@@ -1680,6 +1677,27 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
     if (capability.protocol_ == 0) {
         device.model_ = "hiplay";
     }
+}
+
+bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+    uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort)
+{
+    if (ioHandle != HDI_INVALID_ID && paIndex != OPEN_PORT_FAILURE) {
+        return true;
+    }
+
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
+    AUDIO_ERR_LOG("AudioPort failed, ioHandle: %{public}u, paIndex: %{public}u", ioHandle, paIndex);
+    CHECK_AND_RETURN_RET_LOG(streamDescs.begin() != streamDescs.end() &&
+        (*streamDescs.begin())->newDeviceDescs_.size() > 0, false, "a2dpAudioPort streamDescs is nullptr!");
+    shared_ptr<AudioDeviceDescriptor> desc = (*streamDescs.begin())->newDeviceDescs_[0];
+    desc->exceptionFlag_ = true;
+    audioDeviceManager_.UpdateDevicesListInfo(
+        std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RestoreNewA2dpPort", reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RestoreNewA2dpPort", reason);
+    return false;
 }
 }
 }

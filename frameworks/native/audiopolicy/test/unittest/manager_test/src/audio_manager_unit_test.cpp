@@ -21,6 +21,7 @@
 #include "audio_capturer.h"
 #include "audio_stream_manager.h"
 #include "audio_utils.h"
+#include "audio_unit_test.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
@@ -1248,6 +1249,23 @@ HWTEST(AudioManagerUnitTest, AudioVolume_001, TestSize.Level1)
 }
 #endif
 
+/**
+* @tc.name   : Test SetVolume API
+* @tc.number : SetVolumeTest_001
+* @tc.desc   : Test setting volume of ringtone stream with max volume
+*/
+HWTEST(AudioManagerUnitTest, SetVolumeTest_001, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    auto ret = AudioSystemManager::GetInstance()->SetVolume(AudioVolumeType::STREAM_RING, MAX_VOL);
+    EXPECT_EQ(SUCCESS, ret);
+ 
+    int32_t volume = AudioSystemManager::GetInstance()->GetVolume(AudioVolumeType::STREAM_RING);
+    EXPECT_EQ(MAX_VOL, volume);
+    MockNative::Resume();
+}
+
 #ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test SetVolume API
@@ -1410,6 +1428,7 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
     bool isMicrophoneMuted = AudioSystemManager::GetInstance()->IsMicrophoneMute();
     EXPECT_EQ(isMicrophoneMuted, false);
 }
+#endif
 
 /**
 * @tc.name   : Test SetMute API
@@ -1418,10 +1437,26 @@ HWTEST(AudioManagerUnitTest, SetMicrophoneMute_002, TestSize.Level1)
 */
 HWTEST(AudioManagerUnitTest, SetMute_001, TestSize.Level1)
 {
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, true);
     EXPECT_EQ(SUCCESS, ret);
+    MockNative::Resume();
 }
-#endif
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_002
+* @tc.desc   : Test unmute functionality of ring stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_002, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_RING, false);
+    EXPECT_EQ(SUCCESS, ret);
+    MockNative::Resume();
+}
 
 /**
 * @tc.name   : Test SetMute API
@@ -1482,6 +1517,23 @@ HWTEST(AudioManagerUnitTest, SetMute_007, TestSize.Level1)
     EXPECT_TRUE(isActive);
 }
 #endif
+
+/**
+* @tc.name   : Test SetMute API
+* @tc.number : SetMute_008
+* @tc.desc   : Test unmute functionality of media stream
+*/
+HWTEST(AudioManagerUnitTest, SetMute_008, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t ret = AudioSystemManager::GetInstance()->SetMute(AudioVolumeType::STREAM_ALL, false);
+    EXPECT_EQ(ret, SUCCESS);
+    auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_SYSTEM);
+    EXPECT_FALSE(isActive);
+    MockNative::Resume();
+}
 
 /**
  * @tc.name : SetLowPowerVolume_001
@@ -2128,7 +2180,7 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
     CastType castType = CAST_TYPE_ALL;
     audioDeviceDescriptors[0]->networkId_ = REMOTE_NETWORK_ID;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

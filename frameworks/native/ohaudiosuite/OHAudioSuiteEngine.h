@@ -88,14 +88,14 @@ public:
     static OHAudioSuiteEngine *GetInstance();
 
     // engine
-    int32_t CreateEngine();
-    int32_t DestroyEngine();
+    int32_t CreateEngine() const;
+    int32_t DestroyEngine() const;
 
     // pipeline
     int32_t CreatePipeline(OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode);
     int32_t DestroyPipeline(OHAudioSuitePipeline *audioPipeline);
-    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline);
-    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline);
+    int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline) const;
+    int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline) const;
     int32_t GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state);
     int32_t RenderFrame(OHAudioSuitePipeline *audioPipeline,
         uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);

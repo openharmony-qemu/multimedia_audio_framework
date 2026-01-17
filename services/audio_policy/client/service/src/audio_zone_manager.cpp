@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "AudioZoneManager"
 #endif
-
+#include <mutex>
 #include "audio_zone_manager.h"
 
 #include "audio_errors.h"

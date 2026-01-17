@@ -26,7 +26,7 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "audio_utils.h"
-#include "audio_system_manager.h"
+#include "app_bundle_manager.h"
 #include "media_monitor_manager.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +51,8 @@ namespace {
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
+    // This is just to pre-validate potential errors, with the actual audio protection
+    // implemented where the recording stream is truly created.
     Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
     tokenId = (tokenId == Security::AccessToken::INVALID_TOKENID) ? IPCSkeleton::GetCallingTokenID() : tokenId;
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
@@ -125,7 +127,7 @@ AudioLoopbackReportInfo AudioLoopbackPrivate::GetReportInfo(AudioLoopbackErrorSc
 {
     AudioLoopbackReportInfo info = {
         .appUid = appInfo_.appUid,
-        .appName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid),
+        .appName = AppBundleManager::GetSelfBundleName(appInfo_.appUid),
         .renderDeviceType = activeOutputDevice_,
         .captureDeviceType = activeInputDevice_,
         .errScope = scope,

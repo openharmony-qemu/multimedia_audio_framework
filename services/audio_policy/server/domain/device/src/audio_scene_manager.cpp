@@ -73,6 +73,13 @@ bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
     return streamCollector_.IsStreamActive(streamType);
 }
 
+bool AudioSceneManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) const
+{
+    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
+    return streamCollector_.IsStreamActiveByStreamUsage(streamUsage);
+}
+
 bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
 {
     return streamCollector_.CheckVoiceCallActive(sessionId);

@@ -16,14 +16,14 @@
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
-
+#include <thread>
+#include <mutex>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -33,8 +33,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
-#include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 
