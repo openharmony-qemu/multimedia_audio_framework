@@ -94,7 +94,7 @@ void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
         OnNotifyDfxNodeAdmin(false, node->GetNodeInfo());
 #endif
     }
- 	RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
+    RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
