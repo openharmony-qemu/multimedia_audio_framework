@@ -59,6 +59,11 @@ public:
         return SUCCESS;
     }
 
+    ErrCode OnCheckMediaControllerBundle(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
     ErrCode OnCheckVKBInfo(const std::string& bundleName, bool& isValid) override
     {
         return SUCCESS;
