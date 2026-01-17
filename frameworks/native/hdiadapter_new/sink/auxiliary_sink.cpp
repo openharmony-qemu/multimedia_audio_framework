@@ -211,7 +211,7 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is null");
 
     int32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
-    CHECK_AND_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
     if (bufferAddress_ != nullptr) {
         munmap(bufferAddress_, MAX_AUXILIARY_BUFFERSIZE);
         bufferAddress_ = nullptr;
