@@ -631,7 +631,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         capturerInfo
     };
 
-    if (sourceType_ == modernInnerCapturer_) {
+    if (modernInnerCapturer_) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
     }
 
