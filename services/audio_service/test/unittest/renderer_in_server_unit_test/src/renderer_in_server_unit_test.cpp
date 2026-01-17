@@ -2344,7 +2344,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_005, TestSize.
 HWTEST_F(RendererInServerUnitTest, RendererInServerOnWriteData_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     int32_t ret = streamCallbacks->OnWriteData(TEST_LENGTH);

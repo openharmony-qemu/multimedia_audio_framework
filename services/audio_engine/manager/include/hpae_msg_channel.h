@@ -141,6 +141,11 @@ struct HpaeDfxNodeInfo {
     AudioEncodingType encoding;
 };
 
+struct OffloadCallbackData {
+    bool isFlush_ = false;
+    uint64_t writePos_ = 0;
+};
+
 class INodeCallback {
 public:
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
@@ -152,10 +157,10 @@ public:
     virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo){};
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
-    virtual void OnRequestWritePos(uint64_t &writePos){};
-    virtual bool GetFlushState() const noexcept
+    virtual OffloadCallbackData GetOffloadCallbackData() noexcept
     {
-        return false;
+        OffloadCallbackData data {false, 0};
+        return data;
     }
 };
 

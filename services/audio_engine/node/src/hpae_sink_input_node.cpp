@@ -327,13 +327,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
-    uint64_t writePos = 0;
-    bool isFlush = false;
+    OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), latency);
-        nodeCallback->OnRequestWritePos(writePos);
-        isFlush = nodeCallback->GetFlushState();
+        callbackData = nodeCallback->GetOffloadCallbackData();
     }
     latency += GetLatency();
     streamInfo_ = {
@@ -347,8 +345,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceNetId = GetDeviceNetId(),
         .needData = needData,
         .forceData = forceData,
-        .writePos_ = writePos,
-        .isFlush_ = isFlush
+        .writePos_ = callbackData.writePos_,
+        .isFlush_ = callbackData.isFlush_
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

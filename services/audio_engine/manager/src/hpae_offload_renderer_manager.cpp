@@ -885,22 +885,14 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
-void HpaeOffloadRendererManager::OnRequestWritePos(uint64_t &writePos)
+OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() const noexcept
 {
-    writePos = 0;
-    if (sinkOutputNode_ != nullptr) {
-        writePos = sinkOutputNode_->GetWritePos();
-    }
-}
-
-bool HpaeOffloadRendererManager::GetFlushState() const noexcept
-{
-    bool isFlush = false;
+    OffloadCallbackData data;
     if (sinkOutputNode_ != nullptr)
     {
-        isFlush = sinkOutputNode_->GetFlushState();
+        data = sinkOutputNode_->GetOffloadCallbackData();
     }
-    return isFlush;
+    return data;
 }
 
 void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
