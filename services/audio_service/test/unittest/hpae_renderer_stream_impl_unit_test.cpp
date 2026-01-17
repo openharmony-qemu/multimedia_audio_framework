@@ -352,9 +352,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     unit->isWriteFirst_ = true;
     unit->UpdateInnerCapWriteState(true);
-    EXPECT_EQ(isWriteFirst_, true);
+    EXPECT_EQ(unit->isWriteFirst_, true);
     unit->UpdateInnerCapWriteState(false);
-    EXPECT_EQ(isWriteFirst_, false);
+    EXPECT_EQ(unit->isWriteFirst_, false);
 }
 
 /**
