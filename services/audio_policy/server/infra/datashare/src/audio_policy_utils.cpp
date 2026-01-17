@@ -28,6 +28,7 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_bundle_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -146,6 +147,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         return ERR_INVALID_PARAM;
     }
     int32_t ret = SUCCESS;
+    bool mediaControllerFlag = IsSelectedByMediaController();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
@@ -157,12 +159,13 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
             break;
         case AUDIO_RECORD_CAPTURE:
-            audioStateManager_.SetPreferredRecordCaptureDevice(desc);
             {
                 RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
                 AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
-                    UpdateType::SYSTEM_SELECT, info);
+                    UpdateType::SYSTEM_SELECT, info, mediaControllerFlag);
             }
+            CHECK_AND_BREAK_LOG(!mediaControllerFlag, "selected by media controller");
+            audioStateManager_.SetPreferredRecordCaptureDevice(desc);
             break;
         case AUDIO_RING_RENDER:
         case AUDIO_TONE_RENDER:
@@ -187,6 +190,17 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     }
     AudioDeviceStatus::GetInstance().NotifyPreferredDeviceSet(preferredType, desc, uid, caller);
     return ret;
+}
+
+bool AudioPolicyUtils::IsSelectedByMediaController()
+{
+ 	std::lock_guard<std::mutex> lock(mutex_);
+ 	auto callerUid = IPCSkeleton::GetCallingUid();
+ 	std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
+ 	CHECK_AND_RETURN_RET(audioClientInfoMgrCallback_ != nullptr, false);
+ 	bool ret = false;
+ 	audioClientInfoMgrCallback_->OnCheckMediaControllerBundle(bundleName, ret);
+	return ret;
 }
 
 int32_t AudioPolicyUtils::ErasePreferredDeviceByType(const PreferredType preferredType)
@@ -875,5 +889,11 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
+int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+ 	std::lock_guard<std::mutex> lock(mutex_);
+    audioClientInfoMgrCallback_ = callback;
+ 	return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
