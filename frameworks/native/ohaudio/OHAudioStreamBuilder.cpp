@@ -633,10 +633,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         capturerInfo
     };
 
-    if (options.playbackCaptureConfig.isModernInnerCapturer) {
-        AUDIO_INFO_LOG("the moderninner has been used, sourcetype set to playbackcapture");
-        sourceType_ = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    }
 
     if (sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
