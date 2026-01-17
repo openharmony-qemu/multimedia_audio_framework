@@ -194,13 +194,13 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
 
 bool AudioPolicyUtils::IsSelectedByMediaController()
 {
- 	std::lock_guard<std::mutex> lock(mutex_);
- 	auto callerUid = IPCSkeleton::GetCallingUid();
- 	std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
- 	CHECK_AND_RETURN_RET(audioClientInfoMgrCallback_ != nullptr, false);
- 	bool ret = false;
- 	audioClientInfoMgrCallback_->OnCheckMediaControllerBundle(bundleName, ret);
-	return ret;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
+    CHECK_AND_RETURN_RET(audioClientInfoMgrCallback_ != nullptr, false);
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnCheckMediaControllerBundle(bundleName, ret);
+    return ret;
 }
 
 int32_t AudioPolicyUtils::ErasePreferredDeviceByType(const PreferredType preferredType)
@@ -891,9 +891,9 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
 
 int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
 {
- 	std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     audioClientInfoMgrCallback_ = callback;
- 	return 0;
+    return 0;
 }
 } // namespace AudioStandard
 } // namespace OHOS
