@@ -237,13 +237,14 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
     } else if (busAddresses.size() > 1) {
         // Vehicle system scenario enter, Filter newPipeInfoList based on busAddress.
         CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        std::shared_ptr<AudioStreamDescriptor> tempDesc = streamDesc;
+        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
         busPipeIter = findPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
-                   newPipeInfo->adapterName_ == streamDescAdapterName &&
-                   newPipeInfo->audioStreamInfo_.channels == streamDesc->streamInfo_.channels;
+                   newPipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_;
         });
     }
     if (busPipeIter == newPipeInfoList.end()) {
