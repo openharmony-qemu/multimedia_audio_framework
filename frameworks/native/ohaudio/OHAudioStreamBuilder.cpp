@@ -459,6 +459,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode)
 {
+    modernInnerCapturer_ = true;
     sourceType_ = SOURCE_TYPE_PLAYBACK_CAPTURE;
     playbackCaptureMode_ = mode;
     return AUDIOSTREAM_SUCCESS;
@@ -466,6 +467,11 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
+    if (modernInnerCapturer_) {
+        AUDIO_INFO_LOG("the moderninner has been used");
+        return AUDIOSTREAM_SUCCESS;
+    }
+
     CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
 
@@ -581,7 +587,8 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
-    } else {
+    } else if (mode == AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT ||
+        mode == (AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT|AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF)) {
         config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
@@ -597,6 +604,7 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
     }
  
     if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF) {
+        config.IsModernInnerCapturer = true;
         config.filterOptions.pids.push_back(getpid());
         config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
     }
