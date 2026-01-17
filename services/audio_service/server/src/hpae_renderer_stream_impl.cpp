@@ -648,7 +648,7 @@ bool HpaeRendererStreamImpl::InitLatencyInfo(const AudioCallBackStreamInfo &call
 
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
-    OnNotifyFlushStatus(callBackStreamInfo.isFlush_);
+    UpdateInnerCapWriteState(callBackStreamInfo.isWriteInnerCap_);
     bool needResetSinkLatencyFetcher = InitLatencyInfo(callBackStreamInfo);
     if (needResetSinkLatencyFetcher) {
         ResetSinkLatencyFetcher(callBackStreamInfo);
@@ -1106,15 +1106,15 @@ uint64_t HpaeRendererStreamImpl::GetOffloadLatency()
     return cacheLenInHdi / MICROSECOND_PER_MILLISECOND;
 }
 
-void HpaeRendererStreamImpl::OnNotifyFlushStatus(bool isFlush)
+void HpaeRendererStreamImpl::UpdateInnerCapWriteState(bool isWriteInnerCap)
 {
-    if (isFlush_ == isFlush) {
+    if (isWriteInnerCap_ == isWriteInnerCap) {
         return;
     }
-    isFlush_ = isFlush;
+    isWriteInnerCap_ = isWriteInnerCap;
     std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
     if (statusCallback != nullptr) {
-        statusCallback->OnStatusUpdate(isFlush ? OPERATION_OFFLOAD_FLUSH_BEGIN : OPERATION_OFFLOAD_FLUSH_END);
+        statusCallback->OnStatusUpdate(isWriteInnerCap ? OPERATION_OFFLOAD_FLUSH_BEGIN : OPERATION_OFFLOAD_FLUSH_END);
     }
 }
 

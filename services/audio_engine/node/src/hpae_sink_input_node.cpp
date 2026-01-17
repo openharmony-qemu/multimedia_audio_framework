@@ -346,7 +346,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .needData = needData,
         .forceData = forceData,
         .writePos_ = callbackData.writePos_,
-        .isFlush_ = callbackData.isFlush_
+        .isWriteInnerCap_ = callbackData.isFlush_
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

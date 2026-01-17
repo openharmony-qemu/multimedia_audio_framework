@@ -419,10 +419,10 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
         case OPERATION_OFFLOAD_FLUSH_BEGIN:
-            HandleOffloadFlush(true);
+            HandleInnerCapWrite(true);
             break;
         case OPERATION_OFFLOAD_FLUSH_END:
-            HandleOffloadFlush(false);
+            HandleInnerCapWrite(false);
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -1943,7 +1943,7 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
         "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
     CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
-    CHECK_AND_RETURN_RET_LOG(!isFlush_, ERROR, "audioStream is flush, overlap OnWriteData");
+    CHECK_AND_RETURN_RET_LOG(!CheckIsWriteInner(), ERROR, "audioStream is flush, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
         std::unique_ptr<AudioRingCache> &dupBuffer = dupRingBuffer_;
@@ -1978,11 +1978,11 @@ void StreamCallbacks::SetFirstWriteDataFlag(bool isFirstWriteDataFlag)
     isFirstWriteDataFlag_ = isFirstWriteDataFlag;
 }
 
-bool StreamCallbacks::CheckIsFlush() const noexcept
+bool StreamCallbacks::CheckIsWriteInner() const noexcept
 {
     auto renderer = renderer_.lock();
     if (renderer != nullptr) {
-        return renderer->IsFlush();
+        return renderer->IsWriteInnerCap();
     }
     return false;
 }
@@ -2957,14 +2957,14 @@ void RendererInServer::MarkStaticFadeIn()
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
-void RendererInServer::HandleOffloadFlush(bool isFlush)
+void RendererInServer::HandleInnerCapWrite(bool isWriteInnerCap)
 {
-    isFlush_ = isFlush;
+    isWriteInnerCap_ = isWriteInnerCap;
 }
 
-bool RendererInServer::IsFlush() const noexcept
+bool RendererInServer::IsWriteInnerCap() const noexcept
 {
-    return isFlush_;
+    return isWriteInnerCap_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
