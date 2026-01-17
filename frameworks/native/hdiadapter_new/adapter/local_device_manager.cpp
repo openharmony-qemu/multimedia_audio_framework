@@ -593,7 +593,7 @@ int32_t LocalDeviceManager::CreateCognitionStream(const std::string &adapterName
 
     int32_t ret = wrapper->adapter_->CreateCognitionStream(wrapper->adapter_, localParam,
         &sinkId, localBuffer);
-    if (ret != SUCCESS || sinkId == HDI_INVALID_ID) {
+    if (ret != SUCCESS || sinkId == INVALID_ID) {
         AUDIO_ERR_LOG("create CogStream:%{public}d fail, ret:%{public}d", sinkId, ret);
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create CogStream:" + std::to_string(sinkId) + " fail, ret:" + std::to_string(ret)));
@@ -605,7 +605,7 @@ int32_t LocalDeviceManager::CreateCognitionStream(const std::string &adapterName
 
 int32_t LocalDeviceManager::DestroyCognitionStream(const std::string &adapterName, const int32_t &sinkId)
 {
-    CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(sinkId != INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
@@ -627,7 +627,7 @@ int32_t LocalDeviceManager::DestroyCognitionStream(const std::string &adapterNam
 int32_t LocalDeviceManager::NotifyCognitionData(const std::string &adapterName, const int32_t &sinkId,
     uint32_t size, uint32_t offset)
 {
-    CHECK_AND_RETURN_RET_LOG(sinkId != HDI_INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
+    CHECK_AND_RETURN_RET_LOG(sinkId != INVALID_ID, ERROR_INVALID_PARAM, "streamId is invalid");
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERROR_INVALID_PARAM,
