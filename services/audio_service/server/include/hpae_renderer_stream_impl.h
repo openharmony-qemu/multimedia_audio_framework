@@ -127,7 +127,7 @@ private:
         std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
-    void UpdateInnerCapWriteState(bool isWriteInnerCap);
+    void UpdateInnerCapWriteState(bool isWriteFirst);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -197,7 +197,7 @@ private:
     std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
     uint64_t writePos_ = 0;
     float speed_ = 1.0f;
-    bool isWriteInnerCap_ = false;
+    bool isWriteFirst_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -54,7 +54,7 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
     void SetFirstWriteDataFlag(bool isFirstWriteDataFlag);
 private:
-    bool CheckIsWriteInner() const noexcept;
+    bool CheckIsWriteFirst() const noexcept;
 private:
     uint32_t streamIndex_ = 0;
     std::weak_ptr<RendererInServer> renderer_;
@@ -171,7 +171,7 @@ public:
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
-    bool IsWriteInnerCap() const noexcept;
+    bool IsWriteFirst() const noexcept;
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -240,7 +240,7 @@ private:
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
-    void HandleInnerCapWrite(bool isFlush);
+    void HandleIsWriteFirst(bool isWriteFirst);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -351,7 +351,7 @@ private:
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
-    bool isWriteInnerCap_ = false;
+    bool isWriteFirst_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

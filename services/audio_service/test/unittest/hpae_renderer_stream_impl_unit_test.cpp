@@ -350,11 +350,11 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     unit->processConfig_.streamType = STREAM_MOVIE;
     ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
-    unit->isWriteInnerCap_ = true;
+    unit->isWriteFirst_ = true;
     unit->UpdateInnerCapWriteState(true);
-    EXPECT_EQ(isWriteInnerCap_, true);
+    EXPECT_EQ(isWriteFirst_, true);
     unit->UpdateInnerCapWriteState(false);
-    EXPECT_EQ(isWriteInnerCap_, false);
+    EXPECT_EQ(isWriteFirst_, false);
 }
 
 /**
