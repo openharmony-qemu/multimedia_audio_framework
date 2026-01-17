@@ -80,11 +80,11 @@ int32_t AudioPolicyManagerListenerStubImpl::OnCheckClientInfo(
 
 int32_t AudioPolicyManagerListenerStubImpl::OnCheckMediaControllerBundle(const std::string &bundleName, bool &ret)
 {
- 	std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
 
- 	CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, AUDIO_INVALID_PARAM,
- 	    "audioClientInfoMgrCallback is nullptr");
- 	ret = audioClientInfoMgrCallback->OnCheckMediaControllerBundle(bundleName);
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioClientInfoMgrCallback is nullptr");
+    ret = audioClientInfoMgrCallback->OnCheckMediaControllerBundle(bundleName);
     return SUCCESS;
 }
 
