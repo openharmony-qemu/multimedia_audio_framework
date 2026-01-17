@@ -98,6 +98,7 @@ private:
 private:
     static constexpr uint32_t MAX_AUDIO_ADAPTER_NUM = 5;
     static constexpr uid_t UID_BLUETOOTH_SA = 1002;
+    static constexpr int32_t INVALID_ID = -1;
 
     struct IAudioManager *audioManager_ = nullptr;
     struct HdfRemoteService *hdfRemoteService_ = nullptr;

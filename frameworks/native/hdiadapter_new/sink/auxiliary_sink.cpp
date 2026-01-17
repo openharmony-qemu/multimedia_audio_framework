@@ -55,10 +55,11 @@ int32_t AuxiliarySink::Init(const IAudioSinkAttr &attr)
     dumpFileName_ = std::string(AUXILIARY_SINK_FILENAME) + "_" + GetTime() + "_" +
         std::to_string(attr.sampleRate) + "_" + std::to_string(attr.channel) +
         "_" + std::to_string(attr.format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
-    uint32_t ret = PrepareMmapBuffer();
+    int32_t ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "prepare mmap buffer fail");
+
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     sinkInited_ = true;
     return SUCCESS;
 }
@@ -156,8 +157,9 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 void AuxiliarySink::DeInit(void)
 {
     Trace trace(logTag_ + "::DeInit");
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("%{public}s::DeInit sinkId:%{public}d", logTag_.c_str(), sinkId_);
     ReleaseMmapBuffer();
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     sinkInited_ = false;
 }
 
@@ -208,8 +210,8 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is null");
 
-    uint32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
+    int32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
     if (bufferAddress_ != nullptr) {
         munmap(bufferAddress_, MAX_AUXILIARY_BUFFERSIZE);
         bufferAddress_ = nullptr;
