@@ -21,7 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-    const int32_t SAMPLING_RATE_44100 = 44100;x
+    const int32_t SAMPLING_RATE_44100 = 44100;
     const int32_t SAMPLING_RATE_48000 = 48000;
     const int32_t SAMPLING_RATE_88200 = 88200;
     const int32_t SAMPLING_RATE_176400 = 176400;
@@ -1373,6 +1373,83 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
     EXPECT_NE(builder, nullptr);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode MODE_DEFAULT state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMode_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    uint32_t mode = AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT;
+    result = OH_AudioStreamBuilder_SetPlaybackCaptureMode(builder, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode EXCLUDING_SELF state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMode_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    uint32_t mode = AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF;
+    result = OH_AudioStreamBuilder_SetPlaybackCaptureMode(builder, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode _INVALID_PARAM state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMode_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    uint32_t mode = -1;
+    result = OH_AudioStreamBuilder_SetPlaybackCaptureMode(builder, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode SetCapturerInfo state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetPlaybackCaptureMode interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMode_004, TestSize.Level3)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    uint32_t mode = AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT;
+    result = OH_AudioStreamBuilder_SetPlaybackCaptureMode(builder, mode);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_PLAYBACK_CAPTURE;
+    result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
