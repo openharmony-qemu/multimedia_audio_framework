@@ -157,7 +157,7 @@ int32_t AuxiliarySink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 void AuxiliarySink::DeInit(void)
 {
     Trace trace(logTag_ + "::DeInit");
-    AUDIO_INFO_LOG("%{public}s::DeInit sinkId:%{public}d", logTag_, sinkId_);
+    AUDIO_INFO_LOG("%{public}s::DeInit sinkId:%{public}d", logTag_.c_str(), sinkId_);
     ReleaseMmapBuffer();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     sinkInited_ = false;
@@ -211,7 +211,7 @@ void AuxiliarySink::ReleaseMmapBuffer(void)
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is null");
 
     int32_t ret = deviceManager->DestroyCognitionStream("primary", sinkId_);
-    CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
+    CHECK_AND_LOG(ret == SUCCESS, "destroy cogStream:%{public}d fail, ret:%{public}d", sinkId_, ret);
     if (bufferAddress_ != nullptr) {
         munmap(bufferAddress_, MAX_AUXILIARY_BUFFERSIZE);
         bufferAddress_ = nullptr;
