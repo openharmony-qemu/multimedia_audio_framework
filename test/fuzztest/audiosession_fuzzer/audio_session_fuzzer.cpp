@@ -258,8 +258,7 @@ void GetAudioSessionStreamUsageForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    uint32_t streamId = g_fuzzUtils.GetData<uint32_t>();
-    audioSession->GetAudioSessionStreamUsageForDevice(streamId);
+    audioSession->GetAudioSessionStreamUsageForDevice();
 }
 
 void Test(FuzzedDataProvider& fdp)
