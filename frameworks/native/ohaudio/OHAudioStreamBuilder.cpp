@@ -587,8 +587,7 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
-    } else if (mode == AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT ||
-        mode == (AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT|AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF)) {
+    } else {
         config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
@@ -633,7 +632,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         capturerInfo
     };
 
-    if (sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+    if (sourceType_ == modernInnerCapturer_) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
     }
 
