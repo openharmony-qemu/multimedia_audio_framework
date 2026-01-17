@@ -1770,7 +1770,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
         isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-    innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex);
+    innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex, shared_from_this());
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         ret = CreateDupBufferInner(innerCapId);
@@ -1907,7 +1907,8 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
     return SUCCESS;
 }
 
-StreamCallbacks::StreamCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
+StreamCallbacks::StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer)
+    : streamIndex_(streamIndex), renderer_(renderer)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create StreamCallbacks", streamIndex_);
     int32_t engineFlag = GetEngineFlag();
@@ -1976,9 +1977,13 @@ void StreamCallbacks::SetFirstWriteDataFlag(bool isFirstWriteDataFlag)
     isFirstWriteDataFlag_ = isFirstWriteDataFlag;
 }
 
-void StreamCallbacks::SetOffloadFlushStatus(bool isFlush)
+bool StreamCallbacks::CheckIsFlush() const noexcept
 {
-    isFlush_ = isFlush;
+    auto renderer = renderer_.lock();
+    if (renderer != nullptr) {
+        return renderer->IsFlush();
+    }
+    return false;
 }
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)
@@ -2953,17 +2958,12 @@ void RendererInServer::MarkStaticFadeIn()
 
 void RendererInServer::HandleOffloadFlush(bool isFlush)
 {
-    std::lock_guard<std::mutex> dupLock(dupMutex_);
-    for (auto &capInfo : captureInfos_) {
-        if (IsEnabledAndValidDupStream(capInfo.second)) {
-            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
-                innerCapIdToDupStreamCallbackMap_.end(),
-                "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
-            CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
-                "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
-            innerCapIdToDupStreamCallbackMap_[capInfo.first]->SetOffloadFlushStatus(isFlush);
-        }
-    }
+    isFlush_ = isFlush;
+}
+
+bool RendererInServer::IsFlush() const noexcept
+{
+    return isFlush_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
