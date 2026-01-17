@@ -193,8 +193,9 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
         sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
         CapturerSourceStop();
     }
-	HpaeSessionState outputState = sourceOutputNodeMap_[sessionId]->GetState();
- 	CapturerState state = outputState == HPAE_SESSION_RELEASED ? CAPTURER_INVALID : CAPTURER_RELEASED;
+    
+    HpaeSessionState outputState = sourceOutputNodeMap_[sessionId]->GetState();
+    CapturerState state = outputState == HPAE_SESSION_RELEASED ? CAPTURER_INVALID : CAPTURER_RELEASED;
     NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);

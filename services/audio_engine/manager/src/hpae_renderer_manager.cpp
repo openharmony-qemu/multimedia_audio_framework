@@ -372,8 +372,8 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
         OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
     }
 #endif
-	HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
- 	RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
+    HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
+    RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
