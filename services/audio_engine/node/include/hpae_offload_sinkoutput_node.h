@@ -69,7 +69,7 @@ public:
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     
     void RegisterOffloadCallback(IOffloadCallback *offloadCallback);
-    uint64_t GetWritePos() const noexcept;
+    OffloadCallbackData GetOffloadCallbackData() noexcept;
 private:
     // lock/unlock running lock
     void RunningLock(bool isLock);
@@ -136,6 +136,7 @@ private:
 
     bool needUnLock_ = false;
     IOffloadCallback *offloadCallback_;
+    bool isFlush_ = false;
 };
 
 }  // namespace HPAE

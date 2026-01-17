@@ -1802,7 +1802,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDupStream_005, TestS
 HWTEST_F(RendererInServerThirdUnitTest, OnStatusUpdate_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
@@ -1819,7 +1819,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnStatusUpdate_001, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
@@ -1841,7 +1841,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
@@ -1864,7 +1864,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, GetAvailableSize_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
     
     size_t length = 0;
@@ -2209,7 +2209,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteDupBufferInner_003,
     captureInfo.dupStream = nullptr;
     int32_t innerCapId = 1;
     uint32_t streamIndex = 0;
-    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex);
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex, server);
     server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
     int32_t length = 10000;
@@ -2968,7 +2968,7 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     size_t dupSpanSizeInFrameTest = 1;
     size_t dupByteSizePerFrameTest = 1;
     rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
-        std::make_shared<StreamCallbacks>(dupStreamIndex);
+        std::make_shared<StreamCallbacks>(dupStreamIndex, rendererInServer);
     rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
         AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
     rendererInServer->offloadEnable_ = true;
