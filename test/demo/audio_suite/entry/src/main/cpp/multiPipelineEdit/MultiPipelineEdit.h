@@ -7,6 +7,9 @@
 #include "napi/native_api.h"
 #include "audioEffectNode/Input.h"
 #include "callback/RegisterCallback.h"
+#include <./utils/Utils.h>
+#include "PipelineManager.h"
+
 struct InputAudioParams {
     std::string inputId;
     std::string outputId;
@@ -26,5 +29,6 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info);
 napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info);
 napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info);
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info);
+extern thread_local std::shared_ptr<PipelineManager> threadPipelineManager;
 
 #endif

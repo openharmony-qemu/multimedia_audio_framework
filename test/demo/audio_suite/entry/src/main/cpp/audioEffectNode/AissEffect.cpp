@@ -67,6 +67,7 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     g_multiRenderFrameFlag = true;
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: operation success");
+    threadPipelineManager->multiRenderFrameFlag = true;
     delete[] argv;
     return ret;
 }

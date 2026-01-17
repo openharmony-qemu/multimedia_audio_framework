@@ -18,16 +18,11 @@
 #include <fstream>
 #include <fcntl.h>
 #include <multiPipelineEdit/MultiPipelineEdit.h>
-#include "./callback/RegisterCallback.h"
-#include "./audioEffectNode/Output.h"
-#include "./audioEffectNode/Input.h"
 #include "../callback/RegisterCallback.h"
 #include "../audioEffectNode/Output.h"
 #include "../audioEffectNode/Input.h"
 #include "NodeManager.h"
-#include "PipelineManager.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include <./utils/Utils.h>
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
@@ -60,7 +55,7 @@ const int ARRAY_SIZE_2 = 2;
 const int AUDIOSUITE_ERROR_SYSTEM_CODE = 3;
 const int ERROR_CODE_3 = 3;
 const double HUNDRED_NUM = 100;
-const int INVALID_FILE_LENGTH = -1;
+const int VALID_FILE_LENGTH = -1;
 const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
@@ -89,6 +84,7 @@ std::vector<FILE*> g_activedFileArray;
 
 void MultiStoreTotalBuffToMap(const char *totalBuff, size_t size, const std::string &key)
 {
+    (void)key;
     std::lock_guard<std::mutex> lock(g_threadLock);
     OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest storeTotalBuffToMap totalBuff:%{public}p, size:%{public}zu", totalBuff, size);
@@ -176,7 +172,7 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                          "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d",
                          static_cast<int>(result));
-            continue;
+            break;
         }
         // Save the obtained buffer value each time
         std::copy(static_cast<const char*>(audioData),
@@ -359,6 +355,7 @@ OH_AudioSuite_Result GetMultiRenderFrameOutputAsync(char *&firData, char *&secDa
 OH_AudioSuite_Result GetRenderFrameOutputAsync(char *&firData, size_t frameSize,
                                                size_t &firDataSize, bool &finishedFlag)
 {
+    (void)firDataSize;
     OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
     OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
     if (frameSize <= 0 || frameSize > MAX_FRAME_SIZE) {
@@ -715,7 +712,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
     threadNodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
 }
 
-void MultiUpdateInputNode(OH_AudioSuite_Result &result, UpdateInputNodeParams &params)
+void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodeParams &params)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest MultiUpdateInputNode start");
     OH_AudioFormat &audioFormatInput = threadPipelineManager->audioFormatInput;
@@ -747,40 +744,40 @@ void MultiUpdateInputNode(OH_AudioSuite_Result &result, UpdateInputNodeParams &p
                  "audioEditTest AudioInAndOutInit g_writeDataBufferMap[inputId] length: %{public}d", it->second.size());
 }
 
-bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &channels, int32_t &bitsPerSample)
+bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int32_t* channels, int32_t* bitsPerSample)
 {
-    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUD_SAMPLE_RATE, &sampleRate)) {
+    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUD_SAMPLE_RATE, sampleRate)) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "get sample rate failed");
         return false;
     }
-    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUD_CHANNEL_COUNT, &channels)) {
+    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUD_CHANNEL_COUNT, channels)) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "get channel count failed");
         return false;
     }
-    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUDIO_SAMPLE_FORMAT, &bitsPerSample)) {
+    if (!OH_AVFormat_GetIntValue(trackFormat, OH_MD_KEY_AUDIO_SAMPLE_FORMAT, bitsPerSample)) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "get bits per sample failed");
         return false;
     }
     OH_AudioFormat &threadAudioFormatInput = threadPipelineManager->audioFormatInput;
     OH_AudioFormat &threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
     // Set Sampling Rate
-    threadAudioFormatInput.samplingRate = SetSamplingRate(sampleRate);
+    threadAudioFormatInput.samplingRate = SetSamplingRate(*sampleRate);
     // Set audio channels
-    threadAudioFormatInput.channelCount = channels;
-    threadAudioFormatInput.channelLayout = SetChannelLayout(channels);
+    threadAudioFormatInput.channelCount = *channels;
+    threadAudioFormatInput.channelLayout = SetChannelLayout(*channels);
     // Set bit depth
-    threadAudioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
+    threadAudioFormatInput.sampleFormat = SetSampleFormat(*bitsPerSample);
     // Set the encoding format
     threadAudioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
 
     threadAudioFormatOutput.samplingRate = threadAudioFormatInput.samplingRate;
-    threadAudioFormatOutput.channelCount = channels;
+    threadAudioFormatOutput.channelCount = *channels;
     threadAudioFormatOutput.channelLayout = threadAudioFormatInput.channelLayout;
     threadAudioFormatOutput.sampleFormat = threadAudioFormatInput.sampleFormat;
     threadAudioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "sampleRate: %{public}d, channels: %{public}d,"
-                 "bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
+                 "bitsPerSample: %{public}d", *sampleRate, *channels, *bitsPerSample);
     return true;
 }
 
@@ -888,10 +885,32 @@ int GetFileLength(FILE *inputFile)
     if (fseek(inputFile, 0, SEEK_END) != 0) {
         fclose(inputFile);
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "fseek ERROR");
-        return INVALID_FILE_LENGTH;
+        return VALID_FILE_LENGTH;
     }
     int fileLength = ftell(inputFile);
     return fileLength;
+}
+
+static bool GetWavDataPosition(FILE* file, uint32_t& data_offset, uint32_t& data_length) {
+    if (file == nullptr) {
+        return false;
+    }
+    fseek(file, 0, SEEK_SET);
+    char chunk_id[4];
+    uint32_t chunk_size;
+    fseek(file, 12, SEEK_SET);
+    while (fread(chunk_id, 1, 4, file) == 4 && fread(&chunk_size, 4, 1, file) == 1) {
+        if (memcmp(chunk_id, "data", 4) == 0) {
+            data_offset = ftell(file);
+            data_length = chunk_size;
+            return true;
+        }
+        fseek(file, chunk_size, SEEK_CUR);
+        if (chunk_size % 2 == 1) {
+            fseek(file, 1, SEEK_CUR);
+        }
+    }
+    return false;
 }
 
 napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
@@ -906,6 +925,9 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     int fd = fileno(inputFile);
     int fileLength = GetFileLength(inputFile);
     OH_AVSource *source = OH_AVSource_CreateWithFD(fd, 0, fileLength);
+    if (source == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
     OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
     if (trackFormat == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
@@ -913,17 +935,27 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     int32_t sampleRate;
     int32_t channels;
     int32_t bitsPerSample;
-    if (!MultiGetAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
+    if (!MultiGetAudioProperties(trackFormat, &sampleRate, &channels, &bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
+
+    uint32_t offset = 0;
+    uint32_t length = 0;
+    if (GetWavDataPosition(inputFile, offset, length)) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
+        "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(), offset, length);
+    } else {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
+    }
+
     std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
     std::map<std::string, FILE*> &writeDataFileMap = threadPipelineManager->writeDataFileMap;
     writeDataFileMap[params.inputId] = inputFile;
-    threadPipelineManager->totalInputDataSize = fileLength;
+    threadPipelineManager->totalInputDataSize = length;
     g_activedFileArray.push_back(inputFile);
     napi_value napiValue;
     OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
@@ -934,8 +966,6 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
         UpdateInputNodeParams *updateParams =
             new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
         MultiUpdateInputNode(result, *updateParams);
-        delete updateParams;
-        updateParams = nullptr;
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
@@ -1159,7 +1189,6 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
     }
-    FreeBuffer(&playAudioBuffer);
     playAudioBuffer = (char *)malloc(*writeSize);
     std::copy(audioData, audioData + *writeSize, playAudioBuffer);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1173,6 +1202,7 @@ OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSi
 OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
     void *userData, void *audioData, int32_t audioDataSize)
 {
+    (void)userData;
     if (renderer == nullptr) {
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
@@ -1194,7 +1224,7 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
             int32_t copySize = std::min(audioDataSize, writeSize);
             std::copy(playAudioBuffer, playAudioBuffer + copySize,
                 static_cast<char *>(firstAudioBuffer) + firstBufferSize);
-            firstBufferSize += std::min(audioDataSize, writeSize);
+            firstBufferSize += writeSize;
         }
     }
     int32_t copySize = std::min(audioDataSize, writeSize);
@@ -1300,7 +1330,6 @@ napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info)
 {
-    std::lock_guard<std::mutex> lock(g_threadLock);
     napi_value jsMap;
     napi_create_object(env, &jsMap);
     bool endFlag = true;

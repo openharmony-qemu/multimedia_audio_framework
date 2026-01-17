@@ -35,6 +35,7 @@ export const startVBEffect: (inputId: string, mode: number, voiceBeautifierId: s
 export const resetVBEffect: (inputId: string, mode: number, voiceBeautifierId: string) => number;
 export const deleteNode: (nodeId: string) => number;
 export const registerAudioFormatCallback: (callBackFull: Function) => string[];
+export const unregisterAudioFormatCallback: () => void;
 export const getOptions: (nodeId: string) => string;
 export const getEffectNodeList: () => Array<number>;
 export const setSoundSpeedTone: (pitchSong: string, soundSpeedToneId: string, soundSpeed: number, soundTone: number, selectedNodeId?: string) => number;
@@ -53,3 +54,13 @@ export const ResetExpandEffect: (extRadius: number, extAngle: number, spaceRende
 export const GetFixedPositionParams: (nodeId: string) => { x: number, y: number, z: number };
 export const GetDynamicRenderParams: (nodeId: string) => { x: number, y: number, z: number, surroundTime: number, surroundDirection: number };
 export const GetExpandParams: (nodeId: string) => { extRadius: number, extAngle: number };
+export const registerStringCallback: (callBackFull: Function) => string;
+export const unregisterStringCallback: () => void;
+export const clear: () => void;
+export const clearByInputId: (inputId: string, startTime: number) => void;
+export const stopPipeline: () => void;
+export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
+export const unregisterAudioCacheCallback: () => void;
+export const ModifyRender: (NotRenderTrackIds: string[], RenderTrackIds: string[]) => void;
+export const setCurrentTime: (currentTime: number) => void;
+export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;

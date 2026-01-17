@@ -11,6 +11,10 @@
      */
     public static readonly FULL_WIDTH: string = '100%';
     /**
+     * Ninety-five percent width.
+     */
+    public static readonly NINETY_FIVE_PERCENT_WIDTH: string = '95%';
+    /**
      * Ninety percent width.
      */
     public static readonly NINETY_PERCENT_WIDTH: string = '90%';
@@ -19,17 +23,41 @@
      */
     public static readonly SIXTY_PERCENT_WIDTH: string = '60%';
     /**
+     * Fifty percent width.
+     */
+    public static readonly FIFTY_PERCENT_WIDTH: string = '50%';
+    /**
      * Thirty percent width.
      */
     public static readonly THIRTY_PERCENT_WIDTH: string = '30%';
+    /**
+     * Twenty-two percent width.
+     */
+    public static readonly TWENTY_TWO_PERCENT_WIDTH: string = '22%';
+    /**
+     * Twenty percent width.
+     */
+    public static readonly TWENTY_PERCENT_WIDTH: string = '20%';
+    /**
+     * ten percent width.
+     */
+    public static readonly TEN_PERCENT_WIDTH: string = '10%';
+    /**
+     * FIVE percent width.
+     */
+    public static readonly FIVE_PERCENT_WIDTH: string = '5%';
     /**
      * Full height.
      */
     public static readonly FULL_HEIGHT: string = '100%';
     /**
-    * Ninety-five percent width.
+     * One hundred and eight height.
+     */
+    public static readonly ONE_HUNDRED_AND_EIGHT_HEIGHT: string = '108%';
+    /**
+    * Eighty percent height.
     */
-    public static readonly NINETY_FIVE_PERCENT_WIDTH: string = '95%';
+    public static readonly EIGHTY_PERCENT_HEIGHT: string = '80%';
     /**
      * Thirty percent height.
      */
@@ -42,6 +70,14 @@
      * Twenty five percent height.
      */
     public static readonly TWENTY_FIVE_PERCENT_HEIGHT: string = '25%';
+    /**
+     * nineteen percent height.
+     */
+    public static readonly NINETEEN_PERCENT_HEIGHT: string = '19%';
+    /**
+     * FIVE percent height.
+     */
+    public static readonly FIVE_PERCENT_HEIGHT: string = '5%';
     /**
      * Opacity.
      */

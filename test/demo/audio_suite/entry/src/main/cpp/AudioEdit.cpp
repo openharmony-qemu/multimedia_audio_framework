@@ -40,11 +40,13 @@
 #include "audioEffectNode/AissEffect.h"
 #include "audioEffectNode/SoundSpeedTone.h"
 #include "audioEffectNode/VoiceChange.h"
+#include "callback/RegisterCallbackNapi.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
 #include "audioSuiteError/AudioSuiteError.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
-
+#include "audioRecord/AudioRecord.h"
+#include "timeline/Timeline_napi.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
 #include <multimedia/player_framework/native_avcodec_base.h>
@@ -61,30 +63,6 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
-
-static napi_ref callbackStringArrayRef = nullptr;
-static napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info info)
-{
-    size_t argc = 1;
-    napi_value args[1];
-    napi_value callback;
-    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // Creating a Global Reference
-    napi_create_reference(env, args[0], 1, &callbackStringArrayRef);
-
-    // Creating Thread-Safe Functions
-    napi_value global;
-    napi_get_global(env, &global);
-    napi_get_reference_value(env, callbackStringArrayRef, &callback);
-    napi_value name;
-    napi_status status = napi_create_string_utf8(env, "CallStringArrayCallback", NAPI_AUTO_LENGTH, &name);
-    napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL, CallStringArrayThread,
-        &tsfnStringArray);
-
-    napi_value result;
-    napi_get_undefined(env, &result);
-    return result;
-}
 
 static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 {
@@ -151,6 +129,17 @@ static void Clear()
         delete pair.second; // Delete the object pointed to by the pointer
     }
     g_userDataMap.clear();
+    Timeline::getInstance().deleteAllAudioTrack();
+}
+
+// release selected inputNode
+static void ClearByInputId(const std::string& inputId, long startTime)
+{
+    auto it = g_writeDataBufferMap.find(inputId.c_str() + std::to_string(startTime));
+    if (it != g_writeDataBufferMap.end()) {
+        g_writeDataBufferMap.erase(it);
+    }
+    bool ret = Timeline::getInstance().deleteAudioTrack(inputId);
 }
 
 static napi_value AudioEditDestory(napi_env env, napi_callback_info info)
@@ -237,23 +226,18 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     
     napi_value napiValue;
     OH_AudioSuite_Result result;
-    Node inputNode = g_nodeManager->GetNodeById(params.inputId);
-    if (inputNode.id.empty()) {
-        CreateInputNode(env, params.inputId, napiValue, result);
-    } else {
-        UpdateInputNodeParams updateInputNodeParams;
-        updateInputNodeParams.inputId = params.inputId;
-        updateInputNodeParams.channels = params.channels;
-        updateInputNodeParams.sampleRate = params.sampleRate;
-        updateInputNodeParams.bitsPerSample = params.bitsPerSample;
-        UpdateInputNode(napiValue, result, updateInputNodeParams);
-        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
-    }
+    ManageInputNodes(env, params, result, napiValue);
     ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 // Import Audio Call
+void updateRecordAudioParam(int sampleRate, int channels, int bitsPerSample) {
+    g_samplingRate = sampleRate;
+    g_channelCount = channels;
+    g_bitsPerSample = bitsPerSample;
+}
+
 static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioInAndOutInit start");
@@ -274,7 +258,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     int32_t sampleRate;
     int32_t channels;
     int32_t bitsPerSample;
-    if (!GetAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
+    if (!GetAudioProperties(trackFormat, &sampleRate, &channels, &bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     std::vector<std::string> audioFormat = {
@@ -282,11 +266,13 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     };
     CallStringArrayCallback(audioFormat);
     // Create a corresponding unsealer for the resource instance
+    updateRecordAudioParam(sampleRate, channels, bitsPerSample);
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-    RunAudioThread(demuxer, params.fileLength);
+    AudioFormat format{sampleRate, channels, bitsPerSample, params.startTime};
+    RunAudioThread(demuxer, params.fileLength, params.inputId, format);
     napi_value napiValue;
     OH_AudioSuite_Result result;
     Node inputNode = g_nodeManager->GetNodeById(params.inputId);
@@ -298,7 +284,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         updateInputNodeParams.channels = channels;
         updateInputNodeParams.sampleRate = sampleRate;
         updateInputNodeParams.bitsPerSample = bitsPerSample;
-        UpdateInputNode(napiValue, result, updateInputNodeParams);
+        UpdateInputNode(result, updateInputNodeParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
@@ -486,7 +472,6 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SaveFileBuffer start");
     ResetAllIsResetTotalWriteAudioDataSize();
     RenDerFrame();
-    Clear();
 
     napi_value napiValue = nullptr;
     void *arrayBufferData = nullptr;
@@ -705,32 +690,6 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// Audio playback -------------------------------------
-static napi_ref callbackAudioRendererRef = nullptr;
-
-// Register callback to get the finished value of audio playback
-static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
-{
-    size_t argc = 1;
-    napi_value args[1];
-    napi_value callback;
-    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // Creating a Global Reference
-    napi_create_reference(env, args[0], 1, &callbackAudioRendererRef);
-
-    // Creating Thread-Safe Functions
-    napi_value global;
-    napi_get_global(env, &global);
-    napi_get_reference_value(env, callbackAudioRendererRef, &callback);
-    napi_value name;
-    napi_status status = napi_create_string_utf8(env, "CallBooleanCallback", NAPI_AUTO_LENGTH, &name);
-    napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL, CallBoolThread, &tsfnBoolean);
-
-    napi_value result;
-    napi_get_undefined(env, &result);
-    return result;
-}
-
 static napi_value Record(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest Record start");
@@ -939,6 +898,120 @@ static napi_value SetSeparationMode(napi_env env, napi_callback_info info)
     return ReturnResult(env, static_cast<AudioSuiteResult>(status));
 }
 
+static napi_value clear(napi_env env, napi_callback_info info)
+{
+    Clear();
+    return nullptr;
+}
+
+static napi_value clearByInputId(napi_env env, napi_callback_info info)
+{
+    size_t argc = 2;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+ 
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    long startTime = 0;
+    status = napi_get_value_int64(env, argv[ARG_1], &startTime);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        return nullptr;
+    }
+    ClearByInputId(inputId, startTime);
+    return nullptr;
+}
+
+static napi_value ModifyRender(napi_env env, napi_callback_info info)
+{
+    return ModifyRenderTrack(env, info);
+}
+
+static napi_value stopPipeline(napi_env env, napi_callback_info info)
+{
+    // Shut down the pipeline
+    OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
+    return nullptr;
+}
+
+static napi_value setCurrentTime(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    long currentTime = 0;
+    napi_status status = napi_get_value_int64(env, argv[0], &currentTime);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "setCurrentTime g_currentTime: %{public}ld", currentTime);
+    Timeline::getInstance().resetCurrent(currentTime);
+    return nullptr;
+}
+
+static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
+{
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_value result;
+    napi_get_boolean(env, false, &result);
+    std::string inputId;
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
+    std::string EffectNodeId;
+    status = ParseNapiString(env, argv[ARG_1], EffectNodeId);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "EffectNodeId is: %{public}s", EffectNodeId.c_str());
+    bool isBypass = false;
+    status = napi_get_value_bool(env, argv[ARG_2], &isBypass);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
+        delete[] argv;
+        return result;
+    }
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "isBypass is: %{public}d", isBypass);
+    delete[] argv;
+    Node effectNode = g_nodeManager->GetNodeById(EffectNodeId);
+    if (!effectNode.physicalNode) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass get effectNode error, effectNodeId: %{public}s", EffectNodeId.c_str());
+        return result;
+    }
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_BypassEffectNode(effectNode.physicalNode, isBypass);
+    if (ret != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "SetEffectNodeBypass OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}u", ret);
+        return result;
+    }
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
+const std::vector<napi_property_descriptor> recordDescriptors = {
+    {"audioCapturerInit", nullptr, AudioCapturerInit,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerStart", nullptr, AudioCapturerStart, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerStop", nullptr, AudioCapturerStop, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"audioCapturerRelease", nullptr, AudioCapturerRelease, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"getAudioFrames", nullptr, GetAudioFrames, nullptr, nullptr, 0, napi_default, nullptr },
+    {"audioCapturerPause", nullptr, AudioCapturerPause, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"mixRecordBuffer", nullptr, MixRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"mixPlayInitBuffer", nullptr, MixPlayInitBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"clearRecordBuffer", nullptr, ClearRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr },
+    {"realPlayRecordBuffer", nullptr, RealPlayRecordBuffer, nullptr, nullptr, 0, napi_default, nullptr }
+};
+
 const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
     {"audioEditNodeInitMultiPipeline", nullptr, AudioEditNodeInitMultiPipeline,
         nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -985,6 +1058,35 @@ const std::vector<napi_property_descriptor> spaceRenderDescriptors = {
     {"GetExpandParams", nullptr, GetExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
 };
 
+const std::vector<napi_property_descriptor> timelineDescriptors = {
+    {"addAudioTrack", nullptr, AddAudioTrack, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteAudioTrack", nullptr, DeleteAudioTrack, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"setAudioTrackSilent", nullptr, SetAudioTrackSilent, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"addAudioAsset", nullptr, AddAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"updateAudioAsset", nullptr, UpdateAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"deleteAudioAsset", nullptr, DeleteAudioAsset, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"setAudioAssetStartTime", nullptr, SetAudioAssetStartTime, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"setAudioAssetPcmBufferLength", nullptr, SetAudioAssetPcmBufferLength,
+        nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"addAudioAssetEffectNode", nullptr, AddAudioAssetEffectNode, nullptr, nullptr, nullptr, napi_default, nullptr },
+    {"deleteAudioAssetEffectNode", nullptr, DeleteAudioAssetEffectNode,
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"clearTimeline", nullptr, ClearTimeline, nullptr, nullptr, nullptr, napi_default, nullptr },
+};
+
+const std::vector<napi_property_descriptor> callbackDescriptors = {
+    {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default,
+            nullptr},
+    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
+            napi_default, nullptr},
+    {"registerStringCallback", nullptr, RegisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerAudioCacheCallback", nullptr, RegisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"unregisterFinishedCallback", nullptr, UnregisterFinishedCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"unregisterAudioFormatCallback", nullptr, UnregisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"unregisterStringCallback", nullptr, UnregisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"unregisterAudioCacheCallback", nullptr, UnregisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default, nullptr}
+};
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
     std::vector<napi_property_descriptor> desc = {
@@ -995,8 +1097,6 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"audioRendererPause", nullptr, AudioRendererPause, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioRendererStop", nullptr, AudioRendererStop, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getRendererState", nullptr, GetRendererState, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default,
-            nullptr},
         {"resetTotalWriteAudioDataSize", nullptr, ResetTotalWriteAudioDataSize, nullptr, nullptr, nullptr, napi_default,
             nullptr},
         {"realTimeSaveFileBuffer", nullptr, RealTimeSaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1022,17 +1122,24 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"startEnvEffect", nullptr, startEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
-            napi_default, nullptr},
         {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setSoundSpeedTone", nullptr, SetSoundSpeedTone, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setIsRecord", nullptr, SetIsRecord, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr}
+        {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"clear", nullptr, clear, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"clearByInputId", nullptr, clearByInputId, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"ModifyRender", nullptr, ModifyRender, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"stopPipeline", nullptr, stopPipeline, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setCurrentTime", nullptr, setCurrentTime, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
     desc.insert(desc.end(), spaceRenderDescriptors.begin(), spaceRenderDescriptors.end());
+    desc.insert(desc.end(), recordDescriptors.begin(), recordDescriptors.end());
+    desc.insert(desc.end(), timelineDescriptors.begin(), timelineDescriptors.end());
+    desc.insert(desc.end(), callbackDescriptors.begin(), callbackDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;
 }
