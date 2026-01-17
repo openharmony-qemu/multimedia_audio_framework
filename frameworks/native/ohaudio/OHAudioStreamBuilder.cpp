@@ -633,7 +633,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         capturerInfo
     };
 
-
     if (sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
     }
