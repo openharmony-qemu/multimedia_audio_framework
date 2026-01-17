@@ -603,7 +603,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
     }
  
     if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF) {
-        config.isModernInnerCapturer = true;
         config.filterOptions.pids.push_back(getpid());
         config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
     }
