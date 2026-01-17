@@ -33,7 +33,7 @@ public:
     OH_AudioStream_Result Generate(OH_AudioRenderer **renderer);
     OH_AudioStream_Result Generate(OH_AudioCapturer **capturer);
 
-    OH_AudioStream_Result SetSamplingRate(int32_t rate);d
+    OH_AudioStream_Result SetSamplingRate(int32_t rate);
     OH_AudioStream_Result SetChannelCount(int32_t channelCount);
     OH_AudioStream_Result SetSampleFormat(AudioSampleFormat sampleFormat);
     OH_AudioStream_Result SetEncodingType(AudioEncodingType encodingType);
@@ -97,6 +97,7 @@ private:
     bool keepRunning_ = false;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
+    bool modernInnerCapturer_ = false;
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
