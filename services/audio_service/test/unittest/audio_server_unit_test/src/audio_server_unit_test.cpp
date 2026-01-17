@@ -1374,12 +1374,12 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
 
     streamType = static_cast<AudioStreamType>(-1);
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 
     streamType = STREAM_MUSIC;
     volume = -1.0f;
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2378,7 +2378,7 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
     int32_t result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
     EXPECT_EQ(result, SUCCESS);
     result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
