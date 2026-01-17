@@ -1770,7 +1770,8 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
         isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-    innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex, shared_from_this());
+    innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex,
+        shared_from_this());
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         ret = CreateDupBufferInner(innerCapId);

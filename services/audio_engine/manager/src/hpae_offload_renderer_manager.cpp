@@ -885,11 +885,10 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
-OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() const noexcept
+OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() noexcept
 {
     OffloadCallbackData data;
-    if (sinkOutputNode_ != nullptr)
-    {
+    if (sinkOutputNode_ != nullptr) {
         data = sinkOutputNode_->GetOffloadCallbackData();
     }
     return data;
