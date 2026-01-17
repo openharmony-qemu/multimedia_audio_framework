@@ -188,7 +188,7 @@ bool AudioUsrSelectManager::HasMCSourceTypeStreamRunning()
     return false;
 }
 
-void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info, bool mcFlag)
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info)
 {
     if (index < 0) {
         RecordDeviceInfo recordDeviceInfo {
