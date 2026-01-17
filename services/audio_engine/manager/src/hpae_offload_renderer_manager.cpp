@@ -543,7 +543,8 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 
-        if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
+        CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is null");
+        if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
             CreateOffloadNodes();
             ConnectInputSession();
         }
