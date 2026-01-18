@@ -60,8 +60,6 @@ public:
     MOCK_METHOD(int32_t, SetMute, (bool mute), (override));
     MOCK_METHOD(bool, GetMute, (), (override));
 
-    MOCK_METHOD(int32_t, SetBackMute, (bool backMute), (override));
-
     MOCK_METHOD(uint32_t, GetUnderflowCount, (), (override));
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
     MOCK_METHOD(void, SetUnderflowCount, (uint32_t underflowCount), (override));
@@ -435,6 +433,7 @@ HWTEST_F(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
 HWTEST_F(FastSystemStreamUnitTest, SetBackMute_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("SetBackMute_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     int32_t res = fastAudioStream->SetBackMute(false);
