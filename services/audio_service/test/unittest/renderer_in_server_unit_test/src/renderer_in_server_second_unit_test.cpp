@@ -1473,6 +1473,18 @@ HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetPlaybackManager
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackManager_004
+ * @tc.desc  : Test GetPlaybackManager API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_004, TestSize.Level1)
+{
+    IStreamManager &manager = IStreamManager::GetPlaybackManager(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
+    EXPECT_NE(&manager, nullptr);
+}
+
+/**
  * @tc.name  : Test Pause API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerPause_003

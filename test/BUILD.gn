@@ -136,6 +136,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest/audio_engine_client_manager_unit_test:audio_engine_client_manager_unit_test",
     "../services/audio_service/test/unittest:audio_stream_monitor_unit_test",
     "../services/audio_service/test/unittest:audio_tool_calculate_unit_test",
+    "../services/audio_service/test/unittest:cabin_playback_engine_unit_test",
   ]
 
   if (audio_framework_feature_audiosuite_support) {

@@ -2261,7 +2261,8 @@ const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringM
     {ENCODING_TRUE_HD, "TRUE_HD"},
     {ENCODING_DTS_HD, "DTS_HD"},
     {ENCODING_DTS_X, "DTS_X"},
-    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
+    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"},
+    {ENCODING_AUDIOVIVID_3DA_DIRECT, "AUDIOVIVID_3DA_DIRECT"}
 };
 
 std::string EncodingTypeStr(AudioEncodingType type)
