@@ -21,11 +21,11 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
+namespace{
+constexpr int32_t DECIMAL = 10;
+}
 namespace OHOS {
 namespace AudioStandard {
-namespace{
-constexpr int32_t DECIMAL_BASE = 10;
-}
 const uint32_t FIRST_SESSIONID = 100000;
 const uint32_t RING_SESSIONID = 1;
 const uint32_t VOIP_SESSIONID = 2;
@@ -266,7 +266,7 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
 {
     AudioStreamInfo streamInfo = pipeInfo->audioStreamInfo_;
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-        const auto &rate = static_cast<int32_t>(std::strtol(pipeInfo->moduleInfo_.rate, nullptr, DECIMAL_BASE));
+        const auto &rate = static_cast<int32_t>(std::strtol(pipeInfo->moduleInfo_.rate.c_str(), nullptr, DECIMAL));
         if (rate > AudioSamplingRate::SAMPLE_RATE_96000) {
             streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
             return streamInfo;
