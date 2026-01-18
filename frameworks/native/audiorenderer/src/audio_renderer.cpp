@@ -2200,6 +2200,9 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     res = audioStream->SetDuckVolume(info.duckVolume);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetDuckVolume failed");
     audioStream->SetUnderflowCount(info.underFlowCount);
+    if (info.backMute) {
+        audioStream->SetMute(true, CMD_FROM_SYSTEM);
+    }
 
     if (info.userSettedPreferredFrameSize.has_value()) {
         audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
@@ -2363,6 +2366,9 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     audioStream_->SetMute(true, CMD_FROM_SYSTEM); // Do not record this status in recover(InitSwitchInfo)
+    bool backMute = false;
+    GetCurrentBackMuteStatus(backMute);
+    audioStream_->SetBackMute(backMute);
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();
@@ -3193,6 +3199,10 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
         audioStream->SetStaticBufferInfo(info.staticBufferInfo);
         audioStream->SetRenderRate(info.renderRate);
     }
+    if (info.backMute) {
+        // resume the backMute flag for new stream
+        audioStream->SetBackMute(true);
+    }
 }
 
 int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
@@ -3200,6 +3210,25 @@ int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag 
     std::shared_lock lock(rendererMutex_);
     CHECK_AND_RETURN_RET_LOG(GetStatusInner() != RENDERER_RELEASED, ERR_ILLEGAL_STATE, "state is released");
     return audioStream_->GetLatencyWithFlag(latency, flag);
+}
+
+int32_t AudioRendererPrivate::GetCurrentBackMuteStatus(bool &backMute)
+{
+    // gain background mute status for stream
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamIdInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, " Get sessionId failed");
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get Current Renderer backMute failed");
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+            backMute = (*it)->backMute;
+        }
+    }
+    return SUCCESS;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

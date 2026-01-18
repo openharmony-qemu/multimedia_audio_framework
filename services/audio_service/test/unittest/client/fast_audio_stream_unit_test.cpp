@@ -60,6 +60,8 @@ public:
     MOCK_METHOD(int32_t, SetMute, (bool mute), (override));
     MOCK_METHOD(bool, GetMute, (), (override));
 
+    MOCK_METHOD(int32_t, SetBackMute, (bool backMute), (override));
+
     MOCK_METHOD(uint32_t, GetUnderflowCount, (), (override));
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
     MOCK_METHOD(void, SetUnderflowCount, (uint32_t underflowCount), (override));
@@ -422,6 +424,21 @@ HWTEST_F(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     int32_t res = fastAudioStream->SetMute(false, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetBackMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetBackMute_001
+ * @tc.desc  : Test SetBackMute interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetBackMute_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetBackMute_001 start");
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetBackMute(false);
+    EXPECT_EQ(res, SUCCESS);
 }
 
 /**

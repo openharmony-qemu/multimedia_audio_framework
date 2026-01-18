@@ -711,6 +711,12 @@ int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
     return ERROR;
 }
 
+int32_t CapturerInClientInner::SetBackMute(bool backMute)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
+}
+
 bool CapturerInClientInner::GetMute()
 {
     AUDIO_WARNING_LOG("only for renderer");
