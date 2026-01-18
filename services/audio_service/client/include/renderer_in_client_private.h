@@ -474,6 +474,7 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+    bool backMute_ = false;
 
     // for getAudioTimeStampInfo
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {
