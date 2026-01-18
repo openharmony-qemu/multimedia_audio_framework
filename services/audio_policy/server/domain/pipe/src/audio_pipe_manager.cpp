@@ -21,7 +21,7 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
-namespace{
+namespace {
 constexpr int32_t DECIMAL = 10;
 }
 namespace OHOS {
