@@ -1293,6 +1293,8 @@ struct AudioRegisterTrackerInfo {
     int32_t channelCount;
     uint32_t appTokenId;
     AudioStreamInfo streamInfo;
+    // callback for backMute status to renderChangeinfo
+    bool backMute = false;
 };
 
 enum StateChangeCmdType {

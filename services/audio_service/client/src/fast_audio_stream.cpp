@@ -415,6 +415,13 @@ int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
     return ret;
 }
 
+int32_t FastAudioStream::SetBackMute(bool backMute)
+{
+    AUDIO_INFO_LOG("when finish old stream and generate new stream, store the old backMute");
+    backMute_ = backMute;
+    return SUCCESS;
+}
+
 bool FastAudioStream::GetMute()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
@@ -1015,6 +1022,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
     info.renderRate = renderRate_;
+    info.backMute = backMute_;
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();

@@ -425,6 +425,22 @@ HWTEST_F(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetBackMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetBackMute_001
+ * @tc.desc  : Test SetBackMute interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetBackMute_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetBackMute_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetBackMute(false);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
  * @tc.name  : Test SetRenderMode and GetCaptureMode API
  * @tc.type  : FUNC
  * @tc.number: SetRenderMode_001
