@@ -86,12 +86,16 @@ void HpaeOffloadRendererManager::AddNodeToMap(std::shared_ptr<HpaeSinkInputNode>
 void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
 {
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    HpaeSessionState inputState = HPAE_SESSION_RELEASED;
     if (node != nullptr) {
         renderNoneEffectNode_->AudioOffloadRendererRelease(node->GetNodeInfo(), sinkInfo_);
+        inputState = node->GetState();
 #ifdef ENABLE_HIDUMP_DFX
         OnNotifyDfxNodeAdmin(false, node->GetNodeInfo());
 #endif
     }
+    RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
+    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
         DestroyOffloadNodes();
@@ -205,7 +209,6 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
         } else {
             RemoveNodeFromMap(sessionId);
         }
-        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_INVALID);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -416,7 +419,6 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
     } else {
         TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
     }
-    NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE_ALL, 0, RENDERER_RELEASED);
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -466,7 +468,6 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
         }
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, node, name);
-        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, RENDERER_RELEASED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -542,10 +543,13 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 
-        if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
+        CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ is null");
+        if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
             CreateOffloadNodes();
             ConnectInputSession();
         }
+        NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, curNode_->GetSessionId(),
+            ConvertHpaeToRendererState(curNode_->GetState()), curNode_->GetAppUid());
     };
     SendRequest(request, __func__, true);
     if (!IsInit()) {
@@ -885,19 +889,15 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
-void HpaeOffloadRendererManager::OnRequestWritePos(uint64_t &writePos)
+OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() noexcept
 {
-    writePos = 0;
+    OffloadCallbackData data;
     if (sinkOutputNode_ != nullptr) {
-        writePos = sinkOutputNode_->GetWritePos();
+        data = sinkOutputNode_->GetOffloadCallbackData();
     }
+    return data;
 }
-void HpaeOffloadRendererManager::OnNotifyFlushStatus(bool isFlush)
-{
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
-        "HpaeOffloadRendererManager::OnNotifyFlushStatus curNode_ is null");
-    curNode_->NotifyOffloadFlushState(isFlush);
-}
+
 void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
 {
     CHECK_AND_RETURN_LOG(curNode_ != nullptr,

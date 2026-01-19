@@ -401,6 +401,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
 void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
 {
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
+    if (audioScene == AUDIO_SCENE_DEFAULT && !CheckRingAndVoipStreamRunning()) {
+        return;
+    }
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
@@ -3050,8 +3053,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
 
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc),
-        streamDesc->GetSessionId());
+    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
     streamDesc->rendererInfo_.streamUsage;
 
@@ -3568,14 +3570,17 @@ void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<A
     }
 }
 
-void AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
+bool AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
 {
+    bool ret = false;
     if ((lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING) &&
         (audioScene == AUDIO_SCENE_DEFAULT || audioScene == AUDIO_SCENE_PHONE_CALL ||
             audioScene == AUDIO_SCENE_PHONE_CHAT)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to non-ring");
         isRingDualToneOnPrimarySpeaker_ = false;
+        ret = true;
     }
+    return ret;
 }
 
 bool AudioCoreService::IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene)

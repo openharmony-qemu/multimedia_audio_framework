@@ -2753,6 +2753,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
         auto ret = audioStateManager_.SetAudioClientInfoMgrCallback(callback);
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ret, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SetAudioClientInfoMgrCallback(callback);
+        audioPolicyUtils_.SetAudioClientInfoMgrCallback(callback);
         return ret;
     } else {
         AUDIO_ERR_LOG("Client info manager callback is null");

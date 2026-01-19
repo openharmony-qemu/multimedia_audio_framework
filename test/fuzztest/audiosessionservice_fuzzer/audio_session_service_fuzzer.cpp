@@ -190,8 +190,7 @@ void AudioSessionServiceGetAudioSessionStreamUsageForDeviceFuzzTest()
 {
     auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
-    uint32_t streamId = GetData<uint32_t>();
-    audioSessionService.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    audioSessionService.GetAudioSessionStreamUsageForDevice(callerPid);
 }
 
 TestPtr g_testPtrs[] = {

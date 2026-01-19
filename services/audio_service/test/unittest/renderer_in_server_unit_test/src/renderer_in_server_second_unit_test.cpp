@@ -200,7 +200,7 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     captureInfo.dupStream = nullptr;
     int32_t innerCapId = 1;
     uint32_t streamIndex_ = 0;
-    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex_);
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex_, server);
     server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
     server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() = AudioRingCache::Create(length);
     
@@ -1095,7 +1095,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_005, Tes
 HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     auto inputData = new int8_t [10] {1, 2, 3};

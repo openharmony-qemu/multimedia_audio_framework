@@ -59,7 +59,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
-    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag = false);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
 
 private:
@@ -72,12 +72,17 @@ private:
     int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
     void UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfoForSystemSelectInner(int32_t index, RecordDeviceInfo info, bool mcFlag);
     void UpdateRecordDeviceInfoForPreferInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
+    bool IsSourceTypeSupportedByMC(SourceType type);
+    bool HasMCSourceTypeStreamRunning();
 
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;
     std::map<int32_t, AppIsBackState> appIsBackStatesMap_;
+    bool mcSelectedFlag_ = false;
+    std::shared_ptr<AudioDeviceDescriptor> mcInputPreferred_ = std::make_shared<AudioDeviceDescriptor>();
 };
 
 } // namespace AudioStandard

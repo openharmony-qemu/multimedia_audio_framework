@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "audio_unit_test.h"
 #include "audio_system_manager.h"
 
 #include "audio_volume_change_unit_test.h"
@@ -133,6 +134,45 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
     g_audioManagerInstance->UnregisterVolumeKeyEventCallback(getpid());
+}
+
+/*
+ * Feature: AudioVolumeChangeUnitTest
+ * Function: Set volume for AudioStreamType::STREAM_RING
+ * SubFunction: NA
+ * FunctionPoints: NA
+ * EnvConditions: NA
+ * CaseDescription:
+ */
+HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    int result;
+    int callBackSetResult;
+    std::string testCaseName("volumeChange_test_002");
+    g_isCallbackReceived = false;
+    AudioStreamType streamType = AudioStreamType::STREAM_RING;
+    AudioVolumeType volumeType
+        = static_cast<AudioVolumeType>(streamType);
+    int volume = 10;
+    g_callbackName = testCaseName;
+    bool isUpdateUi = false;
+    auto appCallback = make_shared<ApplicationCallback>(testCaseName);
+    callBackSetResult = g_audioManagerInstance->RegisterVolumeKeyEventCallback(getpid(), appCallback);
+    result = g_audioManagerInstance->SetVolume(volumeType, volume);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(callBackSetResult, SUCCESS);
+    if (result == SUCCESS) {
+        // Wait here for callback. If not callback for 2 mintues, will skip this step
+        AudioVolumeChangeUnitTest::WaitForCallback();
+        EXPECT_EQ(streamType, g_streamType);
+        EXPECT_EQ(volume, g_volumeLevel);
+        EXPECT_EQ(isUpdateUi, g_isUpdateUi);
+        EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
+    }
+    g_audioManagerInstance->UnregisterVolumeKeyEventCallback(getpid());
+    MockNative::Resume();
 }
 
 /*

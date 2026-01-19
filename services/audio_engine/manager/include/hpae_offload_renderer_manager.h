@@ -98,9 +98,8 @@ public:
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     bool IsBypassSpatializationForStereo() override;
 
-    void OnRequestWritePos(uint64_t &writePos) override;
-    void OnNotifyFlushStatus(bool isFlush) override;
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    OffloadCallbackData GetOffloadCallbackData() noexcept override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();

@@ -60,6 +60,7 @@ public:
     AudioClientInfoMgrCallbackFuzzTest() {}
     bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override { return false; }
     bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) override { return false; }
+    bool OnCheckMediaControllerBundle(const std::string &bundleName) override { return false; }
 };
 
 class AudioQueryAllowedPlaybackCallbackFuzzTest : public AudioQueryAllowedPlaybackCallback {
@@ -141,6 +142,19 @@ void OnCheckClientInfoFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
     policyListenerStub->OnCheckClientInfo(bundleName, uid, pid, ret);
+}
+
+void OnCheckMediaControllerBundleFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::string bundleName = "bundleName";
+    bool ret = g_fuzzUtils.GetData<bool>();
+    policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
+    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->OnCheckMediaControllerBundle(bundleName, ret);
 }
 
 void OnQueryAllowedPlaybackFuzzTest(FuzzedDataProvider& fdp)
@@ -301,6 +315,7 @@ void Test(FuzzedDataProvider& fdp)
     OnAvailableDeviceChangeFuzzTest,
     OnQueryClientTypeFuzzTest,
     OnCheckClientInfoFuzzTest,
+    OnCheckMediaControllerBundleFuzzTest,
     OnQueryAllowedPlaybackFuzzTest,
     OnBackgroundMuteFuzzTest,
     OnQueryDeviceVolumeBehaviorFuzzTest,

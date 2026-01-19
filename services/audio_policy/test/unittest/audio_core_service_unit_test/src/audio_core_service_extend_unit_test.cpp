@@ -72,7 +72,7 @@ void AudioCoreServiceExtUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceExtUnitTest::SetUpTestCase start-end");
     GetPermission();
-    GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
+    GetServerPtr()->eventEntry_->NotifyServiceReady();
 }
 void AudioCoreServiceExtUnitTest::TearDownTestCase(void)
 {

@@ -729,12 +729,14 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
 
-    HandleRingToNonRingSceneChange(lastAudioScene, audioScene);
+    bool isDealStreamsWhenRingDual = HandleRingToNonRingSceneChange(lastAudioScene, audioScene);
     FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
-    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
+    if (isDealStreamsWhenRingDual) {
+        for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+            audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
+        }
+        streamsWhenRingDualOnPrimarySpeaker_.clear();
     }
-    streamsWhenRingDualOnPrimarySpeaker_.clear();
 
     if (!isSameScene) {
         SetSleVoiceStatusFlag(audioScene);
