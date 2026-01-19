@@ -119,31 +119,31 @@ void ParseDynamicRenderParams(napi_env env, napi_value* argv, size_t argc, Dynam
 {
     napi_status status;
 
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &params.x);
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &params.y);
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &params.z);
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_3], &params.surroundTime);
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &params.surroundDirection);
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params.effectNodeId);
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_6], params.inputId);
+    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &(params->x));
+    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &(params->y));
+    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &(params->z));
+    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_3], &(params->surroundTime));
+    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &(params->surroundDirection));
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params->effectNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_6], params->inputId);
     if (argc == UINT_8) {
-        status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_7], params.selectedNodeId);
+        status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_7], params->selectedNodeId);
     }
 
-    switch (params.surroundDirection) {
+    switch (params->surroundDirection) {
         case 0:
-            params.surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
+            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
             break;
         case 1:
-            params.surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW;
+            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW;
             break;
         default:
-            params.surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
+            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
     }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG,
                  "x:%{public}lf, y:%{public}lf, z:%{public}lf, surroundTime:%{public}d surroundDirection:%{public}d",
-                 params.x, params.y, params.z, params.surroundTime, params.surroundDirection);
+                 params->x, params->y, params->z, params->surroundTime, params->surroundDirection);
 }
 
 napi_value StartDynamicRenderEffect(napi_env env, napi_callback_info info)
@@ -155,7 +155,7 @@ napi_value StartDynamicRenderEffect(napi_env env, napi_callback_info info)
     napi_status status;
 
     DynamicRenderParams params;
-    ParseDynamicRenderParams(env, argv, argc, params);
+    ParseDynamicRenderParams(env, argv, argc, &params);
 
     double x = params.x;
     double y = params.y;
@@ -350,7 +350,7 @@ napi_value GetFixedPositionParams(napi_env env, napi_callback_info info)
     }
     napi_value resultObj;
     status = napi_create_object(env, &resultObj);
-    // 创建属性键（字符串）
+
     napi_value xKey;
     napi_value yKey;
     napi_value zKey;
@@ -358,7 +358,6 @@ napi_value GetFixedPositionParams(napi_env env, napi_callback_info info)
     napi_create_string_utf8(env, "y", NAPI_AUTO_LENGTH, &yKey);
     napi_create_string_utf8(env, "z", NAPI_AUTO_LENGTH, &zKey);
 
-    // 创建属性值（double 类型 napi_value）
     napi_value xValue;
     napi_value yValue;
     napi_value zValue;
@@ -366,7 +365,6 @@ napi_value GetFixedPositionParams(napi_env env, napi_callback_info info)
     napi_create_double(env, positionPara.y, &yValue);
     napi_create_double(env, positionPara.z, &zValue);
 
-    // 设置对象属性
     napi_set_property(env, resultObj, xKey, xValue);
     napi_set_property(env, resultObj, yKey, yValue);
     napi_set_property(env, resultObj, zKey, zValue);
@@ -396,7 +394,6 @@ napi_value GetDynamicRenderParams(napi_env env, napi_callback_info info)
     napi_value resultObj;
     status = napi_create_object(env, &resultObj);
 
-    // 创建属性键（字符串）
     napi_value xKey;
     napi_value yKey;
     napi_value zKey;
@@ -408,7 +405,6 @@ napi_value GetDynamicRenderParams(napi_env env, napi_callback_info info)
     napi_create_string_utf8(env, "surroundTime", NAPI_AUTO_LENGTH, &surroundTimeKey);
     napi_create_string_utf8(env, "surroundDirection", NAPI_AUTO_LENGTH, &surroundDirectionKey);
 
-    // 创建属性值（double 类型 napi_value）
     napi_value xValue;
     napi_value yValue;
     napi_value zValue;
@@ -420,7 +416,6 @@ napi_value GetDynamicRenderParams(napi_env env, napi_callback_info info)
     napi_create_int32(env, rotationPara.surroundTime, &surroundTimeValue);
     napi_create_int32(env, static_cast<int>(rotationPara.surroundDirection), &surroundDirectionValue);
 
-    // 设置对象属性
     napi_set_property(env, resultObj, xKey, xValue);
     napi_set_property(env, resultObj, yKey, yValue);
     napi_set_property(env, resultObj, zKey, zValue);
@@ -451,19 +446,16 @@ napi_value GetExpandParams(napi_env env, napi_callback_info info)
     napi_value resultObj;
     status = napi_create_object(env, &resultObj);
 
-    // 创建属性键（字符串）
     napi_value extRadiusKey;
     napi_value extAngleKey;
     napi_create_string_utf8(env, "extRadius", NAPI_AUTO_LENGTH, &extRadiusKey);
     napi_create_string_utf8(env, "extAngle", NAPI_AUTO_LENGTH, &extAngleKey);
 
-    // 创建属性值（double 类型 napi_value）
     napi_value extRadiusValue;
     napi_value extAngleValue;
     napi_create_double(env, expandPara.extRadius, &extRadiusValue);
     napi_create_double(env, expandPara.extAngle, &extAngleValue);
 
-    // 设置对象属性
     napi_set_property(env, resultObj, extRadiusKey, extRadiusValue);
     napi_set_property(env, resultObj, extAngleKey, extAngleValue);
 

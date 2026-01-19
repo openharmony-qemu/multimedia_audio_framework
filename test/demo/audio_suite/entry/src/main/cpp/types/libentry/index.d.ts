@@ -3,6 +3,8 @@
  */
 
 export * from "./multiPipelineIndex";
+export * from "./audioRecord";
+export * from "./timeline";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;
@@ -11,10 +13,11 @@ export const audioRendererPause: () => void;
 export const audioRendererStop: () => void;
 export const getRendererState: () => number;
 export const registerFinishedCallback: (callBackFull: Function) => boolean;
+export const unregisterFinishedCallback: () => void;
 export const resetTotalWriteAudioDataSize: () => void;
 export const realTimeSaveFileBuffer: () => ArrayBuffer;
 export const audioEditNodeInit: (workMode: number) => number;
-export const audioInAndOutInit: (inputId: string, outputId: string, mixerId: string, fd: number, bufferLength: number) => number;
+export const audioInAndOutInit: (NodeIds: string[], fd: number, bufferLength: number, startTime: number) => number;
 export const initByPipelineCascad: (inputId: string, outputId: string, mixerId: string, audioFormat: string, buffer: ArrayBuffer) => number;
 export const audioEditDestory: () => number;
 export const setEqualizerMode: (equalizerMode: number, nodeId: string, inputId:string) => number;
