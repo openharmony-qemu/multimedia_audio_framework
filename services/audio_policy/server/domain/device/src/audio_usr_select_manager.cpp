@@ -90,7 +90,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    // 判断设备是不是存在且处于连接状�?
+    // 判断设备是不是存在且处于连接状态
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
 
     if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
