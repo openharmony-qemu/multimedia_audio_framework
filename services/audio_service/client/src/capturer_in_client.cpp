@@ -1175,7 +1175,6 @@ void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
  
 int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     if (gasp == nullptr) {
         AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
@@ -1192,6 +1191,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     waitLock.unlock();
  
     std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     if (operation != USER_PRIVACY_AUTHORITY) {
         AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), operation, result);
