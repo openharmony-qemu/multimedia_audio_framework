@@ -1046,7 +1046,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
 
 int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // root user case for auto test
     if (callingUid == ROOT_UID) {

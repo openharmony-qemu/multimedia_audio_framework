@@ -29,6 +29,7 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "../../../../audio_policy/server/include",
     "../../../../audio_policy/server/src",
     "../../../../audio_policy/server/src/interface",
+    "../../../../audio_service/test/unittest/include",
   ]
 
   use_exceptions = true

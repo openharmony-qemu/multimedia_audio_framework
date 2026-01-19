@@ -124,7 +124,6 @@ int32_t RemoteFastAudioCaptureSource::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    SetAudioParameter(AudioParamKey::NONE, "", GenerateAppsUidStr(appsUid_));
     int32_t ret = audioCapture_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     ret = CheckPositionTime();

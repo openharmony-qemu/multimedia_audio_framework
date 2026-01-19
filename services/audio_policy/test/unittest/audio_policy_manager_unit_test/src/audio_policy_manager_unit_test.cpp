@@ -866,5 +866,20 @@ HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventLi
     int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnregisterCollaborationEnabledForCurrentDeviceEventListener_002.
+* @tc.desc  : Test UnregisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventListener_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

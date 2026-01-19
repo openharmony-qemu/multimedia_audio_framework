@@ -31,7 +31,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
-const int32_t AUDIO_DEFAULT_PRIORITY = 1;
 
 int32_t GetIntParameter(const char* key, int32_t defaultValue)
 {
@@ -54,31 +53,8 @@ public:
  * @tc.number : AudioScheduleUnitTest_001
  * @tc.desc   : Test AudioScheduleUnitTest_001
  */
-HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_001, TestSize.Level1)
-{
-    SetProcessDataThreadPriority(1);
-    GetIntParameter("const.multimedia.audio_setPriority", AUDIO_DEFAULT_PRIORITY);
-    EXPECT_TRUE(SetEndpointThreadPriority());
-}
 
-/**
- * @tc.name   : Test AudioScheduleUnit
- * @tc.number : AudioScheduleUnitTest_002
- * @tc.desc   : Test AudioScheduleUnitTest_002
- */
-HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_002, TestSize.Level1)
-{
-    SetProcessDataThreadPriority(4);
-    GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-    EXPECT_TRUE(SetEndpointThreadPriority());
-}
-
-/**
- * @tc.name   : Test AudioScheduleUnit
- * @tc.number : AudioScheduleUnitTest_003
- * @tc.desc   : Test AudioScheduleUnitTest_003
- */
- HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_003, TestSize.Level3)
+ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_001, TestSize.Level3)
  {
      SetProcessDataThreadPriority(-1);
      GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
@@ -90,7 +66,7 @@ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_002, TestSize.Level1)
  * @tc.number : ResetProcessDataThreadPriorityTest_001
  * @tc.desc   : Test ResetProcessDataThreadPriority
  */
-HWTEST_F(AudioScheduleUnitTest, ResetProcessDataThreadPriorityTest_002, TestSize.Level1)
+HWTEST_F(AudioScheduleUnitTest, ResetProcessDataThreadPriorityTest_001, TestSize.Level1)
 {
     ResetProcessDataThreadPriority();
     GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
@@ -99,7 +75,7 @@ HWTEST_F(AudioScheduleUnitTest, ResetProcessDataThreadPriorityTest_002, TestSize
 
 /**
  * @tc.name   : Test ResetEndpointThreadPriority
- * @tc.number : ResetEndpointThreadPriorityTest_001
+ * @tc.number : ResetEndpointThreadPriorityTest_002
  * @tc.desc   : Test ResetEndpointThreadPriority
  */
 HWTEST_F(AudioScheduleUnitTest, ResetEndpointThreadPriorityTest_002, TestSize.Level1)

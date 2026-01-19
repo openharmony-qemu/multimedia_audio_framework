@@ -85,13 +85,14 @@ private:
     static constexpr int32_t VOIP_MAX_GET_POSITION_HANDLE_TIME = 20000000; // 20ms = 20ns * 1000 * 1000
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;
+    static constexpr int32_t INVALID_ID = -1;
     static constexpr const char *AUXILIARY_SINK_FILENAME = "dump_auxiliary_sink";
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::string logTag_ = "AuxSink";
     mutable int64_t volumeDataCount_ = 0;
     std::string halName_ = "AuxSink";
-    int32_t sinkId_ = HDI_INVALID_ID;
+    int32_t sinkId_ = INVALID_ID;
     IAudioSinkAttr attr_ = {};
     bool sinkInited_ = false;
 

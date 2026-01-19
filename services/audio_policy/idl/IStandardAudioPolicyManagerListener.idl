@@ -27,6 +27,7 @@ interface IStandardAudioPolicyManagerListener {
     void OnAvailableDeviceChange([in] unsigned int usage, [in] DeviceChangeAction deviceChangeAction);
     void OnQueryClientType([in] String bundleName, [in] unsigned int uid, [out] boolean ret);
     void OnCheckClientInfo([in] String bundleName, [out] int uid, [in] int pid, [out] boolean ret);
+    void OnCheckMediaControllerBundle([in] String bundleName, [out] boolean ret);
     void OnCheckVKBInfo([in] String bundleName, [out] boolean isValid);
     void OnQueryAllowedPlayback([in] int uid, [in] int pid, [out] boolean ret);
     [oneway] void OnBackgroundMute([in] int uid);

@@ -195,42 +195,6 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioZone.
- * @tc.number: AudioZone_006
- * @tc.desc  : Test release audio zone
- */
-HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
-{
-    ClearZone();
-    int32_t fakeUid = 1234;
-    int32_t fakePid = 4321;
-    auto ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test AudioZone.
- * @tc.number: AudioZone_007
- * @tc.desc  : Test release audio zone
- */
-HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
-{
-    ClearZone();
-    int32_t fakeUid = 1234;
-    int32_t fakePid = 4321;
-    AudioZoneContext context;
-    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
-    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
-    AudioSessionService &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
-    int ret = audioSessionService.SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
-    EXPECT_EQ(ret, 0);
-    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
-    audioSessionService.sessionMap_.clear();
-}
-
-/**
- * @tc.name  : Test AudioZone.
  * @tc.number: AudioZone_DegreeTest_001
  * @tc.desc  : Test SetSystemVolumeDegree interface.
  */

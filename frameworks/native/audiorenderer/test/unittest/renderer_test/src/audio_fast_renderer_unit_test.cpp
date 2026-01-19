@@ -111,9 +111,7 @@ void AudioFastRendererUnitTest::TearDown(void)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -134,9 +132,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -162,9 +158,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_002, TestSize.Level0)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);
@@ -204,9 +198,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_003, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     ASSERT_NE(nullptr, GetRenderPtr());
 
     int32_t ret = GetRenderPtr()->GetUnderflowCount();
@@ -224,9 +216,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -278,9 +268,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -306,9 +294,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_006, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -339,9 +325,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_007, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     ASSERT_NE(nullptr, GetRenderPtr());
 
     // If the audiorenderer does not enter low-latency mode but enters normal mode, flush will return false in prepare.
@@ -367,9 +351,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_008, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;
     ASSERT_NE(nullptr, GetRenderPtr());
 
@@ -404,9 +386,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_009, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     int32_t setFrameSize = 960;
     uint32_t getFrameSize = 0;
     ASSERT_NE(nullptr, GetRenderPtr());
@@ -430,9 +410,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
  */
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
 {
-    if (!g_isFastRenderer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastRenderer);
     AudioRendererOptions rendererOptions;
 
     InitializeFastRendererOptions(rendererOptions);

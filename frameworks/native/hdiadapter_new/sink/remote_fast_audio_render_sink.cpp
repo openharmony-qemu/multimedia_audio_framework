@@ -107,7 +107,6 @@ int32_t RemoteFastAudioRenderSink::Start(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    SetAudioParameter(AudioParamKey::NONE, "", GenerateAppsUidStr(appsUid_));
     int32_t ret = audioRender_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     ret = CheckPositionTime();
@@ -420,6 +419,7 @@ int32_t RemoteFastAudioRenderSink::CreateRender(void)
     if (param.type == AUDIO_MMAP_NOIRQ || param.type == AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer();
     }
+    audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("create render success, cost: [%{public}" PRId64 "]ms", stamp);

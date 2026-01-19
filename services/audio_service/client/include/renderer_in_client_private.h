@@ -83,6 +83,7 @@ public:
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -473,6 +474,7 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+    bool backMute_ = false;
 
     // for getAudioTimeStampInfo
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {

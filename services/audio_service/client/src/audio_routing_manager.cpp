@@ -58,6 +58,36 @@ int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapture
     return SUCCESS;
 }
 
+RecommendInputDevices AudioRoutingManager::GetRecommendInputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    AudioCapturerInfo captureInfo;
+    captureInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    GetPreferredInputDeviceForCapturerInfo(captureInfo, descs);
+
+    return ConvertRecommendInputDevices(descs);
+}
+
+RecommendInputDevices AudioRoutingManager::ConvertRecommendInputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    if (descs.size() == 0) {
+        return RecommendInputDevices::NO_UNAVAILABLE_DEVICE;
+    }
+
+    auto it = std::find_if(descs.begin(), descs.end(), [](const auto &desc) {
+        return desc && desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == LOCAL_NETWORK_ID;
+    });
+    if (it != descs.end()) {
+        auto desc = *it;
+        descs.clear();
+        descs.push_back(desc);
+        return RecommendInputDevices::RECOMMEND_BUILT_IN_MIC;
+    } else {
+        return RecommendInputDevices::RECOMMEND_EXTERNAL_MIC;
+    }
+}
+
 int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback, const int32_t uid)
 {

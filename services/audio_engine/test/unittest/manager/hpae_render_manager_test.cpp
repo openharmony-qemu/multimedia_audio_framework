@@ -2120,9 +2120,6 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    uint64_t pos = 0;
-    offloadManager->OnRequestWritePos(pos);
-    EXPECT_EQ(pos, 0);
     std::pair<uint64_t, TimePoint> hdiPos = std::make_pair(0, std::chrono::high_resolution_clock::now());
     offloadManager->OnNotifyHdiData(hdiPos);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);

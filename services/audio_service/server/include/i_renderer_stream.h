@@ -37,7 +37,6 @@ class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
     virtual bool OnQueryUnderrun() { return false; };
-    virtual void OnNotifyFlushStatus(bool isFlush){};
     virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos){};
 };
 

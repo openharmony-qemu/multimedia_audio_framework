@@ -209,13 +209,12 @@ HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage_001, TestSize.L
 HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsageForDevice_001, TestSize.Level1)
 {
     int32_t callerPid = 10001;
-    uint32_t streamId = 100;
-    StreamUsage usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    StreamUsage usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid);
     EXPECT_EQ(STREAM_USAGE_INVALID, usage);
     callerPid = 10002;
     int ret = audioSessionService_.SetAudioSessionScene(callerPid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
-    usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid);
     EXPECT_EQ(STREAM_USAGE_MEDIA, usage);
 }
 
@@ -295,12 +294,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_013, TestSize.
 HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_014, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
-
-    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
+    audioInterrupt.pid = 0;
+    EXPECT_FALSE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
 }
 
 /**

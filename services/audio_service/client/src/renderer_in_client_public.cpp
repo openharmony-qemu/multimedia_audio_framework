@@ -581,6 +581,12 @@ int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::SetBackMute(bool backMute)
+{
+    backMute_ = backMute;
+    return SUCCESS;
+}
+
 bool RendererInClientInner::GetMute()
 {
     return std::abs(muteVolume_ - 0.0f) <= std::numeric_limits<float>::epsilon();

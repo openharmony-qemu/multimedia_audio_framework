@@ -155,6 +155,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
     rendererChangeInfo->streamInfo = streamChangeInfo.audioRendererChangeInfo.streamInfo;
+    rendererChangeInfo->backMute = streamChangeInfo.audioRendererChangeInfo.backMute;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,

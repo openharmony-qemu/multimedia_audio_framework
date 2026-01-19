@@ -117,6 +117,7 @@ public:
 
         StaticBufferInfo staticBufferInfo{};
         std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
+        bool backMute = false;
     };
 
     virtual ~IAudioStream() = default;
@@ -182,6 +183,7 @@ public:
     virtual int32_t SetDuckVolume(float volume) = 0;
     virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute, StateChangeCmdType cmdType) = 0;
+    virtual int32_t SetBackMute(bool backMute) = 0;
     virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;

@@ -211,9 +211,14 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 start");
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager::GetInstance()->SetMute(STREAM_MUSIC, false, deviceType);
+    AudioSystemManager::GetInstance()->SetMute(STREAM_RING, false, deviceType);
+    AudioSystemManager::GetInstance()->SetMute(STREAM_NOTIFICATION, false, deviceType);
+
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result1:%{public}d", result);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_RING);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result2:%{public}d", result);

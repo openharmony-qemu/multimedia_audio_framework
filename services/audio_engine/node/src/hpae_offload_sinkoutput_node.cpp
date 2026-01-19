@@ -358,6 +358,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
     auto callback = GetNodeInfo().statusCallback.lock();
     CHECK_AND_RETURN_LOG(callback != nullptr, "HpaeOffloadSinkOutputNode::StopStream callback is null");
     OffloadReset();
+    NotifyHdiPos();
     callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
 }
 
@@ -639,10 +640,9 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
 
 void HpaeOffloadSinkOutputNode::UpdateOffloadFlushStatus(bool isFlush)
 {
-    if (offloadCallback_ != nullptr) {
-        offloadCallback_->OnNotifyFlushStatus(isFlush);
-    }
+    isFlush_ = isFlush;
 }
+
 void HpaeOffloadSinkOutputNode::NotifyHdiPos()
 {
     if (offloadCallback_ != nullptr) {
@@ -655,9 +655,10 @@ void HpaeOffloadSinkOutputNode::RegisterOffloadCallback(IOffloadCallback *offloa
     offloadCallback_ = offloadCallback;
 }
 
-uint64_t HpaeOffloadSinkOutputNode::GetWritePos() const noexcept
+OffloadCallbackData HpaeOffloadSinkOutputNode::GetOffloadCallbackData() noexcept
 {
-    return writePos_;
+    OffloadCallbackData data {isFlush_, writePos_};
+    return data;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

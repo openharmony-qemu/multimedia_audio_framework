@@ -59,15 +59,6 @@ public:
     MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
 };
 
-class IIStatusCallbackTest : public IStatusCallback {
-public:
-    IIStatusCallbackTest() = default;
-
-    virtual ~IIStatusCallbackTest() = default;
-
-    void OnStatusUpdate(IOperation operation) override {}
-};
-
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -347,14 +338,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
-    unit->OnNotifyFlushStatus(false);
-    std::shared_ptr<IStatusCallback> callback = std::make_shared<IIStatusCallbackTest>();
-    unit->offloadEnable_ = true;
-    unit->statusCallback_ = callback;
-    unit->OnNotifyFlushStatus(false);
-    unit->OnNotifyFlushStatus(true);
-    unit->offloadEnable_ = false;
-    unit->OnNotifyFlushStatus(false);
 
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
@@ -367,6 +350,11 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     unit->processConfig_.streamType = STREAM_MOVIE;
     ret = unit->GetOffloadLatency();
     EXPECT_EQ(ret, SUCCESS);
+    unit->isWriteFirst_ = true;
+    unit->UpdateInnerCapWriteState(true);
+    EXPECT_EQ(unit->isWriteFirst_, true);
+    unit->UpdateInnerCapWriteState(false);
+    EXPECT_EQ(unit->isWriteFirst_, false);
 }
 
 /**

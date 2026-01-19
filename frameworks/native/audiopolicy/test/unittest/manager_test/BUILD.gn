@@ -23,6 +23,7 @@ ohos_unittest("audio_manager_unit_test") {
     "./include",
     "../../../../common/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../services/audio_service/test/unittest/include"
   ]
 
   cflags = [
