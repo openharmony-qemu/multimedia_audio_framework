@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../config.gni")
 
 ohos_shared_library("audio_engine_utils") {
   stack_protector_ret = true
@@ -104,6 +105,18 @@ ohos_shared_library("audio_engine_plugins") {
     "hilog:libhilog",
   ]
 
+  defines = []
+
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
@@ -156,6 +169,16 @@ ohos_shared_library("audio_engine_node") {
 
   if (is_emulator) {
     defines += [ "IS_EMULATOR" ]
+  }
+
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
   }
 
   configs = [ ":audio_engine_node_config" ]

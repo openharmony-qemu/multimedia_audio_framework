@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
 import("../../config.gni")
-import("../../config.gni")
 import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
@@ -518,6 +517,16 @@ audio_ohos_library("audio_process_service") {
 
   if (!audio_framework_feature_new_engine_flag) {
     defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
+
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
   }
 
   cflags = [ "-Os" ]

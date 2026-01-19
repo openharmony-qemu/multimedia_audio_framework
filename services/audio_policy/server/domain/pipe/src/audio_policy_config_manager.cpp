@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 constexpr int32_t MS_PER_S = 1000;
-static const unsigned int BUFFER_CALC_20MS = 20;
+static const unsigned int BUFFER_CALC_20MS = (20 * SOURCE_PERIOD_SIZE);
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
@@ -205,7 +205,7 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->channelLayout_ = layout;
             streamProp->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(layout);
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
-                streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
+                streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC * SOURCE_PERIOD_SIZE;
             streamPropInfos.push_back(streamProp);
         }
     }
@@ -633,6 +633,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(info->format_);
         info->bufferSize_ = BUFFER_CALC_20MS * info->sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * info->channels_ * sampleFormatBits;
+        info->bufferSize_ *= 8;
     }
 #endif
 }
