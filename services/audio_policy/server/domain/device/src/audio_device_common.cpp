@@ -102,6 +102,26 @@ static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
     return desc.deviceType_ == DEVICE_TYPE_SPEAKER && desc.networkId_ != LOCAL_NETWORK_ID;
 }
 
+#ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
+static void ExcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
+{
+    CHECK_AND_RETURN(!updatedDesc.hasPair_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    string key = string("is_root_hub#C") + GetField(updatedDesc.macAddress_, "card", ';') + "D0";
+    auto val = AudioServerProxy::GetInstance().GetAudioParameterProxy(key);
+    AUDIO_INFO_LOG("key=%{public}s, val=%{public}s", key.c_str(), val.c_str());
+    CHECK_AND_RETURN(val == "true");
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
+    AudioStateManager::GetAudioStateManager().ExcludeDevices(MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES, descs);
+}
+
+static void UnexcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
+{
+    CHECK_AND_RETURN(!updatedDesc.hasPair_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
+    AudioStateManager::GetAudioStateManager().UnexcludeDevices(MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES, descs);
+}
+#endif
+
 void AudioDeviceCommon::Init(std::shared_ptr<AudioPolicyServerHandler> handler)
 {
     audioPolicyServerHandler_ = handler;
@@ -349,6 +369,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDe
     }
     if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
+#ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
+        ExcludeIndirectUsbArmInput(updatedDesc);
+#endif
     }
 }
 
@@ -362,15 +385,8 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
     }
 }
 
-void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
+void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
-    RemoveOfflineDevice(updatedDesc);
-    AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
-
-    // Remember the disconnected device descriptor and remove it
-    audioDeviceManager_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
-        updatedDesc.macAddress_, updatedDesc.deviceRole_, descForCb);
     for (const auto& desc : descForCb) {
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredMediaRenderDevice())) {
@@ -393,6 +409,18 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
                 std::make_shared<AudioDeviceDescriptor>());
         }
     }
+}
+
+void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
+{
+    RemoveOfflineDevice(updatedDesc);
+    AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
+
+    // Remember the disconnected device descriptor and remove it
+    audioDeviceManager_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
+        updatedDesc.macAddress_, updatedDesc.deviceRole_, descForCb);
+    ClearPreferredDevices(descForCb);
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
         make_shared<AudioDeviceDescriptor>(updatedDesc)};
@@ -407,6 +435,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     }
     if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         streamCollector_.ResetCapturerStreamDeviceInfo(updatedDesc);
+#ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
+        UnexcludeIndirectUsbArmInput(updatedDesc);
+#endif
     }
 
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);

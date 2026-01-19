@@ -209,6 +209,41 @@ void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest(Fuzz
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc_, uid);
 }
 
+void FindExcludedDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    man.FindExcludedDevices(MEDIA_OUTPUT_DEVICES);
+    man.FindExcludedDevices(MEDIA_INPUT_DEVICES);
+    man.FindExcludedDevices(CALL_OUTPUT_DEVICES);
+    man.FindExcludedDevices(CALL_INPUT_DEVICES);
+    man.FindExcludedDevices(D_ALL_DEVICES);
+    man.FindExcludedDevices(GetData<AudioDeviceUsage>());
+}
+
+void ExcludeDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->macAddress_ = "card=2;device=0";
+    man.ExcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+}
+
+void UnexcludeDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->macAddress_ = "card=2;device=0";
+    man.UnexcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+}
+
 void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -233,6 +268,9 @@ void Test(FuzzedDataProvider& fdp)
     UpdatePreferredCallRenderDeviceConnectStateFuzzTest,
     UpdatePreferredCallCaptureDeviceConnectStateFuzzTest,
     UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest,
+    FindExcludedDevicesFuzzTest,
+    ExcludeDevicesFuzzTest,
+    UnexcludeDevicesFuzzTest,
     SetAndGetPreferredRingRenderDeviceFuzzTest,
     SetAndGetPreferredToneRenderDeviceFuzzTest,
     SetAndGetPreferredRecognitionCaptureDeviceFuzzTest,
