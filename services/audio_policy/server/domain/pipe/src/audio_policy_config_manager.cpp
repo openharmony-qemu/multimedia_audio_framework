@@ -633,7 +633,6 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(info->format_);
         info->bufferSize_ = BUFFER_CALC_20MS * info->sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * info->channels_ * sampleFormatBits;
-        info->bufferSize_ *= 8;
     }
 #endif
 }
