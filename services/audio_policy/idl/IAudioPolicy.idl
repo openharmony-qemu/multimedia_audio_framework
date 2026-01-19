@@ -316,5 +316,6 @@ interface IAudioPolicy {
     void IsOtherMediaPlaying([out] boolean retIsExistence);
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
+    void NotifyStreamSilentChange([in] unsigned int streamId);
 }
 
