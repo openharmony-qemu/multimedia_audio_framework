@@ -74,7 +74,7 @@ void AudioCoreServiceUnitTest::SetUpTestCase(void)
     AudioPolicyServer* server = GetServerPtr();
     server->isUT_ = true;
     GetPermission();
-    GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
+    GetServerPtr()->eventEntry_->NotifyServiceReady();
 }
 void AudioCoreServiceUnitTest::TearDownTestCase(void)
 {

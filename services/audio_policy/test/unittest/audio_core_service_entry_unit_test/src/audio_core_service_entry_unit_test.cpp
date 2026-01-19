@@ -199,6 +199,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     uint32_t sessionId = 0;
     std::string networkId = "";
 
+    eventEntry->NotifyServiceReady();
     auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -219,6 +220,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_009, TestSize.Level1)
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
 
+    eventEntry->NotifyServiceReady();
     auto ret = eventEntry->CreateCapturerClient(streamDesc, audioFlag, sessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
