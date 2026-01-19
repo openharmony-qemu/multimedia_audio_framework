@@ -467,12 +467,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    if (modernInnerCapturer_) {
-        AUDIO_INFO_LOG("the moderninner has been used");
-        return AUDIOSTREAM_SUCCESS;
-    }
-
-    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID,
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID && !modernInnerCapturer_,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
 
     sourceType_ = type;
