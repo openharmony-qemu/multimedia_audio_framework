@@ -322,14 +322,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     }
 }
 
-static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
+static void UpdateDeviceForOtherSinks(std::vector<DeviceType> &deviceTypes)
 {
     auto limitFunc = [](uint32_t renderId) -> bool {
         uint32_t type = IdHandler::GetInstance().ParseType(renderId);
         std::string info = IdHandler::GetInstance().ParseInfo(renderId);
-        if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT;
-        }
         if (type == HDI_ID_TYPE_OFFLOAD) {
             return info == HDI_ID_INFO_DEFAULT;
         }
@@ -1555,11 +1552,13 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        UpdateDeviceForAllSinks(deviceTypes);
+        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForOtherSinks(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        UpdateDeviceForAllSinks(deviceTypes);
+        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForOtherSinks(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
