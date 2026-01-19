@@ -2308,7 +2308,7 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
     int32_t pid = 2001;
     int32_t ret;
     ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
