@@ -5747,5 +5747,11 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
     audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
+{
+    AudioZoneService::GetInstance().NotifyStreamSilentChange(streamId);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3489,6 +3489,15 @@ AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
     gsp->GetAudioSceneFromAllZones(audioScene);
     return static_cast<AudioScene>(audioScene);
 }
+
+int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+ 
+    gsp->NotifyStreamSilentChange(streamId);
+    return SUCCESS;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

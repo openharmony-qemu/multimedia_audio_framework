@@ -152,6 +152,7 @@ public:
         int32_t zoneId = ZONEID_DEFAULT);
     void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
+    void NotifyStreamSilentChange(uint32_t streamId);
     std::future<void> stopFuture_;
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
@@ -382,6 +383,9 @@ private:
         const AudioInterrupt &incomingInterrupt);
     void SuggestionProcessWhenMixWithOthers(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt);
+    void RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
+    void MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocus, const AudioInterrupt &incomingInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -399,6 +403,8 @@ private:
     std::map<uint32_t, std::shared_ptr<AudioInterrupt>> suggestionInterrupts_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionStreamIdRecords_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
+
+    std::map<uint32_t, std::list<std::pair<AudioInterrupt, AudioFocuState>>> muteAudioFocus_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

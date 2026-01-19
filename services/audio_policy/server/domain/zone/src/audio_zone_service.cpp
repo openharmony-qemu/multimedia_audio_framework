@@ -800,5 +800,10 @@ void AudioZoneService::UpdateContextForAudioZone(int32_t zoneId, const AudioZone
     CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
     tmp->UpdateContextForAudioZone(zoneId, context);
 }
+
+void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
+{
+    interruptService_->NotifyStreamSilentChange(streamId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
