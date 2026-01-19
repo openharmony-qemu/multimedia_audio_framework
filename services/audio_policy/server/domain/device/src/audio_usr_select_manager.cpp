@@ -90,7 +90,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    // 判断设备是不是存在且处于连接状态
+    // 判断设备是不是存在且处于连接状�?
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
 
     if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
@@ -211,6 +211,10 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, R
                 recordDeviceInfoList_.begin() + index + 1);
         }
     }
+    CHECK_AND_RETURN(mcSelectedFlag_ && IsSourceTypeSupportedByMC(info.sourceType_));
+    for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+        recordDeviceInfo.activeSelectedDevice_ = mcInputPreferred_;
+    }
 }
 
 void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info)
@@ -244,7 +248,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSystemSelectInner(int32_t i
     mcSelectedFlag_ = mcFlag && info.activeSelectedDevice_->deviceType_ != DEVICE_TYPE_NONE;
     mcInputPreferred_ =
         mcSelectedFlag_ ? info.activeSelectedDevice_ : std::make_shared<AudioDeviceDescriptor>();
-    bool mcRestoreFlag = mcFlag && info.activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE;
     if (info.activeSelectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
         CHECK_AND_RETURN(!(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning()));
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
