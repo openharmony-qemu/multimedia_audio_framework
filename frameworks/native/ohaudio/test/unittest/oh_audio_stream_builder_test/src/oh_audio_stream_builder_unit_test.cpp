@@ -1446,7 +1446,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMod
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_PLAYBACK_CAPTURE;
     result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
-    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
