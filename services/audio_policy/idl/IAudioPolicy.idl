@@ -318,6 +318,3 @@ interface IAudioPolicy {
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
     void NotifyStreamSilentChange([in] unsigned int streamId);
 }
-
-
-
