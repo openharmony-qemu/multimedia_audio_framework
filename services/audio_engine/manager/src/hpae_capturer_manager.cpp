@@ -166,6 +166,7 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     AUDIO_INFO_LOG("delete output node:%{public}d, source name:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
     if (!sourceOutputNode) {
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_INVALID);
         sourceOutputNodeMap_.erase(sessionId);
         sessionNodeMap_.erase(sessionId);
         return SUCCESS;
@@ -192,6 +193,10 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
         sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
         CapturerSourceStop();
     }
+    
+    HpaeSessionState outputState = sourceOutputNodeMap_[sessionId]->GetState();
+    CapturerState state = outputState == HPAE_SESSION_RELEASED ? CAPTURER_INVALID : CAPTURER_RELEASED;
+    NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -232,7 +237,6 @@ int32_t HpaeCapturerManager::DestroyStream(uint32_t sessionId)
     auto request = [this, sessionId]() {
         // map check in DeleteOutputSession
         DeleteOutputSession(sessionId);
-        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_INVALID);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -983,7 +987,6 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     } else {
         TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name, moveType);
     }
-    NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE_ALL, 0, CAPTURER_RELEASED);
 }
 
 int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)
@@ -1018,7 +1021,6 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
         DeleteOutputSession(sessionId);
         std::string name = sourceName;
         TriggerCallback(MOVE_SOURCE_OUTPUT, moveInfo, name);
-        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_RELEASED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
