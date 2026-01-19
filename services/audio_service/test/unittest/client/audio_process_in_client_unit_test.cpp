@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,7 +49,7 @@ public:
     MOCK_METHOD(int32_t, RegisterProcessCb, (const &sptr<object>), (override));
 
     MOCK_METHOD(int32_t, RegisterThreadPriority,
-        (int32_t tid, const std::string &bundleName, uint32_t method), (override));
+        (int32_t tid, const std::string &bundleName, uint32_t method, uint32_t threadPriority), (override));
 
     MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice, bool skipForce), (override));
     MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
@@ -878,100 +878,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_040, TestSize.Lev
     ptrAudioProcessInClientInner->startFadeout_.store(false);
 
     ptrAudioProcessInClientInner->DoFadeInOut(curWritePos);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_044
- * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_044, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    int64_t curTime = 1000100;
-    int64_t wakeUpTime = 0;
-
-    ptrAudioProcessInClientInner->CheckIfWakeUpTooLate(curTime, wakeUpTime);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_045
- * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_045, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    int64_t curTime = 1000;
-    int64_t wakeUpTime = 0;
-
-    ptrAudioProcessInClientInner->CheckIfWakeUpTooLate(curTime, wakeUpTime);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_046
- * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_046, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    int64_t curTime = 1000100;
-    int64_t wakeUpTime = 0;
-    int64_t clientWriteCost = 0;
-
-    ptrAudioProcessInClientInner->CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_047
- * @tc.desc  : Test AudioProcessInClientInner::CheckIfWakeUpTooLate
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_047, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    int64_t curTime = 100;
-    int64_t wakeUpTime = 0;
-    int64_t clientWriteCost = 1000100;
-
-    ptrAudioProcessInClientInner->CheckIfWakeUpTooLate(curTime, wakeUpTime, clientWriteCost);
 }
 
 /**

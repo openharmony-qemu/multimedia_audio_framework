@@ -658,7 +658,7 @@ void RendererInClientInner::FirstFrameProcess()
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
-        ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ);
+        ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
     }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
@@ -1029,7 +1029,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         return;
     }
 
-    ipcStream_->RegisterThreadPriority(tid, bundleName, METHOD_START);
+    ipcStream_->RegisterThreadPriority(tid, bundleName, METHOD_START, THREAD_PRIORITY_QOS_7);
 }
 
 void RendererInClientInner::ResetCallbackLoopTid()

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -314,6 +314,16 @@ public:
         return false;
     }
 
+    void SetUltraFastFlag(const bool ultraFastFlag)
+    {
+        ultraFastStream_ = ultraFastFlag;
+    }
+
+    bool GetUltraFastFlag() const
+    {
+        return ultraFastStream_;
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -327,6 +337,7 @@ private:
     void DumpDeviceAttrs(std::string &dumpString);
 
     std::mutex lock_;
+    bool ultraFastStream_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

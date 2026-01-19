@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -187,8 +187,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest(FuzzedDataProvider& fdp)
     uint32_t sessionId = 0;
     AudioDeviceDescriptor deviceInfo;
     AudioStreamInfo info;
-    int32_t pin;
-    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin);
+    bool isUltraFast = false;
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, isUltraFast);
 }
 
 void GetModuleNameBySessionIdFuzzTest(FuzzedDataProvider& fdp)

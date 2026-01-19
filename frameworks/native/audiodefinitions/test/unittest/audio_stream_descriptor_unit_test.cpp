@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -358,5 +358,65 @@ HWTEST_F(AudioStreamDescriptorUnitTest, IsMediaScene_001, TestSize.Level2)
     EXPECT_FALSE(testRendererStream_->IsMediaScene());
 }
 
+/**
+ * @tc.name   : AudioStreamDescriptor_UltraFastFlag_001
+ * @tc.number : UltraFastFlag_001
+ * @tc.desc   : Test SetUltraFastFlag/GetUltraFastFlag on audio stream descriptor
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, UltraFastFlag_001, TestSize.Level2)
+{
+    // default value may be false, set to true and verify
+    testRendererStream_->SetUltraFastFlag(true);
+    EXPECT_EQ(true, testRendererStream_->GetUltraFastFlag());
+
+    // set back to false and verify
+    testRendererStream_->SetUltraFastFlag(false);
+    EXPECT_EQ(false, testRendererStream_->GetUltraFastFlag());
+}
+
+/**
+ * @tc.name   : AudioStreamDescriptorUnitTest_DumpRendererStreamAttrs_NoFast_001
+ * @tc.number : DumpRendererStreamAttrs_NoFast_001
+ * @tc.desc   : Test DumpRendererStreamAttrs when stream is not fast
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_NoFast_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    testRendererStream_->SetUltraFastFlag(true);
+    dumpStr.clear();
+    testRendererStream_->Dump(dumpStr);
+    EXPECT_EQ(std::string::npos, dumpStr.find("UltralFastStream"));
+}
+
+/**
+ * @tc.name   : AudioStreamDescriptorUnitTest_DumpRendererStreamAttrs_FastTrue_001
+ * @tc.number : DumpRendererStreamAttrs_FastTrue_001
+ * @tc.desc   : Test DumpRendererStreamAttrs when route is fast and ultraFast flag is true
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastTrue_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    testRendererStream_->SetUltraFastFlag(true);
+    dumpStr.clear();
+    testRendererStream_->Dump(dumpStr);
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 1"));
+}
+
+/**
+ * @tc.name   : AudioStreamDescriptorUnitTest_DumpRendererStreamAttrs_FastFalse_001
+ * @tc.number : DumpRendererStreamAttrs_FastFalse_001
+ * @tc.desc   : Test DumpRendererStreamAttrs when route is fast and ultraFast flag is false
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastFalse_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    testRendererStream_->SetUltraFastFlag(false);
+    dumpStr.clear();
+    testRendererStream_->Dump(dumpStr);
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 0"));
+}
 } // namespace AudioStandard
 } // namespace OHOS
