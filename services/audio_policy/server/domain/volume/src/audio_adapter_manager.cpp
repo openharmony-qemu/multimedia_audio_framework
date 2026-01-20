@@ -3546,7 +3546,7 @@ void AudioAdapterManager::SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> 
     AudioStreamType streamType, int32_t volumeLevel, bool updateDb, bool updateMem)
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType, desc);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
 
     if (updateDb) {
