@@ -20,12 +20,6 @@ PipelineManager::PipelineManager(std::string pipelineId,
 
 PipelineManager::~PipelineManager()
 {
-    for (auto& [key, file] : writeDataFileMap) {
-        if (file != nullptr) {
-            fclose(file);
-            file = nullptr;
-        }
-    }
 }
 
 MultiUserData::MultiUserData(std::string pipelineId, std::string inputId) : pipelineId(pipelineId), inputId(inputId)
