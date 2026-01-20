@@ -431,8 +431,20 @@ OH_AudioSuite_Result NodeManager::insertNode(
         "NodeManagerTest insertNode targetNode: %{public}d",
         static_cast<int>(targetNode.type));
     if (direction == Direction::BEFORE) {
+        OH_LOG_Print(LOG_APP,
+        LOG_INFO,
+        GLOBAL_RESMGR,
+        TAG,
+        "zhangkan-BEFORE , sourceNodeId is: %{public}s, targetNodeId is: %{public}s, targetNode type %{public}d",sourceNodeId.c_str(),targetNodeId.c_str()
+        , targetNode.type);
         return insertBefore(sourceNodeId, targetNodeId, targetNode);
     } else {
+        OH_LOG_Print(LOG_APP,
+        LOG_INFO,
+        GLOBAL_RESMGR,
+        TAG,
+        "zhangkan-LATER , sourceNodeId is: %{public}s, targetNodeId is: %{public}s, targetNode type %{public}d",sourceNodeId.c_str(),targetNodeId.c_str()
+        , targetNode.type);
         return insertAfter(sourceNodeId, targetNodeId, targetNode);
     }
 }

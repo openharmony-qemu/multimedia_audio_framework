@@ -74,7 +74,7 @@ public:
     // Stop pipeline status
     OH_AudioSuite_Result stopPipelineState();
 
-    bool IsValidNode(const std::string &nodeId);
+    bool IsValidNode(const std::string &nodeId) const;
 
     OH_AudioSuite_Result insertBefore(
         const std::string &sourceNodeId, const std::string &targetNodeId, const Node &targetNode);

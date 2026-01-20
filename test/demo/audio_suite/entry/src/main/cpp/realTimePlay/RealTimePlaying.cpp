@@ -12,6 +12,7 @@
 #include "../audioSuiteError/AudioSuiteError.h"
 #include "../audioEffectNode/Output.h"
 #include "../utils/Utils.h"
+#include "timeline/Timeline.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *REAL_TIME_PLAYING_TAG = "[AudioEditTestApp_RealTimePlaying_cpp]";
@@ -107,7 +108,6 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
         *writeSize, (g_playFinishedFlag ? "true" : "false"));
     FreeBuffer(&audioData);
-    FreeBuffer(&g_playAudioData);
     return result;
 }
 
@@ -156,6 +156,7 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
 OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
     void *userData, void *audioData, int32_t audioDataSize)
 {
+    (void)userData;
     if (renderer == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest PlayAudioRendererOnWriteData renderer is nullptr");
@@ -223,4 +224,71 @@ void ReleaseExistingResources()
         OH_AudioStreamBuilder_Destroy(rendererBuilder);
         rendererBuilder = nullptr;
     }
+}
+
+std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, uint32_t trackIds_length)
+{
+    std::vector<std::string> trackIds;
+    napi_valuetype type;
+    for (uint32_t i = 0; i < trackIds_length; i++) {
+        napi_value element;
+        napi_get_element(env, arrayValue, i, &element);
+        napi_typeof(env, element, &type);
+        if (type != napi_string) {
+            napi_throw_type_error(env, "EINVAL", "nodeIds must contain only strings");
+            return {};
+        }
+        std::string tempString;
+        napi_status status = ParseNapiString(env, element, tempString);
+        trackIds.push_back(tempString);
+    }
+    return trackIds;
+}
+
+napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
+{
+    size_t argc = 2;
+    napi_value *argv = new napi_value[argc];
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    if (status != napi_ok || argc < 2) {
+        napi_throw_error(env, "EINVAL", "Expected exactly 2 arguments");
+        return nullptr;
+    }
+    napi_valuetype type;
+    napi_typeof(env, argv[ARG_0], &type);
+    napi_typeof(env, argv[ARG_1], &type);
+    if (type != napi_object) {
+        napi_throw_type_error(env, "EINVAL", "trackIds must be an object");
+        delete [] argv;
+        return {};
+    }
+    bool is_array;
+    napi_is_array(env, argv[ARG_0], &is_array);
+    napi_is_array(env, argv[ARG_1], &is_array);
+    if (!is_array) {
+        napi_throw_type_error(env, "EINVAL", "trackIds must be an array");
+        delete [] argv;
+        return {};
+    }
+    uint32_t trackIds_length;
+    napi_get_array_length(env, argv[ARG_0], &trackIds_length);
+    std::vector<std::string> trackIdsNotRender = ParseStringArray(env, argv[0], trackIds_length);
+    if (trackIdsNotRender.empty()) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+                       "Failed to parse NotRenderTrackIds");
+    }
+
+    napi_get_array_length(env, argv[ARG_1], &trackIds_length);
+    std::vector<std::string> trackIdsRender = ParseStringArray(env, argv[1],trackIds_length);
+    if (trackIdsRender.empty()) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+                       "trackIdsNotRender size %zu",trackIdsNotRender.size());
+    }
+    const std::vector<bool> isSilents(trackIdsNotRender.size(), true);
+    Timeline::getInstance().setAudioTrackSilent(trackIdsNotRender, isSilents);
+    const std::vector<bool> isNotSilents(trackIdsRender.size(), false);
+    Timeline::getInstance().setAudioTrackSilent(trackIdsRender, isNotSilents);
+    napi_value napiValue;
+    return napiValue;
 }

@@ -8,6 +8,8 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
 #include <cstdint>
+#include "napi/native_api.h"
+#include <string>
 
 extern OH_AudioRenderer *audioRenderer;
 
@@ -42,6 +44,8 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
 
 OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
     void *userData, void *audioData, int32_t audioDataSize);
+
+napi_value ModifyRenderTrack(napi_env env, napi_callback_info info);
 
 void ReleaseExistingResources();
 
