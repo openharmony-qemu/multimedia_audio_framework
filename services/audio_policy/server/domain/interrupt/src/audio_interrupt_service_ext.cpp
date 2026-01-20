@@ -489,7 +489,7 @@ void AudioInterruptService::RemoveInterruptFocusInfoList(const std::pair<AudioIn
         RemovePlaceholderInterruptForSession(activeInterrupt.pid);
     }
     for (auto&[streamId, activeFocusList] : muteAudioFocus_) {
-        activeFocusList.remove_if([&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& pair){
+        activeFocusList.remove_if([&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& pair) {
             return pair.first.streamId == activeInterrupt.streamId;
         });
     }
