@@ -510,7 +510,6 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     const std::pair<AudioInterrupt, AudioFocuState> &audioFocus, const AudioInterrupt &incomingInterrupt)
 {
     if (sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid)) {
-        AUDIO_INFO_LOG("pid: %{public}d is audioSession v2",incomingInterrupt.pid);
         return;
     }
 
@@ -519,20 +518,16 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
     if (focusEntry.hintType != INTERRUPT_HINT_STOP ||
         !IsMediaStream(currentStreamType) || !IsMediaStream(incomingStreamType)) {
-        AUDIO_INFO_LOG("hintType: %{public}d, currentStreamType IsMediaStream: %{public}d, incomingStreamType IsMediaStream: %{public}d",
-            focusEntry.hintType, IsMediaStream(currentStreamType), IsMediaStream(incomingStreamType));
         return;
     }
 
     bool isInMuteCheckList = false;
     auto bundleName = GetAudioInterruptBundleName(incomingInterrupt);
-    string muteCheckAppName = bundleName + "_mute_check";
+    string muteCheckAppName = bundleName + "_check";
     if (queryBundleNameListCallback_ != nullptr) {
-        AUDIO_INFO_LOG("OnQueryBundleNameIsInList in muteCheckAppName:%{public}s", muteCheckAppName.c_str());
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_param",
             isInMuteCheckList);
     }
-    AUDIO_INFO_LOG("isInMuteCheckList: %{public}d", isInMuteCheckList);
     if (isInMuteCheckList) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocus);
