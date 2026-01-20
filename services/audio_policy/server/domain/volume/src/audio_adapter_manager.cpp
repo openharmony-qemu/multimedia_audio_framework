@@ -47,9 +47,7 @@ static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_REMOTE_DAUDIO
+    DEVICE_TYPE_WIRED_HEADSET
 };
 
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
@@ -3548,7 +3546,7 @@ void AudioAdapterManager::SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> 
     AudioStreamType streamType, int32_t volumeLevel, bool updateDb, bool updateMem)
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType, desc);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
 
     if (updateDb) {
