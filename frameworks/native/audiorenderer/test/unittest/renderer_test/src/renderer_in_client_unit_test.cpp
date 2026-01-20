@@ -3232,7 +3232,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4
     }
     ASSERT_EQ(realSysVal, 1);
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
-    ptrRendererInClientInner->direct3DATestFlag = 1;
     AudioStreamParams info;
     info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;

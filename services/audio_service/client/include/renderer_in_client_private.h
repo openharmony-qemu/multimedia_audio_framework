@@ -342,7 +342,6 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
-    int32_t direct3DATestFlag = 0;
     std::vector<uint8_t> outPackedBuf_;
     size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;

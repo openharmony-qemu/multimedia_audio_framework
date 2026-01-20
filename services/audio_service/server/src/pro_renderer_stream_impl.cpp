@@ -135,7 +135,8 @@ int32_t ProRendererStreamImpl::InitParams()
     InitBasicInfo(streamInfo);
     uint32_t bufferSize = 0;
     GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         bufferSize = minBufferSize_;
         isNeedResample_ = false;
         isNeedMcr_ = false;
@@ -410,8 +411,8 @@ BufferDesc ProRendererStreamImpl::DequeueBuffer(size_t length)
 
 void ProRendererStreamImpl::WriteToSinkBuffer(const BufferDesc &bufferDesc, uint32_t writeIndex)
 {
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         if (sinkBuffer_[writeIndex].size() >= bufferDesc.bufLength) {
             memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(),
                 bufferDesc.buffer, bufferDesc.bufLength);
@@ -730,8 +731,8 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     desFormat_ = GetDirectFormat(streamInfo.format);
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         spanSizeInFrame_ = AUDIO_VIVID_SAMPLES;
         minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_ + AVS3METADATA_SIZE;
     } else {

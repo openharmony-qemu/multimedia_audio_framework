@@ -136,7 +136,6 @@ private:
     std::condition_variable firstFrameSync_;
     std::condition_variable drainSync_;
     FILE *dumpFile_;
-    int32_t direct3DATestFlag = 0;
 
     std::atomic<bool> isFirstNoUnderrunFrame_ = false;
 };

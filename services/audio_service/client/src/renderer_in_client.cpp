@@ -215,7 +215,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
     if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT) {
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -669,9 +669,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
     AUDIO_DEBUG_LOG("WriteInner with meta: pcmBuffer size: %{public}zu, metaBuffer size: %{public}zu",
         pcmBufferSize, metaBufferSize);
-   
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
+
+    AUDIO_INFO_LOG("renderer rendererFlags: %{public}u", rendererInfo_.rendererFlags);
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
         WriteAudioVividDirect(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
         return WriteInner(outPackedBuf_.data(), outPackedLen_);
     }

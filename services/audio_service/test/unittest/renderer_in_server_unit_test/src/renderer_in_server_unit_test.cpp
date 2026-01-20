@@ -1217,7 +1217,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_010, TestSize.Level1)
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_SPEAKER, AUDIO_FLAG_NORMAL);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
-    rendererInServer->direct3DATestFlag = 1;
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = false;

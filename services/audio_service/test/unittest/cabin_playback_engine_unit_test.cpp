@@ -146,7 +146,7 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinAudioPlayBackEngineState_002, TestSiz
     newDevice.deviceType_ = DEVICE_TYPE_USB_HEADSET;
     ret = playbackEngine_->Init(newDevice, false);
     EXPECT_EQ(SUCCESS, ret);
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, 
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
         HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, HDI_ID_INFO_DEFAULT, true);
 
     playbackEngine_->Start();
@@ -174,7 +174,7 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngineState_003, TestSize.Lev
     auto rendererStream = std::make_shared<ProRendererStreamImpl>(config, false);
     rendererStream->InitParams();
     playbackEngine_->AddRenderer(rendererStream);
-    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, 
+    playbackEngine_->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
         HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT, HDI_ID_INFO_DEFAULT, true);
     int32_t ret = playbackEngine_->Start();
     EXPECT_NE(SUCCESS, ret);
