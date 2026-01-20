@@ -1734,7 +1734,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
 /**
  * @tc.name: HandleFindBusPipe_001
  * @tc.desc: Test that when busAddresses is empty, the function should return the end iterator of newPipeInfoList.

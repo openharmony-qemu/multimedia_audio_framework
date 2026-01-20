@@ -28,7 +28,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-constexpr std::string_view PRIMARY_ZONE_NAME = "primary";
 constexpr std::string_view PRIMARY_DEFAULT_BUS = "bus0_media_out";
 }
 AudioBusSelector &AudioBusSelector::GetBusSelector() noexcept
@@ -38,7 +37,7 @@ AudioBusSelector &AudioBusSelector::GetBusSelector() noexcept
     return instance;
 }
 
-int32_t AudioBusSelector::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes)
+int32_t AudioBusSelector::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     std::lock_guard<std::mutex> lock(audioMixMutex_);
     AUDIO_INFO_LOG("Entered %{public}s, zoneName: %{public}s, audioMix size: %{public}zu", __func__, zoneName.c_str(),
@@ -58,10 +57,6 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
     }
 
     std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_);
-    if (zoneName.empty()) {
-        zoneName = std::string(PRIMARY_ZONE_NAME);
-    }
-
     std::lock_guard<std::mutex> lock(audioMixMutex_);
     auto iter = audioMixMap_.find(zoneName);
     CHECK_AND_RETURN_RET(iter != audioMixMap_.end(), {});

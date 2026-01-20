@@ -30,6 +30,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr std::string_view PRIMARY_ZONE_NAME = "primary";
+}
 AudioZoneService& AudioZoneService::GetInstance()
 {
     static AudioZoneService service;
@@ -388,7 +391,7 @@ std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid)
             return it.second->GetName();
         }
     }
-    return "";
+    return std::string(PRIMARY_ZONE_NAME);
 }
 
 int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)

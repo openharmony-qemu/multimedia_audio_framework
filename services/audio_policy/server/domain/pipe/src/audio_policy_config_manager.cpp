@@ -701,7 +701,7 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     return false;
 }
 
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
                                                  std::shared_ptr<PipeStreamPropInfo> &info,
                                                  const std::vector<std::string> &busAddresses)

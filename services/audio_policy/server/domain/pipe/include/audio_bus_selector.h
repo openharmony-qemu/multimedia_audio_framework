@@ -33,7 +33,7 @@ public:
     AudioBusSelector &operator=(const AudioBusSelector &) = delete;
 
     static AudioBusSelector &GetBusSelector() noexcept;
-    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
     std::vector<std::string> GetBusAddressesByStreamDesc(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::string GetSinkNameByStreamId(int32_t streamId);
 
@@ -52,7 +52,7 @@ private:
     AudioZoneService &audioZoneService_;
     const std::shared_ptr<AudioPipeManager> audioPipeManager_{nullptr};
     AudioPolicyConfigManager &audioConfigManager_;
-    std::map<std::string, std::vector<AudioMix>> audioMixMap_;
+    std::map<std::string, std::vector<AudioZoneMix>> audioMixMap_;
     std::mutex audioMixMutex_;
 };
 

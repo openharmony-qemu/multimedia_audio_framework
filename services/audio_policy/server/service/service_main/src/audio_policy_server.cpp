@@ -5748,7 +5748,7 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes)
+int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }

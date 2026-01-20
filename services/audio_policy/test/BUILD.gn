@@ -109,7 +109,7 @@ group("audio_policy_unittest_packages") {
     "../client/stub:client_stub_unit_test_group",
   ]
 
-  if (audio_framework_feature_car_audio) {
+  if (audio_framework_feature_multi_bus) {
         deps += [ ":audio_bus_selector_unit_test" ]
   }
 }

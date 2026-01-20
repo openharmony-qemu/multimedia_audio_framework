@@ -94,7 +94,7 @@ public:
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info,
                            const std::vector<std::string> &busAddresses);
 #endif

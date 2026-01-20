@@ -110,7 +110,7 @@ struct PaPropInfo {
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
     std::string busAddress_ = STR_INITED;
 #endif
 };

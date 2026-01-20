@@ -739,7 +739,7 @@ public:
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
-    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     AudioPolicyManager() {}

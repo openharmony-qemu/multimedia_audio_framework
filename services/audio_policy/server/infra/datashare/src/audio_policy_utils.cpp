@@ -396,7 +396,7 @@ bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
         return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
 #else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
@@ -411,7 +411,7 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
         return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
 #else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;

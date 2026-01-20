@@ -38,8 +38,8 @@ void AudioBusSelectorUnitTest::TearDown(void) {}
 HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_001, TestSize.Level1)
 {
     const std::string zoneName = "test_zone";
-    std::vector<AudioMix> audioMixes;
-    AudioMix mix;
+    std::vector<AudioZoneMix> audioMixes;
+    AudioZoneMix mix;
     mix.busAddress = "test_bus";
     audioMixes.push_back(mix);
 
@@ -56,8 +56,8 @@ HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_001, TestSize.Level1)
 HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_002, TestSize.Level1)
 {
     const std::string zoneName = "";
-    std::vector<AudioMix> audioMixes;
-    AudioMix mix;
+    std::vector<AudioZoneMix> audioMixes;
+    AudioZoneMix mix;
     mix.busAddress = "test_bus";
     audioMixes.push_back(mix);
 
@@ -74,7 +74,7 @@ HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_002, TestSize.Level1)
 HWTEST_F(AudioBusSelectorUnitTest, SetCustomAudioMix_003, TestSize.Level1)
 {
     const std::string zoneName = "test_zone";
-    std::vector<AudioMix> audioMixes;
+    std::vector<AudioZoneMix> audioMixes;
 
     int32_t result = AudioBusSelector::GetBusSelector().SetCustomAudioMix(zoneName, audioMixes);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -137,7 +137,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_003, TestSize.Lev
 
 /**
  * @tc.name: GetBusAddressesByStreamDesc_004
- * @tc.desc: Test that the function returns an empty vector when there is no matching AudioMix.
+ * @tc.desc: Test that the function returns an empty vector when there is no matching AudioZoneMix.
  * @tc.type: FUNC
  * @tc.require: #10496
  */
@@ -152,7 +152,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_004, TestSize.Lev
     streamDesc->callerUid_ = 123;
     streamDesc->rendererInfo_.encodingType = AudioEncodingType::ENCODING_PCM;
     streamDesc->rendererInfo_.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
-    AudioMix audioMix;
+    AudioZoneMix audioMix;
     audioMix.streamUsages = {};
     audioMix.encodingType = AudioEncodingType::ENCODING_PCM;
     busSelector.audioMixMap_["primary"] = {audioMix};
@@ -162,7 +162,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_004, TestSize.Lev
 
 /**
  * @tc.name: GetBusAddressesByStreamDesc_005
- * @tc.desc: Test that the function returns the correct bus addresses when there is a matching AudioMix.
+ * @tc.desc: Test that the function returns the correct bus addresses when there is a matching AudioZoneMix.
  * @tc.type: FUNC
  * @tc.require: #10496
  */
@@ -177,7 +177,7 @@ HWTEST_F(AudioBusSelectorUnitTest, GetBusAddressesByStreamDesc_005, TestSize.Lev
     streamDesc->callerUid_ = 123;
     streamDesc->rendererInfo_.encodingType = AudioEncodingType::ENCODING_PCM;
     streamDesc->rendererInfo_.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
-    AudioMix audioMix;
+    AudioZoneMix audioMix;
     audioMix.streamUsages = {StreamUsage::STREAM_USAGE_MUSIC};
     audioMix.encodingType = AudioEncodingType::ENCODING_PCM;
     audioMix.deviceType = DEVICE_TYPE_NONE;

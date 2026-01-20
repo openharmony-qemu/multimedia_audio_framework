@@ -36,7 +36,7 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -62,7 +62,7 @@ private:
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
     void HandleFindBusPipe(const std::vector<std::string> &busAddresses,
                            std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
                            const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -106,6 +106,8 @@ private:
     void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void ProcessUltraFastWhenCreate(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                          std::shared_ptr<PipeStreamPropInfo> &info);
 
     AudioPolicyConfigManager& configManager_;
 };

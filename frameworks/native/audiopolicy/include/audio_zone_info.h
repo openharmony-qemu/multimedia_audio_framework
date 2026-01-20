@@ -182,15 +182,15 @@ struct AudioZoneStream : public Parcelable {
     }
 };
 
-struct AudioMix : public Parcelable {
+struct AudioZoneMix : public Parcelable {
     std::vector<StreamUsage> streamUsages{};
     AudioEncodingType encodingType = ENCODING_INVALID;
     DeviceType deviceType = DEVICE_TYPE_NONE;
     DeviceRole deviceRole = DEVICE_ROLE_NONE;
     std::string busAddress;
     
-    AudioMix() = default;
-    ~AudioMix() = default;
+    AudioZoneMix() = default;
+    ~AudioZoneMix() = default;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -206,9 +206,9 @@ struct AudioMix : public Parcelable {
         return true;
     }
 
-    static AudioMix *Unmarshalling(Parcel &parcel)
+    static AudioZoneMix *Unmarshalling(Parcel &parcel)
     {
-        auto info = new (std::nothrow) AudioMix();
+        auto info = new (std::nothrow) AudioZoneMix();
         if (info == nullptr) {
             return nullptr;
         }

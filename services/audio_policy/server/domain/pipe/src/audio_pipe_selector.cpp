@@ -109,13 +109,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
 
-#ifdef CAR_AUDIO_DETECT
-    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
-#else
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-#endif
-
+    GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
     UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
@@ -220,7 +214,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     CheckFastStreamOverLimitToNormal(streamDescs);
 }
 
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
 void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAddresses,
                                           std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
                                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -239,7 +233,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
         CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::shared_ptr<AudioStreamDescriptor> tempDesc = streamDesc;
-        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
+        configManager_.GetStreamPropInfo(tempDesc, streamPropInfo, busAddresses);
         busPipeIter = findPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
@@ -259,7 +253,7 @@ void AudioPipeSelector::HandleFindMatchPipe(
     const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo,
     std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter)
 {
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
     std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
         // Vehicle system scenario enter.
     HandleFindBusPipe(busAddresses, newPipeInfoList, streamDesc, matchPipeIter);
@@ -306,13 +300,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         }
 
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-#ifdef CAR_AUDIO_DETECT
-        std::vector<std::string> busAddresses =
-            AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
-        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
-#else
-        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-#endif
+        GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
             MatchRemoteOffloadPipe(streamPropInfo, *newPipeIter, streamDesc);
 
@@ -420,12 +408,7 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
 {
     AudioPipeInfo pipeInfo = {};
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-#ifdef CAR_AUDIO_DETECT
-    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
-#else
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-#endif
+    GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, pipeInfo);
     pipeInfo.pipeAction_ = PIPE_ACTION_NEW;
     std::shared_ptr<AudioPipeInfo> tempPipeInfo = std::make_shared<AudioPipeInfo>(pipeInfo);
@@ -523,27 +506,26 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     CHECK_AND_RETURN_RET(streamDescA != nullptr && streamDescB != nullptr && streamDescA->newDeviceDescs_.size() != 0 &&
         streamDescB->newDeviceDescs_.size() != 0, true);
     bool hasRemote = false;
+#ifdef MULTI_BUS_ENABLE
+    auto GetPortName = [](const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+                          const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
+        return AudioPolicyUtils::GetInstance().GetSinkName(deviceDesc, streamDesc->sessionId_);
+#else
+    auto GetPortName = [this](const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+                          const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
+        AudioPipeType pipeType = this->GetPipeType(streamDesc->routeFlag_, streamDesc->audioMode_);
+        return AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDesc->deviceType_, pipeType);
+#endif
+    };
+    
     for (auto deviceDescA : streamDescA->newDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDescA != nullptr);
-
-#ifdef CAR_AUDIO_DETECT
-        std::string portNameA = AudioPolicyUtils::GetInstance().GetSinkName(deviceDescA, streamDescA->sessionId_);
-#else
-        AudioPipeType pipeTypeA = GetPipeType(streamDescA->routeFlag_, streamDescA->audioMode_);
-        std::string portNameA = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescA->deviceType_, pipeTypeA);
-#endif
+        std::string portNameA = GetPortName(deviceDescA, streamDescA);
         bool isRemoteA = deviceDescA->networkId_ != LOCAL_NETWORK_ID;
         hasRemote = isRemoteA ? true : hasRemote;
         for (auto deviceDescB : streamDescB->newDeviceDescs_) {
             CHECK_AND_CONTINUE(deviceDescB != nullptr);
-
-#ifdef CAR_AUDIO_DETECT
-            std::string portNameB = AudioPolicyUtils::GetInstance().GetSinkName(deviceDescB, streamDescB->sessionId_);
-#else
-            AudioPipeType pipeTypeB = GetPipeType(streamDescB->routeFlag_, streamDescB->audioMode_);
-            std::string portNameB =
-                AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescB->deviceType_, pipeTypeB);
-#endif
+            std::string portNameA = GetPortName(deviceDescB, streamDescB);
             bool isRemoteB = deviceDescB->networkId_ != LOCAL_NETWORK_ID;
             hasRemote = isRemoteB ? true : hasRemote;
             CHECK_AND_RETURN_RET(!(isRemoteA == isRemoteB && portNameA == portNameB), true);
@@ -637,18 +619,23 @@ uint32_t AudioPipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStream
     return flag;
 }
 
+void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                                         std::shared_ptr<PipeStreamPropInfo> &info)
+{
+#ifdef MULTI_BUS_ENABLE
+    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
+    configManager_.GetStreamPropInfo(desc, info, busAddresses);
+#else
+    configManager_.GetStreamPropInfo(desc, info);
+#endif
+}
+
 std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     std::string name = "";
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-
-#ifdef CAR_AUDIO_DETECT
-    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo, busAddresses);
-#else
-    configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-#endif
+    GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
     CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp Info is null");
 
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
@@ -888,7 +875,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
                         streamPropInfo->channels_, pipeInfo->audioStreamInfo_.format, streamPropInfo->format_,
                         pipeInfo->audioStreamInfo_.samplingRate, streamPropInfo->sampleRate_);
 
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
         CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
                                pipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                                pipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_);
@@ -976,9 +963,9 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
 }
 
 
-int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioMix> &audioMixes)
+int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
-#ifdef CAR_AUDIO_DETECT
+#ifdef MULTI_BUS_ENABLE
     return AudioBusSelector::GetBusSelector().SetCustomAudioMix(zoneName, audioMixes);
 #else
     return SUCCESS;
