@@ -360,8 +360,7 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
         UnloadAdapter(adapterName);
         return nullptr;
     }
-    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
-        localDeviceDesc->desc);
+    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u", hdiCaptureId);
 
     std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.insert(hdiCaptureId);
