@@ -924,7 +924,7 @@ export struct AutoTest {
               } else {
                 Logger.info(TAG, `addAudioSeparation node successful!!!`);
               }
-              pipelineInfo.multiRenderFrameFlag = true
+              pipelineInfo.multiRenderFrameFlag = true;
               break;
             case NodeType.ENV:
               let ENVId: string = util.generateRandomUUID(true);
