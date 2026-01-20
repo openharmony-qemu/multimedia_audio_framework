@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -109,6 +109,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
+    config.isUltraFast = info.isUltraFast;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -723,7 +724,8 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s: process client is null.", logTag_.c_str());
     processClient_->RegisterThreadPriority(tid,
-        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START,
+        THREAD_PRIORITY_QOS_7);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,

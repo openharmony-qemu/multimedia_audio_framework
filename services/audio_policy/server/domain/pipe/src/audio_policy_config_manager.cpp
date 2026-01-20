@@ -206,6 +206,11 @@ void AudioPolicyConfigManager::OnHasEarpiece()
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
+void AudioPolicyConfigManager::OnSupportUltraFast(bool supportUltraFast)
+{
+    supportUltraFast_ = supportUltraFast;
+}
+
 static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &deviceStreamInfo,
     std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos)
 {
@@ -442,6 +447,11 @@ bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::
 bool AudioPolicyConfigManager::GetHasEarpiece()
 {
     return hasEarpiece_;
+}
+
+bool AudioPolicyConfigManager::GetUltraFastFlag()
+{
+    return supportUltraFast_;
 }
 
 bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,

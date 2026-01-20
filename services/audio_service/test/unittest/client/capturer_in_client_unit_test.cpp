@@ -187,7 +187,8 @@ public:
 
     virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
-    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override
+    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override
     {
         return 0;
     }

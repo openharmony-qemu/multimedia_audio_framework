@@ -83,7 +83,8 @@ public:
         (float volume, uint32_t sessionId, std::string adjustTime, uint32_t code), (override));
 
     MOCK_METHOD(int32_t, RegisterThreadPriority,
-        (pid_t tid, const std::string &bundleName, BoostTriggerMethod method), (override));
+        (pid_t tid, const std::string &bundleName, BoostTriggerMethod method, ThreadPriorityConfig threadPriority),
+        (override));
 
     MOCK_METHOD(bool, GetStopFlag, (), (const, override));
     MOCK_METHOD(void, JoinCallbackLoop, (), (override));

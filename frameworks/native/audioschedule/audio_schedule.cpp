@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -50,6 +50,7 @@ static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
+constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 
 void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
@@ -204,16 +205,27 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr unsigned int WAIT_TIMEOUT_SECONDS = 5;
+const static std::set<std::string> USE_PRIORITY_4_BUNDLE_SET = {
+};
 }
 std::map<std::pair<pid_t, pid_t>,
     std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
 std::mutex SharedAudioScheduleGuard::mutex_;
 std::condition_variable SharedAudioScheduleGuard::cv_;
 
-AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, const std::string &bundleName)
+AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority,
+    const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
-    ScheduleReportData(pid, tid, bundleName.c_str());
+    if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
+        threadPriority == THREAD_PRIORITY_4) {
+        struct sched_param param = {0};
+        param.sched_priority = SCHED_PRIORITY_NUM_4;
+        int32_t ret = sched_setscheduler(tid, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+        CHECK_AND_RETURN_LOG(ret == 0, "Set thread 4 priority fail, ret=%{public}d", ret);
+    } else {
+        ScheduleReportData(pid, tid, bundleName.c_str());
+    }
     isReported_ = true;
 }
 
@@ -234,7 +246,7 @@ AudioScheduleGuard::~AudioScheduleGuard()
 }
 
 std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t pid, pid_t tid,
-    const std::string &bundleName)
+    uint32_t threadPriority, const std::string &bundleName)
 {
     std::shared_ptr<SharedAudioScheduleGuard> sharedGuard = nullptr;
     std::unique_lock lock(mutex_);
@@ -259,7 +271,7 @@ std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t
     }
 
     if (!guardMap_.contains({pid, tid})) {
-        sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, bundleName);
+        sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, threadPriority, bundleName);
         CHECK_AND_RETURN_RET_LOG(sharedGuard, nullptr, "no mem");
         guardMap_.insert({{pid, tid}, sharedGuard});
         return sharedGuard;

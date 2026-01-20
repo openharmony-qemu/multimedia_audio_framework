@@ -1955,7 +1955,8 @@ void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
         STREAM_SPEECH,
         STREAM_NAVIGATION,
         STREAM_CAMCORDER,
-        STREAM_VOICE_MESSAGE
+        STREAM_VOICE_MESSAGE,
+        STREAM_VOICE_ASSISTANT
     };
     for (auto &changeInfo: audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&

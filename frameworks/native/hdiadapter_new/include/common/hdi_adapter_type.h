@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,6 +32,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
     uint32_t channel = 0;
+    uint32_t period = 0;
     float volume = 0.0f;
     std::string filePath = "";
     std::string deviceNetworkId = "";
@@ -52,6 +53,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
             parcel.WriteUint8(static_cast<uint8_t>(format)) &&
             parcel.WriteUint32(sampleRate) &&
             parcel.WriteUint32(channel) &&
+            parcel.WriteUint32(period) &&
             parcel.WriteFloat(volume) &&
             parcel.WriteString(filePath) &&
             parcel.WriteString(deviceNetworkId) &&
@@ -77,6 +79,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
         attr->format = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRate = parcel.ReadUint32();
         attr->channel = parcel.ReadUint32();
+        attr->period = parcel.ReadUint32();
         attr->volume = parcel.ReadFloat();
         attr->filePath = parcel.ReadString();
         attr->deviceNetworkId = parcel.ReadString();
