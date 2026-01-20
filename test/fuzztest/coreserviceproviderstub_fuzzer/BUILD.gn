@@ -76,7 +76,7 @@ ohos_fuzztest("CoreServiceProviderStubFuzzTest") {
     "safwk:system_ability_fwk",
   ]
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
   if (accessibility_enable == true) {
     external_deps += [

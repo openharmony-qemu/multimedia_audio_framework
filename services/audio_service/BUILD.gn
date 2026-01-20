@@ -126,7 +126,7 @@ ohos_shared_library("audio_common") {
   ]
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   cflags_cc = cflags
@@ -193,7 +193,7 @@ config("audio_client_public_config") {
   external_deps = []
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   if (target_cpu == "arm") {
@@ -299,7 +299,7 @@ ohos_shared_library("audio_client") {
 
   public_external_deps = [
     "c_utils:utils",
-    "pulseaudio:sonic",
+    "sonic:sonic",
   ]
 
   defines = []

@@ -92,7 +92,7 @@ ohos_fuzztest("AudioRecoveryDeviceFuzzTest") {
     "bluetooth:btframework"
   ]
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
   if (accessibility_enable == true) {
     external_deps += [
