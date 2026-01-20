@@ -36,6 +36,9 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         case HWDECODING_PLAYBACK:
             static HWDecodingStreamManager hwDecodingManger;
             return hwDecodingManger;
+        case AUDIO_VIVID_3DA_DIRECT_PLAYBACK:
+            static ProAudioStreamManager cabin3DADirectManager(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
+            return cabin3DADirectManager;
         case PLAYBACK:
         default:
 #ifdef SUPPORT_OLD_ENGINE

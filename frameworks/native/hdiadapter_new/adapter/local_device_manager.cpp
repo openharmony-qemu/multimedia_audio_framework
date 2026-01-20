@@ -170,7 +170,7 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
     int32_t ret = wrapper->adapter_->GetExtraParams(wrapper->adapter_, hdiKey, condition.c_str(), value,
         DumpFileUtil::PARAM_VALUE_LENTH);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get param fail, error code: %{public}d", ret);
-    return value;
+    return std::string(value);
 }
 
 int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float volume)
@@ -360,8 +360,7 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
         UnloadAdapter(adapterName);
         return nullptr;
     }
-    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId,
-        localDeviceDesc->desc);
+    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u", hdiCaptureId);
 
     std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.insert(hdiCaptureId);

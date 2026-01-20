@@ -107,14 +107,13 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    HILOG_COMM_INFO("[StartPlaying] device [%{public}s] sle streamType [%{public}u] timeout [%{public}d]",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType, timeoutMs);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
     if (startedSleStreamType_[device][streamType].isStarted) {
-        HILOG_COMM_INFO("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
+    HILOG_COMM_INFO("StartPlaying device [%{public}s] sle streamType [%{public}u] timeout [%{public}d]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType, timeoutMs);
     callback_->StartPlaying(device, streamType, timeoutMs, ret);
     if (ret != SUCCESS) {
         HILOG_COMM_ERROR("[startplaying] failed");
@@ -367,7 +366,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
-    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] streamType %{public}u sessionId %{public}d",
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u sessionId %{public}d",
         AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
@@ -444,7 +443,7 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
 
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
-        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "streamType %{public}u has no session", streamType);
+        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "sle streamType %{public}u has no session", streamType);
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 

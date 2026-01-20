@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -92,6 +92,7 @@ const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 const int32_t MAX_VOLUME_DEGREE = 100;
 const int32_t MIN_VOLUME_DEGREE = 0;
 const int32_t VOLUME_LEVEL_ZERO = 0;
+const int32_t MID_CORE_START = 4;
 
 const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -2261,7 +2262,8 @@ const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringM
     {ENCODING_TRUE_HD, "TRUE_HD"},
     {ENCODING_DTS_HD, "DTS_HD"},
     {ENCODING_DTS_X, "DTS_X"},
-    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
+    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"},
+    {ENCODING_AUDIOVIVID_3DA_DIRECT, "AUDIOVIVID_3DA_DIRECT"}
 };
 
 std::string EncodingTypeStr(AudioEncodingType type)
@@ -2404,6 +2406,19 @@ uint64_t HexStrToNum(const std::string &str)
     return endPtr != nullptr && *endPtr == '\0' ? num : 0;
 }
 
+void BindBigAndMidCore()
+{
+    cpu_set_t cpuSet;
+    CPU_ZERO(&cpuSet);
+    int32_t cpuNum = sysconf(_SC_NPROCESSORS_CONF);
+    for (int32_t i = MID_CORE_START; i < cpuNum; i++) {
+        CPU_SET(i, &cpuSet); // bind to mid cores
+    }
+    int32_t result = sched_setaffinity(gettid(), sizeof(cpu_set_t), &cpuSet);
+    CHECK_AND_CALL_FUNC_RETURN(result == 0,
+        HILOG_COMM_ERROR("[BindBigAndMidCore] Set target cpu failed, ret: %{public}d", result));
+    AUDIO_INFO_LOG("Bind pid: %{public}d, tid: %{public}d to big and mid cores success", getpid(), gettid());
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

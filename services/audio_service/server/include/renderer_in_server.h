@@ -133,6 +133,7 @@ public:
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
 
+    void Get3daDirectControlParm();
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
@@ -312,6 +313,8 @@ private:
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_;
+
+    int32_t direct3DATestFlag = 0;
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;

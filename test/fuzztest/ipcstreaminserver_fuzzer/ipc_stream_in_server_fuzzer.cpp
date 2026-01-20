@@ -335,7 +335,7 @@ void IpcStreamInServerRegisterThreadPriorityFuzzTest()
     int32_t tid = g_fuzzUtils.GetData<int32_t>();
     std::string bundleName = "testBundleName";
     uint32_t method = g_fuzzUtils.GetData<uint32_t>();
-    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method);
+    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method, THREAD_PRIORITY_QOS_7);
 }
 
 void IpcStreamInServerSetDefaultOutputDeviceFuzzTest()

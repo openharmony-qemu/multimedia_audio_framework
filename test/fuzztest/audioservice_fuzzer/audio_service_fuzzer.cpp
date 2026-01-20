@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -234,9 +234,16 @@ void AudioServiceCheckInnerCapForProcessFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -255,9 +262,16 @@ void AudioServiceLinkProcessToEndpointFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -276,9 +290,16 @@ void AudioServiceUnlinkProcessToEndpointFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -304,8 +325,8 @@ void AudioServiceGetDeviceInfoForProcessFuzzTest()
     config.streamInfo.format = g_testAudioSampleFormats[GetData<uint32_t>() % g_testAudioSampleFormats.size()];
 
     AudioStreamInfo info;
-    int32_t pin;
-    audioService->GetDeviceInfoForProcess(config, info, pin);
+    bool isUltraFast = false;
+    audioService->GetDeviceInfoForProcess(config, info, isUltraFast);
 }
 
 void AudioServiceGetMaxAmplitudeFuzzTest()
@@ -316,9 +337,16 @@ void AudioServiceGetMaxAmplitudeFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -713,9 +741,16 @@ void AudioServiceNotifyStreamVolumeChangedFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -738,9 +773,16 @@ void AudioServiceDumpFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -799,9 +841,16 @@ void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo, adapterName, pin);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     CHECK_AND_RETURN(audioEndpointPtr != nullptr);
 
     std::string dupSinkName;

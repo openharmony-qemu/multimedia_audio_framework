@@ -53,6 +53,7 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
+    void OnSupportUltraFast(bool supportUltraFast);
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
@@ -85,6 +86,7 @@ public:
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
+    bool GetUltraFastFlag();
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -153,6 +155,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportUltraFast_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
     AudioDeviceManager &audioDeviceManager_;

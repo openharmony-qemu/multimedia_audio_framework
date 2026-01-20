@@ -632,6 +632,7 @@ void A2dpInBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemo
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
+    desc.highQualityRecordingSupported_ = true;
     AUDIO_INFO_LOG("a2dpInBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {

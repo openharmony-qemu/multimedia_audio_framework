@@ -423,7 +423,7 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     audioCapture_.ForceSetRefPtr(static_cast<IAudioCapture *>(capture));
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED, "create capture fail");
     deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, shared_from_this());
-    audioCapture_.SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
     return SUCCESS;
 }
 

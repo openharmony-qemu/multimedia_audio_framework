@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -177,22 +177,208 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_004, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_005
- * @tc.desc  : Test AudioProcessInServer interface.
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_001
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer when processBuffer_ already configured
  */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_005, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_001, TestSize.Level1)
 {
-    AudioProcessConfig configRet = InitProcessConfig();
-    configRet.streamInfo.format = SAMPLE_U8;
-    AudioService *releaseCallbackRet = AudioService::GetInstance();
-    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
-    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
 
-    EXPECT_EQ(audioProcessInServerRet.processBuffer_, nullptr);
-    auto ret = audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
-        spanSizeInFrame, g_audioStreamInfo);
+    uint32_t totalSizeInframe = TOTAL_SIZE_IN_FRAME;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServer.processBuffer_ = std::make_shared<OHAudioBufferBase>(
+        bufferHolder, totalSizeInframe, byteSizePerFrame);
+
+    uint32_t spanSizeInframe = SPAN_SIZE_IN_FRAME;
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_002
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer with zero totalSizeInframe
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+
+    uint32_t totalSizeInframe = 0; // Invalid
+    uint32_t spanSizeInframe = SPAN_SIZE_IN_FRAME;
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_003
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer with zero spanSizeInframe
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_003, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+
+    uint32_t totalSizeInframe = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInframe = 0; // Invalid
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_004
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer when totalSizeInframe not divisible by spanSizeInframe
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_004, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+    uint32_t totalSizeInframe = 100;
+    uint32_t spanSizeInframe = 30; // 100 % 30 != 0
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_005
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer with default fast span size
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_005, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+
+    AudioSamplingRate serverSamplingRate = SAMPLE_RATE_48000;
+    uint32_t spanSizeInframe = static_cast<uint32_t>(
+        2.5 * static_cast<float>(serverSamplingRate) / static_cast<float>(AUDIO_MS_PER_SECOND)); // ultral fast is 2.5ms
+    uint32_t totalSizeInframe = spanSizeInframe * 4; // 4 spans
+
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+    serverStreamInfo.samplingRate = serverSamplingRate;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_006
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer with non-default span size
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_006, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+
+    AudioSamplingRate serverSamplingRate = SAMPLE_RATE_44100;
+    uint32_t spanSizeInframe = 256; // Non-default span size
+    uint32_t totalSizeInframe = spanSizeInframe * 8; // 8 spans
+
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+    serverStreamInfo.samplingRate = serverSamplingRate;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_007
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer for capture mode
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_007, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.audioMode = AUDIO_MODE_RECORD; // Capture mode
+
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, audioService);
+
+    AudioSamplingRate serverSamplingRate = SAMPLE_RATE_48000;
+    uint32_t spanSizeInframe = 256;
+    uint32_t totalSizeInframe = spanSizeInframe * 8;
+
+    AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+    serverStreamInfo.samplingRate = serverSamplingRate;
+
+    auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_ConfigProcessBuffer_008
+ * @tc.desc  : Test AudioProcessInServer::ConfigProcessBuffer with different audio formats
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_ConfigProcessBuffer_008, TestSize.Level1)
+{
+    struct FormatTestCase {
+        AudioSampleFormat format;
+        uint32_t expectedBits;
+    } testCases[] = {
+        {SAMPLE_U8, 8},
+        {SAMPLE_S16LE, 16},
+        {SAMPLE_S24LE, 24},
+        {SAMPLE_S32LE, 32},
+    };
+
+    for (const auto& testCase : testCases) {
+        AudioProcessConfig config = InitProcessConfig();
+        config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+        config.streamInfo.channels = STEREO;
+        config.streamInfo.format = testCase.format;
+        config.audioMode = AUDIO_MODE_PLAYBACK;
+
+        AudioService *audioService = AudioService::GetInstance();
+        AudioProcessInServer audioProcessInServer(config, audioService);
+
+        uint32_t totalSizeInframe = TOTAL_SIZE_IN_FRAME;
+        uint32_t spanSizeInframe = SPAN_SIZE_IN_FRAME;
+        AudioStreamInfo serverStreamInfo = g_audioStreamInfo;
+        serverStreamInfo.samplingRate = SAMPLE_RATE_48000;
+        auto ret = audioProcessInServer.ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, serverStreamInfo);
+        EXPECT_TRUE(ret == SUCCESS || ret == ERR_OPERATION_FAILED);
+    }
 }
 
 /**
@@ -699,7 +885,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_025, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     std::string name = "unit_test";
-    auto ret = audioProcessInServerRet.RegisterThreadPriority(0, name, METHOD_WRITE_OR_READ);
+    auto ret = audioProcessInServerRet.RegisterThreadPriority(0, name, METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**

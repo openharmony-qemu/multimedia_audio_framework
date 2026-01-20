@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -865,12 +865,20 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioStreamInfo audioStreamInfo;
-    int32_t pin;
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, pin);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, isUltraFast);
     std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(config.originalSessionId);
     std::lock_guard<std::mutex> lock(processListMutex_);
-    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-        audioStreamInfo, adapterName, pin, IsEndpointTypeVoip(config, deviceInfo));
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        GetAudioEndpointForDevice(endpointConfig, IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_CALL_FUNC_RETURN_RET(audioEndpoint != nullptr, nullptr,
         HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
     // if reuse endpoint should keep samplerate same
@@ -981,12 +989,12 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
 }
 
 AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config,
-    AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
+    AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
-        deviceInfo, streamInfo, pin, isReloadProcess);
+        deviceInfo, streamInfo, isUltraFast, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
@@ -1050,8 +1058,7 @@ bool AudioService::IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStr
 }
 
 // must be called with processListMutex_ lock hold
-ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
-    const std::string &deviceKey, AudioStreamInfo &streamInfo, int32_t endpointFlag)
+ReuseEndpointType AudioService::GetReuseEndpointType(const std::string &deviceKey, const AudioStreamInfo &streamInfo)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
@@ -1065,14 +1072,13 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
-std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-    const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, const std::string &adapterName,
-    const int32_t pin, bool isVoipStream)
+std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
+    bool isVoipStream)
 {
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
-    std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo, endpointFlag);
+    std::string deviceKey = AudioEndpoint::GenerateEndpointKey(endpointConfig.deviceInfo, endpointFlag);
+    ReuseEndpointType type = GetReuseEndpointType(deviceKey, endpointConfig.streamInfo);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
@@ -1088,9 +1094,8 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
             [[fallthrough]];
         }
         case ReuseEndpointType::CREATE_ENDPOINT: {
-            CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
-            endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
-                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo, streamInfo, adapterName, pin);
+            CheckBeforeRecordEndpointCreate(endpointConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+            endpoint = AudioEndpoint::CreateEndpoint(isVoipStream, endpointConfig);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
             endpointList_[deviceKey] = endpoint;

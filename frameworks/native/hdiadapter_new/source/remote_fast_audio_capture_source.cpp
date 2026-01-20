@@ -479,7 +479,7 @@ int32_t RemoteFastAudioCaptureSource::CreateCapture(void)
     if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer(param);
     }
-    audioCapture_.SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
     AUDIO_INFO_LOG("end");
     return SUCCESS;
 }
