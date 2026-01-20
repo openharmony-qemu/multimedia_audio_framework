@@ -3493,7 +3493,7 @@ AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
 int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
  
     gsp->NotifyStreamSilentChange(streamId);
     return SUCCESS;

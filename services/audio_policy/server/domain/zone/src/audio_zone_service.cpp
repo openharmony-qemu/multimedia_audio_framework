@@ -803,6 +803,7 @@ void AudioZoneService::UpdateContextForAudioZone(int32_t zoneId, const AudioZone
 
 void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     interruptService_->NotifyStreamSilentChange(streamId);
 }
 } // namespace AudioStandard

@@ -477,7 +477,6 @@ int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t cal
 
 void AudioInterruptService::RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocus)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
     AudioInterrupt activeInterrupt = audioFocus.first;
     int32_t zoneId = zoneManager_.FindZoneByPid(activeInterrupt.pid);
     auto itZone = zonesMap_.find(zoneId);
@@ -489,12 +488,19 @@ void AudioInterruptService::RemoveInterruptFocusInfoList(const std::pair<AudioIn
         HandleLowPriorityEvent(activeInterrupt.pid, activeInterrupt.streamId)) {
         RemovePlaceholderInterruptForSession(activeInterrupt.pid);
     }
+    for (auto&[streamId, activeFocusList] : muteAudioFocus_) {
+        activeFocusList.remove_if([&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& pair){
+            return pair.first.streamId == activeInterrupt.streamId;
+        });
+    }
 }
 
 void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     if (muteAudioFocus_.count(streamId) > 0) {
-        for (auto audioFocus : muteAudioFocus_[streamId]) {
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> tempList(muteAudioFocus_[streamId]);
+        for (const auto& audioFocus : tempList) {
             AudioInterrupt activeInterrupt = audioFocus.first;
             InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
             AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
