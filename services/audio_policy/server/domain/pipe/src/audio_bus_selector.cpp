@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-#undef LOG_TAG
-#define LOG_TAG "AudioBusSelector"
 
 #include "audio_bus_selector.h"
 #include "audio_errors.h"
 #include "audio_module_info.h"
+
+#undef LOG_TAG
+#define LOG_TAG "AudioBusSelector"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
