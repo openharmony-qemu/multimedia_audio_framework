@@ -232,7 +232,8 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
 }
 
 // Import Audio Call
-void updateRecordAudioParam(int sampleRate, int channels, int bitsPerSample) {
+void updateRecordAudioParam(int sampleRate, int channels, int bitsPerSample)
+{
     g_samplingRate = sampleRate;
     g_channelCount = channels;
     g_bitsPerSample = bitsPerSample;
@@ -963,15 +964,15 @@ static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
         return result;
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
-    std::string EffectNodeId;
-    status = ParseNapiString(env, argv[ARG_1], EffectNodeId);
+    std::string effectNodeId;
+    status = ParseNapiString(env, argv[ARG_1], effectNodeId);
     if (status != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "SetEffectNodeBypass status: %{public}d", static_cast<int>(status));
         delete[] argv;
         return result;
     }
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "EffectNodeId is: %{public}s", EffectNodeId.c_str());
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "effectNodeId is: %{public}s", effectNodeId.c_str());
     bool isBypass = false;
     status = napi_get_value_bool(env, argv[ARG_2], &isBypass);
     if (status != napi_ok) {
@@ -982,10 +983,10 @@ static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "isBypass is: %{public}d", isBypass);
     delete[] argv;
-    Node effectNode = g_nodeManager->GetNodeById(EffectNodeId);
+    Node effectNode = g_nodeManager->GetNodeById(effectNodeId);
     if (!effectNode.physicalNode) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "SetEffectNodeBypass get effectNode error, effectNodeId: %{public}s", EffectNodeId.c_str());
+            "SetEffectNodeBypass get effectNode error, effectNodeId: %{public}s", effectNodeId.c_str());
         return result;
     }
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_BypassEffectNode(effectNode.physicalNode, isBypass);
@@ -1075,16 +1076,19 @@ const std::vector<napi_property_descriptor> timelineDescriptors = {
 };
 
 const std::vector<napi_property_descriptor> callbackDescriptors = {
-    {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default,
-            nullptr},
-    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
-            napi_default, nullptr},
+    {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,napi_default,
+        nullptr},
     {"registerStringCallback", nullptr, RegisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"registerAudioCacheCallback", nullptr, RegisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"unregisterFinishedCallback", nullptr, UnregisterFinishedCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"unregisterAudioFormatCallback", nullptr, UnregisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"registerAudioCacheCallback", nullptr, RegisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"unregisterFinishedCallback", nullptr, UnregisterFinishedCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
+    {"unregisterAudioFormatCallback", nullptr, UnregisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr},
     {"unregisterStringCallback", nullptr, UnregisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"unregisterAudioCacheCallback", nullptr, UnregisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default, nullptr}
+    {"unregisterAudioCacheCallback", nullptr, UnregisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default,
+        nullptr}
 };
 
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)

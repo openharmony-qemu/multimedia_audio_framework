@@ -60,7 +60,14 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int CONSTANT_0 = 0;
+const int EVEN_ADJUSTMENT = 1;
+const int DATA_OFFSET = 12;
 const char *MULTI_PIPELINE_TAG = "[AudioEditTestApp_multiPipelineEdit_cpp]";
+const int CHUNK_ID_LENGTH = 4;
+const int CHUNK_SIZE_LENGTH = 4;
+const int FILE_HEADER_LENGTH = 12;
+const int alignmentPadding = 1;
+const char DATA_CHUNK_ID[] = "data";
 
 // Multi-thread shared lock
 std::mutex g_threadLock;
@@ -891,23 +898,38 @@ int GetFileLength(FILE *inputFile)
     return fileLength;
 }
 
-static bool GetWavDataPosition(FILE* file, uint32_t& data_offset, uint32_t& data_length) {
+static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataLength)
+{
     if (file == nullptr) {
         return false;
     }
-    fseek(file, 0, SEEK_SET);
-    char chunk_id[4];
-    uint32_t chunk_size;
-    fseek(file, 12, SEEK_SET);
-    while (fread(chunk_id, 1, 4, file) == 4 && fread(&chunk_size, 4, 1, file) == 1) {
-        if (memcmp(chunk_id, "data", 4) == 0) {
-            data_offset = ftell(file);
-            data_length = chunk_size;
+
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        return false;
+    }
+    char chunkId[CHUNK_ID_LENGTH];
+    uint32_t chunkSize;
+
+    if (fseek(file, FILE_HEADER_LENGTH, SEEK_SET) != 0) {
+        return false;
+    }
+    while (fread(chunkId, 1, CHUNK_ID_LENGTH, file) == CHUNK_ID_LENGTH && 
+           fread(&chunkSize, CHUNK_SIZE_LENGTH, 1, file) == 1) {
+        
+        if (memcmp(chunkId, DATA_CHUNK_ID, CHUNK_ID_LENGTH) == 0) {
+            dataOffset = ftell(file);
+            dataLength = chunkSize;
             return true;
         }
-        fseek(file, chunk_size, SEEK_CUR);
-        if (chunk_size % 2 == 1) {
-            fseek(file, 1, SEEK_CUR);
+        
+        if (fseek(file, chunkSize, SEEK_CUR) != 0) {
+            return false;
+        }
+        
+        if (chunkSize % 2 == 1) {
+            if (fseek(file, alignmentPadding, SEEK_CUR) != 0) {
+                return false;
+            }
         }
     }
     return false;
@@ -947,7 +969,8 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     uint32_t length = 0;
     if (GetWavDataPosition(inputFile, offset, length)) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-        "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(), offset, length);
+                     "file name  %{public}s, Data offset: %{public}u, length: %{public}u",
+                     params.fileName.c_str(), offset, length);
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
     }
