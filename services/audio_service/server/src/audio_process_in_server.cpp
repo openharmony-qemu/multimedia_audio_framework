@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -774,10 +774,11 @@ void AllocateBufferDesc(size_t spanSizeInByte, BufferDesc &buffer,  std::unique_
     buffer.dataLength = spanSizeInByte;
 }
 
-size_t CalcSpanSize(uint32_t spanTime, AudioSamplingRate samplingRate, AudioChannel channels,
+size_t CalcSpanSize(float spanTime, AudioSamplingRate samplingRate, AudioChannel channels,
     AudioSampleFormat format)
 {
-    uint32_t bufferSpanSizeInFrame = spanTime * samplingRate / AUDIO_MS_PER_SECOND;
+    uint32_t bufferSpanSizeInFrame = static_cast<uint32_t>(spanTime * static_cast<float>(samplingRate) /
+        static_cast<float>(AUDIO_MS_PER_SECOND));
     size_t spanSizeInByte = static_cast<size_t>(channels * PcmFormatToBits(format) * bufferSpanSizeInFrame);
     return spanSizeInByte;
 }
@@ -791,7 +792,7 @@ void AudioProcessInServer::InitCapturerStream(uint32_t spanSizeInByte,
     }
 }
 
-void AudioProcessInServer::InitRendererStream(uint32_t spanTime,
+void AudioProcessInServer::InitRendererStream(float spanTime,
     const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo)
 {
     AudioStreamInfo resampleStreamInfo = clientStreamInfo;
@@ -903,9 +904,21 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     
     serverStreamInfo_ = serverStreamInfo;
 
-    uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / serverStreamInfo.samplingRate;
-    spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
-    totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
+    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate != 0, ERR_INVALID_PARAM,
+        "invalid sampling rate!");
+    float spanTime = static_cast<float>(spanSizeInframe) * static_cast<float>(AUDIO_MS_PER_SECOND) /
+        static_cast<float>(serverStreamInfo.samplingRate);
+    spanSizeInframe_ = static_cast<uint32_t>(spanTime * static_cast<float>(processConfig_.streamInfo.samplingRate) /
+        static_cast<float>(AUDIO_MS_PER_SECOND));
+    if (abs(DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS - spanTime) < std::numeric_limits<float>::epsilon()) {
+        totalSizeInframe_ = totalSizeInframe / spanSizeInframe * DEFAULT_FAST_SPAN_SIZE_INT_IN_MS *
+            processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+    } else {
+        totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
+    }
+    AUDIO_INFO_LOG("SpanTime: %{public}f ms, SpanSizeInframe: %{public}u, TotalSizeInframe: %{public}u",
+        spanTime, spanSizeInframe_, totalSizeInframe_);
+
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
@@ -954,11 +967,12 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
+int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+    uint32_t threadPriority)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;

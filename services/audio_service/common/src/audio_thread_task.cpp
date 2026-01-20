@@ -132,7 +132,7 @@ void AudioThreadTask::doEmptyJob() {}
 
 void AudioThreadTask::RunJob()
 {
-    AudioScheduleGuard scheduleGuard(getpid(), gettid());
+    AudioScheduleGuard scheduleGuard(getpid(), gettid(), 0); // 0: THREAD_PRIORITY_QOS_7 in ThreadPriorityConfig
     for (;;) {
         if (state_.load() == RunningState::STARTED) {
             job_();

@@ -1529,7 +1529,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
         needSetThreadPriority_ = false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -103,7 +103,7 @@ void AudioCoreService::EventEntry::NotifyServiceReady()
 }
 
 int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     int32_t waitRet = WaitForServiceReady();
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
@@ -165,14 +165,14 @@ std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sess
 }
 
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()

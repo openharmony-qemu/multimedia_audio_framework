@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,8 +60,7 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, AudioMode audioMode);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, const std::string &adapterName,
-        const int32_t pin, AudioStreamType streamType) override;
+    bool Config(const AudioEndpointConfig &endpointConfig) override;
     bool StartDevice(EndpointStatus preferredState = INVALID,
         int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
@@ -204,8 +203,7 @@ private:
 
     std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
     std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type);
-    IAudioSinkAttr InitSinkAttr(const AudioDeviceDescriptor &deviceInfo, const std::string &adapterName,
-        const int32_t pin);
+    IAudioSinkAttr InitSinkAttr(const AudioEndpointConfig &endpointConfig);
     IAudioSourceAttr InitSourceAttr(const AudioDeviceDescriptor &deviceInfo);
 
     void InitLatencyMeasurement();

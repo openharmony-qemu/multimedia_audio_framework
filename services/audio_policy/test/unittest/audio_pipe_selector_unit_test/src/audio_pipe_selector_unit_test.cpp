@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -282,57 +282,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetAdapterNameByStreamDesc_001, TestSize.Lev
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
     EXPECT_EQ(result, "");
-}
-
-/**
- * @tc.name: ConvertStreamDescToPipeInfo_001
- * @tc.desc: Test ConvertStreamDescToPipeInfo when pipeInfoPtr and adapterInfoPtr are not nullptr.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->routeFlag_ = 1;
-    streamDesc->sessionId_ = 100;
-    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
-    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
-
-    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
-    streamPropInfo->sampleRate_ = 44100;
-    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
-    streamPropInfo->bufferSize_ = 1024;
-
-    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
-    pipeInfoPtr->paProp_.lib_ = "test_lib";
-    pipeInfoPtr->paProp_.role_ = "test_role";
-    pipeInfoPtr->paProp_.moduleName_ = "test_module";
-    pipeInfoPtr->name_ = "test_name";
-    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
-
-    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
-    adapterInfoPtr->adapterName = "test_adapter";
-
-    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
-    streamPropInfo->pipeInfo_ = pipeInfoPtr;
-
-    AudioPipeInfo info;
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-
-    pipeInfoPtr->name_ = "multichannel_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-    pipeInfoPtr->name_ = "offload_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-    pipeInfoPtr->name_ = "offload_distributed_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
 }
 
 /**
@@ -845,6 +794,158 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_002, TestSize.Le
     streamPropInfo->pipeInfo_ = pipeInfo;
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     EXPECT_EQ(info.moduleInfo_.className, "dp_multichannel");
+}
+
+/**
+ * @tc.name   : ConvertStreamDescToPipeInfo_004
+ * @tc.desc   : Test ConvertStreamDescToPipeInfo when in ultra fast mode
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+    streamDesc->SetUltraFastFlag(true);
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.GetUltraFastFlag(), true);
+}
+
+/**
+ * @tc.name   : ConvertStreamDescToPipeInfo_005
+ * @tc.desc   : Test ConvertStreamDescToPipeInfo when not in ultra fast mode
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+    streamDesc->SetUltraFastFlag(false);
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.GetUltraFastFlag(), false);
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_006
+ * @tc.desc: Test ConvertStreamDescToPipeInfo when pipeInfoPtr and adapterInfoPtr are not nullptr.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_006, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+
+    pipeInfoPtr->name_ = "multichannel_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_distributed_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+}
+
+/**
+ * @tc.name: AudioPipeSelector_ProcessUltraFastWhenCreate_HasRunningStream_001
+ * @tc.desc: Test ProcessUltraFastWhenCreate
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ProcessUltraFastWhenCreate_HasRunningStream_001, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->SetUltraFastFlag(true);
+    AudioPipeSelector selector;
+
+    selector.ProcessUltraFastWhenCreate(streamDesc);
+    EXPECT_EQ(streamDesc->GetUltraFastFlag(), true);
+
+    streamDesc->SetUltraFastFlag(false);
+    selector.ProcessUltraFastWhenCreate(streamDesc);
+    EXPECT_EQ(streamDesc->GetUltraFastFlag(), false);
 }
 
 /**

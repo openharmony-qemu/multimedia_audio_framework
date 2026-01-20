@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,6 +56,7 @@ constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -663,6 +664,7 @@ struct AudioRendererInfo : public Parcelable {
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
+    bool isUltraFast = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -1373,6 +1375,8 @@ struct AudioProcessConfig : public Parcelable {
 
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
+    bool isUltraFast = false;
+
     bool isInnerCapturer = false;
 
     bool isWakeupCapturer = false;
@@ -1427,6 +1431,9 @@ struct AudioProcessConfig : public Parcelable {
 
         // deviceType
         parcel.WriteInt32(deviceType);
+
+        // Renderer only
+        parcel.WriteBool(isUltraFast);
 
         // Recorder only
         parcel.WriteBool(isInnerCapturer);
@@ -1487,6 +1494,9 @@ struct AudioProcessConfig : public Parcelable {
 
         // deviceType
         config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+
+        // Renderer only
+        config->isUltraFast = parcel.ReadBool();
 
         // Recorder only
         config->isInnerCapturer = parcel.ReadBool();
@@ -2101,6 +2111,11 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
+};
+
+enum ThreadPriorityConfig : uint32_t {
+    THREAD_PRIORITY_QOS_7 = 0,
+    THREAD_PRIORITY_4,
 };
 
 enum XperfEventId : int32_t {

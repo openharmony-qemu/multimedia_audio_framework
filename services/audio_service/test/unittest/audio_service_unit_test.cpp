@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -697,11 +697,11 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
     config.audioMode = AUDIO_MODE_PLAYBACK;
     AudioDeviceDescriptor deviceinfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo info;
-    int32_t pin;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, pin);
+    bool isUltraFast = false;
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast);
     EXPECT_NE(deviceinfo.deviceRole_, INPUT_DEVICE);
     config.audioMode = AUDIO_MODE_RECORD;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, pin);
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast);
     EXPECT_NE(deviceinfo.deviceRole_, OUTPUT_DEVICE);
 }
 
@@ -3059,8 +3059,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
     bool reload = false;
     AudioStreamInfo info;
-    int32_t pin;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, pin, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3081,8 +3082,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
     bool reload = false;
     AudioStreamInfo info;
-    int32_t pin;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, pin, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3103,8 +3105,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     config.audioMode = AUDIO_MODE_RECORD;
     bool reload = false;
     AudioStreamInfo info;
-    int32_t pin;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, pin, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_EQ(deviceInfo.deviceId_, 1);
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);
