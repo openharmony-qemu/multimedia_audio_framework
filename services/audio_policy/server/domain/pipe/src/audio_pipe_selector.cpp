@@ -623,7 +623,7 @@ void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioSt
                                                          std::shared_ptr<PipeStreamPropInfo> &info)
 {
 #ifdef MULTI_BUS_ENABLE
-    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
+    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(desc);
     configManager_.GetStreamPropInfo(desc, info, busAddresses);
 #else
     configManager_.GetStreamPropInfo(desc, info);
