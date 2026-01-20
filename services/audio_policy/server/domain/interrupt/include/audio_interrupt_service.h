@@ -384,9 +384,9 @@ private:
         const AudioInterrupt &incomingInterrupt);
     void SuggestionProcessWhenMixWithOthers(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt);
-    void RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
+    void RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo);
     void MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
-        const std::pair<AudioInterrupt, AudioFocuState> &audioFocus, const AudioInterrupt &incomingInterrupt);
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
