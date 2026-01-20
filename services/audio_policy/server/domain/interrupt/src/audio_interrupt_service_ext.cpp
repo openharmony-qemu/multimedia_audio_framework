@@ -486,7 +486,7 @@ void AudioInterruptService::RemoveInterruptFocusInfoList(const std::pair<AudioIn
         audioFocusInfoList.remove(audioFocus);
     }
     if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid) &&
-        HandleLowPriorityEvent(activeInterrupt.pid, activeInterrupt.sessionId)) {
+        HandleLowPriorityEvent(activeInterrupt.pid, activeInterrupt.streamId)) {
         RemovePlaceholderInterruptForSession(activeInterrupt.pid);
     }
 }
@@ -498,8 +498,8 @@ void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
             AudioInterrupt activeInterrupt = audioFocus.first;
             InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
             AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
-                activeInterrupt.sessionId, streamId);
-            SendInterruptEventCallback(interruptEvent, activeInterrupt.sessionId, activeInterrupt);
+                activeInterrupt.streamId, streamId);
+            SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
             RemoveInterruptFocusInfoList(audioFocus);
         }
         muteAudioFocus_.erase(streamId);
@@ -535,7 +535,7 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     AUDIO_INFO_LOG("isInMuteCheckList: %{public}d", isInMuteCheckList);
     if (isInMuteCheckList) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
-        muteAudioFocus_[incomingInterrupt.sessionId].push_back(audioFocus);
+        muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocus);
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }
 }

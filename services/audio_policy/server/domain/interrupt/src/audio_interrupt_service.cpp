@@ -2533,7 +2533,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         }
         ResetNonInterruptControl(audioInterrupt);
         audioFocusInfoList.erase(iter);
-        muteAudioFocus_.erase(iter->first.sessionId);
+        muteAudioFocus_.erase(iter->first.streamId);
         itZone->second->zoneId = zoneId;
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
@@ -2545,7 +2545,13 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
+    DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
+    return;
+}
 
+void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout)
+{
+    auto itZone = zonesMap_.find(zoneId);
     if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         HILOG_COMM_INFO("[DeactivateAudioInterruptInternal]zone: %{public}d distributed focus strategy not "
             "resume when deactivate interrupt", itZone->first);
