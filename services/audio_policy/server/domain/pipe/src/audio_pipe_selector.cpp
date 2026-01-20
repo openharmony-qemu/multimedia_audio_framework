@@ -517,7 +517,7 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
         return AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDesc->deviceType_, pipeType);
 #endif
     };
-    
+
     for (auto deviceDescA : streamDescA->newDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDescA != nullptr);
         std::string portNameA = GetPortName(deviceDescA, streamDescA);
@@ -525,7 +525,7 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
         hasRemote = isRemoteA ? true : hasRemote;
         for (auto deviceDescB : streamDescB->newDeviceDescs_) {
             CHECK_AND_CONTINUE(deviceDescB != nullptr);
-            std::string portNameA = GetPortName(deviceDescB, streamDescB);
+            std::string portNameB = GetPortName(deviceDescB, streamDescB);
             bool isRemoteB = deviceDescB->networkId_ != LOCAL_NETWORK_ID;
             hasRemote = isRemoteB ? true : hasRemote;
             CHECK_AND_RETURN_RET(!(isRemoteA == isRemoteB && portNameA == portNameB), true);
@@ -958,7 +958,6 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
-
     return pipeInfo->IsSameNetworkId(deviceDesc->networkId_);
 }
 
