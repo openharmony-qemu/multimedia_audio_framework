@@ -802,6 +802,13 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 
         MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
 
+        if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
+            pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
+            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
+            streamDesc->ResetToNormalRoute(false);
+            return FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+        }
+
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
         pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
