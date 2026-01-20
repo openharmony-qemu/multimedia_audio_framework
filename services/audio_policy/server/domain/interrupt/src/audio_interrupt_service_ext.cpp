@@ -475,7 +475,8 @@ int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t cal
     return sessionService_.EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
 }
 
-void AudioInterruptService::RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo)
+void AudioInterruptService::RemoveInterruptFocusInfoList(
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo)
 {
     AudioInterrupt activeInterrupt = audioFocusInfo.first;
     int32_t zoneId = zoneManager_.FindZoneByPid(activeInterrupt.pid);
