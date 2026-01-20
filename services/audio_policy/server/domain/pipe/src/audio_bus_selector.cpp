@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "AudioBusSelector"
-#endif
 
 #include "audio_bus_selector.h"
 #include "audio_errors.h"
