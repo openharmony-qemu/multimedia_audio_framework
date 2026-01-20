@@ -58,6 +58,7 @@ int AddVBEffectNode(std::string& inputId, int mode, std::string& voiceBeautifier
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId)
 {
+    (void)inputId;
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
     Node node = g_nodeManager->GetNodeById(voiceBeautifierId);
