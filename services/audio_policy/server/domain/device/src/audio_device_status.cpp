@@ -34,6 +34,7 @@
 #include "audio_utils_c.h"
 #include "sle_audio_device_manager.h"
 #include "audio_zone_service.h"
+#include "audio_collaborative_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1384,6 +1385,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     CheckForA2dpSuspend(desc);
 
     OnPreferredStateUpdated(desc, command, reason);
+    UpdateChangeReasonForCollaboration(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     if (portNeedClose != "" && oldPaIndex == GetPaIndexByPortName(portNeedClose)) {
@@ -1394,6 +1396,14 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceInfoUpdated");
+}
+
+void AudioDeviceStatus::UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
+        AudioStreamDeviceChangeReasonExt &reason)
+{
+    CHECK_AND_RETURN(updateCommand == CONNECTSTATE_UPDATE && reason == AudioStreamDeviceChangeReason::UNKNOWN &&
+        desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+    if (AudioCollaborativeService::GetAudioCollaborativeService().)
 }
 
 void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)

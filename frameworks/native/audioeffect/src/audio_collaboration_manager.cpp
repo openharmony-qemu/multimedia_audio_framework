@@ -171,5 +171,10 @@ void AudioCollaborationManager::updateLatencyInner()
         productId_.c_str(), twsMode_, latencyMs_);
 }
 
+int32_t AudioCollaborationManager::GetCollaborationLatency()
+{
+    std::lock_guard<std::mutex> lock(collaborationMutex_);
+    return latencyMs_;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

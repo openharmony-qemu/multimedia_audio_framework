@@ -203,5 +203,16 @@ void AudioCollaborativeService::LoadCollaborationConfig()
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     audioPolicyManager_.LoadCollaborationConfig();
 }
+
+bool AudioCollaborativeService::IsCollaborativePlaybackOpenedOrReservedForDevice(
+    const AudioDeviceDescriptor &selectedAudioDevice)
+{
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    AUDIO_INFO_LOG("IsCollaborativePlaybackOpenedOrReservedForDevice Entered!");
+    auto it = addressToCollaborativeEnabledMap_.find(selectedAudioDevice.macAddress_);
+    CHECK_AND_RETURN_RET_LOG(it != addressToCollaborativeEnabledMap_.end(), false,
+        "address %{public}s is not in map", GetEncryptAddr(selectedAudioDevice.macAddress_).c_str());
+    return it->second == COLLABORATIVE_OPENED || it->second == COLLABORATIVE_RESERVED;
+}
 } // AudioStandard
 } // OHOS
