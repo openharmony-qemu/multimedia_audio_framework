@@ -624,6 +624,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_HWDECODING = 13,
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
+    HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

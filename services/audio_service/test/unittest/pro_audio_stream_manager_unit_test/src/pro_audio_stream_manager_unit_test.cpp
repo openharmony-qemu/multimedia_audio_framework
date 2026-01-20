@@ -628,6 +628,25 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_022, TestSize.Level1
 }
 
 /**
+* @tc.name   : Test CreateRender API
+* @tc.number : ProAudioStreamManager_023
+* @tc.desc   : Test CreateRender interface.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_023, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = \
+        make_shared<ProAudioStreamManager>(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    shared_ptr<IRendererStream> rendererStream = audioStreamManager->CreateRendererStream(config);
+    ASSERT_TRUE(rendererStream != nullptr);
+
+    int result = audioStreamManager->CreateRender(config, rendererStream);
+    EXPECT_NE(ERROR, result);
+}
+
+/**
 * @tc.name   : Test CreateRendererStream API
 * @tc.number : CreateRendererStream_001
 * @tc.desc   : Test CreateRendererStream interface.

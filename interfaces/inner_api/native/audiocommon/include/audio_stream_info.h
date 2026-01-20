@@ -107,6 +107,7 @@ enum AudioPipeType {
     PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION = 15,
     PIPE_TYPE_OUT_HWDECODING = 16,
     PIPE_TYPE_IN_NORMAL_RAW_AI = 17,
+    PIPE_TYPE_OUT_3DA_DIRECT = 18,
 };
 
 enum AudioPreloadType {
@@ -162,7 +163,8 @@ enum AudioEncodingType {
     ENCODING_TRUE_HD = 4,
     ENCODING_DTS_HD = 5,
     ENCODING_DTS_X = 6,
-    ENCODING_AUDIOVIVID_DIRECT = 7
+    ENCODING_AUDIOVIVID_DIRECT = 7,
+    ENCODING_AUDIOVIVID_3DA_DIRECT = 8
 };
 
 enum DirectPlaybackMode {
