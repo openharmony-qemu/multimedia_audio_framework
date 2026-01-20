@@ -1398,12 +1398,16 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceInfoUpdated");
 }
 
-void AudioDeviceStatus::UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
-        AudioStreamDeviceChangeReasonExt &reason)
+void AudioDeviceStatus::UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
     CHECK_AND_RETURN(updateCommand == CONNECTSTATE_UPDATE && reason == AudioStreamDeviceChangeReason::UNKNOWN &&
         desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
-    if (AudioCollaborativeService::GetAudioCollaborativeService().)
+    if (AudioCollaborativeService::GetAudioCollaborativeService().
+        IsCollaborativePlaybackOpenedOrReservedForDevice(desc)) {
+        AUDIO_INFO_LOG("Update Reason For Collaboration");
+        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::COLLABORATIVE_STATE_CHANGE;
+    }
 }
 
 void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
