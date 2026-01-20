@@ -134,7 +134,6 @@ int32_t ProRendererStreamImpl::InitParams()
         streamInfo.format, streamInfo.samplingRate);
     InitBasicInfo(streamInfo);
     uint32_t bufferSize = 0;
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         bufferSize = minBufferSize_;
