@@ -34,6 +34,7 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
+#include "audio_device_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -448,6 +449,9 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+        AudioStreamDeviceChangeReason::OVERRODE);
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 

@@ -89,6 +89,7 @@ public:
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
     bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetAdjustVolumeForZone(int32_t zoneId);
+    int32_t GetAdjustVolumeZoneId();
 
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);

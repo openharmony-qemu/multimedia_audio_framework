@@ -562,6 +562,11 @@ void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
     volumeAdjustZoneId_ = zoneId;
 }
 
+int32_t AudioActiveDevice::GetAdjustVolumeZoneId()
+{
+    return volumeAdjustZoneId_;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
