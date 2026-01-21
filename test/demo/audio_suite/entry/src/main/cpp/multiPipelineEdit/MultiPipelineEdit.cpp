@@ -66,8 +66,9 @@ const char *MULTI_PIPELINE_TAG = "[AudioEditTestApp_multiPipelineEdit_cpp]";
 const int CHUNK_ID_LENGTH = 4;
 const int CHUNK_SIZE_LENGTH = 4;
 const int FILE_HEADER_LENGTH = 12;
-const int alignmentPadding = 1;
+const int ALIGNMENT_PADD = 1;
 const char DATA_CHUNK_ID[] = "data";
+const int WORD_ALIGNMENT = 2;
 
 // Multi-thread shared lock
 std::mutex g_threadLock;
@@ -913,21 +914,19 @@ static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataL
     if (fseek(file, FILE_HEADER_LENGTH, SEEK_SET) != 0) {
         return false;
     }
-    while (fread(chunkId, 1, CHUNK_ID_LENGTH, file) == CHUNK_ID_LENGTH && 
+
+    while (fread(chunkId, 1, CHUNK_ID_LENGTH, file) == CHUNK_ID_LENGTH &&
            fread(&chunkSize, CHUNK_SIZE_LENGTH, 1, file) == 1) {
-        
         if (memcmp(chunkId, DATA_CHUNK_ID, CHUNK_ID_LENGTH) == 0) {
             dataOffset = ftell(file);
             dataLength = chunkSize;
             return true;
         }
-        
         if (fseek(file, chunkSize, SEEK_CUR) != 0) {
             return false;
         }
-        
-        if (chunkSize % 2 == 1) {
-            if (fseek(file, alignmentPadding, SEEK_CUR) != 0) {
+        if (chunkSize % WORD_ALIGNMENT == 1) {
+            if (fseek(file, ALIGNMENT_PADD, SEEK_CUR) != 0) {
                 return false;
             }
         }

@@ -1077,7 +1077,7 @@ const std::vector<napi_property_descriptor> timelineDescriptors = {
 
 const std::vector<napi_property_descriptor> callbackDescriptors = {
     {"registerFinishedCallback", nullptr, RegisterFinishedCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
-    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,napi_default,
+    {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default,
         nullptr},
     {"registerStringCallback", nullptr, RegisterStringCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
     {"registerAudioCacheCallback", nullptr, RegisterAudioCacheCallback, nullptr, nullptr, nullptr, napi_default,
