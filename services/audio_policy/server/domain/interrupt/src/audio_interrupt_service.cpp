@@ -1586,7 +1586,6 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     if (IsCanMixInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
     }
-    MuteCheckFocusStrategy(focusEntry, *iterActive, incomingInterrupt);
     switch (focusEntry.hintType) {
         case INTERRUPT_HINT_STOP:
             if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
@@ -1794,6 +1793,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         uint32_t activeStreamId = (iterActive->first).streamId;
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
+        MuteCheckFocusStrategy(focusEntry, *iterActive, incomingInterrupt, interruptEvent);
         AudioInterrupt currentInterrupt = iterActive->first;
         if (removeFocusInfo) {
             RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
