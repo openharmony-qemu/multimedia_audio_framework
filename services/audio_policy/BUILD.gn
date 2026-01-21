@@ -794,6 +794,7 @@ config("audio_manager_client_public_config") {
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",
     "../../frameworks/native/hdiadapter_new/include/common",
+    "../../interfaces/inner_api/native/audiocommon/include"
   ]
 }
 
@@ -813,6 +814,7 @@ ohos_shared_library("audio_manager_client") {
     "../audio_service/client/src/audio_anahs_manager.cpp",
     "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "client/service/src/audio_general_manager.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
   ]
 
   public_configs = [ ":audio_manager_client_public_config" ]
@@ -827,6 +829,7 @@ ohos_shared_library("audio_manager_client") {
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "eventhandler:libeventhandler",
     "hicollie:libhicollie",
     "hilog:libhilog",
