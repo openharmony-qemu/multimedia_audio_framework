@@ -2532,8 +2532,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             return;
         }
         ResetNonInterruptControl(audioInterrupt);
-        audioFocusInfoList.erase(iter);
         muteAudioFocus_.erase(iter->first.streamId);
+        audioFocusInfoList.erase(iter);
         itZone->second->zoneId = zoneId;
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         zonesMap_[zoneId] = itZone->second;
