@@ -43,6 +43,7 @@ public:
     static AudioCollaborationManager *GetInstance();
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
+    int32_t GetCollaborationLatency();
 
 private:
     void updateLatencyInner();

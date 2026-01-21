@@ -477,6 +477,30 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeoutWrongScene_ShouldNo
     EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
     EXPECT_GT(hpaeSinkOutputNode->silenceDataUs_, SILENCE_TIME_OUT_US);
 }
+
+// Test case: CheckAndSetCollDelayForRenderFrameFailed
+HWTEST_F(HpaeSinkOutputNodeTest, CheckAndSetCollDelayForRenderFrameFailed, TestSize.Level0)
+{
+    PcmBufferInfo bufferInfo;
+    PreparePcmBufferInfo(bufferInfo);
+    std::shared_ptr<HpaePcmBuffer> pcmBuffer = std::make_shared<HpaePcmBuffer>(bufferInfo);
+    pcmBuffer->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
+    
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->collRenderFrameFailedCount_.store(0);
+    hpaeSinkOutputNode->CheckAndSetCollDelayForRenderFrameFailed();
+
+    EXPECT_EQ(hpaeSinkOutputNode->collRenderFrameFailedCount_.load(), 0);
+    hpaeSinkOutputNode->collRenderFrameFailedCount_.fetch_add(1);
+    EXPECT_EQ(hpaeSinkOutputNode->collRenderFrameFailedCount_.load(), 1);
+    hpaeSinkOutputNode->collRenderFrameFailedCount_.fetch_add(1);
+    hpaeSinkOutputNode->collRenderFrameFailedCount_.fetch_add(1);
+    hpaeSinkOutputNode->CheckAndSetCollDelayForRenderFrameFailed();
+    EXPECT_EQ(hpaeSinkOutputNode->collRenderFrameFailedCount_.load(), 0);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

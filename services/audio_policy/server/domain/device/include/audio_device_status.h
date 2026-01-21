@@ -177,6 +177,8 @@ private:
         AudioStreamDeviceChangeReasonExt &reason, AudioDeviceDescriptor &deviceDesc);
     bool CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
+    void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
+        AudioStreamDeviceChangeReasonExt &reason);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

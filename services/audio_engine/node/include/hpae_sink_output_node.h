@@ -61,6 +61,7 @@ public:
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     int32_t SetAuxiliarySinkEnable(bool isEnabled);
+    void CheckAndSetCollDelayForRenderFrameFailed();
 
 private:
     void HandleRemoteTiming();
@@ -105,6 +106,7 @@ private:
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif
+    std::atomic<size_t> collRenderFrameFailedCount_ = 0;
 };
 
 }  // namespace HPAE

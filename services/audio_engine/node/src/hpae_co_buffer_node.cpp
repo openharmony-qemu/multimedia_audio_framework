@@ -19,6 +19,7 @@
 #include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
 #include "audio_effect_log.h"
+#include "audio_collaboration_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,7 +27,7 @@ namespace HPAE {
 static constexpr int32_t DEFAULT_FRAME_LEN = 960;
 static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t MS_PER_SECOND = 1000;
-static constexpr int32_t TEST_LATENCY = 260;
+static constexpr int32_t DEFAULT_CO_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
 
@@ -170,30 +171,31 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     AUDIO_INFO_LOG("latency is %{public}d", latency);
 }
 
-void HpaeCoBufferNode::FillSilenceFramesInner(uint32_t latencyMs)
+void HpaeCoBufferNode::FillSilenceFramesInner(int32_t latencyMs)
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
-    
-    uint32_t offset = 0;
-    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float);
-    
-    while (offset < latencyMs) {
-        // check writable size
-        OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-        if (result.size < frameSize) {
-            AUDIO_WARNING_LOG("Insufficient space for silence frame: %{public}zu < %{public}zu",
-                result.size, frameSize);
-            break;
-        }
-        
-        // create silence frame
-        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_.GetPcmDataBuffer()), frameSize};
-        result = ringCache_->Enqueue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
-        offset += FRAME_LEN_20MS;
+    if (latencyMs < 0) {
+        latencyMs = DEFAULT_CO_LATENCY;
     }
-    AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", offset);
+
+    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float) *
+        (latencyMs / FRAME_LEN_20MS);
+    
+    // check writable size
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+    if (result.size < frameSize) {
+        AUDIO_WARNING_LOG("Insufficient space for silence frame: %{public}zu < %{public}zu",
+            result.size, frameSize);
+        return;
+    }
+    
+    std::vector<uint8_t> silenceData(frameSize, 0);
+    // create silence frame
+    BufferWrap bufferWrap = {silenceData.data(), frameSize};
+    result = ringCache_->Enqueue(bufferWrap);
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
+    AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", latencyMs);
 }
 
 void HpaeCoBufferNode::ProcessInputFrameInner(HpaePcmBuffer* buffer)
@@ -280,10 +282,12 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frame for latency adjustment
-        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment");
         ringCache_->ResetBuffer();
 
-        FillSilenceFramesInner(TEST_LATENCY);
+        int32_t latency = DEFAULT_CO_LATENCY;
+        ChangeLatencyByCollManager(latency);
+        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment, use latency: %{public}d", latency);
+        FillSilenceFramesInner(latency);
         // smoothen collaborative data
         float gain = 0;
         float deltaGain = 1.0f / DEFAULT_FRAME_LEN;
@@ -295,6 +299,13 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
     }
 
     return true;
+}
+
+void HpaeCoBufferNode::ChangeLatencyByCollManager(int32_t &latency)
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
+    latency = audioCollaborationManager->GetCollaborationLatency();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
