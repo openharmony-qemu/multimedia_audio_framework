@@ -187,7 +187,8 @@ public:
 
     virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
-    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override
+    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override
     {
         return 0;
     }
@@ -417,7 +418,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
 }
 
 /**
@@ -485,7 +486,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = INVALID;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
 }
 
 /**

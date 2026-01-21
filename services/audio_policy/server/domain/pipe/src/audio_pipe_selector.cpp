@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -371,6 +371,7 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
+    ProcessUltraFastWhenCreate(streamDesc);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     for (auto &pipeInfo : pipeInfoList) {
@@ -674,6 +675,10 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
     info.InitAudioStreamInfo();
+
+    if (streamDesc->GetUltraFastFlag()) {
+        info.SetUltraFastFlag(true);
+    }
 }
 
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(
@@ -797,6 +802,13 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 
         MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
 
+        if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
+            pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
+            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
+            streamDesc->ResetToNormalRoute(false);
+            return FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+        }
+
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
         pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
@@ -872,6 +884,25 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
 
     return pipeInfo->IsSameNetworkId(deviceDesc->networkId_);
+}
+
+void AudioPipeSelector::ProcessUltraFastWhenCreate(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->GetUltraFastFlag());
+    bool hasRunningStream = AudioPipeManager::GetPipeManager()->HasRunningStream();
+    if (hasRunningStream) {
+        AUDIO_INFO_LOG("Other stream is running, session %{public}u cannot use ultra fast mode",
+            streamDesc->sessionId_);
+        streamDesc->SetUltraFastFlag(false);
+        return;
+    }
+    bool hasFastOutputPipe = AudioPipeManager::GetPipeManager()->HasFastOutputPipe();
+    if (hasFastOutputPipe) {
+        AUDIO_INFO_LOG("Fast output pipe exists, session %{public}u cannot use ultra fast mode",
+            streamDesc->sessionId_);
+        streamDesc->SetUltraFastFlag(false);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

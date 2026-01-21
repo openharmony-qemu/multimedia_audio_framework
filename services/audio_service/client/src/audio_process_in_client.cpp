@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -146,7 +146,8 @@ public:
 
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code) override;
 
-    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method,
+        ThreadPriorityConfig threadPriority) override;
 
     bool GetStopFlag() const override;
 
@@ -205,8 +206,6 @@ private:
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc);
-    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
-    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
 
     void DoFadeInOut(const BufferDesc &buffDesc);
 
@@ -257,7 +256,7 @@ private:
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
-    uint32_t spanSizeInMs_ = 0;
+    float serverSpanSizeInMs_ = 0;
     size_t spanSizeInByte_ = 0;
     std::weak_ptr<AudioDataCallback> audioDataCallback_;
     std::weak_ptr<ClientUnderrunCallBack> underrunCallback_;
@@ -639,17 +638,28 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
-
-    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
-    clientSpanSizeInFrame_ = spanSizeInFrame_;
+    serverSpanSizeInMs_ = static_cast<float>(spanSizeInFrame_) * static_cast<float>(MILLISECOND_PER_SECOND) /
+        static_cast<float>(processConfig_.streamInfo.samplingRate);
+    
+    if (abs(DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS - serverSpanSizeInMs_) < std::numeric_limits<float>::epsilon() &&
+        processConfig_.audioMode == AUDIO_MODE_PLAYBACK && processConfig_.isUltraFast == false) {
+        clientSpanSizeInFrame_ =
+            DEFAULT_FAST_SPAN_SIZE_INT_IN_MS * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+        clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
+    } else {
+        clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+        clientSpanSizeInFrame_ = spanSizeInFrame_;
+    }
+    
     if ((processConfig_.audioMode != AUDIO_MODE_PLAYBACK) && (!isVoipMmap_)) {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
-        "spanSizeInByte_ %{public}zu, spanSizeInMs_ %{public}u", totalSizeInFrame_, spanSizeInFrame_,
-        byteSizePerFrame_, spanSizeInByte_, spanSizeInMs_);
+        "spanSizeInByte_ %{public}zu, serverSpanSizeInMs_ %{public}f, clientSpanSizeInFrame_ %{public}zu, "
+        "isUltraFast %{public}d",
+        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, serverSpanSizeInMs_,
+        clientSpanSizeInFrame_, processConfig_.isUltraFast);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
@@ -713,6 +723,11 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 #endif
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([this, weakStream] {
+        ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+        if (processConfig_.isUltraFast) {
+            BindBigAndMidCore();
+            threadPriority = THREAD_PRIORITY_4;
+        }
         bool keepRunning = true;
         uint64_t curWritePos = 0;
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
@@ -721,7 +736,8 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         processProxy_->RegisterThreadPriority(
             gettid(),
             AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ);
+            METHOD_WRITE_OR_READ,
+            threadPriority);
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
@@ -752,7 +768,8 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         processProxy_->RegisterThreadPriority(
             gettid(),
             AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ);
+            METHOD_WRITE_OR_READ,
+            THREAD_PRIORITY_QOS_7);
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
@@ -1707,30 +1724,6 @@ bool AudioProcessInClientInner::KeepLoopRunningIndependent()
     return false;
 }
 
-void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime)
-{
-    curTime = ClockTime::GetCurNano();
-    int64_t wakeupCost = curTime - wakeUpTime;
-    if (wakeupCost > ONE_MILLISECOND_DURATION) {
-        if (wakeupCost > TWO_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-        }
-        wakeUpTime = curTime;
-    }
-}
-
-void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost)
-{
-    curTime = ClockTime::GetCurNano();
-    int64_t round = static_cast<int64_t>(spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
-    int64_t clientBufferDurationInMs = static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION * round;
-    if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
-        Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
-            "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
-        AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
-    }
-}
-
 int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
@@ -1777,10 +1770,10 @@ void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_
 }
 
 int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+    BoostTriggerMethod method, ThreadPriorityConfig threadPriority)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
-    return processProxy_->RegisterThreadPriority(tid, bundleName, method);
+    return processProxy_->RegisterThreadPriority(tid, bundleName, method, threadPriority);
 }
 
 bool AudioProcessInClientInner::GetStopFlag() const

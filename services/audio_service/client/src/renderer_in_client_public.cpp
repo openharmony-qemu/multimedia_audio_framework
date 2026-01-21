@@ -241,7 +241,15 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             AUDIO_ERR_LOG("AudioStream: converter construct error");
             return ERR_NOT_SUPPORTED;
         }
-        converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+
+        AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
+        if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+            curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
+            cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
+            cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
+        } else {
+            converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+        }
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
@@ -578,6 +586,12 @@ int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
         AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
         return ERROR;
     }
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetBackMute(bool backMute)
+{
+    backMute_ = backMute;
     return SUCCESS;
 }
 

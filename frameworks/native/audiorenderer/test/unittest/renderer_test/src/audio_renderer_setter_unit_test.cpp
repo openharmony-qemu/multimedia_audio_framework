@@ -1408,9 +1408,8 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoip == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     int32_t ret = audioRendererForVoip->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
@@ -1429,9 +1428,8 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    if (audioRendererForVoiceCall == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -1462,9 +1460,8 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    if (audioRendererForVoiceCall == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -1479,9 +1476,8 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoip == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoip);
+    
     audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoip = audioRendererForVoip->Start();
     EXPECT_EQ(false, isStartedforVoip);

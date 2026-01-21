@@ -419,6 +419,7 @@ void AudioCaptureSource::ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytes
     if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
         AUDIO_ERR_LOG("copy desc ec fail");
     } else {
+        HdiDfxUtils::DumpData(fdescEc->frame, replyBytesEc, ecDumpFile_, ecDumpFileName_);
         SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
     }
 }
@@ -1102,8 +1103,8 @@ int32_t AudioCaptureSource::CreateCapture(void)
     InitDeviceDesc(deviceDesc);
 
     HILOG_COMM_INFO("[CreateCapture]halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
-        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
-        param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
+        "channel: %{public}u, format: %{public}u, devicePin: %{public}u", halName_.c_str(),
+        param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
         AUDIO_INFO_LOG("config ec, rate: %{public}d, channel: %{public}u, format: %{public}u",
             param.ecSampleAttributes.ecSampleRate, param.ecSampleAttributes.ecChannelCount,
@@ -1116,8 +1117,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     audioCapture_ = static_cast<struct IAudioCapture *>(capture);
     CHECK_AND_RETURN_RET(IsCaptureInvalid(), ERR_NOT_STARTED);
 
-    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId_,
-        deviceDesc.desc);
+    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u", hdiCaptureId_);
     return SUCCESS;
 }
 

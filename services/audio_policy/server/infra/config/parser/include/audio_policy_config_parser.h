@@ -95,6 +95,7 @@ private:
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
     bool shouldSetDefaultAdapter_ = false;
+    bool supportUltraFast_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

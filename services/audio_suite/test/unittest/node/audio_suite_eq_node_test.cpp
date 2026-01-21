@@ -30,7 +30,11 @@ public:
 };
 
 void AudioSuiteEqNodeTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteEqNodeTest::TearDown()
 {}

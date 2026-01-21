@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -76,6 +76,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
     streamDescriptors_ = pipeInfo->streamDescriptors_;
     streamDescMap_ = pipeInfo->streamDescMap_;
     audioStreamInfo_ = pipeInfo->audioStreamInfo_;
+    ultraFastPipe_ = pipeInfo->ultraFastPipe_;
 }
 
 void AudioPipeInfo::Dump(std::string &dumpString)
@@ -112,6 +113,9 @@ void AudioPipeInfo::DumpCommonAttrs(std::string &dumpString)
 void AudioPipeInfo::DumpOutputAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "  - RenderInIdleState: %s\n", moduleInfo_.renderInIdleState.c_str());
+    if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+        AppendFormat(dumpString, " - UltralFastPipe: %d\n", ultraFastPipe_);
+    }
 }
 
 void AudioPipeInfo::DumpInputAttrs(std::string &dumpString)
@@ -153,5 +157,14 @@ void AudioPipeInfo::RemoveStream(uint32_t sessionId)
         streamDescriptors_.end());
 }
 
+void AudioPipeInfo::SetUltraFastFlag(bool ultraFastFlag)
+{
+    ultraFastPipe_ = ultraFastFlag;
+}
+
+bool AudioPipeInfo::GetUltraFastFlag() const
+{
+    return ultraFastPipe_;
+}
 } // AudioStandard
 } // namespace OHOS

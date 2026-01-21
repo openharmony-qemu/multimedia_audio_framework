@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -72,7 +72,7 @@ void AudioCoreServiceExtUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceExtUnitTest::SetUpTestCase start-end");
     GetPermission();
-    GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
+    GetServerPtr()->eventEntry_->NotifyServiceReady();
 }
 void AudioCoreServiceExtUnitTest::TearDownTestCase(void)
 {
@@ -409,8 +409,9 @@ HWTEST_F(AudioCoreServiceExtUnitTest, GetProcessDeviceInfoBySessionId_001, TestS
     uint32_t sessionID = 100001; // sessionId
     AudioDeviceDescriptor deviceDesc;
     AudioStreamInfo info;
-    int32_t pin;
-    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info, pin);
+    bool isUltraFast = false;
+    auto result =
+        GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info, isUltraFast);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1741,7 +1742,7 @@ HWTEST_F(AudioCoreServiceExtUnitTest, SetAudioScene_006, TestSize.Level1)
 /**
 * @tc.name  : Test AudioCoreService
 * @tc.number: SetFlagForMmapStream_001
-* @tc.desc  : Test SetFlagForMmapStream() when device type is DEVICE_TYPE_BLUETOOTH_A2DP
+* @tc.desc  : Test GetFlagForMmapStream() when device type is DEVICE_TYPE_BLUETOOTH_A2DP
 */
 HWTEST_F(AudioCoreServiceExtUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
 {
@@ -1757,7 +1758,7 @@ HWTEST_F(AudioCoreServiceExtUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    auto ret = coreService_->SetFlagForMmapStream(streamDesc);
+    auto ret = coreService_->GetFlagForMmapStream(streamDesc);
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
 }
 

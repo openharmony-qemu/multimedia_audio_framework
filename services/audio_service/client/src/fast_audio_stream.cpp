@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -109,6 +109,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
+    config.isUltraFast = info.isUltraFast;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -413,6 +414,13 @@ int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
     int32_t ret = processClient_->SetMute(mute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s: error.", logTag_.c_str());
     return ret;
+}
+
+int32_t FastAudioStream::SetBackMute(bool backMute)
+{
+    AUDIO_INFO_LOG("when finish old stream and generate new stream, store the old backMute");
+    backMute_ = backMute;
+    return SUCCESS;
 }
 
 bool FastAudioStream::GetMute()
@@ -722,7 +730,8 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s: process client is null.", logTag_.c_str());
     processClient_->RegisterThreadPriority(tid,
-        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START,
+        THREAD_PRIORITY_QOS_7);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
@@ -1022,6 +1031,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
     info.renderRate = renderRate_;
+    info.backMute = backMute_;
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();

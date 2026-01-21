@@ -41,7 +41,7 @@
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_spatialization_service.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -117,7 +117,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void UpdateCurrentDeviceFuzzTest()
+void UpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
      // Update with a new device
@@ -150,7 +150,7 @@ void UpdateCurrentDeviceFuzzTest()
     service.UpdateCurrentDevice(selectedAudioDevice);
 }
 
-void RemoveOldestDeviceFuzzTest()
+void RemoveOldestDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     service.addressToDeviceSpatialInfoMap_ = {
@@ -180,7 +180,7 @@ void RemoveOldestDeviceFuzzTest()
     service.RemoveOldestDevice();
 }
 
-void UpdateDeviceSpatialMapInfoFuzzTest()
+void UpdateDeviceSpatialMapInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     for (uint32_t i = 1; i <= AudioSpatializationService::MAX_DEVICE_NUM; ++i) {
@@ -197,7 +197,7 @@ void UpdateDeviceSpatialMapInfoFuzzTest()
                                        "info" + to_string(exitNum + AudioSpatializationService::MAX_DEVICE_NUM));
 }
 
-void WriteSpatializationStateToDbFuzzTest()
+void WriteSpatializationStateToDbFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     uint32_t testSceneCount = GetData<uint32_t>() % AudioSpatializationSceneTypeVec.size();
@@ -210,7 +210,7 @@ void WriteSpatializationStateToDbFuzzTest()
     service.WriteSpatializationStateToDb(operation);
 }
 
-void GetSpatializationStateFuzzTest()
+void GetSpatializationStateFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     service.spatializationEnabledReal_ = GetData<uint32_t>() % NUM_2;
@@ -220,14 +220,14 @@ void GetSpatializationStateFuzzTest()
     service.GetSpatializationState(supportedUsage);
 }
 
-void SetHeadTrackingEnabledFuzzTest()
+void SetHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
     bool enable = GetData<uint32_t>() % NUM_2;
     service.SetHeadTrackingEnabled(enable);
 }
 
-void AudioSpatializationServiceInitFuzzTest()
+void AudioSpatializationServiceInitFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<EffectChain> effectChains = {
@@ -239,7 +239,7 @@ void AudioSpatializationServiceInitFuzzTest()
     ptrAudioSpatializationService->Init(effectChains);
 }
 
-void IsSpatializationEnabledFuzzTest()
+void IsSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<string> preSettingSpatialAddressList = { "NO_PREVIOUS_SET_DEVICE", "1234", "test_address"};
@@ -249,7 +249,7 @@ void IsSpatializationEnabledFuzzTest()
     ptrAudioSpatializationService->IsSpatializationEnabled();
 }
 
-void SetSpatializationEnabledFuzzTest()
+void SetSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     const bool enable = GetData<uint32_t>() % NUM_2;
@@ -258,7 +258,7 @@ void SetSpatializationEnabledFuzzTest()
     ptrAudioSpatializationService->SetSpatializationEnabled(enable);
 }
 
-void IsHeadTrackingEnabledFuzzTest()
+void IsHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     vector<string> preSettingSpatialAddressList = { "NO_PREVIOUS_SET_DEVICE", "1234"};
@@ -268,7 +268,7 @@ void IsHeadTrackingEnabledFuzzTest()
     ptrAudioSpatializationService->IsHeadTrackingEnabled();
 }
 
-void HandleHeadTrackingDeviceChangeFuzzTest()
+void HandleHeadTrackingDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     std::unordered_map<std::string, bool> changeInfo;
@@ -277,7 +277,7 @@ void HandleHeadTrackingDeviceChangeFuzzTest()
     ptrAudioSpatializationService->HandleHeadTrackingDeviceChange(changeInfo);
 }
 
-void AudioSpatializationServiceIsSpatializationEnabledFuzzTest()
+void AudioSpatializationServiceIsSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -288,7 +288,7 @@ void AudioSpatializationServiceIsSpatializationEnabledFuzzTest()
     ptrAudioSpatializationService->IsSpatializationEnabled(address);
 }
 
-void AudioSpatializationServiceIsSpatializationEnabledForCurrentDeviceFuzzTest()
+void AudioSpatializationServiceIsSpatializationEnabledForCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -299,7 +299,7 @@ void AudioSpatializationServiceIsSpatializationEnabledForCurrentDeviceFuzzTest()
     ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
 }
 
-void AudioSpatializationServiceSetSpatializationEnabledFuzzTest()
+void AudioSpatializationServiceSetSpatializationEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -312,7 +312,7 @@ void AudioSpatializationServiceSetSpatializationEnabledFuzzTest()
     ptrAudioSpatializationService->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
-void AudioSpatializationServiceIsHeadTrackingEnabledFuzzTest()
+void AudioSpatializationServiceIsHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -325,7 +325,7 @@ void AudioSpatializationServiceIsHeadTrackingEnabledFuzzTest()
     ptrAudioSpatializationService->IsHeadTrackingEnabled(address);
 }
 
-void AudioSpatializationServiceSetHeadTrackingEnabledFuzzTest()
+void AudioSpatializationServiceSetHeadTrackingEnabledFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -337,7 +337,7 @@ void AudioSpatializationServiceSetHeadTrackingEnabledFuzzTest()
     ptrAudioSpatializationService->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
-void AudioSpatializationServiceHandleSpatializationEnabledChangeFuzzTest()
+void AudioSpatializationServiceHandleSpatializationEnabledChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -350,7 +350,7 @@ void AudioSpatializationServiceHandleSpatializationEnabledChangeFuzzTest()
     ptrAudioSpatializationService->HandleSpatializationEnabledChange(selectedAudioDevice, enable);
 }
 
-void AudioSpatializationServiceHandleSpatializationEnabledChangeForCurrentDeviceFuzzTest()
+void AudioSpatializationServiceHandleSpatializationEnabledChangeForCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -362,7 +362,7 @@ void AudioSpatializationServiceHandleSpatializationEnabledChangeForCurrentDevice
     ptrAudioSpatializationService->HandleSpatializationEnabledChangeForCurrentDevice(enable);
 }
 
-void AudioSpatializationServiceHandleHeadTrackingEnabledChangeFuzzTest()
+void AudioSpatializationServiceHandleHeadTrackingEnabledChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -375,7 +375,7 @@ void AudioSpatializationServiceHandleHeadTrackingEnabledChangeFuzzTest()
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(selectedAudioDevice, enable);
 }
 
-void AudioSpatializationServiceIsHeadTrackingSupportedForDeviceFuzzTest()
+void AudioSpatializationServiceIsHeadTrackingSupportedForDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -386,7 +386,7 @@ void AudioSpatializationServiceIsHeadTrackingSupportedForDeviceFuzzTest()
     ptrAudioSpatializationService->IsHeadTrackingSupportedForDevice(address);
 }
 
-void AudioSpatializationServiceUpdateSpatialDeviceStateFuzzTest()
+void AudioSpatializationServiceUpdateSpatialDeviceStateFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<AudioSpatialDeviceType> audioSpatialDeviceTypeVec = {
         EARPHONE_TYPE_NONE,
@@ -410,7 +410,7 @@ void AudioSpatializationServiceUpdateSpatialDeviceStateFuzzTest()
     ptrAudioSpatializationService->UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
 
-void AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest()
+void AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -420,7 +420,7 @@ void AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest()
     ptrAudioSpatializationService->GetSpatializationSceneType();
 }
 
-void AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTest()
+void AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     if (ptrAudioSpatializationService == nullptr) {
@@ -431,7 +431,7 @@ void AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTes
     ptrAudioSpatializationService->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest()
+void AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     static const vector<AudioSpatializationSceneType> testAudioSpatializationSceneType = {
         SPATIALIZATION_SCENE_TYPE_DEFAULT,
@@ -450,7 +450,9 @@ void AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest()
     ptrAudioSpatializationService->SetSpatializationSceneType(spatializationSceneType);
 }
 
-TestFuncs g_testFuncs[] = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     UpdateCurrentDeviceFuzzTest,
     RemoveOldestDeviceFuzzTest,
     UpdateDeviceSpatialMapInfoFuzzTest,
@@ -475,28 +477,20 @@ TestFuncs g_testFuncs[] = {
     AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest,
     AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTest,
     AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -507,7 +501,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

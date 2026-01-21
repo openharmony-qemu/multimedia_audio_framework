@@ -17,6 +17,7 @@
 #include "OHAudioSuiteEngine.h"
 #include "OHAudioSuiteNodeBuilder.h"
 #include "native_audio_suite_engine.h"
+#include "oh_audio_suite_tool_test.h"
 
 using namespace testing::ext;
 
@@ -26,7 +27,12 @@ void OHAudioSuiteNodeBuilderTest::SetUpTestCase(void) { }
 
 void OHAudioSuiteNodeBuilderTest::TearDownTestCase(void) { }
 
-void OHAudioSuiteNodeBuilderTest::SetUp(void) { }
+void OHAudioSuiteNodeBuilderTest::SetUp(void)
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void OHAudioSuiteNodeBuilderTest::TearDown(void) { }
 
@@ -82,7 +88,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
  * @tc.number: OH_AudioSuiteNodeBuilder_Create_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -93,7 +99,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_001, TestSiz
  * @tc.number: OH_AudioSuiteNodeBuilder_Create_002
  * @tc.desc  : Test success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_002, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
@@ -109,7 +115,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Create_002, TestSiz
  * @tc.number: OH_AudioSuiteNodeBuilder_Destroy_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Destroy(nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -120,7 +126,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_001, TestSi
  * @tc.number: OH_AudioSuiteNodeBuilder_Destroy_002
  * @tc.desc  : Test success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_002, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
@@ -136,7 +142,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Destroy_002, TestSi
  * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_001, TestSize.Level0)
 {
     OH_AudioFormat audioFormat;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_SetFormat(nullptr, audioFormat);
@@ -148,7 +154,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_001, Test
  * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_002
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_002, TestSize.Level0)
 {
     OH_AudioFormat audioFormat;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_SetFormat(nullptr, audioFormat);
@@ -160,7 +166,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_002, Test
  * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_003
  * @tc.desc  : Test audioFormat for effect node.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_003, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_003, TestSize.Level0)
 {
     OH_AudioFormat audioFormat;
     OH_AudioNodeBuilder *builder = nullptr;
@@ -194,7 +200,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_003, Test
  * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_004
  * @tc.desc  : Test audioFormat invaild value.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_004, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_004, TestSize.Level0)
 {
     OH_AudioFormat audioFormat;
     OH_AudioNodeBuilder *builder = nullptr;
@@ -219,7 +225,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_004, Test
  * @tc.number: OH_AudioSuiteNodeBuilder_SetFormat_006
  * @tc.desc  : Test success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_005, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_005, TestSize.Level0)
 {
     OH_AudioFormat audioFormat;
     OH_AudioNodeBuilder *builder = nullptr;
@@ -250,7 +256,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetFormat_005, Test
  * @tc.number: OH_AudioSuiteNodeBuilder_SetRequestDataCallback_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(nullptr, nullptr, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -272,7 +278,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallb
  * @tc.number: OH_AudioSuiteNodeBuilder_SetRequestDataCallback_002
  * @tc.desc  : Test userData is nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_002, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
@@ -291,7 +297,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallb
  * @tc.number: OH_AudioSuiteNodeBuilder_SetRequestDataCallback_003
  * @tc.desc  : Test node type not input node.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_003, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_003, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
@@ -321,7 +327,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallb
  * @tc.number: OH_AudioSuiteNodeBuilder_SetRequestDataCallback_004
  * @tc.desc  : Test success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_004, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallback_004, TestSize.Level0)
 {
     OH_AudioNodeBuilder *builder = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
@@ -340,7 +346,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetRequestDataCallb
  * @tc.number: OH_AudioSuiteEngine_CreateNode_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_CreateNode(nullptr, nullptr, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -379,7 +385,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_001, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_002
  * @tc.desc  : Test input node not set callback.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_002, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -420,7 +426,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_002, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_003
  * @tc.desc  : Test input node not set audioFormat.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_003, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_003, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -457,7 +463,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_003, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_004
  * @tc.desc  : Test output node not set audioFormat.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_004, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_004, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -491,7 +497,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_004, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_005
  * @tc.desc  : Test output node set callback.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_005, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_005, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -535,7 +541,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_005, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_006
  * @tc.desc  : Test effect node set audioFormat.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_006, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_006, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -573,7 +579,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_006, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_007
  * @tc.desc  : Test effect node set callback.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_007, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_007, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -610,7 +616,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_007, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_008
  * @tc.desc  : Test input node num more than limit.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_008, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_008, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -665,7 +671,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_008, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_009
  * @tc.desc  : Test output node num more than limit.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_009, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_009, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -717,7 +723,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_009, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_010
  * @tc.desc  : Test effect node num more than limit.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_010, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_010, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -762,7 +768,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_010, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_011
  * @tc.desc  : Test mix node num more than limit.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_011, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_011, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -807,7 +813,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_011, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_012
  * @tc.desc  : Test input node creat success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_012, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_012, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -854,7 +860,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_012, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_013
  * @tc.desc  : Test output node creat success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_013, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_013, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -898,7 +904,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_013, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_014
  * @tc.desc  : Test mix node create success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_014, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_014, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -935,7 +941,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_014, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_015
  * @tc.desc  : Test EQUALIZER node create success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_015, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_015, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -972,7 +978,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_015, TestSize
  * @tc.number: OH_AudioSuiteEngine_CreateNode_017
  * @tc.desc  : Test NOISE_REDUCTION node create success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_017, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_017, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1009,7 +1015,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_017, TestSize
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_001, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1046,7 +1052,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_001, TestSiz
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_002
  * @tc.desc  : Test destry node when pipeline destroy.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_002, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1083,7 +1089,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_002, TestSiz
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_003
  * @tc.desc  : Test destry node when eninge destroy.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_003, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_003, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1120,7 +1126,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_003, TestSiz
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_004
  * @tc.desc  : Test destry node when the pipeline running and tho node is used.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_004, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_004, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1165,7 +1171,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_004, TestSiz
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_005
  * @tc.desc  : Test destry node success.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_005, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_005, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1202,7 +1208,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_DestroyNode_005, TestSiz
  * @tc.number: OH_AudioSuiteNodeBuilder_Reset_001
  * @tc.desc  : Test nodeBuilder reset.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Reset(nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -1224,7 +1230,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_001, TestSize
  * @tc.number: OH_AudioSuiteNodeBuilder_Reset_002
  * @tc.desc  : Test nodeBuilder reset.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_002, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_002, TestSize.Level0)
 {
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
@@ -1264,7 +1270,7 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_002, TestSize
  * @tc.number: OH_AudioSuiteNodeBuilder_SetNodeType_001
  * @tc.desc  : Test setNodeType.
  */
-HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, TestSize.Level0)
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_SetNodeType(nullptr, INPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -1276,6 +1282,24 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_001, Te
 
     ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, INPUT_NODE_TYPE_DEFAULT);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteNodeBuilder_SetNodeType.
+ * @tc.number: OH_AudioSuiteNodeBuilder_SetNodeType_002
+ * @tc.desc  : Test setNodeType when type is invalid.
+ */
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_SetNodeType_002, TestSize.Level0)
+{
+    OH_AudioNodeBuilder *builder = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, static_cast<OH_AudioNode_Type>(999));
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

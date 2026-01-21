@@ -279,6 +279,7 @@ ohos_unittest("renderer_in_client_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_foundation",
     "samgr:samgr_proxy",
+    "init:libbegetutil",
   ]
 
   resource_config_file =

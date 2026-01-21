@@ -847,7 +847,7 @@ HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_001, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetDoNotDisturbStatusVolume_002, TestSize.Level1)
 {
     int32_t volumeType = STREAM_MEDIA;
-    int32_t appUid = 5523;
+    int32_t appUid = 1001;
     uint32_t sessionId = 123;
 
     audioVolumeTest->isDoNotDisturbStatus_ = true;

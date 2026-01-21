@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,7 @@
 
 #include "audio_core_service.h"
 
+#include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_server_proxy.h"
 
@@ -27,6 +28,8 @@ namespace {
 static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
 static constexpr int32_t RETRY_TIMES = 25;
 static constexpr uint32_t TIMEOUT_CORE_ENTRY_S = 20;
+static constexpr int64_t SERVICE_READY_TIMEOUT_MS = 5000; // 5s
+static constexpr int32_t SERVICE_READY_WAIT_LIMIT = 5;
 }
 
 static const char *SessionOperationToString(SessionOperation operation)
@@ -75,9 +78,35 @@ void AudioCoreService::EventEntry::RegistCoreService()
     AUDIO_INFO_LOG("Result:%{public}d", ret);
 }
 
-int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+int32_t AudioCoreService::EventEntry::WaitForServiceReady()
 {
+    CHECK_AND_RETURN_RET(!serviceReady_.load(), SUCCESS);
+    std::unique_lock<std::mutex> readyLock(serviceReadyMutex_);
+    CHECK_AND_RETURN_RET_LOG(serviceReadyWaitCount_ < SERVICE_READY_WAIT_LIMIT,
+        ERR_RETRY_IN_CLIENT, "let client retry");
+    serviceReadyWaitCount_++;
+    bool isReady = serviceReadyCV_.wait_for(readyLock,
+        std::chrono::milliseconds(SERVICE_READY_TIMEOUT_MS),
+        [this]() { return serviceReady_.load(); });
+    serviceReadyWaitCount_--;
+    CHECK_AND_RETURN_RET_LOG(isReady, ERR_OPERATION_FAILED, "timeout waiting for service connected");
+    return SUCCESS;
+}
+
+void AudioCoreService::EventEntry::NotifyServiceReady()
+{
+    {
+        std::lock_guard<std::mutex> readyLock(serviceReadyMutex_);
+        serviceReady_.store(true);
+    }
+    serviceReadyCV_.notify_all();
+}
+
+int32_t AudioCoreService::EventEntry::CreateRendererClient(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+{
+    int32_t waitRet = WaitForServiceReady();
+    CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
     return SUCCESS;
@@ -86,6 +115,8 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
 int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
+    int32_t waitRet = WaitForServiceReady();
+    CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
@@ -134,14 +165,14 @@ std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sess
 }
 
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, pin);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
@@ -236,6 +267,7 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     // load hdi-effect-model
     AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
+    NotifyServiceReady();
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)

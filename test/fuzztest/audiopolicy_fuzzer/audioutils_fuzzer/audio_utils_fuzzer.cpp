@@ -29,7 +29,7 @@
 #include "audio_channel_blend.h"
 #include "volume_ramp.h"
 #include "audio_speed.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -118,7 +118,7 @@ void GetCurNanoFuzzTest(const uint8_t* rawData, size_t size)
     ClockTime::GetCurNano();
 }
 
-void AbsoluteSleepFuzzTest()
+void AbsoluteSleepFuzzTest(FuzzedDataProvider& fdp)
 {
     int64_t nanoTime = COMMON_INT64_NUM;
     if (nanoTime > LIMIT_TIME) {
@@ -127,7 +127,7 @@ void AbsoluteSleepFuzzTest()
     ClockTime::AbsoluteSleep(nanoTime);
 }
 
-void RelativeSleepFuzzTest()
+void RelativeSleepFuzzTest(FuzzedDataProvider& fdp)
 {
     int64_t nanoTime = COMMON_INT64_NUM;
     if (nanoTime > LIMIT_TIME) {
@@ -136,14 +136,14 @@ void RelativeSleepFuzzTest()
     ClockTime::RelativeSleep(nanoTime);
 }
 
-void CountFuzzTest()
+void CountFuzzTest(FuzzedDataProvider& fdp)
 {
     int64_t count = COMMON_INT64_NUM;
     const std::string value = "value";
     Trace::Count(value, count);
 }
 
-void CountVolumeFuzzTest()
+void CountVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint8_t data = GetData<uint8_t>();
     const std::string value = "value";
@@ -218,12 +218,12 @@ void NotifyPrivacyFuzzTest(const uint8_t *rawData, size_t size)
     PermissionUtil::NotifyPrivacyStop(targetTokenId, 0);
 }
 
-void GetTimeFuzzTest()
+void GetTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     GetTime();
 }
 
-void AudioBlendFuzzTest()
+void AudioBlendFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioBlend> audioBlend = nullptr;
     audioBlend = std::make_shared<AudioBlend>();
@@ -240,7 +240,7 @@ void AudioBlendFuzzTest()
     delete[] buffer;
 }
 
-void VolumeRampFuzzTest()
+void VolumeRampFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<VolumeRamp> volumeRamp = nullptr;
     volumeRamp = std::make_shared<VolumeRamp>();
@@ -253,9 +253,9 @@ void VolumeRampFuzzTest()
     volumeRamp->Terminate();
 }
 
-typedef void (*TestFuncs[7])();
-
-TestFuncs g_testFuncs = {
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     AbsoluteSleepFuzzTest,
     RelativeSleepFuzzTest,
     CountFuzzTest,
@@ -263,37 +263,23 @@ TestFuncs g_testFuncs = {
     GetTimeFuzzTest,
     AudioBlendFuzzTest,
     VolumeRampFuzzTest,
-};
-
-bool FuzzTest(const uint8_t* rawData, size_t size)
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
-        return false;
+    if (data == nullptr) {
+        return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return true;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
-
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
-{
-    OHOS::AudioStandard::AudioFuzzTestGetPermission();
-    return 0;
-}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
@@ -301,7 +287,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

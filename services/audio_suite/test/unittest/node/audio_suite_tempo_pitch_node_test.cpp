@@ -53,6 +53,9 @@ class AudioSuiteTempoPitchNodeTest : public ::testing::Test {
 public:
     void SetUp() override
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
         std::filesystem::remove(g_outfile001);
         std::filesystem::remove(g_outfile002);
         std::filesystem::remove(g_outfile003);

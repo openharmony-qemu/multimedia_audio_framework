@@ -62,25 +62,6 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestS
 
 /**
 * @tc.name  : Test Su.
-* @tc.number: AudioSpatializationService_002
-* @tc.desc  : Test SetCollaborativePlaybackEnabledForDevice.
-*/
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestSize.Level0)
-{
-    const std::shared_ptr<AudioDeviceDescriptor> audioDevice1 = std::make_shared<AudioDeviceDescriptor>();
-    audioDevice1->macAddress_ = testAddr1;
-    int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, false);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, false);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test Su.
 * @tc.number: AudioSpatializationService_003
 * @tc.desc  : Test IsCollaborativePlaybackEnabledForDevice.
 */

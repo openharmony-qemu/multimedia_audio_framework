@@ -2120,6 +2120,8 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    std::pair<uint64_t, TimePoint> hdiPos = std::make_pair(0, std::chrono::high_resolution_clock::now());
+    offloadManager->OnNotifyHdiData(hdiPos);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
   
@@ -2149,6 +2151,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
+    offloadManager->OnNotifyHdiData(hdiPos);
     // new curNode, create new nodes for stream2
     EXPECT_NE(offloadManager->converterForOutput_, nullptr);
     EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);

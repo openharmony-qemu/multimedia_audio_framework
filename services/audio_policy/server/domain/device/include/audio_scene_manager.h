@@ -48,6 +48,7 @@ public:
     AudioScene GetLastAudioScene() const;
     bool IsSameAudioScene();
     bool IsStreamActive(AudioStreamType streamType) const;
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) const;
     bool CheckVoiceCallActive(int32_t sessionId) const;
 
     bool IsVoiceCallRelatedScene();

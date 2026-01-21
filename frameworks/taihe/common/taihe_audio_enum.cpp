@@ -48,6 +48,7 @@ static const std::map<OHOS::AudioStandard::DeviceType, DeviceType> DEVICE_TYPE_T
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_REMOTE_DAUDIO, DeviceType::key_t::REMOTE_DAUDIO},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_HEARING_AID, DeviceType::key_t::HEARING_AID},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK, DeviceType::key_t::NEARLINK},
+    {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE, DeviceType::key_t::SYSTEM_PRIVATE},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT, DeviceType::key_t::DEFAULT},
 };
 
@@ -342,6 +343,7 @@ const std::map<std::string, int32_t> TaiheAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_SCO", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP},
     {"NEARLINK", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK},
+    {"SYSTEM_PRIVATE", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE},
     {"MIC", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_MIC},
     {"WAKEUP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_HEADSET},

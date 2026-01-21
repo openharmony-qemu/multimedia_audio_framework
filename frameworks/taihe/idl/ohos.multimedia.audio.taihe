@@ -111,6 +111,7 @@ enum DeviceType: i32 {
   REMOTE_DAUDIO = 29,
   HEARING_AID = 30,
   NEARLINK = 31,
+  SYSTEM_PRIVATE = 200,
   DEFAULT = 1000,
 }
 

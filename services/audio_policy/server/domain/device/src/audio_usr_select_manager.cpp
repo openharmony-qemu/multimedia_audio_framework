@@ -138,7 +138,7 @@ int32_t AudioUsrSelectManager::GetIdFromRecordDeviceInfoList(int32_t uid)
     return -1;
 }
 
-void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info)
+void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t index = GetIdFromRecordDeviceInfoList(info.uid_);
@@ -151,15 +151,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
             UpdateRecordDeviceInfoForSelectInner(index, info);
             break;
         case UpdateType::SYSTEM_SELECT:
-            if (info.activeSelectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
-                for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-                    recordDeviceInfo.activeSelectedDevice_ = info.activeSelectedDevice_;
-                }
-            } else {
-                for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-                    recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
-                }
-            }
+            UpdateRecordDeviceInfoForSystemSelectInner(index, info, mcFlag);
             break;
         case UpdateType::APP_PREFER:
             UpdateRecordDeviceInfoForPreferInner(index, info);
@@ -171,10 +163,29 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
             if (index >= 0) {
                 recordDeviceInfoList_.erase(recordDeviceInfoList_.begin() + index);
             }
+            CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
+            for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+                CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
+                recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
+            }
             break;
         default:
             return;
     }
+}
+
+bool AudioUsrSelectManager::IsSourceTypeSupportedByMC(SourceType type)
+{
+    return type == SOURCE_TYPE_MIC || type == SOURCE_TYPE_CAMCORDER ||
+        type == SOURCE_TYPE_UNPROCESSED || type == SOURCE_TYPE_LIVE;
+}
+ 
+bool AudioUsrSelectManager::HasMCSourceTypeStreamRunning()
+{
+    for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+        CHECK_AND_RETURN_RET(!IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_), true);
+    }
+    return false;
 }
 
 void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info)
@@ -183,17 +194,26 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, R
         RecordDeviceInfo recordDeviceInfo {
             .uid_ = info.uid_,
             .sourceType_ = info.sourceType_,
-            .activeSelectedDevice_ = info.activeSelectedDevice_
+            .activeSelectedDevice_ = (mcSelectedFlag_ && (HasMCSourceTypeStreamRunning() ||
+                IsSourceTypeSupportedByMC(info.sourceType_))) ?
+                mcInputPreferred_ : std::make_shared<AudioDeviceDescriptor>(),
         };
         recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
     } else {
         recordDeviceInfoList_[index].sourceType_ = info.sourceType_;
         recordDeviceInfoList_[index].activeSelectedDevice_ = info.activeSelectedDevice_->deviceType_ !=
             DEVICE_TYPE_NONE ? info.activeSelectedDevice_ : recordDeviceInfoList_[index].selectedDevice_;
+        recordDeviceInfoList_[index].activeSelectedDevice_ = (mcSelectedFlag_ &&
+            (HasMCSourceTypeStreamRunning() || IsSourceTypeSupportedByMC(info.sourceType_))) ?
+            mcInputPreferred_ : recordDeviceInfoList_[index].activeSelectedDevice_;
         if (index > 0 && index < static_cast<int32_t>(recordDeviceInfoList_.size())) {
             std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
                 recordDeviceInfoList_.begin() + index + 1);
         }
+    }
+    CHECK_AND_RETURN(mcSelectedFlag_ && IsSourceTypeSupportedByMC(info.sourceType_));
+    for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+        recordDeviceInfo.activeSelectedDevice_ = mcInputPreferred_;
     }
 }
 
@@ -218,6 +238,24 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, 
                 std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
                     recordDeviceInfoList_.begin() + index + 1);
             }
+        }
+    }
+}
+
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForSystemSelectInner(int32_t index,
+    RecordDeviceInfo info, bool mcFlag)
+{
+    mcSelectedFlag_ = mcFlag && info.activeSelectedDevice_->deviceType_ != DEVICE_TYPE_NONE;
+    mcInputPreferred_ =
+        mcSelectedFlag_ ? info.activeSelectedDevice_ : std::make_shared<AudioDeviceDescriptor>();
+    if (info.activeSelectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
+        CHECK_AND_RETURN(!(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning()));
+        for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+            recordDeviceInfo.activeSelectedDevice_ = info.activeSelectedDevice_;
+        }
+    } else {
+        for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+            recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }
 }
@@ -248,6 +286,11 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
             }
         } else {
             recordDeviceInfoList_.erase(recordDeviceInfoList_.begin() + index);
+        }
+        CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
+        for (auto &recordDeviceInfo : recordDeviceInfoList_) {
+            CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
+            recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }
 }

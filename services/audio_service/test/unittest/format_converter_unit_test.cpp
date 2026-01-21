@@ -28,8 +28,8 @@ const size_t BUFFER_LENGTH_EIGHT = 8;
 constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER8 = 8;
-constexpr float FLOAT_SCALE_32 = 1.0f / (1 << (32 - 1));
 constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (16 - 1));
+constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (32 - 1));
 }
 class FormatConverterUnitTest : public testing::Test {
 public:

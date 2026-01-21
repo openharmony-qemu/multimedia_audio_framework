@@ -27,6 +27,7 @@
 #include "sink/bluetooth_audio_render_sink.h"
 #include "sink/fast_audio_render_sink.h"
 #include "sink/file_audio_render_sink.h"
+#include "sink/cabin_audio_render_sink.h"
 #include "sink/multichannel_audio_render_sink.h"
 #include "sink/offload_audio_render_sink.h"
 #include "sink/direct_audio_render_sink.h"
@@ -92,6 +93,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
             break;
         case HDI_ID_TYPE_HWDECODE:
             sink = std::make_shared<DirectAudioRenderSink>();
+            break;
+        case HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT:
+            sink = std::make_shared<CabinAudioRenderSink>();
             break;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_ID_TYPE_REMOTE:

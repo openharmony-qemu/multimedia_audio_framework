@@ -20,7 +20,7 @@
 #include "audio_log.h"
 #include "audio_info.h"
 #include "audio_volume.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -97,7 +97,7 @@ const vector<AudioStreamType> AudioStreamTypeVec = {
     STREAM_ALL,
 };
 
-void GetVolumeFuzzTest()
+void GetVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = 1;
     uint32_t index = GetData<uint32_t>() % AudioStreamTypeVec.size();
@@ -108,7 +108,7 @@ void GetVolumeFuzzTest()
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
 }
 
-void GetDoNotDisturbStatusVolumeFuzzTest()
+void GetDoNotDisturbStatusVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t index = GetData<uint32_t>() % AudioStreamTypeVec.size();
     int32_t volumeType = AudioStreamTypeVec[index];
@@ -123,7 +123,7 @@ void GetDoNotDisturbStatusVolumeFuzzTest()
     audioVolumeTest->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
 }
 
-void SetDoNotDisturbStatusWhiteListVolumeFuzzTest()
+void SetDoNotDisturbStatusWhiteListVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
     std::map<std::string, std::string> obj;
@@ -137,13 +137,13 @@ void SetDoNotDisturbStatusWhiteListVolumeFuzzTest()
     AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(volumeType, appUid, sessionId);
 }
 
-void SetDoNotDisturbStatusFuzzTest()
+void SetDoNotDisturbStatusFuzzTest(FuzzedDataProvider& fdp)
 {
     bool isDoNotDisturbStatus = GetData<uint8_t>() % NUM_2;
     AudioVolume::GetInstance()->SetDoNotDisturbStatus(isDoNotDisturbStatus);
 }
 
-void GetStreamVolumeFuzzTest()
+void GetStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = GetData<uint32_t>();
     float lowPowerFactor = GetData<float>();
@@ -151,13 +151,13 @@ void GetStreamVolumeFuzzTest()
     AudioVolume::GetInstance()->GetStreamVolume(sessionId);
 }
 
-void GetHistoryVolumeFuzzTest()
+void GetHistoryVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = GetData<uint32_t>();
     AudioVolume::GetInstance()->GetHistoryVolume(sessionId);
 }
 
-void SetHistoryVolumeFuzzTest()
+void SetHistoryVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = GetData<uint32_t>();
     float volume = GetData<float>();
@@ -165,7 +165,7 @@ void SetHistoryVolumeFuzzTest()
     AudioVolume::GetInstance()->GetHistoryVolume(sessionId);
 }
 
-void SaveAdjustStreamVolumeInfoFuzzTest()
+void SaveAdjustStreamVolumeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioVolume = std::make_shared<AudioVolume>();
     if (audioVolume == nullptr) {
@@ -181,7 +181,7 @@ void SaveAdjustStreamVolumeInfoFuzzTest()
     audioVolume->SaveAdjustStreamVolumeInfo(volume, sessionId, invocationTime, code);
 }
 
-void GetStreamVolumeInfoFuzzTest()
+void GetStreamVolumeInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioVolume = std::make_shared<AudioVolume>();
     if (audioVolume == nullptr) {
@@ -199,7 +199,7 @@ void GetStreamVolumeInfoFuzzTest()
     audioVolume->GetStreamVolumeInfo(volumeType);
 }
 
-void GetAppVolumeFuzzTest()
+void GetAppVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
     int32_t appUid = GetData<int32_t>();
@@ -209,7 +209,7 @@ void GetAppVolumeFuzzTest()
     audioVolumeTest->GetAppVolume(appUid, mode);
 }
 
-void SetAppVolumeMuteFuzzTest()
+void SetAppVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
     int32_t appUid = GetData<int32_t>();
@@ -219,7 +219,7 @@ void SetAppVolumeMuteFuzzTest()
     audioVolumeTest->SetAppVolumeMute(appUid, isMuted);
 }
 
-void SetAppVolumeFuzzTest()
+void SetAppVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
     int32_t appUid = GetData<int32_t>();
@@ -233,14 +233,14 @@ void SetAppVolumeFuzzTest()
     audioVolumeTest->SetAppVolume(appVolume);
 }
 
-void SetDefaultAppVolumeFuzzTest()
+void SetDefaultAppVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
     int32_t level = GetData<int32_t>();
     audioVolumeTest->SetDefaultAppVolume(level);
 }
 
-void SetSystemVolume1FuzzTest()
+void SetSystemVolume1FuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t volumeType = GetData<int32_t>();
     std::string deviceClass = "speaker";
@@ -251,7 +251,7 @@ void SetSystemVolume1FuzzTest()
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
 }
 
-void SetSystemVolume2FuzzTest()
+void SetSystemVolume2FuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t volumeType = GetData<int32_t>();
     std::string deviceClass = "speaker";
@@ -260,7 +260,7 @@ void SetSystemVolume2FuzzTest()
     AudioVolume::GetInstance()->SetSystemVolume(volumeType, deviceClass, volume, volumeLevel);
 }
 
-void SetSystemVolumeMuteFuzzTest()
+void SetSystemVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t volumeType = GetData<int32_t>();
     std::vector<std::string> deviceClassVec = {"speaker", "test"};
@@ -270,7 +270,7 @@ void SetSystemVolumeMuteFuzzTest()
     AudioVolume::GetInstance()->SetSystemVolumeMute(volumeType, deviceClass, isMuted);
 }
 
-void ConvertStreamTypeStrToIntFuzzTest()
+void ConvertStreamTypeStrToIntFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::string> streamTypeVec = {"ring", "test"};
     uint32_t streamTypeCount = GetData<uint32_t>() % streamTypeVec.size();
@@ -278,20 +278,20 @@ void ConvertStreamTypeStrToIntFuzzTest()
     AudioVolume::GetInstance()->ConvertStreamTypeStrToInt(streamType);
 }
 
-void IsSameVolumeFuzzTest()
+void IsSameVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     float x = GetData<float>();
     float y = GetData<float>();
     AudioVolume::GetInstance()->IsSameVolume(x, y);
 }
 
-void DumpFuzzTest()
+void DumpFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string dumpString = "abc";
     AudioVolume::GetInstance()->Dump(dumpString);
 }
 
-void MonitorFuzzTest()
+void MonitorFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioVolume = std::make_shared<AudioVolume>();
     if (audioVolume == nullptr) {
@@ -310,7 +310,7 @@ void MonitorFuzzTest()
     audioVolume->Monitor(sessionId, GetData<int32_t>() % NUM_2);
 }
 
-void SetFadeoutStateFuzzTest()
+void SetFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
     int32_t fadePauseStateCount = static_cast<int32_t>(FadePauseState::INVALID_STATE) + 1;
@@ -318,14 +318,14 @@ void SetFadeoutStateFuzzTest()
     AudioVolume::GetInstance()->SetFadeoutState(streamIndex, fadeoutState);
 }
 
-void GetFadeoutStateFuzzTest()
+void GetFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
     AudioVolume::GetInstance()->fadeoutState_.clear();
     AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
 }
 
-void RemoveFadeoutStateFuzzTest()
+void RemoveFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
     int32_t fadePauseStateCount = static_cast<int32_t>(FadePauseState::INVALID_STATE) + 1;
@@ -334,7 +334,7 @@ void RemoveFadeoutStateFuzzTest()
     AudioVolume::GetInstance()->RemoveFadeoutState(streamIndex);
 }
 
-void SetStopFadeoutStateFuzzTest()
+void SetStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
     int32_t fadePauseStateCount = static_cast<int32_t>(FadePauseState::INVALID_STATE) + 1;
@@ -342,7 +342,7 @@ void SetStopFadeoutStateFuzzTest()
     AudioVolume::GetInstance()->SetStopFadeoutState(streamIndex, fadeoutState);
 }
 
-void GetStopFadeoutStateFuzzTest()
+void GetStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioVolume = std::make_shared<AudioVolume>();
     if (audioVolume == nullptr) {
@@ -352,12 +352,12 @@ void GetStopFadeoutStateFuzzTest()
     audioVolume->GetStopFadeoutState(streamIndex);
 }
 
-void GetCurrentActiveDeviceFuzzTest()
+void GetCurrentActiveDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolume::GetInstance()->GetCurrentActiveDevice();
 }
 
-void RemoveStopFadeoutStateFuzzTest()
+void RemoveStopFadeoutStateFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t streamIndex = GetData<uint32_t>();
     int32_t fadePauseStateCount = static_cast<int32_t>(FadePauseState::INVALID_STATE) + 1;
@@ -366,7 +366,7 @@ void RemoveStopFadeoutStateFuzzTest()
     AudioVolume::GetInstance()->RemoveStopFadeoutState(streamIndex);
 }
 
-void SetVgsVolumeSupportedFuzzTest()
+void SetVgsVolumeSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t sessionId = GetData<uint32_t>();
     int32_t volumeType = GetData<int32_t>();
@@ -374,7 +374,87 @@ void SetVgsVolumeSupportedFuzzTest()
     AudioVolume::GetInstance()->SetVgsVolumeSupported(GetData<uint8_t>() % NUM_2);
 }
 
-TestFuncs g_testFuncs[] = {
+void SetOffloadEnableFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint32_t streamIndex = GetData<uint32_t>();
+    int32_t offloadEnable = GetData<int32_t>();
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
+}
+
+void GetOffloadEnableFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint32_t streamIndex = GetData<uint32_t>();
+    AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+}
+
+void SetOffloadTypeFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint32_t streamIndex = GetData<uint32_t>();
+    int32_t offloadType = GetData<int32_t>();
+    AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
+}
+
+void GetOffloadTypeFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint32_t streamIndex = GetData<uint32_t>();
+    AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+}
+
+void SetDualStreamVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t streamType = GetData<int32_t>();
+    int32_t streamUsage = GetData<int32_t>();
+    int32_t uid = GetData<int32_t>();
+    int32_t pid = GetData<int32_t>();
+    bool isSystemApp = GetData<uint8_t>() % NUM_2;
+    int32_t mode = GetData<int32_t>();
+    bool isVKB = GetData<uint8_t>() % NUM_2;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    bool isDualMuted = GetData<uint8_t>() % NUM_2;
+    audioVolumeTest->SetDualStreamVolumeMute(sessionId, isDualMuted);
+}
+
+void SetAppRingMutedFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t appUid = GetData<int32_t>();
+    int32_t streamUsage = GetData<int32_t>();
+    int32_t pid = GetData<int32_t>();
+    bool isSystemApp = GetData<uint8_t>() % NUM_2;
+    int32_t mode = GetData<int32_t>();
+    bool isVKB = GetData<uint8_t>() % NUM_2;
+    StreamVolume streamVolume(sessionId, STREAM_RING, streamUsage, appUid, pid, isSystemApp, mode, isVKB);
+    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    bool isMuted = GetData<uint8_t>() % NUM_2;
+    audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+}
+
+void GetDurationMsFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t streamType = GetData<int32_t>();
+    int32_t streamUsage = GetData<int32_t>();
+    int32_t uid = GetData<int32_t>();
+    int32_t pid = GetData<int32_t>();
+    bool isSystemApp = GetData<uint8_t>() % NUM_2;
+    int32_t mode = GetData<int32_t>();
+    bool isVKB = GetData<uint8_t>() % NUM_2;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+    audioVolumeTest->streamVolume_.insert({sessionId, streamVolume});
+    float volume = GetData<float>();
+    uint32_t durationMs = GetData<uint32_t>();
+    audioVolumeTest->SetHistoryVolume(sessionId, volume, durationMs);
+    audioVolumeTest->GetDurationMs(sessionId);
+}
+
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
     GetVolumeFuzzTest,
     GetDoNotDisturbStatusVolumeFuzzTest,
     SetDoNotDisturbStatusWhiteListVolumeFuzzTest,
@@ -387,7 +467,6 @@ TestFuncs g_testFuncs[] = {
     GetAppVolumeFuzzTest,
     SetAppVolumeMuteFuzzTest,
     SetAppVolumeFuzzTest,
-
     SetDefaultAppVolumeFuzzTest,
     SetSystemVolume1FuzzTest,
     SetSystemVolume2FuzzTest,
@@ -404,28 +483,27 @@ TestFuncs g_testFuncs[] = {
     RemoveStopFadeoutStateFuzzTest,
     SetVgsVolumeSupportedFuzzTest,
     GetCurrentActiveDeviceFuzzTest,
-};
-
-void FuzzTest(const uint8_t* rawData, size_t size)
+    SetOffloadEnableFuzzTest,
+    GetOffloadEnableFuzzTest,
+    SetOffloadTypeFuzzTest,
+    GetOffloadTypeFuzzTest,
+    SetDualStreamVolumeMuteFuzzTest,
+    SetAppRingMutedFuzzTest,
+    GetDurationMsFuzzTest,
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
 {
-    if (rawData == nullptr) {
+    if (data == nullptr) {
         return;
     }
-
-    // initialize data
-    RAW_DATA = rawData;
+    RAW_DATA = data;
     g_dataSize = size;
     g_pos = 0;
-
-    uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
-    if (len > 0) {
-        g_testFuncs[code % len]();
-    } else {
-        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
-    }
-
-    return;
+}
+void Init()
+{
 }
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -436,7 +514,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
     return 0;
 }

@@ -162,6 +162,8 @@ public:
 
     void UpdateVolumeForStreams();
 
+    void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream);
+
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName);

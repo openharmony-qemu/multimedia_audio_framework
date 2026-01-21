@@ -270,7 +270,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 }
 
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-    bool enableSetVoiceCallVolume)
+    bool enableSetVoiceCallVolume, std::shared_ptr<AudioStreamDescriptor> targetStream)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     if (!AudioVolumeUtils::GetInstance().IsDeviceWithSafeVolume(desc)) {
@@ -280,7 +280,12 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
     }
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
-    // Load volume from KvStore and set volume for each stream type
+    
+    auto &sceneManager = AudioSceneManager::GetInstance();
+    AudioScene curScene = sceneManager.GetAudioScene(true);
+
+    bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
+
     audioPolicyManager_.UpdateVolumeForStreams();
 
     // The volume of voice_call needs to be adjusted separately
@@ -1826,6 +1831,36 @@ int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, in
     if (zoneId > 0) {
         return audioPolicyManager_.GetZoneVolumeDegree(zoneId, streamType);
     }
+
+    if (streamType == STREAM_RING && !IsRingerModeMute()) {
+        AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
+        return DUAL_TONE_RING_VOLUME;
+    }
+
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    {
+        DeviceType curOutputDeviceType = audioActiveDevice_.GetDeviceForVolume(volumeType)->deviceType_;
+        std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
+        if (volumeType == STREAM_MUSIC &&
+            curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
+            A2dpDeviceConfigInfo info;
+            bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
+
+            int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(info.volumeLevel, volumeLevelMax);
+            if (ret && info.absVolumeSupport) {
+                return info.mute ? 0 : volumeDegree;
+            }
+        }
+    }
+
+    auto deviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
+    if (deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
+        int32_t volLevel = SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(volumeType, deviceDesc);
+        return VolumeUtils::VolumeLevelToDegree(volLevel, volumeLevelMax);
+    }
+
     return audioPolicyManager_.GetSystemVolumeDegree(streamType);
 }
 
