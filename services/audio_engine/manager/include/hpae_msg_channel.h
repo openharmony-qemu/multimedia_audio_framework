@@ -162,6 +162,7 @@ public:
         OffloadCallbackData data {false, 0};
         return data;
     }
+    virtual void SetCollDelayCount(){};
 };
 
 class IOffloadCallback {

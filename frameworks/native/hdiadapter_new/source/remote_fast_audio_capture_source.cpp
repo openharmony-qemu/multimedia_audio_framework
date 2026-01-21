@@ -479,7 +479,9 @@ int32_t RemoteFastAudioCaptureSource::CreateCapture(void)
     if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer(param);
     }
-    audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    std::string appsInfo = GenerateAppsUidStr(appsUid_);
+    int32_t ret = audioCapture_->SetExtraParams(appsInfo.c_str());
+    AUDIO_INFO_LOG("set parameter: %{public}s, ret: %{public}d", appsInfo.c_str(), ret);
     AUDIO_INFO_LOG("end");
     return SUCCESS;
 }

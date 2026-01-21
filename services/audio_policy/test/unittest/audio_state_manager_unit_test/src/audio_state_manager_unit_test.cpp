@@ -308,6 +308,63 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_013, TestSize.Leve
 
 /**
 * @tc.name  : Test AudioStateManager.
+* @tc.number: FindExcludedDevices_001
+* @tc.desc  : Test FindExcludedDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, FindExcludedDevices_001, TestSize.Level1)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    ExcludedDevices *devs;
+    devs = man.FindExcludedDevices(MEDIA_OUTPUT_DEVICES);
+    EXPECT_NE(devs, nullptr);
+    devs = man.FindExcludedDevices(MEDIA_INPUT_DEVICES);
+    EXPECT_NE(devs, nullptr);
+    devs = man.FindExcludedDevices(CALL_OUTPUT_DEVICES);
+    EXPECT_NE(devs, nullptr);
+    devs = man.FindExcludedDevices(CALL_INPUT_DEVICES);
+    EXPECT_NE(devs, nullptr);
+    devs = man.FindExcludedDevices(D_ALL_DEVICES);
+    EXPECT_EQ(devs, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: ExcludeDevices_001
+* @tc.desc  : Test ExcludeDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, ExcludeDevices_001, TestSize.Level1)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = 1000;
+    dev->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = OUTPUT_DEVICE;
+    dev->macAddress_ = "card=2;device=0";
+    man.ExcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+    EXPECT_TRUE(man.IsExcludedDevice(MEDIA_OUTPUT_DEVICES, dev));
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: UnexcludeDevices_001
+* @tc.desc  : Test UnexcludeDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, UnexcludeDevices_001, TestSize.Level1)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = 1000;
+    dev->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = OUTPUT_DEVICE;
+    dev->macAddress_ = "card=2;device=0";
+    man.UnexcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+    EXPECT_FALSE(man.IsExcludedDevice(MEDIA_OUTPUT_DEVICES, dev));
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
 * @tc.number: AudioStateManagerUnitTest_014
 * @tc.desc  : Test SetAndGetPreferredCallRenderDeviceForUid interface.
 */

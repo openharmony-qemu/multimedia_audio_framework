@@ -419,7 +419,9 @@ int32_t RemoteFastAudioRenderSink::CreateRender(void)
     if (param.type == AUDIO_MMAP_NOIRQ || param.type == AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer();
     }
-    audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    std::string appsInfo = GenerateAppsUidStr(appsUid_);
+    int32_t ret = audioRender_->SetExtraParams(appsInfo.c_str());
+    AUDIO_INFO_LOG("set parameter: %{public}s, ret: %{public}d", appsInfo.c_str(), ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("create render success, cost: [%{public}" PRId64 "]ms", stamp);

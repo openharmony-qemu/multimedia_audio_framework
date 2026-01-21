@@ -241,8 +241,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             AUDIO_ERR_LOG("AudioStream: converter construct error");
             return ERR_NOT_SUPPORTED;
         }
-        GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-        if (direct3DATestFlag == 1) {
+
+        AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
+        if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
             curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
             cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
             cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;

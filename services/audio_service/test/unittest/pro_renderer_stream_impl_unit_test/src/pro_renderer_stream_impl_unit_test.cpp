@@ -263,7 +263,6 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
     processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
 
     auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->direct3DATestFlag = 1;
     rendererStreamImpl->status_ = I_STATUS_INVALID;
 
     int32_t ret = rendererStreamImpl->InitParams();
@@ -287,7 +286,6 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
     processConfig.streamType = STREAM_MUSIC;
 
     auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->direct3DATestFlag = 0;
     rendererStreamImpl->status_ = I_STATUS_INVALID;
 
     int32_t ret = rendererStreamImpl->InitParams();
@@ -821,7 +819,6 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_009, TestSize.Level3)
     processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->direct3DATestFlag = 1;
     rendererStreamImpl->InitParams();
     rendererStreamImpl->isNeedMcr_ = false;
     rendererStreamImpl->isNeedResample_ = false;

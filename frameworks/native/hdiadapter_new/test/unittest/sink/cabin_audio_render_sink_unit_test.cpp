@@ -156,7 +156,7 @@ HWTEST_F(CabinAudioRenderSinkUnitTest, RenderFrame_002, TestSize.Level1)
 HWTEST_F(CabinAudioRenderSinkUnitTest, FormatConversion_Test, TestSize.Level1)
 {
     EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S16LE), AUDIO_FORMAT_TYPE_PCM_16_BIT);
-    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S32LE), AUDIO_FORMAT_TYPE_PCM_216BIT);
+    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S32LE), AUDIO_FORMAT_TYPE_PCM_16_BIT);
 
     EXPECT_EQ(sink_->PcmFormatToBit(SAMPLE_S16LE), 16);
     EXPECT_EQ(sink_->PcmFormatToBit(SAMPLE_S24LE), 24);

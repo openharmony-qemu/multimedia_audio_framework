@@ -911,7 +911,9 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
         << attr_.channel << "," << attr_.channelLayout;
     SetAudioParameter(AudioParamKey::NONE, "", val.str());
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, shared_from_this());
-    audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    std::string appsInfo = GenerateAppsUidStr(appsUid_);
+    int32_t ret = audioRender_->SetExtraParams(appsInfo.c_str());
+    AUDIO_INFO_LOG("set parameter: %{public}s, ret: %{public}d", appsInfo.c_str(), ret);
     return SUCCESS;
 }
 

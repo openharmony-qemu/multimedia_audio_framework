@@ -155,8 +155,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     CHECK_AND_CALL_FUNC_RETURN_RET(spanSizeInByte_ != 0, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[ConfigServerBuffer]Config oh audio buffer failed!"));
 
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
         size_t metadataSize = AVS3METADATA_SIZE;
         size_t combinedSpanInByte = spanSizeInByte_ + metadataSize;
         size_t totalCombinedByte = combinedSpanInByte * DEFAULT_SPAN_SIZE;
@@ -205,6 +205,13 @@ void RendererInServer::ProcessManagerType()
         isHWDecodingType_ = true;
         AUDIO_INFO_LOG("current stream marked as HWDecoding stream");
     }
+
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
+            AUDIO_INFO_LOG("current stream marked as 3DA stream");
+            managerType_ = AUDIO_VIVID_3DA_DIRECT_PLAYBACK;
+        }
+
     if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
         if (IStreamManager::GetPlaybackManager(VOIP_PLAYBACK).GetStreamCount() <= 0) {
             AUDIO_INFO_LOG("current stream marked as VoIP direct stream");
@@ -215,14 +222,6 @@ void RendererInServer::ProcessManagerType()
     }
 }
 
-void RendererInServer::Get3daDirectControlParm()
-{
-    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-    AUDIO_INFO_LOG("direct3DATestFlag: %{public}d", direct3DATestFlag);
-    if (direct3DATestFlag == 1) {
-        managerType_ = AUDIO_VIVID_3DA_DIRECT_PLAYBACK;
-    }
-}
 
 int32_t RendererInServer::Init()
 {
@@ -230,7 +229,6 @@ int32_t RendererInServer::Init()
     // remove eac3 param check
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
-    Get3daDirectControlParm();
     int32_t ret = IStreamManager::GetPlaybackManager(managerType_).CreateRender(processConfig_, stream_);
     if (ret != SUCCESS && (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK)) {
         Trace trace("high resolution create failed use normal replace");
@@ -765,8 +763,8 @@ int32_t RendererInServer::WriteData()
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
-        if (direct3DATestFlag == 1) {
+        if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+            (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
             ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_ + AVS3METADATA_SIZE);
         } else {
             ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_);
