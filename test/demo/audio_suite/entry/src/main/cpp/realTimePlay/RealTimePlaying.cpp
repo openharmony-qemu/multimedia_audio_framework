@@ -5,7 +5,7 @@
 #include "RealTimePlaying.h"
 #include "hilog/log.h"
 #include "../audioEffectNode/Input.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
 #include "./callback/RegisterCallback.h"
