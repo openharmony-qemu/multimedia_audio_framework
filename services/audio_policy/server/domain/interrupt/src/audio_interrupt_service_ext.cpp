@@ -515,7 +515,7 @@ void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
 
 void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
-    InterruptEventInternal &interruptEvent)
+    bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
 {
     if (sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid)) {
         return;
@@ -539,6 +539,7 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     if (isInMuteCheckList) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
+        removeFocusInfo = false;
         muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }

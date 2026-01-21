@@ -1793,7 +1793,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         uint32_t activeStreamId = (iterActive->first).streamId;
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
-        MuteCheckFocusStrategy(focusEntry, *iterActive, incomingInterrupt, interruptEvent);
+        MuteCheckFocusStrategy(focusEntry, *iterActive, incomingInterrupt, removeFocusInfo, interruptEvent);
         AudioInterrupt currentInterrupt = iterActive->first;
         if (removeFocusInfo) {
             RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
