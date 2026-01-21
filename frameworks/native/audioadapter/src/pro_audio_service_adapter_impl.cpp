@@ -539,6 +539,14 @@ void ProAudioServiceAdapterImpl::OnGetAudioEnhancePropertyCb(int32_t result)
     callbackCV_.notify_all();
 }
 
+void ProAudioServiceAdapterImpl::OnSetOutputDeviceSinkCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("Result: %{public}d", result);
+    isFinishSetOutputDeviceSink_ = true;
+    callbackCV_.notify_all();
+}
+
 void ProAudioServiceAdapterImpl::HandleSourceAudioStreamRemoved(uint32_t sessionId)
 {
     // todo: code check
@@ -618,6 +626,19 @@ void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
 {
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().LoadCollaborationConfig();
+}
+
+void ProAudioServiceAdapterImpl::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
+{
+    AUDIO_INFO_LOG("Enter");
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishSetOutputDeviceSink_ = false;
+    IHpaeManager::GetHpaeManager().SetOutputDeviceSink(device, sinkName);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishSetOutputDeviceSink_;
+    });
+    CHECK_AND_RETURN_LOG(stopWaiting, "TimeOut");
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

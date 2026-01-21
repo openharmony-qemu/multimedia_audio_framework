@@ -278,6 +278,13 @@ public:
      */
     virtual void LoadCollaborationConfig() = 0;
 
+    /**
+     * @brief Load Collaboration Config
+     *
+     * @return void
+     */
+    virtual void SetOutputDeviceSink(int32_t device, const std::string &sinkName) = 0;
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard
