@@ -1,8 +1,6 @@
-//
-// Created on 2025/12/2.
-//
-// Node APIs are not fully supported. To solve the compilation error of the interface cannot be found,
-// please include "napi/native_api.h".
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
+ */
 #include "napi/native_api.h"
 #include "audioEffectNode/EffectNode.h"
 
@@ -29,7 +27,7 @@ napi_value AudioCapturerPause(napi_env env, napi_callback_info info);
 
 napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info);
 
-void convertFormat();
+void ConvertFormat();
 
 napi_value ClearRecordBuffer(napi_env env, napi_callback_info info);
 

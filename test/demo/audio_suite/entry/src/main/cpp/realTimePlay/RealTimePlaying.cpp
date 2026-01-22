@@ -13,6 +13,7 @@
 #include "../audioEffectNode/Output.h"
 #include "../utils/Utils.h"
 #include "timeline/Timeline.h"
+#include "utils/Constant.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *REAL_TIME_PLAYING_TAG = "[AudioEditTestApp_RealTimePlaying_cpp]";
@@ -35,19 +36,18 @@ char *g_playTotalAudioData = (char *)malloc(1024 * 1024 * 100);
 
 int32_t g_playResultTotalSize = 0;
 
-OH_AudioDataArray* g_playOhAudioDataArray = new OH_AudioDataArray();
- 
+OH_AudioDataArray *g_playOhAudioDataArray = new OH_AudioDataArray();
+
 uint32_t g_separationMode = -1;
 
-OH_AudioSuite_Result ProcessPipeline()
-{
+OH_AudioSuite_Result ProcessPipeline() {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest ProcessPipeline start");
     // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest OH_AudioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
-        static_cast<int>(result), static_cast<int>(pipeLineState));
+                 "audioEditTest OH_AudioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
+                 static_cast<int>(result), static_cast<int>(pipeLineState));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
@@ -56,7 +56,7 @@ OH_AudioSuite_Result ProcessPipeline()
     if (pipeLineState != OH_AudioSuite_PipelineState::AUDIOSUITE_PIPELINE_RUNNING) {
         result = OH_AudioSuiteEngine_StartPipeline(g_audioSuitePipeline);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OH_AudioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
+                     "audioEditTest OH_AudioSuiteEngine_StartPipeline result: %{public}d", static_cast<int>(result));
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             return result;
         }
@@ -64,56 +64,51 @@ OH_AudioSuite_Result ProcessPipeline()
     return result;
 }
 
-OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
-{
+OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize) {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest OneRenDerFrame start");
     ProcessPipeline();
     if (audioDataSize <= CONSTANT_0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d",
-            static_cast<int>(audioDataSize));
+                     "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d",
+                     static_cast<int>(audioDataSize));
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
     }
     char *audioData = (char *)malloc(audioDataSize);
     if (audioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OneRenDerFrame malloc audioData failed, audioDataSize: %{public}d",
-            audioDataSize);
+                     "audioEditTest OneRenDerFrame malloc audioData failed, audioDataSize: %{public}d", audioDataSize);
         return static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     OH_AudioSuite_Result result =
-        OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData,
-                                        audioDataSize, writeSize, &g_playFinishedFlag);
+        OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData, audioDataSize, writeSize, &g_playFinishedFlag);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize: %{public}d, writeSize:%{public}d "
-        "g_playFinishedFlag : %{public}s, result: %{public}d",
-        audioDataSize, *writeSize, (g_playFinishedFlag ? "true" : "false"), static_cast<int>(result));
+                 "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize: %{public}d, writeSize:%{public}d "
+                 "g_playFinishedFlag : %{public}s, result: %{public}d",
+                 audioDataSize, *writeSize, (g_playFinishedFlag ? "true" : "false"), static_cast<int>(result));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OH_AudioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
+                     "audioEditTest OH_AudioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
         return result;
     }
     // Save the obtained buffer value each time
     g_playAudioData = (char *)malloc(*writeSize);
     if (g_playAudioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OneRenDerFrame malloc g_playAudioData failed, writeSize: %{public}d",
-            *writeSize);
+                     "audioEditTest OneRenDerFrame malloc g_playAudioData failed, writeSize: %{public}d", *writeSize);
         free(audioData);
         audioData = nullptr;
         return static_cast<OH_AudioSuite_Result>(AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     std::copy(audioData, audioData + *writeSize, static_cast<char *>(g_playAudioData));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
-        *writeSize, (g_playFinishedFlag ? "true" : "false"));
+                 "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
+                 *writeSize, (g_playFinishedFlag ? "true" : "false"));
     FreeBuffer(&audioData);
     return result;
 }
 
-OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
-{
-    g_playOhAudioDataArray->audioDataArray = (void**)malloc(ARG_2 * sizeof(void*));
+OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize) {
+    g_playOhAudioDataArray->audioDataArray = (void **)malloc(ARG_2 * sizeof(void *));
     if (g_playOhAudioDataArray->audioDataArray == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
                      "OH_AudioSuiteEngine_MultiRenderFrame g_playOhAudioDataArray is nullptr");
@@ -123,54 +118,48 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
         if (audioDataSize <= ARG_0) {
             return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
         }
-        g_playOhAudioDataArray->audioDataArray[i] = (void*)malloc(audioDataSize);
+        g_playOhAudioDataArray->audioDataArray[i] = (void *)malloc(audioDataSize);
     }
     g_playOhAudioDataArray->arraySize = ARG_2;
     g_playOhAudioDataArray->requestFrameSize = audioDataSize;
-    OH_AudioSuite_Result result =
-        OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, g_playOhAudioDataArray,
-            writeSize, &g_playFinishedFlag);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, g_playOhAudioDataArray,
+                                                                       writeSize, &g_playFinishedFlag);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame result is %{public}d",
-            static_cast<int>(result));
+                     "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame result is %{public}d",
+                     static_cast<int>(result));
         return result;
     }
     // Save the obtained buffer value each time
     g_playAudioData = (char *)malloc(*writeSize);
     if (g_separationMode == ARG_0) {
         std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]),
-            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]) + *writeSize,
-            static_cast<char *>(g_playAudioData));
+                  static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]) + *writeSize,
+                  static_cast<char *>(g_playAudioData));
     } else if (g_separationMode == ARG_1) {
         std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]),
-            static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]) + *writeSize,
-            static_cast<char *>(g_playAudioData));
+                  static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_1]) + *writeSize,
+                  static_cast<char *>(g_playAudioData));
     }
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
+    OH_LOG_Print(
+        LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_MultiRenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
         *writeSize, (g_playFinishedFlag ? "true" : "false"));
     return result;
 }
 
-OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
-    void *userData, void *audioData, int32_t audioDataSize)
-{
+OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer, void *userData, void *audioData,
+                                                          int32_t audioDataSize) {
     (void)userData;
-    if (renderer == nullptr) {
+    if (renderer == nullptr || audioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest PlayAudioRendererOnWriteData renderer is nullptr");
-        return AUDIO_DATA_CALLBACK_RESULT_INVALID;
-    }
-    if (audioData == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest PlayAudioRendererOnWriteData audioData is nullptr");
+                     "audioEditTest PlayAudioRendererOnWriteData renderer or audioData is nullptr");
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
     int32_t writeSize = 0;
     if (!g_playFinishedFlag) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "OneRenDerFrame g_multiRenderFrameFlag: %{public}s", g_multiRenderFrameFlag ? "true" : "false");
+                     "OneRenDerFrame g_multiRenderFrameFlag: %{public}s", g_multiRenderFrameFlag ? "true" : "false");
         // If there a source separation node
         if (!g_multiRenderFrameFlag) {
             OneRenDerFrame(audioDataSize, &writeSize);
@@ -181,7 +170,7 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         if (audioDataSize != 0 && g_isRecord == true) {
             int32_t copySize = std::min(audioDataSize, writeSize);
             std::copy(g_playAudioData, g_playAudioData + copySize,
-                static_cast<char *>(g_playTotalAudioData) + g_playResultTotalSize);
+                      static_cast<char *>(g_playTotalAudioData) + g_playResultTotalSize);
             g_playResultTotalSize += copySize;
         }
     }
@@ -198,7 +187,8 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         // Stop pipeline
         ResetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize is %{public}d", g_playResultTotalSize);
+                     "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize is %{public}d",
+                     g_playResultTotalSize);
         CallBooleanCallback(g_playFinishedFlag);
         g_playFinishedFlag = false;
         if (g_totalBuff != nullptr) {
@@ -207,13 +197,12 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         }
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize: %{public}d, writeSize: %{public}d",
-        g_playResultTotalSize, writeSize);
+                 "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize: %{public}d, writeSize: %{public}d",
+                 g_playResultTotalSize, writeSize);
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 
-void ReleaseExistingResources()
-{
+void ReleaseExistingResources() {
     if (audioRenderer) {
         // Releasing a Player Instance
         OH_AudioRenderer_Release(audioRenderer);
@@ -226,8 +215,7 @@ void ReleaseExistingResources()
     }
 }
 
-std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, uint32_t trackIds_length)
-{
+std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, uint32_t trackIds_length) {
     std::vector<std::string> trackIds;
     napi_valuetype type;
     for (uint32_t i = 0; i < trackIds_length; i++) {
@@ -245,13 +233,11 @@ std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, u
     return trackIds;
 }
 
-napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
-{
+napi_value ModifyRenderTrack(napi_env env, napi_callback_info info) {
     size_t argc = 2;
     napi_value *argv = new napi_value[argc];
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-
-    if (status != napi_ok || argc < 2) {
+    if (status != napi_ok || argc < UINT_2) {
         napi_throw_error(env, "EINVAL", "Expected exactly 2 arguments");
         return nullptr;
     }
@@ -260,30 +246,28 @@ napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[ARG_1], &type);
     if (type != napi_object) {
         napi_throw_type_error(env, "EINVAL", "trackIds must be an object");
-        delete [] argv;
+        delete[] argv;
         return {};
     }
-    bool is_array;
-    napi_is_array(env, argv[ARG_0], &is_array);
-    napi_is_array(env, argv[ARG_1], &is_array);
-    if (!is_array) {
+    bool isArray;
+    napi_is_array(env, argv[ARG_0], &isArray);
+    napi_is_array(env, argv[ARG_1], &isArray);
+    if (!isArray) {
         napi_throw_type_error(env, "EINVAL", "trackIds must be an array");
-        delete [] argv;
+        delete[] argv;
         return {};
     }
-    uint32_t trackIds_length;
-    napi_get_array_length(env, argv[ARG_0], &trackIds_length);
-    std::vector<std::string> trackIdsNotRender = ParseStringArray(env, argv[0], trackIds_length);
+    uint32_t trackIdsLength;
+    napi_get_array_length(env, argv[ARG_0], &trackIdsLength);
+    std::vector<std::string> trackIdsNotRender = ParseStringArray(env, argv[0], trackIdsLength);
     if (trackIdsNotRender.empty()) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-                       "Failed to parse NotRenderTrackIds");
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "Failed to parse NotRenderTrackIds");
     }
-
-    napi_get_array_length(env, argv[ARG_1], &trackIds_length);
-    std::vector<std::string> trackIdsRender = ParseStringArray(env, argv[1],trackIds_length);
+    napi_get_array_length(env, argv[ARG_1], &trackIdsLength);
+    std::vector<std::string> trackIdsRender = ParseStringArray(env, argv[1], trackIdsLength);
     if (trackIdsRender.empty()) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-                       "trackIdsNotRender size %zu",trackIdsNotRender.size());
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "trackIdsNotRender size %zu",
+                     trackIdsNotRender.size());
     }
     const std::vector<bool> isSilents(trackIdsNotRender.size(), true);
     Timeline::getInstance().setAudioTrackSilent(trackIdsNotRender, isSilents);
