@@ -75,7 +75,7 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
         if (defaultBus.empty()) {
             defaultBus = std::string(PRIMARY_DEFAULT_BUS);
         }
-        AUDIO_WARNING_LOG("Not match any bus, use default bus%{public}s, for stream usage: %{public}d",
+        AUDIO_WARNING_LOG("Not match any bus, use default bus: %{public}s, for stream usage: %{public}d",
                           defaultBus.c_str(), streamDesc->rendererInfo_.streamUsage);
         return {defaultBus};
     }
