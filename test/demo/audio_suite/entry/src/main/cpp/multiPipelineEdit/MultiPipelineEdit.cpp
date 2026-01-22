@@ -199,7 +199,7 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
     return result;
 }
 
-void UpdateAudioBuffers(char* firAudioData, char* secAudioData) 
+void UpdateAudioBuffers(char* firAudioData, char* secAudioData)
 {
     std::copy(static_cast<const char*>(firAudioData),
               static_cast<const char*>(firAudioData) + g_threadPipelineManager->firstBufferSize,
@@ -221,7 +221,7 @@ void UpdateAudioBuffers(char* firAudioData, char* secAudioData)
     }
 }
 
-OH_AudioSuite_Result MultiPipelineRenderFrame() 
+OH_AudioSuite_Result MultiPipelineRenderFrame()
 {
     OH_AudioSuitePipeline* threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
@@ -231,25 +231,25 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "StartPipeline ERROR:%{public}d", result);
         return result;
     }
-    
+
     char* firAudioData = (char*)malloc(1024 * 1024 * 100);
     char* secAudioData = (char*)malloc(1024 * 1024 * 100);
-    
+
     int32_t bitsPerSample = GetBitsPerSample(threadAudioFormatOutput.sampleFormat);
     int32_t frameSize =
         20 * threadAudioFormatOutput.samplingRate * threadAudioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
-    
+
     if (g_threadPipelineManager->multiRenderFrameFlag) {
-        result = GetMultiRenderFrameOutput(firAudioData, secAudioData, 
-                                         g_threadPipelineManager->firstBufferSize,
-                                         g_threadPipelineManager->secondBufferSize, 
-                                         g_threadPipelineManager->renderFrameFinishFlag);
+        result = GetMultiRenderFrameOutput(firAudioData, secAudioData,
+                                           g_threadPipelineManager->firstBufferSize,
+                                           g_threadPipelineManager->secondBufferSize,
+                                           g_threadPipelineManager->renderFrameFinishFlag);
     } else {
-        result = GetRenderFrameOutput(firAudioData, frameSize, 
-                                    g_threadPipelineManager->firstBufferSize, 
-                                    g_threadPipelineManager->renderFrameFinishFlag);
+        result = GetRenderFrameOutput(firAudioData, frameSize,
+                                      g_threadPipelineManager->firstBufferSize,
+                                      g_threadPipelineManager->renderFrameFinishFlag);
     }
-    
+
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         FreeBuffer(&g_threadPipelineManager->firstAudioBuffer);
         g_threadPipelineManager->firstAudioBuffer = (char*)malloc(g_threadPipelineManager->firstBufferSize);
@@ -260,7 +260,7 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
         }
         UpdateAudioBuffers(firAudioData, secAudioData);
     }
-    
+
     FreeBuffer(&firAudioData);
     FreeBuffer(&secAudioData);
     return result;
@@ -494,7 +494,7 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
                  "pipelineManager:%{public}p, audioSuitePipeline: %{public}p, nodeManager:%{public}p",
                  g_initedPipelineNum.load(), pipelineManager.get(), pipelineManager->audioSuitePipeline,
                  pipelineManager->nodeManager.get());
-    
+
     for (const auto &pair : pipelineIdToPipelineManagerMap) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "pipelineIdToPipelineManagerMap key=%{public}s,value=%{public}p", pair.first.c_str(),
@@ -686,7 +686,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioSuiteNodeBuilder_SetRequestDataCallback result is %{public}d",
                  static_cast<int>(result));
-    
+
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
@@ -752,7 +752,7 @@ void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodePar
     audioFormatInput.sampleFormat = SetSampleFormat(params.bitsPerSample);
     // Set the encoding format
     audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-    
+
     audioFormatOutput.samplingRate = audioFormatInput.samplingRate;
     audioFormatOutput.channelCount = params.channels;
     audioFormatOutput.channelLayout = audioFormatInput.channelLayout;
@@ -801,7 +801,7 @@ bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int3
     threadAudioFormatOutput.channelLayout = threadAudioFormatInput.channelLayout;
     threadAudioFormatOutput.sampleFormat = threadAudioFormatInput.sampleFormat;
     threadAudioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-    
+
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "sampleRate: %{public}d, channels: %{public}d,"
                  "bitsPerSample: %{public}d", *sampleRate, *channels, *bitsPerSample);
     return true;
@@ -952,14 +952,16 @@ static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataL
     return false;
 }
 
-void InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offset, uint32_t &length)
+bool InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offset, uint32_t &length)
 {
     if (GetWavDataPosition(inputFile, offset, length)) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(),
                      offset, length);
+        return true;
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
+        return false;
     }
 }
 
@@ -993,8 +995,7 @@ napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inp
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
-{
+napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info) {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioInAndOutInit start");
     InputAudioParams params;
     napi_status status = ParseInputArguments(env, info, params);
@@ -1006,6 +1007,7 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
     int fileLength = GetFileLength(inputFile);
     OH_AVSource *source = OH_AVSource_CreateWithFD(fd, 0, fileLength);
     if (source == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
@@ -1313,7 +1315,7 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
     OH_AudioStream_SampleFormat streamSampleFormat;
 
     GetBitsPerSampleAndStreamFormat(g_audioFormatOutput, &bitsPerSample, &streamSampleFormat);
-    
+
     OH_AudioStreamBuilder_SetSamplingRate(rendererBuilder, g_audioFormatOutput.samplingRate);
     OH_AudioStreamBuilder_SetChannelCount(rendererBuilder, g_audioFormatOutput.channelCount);
     OH_AudioStreamBuilder_SetSampleFormat(rendererBuilder, streamSampleFormat);
@@ -1326,10 +1328,10 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
                  "channelCount: %{public}d, bitsPerSample: %{public}d",
                  playDataSize, g_audioFormatOutput.samplingRate, g_audioFormatOutput.channelCount, bitsPerSample);
     OH_AudioStreamBuilder_SetFrameSizeInCallback(rendererBuilder, playDataSize);
-    
+
     OH_AudioRenderer_OnWriteDataCallback rendererCallbacks = MultiPlayAudioRendererOnWriteData;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(rendererBuilder, rendererCallbacks, nullptr);
-    
+
     OH_AudioStreamBuilder_GenerateRenderer(rendererBuilder, &audioRenderer);
     return nullptr;
 }
