@@ -286,9 +286,10 @@ int32_t RemoteOffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint
     return SUCCESS;
 }
 
-int64_t RemoteOffloadAudioRenderSink::GetVolumeDataCount(void)
+int32_t RemoteOffloadAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,

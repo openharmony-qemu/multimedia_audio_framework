@@ -163,7 +163,7 @@ int32_t CabinAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wr
     return SUCCESS;
 }
 
-int64_t CabinAudioRenderSink::GetVolumeDataCount()
+int32_t CabinAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return ERR_NOT_SUPPORTED;

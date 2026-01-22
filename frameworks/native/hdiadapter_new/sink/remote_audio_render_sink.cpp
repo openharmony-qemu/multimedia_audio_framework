@@ -286,9 +286,10 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     return RenderFrame(data, len, writeLen, AUDIO_IN_MEDIA);
 }
 
-int64_t RemoteAudioRenderSink::GetVolumeDataCount()
+int32_t RemoteAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
