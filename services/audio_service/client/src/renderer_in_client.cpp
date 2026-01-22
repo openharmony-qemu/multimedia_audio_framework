@@ -1170,23 +1170,29 @@ bool RendererInClientInner::CheckStaticAndOperate()
 
 void RendererInClientInner::CheckOperations()
 {
-    if (rendererInfo_.isStatic) {
-        Trace trace("RendererInClientInner::ProcessStaticOperations");
-        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
-            sendStaticRecreateFunc_();
-        }
-        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
-        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
-        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
-        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
-            Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
-            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
-        }
-        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
-            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
-        }
+    if (!rendererInfo_.isStatic) {
+        return;
+    }
+
+    Trace trace("RendererInClientInner::ProcessStaticOperations");
+    if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+        sendStaticRecreateFunc_();
+    }
+    std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+    CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
+    while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+        Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
+        audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+        clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+    }
+    if (clientBuffer_->IsNeedSendLoopEndCallback()) {
+        audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+        clientBuffer_->SetIsNeedSendLoopEndCallback(false);
+    }
+    if (clientBuffer_->IsFirstFrame()) {
+        clientBuffer_->SetIsFirstFrame(false);
+        OnFirstFrameWriting();
     }
 }
 
