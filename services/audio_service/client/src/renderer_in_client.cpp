@@ -77,6 +77,7 @@ static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; //1s
+static const int32_t WECHAT_BUFFER_DURATION_IN_US = 120000; 
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -352,6 +353,12 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     } else {
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
+    }
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT &&
+        AudioSystemManager::GetInstance()->GetSelfBundleName() == "com.tencent.wechat") {
+        AUDIO_INFO_LOG("Change duration for voip direct, %{public}" PRIu64 " to %{public}d",
+            bufferDurationInUs, WECHAT_BUFFER_DURATION_IN_US);
+        bufferDurationInUs = WECHAT_BUFFER_DURATION_IN_US;
     }
     uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
     SetCacheSize(durationInFrame);
