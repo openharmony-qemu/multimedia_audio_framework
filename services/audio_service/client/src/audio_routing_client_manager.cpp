@@ -151,7 +151,8 @@ int32_t AudioRoutingClientManager::SetDeviceConnectionStatus(const std::shared_p
     return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
 }
 
-int32_t AudioRoutingClientManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+int32_t AudioRoutingClientManager::SetCustomAudioMix(const std::string &zoneName,
+    const std::vector<AudioZoneMix> &audioMixes)
 {
     CHECK_AND_RETURN_RET_LOG(zoneName != "" && audioMixes.size() > 0, ERR_INVALID_PARAM,
                              "zoneName is empty or audioMix is empty.");
