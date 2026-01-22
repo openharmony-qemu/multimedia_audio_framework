@@ -31,7 +31,6 @@ class TaiheAudioSessionAvailableDeviceChangeCallback :
 public:
     explicit TaiheAudioSessionAvailableDeviceChangeCallback();
     virtual ~TaiheAudioSessionAvailableDeviceChangeCallback();
-    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback);
     void OnAvailableDeviceChange(const OHOS::AudioStandard::AudioDeviceUsage usage,
         const OHOS::AudioStandard::DeviceChangeAction &deviceChangeAction) override;
 

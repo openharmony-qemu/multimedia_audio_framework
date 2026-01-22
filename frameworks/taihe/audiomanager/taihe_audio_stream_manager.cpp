@@ -165,7 +165,7 @@ bool AudioStreamManagerImpl::IsIntelligentNoiseReductionEnabledForCurrentDevice(
 {
     int32_t type = sourceType.get_value();
     if (!TaiheAudioEnum::IsValidSourceType(type)) {
-        AUDIO_ERR_LOG("get sourceType failed");
+        AUDIO_ERR_LOG("get sourceType failed: %{public}d", type);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
             "parameter verification failed: The param of sourceType must be enum SourceType");
         return false;
