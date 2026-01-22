@@ -40,13 +40,14 @@ OH_AudioDataArray *g_playOhAudioDataArray = new OH_AudioDataArray();
 
 uint32_t g_separationMode = -1;
 
-OH_AudioSuite_Result ProcessPipeline() {
+OH_AudioSuite_Result ProcessPipeline()
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest ProcessPipeline start");
     // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-                 "audioEditTest OH_AudioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
+                 "zhagnkan - audioEditTest OH_AudioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
                  static_cast<int>(result), static_cast<int>(pipeLineState));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
@@ -64,7 +65,8 @@ OH_AudioSuite_Result ProcessPipeline() {
     return result;
 }
 
-OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize) {
+OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest OneRenDerFrame start");
     ProcessPipeline();
     if (audioDataSize <= CONSTANT_0) {
@@ -107,7 +109,8 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize) {
     return result;
 }
 
-OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize) {
+OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
+{
     g_playOhAudioDataArray->audioDataArray = (void **)malloc(ARG_2 * sizeof(void *));
     if (g_playOhAudioDataArray->audioDataArray == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -149,7 +152,8 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
 }
 
 OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer, void *userData, void *audioData,
-                                                          int32_t audioDataSize) {
+                                                          int32_t audioDataSize)
+{
     (void)userData;
     if (renderer == nullptr || audioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -202,7 +206,8 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 
-void ReleaseExistingResources() {
+void ReleaseExistingResources()
+{
     if (audioRenderer) {
         // Releasing a Player Instance
         OH_AudioRenderer_Release(audioRenderer);
@@ -215,7 +220,8 @@ void ReleaseExistingResources() {
     }
 }
 
-std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, uint32_t trackIds_length) {
+std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, uint32_t trackIds_length)
+{
     std::vector<std::string> trackIds;
     napi_valuetype type;
     for (uint32_t i = 0; i < trackIds_length; i++) {
@@ -233,7 +239,8 @@ std::vector<std::string> ParseStringArray(napi_env env, napi_value arrayValue, u
     return trackIds;
 }
 
-napi_value ModifyRenderTrack(napi_env env, napi_callback_info info) {
+napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
+{
     size_t argc = 2;
     napi_value *argv = new napi_value[argc];
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);

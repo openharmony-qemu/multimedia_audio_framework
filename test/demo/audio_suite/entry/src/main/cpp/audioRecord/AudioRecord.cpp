@@ -15,7 +15,7 @@
 #include "utils/Utils.h"
 #include "audioEffectNode/Input.h"
 #include "/utils/Constant.h"
-#include <string.h>
+#include <cstring>
 
 static OH_AudioCapturer *audioCapturer;
 static OH_AudioStreamBuilder *builder;
@@ -35,7 +35,6 @@ int32_t g_bitsPerSample = 4;
 // 录制纯音的默认参数
 int32_t g_pureSamplingRate = 44100;
 int32_t g_pureChannelCount = 2;
-int32_t pure_bitsPerSample = 4;
 int32_t g_pureSampleFormat = 4;
 OH_AudioStream_SampleFormat g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
 size_t g_audioBufferTotalSize = 0;
@@ -43,16 +42,8 @@ bool g_realPlaying = false;
 std::string g_key = "";
 bool g_isPure = false;
 
-int safe_memcpy(void *dest, size_t dest_size, const void *src, size_t count) {
-    if (!dest || !src)
-        return -1;
-    if (count > dest_size)
-        return -1; // 超出目标缓冲区
-    memcpy(dest, src, count);
-    return 0; // 成功
-}
-
-void SetAudioData(const uint8_t *data, size_t size) {
+void SetAudioData(const uint8_t *data, size_t size)
+{
     std::lock_guard<std::mutex> lock(g_bufferMutex);
     if (data == nullptr || size == 0) {
         OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, RECORD_TAG, "SetAudioData: invalid data or size (size=%zu)",
@@ -67,22 +58,22 @@ void SetAudioData(const uint8_t *data, size_t size) {
         std::unique_ptr<uint8_t[]> newBuffer = std::make_unique<uint8_t[]>(newTotalSize);
         if (g_recordBuffer) {
             // If there is previous data, copy the old data first.
-            safe_memcpy(newBuffer.get(), newTotalSize, g_recordBuffer.get(), g_audioBufferTotalSize);
+            std::copy(g_recordBuffer.get(), g_recordBuffer.get() + g_audioBufferTotalSize, newBuffer.get());
         }
         // Swap: New buffer becomes the current buffer
         g_recordBuffer = std::move(newBuffer);
         g_audioBufferSize = newTotalSize; // 更新缓冲区容量
     }
     // Copy the new data to the end of g_audioBuffer.
-    size_t remainingSize = g_audioBufferSize - g_audioBufferTotalSize;
-    safe_memcpy(g_recordBuffer.get() + g_audioBufferTotalSize, remainingSize, data, size);
+    std::copy(data, data + size, g_recordBuffer.get() + g_audioBufferTotalSize);
     // Total Update Size
     g_audioBufferTotalSize += size;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, RECORD_TAG,
                  "SetAudioData: appended %{public}zu bytes, total size now %{public}zu", size, g_audioBufferTotalSize);
 }
 
-int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void *buffer, int32_t bufferLen) {
+int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void *buffer, int32_t bufferLen)
+{
     size_t count = 1;
     if (fwrite(buffer, bufferLen, count, g_file) != count) {
         printf("buffer fwrite err");
@@ -109,14 +100,18 @@ int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void
 }
 
 // init capturer
-napi_value AudioCapturerInit(napi_env env, napi_callback_info info) {
+napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
+{
     size_t argc = 6;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_status status = napi_get_value_bool(env, argv[ARG_0], &g_realPlaying);
-    std::string inputId, mixerId, outputId;
-    if (ParseNapiString(env, argv[1], inputId) != napi_ok || ParseNapiString(env, argv[2], mixerId) != napi_ok ||
-        ParseNapiString(env, argv[3], outputId) != napi_ok) {
+    std::string inputId;
+    std::string mixerId;
+    std::string outputId;
+    if (ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputId) != napi_ok ||
+        ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], mixerId) != napi_ok ||
+        ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], outputId) != napi_ok) {
         return nullptr;
     }
     setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
@@ -163,7 +158,8 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info) {
 }
 
 // 调用完AudioCapturerInit，掉实时播放初始化
-napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info) {
+napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
+{
     // stop pipeline
     OH_AudioSuite_Result result;
     size_t argc = 5;
@@ -215,19 +211,22 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info) {
 }
 
 // start capturer
-napi_value AudioCapturerStart(napi_env env, napi_callback_info info) {
+napi_value AudioCapturerStart(napi_env env, napi_callback_info info)
+{
     // start
     OH_AudioCapturer_Start(audioCapturer);
     return nullptr;
 }
 
 // stop capturer
-napi_value AudioCapturerStop(napi_env env, napi_callback_info info) {
+napi_value AudioCapturerStop(napi_env env, napi_callback_info info)
+{
     OH_AudioCapturer_Stop(audioCapturer);
     return nullptr;
 }
 
-napi_value RealPlayRecordBuffer(napi_env env, napi_callback_info info) {
+napi_value RealPlayRecordBuffer(napi_env env, napi_callback_info info)
+{
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -257,7 +256,8 @@ napi_value RealPlayRecordBuffer(napi_env env, napi_callback_info info) {
 }
 
 // release capturer
-napi_value AudioCapturerRelease(napi_env env, napi_callback_info info) {
+napi_value AudioCapturerRelease(napi_env env, napi_callback_info info)
+{
     if (audioCapturer) {
         OH_AudioCapturer_Release(audioCapturer);
         OH_AudioStreamBuilder_Destroy(builder);
@@ -272,7 +272,8 @@ napi_value AudioCapturerRelease(napi_env env, napi_callback_info info) {
 }
 
 // 不需要混音的直接调该方法
-napi_value GetAudioFrames(napi_env env, napi_callback_info info) {
+napi_value GetAudioFrames(napi_env env, napi_callback_info info)
+{
     size_t argc = 0;
     napi_value args[1];
     napi_status status;
@@ -307,7 +308,8 @@ napi_value GetAudioFrames(napi_env env, napi_callback_info info) {
 }
 
 // 处理混音逻辑--把g_audioBuffer转成inputnode，链接到mixer前边
-napi_value MixRecordBuffer(napi_env env, napi_callback_info info) {
+napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, RECORD_TAG, "mix record buffer start");
     size_t argc = 5;
     napi_value *argv = new napi_value[argc];
@@ -346,37 +348,39 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info) {
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-napi_value AudioCapturerPause(napi_env env, napi_callback_info info) {
+napi_value AudioCapturerPause(napi_env env, napi_callback_info info)
+{
     OH_AudioCapturer_Pause(audioCapturer);
     return nullptr;
 }
 
 // 转换函数
-void ConvertFormat() {
+void ConvertFormat()
+{
     if (g_writeDataBufferMap.size() > 0) {
         g_samplingRate = g_audioFormatInput.samplingRate;
         g_channelCount = g_audioFormatInput.channelCount;
         switch (g_audioFormatInput.sampleFormat) {
-        case OH_Audio_SampleFormat::AUDIO_SAMPLE_U8:
-            g_bitsPerSample = UINT_0;
-            g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_U8;
-            break;
-        case OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE:
-            g_bitsPerSample = UINT_1;
-            g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S16LE;
-            break;
-        case OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE:
-            g_bitsPerSample = UINT_2;
-            g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S24LE;
-            break;
-        case OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE:
-            g_bitsPerSample = UINT_3;
-            g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S32LE;
-            break;
-        case OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE:
-            g_bitsPerSample = UINT_4;
-            g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
-            break;
+            case OH_Audio_SampleFormat::AUDIO_SAMPLE_U8:
+                g_bitsPerSample = UINT_0;
+                g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_U8;
+                break;
+            case OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE:
+                g_bitsPerSample = UINT_1;
+                g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S16LE;
+                break;
+            case OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE:
+                g_bitsPerSample = UINT_2;
+                g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S24LE;
+                break;
+            case OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE:
+                g_bitsPerSample = UINT_3;
+                g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_S32LE;
+                break;
+            case OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE:
+                g_bitsPerSample = UINT_4;
+                g_sampleFormat = OH_AudioStream_SampleFormat::AUDIOSTREAM_SAMPLE_F32LE;
+                break;
         }
     } else {
         std::vector<std::string> audioFormat = {std::to_string(g_samplingRate), std::to_string(g_channelCount),
@@ -385,7 +389,8 @@ void ConvertFormat() {
     }
 }
 
-napi_value ClearRecordBuffer(napi_env env, napi_callback_info info) {
+napi_value ClearRecordBuffer(napi_env env, napi_callback_info info)
+{
     // 释放 g_recordBuffer
     g_recordBuffer.reset();
     g_recordBuffer = nullptr;
