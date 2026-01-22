@@ -215,7 +215,7 @@ ohos_shared_library("audio_engine_node") {
   part_name = "audio_framework"
 }
 
-ohos_shared_library("audio_engine_manager") {
+ohos_shared_library("hpae_engine_manager") {
   stack_protector_ret = true
   sanitize = {
     cfi = true
