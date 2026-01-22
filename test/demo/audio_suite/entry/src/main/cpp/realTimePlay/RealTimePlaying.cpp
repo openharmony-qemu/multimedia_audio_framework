@@ -46,9 +46,6 @@ OH_AudioSuite_Result ProcessPipeline()
     // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-                 "zhagnkan - audioEditTest OH_AudioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
-                 static_cast<int>(result), static_cast<int>(pipeLineState));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }

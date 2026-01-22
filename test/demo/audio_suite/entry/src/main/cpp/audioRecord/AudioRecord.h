@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
-#include "napi/native_api.h"
-#include "audioEffectNode/EffectNode.h"
 
 #ifndef AUDIO_SUITE_AUDIORECORD_H
 #define AUDIO_SUITE_AUDIORECORD_H
+
+#include "napi/native_api.h"
+#include "audioEffectNode/EffectNode.h"
 
 extern int32_t g_samplingRate;
 extern int32_t g_channelCount;

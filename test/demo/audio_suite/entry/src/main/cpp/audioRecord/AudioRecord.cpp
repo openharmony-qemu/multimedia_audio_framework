@@ -99,44 +99,8 @@ int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void
     return 0;
 }
 
-// init capturer
-napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
+void assembleStreamBuilder()
 {
-    size_t argc = 6;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    napi_status status = napi_get_value_bool(env, argv[ARG_0], &g_realPlaying);
-    std::string inputId;
-    std::string mixerId;
-    std::string outputId;
-    if (ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputId) != napi_ok ||
-        ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], mixerId) != napi_ok ||
-        ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], outputId) != napi_ok) {
-        return nullptr;
-    }
-    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
-    g_totalSize = g_audioBufferTotalSize;
-    long startTime = 0;
-    status = napi_get_value_int64(env, argv[ARG_4], &startTime);
-    status = napi_get_value_bool(env, argv[ARG_5], &g_isPure);
-    g_key = inputId;
-    if (startTime > 0)
-        g_key = inputId.c_str() + std::to_string(startTime);
-    g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
-    delete[] argv;
-
-    if (audioCapturer) {
-        OH_AudioCapturer_Release(audioCapturer);
-        OH_AudioStreamBuilder_Destroy(builder);
-        audioCapturer = nullptr;
-        builder = nullptr;
-    }
-    if (g_file) {
-        fclose(g_file);
-        g_file = nullptr;
-    }
-    g_file = fopen(g_filePath.c_str(), "wb");
-    // 1. create builder
     OH_AudioStreamBuilder_Create(&builder, AUDIOSTREAM_TYPE_CAPTURER);
     ConvertFormat();
     // 2. set params and callbacks
@@ -154,6 +118,46 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
     OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, nullptr);
     // 3. create OH_AudioCapturer
     OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+}
+
+// init capturer
+napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
+{
+    size_t argc = 6;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_status status = napi_get_value_bool(env, argv[ARG_0], &g_realPlaying);
+    std::string inputId;
+    std::string mixerId;
+    std::string outputId;
+    if (ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputId) != napi_ok ||
+        ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], mixerId) != napi_ok ||
+        ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], outputId) != napi_ok) {
+        return nullptr;
+    }
+    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
+    g_totalSize = g_audioBufferTotalSize;
+    long startTime = UINT_0;
+    status = napi_get_value_int64(env, argv[ARG_4], &startTime);
+    status = napi_get_value_bool(env, argv[ARG_5], &g_isPure);
+    g_key = inputId;
+    if (startTime > UINT_0)
+        g_key = inputId.c_str() + std::to_string(startTime);
+    g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
+    delete[] argv;
+
+    if (audioCapturer) {
+        OH_AudioCapturer_Release(audioCapturer);
+        OH_AudioStreamBuilder_Destroy(builder);
+        audioCapturer = nullptr;
+        builder = nullptr;
+    }
+    if (g_file) {
+        fclose(g_file);
+        g_file = nullptr;
+    }
+    g_file = fopen(g_filePath.c_str(), "wb");
+    assembleStreamBuilder();
     return nullptr;
 }
 
