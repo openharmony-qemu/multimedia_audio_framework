@@ -67,6 +67,11 @@ public:
         return SUCCESS;
     }
 
+    ErrCode OnQueryIsForceGetZoneDevice(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
     ErrCode OnCheckVKBInfo(const std::string& bundleName, bool& isValid) override
     {
         return SUCCESS;
