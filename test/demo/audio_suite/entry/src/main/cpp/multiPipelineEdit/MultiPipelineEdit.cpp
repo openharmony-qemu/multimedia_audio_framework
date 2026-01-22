@@ -199,8 +199,29 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
     return result;
 }
 
-OH_AudioSuite_Result MultiPipelineRenderFrame()
+void UpdateAudioBuffers(bool &multiRenderFrameFlag, char *&firstAudioBuffer, char *&secondAudioBuffer,
+                        size_t &firstBufferSize, size_t &secondBufferSize, char *&firAudioData, char *&secAudioData) 
 {
+    std::copy(static_cast<const char *>(firAudioData), static_cast<const char *>(firAudioData) + firstBufferSize,
+              static_cast<char *>(firstAudioBuffer));
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
+                 "audioEditTest renDerFrame std::copy "
+                 "firBuff: %{public}p, firstBufferSize:%{public}zu",
+                 firstAudioBuffer, firstBufferSize);
+    if (multiRenderFrameFlag) {
+        FreeBuffer(&secondAudioBuffer);
+        secondAudioBuffer = (char *)malloc(secondBufferSize);
+        std::copy(static_cast<const char *>(secAudioData), static_cast<const char *>(secAudioData) + secondBufferSize,
+                  static_cast<char *>(secondAudioBuffer));
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
+                     "audioEditTest renDerFrame "
+                     "std::copy secBuff: %{public}p, g_totalSize:%{public}zu",
+                     secondAudioBuffer, secondBufferSize);
+        multiRenderFrameFlag = false;
+    }
+}
+
+OH_AudioSuite_Result MultiPipelineRenderFrame() {
     OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     bool &multiRenderFrameFlag = g_threadPipelineManager->multiRenderFrameFlag;
     char *&firstAudioBuffer = g_threadPipelineManager->firstAudioBuffer;
@@ -224,7 +245,8 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
         20 * threadAudioFormatOutput.samplingRate * threadAudioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
     
     if (multiRenderFrameFlag) {
-        result = GetMultiRenderFrameOutput(firAudioData, secAudioData, firstBufferSize, secondBufferSize, finishedFlag);
+        result = GetMultiRenderFrameOutput(firAudioData, secAudioData, firstBufferSize,
+                                           secondBufferSize, finishedFlag);
     } else {
         result = GetRenderFrameOutput(firAudioData, frameSize, firstBufferSize, finishedFlag);
     }
@@ -236,22 +258,8 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
             FreeBuffer(&secAudioData);
             return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
         }
-        std::copy(static_cast<const char*>(firAudioData),
-            static_cast<const char*>(firAudioData) + firstBufferSize,
-            static_cast<char*>(firstAudioBuffer));
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest renDerFrame std::copy "
-                     "firBuff: %{public}p, firstBufferSize:%{public}zu", firstAudioBuffer, firstBufferSize);
-        if (multiRenderFrameFlag) {
-            FreeBuffer(&secondAudioBuffer);
-            secondAudioBuffer = (char *)malloc(secondBufferSize);
-            std::copy(static_cast<const char*>(secAudioData),
-                static_cast<const char*>(secAudioData) + secondBufferSize,
-                static_cast<char*>(secondAudioBuffer));
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest renDerFrame "
-                         "std::copy secBuff: %{public}p, g_totalSize:%{public}zu",
-                         secondAudioBuffer, secondBufferSize);
-            multiRenderFrameFlag = false;
-        }
+        UpdateAudioBuffers(multiRenderFrameFlag, firstAudioBuffer, secondAudioBuffer, firstBufferSize,
+                           secondBufferSize,firAudioData, secAudioData);
     }
     FreeBuffer(&firAudioData);
     FreeBuffer(&secAudioData);
@@ -647,7 +655,8 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
 OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId,
                                                 OH_AudioNode_Type type)
 {
-    OH_AudioSuite_Result result = OH_AudioSuiteNodeBuilder_SetFormat(builder, g_threadPipelineManager->audioFormatInput);
+    OH_AudioSuite_Result result = 
+        OH_AudioSuiteNodeBuilder_SetFormat(builder, g_threadPipelineManager->audioFormatInput);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioNodeBuilder_SetFormat result is %{public}d", static_cast<int>(result));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -943,10 +952,7 @@ static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataL
     return false;
 }
 
-napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inputFile, int32_t &sampleRate,
-                             int32_t &channels, int32_t &bitsPerSample) {
-    uint32_t offset = 0;
-    uint32_t length = 0;
+void InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offset, uint32_t &length) {
     if (GetWavDataPosition(inputFile, offset, length)) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(),
@@ -954,6 +960,14 @@ napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inp
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
     }
+}
+
+napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inputFile, int32_t &sampleRate,
+                             int32_t &channels, int32_t &bitsPerSample)
+{
+    uint32_t offset = 0;
+    uint32_t length = 0;
+    InitAudioParams(params, inputFile, offset, length);
 
     std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     std::map<std::string, FILE *> &writeDataFileMap = g_threadPipelineManager->writeDataFileMap;
@@ -978,7 +992,8 @@ napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inp
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info) {
+napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioInAndOutInit start");
     InputAudioParams params;
     napi_status status = ParseInputArguments(env, info, params);
