@@ -121,7 +121,6 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
-    void AbortCallback(int32_t abortTimes) override { return; }
 };
 
 class ConcreteIStreamListener : public IStreamListener {
@@ -605,7 +604,6 @@ void RequestUserPrivacyAuthorityTest()
     auto bufferInfo = std::make_shared<BasicBufferInfo>();
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    capturerInServer_->asrBundleName_ = "com.huawei.hmos.vassistant";
     capturerInServer_->status_ = I_STATUS_STARTING;
     capturerInServer_->RequestUserPrivacyAuthority();
     capturerInServer_->status_ = I_STATUS_PAUSING;
@@ -674,7 +672,6 @@ void ResetAsrFlag()
     auto bufferInfo = std::make_shared<BasicBufferInfo>();
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    capturerInServer_->asrBundleName_ = "com.huawei.hmos.vassistant";
     capturerInServer_->ResetAsrFlag();
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
     capturerInServer_->ResetAsrFlag();
@@ -714,7 +711,6 @@ void Start()
     auto bufferInfo = std::make_shared<BasicBufferInfo>();
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    capturerInServer_->asrBundleName_ = "com.huawei.hmos.vassistant";
     AppInfo appInfo;
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     capturerInServer_->recorderDfx_ = std::make_unique<RecorderDfxWriter>(appInfo, index);
