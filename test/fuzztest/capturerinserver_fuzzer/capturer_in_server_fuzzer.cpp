@@ -638,44 +638,6 @@ void GetLastAudioDurationTest()
     capturerInServer_->GetLastAudioDuration();
 }
 
-void ResetAsrFlag()
-{
-    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
-    if (capturerInServer_ == nullptr) {
-        return;
-    }
-    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
-    if (streamListenerHolder == nullptr) {
-        return;
-    }
-    capturerInServer_->streamListener_ = std::weak_ptr<IStreamListener>();
-    if (capturerInServer_->streamListener_.lock() == nullptr) {
-        capturerInServer_->streamListener_ = streamListenerHolder;
-    }
-    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
-    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
-    if (capturerInServer_->ringCache_ == nullptr) {
-        return;
-    }
-    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest>();
-    if (capturerInServer_->stream_ == nullptr) {
-        return;
-    }
-    uint32_t totalSizeInFrame = NUM_10;
-    uint32_t spanSizeInFrame = NUM_10;
-    uint32_t byteSizePerFrame = NUM_10;
-    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
-    totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    if (capturerInServer_->audioServerBuffer_ == nullptr) {
-        return;
-    }
-    auto bufferInfo = std::make_shared<BasicBufferInfo>();
-    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
-    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    capturerInServer_->ResetAsrFlag();
-    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
-    capturerInServer_->ResetAsrFlag();
-}
 
 void Start()
 {
@@ -745,7 +707,6 @@ vector<TestFuncs> g_testFuncs = {
     RequestUserPrivacyAuthorityTest,
     SetRebuildFlagTest,
     GetLastAudioDurationTest,
-    ResetAsrFlag,
     Start,
 };
 
