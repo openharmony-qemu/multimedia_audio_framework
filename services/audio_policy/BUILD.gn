@@ -344,7 +344,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
-    "../audio_engine:audio_engine_manager",
+    "../audio_engine:hpae_engine_manager",
   ]
 
   external_deps = [
@@ -684,6 +684,9 @@ ohos_executable("audio_dump_test") {
   deps = [
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -710,6 +713,9 @@ ohos_executable("audio_policy_test") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -752,6 +758,7 @@ ohos_shared_library("audio_foundation") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
+    "../audio_service/client/src/audio_manager_util.cpp",
     "server/domain/device/src/audio_device_descriptor.cpp",
     "server/domain/device/src/audio_device_type.cpp",
     "server/domain/effect/src/audio_effect_map.cpp",

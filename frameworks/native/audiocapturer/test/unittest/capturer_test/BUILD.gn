@@ -55,6 +55,9 @@ ohos_unittest("audio_capturer_unit_test") {
 
   deps = [
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audioschedule:audio_schedule",
   ]
@@ -82,6 +85,9 @@ ohos_unittest("inner_capturer_unit_test") {
 
   deps = [
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
   ]
@@ -110,6 +116,9 @@ ohos_unittest("audio_fast_capturer_unit_test") {
 
   deps = [
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
   ]
 }
