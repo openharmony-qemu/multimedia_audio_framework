@@ -119,7 +119,8 @@ bool AudioLoopbackImpl::EnableSync(bool enable)
     return loopback_->Enable(enable);
 }
 
-bool AudioLoopbackImpl::SetReverbPreset(AudioLoopbackReverbPreset preset) {
+bool AudioLoopbackImpl::SetReverbPreset(AudioLoopbackReverbPreset preset)
+{
     if (loopback_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
         return false;
@@ -137,7 +138,8 @@ bool AudioLoopbackImpl::SetReverbPreset(AudioLoopbackReverbPreset preset) {
     return ret;
 }
 
-AudioLoopbackReverbPreset AudioLoopbackImpl::GetReverbPreset() {
+AudioLoopbackReverbPreset AudioLoopbackImpl::GetReverbPreset()
+{
     if (loopback_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
         return AudioLoopbackReverbPreset::key_t::ORIGINAL;
@@ -145,7 +147,8 @@ AudioLoopbackReverbPreset AudioLoopbackImpl::GetReverbPreset() {
     return TaiheAudioEnum::ToTaiheAudioLoopbackReverbPreset(loopback_->GetReverbPreset());
 }
 
-bool AudioLoopbackImpl::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) {
+bool AudioLoopbackImpl::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset)
+{
     if (loopback_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
         return false;
@@ -163,7 +166,8 @@ bool AudioLoopbackImpl::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) 
     return ret;
 }
 
-AudioLoopbackEqualizerPreset AudioLoopbackImpl::GetEqualizerPreset() {
+AudioLoopbackEqualizerPreset AudioLoopbackImpl::GetEqualizerPreset()
+{
     if (loopback_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
         return AudioLoopbackEqualizerPreset::key_t::FLAT;
