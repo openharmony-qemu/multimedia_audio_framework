@@ -64,11 +64,11 @@ int32_t AudioSuiteManager::Init()
     AUDIO_INFO_LOG("Init enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ == nullptr, ERR_ILLEGAL_STATE, "suite engine aleay inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ == nullptr, ERR_ILLEGAL_STATE, "suite engine already inited");
 
     suiteEngine_ = std::make_shared<AudioSuiteEngine>(*this);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
-        ERR_MEMORY_ALLOC_FAILED, "Create suite engine failed, mallocl error.");
+        ERR_MEMORY_ALLOC_FAILED, "Create suite engine failed, malloc error.");
 
     int32_t ret = suiteEngine_->Init();
     if (ret != SUCCESS) {
