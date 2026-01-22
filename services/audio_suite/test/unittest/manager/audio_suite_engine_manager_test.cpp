@@ -236,6 +236,16 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineTest, TestSize.Level0)
     EXPECT_EQ(engineManger.IsInit(), true);
 
     int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
     for (size_t i = 1;i < engineManger.engineCfg_.maxPipelineNum_ + 3; ++i)
     {
         engineManger.pipelineMap_[i]=std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);

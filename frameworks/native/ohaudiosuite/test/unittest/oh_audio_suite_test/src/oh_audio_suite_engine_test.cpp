@@ -3455,7 +3455,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetTempoAndPitch_002, TestS
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_TEMPO_PITCH, &audioNode);
 
-    ret = OH_AudioSuiteEngine_SetTempoAndPitch(audioNode, 1.0, 1.0);
+    ret = OH_AudioSuiteEngine_SetTempoAndPitch(audioNode, 1.2, 1.2);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     float speed;
