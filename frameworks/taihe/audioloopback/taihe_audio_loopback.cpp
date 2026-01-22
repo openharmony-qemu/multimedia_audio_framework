@@ -119,6 +119,59 @@ bool AudioLoopbackImpl::EnableSync(bool enable)
     return loopback_->Enable(enable);
 }
 
+bool AudioLoopbackImpl::SetReverbPreset(AudioLoopbackReverbPreset preset) {
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return false;
+    }
+
+    if ((!TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(preset))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of mode must be enum AudioLoopbackReverbPreset");
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioLoopbackReverbPreset reverbPreset =
+        static_cast<OHOS::AudioStandard::AudioLoopbackReverbPreset>(preset.get_value());
+    bool ret = loopback_->SetReverbPreset(reverbPreset);
+    return ret;
+}
+
+AudioLoopbackReverbPreset AudioLoopbackImpl::GetReverbPreset() {
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return AudioLoopbackReverbPreset::key_t::ORIGINAL;
+    }
+    return TaiheAudioEnum::ToTaiheAudioLoopbackReverbPreset(loopback_->GetReverbPreset());
+}
+
+bool AudioLoopbackImpl::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) {
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return false;
+    }
+
+    if ((!TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(preset))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of mode must be enum AudioLoopbackEqualizerPreset");
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioLoopbackEqualizerPreset equalizerPreset =
+        static_cast<OHOS::AudioStandard::AudioLoopbackEqualizerPreset>(preset.get_value());
+    bool ret = loopback_->SetEqualizerPreset(equalizerPreset);
+    return ret;
+}
+
+AudioLoopbackEqualizerPreset AudioLoopbackImpl::GetEqualizerPreset() {
+    if (loopback_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "loopback_ is nullptr");
+        return AudioLoopbackEqualizerPreset::key_t::FLAT;
+    }
+    return TaiheAudioEnum::ToTaiheAudioLoopbackEqualizerPreset(loopback_->GetEqualizerPreset());
+}
+
+
 void AudioLoopbackImpl::OnStatusChange(callback_view<void(AudioLoopbackStatus data)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);

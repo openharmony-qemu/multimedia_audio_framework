@@ -100,6 +100,8 @@ static const std::map<OHOS::AudioStandard::StreamUsage, StreamUsage> STREAM_USAG
         StreamUsage::key_t::STREAM_USAGE_VIDEO_COMMUNICATION},
     {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT,
         StreamUsage::key_t::STREAM_USAGE_VOICE_CALL_ASSISTANT},
+    {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT, StreamUsage::key_t::STREAM_USAGE_ANNOUNCEMENT},
+    {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY, StreamUsage::key_t::STREAM_USAGE_EMERGENCY},
 };
 
 static const std::map<OHOS::AudioStandard::SourceType, SourceType> SOURCE_TYPE_TAIHE_MAP = {
@@ -344,6 +346,7 @@ const std::map<std::string, int32_t> TaiheAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_A2DP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP},
     {"NEARLINK", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK},
     {"SYSTEM_PRIVATE", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SYSTEM_PRIVATE},
+    {"HEARING_AID", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_HEARING_AID},
     {"MIC", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_MIC},
     {"WAKEUP", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_HEADSET},
@@ -406,6 +409,40 @@ static const std::map<OHOS::AudioStandard::RenderTarget, RenderTarget> RENDER_TA
     {OHOS::AudioStandard::RenderTarget::NORMAL_PLAYBACK, RenderTarget::key_t::PLAYBACK},
     {OHOS::AudioStandard::RenderTarget::INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
         RenderTarget::key_t::INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
+static const std::map<OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory,
+    BluetoothAndNearlinkPreferredRecordCategory> BLUETOOTH_AND_NEARLINK_PREFERRED_RECORD_CATEGORY_TAIHE_MAP = {
+    {OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE,
+        BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_NONE},
+    {OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT,
+        BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_DEFAULT},
+    {OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY,
+        BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_LOW_LATENCY},
+    {OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY,
+        BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_HIGH_QUALITY},
+};
+
+static const std::map<OHOS::AudioStandard::AudioLoopbackReverbPreset,
+    AudioLoopbackReverbPreset> AUDIO_LOOPBACK_REVERB_PRESET_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL,
+        AudioLoopbackReverbPreset::key_t::ORIGINAL},
+    {OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_KTV,
+        AudioLoopbackReverbPreset::key_t::KTV},
+    {OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_THEATER,
+        AudioLoopbackReverbPreset::key_t::THEATER},
+    {OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT,
+        AudioLoopbackReverbPreset::key_t::CONCERT},
+};
+
+static const std::map<OHOS::AudioStandard::AudioLoopbackEqualizerPreset,
+    AudioLoopbackEqualizerPreset> AUDIO_LOOPBACK_EQUALIZER_PRESET_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FLAT,
+        AudioLoopbackEqualizerPreset::key_t::FLAT},
+    {OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FULL,
+        AudioLoopbackEqualizerPreset::key_t::FULL},
+    {OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_BRIGHT,
+        AudioLoopbackEqualizerPreset::key_t::BRIGHT},
 };
 
 bool TaiheAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
@@ -700,6 +737,25 @@ OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsageFir(int32_t
             break;
     }
 
+    return result;
+}
+
+AudioVolumeMode TaiheAudioEnum::GetJsAudioVolumeMode(OHOS::AudioStandard::AudioVolumeMode audioVolumeMode)
+{
+    AudioVolumeMode result = TaiheAudioEnum::ToTaiheAudioVolumeMode(
+        OHOS::AudioStandard::AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL);
+    switch (audioVolumeMode) {
+        case OHOS::AudioStandard::AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL:
+            result = TaiheAudioEnum::ToTaiheAudioVolumeMode(audioVolumeMode);
+            break;
+        case OHOS::AudioStandard::AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL:
+            result = TaiheAudioEnum::ToTaiheAudioVolumeMode(audioVolumeMode);
+            break;
+        default:
+            result = TaiheAudioEnum::ToTaiheAudioVolumeMode(
+                OHOS::AudioStandard::AudioVolumeMode::AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL);
+            break;
+    }
     return result;
 }
 
@@ -1024,6 +1080,23 @@ bool TaiheAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
+bool TaiheAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
+{
+    bool result = false;
+    switch (category) {
+        case OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE:
+        case OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT:
+        case OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY:
+        case OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool TaiheAudioEnum::IsLegalDeviceUsage(int32_t usage)
 {
     bool result = false;
@@ -1081,6 +1154,39 @@ bool TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
     bool result = false;
     switch (inputMode) {
         case AudioLoopbackModeTaihe::LOOPBACK_MODE_HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
+        case OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
+        case OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_THEATER:
+        case OHOS::AudioStandard::AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FLAT:
+        case OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FULL:
+        case OHOS::AudioStandard::AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_BRIGHT:
             result = true;
             break;
         default:
@@ -1449,4 +1555,44 @@ RenderTarget TaiheAudioEnum::ToTaiheRenderTarget(OHOS::AudioStandard::RenderTarg
     }
     return iter->second;
 }
+
+BluetoothAndNearlinkPreferredRecordCategory TaiheAudioEnum::ToTaiheBluetoothAndNearlinkPreferredRecordCategory(
+    OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory category)
+{
+    auto iter = BLUETOOTH_AND_NEARLINK_PREFERRED_RECORD_CATEGORY_TAIHE_MAP.find(category);
+    if (iter == BLUETOOTH_AND_NEARLINK_PREFERRED_RECORD_CATEGORY_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheBluetoothAndNearlinkPreferredRecordCategory invalid mode: %{public}d",
+            static_cast<int32_t>(category));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
+            "ToTaiheBluetoothAndNearlinkPreferredRecordCategory fail");
+        return BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_NONE;
+    }
+    return iter->second;
+}
+
+AudioLoopbackReverbPreset TaiheAudioEnum::ToTaiheAudioLoopbackReverbPreset(
+    OHOS::AudioStandard::AudioLoopbackReverbPreset preset)
+{
+    auto iter = AUDIO_LOOPBACK_REVERB_PRESET_TAIHE_MAP.find(preset);
+    if (iter == AUDIO_LOOPBACK_REVERB_PRESET_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioLoopbackReverbPreset invalid set: %{public}d", static_cast<int32_t>(preset));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioLoopbackReverbPreset fail");
+        return AudioLoopbackReverbPreset::key_t::ORIGINAL;
+    }
+    return iter->second;
+}
+
+AudioLoopbackEqualizerPreset TaiheAudioEnum::ToTaiheAudioLoopbackEqualizerPreset(
+    OHOS::AudioStandard::AudioLoopbackEqualizerPreset preset)
+{
+    auto iter = AUDIO_LOOPBACK_EQUALIZER_PRESET_TAIHE_MAP.find(preset);
+    if (iter == AUDIO_LOOPBACK_EQUALIZER_PRESET_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioLoopbackEqualizerPreset invalid set: %{public}d", static_cast<int32_t>(preset));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioLoopbackEqualizerPreset fail");
+        return AudioLoopbackEqualizerPreset::key_t::FLAT;
+    }
+    return iter->second;
+}
+
+
 } // namespace ANI::Audio

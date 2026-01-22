@@ -796,12 +796,9 @@ void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>>
     UnregisterCapturerCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
+void AudioCapturerImpl::OffAudioInterrupt()
 {
     std::shared_ptr<uintptr_t> cacheCallback = nullptr;
-    if (callback.has_value()) {
-        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
-    }
     UnregisterCapturerCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 

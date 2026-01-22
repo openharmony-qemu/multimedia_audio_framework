@@ -161,6 +161,23 @@ bool AudioStreamManagerImpl::IsAcousticEchoCancelerSupported(SourceType sourceTy
     return audioStreamMngr_->IsAcousticEchoCancelerSupported(static_cast<OHOS::AudioStandard::SourceType>(type));
 }
 
+bool AudioStreamManagerImpl::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
+{
+    int32_t type = sourceType.get_value();
+    if (!TaiheAudioEnum::IsValidSourceType(type)) {
+        AUDIO_ERR_LOG("get sourceType failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of sourceType must be enum SourceType");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
+        return false;
+    }
+    return audioStreamMngr_->IsIntelligentNoiseReductionEnabledForCurrentDevice(
+        static_cast<OHOS::AudioStandard::SourceType>(type));
+}
+
 bool AudioStreamManagerImpl::IsRecordingAvailable(AudioCapturerInfo capturerInfo)
 {
     OHOS::AudioStandard::AudioCapturerInfo innerCapturerInfo;
