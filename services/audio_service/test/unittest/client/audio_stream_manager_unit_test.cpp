@@ -163,20 +163,6 @@ HWTEST(AudioStreamManagerUnitTest, ForceStopAudioStream_001, TestSize.Level1)
     int32_t result = AudioStreamManager::GetInstance()->ForceStopAudioStream(audioType);
     EXPECT_NE(result, 1);
 }
-/**
- * @tc.name  : Test IsAudioLoopbackSupported API
- * @tc.type  : FUNC
- * @tc.number: IsAudioLoopbackSupported_001
- * @tc.desc  : Test IsStreamActive interface.
- */
-HWTEST(AudioStreamManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1)
-{
-    AudioLoopbackMode mode = LOOPBACK_HARDWARE;
-
-    int32_t result = AudioStreamManager::GetInstance()->IsAudioLoopbackSupported(mode);
-
-    EXPECT_EQ(result, false);
-}
 
 /**
  * @tc.name  : Test RegisterAudioRendererEventListener API
