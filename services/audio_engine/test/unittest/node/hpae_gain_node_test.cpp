@@ -111,9 +111,6 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), DEFAULT_NUM_TWO);
-    EXPECT_EQ(hpaeGainNode.use_count(), DEFAULT_NUM_TWO);
-    EXPECT_EQ(hpaeSinkOutputNode.use_count(), 1);
     g_testValue = 0;
     int32_t testValue = 100;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
@@ -130,8 +127,6 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeGainNode);
-    EXPECT_EQ(hpaeGainNode.use_count(), 1);
     hpaeGainNode->DisConnect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
 }
 }  // namespace

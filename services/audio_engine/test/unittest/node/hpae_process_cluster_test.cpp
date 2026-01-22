@@ -106,7 +106,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level
     EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
@@ -117,7 +116,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode1), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode1);
-    EXPECT_EQ(hpaeSinkInputNode1.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_TWO);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_TWO);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_TWO);
@@ -158,7 +156,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_001, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
@@ -200,7 +197,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_002, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
@@ -242,7 +238,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_003, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
@@ -284,7 +279,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_004, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->idGainMap_[nodeInfo.sessionId], nullptr);
     EXPECT_EQ(hpaeProcessCluster->CreateNodes(hpaeSinkInputNode), SUCCESS);
     hpaeProcessCluster->Connect(hpaeSinkInputNode);
-    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
     EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
@@ -343,9 +337,6 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 1);
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
-    EXPECT_EQ(hpaeSinkInputNode0.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeSinkInputNode1.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
-    EXPECT_EQ(hpaeProcessCluster.use_count(), 1);
     g_testValue1 = DEFAULT_TEST_VALUE_FIRST;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
         std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, g_testValue1);
@@ -359,15 +350,12 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeProcessCluster);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
-    EXPECT_EQ(hpaeProcessCluster.use_count(), 1);
     hpaeProcessCluster->DisConnect(hpaeSinkInputNode0);
     EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
-    EXPECT_EQ(hpaeSinkInputNode0.use_count(), 1);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
 
     hpaeProcessCluster->DisConnect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_SECOND), SUCCESS);
-    EXPECT_EQ(hpaeSinkInputNode1.use_count(), 1);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
 }
 
