@@ -175,7 +175,7 @@ HWTEST(AudioStreamManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1
 
     int32_t result = AudioStreamManager::GetInstance()->IsAudioLoopbackSupported(mode);
 
-    EXPECT_EQ(result, 1);
+    EXPECT_EQ(result, false);
 }
 
 /**

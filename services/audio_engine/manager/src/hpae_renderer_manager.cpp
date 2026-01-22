@@ -366,6 +366,7 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
 int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
+    CHECK_AND_RETURN_RET(SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr, SUCCESS);
     DeleteProcessCluster(sessionId);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
