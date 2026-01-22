@@ -29,6 +29,6 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info);
 napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info);
 napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info);
 napi_value GetAutoTestProcess(napi_env env, napi_callback_info info);
-extern thread_local std::shared_ptr<PipelineManager> threadPipelineManager;
+extern thread_local std::shared_ptr<PipelineManager> g_threadPipelineManager;
 
 #endif

@@ -23,8 +23,8 @@
 #include "../audioEffectNode/Input.h"
 #include "NodeManager.h"
 #include "audioSuiteError/AudioSuiteError.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
 #include <multimedia/player_framework/native_avcodec_base.h>
@@ -73,7 +73,7 @@ const int WORD_ALIGNMENT = 2;
 // Multi-thread shared lock
 std::mutex g_threadLock;
 // Thread private pipelineManager
-thread_local std::shared_ptr<PipelineManager> threadPipelineManager;
+thread_local std::shared_ptr<PipelineManager> g_threadPipelineManager;
 // Set the maximum number of parallel pipelines to 10
 int g_maxPipelineSize = 10;
 OH_AudioSuitePipeline **g_multiAudioSuitePipeline =
@@ -102,8 +102,8 @@ void MultiStoreTotalBuffToMap(const char *totalBuff, size_t size, const std::str
 OH_AudioSuite_Result GetMultiRenderFrameOutput(char *&firData, char *&secData, size_t &firDataSize,
     size_t &secDataSize, bool &finishedFlag)
 {
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
-    OH_AudioFormat threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
     int32_t writeSize = 0;
     int32_t bitsPerSample = GetBitsPerSample(threadAudioFormatOutput.sampleFormat);
     int32_t frameSize =
@@ -148,12 +148,15 @@ OH_AudioSuite_Result GetMultiRenderFrameOutput(char *&firData, char *&secData, s
     for (int i = 0; i < ARRAY_SIZE_2; i++) {
         FreeBuffer((char **)&ohAudioDataArray->audioDataArray[i]);
     }
+    free(ohAudioDataArray->audioDataArray);
+    ohAudioDataArray->audioDataArray = nullptr;
+    delete ohAudioDataArray;
     return result;
 }
 
 OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size_t &firDataSize, bool &finishedFlag)
 {
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioSuite_Result result;
     int32_t writeSize = 0;
     if (frameSize <= 0 || frameSize > MAX_FRAME_SIZE) {
@@ -198,14 +201,14 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
 
 OH_AudioSuite_Result MultiPipelineRenderFrame()
 {
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
-    bool &multiRenderFrameFlag = threadPipelineManager->multiRenderFrameFlag;
-    char *&firstAudioBuffer = threadPipelineManager->firstAudioBuffer;
-    char *&secondAudioBuffer = threadPipelineManager->secondAudioBuffer;
-    size_t &firstBufferSize = threadPipelineManager->firstBufferSize;
-    size_t &secondBufferSize = threadPipelineManager->secondBufferSize;
-    OH_AudioFormat threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
-    bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    bool &multiRenderFrameFlag = g_threadPipelineManager->multiRenderFrameFlag;
+    char *&firstAudioBuffer = g_threadPipelineManager->firstAudioBuffer;
+    char *&secondAudioBuffer = g_threadPipelineManager->secondAudioBuffer;
+    size_t &firstBufferSize = g_threadPipelineManager->firstBufferSize;
+    size_t &secondBufferSize = g_threadPipelineManager->secondBufferSize;
+    OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
+    bool &finishedFlag = g_threadPipelineManager->renderFrameFinishFlag;
 
     OH_AudioSuite_Result result = StartPipelineAndCheckState(threadPipeline);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -229,6 +232,8 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
         FreeBuffer(&firstAudioBuffer);
         firstAudioBuffer = (char *)malloc(firstBufferSize);
         if (firstAudioBuffer == nullptr) {
+            FreeBuffer(&firAudioData);
+            FreeBuffer(&secAudioData);
             return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
         }
         std::copy(static_cast<const char*>(firAudioData),
@@ -248,13 +253,15 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
             multiRenderFrameFlag = false;
         }
     }
+    FreeBuffer(&firAudioData);
+    FreeBuffer(&secAudioData);
     return result;
 }
 
 void MultiRenderFrameAsync(RenderFrameAsyncParam *param)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "RenderFrameAsync start pipelineId:%{public}s",
-                 threadPipelineManager->pipelineId.c_str());
+                 g_threadPipelineManager->pipelineId.c_str());
     std::future<OH_AudioSuite_Result> futureTask = std::async(std::launch::async, OH_AudioSuiteEngine_MultiRenderFrame,
         param->audioSuitePipeline, param->ohAudioDataArray, &param->responseSize, &param->finishedFlag);
     OH_AudioSuite_Result futureResult = futureTask.get();
@@ -294,7 +301,7 @@ void MultiRenderFrameAsync(RenderFrameAsyncParam *param)
 void RenderFrameAsync(RenderFrameAsyncParam *param)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "RenderFrameAsync start pipelineId:%{public}s",
-                 threadPipelineManager->pipelineId.c_str());
+                 g_threadPipelineManager->pipelineId.c_str());
     std::future<OH_AudioSuite_Result> futureTask = std::async(std::launch::async, OH_AudioSuiteEngine_RenderFrame,
         param->audioSuitePipeline, param->audioData, param->requestFrameSize, &param->responseSize,
         &param->finishedFlag);
@@ -324,8 +331,8 @@ void RenderFrameAsync(RenderFrameAsyncParam *param)
 OH_AudioSuite_Result GetMultiRenderFrameOutputAsync(char *&firData, char *&secData, size_t &firDataSize,
     size_t &secDataSize, bool &finishedFlag)
 {
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
-    OH_AudioFormat threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
     int32_t bitsPerSample = GetBitsPerSample(threadAudioFormatOutput.sampleFormat);
     int32_t frameSize =
         20 * threadAudioFormatOutput.samplingRate * threadAudioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
@@ -347,12 +354,14 @@ OH_AudioSuite_Result GetMultiRenderFrameOutputAsync(char *&firData, char *&secDa
     param->requestFrameSize = frameSize;
     param->responseSize = 0;
     param->finishedFlag = finishedFlag;
-    param->firstAudioBuffer = &threadPipelineManager->firstAudioBuffer;
-    param->secondAudioBuffer = &threadPipelineManager->secondAudioBuffer;
+    param->firstAudioBuffer = &g_threadPipelineManager->firstAudioBuffer;
+    param->secondAudioBuffer = &g_threadPipelineManager->secondAudioBuffer;
     MultiRenderFrameAsync(param);
     for (int i = 0; i < ARRAY_SIZE_2; i++) {
         FreeBufferOfVoid(&ohAudioDataArray->audioDataArray[i]);
     }
+    free(ohAudioDataArray->audioDataArray);
+    ohAudioDataArray->audioDataArray = nullptr;
     delete ohAudioDataArray;
     ohAudioDataArray = nullptr;
     delete param;
@@ -364,7 +373,7 @@ OH_AudioSuite_Result GetRenderFrameOutputAsync(char *&firData, size_t frameSize,
                                                size_t &firDataSize, bool &finishedFlag)
 {
     (void)firDataSize;
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
     if (frameSize <= 0 || frameSize > MAX_FRAME_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -385,17 +394,17 @@ OH_AudioSuite_Result GetRenderFrameOutputAsync(char *&firData, size_t frameSize,
     RenderFrameAsyncParam *param = new RenderFrameAsyncParam();
     param->audioSuitePipeline = threadPipeline;
     param->firAudioData = firData;
-    param->firstBufferSize = &threadPipelineManager->firstBufferSize;
+    param->firstBufferSize = &g_threadPipelineManager->firstBufferSize;
     param->requestFrameSize = frameSize;
     param->responseSize = 0;
     param->audioData = audioData;
     param->finishedFlag = finishedFlag;
-    param->firstAudioBuffer = &threadPipelineManager->firstAudioBuffer;
+    param->firstAudioBuffer = &g_threadPipelineManager->firstAudioBuffer;
     RenderFrameAsync(param);
     delete param;
     param = nullptr;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "RenderFrameAsync done, pipeline:%{public}s", threadPipelineManager->pipelineId.c_str());
+                 "RenderFrameAsync done, pipeline:%{public}s", g_threadPipelineManager->pipelineId.c_str());
     return OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
 }
 
@@ -414,11 +423,11 @@ napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest multiPipelinePrepare pipelineId=%{public}s", pipelineId.c_str());
 
-    if (threadPipelineManager != nullptr && threadPipelineManager->pipelineId == pipelineId) {
+    if (g_threadPipelineManager != nullptr && g_threadPipelineManager->pipelineId == pipelineId) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "multiPipelinePrepare direct return, pipeline manager of thread had inited,"
-                     "threadPipelineManager=%{public}p",
-                     threadPipelineManager.get());
+                     "g_threadPipelineManager=%{public}p",
+                     g_threadPipelineManager.get());
         napi_create_int64(env, static_cast<int>(0), &napiValue);
         return napiValue;
     }
@@ -432,10 +441,10 @@ napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info)
         napi_create_int64(env, 1, &napiValue);
         return napiValue;
     }
-    threadPipelineManager = pipelineManager;
+    g_threadPipelineManager = pipelineManager;
     g_nodeManager = pipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "multiPipelinePrepare threadPipelineManager=%{public}p", threadPipelineManager.get());
+                 "multiPipelinePrepare g_threadPipelineManager=%{public}p", g_threadPipelineManager.get());
     napi_create_int64(env, static_cast<int>(result), &napiValue);
     return napiValue;
 }
@@ -560,8 +569,8 @@ napi_value MultiSetFormat(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetFormat channels: %{public}d, sampleRate: %{public}d, bitsPerSample: %{public}d",
                  channels, sampleRate, bitsPerSample);
-    OH_AudioFormat &threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
-    const std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    OH_AudioFormat &threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
+    const std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     // Set Sampling Rate
     threadAudioFormatOutput.samplingRate = SetSamplingRate(sampleRate);
     // Set audio channels
@@ -600,9 +609,9 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
     if (pipelineIdToPipelineManagerMap.find(pipelineId) == pipelineIdToPipelineManagerMap.end()) {
         return 0;
     }
-    std::shared_ptr<PipelineManager> threadPipelineManager = pipelineIdToPipelineManagerMap[pipelineId];
-    std::map<std::string, FILE*> writeDataFileMap = threadPipelineManager->writeDataFileMap;
-    float &inputDataProgress = threadPipelineManager->inputDataProgress;
+    std::shared_ptr<PipelineManager> g_threadPipelineManager = pipelineIdToPipelineManagerMap[pipelineId];
+    std::map<std::string, FILE*> writeDataFileMap = g_threadPipelineManager->writeDataFileMap;
+    float &inputDataProgress = g_threadPipelineManager->inputDataProgress;
     int32_t totalSize = curMultiUserData->bufferSize;
     size_t &totalWriteAudioDataSize = curMultiUserData->totalWriteAudioDataSize;
     auto it = writeDataFileMap.find(inputId);
@@ -638,7 +647,7 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
 OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId,
                                                 OH_AudioNode_Type type)
 {
-    OH_AudioSuite_Result result = OH_AudioSuiteNodeBuilder_SetFormat(builder, threadPipelineManager->audioFormatInput);
+    OH_AudioSuite_Result result = OH_AudioSuiteNodeBuilder_SetFormat(builder, g_threadPipelineManager->audioFormatInput);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioNodeBuilder_SetFormat result is %{public}d", static_cast<int>(result));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -648,11 +657,11 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
         return result;
     }
     std::shared_ptr<MultiUserData> userData =
-        std::make_shared<MultiUserData>(threadPipelineManager->pipelineId, inputId);
+        std::make_shared<MultiUserData>(g_threadPipelineManager->pipelineId, inputId);
     // Later, we can consider removing totalInputDataSize and pass it as an input parameter
     userData->inputId = inputId;
-    userData->pipelineId = threadPipelineManager->pipelineId;
-    userData->bufferSize = threadPipelineManager->totalInputDataSize;
+    userData->pipelineId = g_threadPipelineManager->pipelineId;
+    userData->bufferSize = g_threadPipelineManager->totalInputDataSize;
     userData->totalWriteAudioDataSize = 0;
     userData->isResetTotalWriteAudioDataSize = false;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -673,7 +682,7 @@ OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, st
         return result;
     }
     // Store the MultiUserData instance into the mapping table
-    threadPipelineManager->userDataMap[inputId] = userData;
+    g_threadPipelineManager->userDataMap[inputId] = userData;
     return result;
 }
 
@@ -681,8 +690,8 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
                           OH_AudioSuite_Result &result)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest createInputNode start");
-    char *threadinputBuffer = threadPipelineManager->inputBuffer;
-    size_t threadtotalInputDataSize = threadPipelineManager->totalInputDataSize;
+    char *threadinputBuffer = g_threadPipelineManager->inputBuffer;
+    size_t threadtotalInputDataSize = g_threadPipelineManager->totalInputDataSize;
     MultiStoreTotalBuffToMap(threadinputBuffer, threadtotalInputDataSize, inputId);
     // Creating a builder constructor
     OH_AudioNodeBuilder *builderIn;
@@ -713,7 +722,7 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
     }
 
     // Creating an input node
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest CreateInputNode threadNodeManager: %{public}p , inputId:%{public}s",
                  threadNodeManager.get(), inputId.c_str());
@@ -723,8 +732,8 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
 void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodeParams &params)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest MultiUpdateInputNode start");
-    OH_AudioFormat &audioFormatInput = threadPipelineManager->audioFormatInput;
-    OH_AudioFormat &audioFormatOutput = threadPipelineManager->audioFormatOutput;
+    OH_AudioFormat &audioFormatInput = g_threadPipelineManager->audioFormatInput;
+    OH_AudioFormat &audioFormatOutput = g_threadPipelineManager->audioFormatOutput;
     // Set Sampling Rate
     audioFormatInput.samplingRate = SetSamplingRate(params.sampleRate);
     // Set audio channels
@@ -745,7 +754,7 @@ void MultiUpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodePar
     result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &audioFormatInput);
     const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &audioFormatOutput);
-    MultiStoreTotalBuffToMap(threadPipelineManager->inputBuffer, threadPipelineManager->totalInputDataSize,
+    MultiStoreTotalBuffToMap(g_threadPipelineManager->inputBuffer, g_threadPipelineManager->totalInputDataSize,
                              params.inputId);
     auto it = g_writeDataBufferMap.find(params.inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -766,8 +775,8 @@ bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int3
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "get bits per sample failed");
         return false;
     }
-    OH_AudioFormat &threadAudioFormatInput = threadPipelineManager->audioFormatInput;
-    OH_AudioFormat &threadAudioFormatOutput = threadPipelineManager->audioFormatOutput;
+    OH_AudioFormat &threadAudioFormatInput = g_threadPipelineManager->audioFormatInput;
+    OH_AudioFormat &threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
     // Set Sampling Rate
     threadAudioFormatInput.samplingRate = SetSamplingRate(*sampleRate);
     // Set audio channels
@@ -792,7 +801,7 @@ bool MultiGetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int3
 void MultiManageExistingOutputNodes(const std::string &inputId, const std::string &mixerId,
                                     OH_AudioSuite_Result &result, std::vector<Node> outPutNodes)
 {
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest AddEffectNodeToNodeManager start, threadNodeManager: %{public}p",
                  threadNodeManager.get());
@@ -820,7 +829,7 @@ void MultiManageExistingOutputNodes(const std::string &inputId, const std::strin
 void MultiCreateAndConnectOutputNodes(const std::string &inputId, const std::string &outputId,
                                       OH_AudioSuite_Result &result)
 {
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest CreateAndConnectOutputNodes start, threadNodeManager: %{public}p",
                  threadNodeManager.get());
@@ -859,7 +868,7 @@ void MultiCreateAndConnectOutputNodes(const std::string &inputId, const std::str
 void MultiManageOutputNodes(napi_env env, const std::string &inputId, const std::string &outputId,
                             const std::string &mixerId, OH_AudioSuite_Result &result)
 {
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest ManageOutputNodes start, threadNodeManager: %{public}p", threadNodeManager.get());
     const std::vector<Node> outPutNodes =
@@ -934,8 +943,42 @@ static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataL
     return false;
 }
 
-napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
-{
+napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inputFile, int32_t &sampleRate,
+                             int32_t &channels, int32_t &bitsPerSample) {
+    uint32_t offset = 0;
+    uint32_t length = 0;
+    if (GetWavDataPosition(inputFile, offset, length)) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
+                     "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(),
+                     offset, length);
+    } else {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
+    }
+
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
+    std::map<std::string, FILE *> &writeDataFileMap = g_threadPipelineManager->writeDataFileMap;
+    writeDataFileMap[params.inputId] = inputFile;
+    g_threadPipelineManager->totalInputDataSize = length;
+    g_activedFileArray.push_back(inputFile);
+    napi_value napiValue;
+    OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
+    Node inputNode = threadNodeManager->GetNodeById(params.inputId);
+    if (inputNode.id.empty()) {
+        MultiCreateInputNode(env, params.inputId, napiValue, result);
+    } else {
+        UpdateInputNodeParams *updateParams =
+            new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
+        MultiUpdateInputNode(result, *updateParams);
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    std::vector<std::string> audioFormat = {std::to_string(sampleRate), std::to_string(channels),
+                                            std::to_string(bitsPerSample)};
+    CallStringArrayCallback(audioFormat);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+}
+
+napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info) {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioInAndOutInit start");
     InputAudioParams params;
     napi_status status = ParseInputArguments(env, info, params);
@@ -964,37 +1007,7 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
 
-    uint32_t offset = 0;
-    uint32_t length = 0;
-    if (GetWavDataPosition(inputFile, offset, length)) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                     "file name  %{public}s, Data offset: %{public}u, length: %{public}u",
-                     params.fileName.c_str(), offset, length);
-    } else {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "Failed to find data chunk");
-    }
-
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
-    std::map<std::string, FILE*> &writeDataFileMap = threadPipelineManager->writeDataFileMap;
-    writeDataFileMap[params.inputId] = inputFile;
-    threadPipelineManager->totalInputDataSize = length;
-    g_activedFileArray.push_back(inputFile);
-    napi_value napiValue;
-    OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
-    Node inputNode = threadNodeManager->GetNodeById(params.inputId);
-    if (inputNode.id.empty()) {
-        MultiCreateInputNode(env, params.inputId, napiValue, result);
-    } else {
-        UpdateInputNodeParams *updateParams =
-            new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
-        MultiUpdateInputNode(result, *updateParams);
-        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
-    }
-    MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
-    std::vector<std::string> audioFormat = {std::to_string(sampleRate), std::to_string(channels),
-                                            std::to_string(bitsPerSample)};
-    CallStringArrayCallback(audioFormat);
-    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    return MultiAudioOutInit(env, params, inputFile, sampleRate, channels, bitsPerSample);
 }
 
 OH_AudioSuite_Result RemoveNodeMoreThanTwoSize(std::shared_ptr<NodeManager> &threadNodeManager, std::string inputId)
@@ -1073,12 +1086,12 @@ napi_value MultiDeleteSong(napi_env env, napi_callback_info info)
     napi_status status = ParseNapiString(env, argv[0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
         "DeleteSong inputId:%{public}s", inputId.c_str());
-    if (threadPipelineManager == nullptr) {
+    if (g_threadPipelineManager == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "DeleteSong, threadNodeManager is null");
         napi_create_int64(env, static_cast<int>(AUDIOSUITE_ERROR_SYSTEM), &napiValue);
         return napiValue;
     }
-    std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
+    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     const std::vector<Node> inputNodes = threadNodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest DeleteSong inputNodes length is %{public}d", static_cast<int>(inputNodes.size()));
@@ -1100,9 +1113,9 @@ napi_value MultiDeleteSong(napi_env env, napi_callback_info info)
 napi_value MultiSaveFileBuffer(napi_env env, napi_callback_info info)
 {
     pthread_t thisId = gettid();
-    OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
-    char *&threadBuffer = threadPipelineManager->firstAudioBuffer;
-    size_t &threadBufferSize = threadPipelineManager->firstBufferSize;
+    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
+    char *&threadBuffer = g_threadPipelineManager->firstAudioBuffer;
+    size_t &threadBufferSize = g_threadPipelineManager->firstBufferSize;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SaveFileBuffer start buffer: %{public}p,"
                  "pipeline: %{public}p, thread_id:%{public}lu, threadBufferSize:%{public}zu",
@@ -1113,7 +1126,7 @@ napi_value MultiSaveFileBuffer(napi_env env, napi_callback_info info)
         }
         g_startMultiProcess = false;
     }
-    multiPipelineProcessMap[threadPipelineManager->pipelineId] = 0;
+    multiPipelineProcessMap[g_threadPipelineManager->pipelineId] = 0;
     MultiPipelineRenderFrame();
     napi_value napiValue = nullptr;
     void *arrayBufferData = nullptr;
@@ -1145,12 +1158,12 @@ napi_value MultiGetSecondOutputAudio(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---getAudioOfTap---IN");
     napi_value napiValue = nullptr;
     void *data;
-    napi_create_arraybuffer(env, threadPipelineManager->secondBufferSize, &data, &napiValue);
-    char *&secData = threadPipelineManager->secondAudioBuffer;
-    size_t &threadSecDataSize = threadPipelineManager->secondBufferSize;
+    napi_create_arraybuffer(env, g_threadPipelineManager->secondBufferSize, &data, &napiValue);
+    char *&secData = g_threadPipelineManager->secondAudioBuffer;
+    size_t &threadSecDataSize = g_threadPipelineManager->secondBufferSize;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "secData:%{public}p, threadSecDataSize:%{public}zu, pipeline:%{public}p",
-                 secData, threadSecDataSize, threadPipelineManager->audioSuitePipeline);
+                 secData, threadSecDataSize, g_threadPipelineManager->audioSuitePipeline);
     std::copy(static_cast<const char*>(secData),
         static_cast<const char*>(secData) + threadSecDataSize, static_cast<char*>(data));
     std::fill(static_cast<char*>(secData), static_cast<char*>(secData) + threadSecDataSize, 0);
@@ -1186,9 +1199,9 @@ OH_AudioSuite_Result MultiProcessPipeline(OH_AudioSuitePipeline *audioSuitePipel
 OH_AudioSuite_Result MultiOneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest OneRenDerFrame start");
-    OH_AudioSuitePipeline *audioSuitePipeline = threadPipelineManager->audioSuitePipeline;
-    bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
-    char *playAudioBuffer = threadPipelineManager->playAudioBuffer;
+    OH_AudioSuitePipeline *audioSuitePipeline = g_threadPipelineManager->audioSuitePipeline;
+    bool &finishedFlag = g_threadPipelineManager->renderFrameFinishFlag;
+    char *playAudioBuffer = g_threadPipelineManager->playAudioBuffer;
     MultiProcessPipeline(audioSuitePipeline);
     if (audioDataSize <= CONSTANT_0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1231,12 +1244,12 @@ OH_AudioData_Callback_Result MultiPlayAudioRendererOnWriteData(OH_AudioRenderer 
     if (audioData == nullptr) {
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
-    bool &finishedFlag = threadPipelineManager->renderFrameFinishFlag;
-    char *firstAudioBuffer = threadPipelineManager->firstAudioBuffer;
-    char *&playAudioBuffer = threadPipelineManager->playAudioBuffer;
-    bool recordFlag = threadPipelineManager->recordFlag;
-    size_t &firstBufferSize = threadPipelineManager->firstBufferSize;
-    OH_AudioRenderer *&audioRenderer = threadPipelineManager->audioRenderer;
+    bool &finishedFlag = g_threadPipelineManager->renderFrameFinishFlag;
+    char *firstAudioBuffer = g_threadPipelineManager->firstAudioBuffer;
+    char *&playAudioBuffer = g_threadPipelineManager->playAudioBuffer;
+    bool recordFlag = g_threadPipelineManager->recordFlag;
+    size_t &firstBufferSize = g_threadPipelineManager->firstBufferSize;
+    OH_AudioRenderer *&audioRenderer = g_threadPipelineManager->audioRenderer;
     int32_t writeSize = 0;
     if (!finishedFlag) {
         MultiOneRenDerFrame(audioDataSize, &writeSize);
@@ -1277,7 +1290,7 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
 {
     OH_AudioStream_Type type = OH_AudioStream_Type::AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStreamBuilder *rendererBuilder = nullptr;
-    OH_AudioRenderer *&audioRenderer = threadPipelineManager->audioRenderer;
+    OH_AudioRenderer *&audioRenderer = g_threadPipelineManager->audioRenderer;
     int32_t playDataSize = 0;
     OH_AudioStreamBuilder_Create(&rendererBuilder, type);
     int32_t bitsPerSample = 0;
@@ -1308,8 +1321,8 @@ napi_value MultiAudioRendererInit(napi_env env, napi_callback_info info)
 napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioRendererStart start");
-    OH_AudioSuitePipeline *audioSuitePipeline = threadPipelineManager->audioSuitePipeline;
-    OH_AudioRenderer *&audioRenderer = threadPipelineManager->audioRenderer;
+    OH_AudioSuitePipeline *audioSuitePipeline = g_threadPipelineManager->audioSuitePipeline;
+    OH_AudioRenderer *&audioRenderer = g_threadPipelineManager->audioRenderer;
     MultiProcessPipeline(audioSuitePipeline);
     // start
     OH_AudioRenderer_Start(audioRenderer);
@@ -1318,9 +1331,9 @@ napi_value MultiAudioRendererStart(napi_env env, napi_callback_info info)
 
 napi_value MultiRealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 {
-    char *&playAudioBuffer = threadPipelineManager->playAudioBuffer;
-    size_t &playAudioBufferSize = threadPipelineManager->playAudioBufferSize;
-    threadPipelineManager->recordFlag = false;
+    char *&playAudioBuffer = g_threadPipelineManager->playAudioBuffer;
+    size_t &playAudioBufferSize = g_threadPipelineManager->playAudioBufferSize;
+    g_threadPipelineManager->recordFlag = false;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest RealTimeSaveFileBuffer start");
     napi_value napiValue = nullptr;
     void *arrayBufferData = nullptr;
