@@ -20,6 +20,7 @@
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
 #include "audio_policy_interface.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
