@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioPipeManager {
 public:
     AudioPipeManager();
-    ~AudioPipeManager();
+    virtual ~AudioPipeManager();
 
     static std::shared_ptr<AudioPipeManager> GetPipeManager()
     {
@@ -44,7 +44,7 @@ public:
     void Assign(std::shared_ptr<AudioPipeInfo> dst, std::shared_ptr<AudioPipeInfo> src);
     bool IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo);
 
-    const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
+    virtual const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);

@@ -147,5 +147,11 @@ int32_t AudioRoutingManager::SetDeviceConnectionStatus(const std::shared_ptr<Aud
 {
     return AudioRoutingClientManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
 }
+
+int32_t AudioRoutingManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    return AudioRoutingClientManager::GetInstance().SetCustomAudioMix(zoneName, audioMixes);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

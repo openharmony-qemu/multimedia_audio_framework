@@ -20,6 +20,7 @@
 #include "audio_group_manager.h"
 #include "microphone_descriptor.h"
 #include "audio_policy_interface.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +51,7 @@ public:
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     AudioRoutingClientManager() = default;

@@ -5747,5 +5747,10 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
     audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
+}
 } // namespace AudioStandard
 } // namespace OHOS

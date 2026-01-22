@@ -110,6 +110,9 @@ struct PaPropInfo {
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
+#ifdef MULTI_BUS_ENABLE
+    std::string busAddress_ = STR_INITED;
+#endif
 };
 
 class PipeStreamPropInfo;

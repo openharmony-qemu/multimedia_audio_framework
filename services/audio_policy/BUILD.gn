@@ -294,6 +294,11 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "MUTE_SINK_DISABLE" ]
   }
 
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+    sources += [ "server/domain/pipe/src/audio_bus_selector.cpp" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [

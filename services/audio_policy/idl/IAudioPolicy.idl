@@ -43,6 +43,7 @@ sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -316,5 +317,6 @@ interface IAudioPolicy {
     void IsOtherMediaPlaying([out] boolean retIsExistence);
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
+    void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
 }
 

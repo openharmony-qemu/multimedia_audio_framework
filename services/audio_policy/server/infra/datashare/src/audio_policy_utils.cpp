@@ -28,6 +28,7 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
 
 #include "audio_server_proxy.h"
@@ -395,9 +396,13 @@ bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc.deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -406,9 +411,13 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc->deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }

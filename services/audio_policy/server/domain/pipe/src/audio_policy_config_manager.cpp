@@ -701,6 +701,69 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     return false;
 }
 
+#ifdef MULTI_BUS_ENABLE
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                                 std::shared_ptr<PipeStreamPropInfo> &info,
+                                                 const std::vector<std::string> &busAddresses)
+{
+    // Vehicle system scenario enter
+    CHECK_AND_RETURN_LOG(desc != nullptr && !busAddresses.empty(), "StreamDesc is null, none streamDrop");
+
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_LOG(newDeviceDesc != nullptr, "DeviceDesc is null, none streamDrop");
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
+    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
+
+    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap;
+    for (const auto &pipeName : deviceInfo->supportPipes_) {
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
+        if (pipeInfo != nullptr) {
+            pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
+        }
+    }
+
+    auto findPipe = [&pipeInfoMap](const std::string &busAddress) -> std::shared_ptr<AdapterPipeInfo> {
+        auto it = pipeInfoMap.find(busAddress);
+        if (it != pipeInfoMap.end()) {
+            return it->second;
+        }
+        return nullptr;
+    };
+
+    for (const auto &busAddress : busAddresses) {
+        // First, locate the pipe based on the busAddress name,
+        // then check whether the stream information matches the PipeStreamPropInfo under the pipe.
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddress);
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+
+        AudioStreamInfo temp = desc->streamInfo_;
+        UpdateBasicStreamInfo(desc, pipeInfo, temp);
+
+        AUDIO_INFO_LOG(
+            "Bus: %{public}s, AudioStreamInfo: samplingRate[%{public}d], format[%{public}d], channels[%{public}d].",
+            busAddress.c_str(), temp.samplingRate, temp.format, temp.channels);
+        if (MatchStreamPropInfo(info, pipeInfo, temp)) {
+            AUDIO_INFO_LOG("Pipe stream prop info match success: %{public}s.", busAddress.c_str());
+            return;
+        }
+    }
+
+    AUDIO_INFO_LOG("Find streamPropInfo failed, choose first pipe.");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddresses[0]);
+    if (!pipeInfo || pipeInfo->streamPropInfos_.empty()) {
+        AUDIO_ERR_LOG("Failed to find pipe with bus: %{public}s.", busAddresses[0].c_str());
+        return;
+    }
+    info = pipeInfo->streamPropInfos_.front();
+}
+#endif
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {

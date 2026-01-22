@@ -31,6 +31,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr std::string_view PRIMARY_ZONE_NAME = "primary";
+}
 AudioZoneService& AudioZoneService::GetInstance()
 {
     static AudioZoneService service;
@@ -378,6 +381,19 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+}
+
+std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto keyList = AudioZoneBindKey::GetSupportKeys(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    for (const auto &key : keyList) {
+        for (const auto &it : zoneMaps_) {
+            CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+            return it.second->GetName();
+        }
+    }
+    return std::string(PRIMARY_ZONE_NAME);
 }
 
 int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)
