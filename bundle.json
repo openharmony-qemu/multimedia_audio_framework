@@ -174,7 +174,8 @@
               "header": {
                 "header_files": [
                   "audio_general_manager.h",
-                  "./audiomanager/include/audio_anahs_manager.h"
+                  "./audiomanager/include/audio_anahs_manager.h",
+                  "./audiocommon/include/audio_device_capability.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
               }
