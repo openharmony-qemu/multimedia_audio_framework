@@ -149,7 +149,7 @@ private:
     // Only for debug
     int32_t abortFlag_ = 0;
     // offload
-    bool offloadEnable_ = false;
+    std::atomic<bool> offloadEnable_ = false;
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
