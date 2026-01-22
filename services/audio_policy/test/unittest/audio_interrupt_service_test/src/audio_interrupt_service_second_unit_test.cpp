@@ -1865,7 +1865,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_068, TestSize.
  * @tc.number: ActivateAudioInterruptCoreProcedure01
  * @tc.desc  : Test ActivateAudioInterruptCoreProcedure
  */
-HWTEST_F(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
+HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
 
