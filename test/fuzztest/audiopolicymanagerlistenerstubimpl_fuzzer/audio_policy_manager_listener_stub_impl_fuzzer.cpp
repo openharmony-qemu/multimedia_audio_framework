@@ -61,6 +61,7 @@ public:
     bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override { return false; }
     bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) override { return false; }
     bool OnCheckMediaControllerBundle(const std::string &bundleName) override { return false; }
+    bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) override { return false; }
 };
 
 class AudioQueryAllowedPlaybackCallbackFuzzTest : public AudioQueryAllowedPlaybackCallback {

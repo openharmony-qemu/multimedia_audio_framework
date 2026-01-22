@@ -53,8 +53,9 @@ public:
     bool IsOutputClusterConnected();
     bool DelayAlignmentInner();
     void SetDelayCount(int32_t delayCount);
+    void ChangeLatencyByCollManager(int32_t &latency);
 private:
-    void FillSilenceFramesInner(uint32_t latencyMs);
+    void FillSilenceFramesInner(int32_t latencyMs);
     void ProcessInputFrameInner(HpaePcmBuffer* buffer);
     void ProcessOutputFrameInner();
     std::mutex mutex_;

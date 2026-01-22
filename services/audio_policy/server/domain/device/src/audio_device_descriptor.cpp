@@ -69,6 +69,16 @@ static const char *DeviceTypeToString(DeviceType type)
     return "UNKNOWN";
 }
 
+static bool ConverteToUint32(const std::string &str, uint32_t &result)
+{
+    if (str == "-0") {
+        result = 0;
+        return true;
+    }
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
 static std::string ParseAudioFormat(std::string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
@@ -399,7 +409,8 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
         return static_cast<uint32_t>(g_formatStrToEnum[parseRet]);
     }
     CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
-    ret = static_cast<uint32_t>(std::stoi(parseRet));
+    CHECK_AND_RETURN_RET_LOG(ConverteToUint32(parseRet, ret), ret,
+        "convert invalid parseRet: %{public}s", parseRet.c_str());
     return ret;
 }
 

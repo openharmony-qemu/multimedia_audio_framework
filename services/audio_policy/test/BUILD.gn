@@ -99,6 +99,7 @@ group("audio_policy_unittest_packages") {
     ":privacy_priority_router_unit_test",
     ":stream_filter_router_unit_test",
     ":sle_audio_device_manager_unit_test",
+    ":va_device_manager_test",
     ":volume_data_maintainer_unit_test",
     ":audio_ipc_serialization_unit_test",
     ":audio_device_manager_unit_test",
@@ -6714,6 +6715,84 @@ ohos_unittest("audio_injector_policy_unit_test") {
   ]
 
   sources = [ "./unittest/audio_injector_policy_unit_test/src/audio_injector_policy_unit_test.cpp" ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+}
+
+ohos_unittest("va_device_manager_test") {
+  module_out_path = module_output_path
+  include_dirs = ["./unittest/va_device_manager_test/include",
+                  "../../audio_policy/server/domain/device/src/va",
+                  "../../../services/audio_service/unittest/include",
+                  "../../../frameworks",
+                  "//foundation/multimedia/audio_framework/services/audio_service/test/unittest/include/",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  deps = [ "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+           "../../../services/audio_policy:audio_policy_client",
+           "../../../services/audio_policy:audio_policy_service",
+           "../../audio_policy:audio_policy_service_static",
+   ]
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "cJSON:cjson",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_6.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "ipc:ipc_core",
+    "libxml2:libxml2",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "window_manager:session_manager_lite",
+    "window_manager:libwm_lite",
+    "init:libbeget_proxy",
+  ]
+
+  sources = [ "./unittest/va_device_manager_test/src/va_device_manager_test.cpp" ]
 
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]

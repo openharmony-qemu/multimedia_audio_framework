@@ -600,6 +600,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             return type;
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
+        case DEVICE_TYPE_REMOTE_DAUDIO:
             type = "_dp";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -729,7 +730,7 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
         deviceTypeName += "_distributed";
     }
 
-    if (deviceType == DEVICE_TYPE_DP) {
+    if (deviceType == DEVICE_TYPE_DP || deviceType == DEVICE_TYPE_REMOTE_DAUDIO) {
         deviceTypeName += "_dp";
     }
     return type + deviceTypeName;

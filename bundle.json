@@ -32,6 +32,7 @@
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
           "audio_framework_feature_wireless_default_exclude",
+          "audio_framework_feature_exclude_indirect_usb_input_device",
           "audio_framework_feature_opensl_es",
           "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
@@ -174,7 +175,8 @@
               "header": {
                 "header_files": [
                   "audio_general_manager.h",
-                  "./audiomanager/include/audio_anahs_manager.h"
+                  "./audiomanager/include/audio_anahs_manager.h",
+                  "./audiocommon/include/audio_device_capability.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
               }

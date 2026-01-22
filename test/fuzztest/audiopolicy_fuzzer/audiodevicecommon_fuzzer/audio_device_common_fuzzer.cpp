@@ -215,6 +215,24 @@ void UpdateDeviceInfoFuzzTest()
     OnStop();
 }
 
+void ClearPreferredDevicesFuzzTest()
+{
+    AudioDeviceCommon &comm = AudioDeviceCommon::GetInstance();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->deviceName_ = "--";
+    dev->macAddress_ = "card=2;device=0";
+    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
+    comm.audioStateManager_.SetPreferredCallRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredMediaRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
+    comm.ClearPreferredDevices(descForCb);
+    OnStop();
+}
+
 void GetDeviceDescriptorInnerFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -525,6 +543,7 @@ TestFuncs g_testFuncs[] = {
     GetPreferredInputStreamTypeInnerFuzzTest,
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,
+    ClearPreferredDevicesFuzzTest,
     IsFastFromA2dpToA2dpFuzzTest,
     GetDeviceDescriptorInnerFuzzTest,
     IsRendererStreamRunningFuzzTest,

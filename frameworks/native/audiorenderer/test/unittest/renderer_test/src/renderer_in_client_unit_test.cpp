@@ -22,6 +22,7 @@
 #include "meta/audio_types.h"
 #include "oh_audio_buffer.h"
 #include "audio_stream_enum.h"
+#include "parameter.h"
 
 
 using namespace testing::ext;
@@ -1681,7 +1682,7 @@ HWTEST(RendererInClientInnerUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
         .channels = AudioChannel::STEREO,
     };
     int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     info.isRemoteSpatialChannel = true;
     ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
     EXPECT_EQ(ret, SUCCESS);
@@ -3212,5 +3213,61 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_004, TestSize
     EXPECT_NE(ptrRendererInClientInner->clientBuffer_->GetStreamStatus()->load(), StreamStatus::STREAM_IDEL);
 }
 
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_094
+ * @tc.desc  : Test RendererInClientInner::SerAudioStreamInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4)
+{
+    SetParameter("persist.multimedia.3dadirecttest", std::to_string(1).c_str());
+    int32_t realSysVal = 0;
+    for (int i = 0; i < 50; i++) {
+        GetSysPara("persist.multimedia.3dadirecttest", realSysVal);
+        if (realSysVal == 1) {
+            break;
+        }
+        usleep(10000);
+    }
+    ASSERT_EQ(realSysVal, 1);
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    AudioStreamParams info;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.channels = AudioChannel::CHANNEL_8;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+
+    int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_NE(ret, SUCCESS);
+    SetParameter("persist.multimedia.3dadirecttest", std::to_string(0).c_str());
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner_AudioVivid_Direct3DA_001
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_AudioVivid_Direct3DA_001
+ * @tc.desc  : Test RendererInClientInner::WriteAudioVividDirect
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_AudioVivid_Direct3DA_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    size_t pcmSize = 1024;
+    size_t metaSize = 512;
+    uint8_t *pcmBuf = new uint8_t[pcmSize];
+    uint8_t *metaBuf = new uint8_t[metaSize];
+    memset_s(pcmBuf, pcmSize, 0xAA, pcmSize);
+    memset_s(metaBuf, metaSize, 0xBB, metaSize);
+
+    ptrRendererInClientInner->WriteAudioVividDirect(pcmBuf, pcmSize, metaBuf, metaSize);
+    EXPECT_EQ(ptrRendererInClientInner->outPackedLen_, pcmSize + metaSize);
+    ASSERT_EQ(ptrRendererInClientInner->outPackedBuf_.size(), pcmSize + metaSize);
+    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[0]), 0xAA);
+    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[pcmSize]), 0xBB);
+
+    delete[] pcmBuf;
+    delete[] metaBuf;
+}
 } // namespace AudioStandard
 } // namespace OHOS

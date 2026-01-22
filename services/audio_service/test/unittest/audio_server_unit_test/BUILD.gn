@@ -37,6 +37,7 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../services/audio_engine/manager/include",
+    "../../../../../frameworks/native/hdiadapter_new/include",
   ]
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
@@ -56,6 +57,7 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
+    "../../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [
