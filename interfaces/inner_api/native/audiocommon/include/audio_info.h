@@ -2200,7 +2200,7 @@ struct RendererStreamInfo {
 
     RendererState state_ = RENDERER_INVALID;
 
-    uint32_t appUid_ = INVALID_UID;
+    std::string bundleName_ = "";
 };
 
 struct CapturerStreamInfo {
@@ -2210,7 +2210,7 @@ struct CapturerStreamInfo {
 
     CapturerState state_ = CAPTURER_INVALID;
 
-    uint32_t appUid_ = INVALID_UID;
+    std::string bundleName_ = "";
 };
 
 /**
