@@ -273,9 +273,9 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, con
     uint32_t ecFormatSize = static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(ecType).format));
 
     for (uint32_t i = 0; i < framelen; i++) {
-        size_t frameStart = i * totalChannel * micFormatSize;
-        size_t micFrameStart = i * micChannel * micFormatSize;
-        size_t ecFrameStart = i * ecChannel * micFormatSize;
+        size_t frameStart = staitc_cast<size_t>(i) * totalChannel * micFormatSize;
+        size_t micFrameStart = staitc_cast<size_t>(i) * micChannel * micFormatSize;
+        size_t ecFrameStart = staitc_cast<size_t>(i) * ecChannel * micFormatSize;
 
         for (uint32_t j = 0; j < micChannel; j++) {
             size_t destOffset = frameStart + j * micFormatSize;
