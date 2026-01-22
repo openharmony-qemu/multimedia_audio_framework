@@ -559,6 +559,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDev
                 deviceDescriptors.push_back(desc);
             }
         }
+    } else {
+        deviceDescriptors = audioDeviceDescriptors;
     }
     for (const auto &desc : deviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
