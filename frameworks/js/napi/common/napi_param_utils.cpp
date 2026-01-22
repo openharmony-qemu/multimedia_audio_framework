@@ -653,6 +653,7 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     encoding.push_back(deviceInfo.GetDeviceStreamInfo().encoding);
     SetValueInt32Element(env, "encodingTypes", encoding, result);
     SetValueBoolean(env, "spatializationSupported", deviceInfo.spatializationSupported_, result);
+    SetValueBoolean(env, "highQualityRecordingSupported", deviceInfo.highQualityRecordingSupported_, result);
 
     status = SetJsAudioStreamInfos(env, deviceInfo.capabilities_, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set capabilities property failed");
