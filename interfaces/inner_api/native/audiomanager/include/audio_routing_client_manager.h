@@ -50,6 +50,7 @@ public:
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     AudioRoutingClientManager() = default;
